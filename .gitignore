@@ -44,6 +44,9 @@ jspm_packages/
 # IntelliJ IDEA
 .idea/
 
+# Local project context
+PROJECT_CONTEXT.md
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 

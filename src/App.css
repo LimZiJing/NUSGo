@@ -20,3 +20,37 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
   font: 14px/1.2 system-ui, sans-serif;
 }
+
+.map-status::first-line {
+  font-weight: 600;
+}
+
+.map-legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+}
+
+.legend-marker {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.venue-marker {
+  background: #d94f70;
+}
+
+.bus-marker {
+  background: #2563eb;
+}

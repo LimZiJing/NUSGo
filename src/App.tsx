@@ -109,12 +109,18 @@ function App() {
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
       container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      // OpenFreeMap provides an OSM-based vector style with roads, paths,
+      // buildings, and labels for the prototype basemap.
+      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: kentRidgeLocation,
       zoom: 15,
     })
 
     map.addControl(new NavigationControl(), 'top-right')
+    map.on('error', (event) => {
+      console.error('Map error:', event.error)
+      if (isMounted) setStatus('Unable to load map tiles')
+    })
 
     const loadVenues = async () => {
       try {

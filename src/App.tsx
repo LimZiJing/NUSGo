@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Map,
-  Marker,
   NavigationControl,
-  Popup,
   setWorkerUrl,
   type LngLatLike,
+  type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { fetchJson } from './map/data'
+import { addBusStopMarkers, addVenueMarkers } from './map/markers'
 import type { BusStop } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -16,82 +17,6 @@ import './App.css'
 // MapLibre processes vector tiles in a browser worker; Vite bundles this worker
 // and provides its URL through the `?worker&url` import above.
 setWorkerUrl(maplibreWorkerUrl)
-
-function addVenueMarkers(map: Map, venues: VenueLocationMap): Marker[] {
-  const markers: Marker[] = []
-
-  for (const [venueCode, venue] of Object.entries(venues)) {
-    if (!venue.location) continue
-
-    // Use DOM nodes instead of setHTML so venue data is treated as text
-    // if the dataset ever contains characters meaningful to HTML.
-    const popupContent = document.createElement('div')
-    const title = document.createElement('strong')
-    title.textContent = venueCode
-    popupContent.append(title)
-
-    const name = document.createElement('div')
-    name.textContent = venue.roomName
-    popupContent.append(name)
-
-    if (venue.floor !== undefined && venue.floor !== null) {
-      const floor = document.createElement('div')
-      floor.textContent = `Floor: ${venue.floor}`
-      popupContent.append(floor)
-    }
-
-    const marker = new Marker({ color: '#d94f70' })
-      // Venue coordinates use x=longitude and y=latitude, matching
-      // MapLibre's [longitude, latitude] coordinate order.
-      .setLngLat([venue.location.x, venue.location.y])
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(popupContent))
-      .addTo(map)
-
-    markers.push(marker)
-  }
-
-  return markers
-}
-
-function addBusStopMarkers(map: Map, busStops: BusStop[]): Marker[] {
-  const markers: Marker[] = []
-
-  for (const stop of busStops) {
-    if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) {
-      continue
-    }
-
-    // Build popup content with text nodes so values from the dataset are not
-    // interpreted as HTML if the data changes in the future.
-    const popupContent = document.createElement('div')
-    const title = document.createElement('strong')
-    title.textContent = stop.longName
-    popupContent.append(title)
-
-    const code = document.createElement('div')
-    code.textContent = `Stop: ${stop.name}`
-    popupContent.append(code)
-
-    const routes = document.createElement('div')
-    routes.textContent = `Shuttles: ${stop.shuttles.map((shuttle) => shuttle.name).join(', ')}`
-    popupContent.append(routes)
-
-    if (stop.opposite) {
-      const opposite = document.createElement('div')
-      opposite.textContent = `Opposite stop: ${stop.opposite}`
-      popupContent.append(opposite)
-    }
-
-    const marker = new Marker({ color: '#2563eb' })
-      .setLngLat([stop.longitude, stop.latitude])
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(popupContent))
-      .addTo(map)
-
-    markers.push(marker)
-  }
-
-  return markers
-}
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -124,17 +49,11 @@ function App() {
 
     const loadVenues = async () => {
       try {
-        // Files in `public` are served from the site root, so this resolves to
-        // public/data/venues.json in development and in the production build.
-        const response = await fetch('/data/venues.json', {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error(`Venue data request failed: ${response.status}`)
-        }
-
-        const venues = (await response.json()) as VenueLocationMap
+        const venues = await fetchJson<VenueLocationMap>(
+          '/data/venues.json',
+          controller.signal,
+          'Venue data',
+        )
         venueMarkers.push(...addVenueMarkers(map, venues))
 
         if (isMounted) {
@@ -149,15 +68,11 @@ function App() {
 
     const loadBusStops = async () => {
       try {
-        const response = await fetch('/data/bus-stops.json', {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error(`Bus-stop data request failed: ${response.status}`)
-        }
-
-        const busStops = (await response.json()) as BusStop[]
+        const busStops = await fetchJson<BusStop[]>(
+          '/data/bus-stops.json',
+          controller.signal,
+          'Bus-stop data',
+        )
         busStopMarkers.push(...addBusStopMarkers(map, busStops))
 
         if (isMounted) {

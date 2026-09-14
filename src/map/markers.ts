@@ -1,6 +1,6 @@
 import { Map, Marker, Popup } from 'maplibre-gl'
 import type { BusStop } from '../types/transit'
-import type { VenueLocationMap } from '../types/venues'
+import type { VenueLocation, VenueLocationMap } from '../types/venues'
 
 function createPopupContent(titleText: string, details: string[]): HTMLDivElement {
   // Use text nodes instead of setHTML so values from external datasets remain text.
@@ -18,27 +18,27 @@ function createPopupContent(titleText: string, details: string[]): HTMLDivElemen
   return content
 }
 
-export function addVenueMarkers(map: Map, venues: VenueLocationMap): Marker[] {
-  const markers: Marker[] = []
+export function addVenueMarker(
+  map: Map,
+  venueCode: string,
+  venue: VenueLocation,
+): Marker | null {
+  if (!venue.location) return null
 
-  for (const [venueCode, venue] of Object.entries(venues)) {
-    if (!venue.location) continue
-
-    const details = [venue.roomName]
-    if (venue.floor !== undefined && venue.floor !== null) {
-      details.push(`Floor: ${venue.floor}`)
-    }
-
-    const marker = new Marker({ color: '#d94f70' })
-      // Venue data stores x/y as longitude/latitude.
-      .setLngLat([venue.location.x, venue.location.y])
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(createPopupContent(venueCode, details)))
-      .addTo(map)
-
-    markers.push(marker)
+  const details = [venue.roomName]
+  if (venue.floor !== undefined && venue.floor !== null) {
+    details.push(`Floor: ${venue.floor}`)
   }
 
-  return markers
+  return new Marker({ color: '#d94f70' })
+    // Venue data stores x/y as longitude/latitude.
+    .setLngLat([venue.location.x, venue.location.y])
+    .setPopup(new Popup({ offset: 24 }).setDOMContent(createPopupContent(venueCode, details)))
+    .addTo(map)
+}
+
+export function getVenueCount(venues: VenueLocationMap): number {
+  return Object.values(venues).filter((venue) => venue.location).length
 }
 
 export function addBusStopMarkers(map: Map, busStops: BusStop[]): Marker[] {

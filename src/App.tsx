@@ -7,10 +7,12 @@ import {
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
-import { addBusStopMarkers, addVenueMarkers } from './map/markers'
+import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
 import type { BusStop } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
+import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 
@@ -20,7 +22,27 @@ setWorkerUrl(maplibreWorkerUrl)
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<Map | null>(null)
+  const selectedVenueMarkerRef = useRef<Marker | null>(null)
+  const [venues, setVenues] = useState<VenueLocationMap | null>(null)
   const [status, setStatus] = useState('Loading map data…')
+
+  const handleVenueSelect = (result: VenueSearchResult) => {
+    const map = mapRef.current
+    if (!map || !result.venue.location) return
+
+    selectedVenueMarkerRef.current?.remove()
+    const marker = addVenueMarker(map, result.code, result.venue)
+    if (!marker) return
+
+    selectedVenueMarkerRef.current = marker
+    map.flyTo({
+      center: [result.venue.location.x, result.venue.location.y],
+      zoom: Math.max(map.getZoom(), 17),
+      essential: true,
+    })
+    marker.togglePopup()
+  }
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -28,8 +50,8 @@ function App() {
     // Keep the fetch and map resources tied to this component instance so they
     // can be cancelled or removed together when React runs the cleanup.
     const controller = new AbortController()
-    const venueMarkers: Marker[] = []
     const busStopMarkers: Marker[] = []
+    let venueCount = 0
     let isMounted = true
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
@@ -40,6 +62,7 @@ function App() {
       center: kentRidgeLocation,
       zoom: 15,
     })
+    mapRef.current = map
 
     map.addControl(new NavigationControl(), 'top-right')
     map.on('error', (event) => {
@@ -54,10 +77,11 @@ function App() {
           controller.signal,
           'Venue data',
         )
-        venueMarkers.push(...addVenueMarkers(map, venues))
+        venueCount = getVenueCount(venues)
+        if (isMounted) setVenues(venues)
 
         if (isMounted) {
-          setStatus(`${venueMarkers.length} venues loaded; loading shuttle stops…`)
+          setStatus(`${venueCount} venues available; loading shuttle stops…`)
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
@@ -77,7 +101,7 @@ function App() {
 
         if (isMounted) {
           setStatus(
-            `${venueMarkers.length} venues · ${busStopMarkers.length} shuttle stops loaded`,
+            `${venueCount} venues · ${busStopMarkers.length} shuttle stops loaded`,
           )
         }
       } catch (error) {
@@ -95,8 +119,10 @@ function App() {
       // Abort pending work and remove MapLibre objects to avoid stale markers
       // when the component is unmounted or recreated by React.
       controller.abort()
-      venueMarkers.forEach((marker) => marker.remove())
+      selectedVenueMarkerRef.current?.remove()
+      selectedVenueMarkerRef.current = null
       busStopMarkers.forEach((marker) => marker.remove())
+      mapRef.current = null
       map.remove()
     }
   }, [])
@@ -104,6 +130,7 @@ function App() {
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
+      <VenueSearch venues={venues} onSelect={handleVenueSelect} />
       <div className="map-legend" aria-label="Map legend">
         <div><span className="legend-marker venue-marker" /> Venues</div>
         <div><span className="legend-marker bus-marker" /> Shuttle stops</div>

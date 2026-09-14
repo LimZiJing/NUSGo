@@ -10,7 +10,8 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
 import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
-import type { BusStop } from './types/transit'
+import { validateTransitNetwork } from './transit/model'
+import type { TransitNetwork } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
 import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -47,8 +48,7 @@ function App() {
   useEffect(() => {
     if (!mapContainer.current) return
 
-    // Keep the fetch and map resources tied to this component instance so they
-    // can be cancelled or removed together when React runs the cleanup.
+    // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
     const busStopMarkers: Marker[] = []
     let venueCount = 0
@@ -56,8 +56,7 @@ function App() {
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
       container: mapContainer.current,
-      // OpenFreeMap provides an OSM-based vector style with roads, paths,
-      // buildings, and labels for the prototype basemap.
+      // OpenFreeMap provides the OSM-based prototype basemap.
       style: 'https://tiles.openfreemap.org/styles/liberty',
       center: kentRidgeLocation,
       zoom: 15,
@@ -72,15 +71,14 @@ function App() {
 
     const loadVenues = async () => {
       try {
-        const venues = await fetchJson<VenueLocationMap>(
+        const venueData = await fetchJson<VenueLocationMap>(
           '/data/venues.json',
           controller.signal,
           'Venue data',
         )
-        venueCount = getVenueCount(venues)
-        if (isMounted) setVenues(venues)
-
+        venueCount = getVenueCount(venueData)
         if (isMounted) {
+          setVenues(venueData)
           setStatus(`${venueCount} venues available; loading shuttle stops…`)
         }
       } catch (error) {
@@ -90,34 +88,35 @@ function App() {
       }
     }
 
-    const loadBusStops = async () => {
+    const loadTransitNetwork = async () => {
       try {
-        const busStops = await fetchJson<BusStop[]>(
-          '/data/bus-stops.json',
-          controller.signal,
-          'Bus-stop data',
+        const transitNetwork = validateTransitNetwork(
+          await fetchJson<TransitNetwork>(
+            '/data/shuttle-network.json',
+            controller.signal,
+            'Shuttle network',
+          ),
         )
-        busStopMarkers.push(...addBusStopMarkers(map, busStops))
+        busStopMarkers.push(...addBusStopMarkers(map, transitNetwork.stops))
 
         if (isMounted) {
           setStatus(
-            `${venueCount} venues · ${busStopMarkers.length} shuttle stops loaded`,
+            `${venueCount} venues · ${busStopMarkers.length} shuttle stops · ${transitNetwork.routes.length} shuttle routes loaded`,
           )
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        if (isMounted) setStatus('Unable to load map data')
+        if (isMounted) setStatus('Unable to load shuttle network')
         console.error(error)
       }
     }
 
     void loadVenues()
-    void loadBusStops()
+    void loadTransitNetwork()
 
     return () => {
       isMounted = false
-      // Abort pending work and remove MapLibre objects to avoid stale markers
-      // when the component is unmounted or recreated by React.
+      // Abort pending work and remove stale MapLibre objects on unmount.
       controller.abort()
       selectedVenueMarkerRef.current?.remove()
       selectedVenueMarkerRef.current = null

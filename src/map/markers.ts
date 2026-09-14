@@ -1,5 +1,5 @@
 import { Map, Marker, Popup } from 'maplibre-gl'
-import type { BusStop } from '../types/transit'
+import type { TransitStop } from '../types/transit'
 import type { VenueLocation, VenueLocationMap } from '../types/venues'
 
 function createPopupContent(titleText: string, details: string[]): HTMLDivElement {
@@ -41,15 +41,15 @@ export function getVenueCount(venues: VenueLocationMap): number {
   return Object.values(venues).filter((venue) => venue.location).length
 }
 
-export function addBusStopMarkers(map: Map, busStops: BusStop[]): Marker[] {
+export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
   const markers: Marker[] = []
 
   for (const stop of busStops) {
     if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) continue
 
     const details = [
-      `Stop: ${stop.name}`,
-      `Shuttles: ${stop.shuttles.map((shuttle) => shuttle.name).join(', ')}`,
+      `Stop: ${stop.id}`,
+      `Services: ${stop.services.join(', ')}`,
     ]
     if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
 

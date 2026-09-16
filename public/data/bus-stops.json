@@ -4,8 +4,8 @@
     "name": "OTH",
     "longName": "Oei Tiong Ham Building",
     "shortName": "OTH Bldg",
-    "latitude": 1.3198573188135356,
-    "longitude": 103.81783962249756,
+    "latitude": 1.319796,
+    "longitude": 103.817774,
     "shuttles": [
       {
         "name": "P",
@@ -15,12 +15,12 @@
     "opposite": null
   },
   {
-    "caption": "Botanic Gardens MRT",
+    "caption": "Botanic Gardens MRT (PUDO)",
     "name": "BG-MRT",
-    "longName": "Botanic Gardens MRT",
+    "longName": "Botanic Gardens MRT (PUDO)",
     "shortName": "BG MRT",
-    "latitude": 1.3226836154536714,
-    "longitude": 103.81625175476076,
+    "latitude": 1.322614,
+    "longitude": 103.815914,
     "shuttles": [
       {
         "name": "P",
@@ -34,8 +34,8 @@
     "name": "KR-MRT",
     "longName": "Kent Ridge MRT",
     "shortName": "KR MRT",
-    "latitude": 1.2948847442264835,
-    "longitude": 103.78442566841842,
+    "latitude": 1.29482,
+    "longitude": 103.784413,
     "shuttles": [
       {
         "name": "D2",
@@ -68,8 +68,8 @@
     "name": "LT27",
     "longName": "LT 27",
     "shortName": "LT 27",
-    "latitude": 1.297437218656418,
-    "longitude": 103.78099948167802,
+    "latitude": 1.297421,
+    "longitude": 103.780941,
     "shuttles": [
       {
         "name": "D2",
@@ -97,8 +97,8 @@
     "name": "UHALL",
     "longName": "University Hall",
     "shortName": "UHall",
-    "latitude": 1.2972736458482568,
-    "longitude": 103.77864047884944,
+    "latitude": 1.297127,
+    "longitude": 103.778822,
     "shuttles": [
       {
         "name": "D2",
@@ -126,8 +126,8 @@
     "name": "UHC-OPP",
     "longName": "Opp University Health Centre",
     "shortName": "Opp UHC",
-    "latitude": 1.2988403243179818,
-    "longitude": 103.77559281885625,
+    "latitude": 1.298788,
+    "longitude": 103.775612,
     "shuttles": [
       {
         "name": "P",
@@ -160,8 +160,8 @@
     "name": "UTOWN",
     "longName": "University Town",
     "shortName": "UTown",
-    "latitude": 1.3035795710495477,
-    "longitude": 103.77453703433275,
+    "latitude": 1.303876,
+    "longitude": 103.774621,
     "shuttles": [
       {
         "name": "D2",
@@ -191,8 +191,8 @@
     "name": "RAFFLES",
     "longName": "Raffles Hall",
     "shortName": "Raffles Hall",
-    "latitude": 1.301008667392403,
-    "longitude": 103.77260483801366,
+    "latitude": 1.300946,
+    "longitude": 103.772703,
     "shuttles": [
       {
         "name": "R2",
@@ -214,8 +214,8 @@
     "name": "KV",
     "longName": "Kent Vale",
     "shortName": "Kent Vale",
-    "latitude": 1.3019109978924954,
-    "longitude": 103.76963295042516,
+    "latitude": 1.301899,
+    "longitude": 103.769455,
     "shuttles": [
       {
         "name": "R2",
@@ -242,8 +242,8 @@
     "name": "MUSEUM",
     "longName": "Museum",
     "shortName": "Museum",
-    "latitude": 1.301132017197494,
-    "longitude": 103.77342123538257,
+    "latitude": 1.301081,
+    "longitude": 103.77369,
     "shuttles": [
       {
         "name": "A2",
@@ -276,8 +276,8 @@
     "name": "YIH",
     "longName": "Yusof Ishak House",
     "shortName": "YIH",
-    "latitude": 1.2988865805353285,
-    "longitude": 103.77428121864796,
+    "latitude": 1.298885,
+    "longitude": 103.774377,
     "shuttles": [
       {
         "name": "D1",
@@ -312,8 +312,8 @@
     "name": "CLB",
     "longName": "Central Library",
     "shortName": "CLB",
-    "latitude": 1.2963491911313108,
-    "longitude": 103.77220485359432,
+    "latitude": 1.296544,
+    "longitude": 103.772569,
     "shuttles": [
       {
         "name": "A1",
@@ -345,8 +345,8 @@
     "name": "LT13",
     "longName": "LT 13",
     "shortName": "LT 13",
-    "latitude": 1.2947905556920793,
-    "longitude": 103.77054959535602,
+    "latitude": 1.294552,
+    "longitude": 103.770635,
     "shuttles": [
       {
         "name": "D1",
@@ -371,8 +371,8 @@
     "name": "AS5",
     "longName": "AS 5",
     "shortName": "AS 5",
-    "latitude": 1.2934739269872173,
-    "longitude": 103.77176061272623,
+    "latitude": 1.293619,
+    "longitude": 103.771475,
     "shuttles": [
       {
         "name": "D1",
@@ -398,8 +398,8 @@
     "name": "BIZ2",
     "longName": "BIZ 2",
     "shortName": "BIZ 2",
-    "latitude": 1.2932436509698975,
-    "longitude": 103.77514354884626,
+    "latitude": 1.293223,
+    "longitude": 103.775068,
     "shuttles": [
       {
         "name": "A1",
@@ -422,8 +422,8 @@
     "name": "PGP",
     "longName": "Prince George's Park",
     "shortName": "PGP",
-    "latitude": 1.291766129826178,
-    "longitude": 103.78036145120859,
+    "latitude": 1.291765,
+    "longitude": 103.780419,
     "shuttles": [
       {
         "name": "D2",
@@ -454,8 +454,8 @@
     "name": "CG",
     "longName": "College Green",
     "shortName": "College Gr",
-    "latitude": 1.3232413662131859,
-    "longitude": 103.81638050079347,
+    "latitude": 1.323337,
+    "longitude": 103.816276,
     "shuttles": [
       {
         "name": "P",
@@ -493,8 +493,8 @@
     "name": "IT",
     "longName": "Information Technology",
     "shortName": "IT",
-    "latitude": 1.2972656012836414,
-    "longitude": 103.77279158681633,
+    "latitude": 1.297204,
+    "longitude": 103.772688,
     "shuttles": [
       {
         "name": "A2",
@@ -526,8 +526,8 @@
     "name": "YIH-OPP",
     "longName": "Opp Yusof Ishak House",
     "shortName": "Opp YIH",
-    "latitude": 1.2988195425389106,
-    "longitude": 103.7741430848837,
+    "latitude": 1.298904,
+    "longitude": 103.774118,
     "shuttles": [
       {
         "name": "D1",
@@ -562,8 +562,8 @@
     "name": "SDE3-OPP",
     "longName": "Opp SDE 3",
     "shortName": "Opp SDE 3",
-    "latitude": 1.2978676027978284,
-    "longitude": 103.76966916024686,
+    "latitude": 1.297799,
+    "longitude": 103.769603,
     "shuttles": [
       {
         "name": "K",
@@ -590,8 +590,8 @@
     "name": "JP-SCH-16151",
     "longName": "The Japanese Primary School",
     "shortName": "Jpn Pr Sch",
-    "latitude": 1.30074118600086,
-    "longitude": 103.77000007778408,
+    "latitude": 1.30077,
+    "longitude": 103.769904,
     "shuttles": [
       {
         "name": "K",
@@ -616,8 +616,8 @@
     "name": "UHC",
     "longName": "University Health Centre",
     "shortName": "UHC",
-    "latitude": 1.2987940680998082,
-    "longitude": 103.77637267112733,
+    "latitude": 1.29891,
+    "longitude": 103.776103,
     "shuttles": [
       {
         "name": "A2",
@@ -645,8 +645,8 @@
     "name": "UHALL-OPP",
     "longName": "Opp University Hall",
     "shortName": "Opp UHall",
-    "latitude": 1.2975297311415932,
-    "longitude": 103.77793505787851,
+    "latitude": 1.297574,
+    "longitude": 103.778088,
     "shuttles": [
       {
         "name": "A2",
@@ -675,8 +675,8 @@
     "name": "S17",
     "longName": "S 17",
     "shortName": "S 17",
-    "latitude": 1.2974912680707087,
-    "longitude": 103.7806844059378,
+    "latitude": 1.297519,
+    "longitude": 103.78073,
     "shuttles": [
       {
         "name": "A2",
@@ -705,8 +705,8 @@
     "name": "KR-MRT-OPP",
     "longName": "Opp Kent Ridge MRT",
     "shortName": "Opp KR MRT",
-    "latitude": 1.2949484304221306,
-    "longitude": 103.78454837948085,
+    "latitude": 1.294962,
+    "longitude": 103.784556,
     "shuttles": [
       {
         "name": "D2",
@@ -734,8 +734,8 @@
     "name": "PGPR",
     "longName": "Prince George's Park Foyer",
     "shortName": "PGP Foyer",
-    "latitude": 1.291009603808107,
-    "longitude": 103.78104776144029,
+    "latitude": 1.290994,
+    "longitude": 103.781153,
     "shuttles": [
       {
         "name": "D2",
@@ -757,8 +757,8 @@
     "name": "COM3",
     "longName": "COM 3",
     "shortName": "COM 3",
-    "latitude": 1.2947986002645568,
-    "longitude": 103.775053024292,
+    "latitude": 1.294431,
+    "longitude": 103.775217,
     "shuttles": [
       {
         "name": "D1",
@@ -776,8 +776,8 @@
     "name": "HSSML-OPP",
     "longName": "Opp Hon Sui Sen Memorial Library",
     "shortName": "Opp HSSML",
-    "latitude": 1.292876281909209,
-    "longitude": 103.77497591078283,
+    "latitude": 1.292798,
+    "longitude": 103.774978,
     "shuttles": [
       {
         "name": "D1",
@@ -802,8 +802,8 @@
     "name": "NUSS-OPP",
     "longName": "Opp NUSS",
     "shortName": "Opp NUSS",
-    "latitude": 1.2933371691803295,
-    "longitude": 103.77247273921968,
+    "latitude": 1.293208,
+    "longitude": 103.772618,
     "shuttles": [
       {
         "name": "A2",
@@ -828,8 +828,8 @@
     "name": "LT13-OPP",
     "longName": "Ventus",
     "shortName": "Ventus",
-    "latitude": 1.295346804299192,
-    "longitude": 103.77065177075566,
+    "latitude": 1.29534,
+    "longitude": 103.770617,
     "shuttles": [
       {
         "name": "A2",
@@ -855,8 +855,8 @@
     "name": "KRB",
     "longName": "Kent Ridge Bus Terminal",
     "shortName": "KR Bus Ter",
-    "latitude": 1.2942287763181035,
-    "longitude": 103.76979857683183,
+    "latitude": 1.294536,
+    "longitude": 103.77,
     "shuttles": [
       {
         "name": "A1",
@@ -893,8 +893,8 @@
     "name": "TCOMS",
     "longName": "TCOMS",
     "shortName": "TCOMS",
-    "latitude": 1.2937554871546668,
-    "longitude": 103.77687323838474,
+    "latitude": 1.293654,
+    "longitude": 103.776898,
     "shuttles": [
       {
         "name": "A2",
@@ -912,8 +912,8 @@
     "name": "TCOMS-OPP",
     "longName": "Opp TCOMS",
     "shortName": "Opp TCOMS",
-    "latitude": 1.2937554871546668,
-    "longitude": 103.77687323838474,
+    "latitude": 1.293789,
+    "longitude": 103.776715,
     "shuttles": [
       {
         "name": "A1",

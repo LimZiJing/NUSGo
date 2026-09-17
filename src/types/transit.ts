@@ -24,6 +24,34 @@ export interface TransitNetworkMetadata {
   coordinateSource: string
 }
 
+export interface TransitGeometryVerification {
+  source: string
+  reviewedAt: string
+  reviewNotes: string
+}
+
+export type TransitGeoJsonPosition = [longitude: number, latitude: number]
+
+export interface TransitRouteGeometryProperties {
+  routeId: string
+  name: string
+  color: string
+}
+
+export interface TransitRouteGeometryFeature {
+  type: 'Feature'
+  properties: TransitRouteGeometryProperties
+  geometry: {
+    type: 'LineString'
+    coordinates: TransitGeoJsonPosition[]
+  }
+}
+
+export interface TransitRouteGeometry {
+  type: 'FeatureCollection'
+  features: TransitRouteGeometryFeature[]
+}
+
 export interface TransitVerificationRoute {
   routeId: string
   direction: string
@@ -36,6 +64,7 @@ export interface TransitVerificationManifest {
   routeOrderSource: string
   coordinateSource: string
   routes: TransitVerificationRoute[]
+  geometry: TransitGeometryVerification
 }
 
 export interface TransitNetwork {

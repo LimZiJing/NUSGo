@@ -3,7 +3,7 @@
   "metadata": {
     "source": "NUSMods route and stop metadata with NUS API coordinates",
     "routeStopOrder": "Reviewed working order; NUSMods publishes stop memberships but not ordered route paths",
-    "routeGeometry": "not included yet",
+    "routeGeometry": "Curated GeoJSON in public/data/shuttle-routes.geojson; reviewed against the OpenStreetMap road network",
     "verifiedAt": "2026-09-17",
     "routeOrderSource": "NUSMods bus route and stop service data, reviewed prototype route sequences",
     "coordinateSource": "NUS bus-stops API snapshot in public/data/bus-stops.json"

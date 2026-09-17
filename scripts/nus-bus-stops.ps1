@@ -1,13 +1,12 @@
 param(
     [Parameter(Position = 0)]
-    [string] $Command = 'bus-stops'
+    [string] $Command = 'bus-stops',
+
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
+    [string[]] $Arguments
 )
 
 $ErrorActionPreference = 'Stop'
-
-if ($Command -ne 'bus-stops') {
-    throw "Only the bus-stops command is currently supported."
-}
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $projectRoot '.env'
@@ -46,44 +45,135 @@ function Require-Setting([string] $Name) {
     return $value
 }
 
-$proxyBaseUrl = Require-Setting 'NUS_BUS_PROXY_BASE_URL'
-$apiKey = Require-Setting 'NUS_X_API_KEY'
-$jwt = Require-Setting 'NUS_UNIVUS_JWT'
-$userId = Require-Setting 'NUS_USER_ID'
-$deviceId = Get-Setting 'NUS_DEVICE_ID'
-if ([string]::IsNullOrWhiteSpace($deviceId)) {
-    $deviceId = [guid]::NewGuid().ToString()
-}
-$domain = Get-Setting 'NUS_DOMAIN' 'PUBLIC'
-$ipaddr = Get-Setting 'NUS_IPADDR' '0.0.0.0'
-$version = Get-Setting 'NUS_APP_VERSION' '2.56.0'
-
-$body = [ordered]@{
-    deviceid = $deviceId
-    domain   = $domain
-    ipaddr   = $ipaddr
-    token    = $jwt
-    userid   = $userId
-    version  = $version
-} | ConvertTo-Json -Compress
-
-$curlArgs = @(
-    '-sS'
-    '-X', 'POST'
-    "$proxyBaseUrl/univus/api/bus-proxy/bus-stops"
-    '-H', "Authorization: Bearer $jwt"
-    '-H', "X-API-KEY: $apiKey"
-    '-H', 'Content-Type: application/json; charset=utf-8'
-    '--data-raw', $body
-)
-
-$response = & curl.exe @curlArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "curl.exe failed with exit code $LASTEXITCODE"
+function Get-ArgumentValue([string] $Name, [string[]] $Aliases) {
+    $values = @($Arguments | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($values.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace($values[0])) {
+        return $values[0]
+    }
+    if ($values.Count -eq 2 -and $Aliases -contains $values[0]) {
+        return $values[1]
+    }
+    throw "$Name requires a value, for example: npm run bus:call -- $Command $($Aliases[0]) VALUE"
 }
 
-try {
-    ($response -join [Environment]::NewLine) | ConvertFrom-Json | ConvertTo-Json -Depth 20
-} catch {
-    $response
+function Assert-NoArguments {
+    if (@($Arguments | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+        throw "$Command does not accept additional arguments."
+    }
+}
+
+function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
+    $proxyBaseUrl = Require-Setting 'NUS_BUS_PROXY_BASE_URL'
+    $apiKey = Require-Setting 'NUS_X_API_KEY'
+    $jwt = Require-Setting 'NUS_UNIVUS_JWT'
+    $userId = Require-Setting 'NUS_USER_ID'
+    $deviceId = Get-Setting 'NUS_DEVICE_ID'
+    if ([string]::IsNullOrWhiteSpace($deviceId)) {
+        $deviceId = [guid]::NewGuid().ToString()
+    }
+
+    $body = [ordered]@{
+        deviceid = $deviceId
+        domain   = Get-Setting 'NUS_DOMAIN' 'PUBLIC'
+        ipaddr   = Get-Setting 'NUS_IPADDR' '0.0.0.0'
+        token    = $jwt
+        userid   = $userId
+        version  = Get-Setting 'NUS_APP_VERSION' '2.56.0'
+    }
+    foreach ($entry in $Extra.GetEnumerator()) {
+        $body[$entry.Key] = $entry.Value
+    }
+
+    $bodyJson = $body | ConvertTo-Json -Compress
+    $curlArgs = @(
+        '-sS'
+        '-X', 'POST'
+        "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint"
+        '-H', "Authorization: Bearer $jwt"
+        '-H', "X-API-KEY: $apiKey"
+        '-H', 'Content-Type: application/json; charset=utf-8'
+        '--data-raw', $bodyJson
+    )
+
+    $response = & curl.exe @curlArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "curl.exe failed with exit code $LASTEXITCODE"
+    }
+
+    try {
+        ($response -join [Environment]::NewLine) | ConvertFrom-Json | ConvertTo-Json -Depth 20
+    } catch {
+        $response
+    }
+}
+
+if ($Command -in @('help', '--help', '-h')) {
+    @"
+Usage: npm run bus:call -- COMMAND [VALUE]
+
+Commands:
+  bus-stops
+  active-bus ROUTE_CODE
+  bus-location VEHICLE_PLATE
+  bus-stops-all-pickups
+  checkpoint-bus-stop ROUTE_CODE
+  pickup-point ROUTE_CODE
+  pickup-point-shuttle-service ROUTE_CODE
+  route-min-max-time ROUTE_CODE
+  shuttle-service BUS_STOP_NAME
+  ticker-tapes
+
+The value may also be passed with the documented option name, for example:
+  npm run bus:call -- active-bus --route-code D2
+"@
+    exit 0
+}
+
+switch ($Command) {
+    'bus-stops' {
+        Assert-NoArguments
+        Invoke-BusProxy 'bus-stops'
+        break
+    }
+    'active-bus' {
+        Invoke-BusProxy 'active-bus' @{ route_code = Get-ArgumentValue 'route code' @('--route-code', '-RouteCode') }
+        break
+    }
+    'bus-location' {
+        Invoke-BusProxy 'bus-location' @{ veh_plate = Get-ArgumentValue 'vehicle plate' @('--vehicle-plate', '-VehiclePlate') }
+        break
+    }
+    'bus-stops-all-pickups' {
+        Assert-NoArguments
+        Invoke-BusProxy 'bus-stops-all-pickups'
+        break
+    }
+    'checkpoint-bus-stop' {
+        Invoke-BusProxy 'checkpoint-bus-stop' @{ route_code = Get-ArgumentValue 'route code' @('--route-code', '-RouteCode') }
+        break
+    }
+    'pickup-point' {
+        Invoke-BusProxy 'pickup-point' @{ route_code = Get-ArgumentValue 'route code' @('--route-code', '-RouteCode') }
+        break
+    }
+    'pickup-point-shuttle-service' {
+        Invoke-BusProxy 'pickup-point-shuttle-service' @{ route_code = Get-ArgumentValue 'route code' @('--route-code', '-RouteCode') }
+        break
+    }
+    'route-min-max-time' {
+        Invoke-BusProxy 'route-min-max-time' @{ route_code = Get-ArgumentValue 'route code' @('--route-code', '-RouteCode') }
+        break
+    }
+    'shuttle-service' {
+        Invoke-BusProxy 'shuttle-service' @{ busstopname = Get-ArgumentValue 'bus stop name' @('--bus-stop-name', '-BusStopName') }
+        break
+    }
+    'ticker-tapes' {
+        Assert-NoArguments
+        Invoke-BusProxy 'ticker-tapes'
+        break
+    }
+    default {
+        throw "Unknown command: $Command. Run npm run bus:call -- help."
+    }
 }

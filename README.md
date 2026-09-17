@@ -39,6 +39,17 @@ npm run bus:call -- bus-stops
 The wrapper builds the body with PowerShell and invokes `curl.exe` using the
 same request shape as the known-good manual command. It uses the raw JWT in the
 JSON body and adds `Bearer` only to the internal proxy's `Authorization` header.
+The other documented internal endpoints are also available through the same
+command; run `npm run bus:call -- help` for the full list.
+
+Examples:
+
+```bash
+npm run bus:call -- active-bus D2
+npm run bus:call -- pickup-point --route-code D2
+npm run bus:call -- bus-location SBS1234A
+npm run bus:call -- shuttle-service "Kent Ridge MRT"
+```
 
 Do not put these values in `VITE_` variables: Vite exposes those variables to
 the client. For a deployed app, put the request behind a server-side API rather

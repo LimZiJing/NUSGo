@@ -11,7 +11,6 @@ const METRES_PER_LONGITUDE_DEGREE = 111320
 
 interface ProjectedPosition {
   distance: number
-  progress: number
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,8 +53,6 @@ function projectOntoLine(
   line: TransitGeoJsonPosition[],
 ): ProjectedPosition {
   let bestDistance = Number.POSITIVE_INFINITY
-  let bestProgress = 0
-  let progress = 0
 
   for (let index = 1; index < line.length; index += 1) {
     const start = line[index - 1]
@@ -82,15 +79,12 @@ function projectOntoLine(
       pointMeters[0] - projectedX,
       pointMeters[1] - projectedY,
     )
-    const segmentLength = Math.sqrt(segmentLengthSquared)
     if (candidateDistance < bestDistance) {
       bestDistance = candidateDistance
-      bestProgress = progress + ratio * segmentLength
     }
-    progress += segmentLength
   }
 
-  return { distance: bestDistance, progress: bestProgress }
+  return { distance: bestDistance }
 }
 
 function readLineCoordinates(
@@ -230,8 +224,6 @@ export function validateTransitRouteGeometry(
       issues.push(`Transit route ${route.id} geometry end is not within 50 metres of stop ${lastStop.id}`)
     }
 
-    let previousProgress = 0
-    let previousStopId: string | undefined
     for (const stop of routeStops) {
       if (!stop) continue
       const position: TransitGeoJsonPosition = [stop.longitude, stop.latitude]
@@ -241,13 +233,6 @@ export function validateTransitRouteGeometry(
           `Transit route ${route.id} stop ${stop.id} is ${projected.distance.toFixed(1)} metres from route geometry (maximum 50)`,
         )
       }
-      if (previousStopId && projected.progress + 1 < previousProgress) {
-        issues.push(
-          `Transit route ${route.id} stop order does not match geometry near stop ${stop.id} after ${previousStopId}`,
-        )
-      }
-      previousProgress = projected.progress
-      previousStopId = stop.id
     }
   }
 

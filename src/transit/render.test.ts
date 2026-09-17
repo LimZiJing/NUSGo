@@ -358,6 +358,43 @@ describe('validated transit map data', () => {
     expect(first.element.style.display).toBe('')
     expect(second.element.style.display).toBe('')
   })
+
+  it('dims overlapping routes in both layers and restores the cleared state', () => {
+    const state = createFakeMap()
+    state.layerIds.add(TRANSIT_ROUTE_CASING_LAYER_ID)
+    state.layerIds.add(TRANSIT_ROUTE_LAYER_ID)
+
+    setTransitRouteSelection(state.map, 'A1', new Set(['A2']))
+
+    const overlappingRouteMatch = [
+      'in',
+      ['get', 'routeId'],
+      ['literal', ['A2']],
+    ]
+    expect(state.paintProperties[0]).toEqual({
+      name: 'line-opacity',
+      value: ['case', ['==', ['get', 'routeId'], 'A1'], 0.95, ['case', overlappingRouteMatch, 0.04, 0.45]],
+    })
+    expect(state.paintProperties[2]).toEqual({
+      name: 'line-opacity',
+      value: ['case', ['==', ['get', 'routeId'], 'A1'], 1, ['case', overlappingRouteMatch, 0.04, 0.18]],
+    })
+
+    setTransitRouteSelection(state.map, null)
+
+    expect(state.paintProperties.slice(-4)).toEqual([
+      { name: 'line-opacity', value: 0.65 },
+      {
+        name: 'line-width',
+        value: ['interpolate', ['linear'], ['zoom'], 12, 4, 15, 6, 18, 8],
+      },
+      { name: 'line-opacity', value: 0.85 },
+      {
+        name: 'line-width',
+        value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],
+      },
+    ])
+  })
 })
 
 describe('transit route camera', () => {

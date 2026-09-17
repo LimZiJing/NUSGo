@@ -4,7 +4,6 @@ import {
   NavigationControl,
   setWorkerUrl,
   type LngLatLike,
-  type MapLayerMouseEvent,
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
@@ -13,11 +12,11 @@ import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
 import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
 import { TransitValidationError } from './transit/model'
+import { deriveTransitRouteOverlapMap } from './transit/overlap'
 import {
   addTransitRouteLayers,
   fitTransitRoute,
   removeTransitRouteLayers,
-  TRANSIT_ROUTE_LAYER_ID,
   setBusStopMarkerSelection,
   setTransitRouteSelection,
   validateTransitMapData,
@@ -33,6 +32,8 @@ import './App.css'
 // and provides its URL through the `?worker&url` import above.
 setWorkerUrl(maplibreWorkerUrl)
 
+const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
+
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
@@ -40,6 +41,7 @@ function App() {
   const busStopMarkersRef = useRef<Marker[]>([])
   const transitNetworkRef = useRef<TransitNetwork | null>(null)
   const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
+  const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
   const selectedRouteIdRef = useRef<string | null>(null)
   const [venues, setVenues] = useState<VenueLocationMap | null>(null)
   const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
@@ -58,7 +60,10 @@ function App() {
 
     const map = mapRef.current
     if (map) {
-      setTransitRouteSelection(map, nextRouteId)
+      const overlappingRouteIds = nextRouteId
+        ? transitRouteOverlapMapRef.current.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
+        : EMPTY_ROUTE_OVERLAP
+      setTransitRouteSelection(map, nextRouteId, overlappingRouteIds)
       if (nextRouteId !== previousRouteId && network && transitGeometryRef.current) {
         fitTransitRoute(map, network, transitGeometryRef.current, nextRouteId)
       }
@@ -106,17 +111,6 @@ function App() {
     })
     mapRef.current = map
 
-    const handleRouteLineClick = (event: MapLayerMouseEvent) => {
-      const routeId = event.features?.[0]?.properties?.routeId
-      if (typeof routeId === 'string') handleRouteSelect(routeId)
-    }
-    const handleRouteLineEnter = () => {
-      map.getCanvas().style.cursor = 'pointer'
-    }
-    const handleRouteLineLeave = () => {
-      map.getCanvas().style.cursor = ''
-    }
-
     map.addControl(new NavigationControl(), 'top-right')
     map.on('error', (event) => {
       console.error('Map error:', event.error)
@@ -162,17 +156,16 @@ function App() {
           network: transitNetwork,
           geometry,
         } = validateTransitMapData(networkInput, geometryInput)
+        const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
         await waitForMapStyleLoaded(map, controller.signal)
         addTransitRouteLayers(map, geometry)
-        map.on('click', TRANSIT_ROUTE_LAYER_ID, handleRouteLineClick)
-        map.on('mouseenter', TRANSIT_ROUTE_LAYER_ID, handleRouteLineEnter)
-        map.on('mouseleave', TRANSIT_ROUTE_LAYER_ID, handleRouteLineLeave)
         const markers = addBusStopMarkers(map, transitNetwork.stops)
         busStopMarkers.push(...markers)
         busStopMarkersRef.current = markers
         transitNetworkRef.current = transitNetwork
         transitGeometryRef.current = geometry
+        transitRouteOverlapMapRef.current = routeOverlapMap
         setTransitNetwork(transitNetwork)
 
         if (isMounted) {
@@ -204,10 +197,8 @@ function App() {
       busStopMarkersRef.current = []
       transitNetworkRef.current = null
       transitGeometryRef.current = null
+      transitRouteOverlapMapRef.current = new globalThis.Map()
       selectedRouteIdRef.current = null
-      map.off('click', TRANSIT_ROUTE_LAYER_ID, handleRouteLineClick)
-      map.off('mouseenter', TRANSIT_ROUTE_LAYER_ID, handleRouteLineEnter)
-      map.off('mouseleave', TRANSIT_ROUTE_LAYER_ID, handleRouteLineLeave)
       removeTransitRouteLayers(map)
       mapRef.current = null
       map.remove()

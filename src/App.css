@@ -139,7 +139,7 @@
 
 .bus-stop-marker-selected {
   border-color: var(--bus-stop-selected-color, #2563eb);
-  border-radius: 2px;
+  border-radius: 50%;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
   z-index: 2;
 }

@@ -247,9 +247,34 @@ const BASE_ROUTE_LINE_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-
 
 type RouteMatchExpression = ['==', ['get', 'routeId'], string]
 
+function createRouteOpacityExpression(
+  routeMatch: RouteMatchExpression,
+  overlappingRouteIds: ReadonlySet<string>,
+  selectedOpacity: number,
+  overlappingOpacity: number,
+  unselectedOpacity: number,
+): NonNullable<LineLayerSpecification['paint']>['line-opacity'] {
+  if (overlappingRouteIds.size === 0) {
+    return ['case', routeMatch, selectedOpacity, unselectedOpacity]
+  }
+
+  return [
+    'case',
+    routeMatch,
+    selectedOpacity,
+    [
+      'case',
+      ['in', ['get', 'routeId'], ['literal', Array.from(overlappingRouteIds)]],
+      overlappingOpacity,
+      unselectedOpacity,
+    ],
+  ]
+}
+
 export function setTransitRouteSelection(
   map: Map,
   routeId: string | null,
+  overlappingRouteIds: ReadonlySet<string> = new Set(),
 ): void {
   if (!map.getLayer(TRANSIT_ROUTE_LAYER_ID)) return
 
@@ -271,7 +296,7 @@ export function setTransitRouteSelection(
     map.setPaintProperty(
       TRANSIT_ROUTE_CASING_LAYER_ID,
       'line-opacity',
-      ['case', routeMatch, 0.95, 0.45],
+      createRouteOpacityExpression(routeMatch, overlappingRouteIds, 0.95, 0.04, 0.45),
     )
     map.setPaintProperty(
       TRANSIT_ROUTE_CASING_LAYER_ID,
@@ -289,7 +314,7 @@ export function setTransitRouteSelection(
   map.setPaintProperty(
     TRANSIT_ROUTE_LAYER_ID,
     'line-opacity',
-    ['case', routeMatch, 1, 0.18],
+    createRouteOpacityExpression(routeMatch, overlappingRouteIds, 1, 0.04, 0.18),
   )
   map.setPaintProperty(
     TRANSIT_ROUTE_LAYER_ID,

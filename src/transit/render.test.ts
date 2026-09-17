@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Map } from 'maplibre-gl'
+import type { Map, Marker } from 'maplibre-gl'
 import { addBusStopMarkers } from '../map/markers'
 import {
   addTransitRouteLayers,
   addValidatedBusStopMarkers,
   addValidatedTransitMapData,
   removeTransitRouteLayers,
+  setBusStopMarkerSelection,
+  setTransitRouteSelection,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
   validateTransitMapData,
@@ -41,6 +43,25 @@ interface FakeMapState {
   addedLayers: unknown[]
   removedSources: string[]
   removedLayers: string[]
+  paintProperties: Array<{ name: string; value: unknown }>
+}
+
+function createFakeMarker(stopId: string): { marker: Marker; classes: Set<string> } {
+  const classes = new Set<string>()
+  const element = {
+    dataset: { stopId },
+    classList: {
+      toggle(name: string, force: boolean) {
+        if (force) classes.add(name)
+        else classes.delete(name)
+      },
+    },
+  }
+
+  return {
+    marker: { getElement: () => element } as unknown as Marker,
+    classes,
+  }
 }
 
 function createFakeMap(): FakeMapState {
@@ -53,6 +74,7 @@ function createFakeMap(): FakeMapState {
     addedLayers: [],
     removedSources: [],
     removedLayers: [],
+    paintProperties: [],
   }
 
   state.map = {
@@ -75,6 +97,9 @@ function createFakeMap(): FakeMapState {
     removeLayer: vi.fn((id: string) => {
       state.removedLayers.push(id)
       state.layerIds.delete(id)
+    }),
+    setPaintProperty: vi.fn((_layerId: string, name: string, value: unknown) => {
+      state.paintProperties.push({ name, value })
     }),
     isStyleLoaded: vi.fn(() => true),
     once: vi.fn(),
@@ -190,6 +215,52 @@ describe('validated transit map data', () => {
     const geometry = createValidGeometry()
 
     expect(validateTransitMapData(network, geometry)).toEqual({ network, geometry })
+  })
+
+  it('dims unselected routes and restores the all-routes style', () => {
+    const state = createFakeMap()
+    state.layerIds.add(TRANSIT_ROUTE_LAYER_ID)
+
+    setTransitRouteSelection(state.map, 'A1')
+
+    expect(state.paintProperties[0]).toEqual({
+      name: 'line-opacity',
+      value: ['case', ['==', ['get', 'routeId'], 'A1'], 1, 0.18],
+    })
+    expect(state.paintProperties[1].name).toBe('line-width')
+    expect(state.paintProperties[1].value).toEqual([
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12, ['case', ['==', ['get', 'routeId'], 'A1'], 3, 1.5],
+      15, ['case', ['==', ['get', 'routeId'], 'A1'], 6, 3],
+      18, ['case', ['==', ['get', 'routeId'], 'A1'], 8, 4.5],
+    ])
+
+    setTransitRouteSelection(state.map, null)
+
+    expect(state.paintProperties.slice(-2)).toEqual([
+      { name: 'line-opacity', value: 0.85 },
+      {
+        name: 'line-width',
+        value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],
+      },
+    ])
+  })
+
+  it('emphasizes only the selected route stops while keeping other markers visible', () => {
+    const first = createFakeMarker('STOP-A')
+    const second = createFakeMarker('STOP-B')
+
+    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-A'])
+
+    expect(first.classes).toContain('bus-stop-marker-selected')
+    expect(second.classes).not.toContain('bus-stop-marker-selected')
+
+    setBusStopMarkerSelection([first.marker, second.marker], null)
+
+    expect(first.classes).not.toContain('bus-stop-marker-selected')
+    expect(second.classes).not.toContain('bus-stop-marker-selected')
   })
 })
 

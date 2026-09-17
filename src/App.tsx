@@ -9,9 +9,9 @@ import {
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
-import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
-import { validateTransitNetwork } from './transit/model'
-import type { TransitNetwork } from './types/transit'
+import { addVenueMarker, getVenueCount } from './map/markers'
+import { TransitValidationError } from './transit/model'
+import { addValidatedBusStopMarkers } from './transit/render'
 import type { VenueLocationMap } from './types/venues'
 import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -90,14 +90,15 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
-        const transitNetwork = validateTransitNetwork(
-          await fetchJson<TransitNetwork>(
+        const { network: transitNetwork, markers } = addValidatedBusStopMarkers(
+          map,
+          await fetchJson<unknown>(
             '/data/shuttle-network.json',
             controller.signal,
             'Shuttle network',
           ),
         )
-        busStopMarkers.push(...addBusStopMarkers(map, transitNetwork.stops))
+        busStopMarkers.push(...markers)
 
         if (isMounted) {
           setStatus(
@@ -106,7 +107,12 @@ function App() {
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        if (isMounted) setStatus('Unable to load shuttle network')
+        if (isMounted) {
+          const message = error instanceof TransitValidationError
+            ? `Transit data validation failed: ${error.message}`
+            : 'Unable to load shuttle network'
+          setStatus(message)
+        }
         console.error(error)
       }
     }

@@ -68,6 +68,11 @@ describe('validateTransitVerificationManifest', () => {
       reviewedAt: '2026-09-17',
       routeOrderSource: 'test route source',
       coordinateSource: 'test coordinate source',
+      geometry: {
+        source: 'test geometry source',
+        reviewedAt: '2026-09-17',
+        reviewNotes: 'test geometry review',
+      },
       routes: [{
         routeId: 'A1',
         direction: 'Stop A to Stop B',
@@ -85,6 +90,11 @@ describe('validateTransitVerificationManifest', () => {
       reviewedAt: '2026-09-17',
       routeOrderSource: 'test route source',
       coordinateSource: 'test coordinate source',
+      geometry: {
+        source: 'test geometry source',
+        reviewedAt: '2026-09-17',
+        reviewNotes: 'test geometry review',
+      },
       routes: [{
         routeId: 'A1',
         direction: 'Stop A to Stop B',

@@ -1,35 +1,25 @@
-# NavUS Agent Instructions
+# NavUS Agent Guide
 
-## Instruction scope
+## Read before work
 
-- Follow this file for repository-specific agent behavior.
-- Treat explicit user instructions as higher priority than these guidelines.
-- Preserve existing user changes; inspect `git status` before editing.
+Read these documents before changing the repository:
 
-## Project context
+1. PROJECT_CONTEXT.md for the product, stack, current implementation, and roadmap.
+2. CONTEXT.md for the domain glossary.
+3. docs/agents/coding-standards.md for engineering and handoff rules.
+4. docs/agents/issue-tracker.md and docs/agents/triage-labels.md for GitHub issue workflow.
 
-Read `CONTEXT.md` before exploring or changing NavUS for the shared domain language. Read `docs/project-status.md` when current implementation details, limitations, or milestones matter.
+Task-specific user instructions take precedence over this guidance. If two repository documents conflict, use the authority described in the coding standards and call out the conflict in the handoff.
 
-Read the relevant files under `docs/agents/` for issue-tracker, domain-documentation, and triage conventions.
+## Mandatory repository rules
 
-## Development workflow
-
-- Keep `main` stable.
-- Use a separate branch for each coherent feature or larger refactor.
-- Do not use the `codex/` prefix for feature branches. Use names such as `venue-search`, `shuttle-route-layers`, or `live-arrivals`.
-- Preserve unrelated work and do not reset, discard, or overwrite user changes.
-- Commit coherent milestones with clear messages.
-- Do not commit `node_modules`, `dist`, secrets, or local environment files.
-- Do not install future dependencies until the feature requiring them is being implemented.
-- Before committing, run `npm run lint` and `npm run build`.
-
-## Architecture and routing principles
-
-- MapLibre renders maps; it is not a routing engine.
-- Do not implement A* or another routing algorithm from scratch unless existing options cannot support the required constraints.
-- Prototype custom campus or indoor graphs with `ngraph.graph` and `ngraph.path` when a quick client-side routing prototype is appropriate.
-- Evaluate a backend routing engine before committing to a permanent routing architecture.
-- Model stairs, lifts, accessibility, shelter, indoor floors, and bus transfers as graph edges, costs, or routing profiles.
+- Inspect repository status before editing and preserve unrelated user changes.
+- Keep main stable. Use one direct, descriptive branch per coherent feature or larger refactor; do not use a codex/ prefix.
+- Do not commit node_modules, dist, generated caches, secrets, .env files, credentials, or machine-specific output.
+- Do not add a dependency unless the current requirement needs it and existing capabilities are insufficient.
+- Keep external data validated at its boundary and preserve the project’s canonical sources of truth.
+- Run the applicable project checks before handoff and report their exact results.
+- Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
 
 ## GitHub issue workflow
 

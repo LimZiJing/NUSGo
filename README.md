@@ -26,6 +26,21 @@ npm run lint
 npm run build
 ```
 
+## GitHub Pages deployment
+
+The `development` workflow builds and deploys the app to GitHub Pages whenever
+changes reach `main`. It uses a GitHub Actions environment named `development`.
+
+After merging the deployment branch, a repository administrator must enable the
+Pages source:
+
+1. Open **Settings → Pages** in the repository.
+2. Under **Build and deployment → Source**, select **GitHub Actions**.
+3. Save the setting and check the **Actions** tab for the `development` workflow.
+
+The project Pages URL is expected to be:
+`https://limzijing.github.io/NavUS/`.
+
 ## Local NUS bus API checks
 
 The API credentials must stay outside the browser bundle. The repository includes

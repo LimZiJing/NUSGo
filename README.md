@@ -4,7 +4,9 @@ An experimental campus transit and indoor navigation web app for the National Un
 
 ## Current status
 
-Early prototype built with React, TypeScript, and Vite. Navigation, venue data, transit integration, and calendar import are not implemented yet.
+Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented; navigation, route geometry, live transit, and calendar import are not implemented yet.
+
+OpenFreeMap attribution is included by the MapLibre style. Review the provider's usage terms before deploying the app publicly or at scale.
 
 ## Development
 

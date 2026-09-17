@@ -1,0 +1,628 @@
+{
+  "version": 1,
+  "metadata": {
+    "source": "NUSMods-derived local shuttle data",
+    "routeStopOrder": "Inherited from the source stop dataset; verify before production",
+    "routeGeometry": "not included yet"
+  },
+  "routes": [
+    {
+      "id": "A1",
+      "name": "A1",
+      "color": "#2563eb",
+      "stopIds": [
+        "KR-MRT",
+        "LT27",
+        "UHALL",
+        "UHC-OPP",
+        "YIH",
+        "CLB",
+        "LT13",
+        "AS5",
+        "BIZ2",
+        "PGP",
+        "KRB",
+        "TCOMS-OPP"
+      ]
+    },
+    {
+      "id": "A2",
+      "name": "A2",
+      "color": "#7c3aed",
+      "stopIds": [
+        "MUSEUM",
+        "IT",
+        "YIH-OPP",
+        "UHC",
+        "UHALL-OPP",
+        "S17",
+        "KR-MRT-OPP",
+        "PGPR",
+        "HSSML-OPP",
+        "NUSS-OPP",
+        "LT13-OPP",
+        "KRB",
+        "TCOMS"
+      ]
+    },
+    {
+      "id": "D1",
+      "name": "D1",
+      "color": "#db2777",
+      "stopIds": [
+        "UTOWN",
+        "MUSEUM",
+        "YIH",
+        "CLB",
+        "LT13",
+        "AS5",
+        "BIZ2",
+        "IT",
+        "YIH-OPP",
+        "COM3",
+        "HSSML-OPP",
+        "NUSS-OPP",
+        "LT13-OPP"
+      ]
+    },
+    {
+      "id": "D2",
+      "name": "D2",
+      "color": "#ea580c",
+      "stopIds": [
+        "KR-MRT",
+        "LT27",
+        "UHALL",
+        "UHC-OPP",
+        "UTOWN",
+        "MUSEUM",
+        "PGP",
+        "UHC",
+        "UHALL-OPP",
+        "S17",
+        "KR-MRT-OPP",
+        "PGPR",
+        "COM3",
+        "TCOMS",
+        "TCOMS-OPP"
+      ]
+    },
+    {
+      "id": "R1",
+      "name": "R1",
+      "color": "#059669",
+      "stopIds": [
+        "UTOWN",
+        "KV",
+        "MUSEUM",
+        "YIH",
+        "CLB",
+        "LT13",
+        "AS5",
+        "BIZ2",
+        "PGP"
+      ]
+    },
+    {
+      "id": "R2",
+      "name": "R2",
+      "color": "#0891b2",
+      "stopIds": [
+        "UTOWN",
+        "RAFFLES",
+        "KV",
+        "PGP",
+        "IT",
+        "YIH-OPP",
+        "HSSML-OPP",
+        "NUSS-OPP",
+        "LT13-OPP"
+      ]
+    },
+    {
+      "id": "K",
+      "name": "K",
+      "color": "#65a30d",
+      "stopIds": [
+        "KR-MRT",
+        "LT27",
+        "UHALL",
+        "UHC-OPP",
+        "KV",
+        "MUSEUM",
+        "YIH",
+        "CLB",
+        "PGP",
+        "SDE3-OPP",
+        "JP-SCH-16151",
+        "UHC",
+        "UHALL-OPP",
+        "S17",
+        "KR-MRT-OPP",
+        "PGPR"
+      ]
+    },
+    {
+      "id": "P",
+      "name": "P",
+      "color": "#9333ea",
+      "stopIds": [
+        "OTH",
+        "BG-MRT",
+        "KR-MRT",
+        "UHC-OPP",
+        "UTOWN",
+        "KV",
+        "CG"
+      ]
+    }
+  ],
+  "stops": [
+    {
+      "id": "OTH",
+      "longName": "Oei Tiong Ham Building",
+      "shortName": "OTH Bldg",
+      "latitude": 1.3198573188135356,
+      "longitude": 103.81783962249756,
+      "services": [
+        "P"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "BG-MRT",
+      "longName": "Botanic Gardens MRT",
+      "shortName": "BG MRT",
+      "latitude": 1.3226836154536714,
+      "longitude": 103.81625175476076,
+      "services": [
+        "P"
+      ],
+      "opposite": "CG"
+    },
+    {
+      "id": "KR-MRT",
+      "longName": "Kent Ridge MRT",
+      "shortName": "KR MRT",
+      "latitude": 1.2948847442264835,
+      "longitude": 103.78442566841842,
+      "services": [
+        "D2",
+        "A1",
+        "K",
+        "P",
+        "PUB:95"
+      ],
+      "opposite": "KR-MRT-OPP"
+    },
+    {
+      "id": "LT27",
+      "longName": "LT 27",
+      "shortName": "LT 27",
+      "latitude": 1.297437218656418,
+      "longitude": 103.78099948167802,
+      "services": [
+        "D2",
+        "A1",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "S17"
+    },
+    {
+      "id": "UHALL",
+      "longName": "University Hall",
+      "shortName": "UHall",
+      "latitude": 1.2972736458482568,
+      "longitude": 103.77864047884944,
+      "services": [
+        "D2",
+        "A1",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "UHALL-OPP"
+    },
+    {
+      "id": "UHC-OPP",
+      "longName": "Opp University Health Centre",
+      "shortName": "Opp UHC",
+      "latitude": 1.2988403243179818,
+      "longitude": 103.77559281885625,
+      "services": [
+        "P",
+        "D2",
+        "A1",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "UHC"
+    },
+    {
+      "id": "UTOWN",
+      "longName": "University Town",
+      "shortName": "UTown",
+      "latitude": 1.3035795710495477,
+      "longitude": 103.77453703433275,
+      "services": [
+        "D2",
+        "D1",
+        "R1",
+        "R2",
+        "P"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "RAFFLES",
+      "longName": "Raffles Hall",
+      "shortName": "Raffles Hall",
+      "latitude": 1.301008667392403,
+      "longitude": 103.77260483801366,
+      "services": [
+        "R2",
+        "PUB:151",
+        "PUB:96"
+      ],
+      "opposite": "MUSEUM"
+    },
+    {
+      "id": "KV",
+      "longName": "Kent Vale",
+      "shortName": "Kent Vale",
+      "latitude": 1.3019109978924954,
+      "longitude": 103.76963295042516,
+      "services": [
+        "R2",
+        "K",
+        "R1",
+        "P"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "MUSEUM",
+      "longName": "Museum",
+      "shortName": "Museum",
+      "latitude": 1.301132017197494,
+      "longitude": 103.77342123538257,
+      "services": [
+        "A2",
+        "D2",
+        "D1",
+        "R1",
+        "K",
+        "PUB:151"
+      ],
+      "opposite": "RAFFLES"
+    },
+    {
+      "id": "YIH",
+      "longName": "Yusof Ishak House",
+      "shortName": "YIH",
+      "latitude": 1.2988865805353285,
+      "longitude": 103.77428121864796,
+      "services": [
+        "D1",
+        "A1",
+        "R1",
+        "K",
+        "PUB:151",
+        "PUB:95"
+      ],
+      "opposite": "YIH-OPP"
+    },
+    {
+      "id": "CLB",
+      "longName": "Central Library",
+      "shortName": "CLB",
+      "latitude": 1.2963491911313108,
+      "longitude": 103.77220485359432,
+      "services": [
+        "A1",
+        "D1",
+        "R1",
+        "K",
+        "PUB:151",
+        "PUB:95"
+      ],
+      "opposite": "IT"
+    },
+    {
+      "id": "LT13",
+      "longName": "LT 13",
+      "shortName": "LT 13",
+      "latitude": 1.2947905556920793,
+      "longitude": 103.77054959535602,
+      "services": [
+        "D1",
+        "R1",
+        "A1"
+      ],
+      "opposite": "LT13-OPP"
+    },
+    {
+      "id": "AS5",
+      "longName": "AS 5",
+      "shortName": "AS 5",
+      "latitude": 1.2934739269872173,
+      "longitude": 103.77176061272623,
+      "services": [
+        "D1",
+        "R1",
+        "A1"
+      ],
+      "opposite": "NUSS-OPP"
+    },
+    {
+      "id": "BIZ2",
+      "longName": "BIZ 2",
+      "shortName": "BIZ 2",
+      "latitude": 1.2932436509698975,
+      "longitude": 103.77514354884626,
+      "services": [
+        "A1",
+        "R1",
+        "D1"
+      ],
+      "opposite": "HSSML-OPP"
+    },
+    {
+      "id": "PGP",
+      "longName": "Prince George's Park",
+      "shortName": "PGP",
+      "latitude": 1.291766129826178,
+      "longitude": 103.78036145120859,
+      "services": [
+        "D2",
+        "A1",
+        "R1",
+        "R2",
+        "K"
+      ],
+      "opposite": "PGPR"
+    },
+    {
+      "id": "CG",
+      "longName": "College Green",
+      "shortName": "College Gr",
+      "latitude": 1.3232413662131859,
+      "longitude": 103.81638050079347,
+      "services": [
+        "P",
+        "PUB:151",
+        "PUB:153",
+        "PUB:154",
+        "PUB:156",
+        "PUB:170",
+        "PUB:186",
+        "PUB:48",
+        "PUB:67"
+      ],
+      "opposite": "BG-MRT"
+    },
+    {
+      "id": "IT",
+      "longName": "Information Technology",
+      "shortName": "IT",
+      "latitude": 1.2972656012836414,
+      "longitude": 103.77279158681633,
+      "services": [
+        "A2",
+        "R2",
+        "D1",
+        "PUB:151",
+        "PUB:95",
+        "PUB:96"
+      ],
+      "opposite": "CLB"
+    },
+    {
+      "id": "YIH-OPP",
+      "longName": "Opp Yusof Ishak House",
+      "shortName": "Opp YIH",
+      "latitude": 1.2988195425389106,
+      "longitude": 103.7741430848837,
+      "services": [
+        "D1",
+        "R2",
+        "A2",
+        "PUB:151",
+        "PUB:95",
+        "PUB:96"
+      ],
+      "opposite": "YIH"
+    },
+    {
+      "id": "SDE3-OPP",
+      "longName": "Opp SDE 3",
+      "shortName": "Opp SDE 3",
+      "latitude": 1.2978676027978284,
+      "longitude": 103.76966916024686,
+      "services": [
+        "K",
+        "PUB:183",
+        "PUB:188",
+        "PUB:33"
+      ],
+      "opposite": "SDE3"
+    },
+    {
+      "id": "JP-SCH-16151",
+      "longName": "The Japanese Primary School",
+      "shortName": "Jpn Pr Sch",
+      "latitude": 1.30074118600086,
+      "longitude": 103.77000007778408,
+      "services": [
+        "K",
+        "PUB:183",
+        "PUB:188",
+        "PUB:33"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "UHC",
+      "longName": "University Health Centre",
+      "shortName": "UHC",
+      "latitude": 1.2987940680998082,
+      "longitude": 103.77637267112733,
+      "services": [
+        "A2",
+        "D2",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "UHC-OPP"
+    },
+    {
+      "id": "UHALL-OPP",
+      "longName": "Opp University Hall",
+      "shortName": "Opp UHall",
+      "latitude": 1.2975297311415932,
+      "longitude": 103.77793505787851,
+      "services": [
+        "A2",
+        "D2",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "UHALL"
+    },
+    {
+      "id": "S17",
+      "longName": "S 17",
+      "shortName": "S 17",
+      "latitude": 1.2974912680707087,
+      "longitude": 103.7806844059378,
+      "services": [
+        "A2",
+        "D2",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "LT27"
+    },
+    {
+      "id": "KR-MRT-OPP",
+      "longName": "Opp Kent Ridge MRT",
+      "shortName": "Opp KR MRT",
+      "latitude": 1.2949484304221306,
+      "longitude": 103.78454837948085,
+      "services": [
+        "D2",
+        "A2",
+        "K",
+        "PUB:95"
+      ],
+      "opposite": "KR-MRT"
+    },
+    {
+      "id": "PGPR",
+      "longName": "Prince George's Park Foyer",
+      "shortName": "PGP Foyer",
+      "latitude": 1.291009603808107,
+      "longitude": 103.78104776144029,
+      "services": [
+        "D2",
+        "A2",
+        "K"
+      ],
+      "opposite": "PGP"
+    },
+    {
+      "id": "COM3",
+      "longName": "COM 3",
+      "shortName": "COM 3",
+      "latitude": 1.2947986002645568,
+      "longitude": 103.775053024292,
+      "services": [
+        "D1",
+        "D2"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "HSSML-OPP",
+      "longName": "Opp Hon Sui Sen Memorial Library",
+      "shortName": "Opp HSSML",
+      "latitude": 1.292876281909209,
+      "longitude": 103.77497591078283,
+      "services": [
+        "D1",
+        "R2",
+        "A2"
+      ],
+      "opposite": "BIZ2"
+    },
+    {
+      "id": "NUSS-OPP",
+      "longName": "Opp NUSS",
+      "shortName": "Opp NUSS",
+      "latitude": 1.2933371691803295,
+      "longitude": 103.77247273921968,
+      "services": [
+        "A2",
+        "R2",
+        "D1"
+      ],
+      "opposite": "AS5"
+    },
+    {
+      "id": "LT13-OPP",
+      "longName": "Ventus",
+      "shortName": "Ventus",
+      "latitude": 1.295346804299192,
+      "longitude": 103.77065177075566,
+      "services": [
+        "A2",
+        "R2",
+        "D1"
+      ],
+      "opposite": "LT13"
+    },
+    {
+      "id": "KRB",
+      "longName": "Kent Ridge Bus Terminal",
+      "shortName": "KR Bus Ter",
+      "latitude": 1.2942287763181035,
+      "longitude": 103.76979857683183,
+      "services": [
+        "A1",
+        "A2",
+        "PUB:10",
+        "PUB:151",
+        "PUB:200",
+        "PUB:201",
+        "PUB:33",
+        "PUB:95"
+      ],
+      "opposite": null
+    },
+    {
+      "id": "TCOMS",
+      "longName": "TCOMS",
+      "shortName": "TCOMS",
+      "latitude": 1.2937554871546668,
+      "longitude": 103.77687323838474,
+      "services": [
+        "A2",
+        "D2"
+      ],
+      "opposite": "TCOMS-OPP"
+    },
+    {
+      "id": "TCOMS-OPP",
+      "longName": "Opp TCOMS",
+      "shortName": "Opp TCOMS",
+      "latitude": 1.2937554871546668,
+      "longitude": 103.77687323838474,
+      "services": [
+        "A1",
+        "D2"
+      ],
+      "opposite": "TCOMS"
+    }
+  ]
+}
+

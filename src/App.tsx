@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Map,
-  Marker,
   NavigationControl,
-  Popup,
   setWorkerUrl,
   type LngLatLike,
+  type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { VenueSearch } from './components/VenueSearch'
+import { fetchJson } from './map/data'
+import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
+import { validateTransitNetwork } from './transit/model'
+import type { TransitNetwork } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
+import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 
@@ -16,81 +21,65 @@ import './App.css'
 // and provides its URL through the `?worker&url` import above.
 setWorkerUrl(maplibreWorkerUrl)
 
-function addVenueMarkers(map: Map, venues: VenueLocationMap): Marker[] {
-  const markers: Marker[] = []
-
-  for (const [venueCode, venue] of Object.entries(venues)) {
-    if (!venue.location) continue
-
-    // Use DOM nodes instead of setHTML so venue data is treated as text
-    // if the dataset ever contains characters meaningful to HTML.
-    const popupContent = document.createElement('div')
-    const title = document.createElement('strong')
-    title.textContent = venueCode
-    popupContent.append(title)
-
-    const name = document.createElement('div')
-    name.textContent = venue.roomName
-    popupContent.append(name)
-
-    if (venue.floor !== undefined && venue.floor !== null) {
-      const floor = document.createElement('div')
-      floor.textContent = `Floor: ${venue.floor}`
-      popupContent.append(floor)
-    }
-
-    const marker = new Marker({ color: '#d94f70' })
-      // Venue coordinates use x=longitude and y=latitude, matching
-      // MapLibre's [longitude, latitude] coordinate order.
-      .setLngLat([venue.location.x, venue.location.y])
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(popupContent))
-      .addTo(map)
-
-    markers.push(marker)
-  }
-
-  return markers
-}
-
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
-  const [status, setStatus] = useState('Loading venues…')
+  const mapRef = useRef<Map | null>(null)
+  const selectedVenueMarkerRef = useRef<Marker | null>(null)
+  const [venues, setVenues] = useState<VenueLocationMap | null>(null)
+  const [status, setStatus] = useState('Loading map data…')
+
+  const handleVenueSelect = (result: VenueSearchResult) => {
+    const map = mapRef.current
+    if (!map || !result.venue.location) return
+
+    selectedVenueMarkerRef.current?.remove()
+    const marker = addVenueMarker(map, result.code, result.venue)
+    if (!marker) return
+
+    selectedVenueMarkerRef.current = marker
+    map.flyTo({
+      center: [result.venue.location.x, result.venue.location.y],
+      zoom: Math.max(map.getZoom(), 17),
+      essential: true,
+    })
+    marker.togglePopup()
+  }
 
   useEffect(() => {
     if (!mapContainer.current) return
 
-    // Keep the fetch and map resources tied to this component instance so they
-    // can be cancelled or removed together when React runs the cleanup.
+    // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
-    const markers: Marker[] = []
+    const busStopMarkers: Marker[] = []
+    let venueCount = 0
     let isMounted = true
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
       container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      // OpenFreeMap provides the OSM-based prototype basemap.
+      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: kentRidgeLocation,
       zoom: 15,
     })
+    mapRef.current = map
 
     map.addControl(new NavigationControl(), 'top-right')
+    map.on('error', (event) => {
+      console.error('Map error:', event.error)
+      if (isMounted) setStatus('Unable to load map tiles')
+    })
 
     const loadVenues = async () => {
       try {
-        // Files in `public` are served from the site root, so this resolves to
-        // public/data/venues.json in development and in the production build.
-        const response = await fetch('/data/venues.json', {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error(`Venue data request failed: ${response.status}`)
-        }
-
-        const venues = (await response.json()) as VenueLocationMap
-        markers.push(...addVenueMarkers(map, venues))
-
+        const venueData = await fetchJson<VenueLocationMap>(
+          '/data/venues.json',
+          controller.signal,
+          'Venue data',
+        )
+        venueCount = getVenueCount(venueData)
         if (isMounted) {
-          setStatus(`${markers.length} venues loaded`)
+          setVenues(venueData)
+          setStatus(`${venueCount} venues available; loading shuttle stops…`)
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
@@ -99,14 +88,40 @@ function App() {
       }
     }
 
+    const loadTransitNetwork = async () => {
+      try {
+        const transitNetwork = validateTransitNetwork(
+          await fetchJson<TransitNetwork>(
+            '/data/shuttle-network.json',
+            controller.signal,
+            'Shuttle network',
+          ),
+        )
+        busStopMarkers.push(...addBusStopMarkers(map, transitNetwork.stops))
+
+        if (isMounted) {
+          setStatus(
+            `${venueCount} venues · ${busStopMarkers.length} shuttle stops · ${transitNetwork.routes.length} shuttle routes loaded`,
+          )
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (isMounted) setStatus('Unable to load shuttle network')
+        console.error(error)
+      }
+    }
+
     void loadVenues()
+    void loadTransitNetwork()
 
     return () => {
       isMounted = false
-      // Abort pending work and remove MapLibre objects to avoid stale markers
-      // when the component is unmounted or recreated by React.
+      // Abort pending work and remove stale MapLibre objects on unmount.
       controller.abort()
-      markers.forEach((marker) => marker.remove())
+      selectedVenueMarkerRef.current?.remove()
+      selectedVenueMarkerRef.current = null
+      busStopMarkers.forEach((marker) => marker.remove())
+      mapRef.current = null
       map.remove()
     }
   }, [])
@@ -114,6 +129,11 @@ function App() {
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
+      <VenueSearch venues={venues} onSelect={handleVenueSelect} />
+      <div className="map-legend" aria-label="Map legend">
+        <div><span className="legend-marker venue-marker" /> Venues</div>
+        <div><span className="legend-marker bus-marker" /> Shuttle stops</div>
+      </div>
       <div className="map-status" role="status">
         {status}
       </div>

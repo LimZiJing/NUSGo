@@ -12,6 +12,9 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $projectRoot '.env'
 $dotenv = @{}
 
+# Keep credentials out of the client bundle. Process environment variables take
+# precedence over .env values so CI and deployment settings can override local
+# development defaults.
 if (Test-Path -LiteralPath $envPath) {
     foreach ($line in Get-Content -LiteralPath $envPath) {
         if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$') {
@@ -69,6 +72,7 @@ function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
     $userId = Require-Setting 'NUS_USER_ID'
     $deviceId = Get-Setting 'NUS_DEVICE_ID'
     if ([string]::IsNullOrWhiteSpace($deviceId)) {
+        # The proxy accepts a generated device ID for one-off diagnostic calls.
         $deviceId = [guid]::NewGuid().ToString()
     }
 
@@ -80,6 +84,7 @@ function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
         userid   = $userId
         version  = Get-Setting 'NUS_APP_VERSION' '2.56.0'
     }
+    # Each endpoint adds its own fields while sharing the common UniVus body.
     foreach ($entry in $Extra.GetEnumerator()) {
         $body[$entry.Key] = $entry.Value
     }
@@ -89,6 +94,7 @@ function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
         '-sS'
         '-X', 'POST'
         "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint"
+        # The API contract requires the raw JWT in token and Bearer here.
         '-H', "Authorization: Bearer $jwt"
         '-H', "X-API-KEY: $apiKey"
         '-H', 'Content-Type: application/json; charset=utf-8'

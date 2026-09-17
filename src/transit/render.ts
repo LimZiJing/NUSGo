@@ -100,6 +100,61 @@ export function removeTransitRouteLayers(map: Map): void {
   }
 }
 
+const BASE_ROUTE_LINE_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-width'] = [
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  12, 2,
+  15, 4,
+  18, 6,
+]
+
+export function setTransitRouteSelection(
+  map: Map,
+  routeId: string | null,
+): void {
+  if (!map.getLayer(TRANSIT_ROUTE_LAYER_ID)) return
+
+  if (routeId === null) {
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', 0.85)
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', BASE_ROUTE_LINE_WIDTH)
+    return
+  }
+
+  const routeMatch: ['==', ['get', string], string] = ['==', ['get', 'routeId'], routeId]
+  map.setPaintProperty(
+    TRANSIT_ROUTE_LAYER_ID,
+    'line-opacity',
+    ['case', routeMatch, 1, 0.18],
+  )
+  map.setPaintProperty(
+    TRANSIT_ROUTE_LAYER_ID,
+    'line-width',
+    [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12, ['case', routeMatch, 3, 1.5],
+      15, ['case', routeMatch, 6, 3],
+      18, ['case', routeMatch, 8, 4.5],
+    ],
+  )
+}
+
+export function setBusStopMarkerSelection(
+  markers: readonly Marker[],
+  selectedStopIds: readonly string[] | null,
+): void {
+  const selectedIds = new Set(selectedStopIds ?? [])
+  for (const marker of markers) {
+    const element = marker.getElement()
+    element.classList.toggle(
+      'bus-stop-marker-selected',
+      selectedIds.has(element.dataset.stopId ?? ''),
+    )
+  }
+}
+
 export function addValidatedTransitMapData(
   map: Map,
   networkInput: unknown,

@@ -54,6 +54,10 @@ export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
     if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
 
     const marker = new Marker({ color: '#2563eb' })
+    const element = marker.getElement()
+    element.classList.add('bus-stop-marker')
+    element.dataset.stopId = stop.id
+    marker
       .setLngLat([stop.longitude, stop.latitude])
       .setPopup(new Popup({ offset: 24 }).setDOMContent(createPopupContent(stop.longName, details)))
       .addTo(map)

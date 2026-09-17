@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Map,
   NavigationControl,
   setWorkerUrl,
   type LngLatLike,
+  type MapLayerMouseEvent,
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { TransitRouteControl } from './components/TransitRouteControl'
 import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
 import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
@@ -14,9 +16,13 @@ import { TransitValidationError } from './transit/model'
 import {
   addTransitRouteLayers,
   removeTransitRouteLayers,
+  TRANSIT_ROUTE_LAYER_ID,
+  setBusStopMarkerSelection,
+  setTransitRouteSelection,
   validateTransitMapData,
   waitForMapStyleLoaded,
 } from './transit/render'
+import type { TransitNetwork } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
 import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -30,8 +36,28 @@ function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
   const selectedVenueMarkerRef = useRef<Marker | null>(null)
+  const busStopMarkersRef = useRef<Marker[]>([])
+  const transitNetworkRef = useRef<TransitNetwork | null>(null)
   const [venues, setVenues] = useState<VenueLocationMap | null>(null)
+  const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const [status, setStatus] = useState('Loading map data…')
+
+  const handleRouteSelect = useCallback((routeId: string | null) => {
+    const network = transitNetworkRef.current
+    const selectedRoute = routeId && network
+      ? network.routes.find((route) => route.id === routeId)
+      : undefined
+    const nextRouteId = selectedRoute?.id ?? null
+    setSelectedRouteId(nextRouteId)
+
+    const map = mapRef.current
+    if (map) setTransitRouteSelection(map, nextRouteId)
+    setBusStopMarkerSelection(
+      busStopMarkersRef.current,
+      selectedRoute?.stopIds ?? null,
+    )
+  }, [])
 
   const handleVenueSelect = (result: VenueSearchResult) => {
     const map = mapRef.current
@@ -68,6 +94,17 @@ function App() {
       zoom: 15,
     })
     mapRef.current = map
+
+    const handleRouteLineClick = (event: MapLayerMouseEvent) => {
+      const routeId = event.features?.[0]?.properties?.routeId
+      if (typeof routeId === 'string') handleRouteSelect(routeId)
+    }
+    const handleRouteLineEnter = () => {
+      map.getCanvas().style.cursor = 'pointer'
+    }
+    const handleRouteLineLeave = () => {
+      map.getCanvas().style.cursor = ''
+    }
 
     map.addControl(new NavigationControl(), 'top-right')
     map.on('error', (event) => {
@@ -117,8 +154,14 @@ function App() {
 
         await waitForMapStyleLoaded(map, controller.signal)
         addTransitRouteLayers(map, geometry)
+        map.on('click', TRANSIT_ROUTE_LAYER_ID, handleRouteLineClick)
+        map.on('mouseenter', TRANSIT_ROUTE_LAYER_ID, handleRouteLineEnter)
+        map.on('mouseleave', TRANSIT_ROUTE_LAYER_ID, handleRouteLineLeave)
         const markers = addBusStopMarkers(map, transitNetwork.stops)
         busStopMarkers.push(...markers)
+        busStopMarkersRef.current = markers
+        transitNetworkRef.current = transitNetwork
+        setTransitNetwork(transitNetwork)
 
         if (isMounted) {
           setStatus(
@@ -146,15 +189,25 @@ function App() {
       selectedVenueMarkerRef.current?.remove()
       selectedVenueMarkerRef.current = null
       busStopMarkers.forEach((marker) => marker.remove())
+      busStopMarkersRef.current = []
+      transitNetworkRef.current = null
+      map.off('click', TRANSIT_ROUTE_LAYER_ID, handleRouteLineClick)
+      map.off('mouseenter', TRANSIT_ROUTE_LAYER_ID, handleRouteLineEnter)
+      map.off('mouseleave', TRANSIT_ROUTE_LAYER_ID, handleRouteLineLeave)
       removeTransitRouteLayers(map)
       mapRef.current = null
       map.remove()
     }
-  }, [])
+  }, [handleRouteSelect])
 
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
+      <TransitRouteControl
+        network={transitNetwork}
+        selectedRouteId={selectedRouteId}
+        onRouteSelect={handleRouteSelect}
+      />
       <VenueSearch venues={venues} onSelect={handleVenueSelect} />
       <div className="map-legend" aria-label="Map legend">
         <div><span className="legend-marker venue-marker" /> Venues</div>

@@ -15,6 +15,7 @@ import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
 import { TransitValidationError } from './transit/model'
 import {
   addTransitRouteLayers,
+  fitTransitRoute,
   removeTransitRouteLayers,
   TRANSIT_ROUTE_LAYER_ID,
   setBusStopMarkerSelection,
@@ -22,7 +23,7 @@ import {
   validateTransitMapData,
   waitForMapStyleLoaded,
 } from './transit/render'
-import type { TransitNetwork } from './types/transit'
+import type { TransitNetwork, TransitRouteGeometry } from './types/transit'
 import type { VenueLocationMap } from './types/venues'
 import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -38,24 +39,34 @@ function App() {
   const selectedVenueMarkerRef = useRef<Marker | null>(null)
   const busStopMarkersRef = useRef<Marker[]>([])
   const transitNetworkRef = useRef<TransitNetwork | null>(null)
+  const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
+  const selectedRouteIdRef = useRef<string | null>(null)
   const [venues, setVenues] = useState<VenueLocationMap | null>(null)
   const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const [status, setStatus] = useState('Loading map data…')
 
   const handleRouteSelect = useCallback((routeId: string | null) => {
+    const previousRouteId = selectedRouteIdRef.current
     const network = transitNetworkRef.current
     const selectedRoute = routeId && network
       ? network.routes.find((route) => route.id === routeId)
       : undefined
     const nextRouteId = selectedRoute?.id ?? null
+    selectedRouteIdRef.current = nextRouteId
     setSelectedRouteId(nextRouteId)
 
     const map = mapRef.current
-    if (map) setTransitRouteSelection(map, nextRouteId)
+    if (map) {
+      setTransitRouteSelection(map, nextRouteId)
+      if (nextRouteId !== previousRouteId && network && transitGeometryRef.current) {
+        fitTransitRoute(map, network, transitGeometryRef.current, nextRouteId)
+      }
+    }
     setBusStopMarkerSelection(
       busStopMarkersRef.current,
       selectedRoute?.stopIds ?? null,
+      selectedRoute?.color ?? null,
     )
   }, [])
 
@@ -161,6 +172,7 @@ function App() {
         busStopMarkers.push(...markers)
         busStopMarkersRef.current = markers
         transitNetworkRef.current = transitNetwork
+        transitGeometryRef.current = geometry
         setTransitNetwork(transitNetwork)
 
         if (isMounted) {
@@ -191,6 +203,8 @@ function App() {
       busStopMarkers.forEach((marker) => marker.remove())
       busStopMarkersRef.current = []
       transitNetworkRef.current = null
+      transitGeometryRef.current = null
+      selectedRouteIdRef.current = null
       map.off('click', TRANSIT_ROUTE_LAYER_ID, handleRouteLineClick)
       map.off('mouseenter', TRANSIT_ROUTE_LAYER_ID, handleRouteLineEnter)
       map.off('mouseleave', TRANSIT_ROUTE_LAYER_ID, handleRouteLineLeave)

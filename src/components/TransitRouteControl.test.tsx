@@ -29,6 +29,7 @@ describe('TransitRouteControl', () => {
     expect(markup).toContain('Route A1 selected.')
     expect(markup).toContain('Direction:')
     expect(markup).toContain('Stop A (STOP-A)')
+    expect(markup).toContain('2 of 2 shuttle stops shown')
     expect(markup).toContain('Ordered stops')
     expect(markup).toContain('Show all routes')
   })
@@ -42,7 +43,20 @@ describe('TransitRouteControl', () => {
       />,
     )
 
-    expect(markup).toContain('Showing all 8 shuttle routes.')
+    expect(markup).toContain('Showing all 8 shuttle routes and all 2 shuttle stops.')
+    expect(markup).not.toContain('route-details')
+  })
+
+  it('treats an unknown selection as the all-routes state', () => {
+    const markup = renderToStaticMarkup(
+      <TransitRouteControl
+        network={createEightRouteNetwork()}
+        selectedRouteId="UNKNOWN"
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('Showing all 8 shuttle routes and all 2 shuttle stops.')
     expect(markup).not.toContain('route-details')
   })
 })

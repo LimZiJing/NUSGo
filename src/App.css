@@ -126,9 +126,26 @@
   margin: 4px 0;
   color: #475569;
 }
+.bus-stop-marker {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 .bus-stop-marker-selected {
-  filter: brightness(1.35) saturate(1.4) drop-shadow(0 0 4px rgb(255 255 255 / 90%));
+  border-color: var(--bus-stop-selected-color, #2563eb);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
   z-index: 2;
+}
+
+.bus-stop-marker-hidden {
+  display: none;
 }
 
 .route-control {
@@ -195,6 +212,12 @@
   margin: 10px 0;
 }
 
+.route-stop-count {
+  margin: 10px 0 0;
+  color: #475569;
+  font-weight: 600;
+}
+
 .route-stop-heading {
   margin: 10px 0 4px;
   font-weight: 600;
@@ -215,6 +238,6 @@
 @media (max-width: 600px) {
   .route-control {
     top: 150px;
-    max-height: calc(100vh - 185px);
+    max-height: min(50vh, calc(100vh - 185px));
   }
 }

@@ -5,9 +5,14 @@ import {
   addTransitRouteLayers,
   addValidatedBusStopMarkers,
   addValidatedTransitMapData,
+  fitTransitRoute,
+  getTransitRouteBounds,
+  getTransitRouteFitPadding,
   removeTransitRouteLayers,
   setBusStopMarkerSelection,
   setTransitRouteSelection,
+  TRANSIT_ROUTE_CASING_LAYER_ID,
+  TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
   validateTransitMapData,
@@ -44,12 +49,30 @@ interface FakeMapState {
   removedSources: string[]
   removedLayers: string[]
   paintProperties: Array<{ name: string; value: unknown }>
+  filters: Array<{ id: string; value: unknown }>
+  fitBoundsCalls: Array<{ bounds: unknown; options: unknown }>
 }
 
-function createFakeMarker(stopId: string): { marker: Marker; classes: Set<string> } {
+function createFakeMarker(
+  stopId: string,
+  popupIsOpen = false,
+): {
+  marker: Marker
+  classes: Set<string>
+  element: { style: { display: string; setProperty: ReturnType<typeof vi.fn> } }
+  popup: { isOpen: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> }
+} {
   const classes = new Set<string>()
+  const popup = {
+    isOpen: vi.fn(() => popupIsOpen),
+    remove: vi.fn(),
+  }
   const element = {
     dataset: { stopId },
+    style: {
+      display: '',
+      setProperty: vi.fn(),
+    },
     classList: {
       toggle(name: string, force: boolean) {
         if (force) classes.add(name)
@@ -59,8 +82,13 @@ function createFakeMarker(stopId: string): { marker: Marker; classes: Set<string
   }
 
   return {
-    marker: { getElement: () => element } as unknown as Marker,
+    marker: {
+      getElement: () => element,
+      getPopup: () => popup,
+    } as unknown as Marker,
     classes,
+    element,
+    popup,
   }
 }
 
@@ -75,6 +103,8 @@ function createFakeMap(): FakeMapState {
     removedSources: [],
     removedLayers: [],
     paintProperties: [],
+    filters: [],
+    fitBoundsCalls: [],
   }
 
   state.map = {
@@ -100,6 +130,13 @@ function createFakeMap(): FakeMapState {
     }),
     setPaintProperty: vi.fn((_layerId: string, name: string, value: unknown) => {
       state.paintProperties.push({ name, value })
+    }),
+    setFilter: vi.fn((id: string, value: unknown) => {
+      state.filters.push({ id, value })
+    }),
+    getContainer: vi.fn(() => ({ clientWidth: 1200 })),
+    fitBounds: vi.fn((bounds: unknown, options: unknown) => {
+      state.fitBoundsCalls.push({ bounds, options })
     }),
     isStyleLoaded: vi.fn(() => true),
     once: vi.fn(),
@@ -168,7 +205,7 @@ describe('validated transit map data', () => {
     expect(result.network).toBe(network)
     expect(result.geometry).toBe(geometry)
     expect(result.markers).toEqual([])
-    expect(state.events).toEqual(['source', 'layer'])
+    expect(state.events).toEqual(['source', 'layer', 'layer', 'layer'])
     expect(addBusStopMarkers).toHaveBeenCalledWith(state.map, network.stops)
   })
 
@@ -180,12 +217,17 @@ describe('validated transit map data', () => {
     addTransitRouteLayers(state.map, geometry)
 
     expect(state.addedSources).toHaveLength(1)
-    expect(state.addedLayers).toHaveLength(1)
+    expect(state.addedLayers).toHaveLength(3)
     expect(state.addedSources[0]).toEqual({
       id: TRANSIT_ROUTE_SOURCE_ID,
       source: { type: 'geojson', data: geometry },
     })
-    expect(state.addedLayers[0]).toMatchObject({
+    expect(state.addedLayers.map((layer) => (layer as { id: string }).id)).toEqual([
+      TRANSIT_ROUTE_CASING_LAYER_ID,
+      TRANSIT_ROUTE_LAYER_ID,
+      TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+    ])
+    expect(state.addedLayers[1]).toMatchObject({
       id: TRANSIT_ROUTE_LAYER_ID,
       source: TRANSIT_ROUTE_SOURCE_ID,
       type: 'line',
@@ -197,16 +239,33 @@ describe('validated transit map data', () => {
         'line-color': ['get', 'color'],
       },
     })
+    expect(state.addedLayers[2]).toMatchObject({
+      id: TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+      source: TRANSIT_ROUTE_SOURCE_ID,
+      type: 'symbol',
+      filter: ['==', ['get', 'routeId'], ''],
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 80,
+        'text-field': '▶',
+      },
+    })
   })
 
   it('removes the route layer before its source during cleanup', () => {
     const state = createFakeMap()
     state.sourceIds.add(TRANSIT_ROUTE_SOURCE_ID)
+    state.layerIds.add(TRANSIT_ROUTE_CASING_LAYER_ID)
     state.layerIds.add(TRANSIT_ROUTE_LAYER_ID)
+    state.layerIds.add(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
 
     removeTransitRouteLayers(state.map)
 
-    expect(state.removedLayers).toEqual([TRANSIT_ROUTE_LAYER_ID])
+    expect(state.removedLayers).toEqual([
+      TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+      TRANSIT_ROUTE_LAYER_ID,
+      TRANSIT_ROUTE_CASING_LAYER_ID,
+    ])
     expect(state.removedSources).toEqual([TRANSIT_ROUTE_SOURCE_ID])
   })
 
@@ -248,19 +307,121 @@ describe('validated transit map data', () => {
     ])
   })
 
-  it('emphasizes only the selected route stops while keeping other markers visible', () => {
-    const first = createFakeMarker('STOP-A')
-    const second = createFakeMarker('STOP-B')
+  it('applies selection to every route layer and shows direction indicators', () => {
+    const state = createFakeMap()
+    state.layerIds.add(TRANSIT_ROUTE_CASING_LAYER_ID)
+    state.layerIds.add(TRANSIT_ROUTE_LAYER_ID)
+    state.layerIds.add(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
 
-    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-A'])
+    setTransitRouteSelection(state.map, 'A1')
+
+    expect(state.paintProperties[0]).toEqual({
+      name: 'line-opacity',
+      value: ['case', ['==', ['get', 'routeId'], 'A1'], 0.95, 0.45],
+    })
+    expect(state.filters).toEqual([{
+      id: TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+      value: ['==', ['get', 'routeId'], 'A1'],
+    }])
+
+    setTransitRouteSelection(state.map, null)
+
+    expect(state.filters.at(-1)).toEqual({
+      id: TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+      value: ['==', ['get', 'routeId'], ''],
+    })
+  })
+
+  it('hides irrelevant stops, closes their popup, and restores all markers', () => {
+    const first = createFakeMarker('STOP-A')
+    const second = createFakeMarker('STOP-B', true)
+
+    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-A'], '#fb0101')
 
     expect(first.classes).toContain('bus-stop-marker-selected')
     expect(second.classes).not.toContain('bus-stop-marker-selected')
+    expect(first.element.style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#fb0101')
+    expect(first.element.style.display).toBe('')
+    expect(second.element.style.display).toBe('none')
+    expect(second.popup.remove).toHaveBeenCalledOnce()
+
+    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-B'], '#008000')
+
+    expect(first.element.style.display).toBe('none')
+    expect(second.element.style.display).toBe('')
+    expect(second.classes).toContain('bus-stop-marker-selected')
 
     setBusStopMarkerSelection([first.marker, second.marker], null)
 
     expect(first.classes).not.toContain('bus-stop-marker-selected')
     expect(second.classes).not.toContain('bus-stop-marker-selected')
+    expect(first.element.style.display).toBe('')
+    expect(second.element.style.display).toBe('')
+  })
+})
+
+describe('transit route camera', () => {
+  it('builds selected route bounds from geometry and ordered stops', () => {
+    const network = createValidTransitNetwork()
+    const geometry = createValidGeometry()
+    geometry.features[0].geometry.coordinates = [[102.9, 0.9], [103.2, 1.2]]
+
+    expect(getTransitRouteBounds(network, geometry, 'A1')).toEqual([
+      [102.9, 0.9],
+      [103.2, 1.2],
+    ])
+  })
+
+  it('uses all network bounds for cleared and unknown selections', () => {
+    const network = createValidTransitNetwork()
+    network.routes.push({
+      id: 'B1',
+      name: 'B1',
+      color: '#654321',
+      stopIds: ['STOP-B'],
+    })
+    const geometry = createValidGeometry()
+    geometry.features.push({
+      type: 'Feature',
+      properties: { routeId: 'B1', name: 'B1', color: '#654321' },
+      geometry: { type: 'LineString', coordinates: [[104, 2], [104.1, 2.1]] },
+    })
+
+    const allBounds = [[103, 1], [104.1, 2.1]]
+    expect(getTransitRouteBounds(network, geometry, null)).toEqual(allBounds)
+    expect(getTransitRouteBounds(network, geometry, 'UNKNOWN')).toEqual(allBounds)
+  })
+
+  it('uses overlay-aware responsive padding for route fitting', () => {
+    expect(getTransitRouteFitPadding(1200)).toEqual({
+      top: 112,
+      right: 360,
+      bottom: 64,
+      left: 360,
+    })
+    expect(getTransitRouteFitPadding(600)).toEqual({
+      top: 280,
+      right: 24,
+      bottom: 64,
+      left: 24,
+    })
+  })
+
+  it('fits the selected route with interruptible camera options', () => {
+    const state = createFakeMap()
+    const network = createValidTransitNetwork()
+    const geometry = createValidGeometry()
+
+    fitTransitRoute(state.map, network, geometry, 'A1')
+
+    expect(state.fitBoundsCalls).toEqual([{
+      bounds: [[103, 1], [103.1, 1.1]],
+      options: {
+        duration: 500,
+        maxZoom: 16,
+        padding: { top: 112, right: 360, bottom: 64, left: 360 },
+      },
+    }])
   })
 })
 

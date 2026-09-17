@@ -39,13 +39,15 @@ export function TransitRouteControl({
   const lastStopId = selectedRoute?.stopIds.at(-1) ?? ''
   const firstStop = stopsById.get(firstStopId)
   const lastStop = stopsById.get(lastStopId)
+  const totalStopCount = network?.stops.length ?? 0
+  const visibleStopCount = selectedRoute?.stopIds.length ?? totalStopCount
   const announcement = selectedRoute
     ? 'Route ' + selectedRoute.name + ' selected. Direction: ' +
       getStopLabel(firstStop, firstStopId) + ' to ' +
       getStopLabel(lastStop, lastStopId) + '. ' +
-      selectedRoute.stopIds.length + ' stops.'
+      visibleStopCount + ' of ' + totalStopCount + ' shuttle stops shown.'
     : network
-      ? 'Showing all ' + routes.length + ' shuttle routes.'
+      ? 'Showing all ' + routes.length + ' shuttle routes and all ' + totalStopCount + ' shuttle stops.'
       : 'Loading shuttle routes…'
 
   return (
@@ -78,6 +80,9 @@ export function TransitRouteControl({
             {getStopLabel(firstStop, firstStopId)}
             {' → '}
             {getStopLabel(lastStop, lastStopId)}
+          </p>
+          <p className="route-stop-count">
+            {visibleStopCount} of {totalStopCount} shuttle stops shown
           </p>
           <p className="route-stop-heading">Ordered stops</p>
           <ol className="route-stop-list">

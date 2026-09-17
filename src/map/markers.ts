@@ -41,6 +41,14 @@ export function getVenueCount(venues: VenueLocationMap): number {
   return Object.values(venues).filter((venue) => venue.location).length
 }
 
+function createBusStopMarkerElement(stop: TransitStop): HTMLDivElement {
+  const element = document.createElement('div')
+  element.className = 'bus-stop-marker'
+  element.setAttribute('role', 'button')
+  element.setAttribute('aria-label', `${stop.longName} shuttle stop`)
+  return element
+}
+
 export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
   const markers: Marker[] = []
 
@@ -53,9 +61,11 @@ export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
     ]
     if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
 
-    const marker = new Marker({ color: '#2563eb' })
+    const marker = new Marker({
+      anchor: 'center',
+      element: createBusStopMarkerElement(stop),
+    })
     const element = marker.getElement()
-    element.classList.add('bus-stop-marker')
     element.dataset.stopId = stop.id
     marker
       .setLngLat([stop.longitude, stop.latitude])

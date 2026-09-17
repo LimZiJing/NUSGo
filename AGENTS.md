@@ -21,8 +21,23 @@ Task-specific user instructions take precedence over this guidance. If two repos
 - Run the applicable project checks before handoff and report their exact results.
 - Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
 
-## Agent skills
+## GitHub issue workflow
 
-- Issue tracker: docs/agents/issue-tracker.md
-- Triage labels: docs/agents/triage-labels.md
-- Domain guidance: docs/agents/domain.md
+Issues and specs live in GitHub Issues and should use the `gh` CLI. Follow `docs/agents/issue-tracker.md` for the exact commands and conventions.
+
+Use the configured triage vocabulary in `docs/agents/triage-labels.md` when triaging issues.
+
+## Repository-local skills
+
+The selected Matt Pocock skills are installed under `.agents/skills/` and pinned in `skills-lock.json`.
+
+- Use `/setup-matt-pocock-skills` only when repository skill configuration needs to be checked or changed.
+- Use `/grill-with-docs` to clarify a feature and record domain decisions.
+- Use `/to-spec` to turn an agreed conversation into a GitHub issue/spec.
+- Use `/to-tickets` to break a spec into dependent implementation tickets.
+- Use `/implement` to execute a spec or ticket set.
+- Use `/tdd` for test-first feature work or fixes.
+- Use `/code-review` before committing substantial changes.
+- Use `/diagnosing-bugs` for difficult bugs or regressions.
+
+Skills are reusable guidance, not application dependencies. Review their instructions and keep user intent and this file's repository rules authoritative.

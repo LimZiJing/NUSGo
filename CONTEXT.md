@@ -24,3 +24,4 @@ This document defines the domain language used by NavUS. It contains terminology
 - **Route line**: The visual map representation of route geometry.
 - **Selected route**: The one internal route currently receiving focused map and information-panel treatment.
 - **All-routes state**: The map state in which no route is selected and the complete validated network is available for inspection.
+

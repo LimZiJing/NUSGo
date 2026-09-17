@@ -19,6 +19,23 @@ export interface TransitNetworkMetadata {
   source: string
   routeStopOrder: string
   routeGeometry: string
+  verifiedAt: string
+  routeOrderSource: string
+  coordinateSource: string
+}
+
+export interface TransitVerificationRoute {
+  routeId: string
+  direction: string
+  orderedStopIds: string[]
+}
+
+export interface TransitVerificationManifest {
+  version: number
+  reviewedAt: string
+  routeOrderSource: string
+  coordinateSource: string
+  routes: TransitVerificationRoute[]
 }
 
 export interface TransitNetwork {

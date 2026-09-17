@@ -1,26 +1,27 @@
-# NavUS Domain Context
+# NavUS Domain Glossary
 
-## Product
+This document defines the domain language used by NavUS. It contains terminology and relationships, not implementation instructions.
 
-NavUS is a campus transit and indoor-navigation application for the National University of Singapore (NUS).
+## Campus navigation
 
-Its core user goal is to help someone find a venue, understand nearby shuttle services, and eventually receive a route recommendation that may combine walking, indoor movement, and bus transfers.
+- **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
+- **Transit network**: The set of shuttle routes, shuttle stops, and service associations available for campus travel.
 
-## Canonical terms
+## Shuttle transit
 
-- **Venue**: A destination on campus, identified by a venue code, room name, or other user-facing place information.
-- **Shuttle stop**: A place where a campus shuttle can pick up or drop off passengers.
-- **Shuttle route**: An ordered service connecting shuttle stops in a particular direction or service pattern.
-- **Transit model**: The structured representation of shuttle routes, stops, service associations, and their relationships.
-- **Route shape**: The geographic path followed by a shuttle route between its stops.
-- **Walking connection**: A route segment traversed on foot between venues, stops, entrances, or other places.
-- **Indoor connection**: A route segment inside a building or other sheltered space, potentially involving floors, lifts, or stairs.
-- **Route recommendation**: A proposed journey made from one or more walking, indoor, and transit segments.
+- **Route**: An internal campus shuttle service with a stable route ID, a display name, an official color, and an ordered sequence of stops.
+- **Internal route**: A route operated within the NavUS campus transit model. The current network contains eight internal routes.
+- **Stop**: A physical shuttle boarding or alighting location with a stable stop ID, a display name, coordinates, and service associations.
+- **Ordered stop list**: The sequence of stops that defines a route’s travel direction, from its first stop to its last stop.
+- **Service**: A transit service associated with a stop. A service may be an internal route or an external public service token.
+- **Public service token**: An opaque identifier for a public or external service. It is not an internal NavUS route and must not be treated as one.
+- **Opposite stop**: The paired stop representing the reverse side or direction of a stop location. Opposite-stop relationships are reciprocal.
+- **Route geometry**: The geographic line that represents the physical path of a route between its ordered stops.
 
-## Domain boundaries
+## Map presentation
 
-- Venue lookup answers where a place is and helps the user select a destination.
-- Transit data answers which shuttle services and stops are related.
-- Routing answers how a person can travel between an origin and destination while considering walking, indoor movement, accessibility, shelter, and transfers.
+- **Marker**: A visual map representation of a domain location, such as a venue marker or shuttle-stop marker. A marker is not the venue or stop itself.
+- **Route line**: The visual map representation of route geometry.
+- **Selected route**: The one internal route currently receiving focused map and information-panel treatment.
+- **All-routes state**: The map state in which no route is selected and the complete validated network is available for inspection.
 
-Use these terms consistently in issue titles, plans, code names, tests, and user-facing copy.

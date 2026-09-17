@@ -9,9 +9,14 @@ import {
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { VenueSearch } from './components/VenueSearch'
 import { fetchJson } from './map/data'
-import { addVenueMarker, getVenueCount } from './map/markers'
+import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
 import { TransitValidationError } from './transit/model'
-import { addValidatedBusStopMarkers } from './transit/render'
+import {
+  addTransitRouteLayers,
+  removeTransitRouteLayers,
+  validateTransitMapData,
+  waitForMapStyleLoaded,
+} from './transit/render'
 import type { VenueLocationMap } from './types/venues'
 import type { VenueSearchResult } from './venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -53,6 +58,7 @@ function App() {
     const busStopMarkers: Marker[] = []
     let venueCount = 0
     let isMounted = true
+    let transitFailure: string | null = null
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
       container: mapContainer.current,
@@ -79,7 +85,9 @@ function App() {
         venueCount = getVenueCount(venueData)
         if (isMounted) {
           setVenues(venueData)
-          setStatus(`${venueCount} venues available; loading shuttle stops…`)
+          if (!transitFailure) {
+            setStatus(`${venueCount} venues available; loading shuttle routes…`)
+          }
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
@@ -90,14 +98,26 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
-        const { network: transitNetwork, markers } = addValidatedBusStopMarkers(
-          map,
-          await fetchJson<unknown>(
+        const [networkInput, geometryInput] = await Promise.all([
+          fetchJson<unknown>(
             '/data/shuttle-network.json',
             controller.signal,
             'Shuttle network',
           ),
-        )
+          fetchJson<unknown>(
+            '/data/shuttle-routes.geojson',
+            controller.signal,
+            'Shuttle route geometry',
+          ),
+        ])
+        const {
+          network: transitNetwork,
+          geometry,
+        } = validateTransitMapData(networkInput, geometryInput)
+
+        await waitForMapStyleLoaded(map, controller.signal)
+        addTransitRouteLayers(map, geometry)
+        const markers = addBusStopMarkers(map, transitNetwork.stops)
         busStopMarkers.push(...markers)
 
         if (isMounted) {
@@ -107,12 +127,11 @@ function App() {
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        if (isMounted) {
-          const message = error instanceof TransitValidationError
-            ? `Transit data validation failed: ${error.message}`
-            : 'Unable to load shuttle network'
-          setStatus(message)
-        }
+        const message = error instanceof TransitValidationError
+          ? `Transit route data validation failed: ${error.message}`
+          : 'Unable to load shuttle route data'
+        transitFailure = message
+        if (isMounted) setStatus(message)
         console.error(error)
       }
     }
@@ -127,6 +146,7 @@ function App() {
       selectedVenueMarkerRef.current?.remove()
       selectedVenueMarkerRef.current = null
       busStopMarkers.forEach((marker) => marker.remove())
+      removeTransitRouteLayers(map)
       mapRef.current = null
       map.remove()
     }

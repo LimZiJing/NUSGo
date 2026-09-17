@@ -31,6 +31,17 @@ function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
 }
 
+const OFFICIAL_ROUTE_COLORS: Record<string, string> = {
+  A1: '#fb0101',
+  A2: '#e3cf0e',
+  D1: '#c77de0',
+  D2: '#6e1d72',
+  R1: '#ee8136',
+  R2: '#008000',
+  K: '#33599c',
+  P: '#bebebe',
+}
+
 describe('validateTransitRouteGeometry', () => {
   it('accepts a LineString that follows the verified stop order', () => {
     const network = createValidTransitNetwork()
@@ -45,6 +56,18 @@ describe('validateTransitRouteGeometry', () => {
     expect(validateTransitRouteGeometry(network, geometry)).toBe(geometry)
   })
 
+
+  it('uses the official route colors in both transit payloads', () => {
+    const network = validateTransitNetwork(readJson('../../public/data/shuttle-network.json'))
+    const geometry = readJson('../../public/data/shuttle-routes.geojson') as TransitRouteGeometry
+
+    expect(Object.fromEntries(network.routes.map(({ id, color }) => [id, color]))).toEqual(
+      OFFICIAL_ROUTE_COLORS,
+    )
+    expect(Object.fromEntries(
+      geometry.features.map(({ properties }) => [properties.routeId, properties.color]),
+    )).toEqual(OFFICIAL_ROUTE_COLORS)
+  })
 
   it('rejects missing route features', () => {
     const geometry = createValidGeometry()

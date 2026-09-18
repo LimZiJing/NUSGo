@@ -20,6 +20,8 @@ export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
 export const TRANSIT_ROUTE_LAYER_ID = 'shuttle-route-lines'
 export const TRANSIT_ROUTE_DIRECTION_LAYER_ID = 'shuttle-route-directions'
 
+const BASE_ROUTE_LINE_COLOR = '#64748b'
+
 const NO_ROUTE_FILTER: FilterSpecification = ['==', ['get', 'routeId'], '']
 
 const BASE_ROUTE_CASING_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-width'] = [
@@ -41,7 +43,7 @@ const TRANSIT_ROUTE_CASING_LAYER: LineLayerSpecification = {
   },
   paint: {
     'line-color': '#ffffff',
-    'line-opacity': 0.65,
+    'line-opacity': 0.35,
     'line-width': BASE_ROUTE_CASING_WIDTH,
   },
 }
@@ -55,8 +57,8 @@ const TRANSIT_ROUTE_LAYER: LineLayerSpecification = {
     'line-join': 'round',
   },
   paint: {
-    'line-color': ['get', 'color'],
-    'line-opacity': 0.85,
+    'line-color': BASE_ROUTE_LINE_COLOR,
+    'line-opacity': 0.55,
     'line-width': [
       'interpolate',
       ['linear'],
@@ -280,10 +282,11 @@ export function setTransitRouteSelection(
 
   if (routeId === null) {
     if (map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
-      map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-opacity', 0.65)
+      map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-opacity', 0.35)
       map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-width', BASE_ROUTE_CASING_WIDTH)
     }
-    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', 0.85)
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-color', BASE_ROUTE_LINE_COLOR)
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', 0.55)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', BASE_ROUTE_LINE_WIDTH)
     if (map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
       map.setFilter(TRANSIT_ROUTE_DIRECTION_LAYER_ID, NO_ROUTE_FILTER)
@@ -318,6 +321,11 @@ export function setTransitRouteSelection(
   )
   map.setPaintProperty(
     TRANSIT_ROUTE_LAYER_ID,
+    'line-color',
+    ['case', routeMatch, ['get', 'color'], BASE_ROUTE_LINE_COLOR],
+  )
+  map.setPaintProperty(
+    TRANSIT_ROUTE_LAYER_ID,
     'line-width',
     [
       'interpolate',
@@ -330,32 +338,6 @@ export function setTransitRouteSelection(
   )
   if (map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
     map.setFilter(TRANSIT_ROUTE_DIRECTION_LAYER_ID, routeMatch)
-  }
-}
-
-export function setBusStopMarkerSelection(
-  markers: readonly Marker[],
-  selectedStopIds: readonly string[] | null,
-  selectedRouteColor: string | null = null,
-): void {
-  const isAllRoutes = selectedStopIds === null
-  const selectedIds = new Set(selectedStopIds ?? [])
-  for (const marker of markers) {
-    const element = marker.getElement()
-    const isSelected = selectedIds.has(element.dataset.stopId ?? '')
-    const isVisible = isAllRoutes || isSelected
-    element.style.setProperty('--bus-stop-selected-color', selectedRouteColor ?? '')
-    element.classList.toggle(
-      'bus-stop-marker-selected',
-      !isAllRoutes && isSelected,
-    )
-    element.classList.toggle('bus-stop-marker-hidden', !isVisible)
-    element.style.display = isVisible ? '' : 'none'
-
-    const popup = marker.getPopup()
-    if (!isVisible && popup?.isOpen()) {
-      popup.remove()
-    }
   }
 }
 

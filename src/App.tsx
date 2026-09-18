@@ -9,15 +9,21 @@ import {
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { TransitRouteControl } from './components/TransitRouteControl'
 import { VenueSearch } from './components/VenueSearch'
+import { applyBasemapPresentation } from './map/basemap'
 import { fetchJson } from './map/data'
-import { addBusStopMarkers, addVenueMarker, getVenueCount } from './map/markers'
+import {
+  addBusStopMarkers,
+  addVenueMarker,
+  getVenueCount,
+  removeBusStopMarkers,
+  setBusStopMarkerSelection,
+} from './map/markers'
 import { TransitValidationError } from './transit/model'
 import { deriveTransitRouteOverlapMap } from './transit/overlap'
 import {
   addTransitRouteLayers,
   fitTransitRoute,
   removeTransitRouteLayers,
-  setBusStopMarkerSelection,
   setTransitRouteSelection,
   validateTransitMapData,
   waitForMapStyleLoaded,
@@ -71,7 +77,6 @@ function App() {
     setBusStopMarkerSelection(
       busStopMarkersRef.current,
       selectedRoute?.stopIds ?? null,
-      selectedRoute?.color ?? null,
     )
   }, [])
 
@@ -97,7 +102,7 @@ function App() {
 
     // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
-    const busStopMarkers: Marker[] = []
+    let busStopMarkers: Marker[] = []
     let venueCount = 0
     let isMounted = true
     let transitFailure: string | null = null
@@ -115,6 +120,10 @@ function App() {
     map.on('error', (event) => {
       console.error('Map error:', event.error)
       if (isMounted) setStatus('Unable to load map tiles')
+    })
+
+    const mapStyleReady = waitForMapStyleLoaded(map, controller.signal).then(() => {
+      applyBasemapPresentation(map)
     })
 
     const loadVenues = async () => {
@@ -160,10 +169,10 @@ function App() {
         } = validateTransitMapData(networkInput, geometryInput)
         const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
-        await waitForMapStyleLoaded(map, controller.signal)
+        await mapStyleReady
         addTransitRouteLayers(map, geometry)
         const markers = addBusStopMarkers(map, transitNetwork.stops)
-        busStopMarkers.push(...markers)
+        busStopMarkers = markers
         busStopMarkersRef.current = markers
         transitNetworkRef.current = transitNetwork
         transitGeometryRef.current = geometry
@@ -195,6 +204,7 @@ function App() {
       controller.abort()
       selectedVenueMarkerRef.current?.remove()
       selectedVenueMarkerRef.current = null
+      removeBusStopMarkers(map, busStopMarkers)
       busStopMarkers.forEach((marker) => marker.remove())
       busStopMarkersRef.current = []
       transitNetworkRef.current = null
@@ -210,15 +220,13 @@ function App() {
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
-      <TransitRouteControl
-        network={transitNetwork}
-        selectedRouteId={selectedRouteId}
-        onRouteSelect={handleRouteSelect}
-      />
-      <VenueSearch venues={venues} onSelect={handleVenueSelect} />
-      <div className="map-legend" aria-label="Map legend">
-        <div><span className="legend-marker venue-marker" /> Venues</div>
-        <div><span className="legend-marker bus-marker" /> Shuttle stops</div>
+      <div className="map-controls">
+        <TransitRouteControl
+          network={transitNetwork}
+          selectedRouteId={selectedRouteId}
+          onRouteSelect={handleRouteSelect}
+        />
+        <VenueSearch venues={venues} onSelect={handleVenueSelect} />
       </div>
       <div className="map-status" role="status">
         {status}

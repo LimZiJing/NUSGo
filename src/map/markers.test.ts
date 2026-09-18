@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Popup } from 'maplibre-gl'
-import { createBusStopPopupCoordinator } from './markers'
+import {
+  BUS_STOP_MIN_ZOOM,
+  createBusStopLabelGeoJson,
+  createBusStopPopupCoordinator,
+  isBusStopVisible,
+} from './markers'
+import type { TransitStop } from '../types/transit'
 
 type PopupEvent = 'open' | 'close'
 
@@ -54,5 +60,44 @@ describe('createBusStopPopupCoordinator', () => {
 
     expect(stop.remove).not.toHaveBeenCalled()
     expect(venue.remove).not.toHaveBeenCalled()
+  })
+})
+
+describe('bus-stop presentation', () => {
+  const stops: TransitStop[] = [
+    {
+      id: 'STOP-A',
+      longName: 'Central Library',
+      shortName: 'Library',
+      latitude: 1.3,
+      longitude: 103.77,
+      services: ['A1'],
+    },
+    {
+      id: 'STOP-B',
+      longName: 'Invalid coordinates',
+      shortName: 'Invalid',
+      latitude: Number.NaN,
+      longitude: 103.78,
+      services: ['A1'],
+    },
+  ]
+
+  it('creates short-name point features and skips invalid coordinates', () => {
+    expect(createBusStopLabelGeoJson(stops)).toEqual({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { stopId: 'STOP-A', shortName: 'Library' },
+        geometry: { type: 'Point', coordinates: [103.77, 1.3] },
+      }],
+    })
+  })
+
+  it('shows stops at the normal threshold or when route/stop content is focused', () => {
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, false, false)).toBe(false)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM, false, false)).toBe(true)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, true, false)).toBe(true)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, false, true)).toBe(true)
   })
 })

@@ -13,13 +13,15 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 
 ## Current implementation
 
-- Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style.
+- Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style, with bus POI labels suppressed and low-priority local POIs reduced while rail, airport, and major campus context remain visible.
 - Map tile error reporting and MapLibre navigation controls.
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
 - Venue selection flies to the venue and opens its popup; all venue markers are not displayed at once.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
-- Shuttle stops rendered as blue markers with route and opposite-stop information in popups.
+- Shuttle stops rendered as neutral transit-ring markers with collision-aware short-name labels from zoom 14 onward; selected-route and open-stop content remains visible below that threshold.
+- Venue markers use neutral map pins.
+- Validated route lines are neutral and subdued in the all-routes state, with official route colors reserved for the selected route.
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
 - Transit model references are validated before shuttle markers are rendered.
 - Venue markers, shuttle-stop markers, and popup creation are organized in `src/map/markers.ts`.

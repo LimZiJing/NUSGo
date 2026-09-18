@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Popup } from 'maplibre-gl'
+import type { Marker, Popup } from 'maplibre-gl'
 import {
+  BUS_STOP_INACTIVE_OPACITY,
+  BUS_STOP_MIN_ZOOM,
+  createBusStopLabelGeoJson,
   createBusStopPopupContent,
   createBusStopPopupCoordinator,
+  getBusStopLabelFilters,
+  getBusStopLabelOpacity,
   getTripEndpointMarkerClass,
+  isBusStopVisible,
+  isBusStopDimmed,
+  setBusStopMarkerSelection,
 } from './markers'
+import type { TransitStop } from '../types/transit'
 
 type PopupEvent = 'open' | 'close'
 
@@ -60,7 +69,6 @@ describe('createBusStopPopupCoordinator', () => {
     expect(venue.remove).not.toHaveBeenCalled()
   })
 })
-
 
 class FakeElement {
   children: FakeElement[] = []
@@ -139,5 +147,118 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
     })
 
     vi.unstubAllGlobals()
+  })
+})
+
+describe('bus-stop presentation', () => {
+  const stops: TransitStop[] = [
+    {
+      id: 'STOP-A',
+      longName: 'Central Library',
+      shortName: 'Library',
+      latitude: 1.3,
+      longitude: 103.77,
+      services: ['A1'],
+    },
+    {
+      id: 'STOP-B',
+      longName: 'Invalid coordinates',
+      shortName: 'Invalid',
+      latitude: Number.NaN,
+      longitude: 103.78,
+      services: ['A1'],
+    },
+  ]
+
+  it('uses the selected route color for selected stop rings', () => {
+    const style = {
+      display: '',
+      setProperty: vi.fn(),
+    }
+    const marker = {
+      getElement: () => ({
+        dataset: { stopId: 'STOP-A' },
+        classList: { toggle: vi.fn() },
+        style,
+      }),
+      getPopup: () => null,
+    } as unknown as Marker
+
+    setBusStopMarkerSelection([marker], ['STOP-A'], '#e3cf0e')
+
+    expect(style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#e3cf0e')
+  })
+
+  it('dims only inactive stops when a route is selected', () => {
+    const activeClasses = new Set<string>()
+    const inactiveClasses = new Set<string>()
+    const createMarker = (stopId: string, classes: Set<string>) => ({
+      getElement: () => ({
+        dataset: { stopId },
+        classList: {
+          toggle(name: string, force: boolean) {
+            if (force) classes.add(name)
+            else classes.delete(name)
+          },
+        },
+        style: { setProperty: vi.fn(), display: '' },
+      }),
+      getPopup: () => null,
+    } as unknown as Marker)
+
+    setBusStopMarkerSelection(
+      [createMarker('STOP-A', activeClasses)],
+      ['STOP-A'],
+      '#e3cf0e',
+    )
+    setBusStopMarkerSelection(
+      [createMarker('STOP-B', inactiveClasses)],
+      ['STOP-A'],
+      '#e3cf0e',
+    )
+
+    expect(activeClasses).not.toContain('bus-stop-marker-dimmed')
+    expect(inactiveClasses).toContain('bus-stop-marker-dimmed')
+  })
+
+  it('keeps active and focused labels out of the inactive layer', () => {
+    expect(getBusStopLabelFilters(new Set(['STOP-A']), new Set(['STOP-B']))).toEqual({
+      active: ['in', ['get', 'stopId'], ['literal', ['STOP-A', 'STOP-B']]],
+      inactive: ['!', ['in', ['get', 'stopId'], ['literal', ['STOP-A', 'STOP-B']]]],
+    })
+    expect(getBusStopLabelFilters(null, new Set())).toEqual({
+      active: ['in', ['get', 'stopId'], ['literal', []]],
+      inactive: null,
+    })
+  })
+
+  it('uses full label opacity for all routes and the inactive opacity for a selection', () => {
+    expect(getBusStopLabelOpacity(null)).toBe(1)
+    expect(getBusStopLabelOpacity(new Set(['STOP-A']))).toBe(BUS_STOP_INACTIVE_OPACITY)
+  })
+
+  it('does not dim active or focused stops', () => {
+    expect(isBusStopDimmed(false, false, false)).toBe(false)
+    expect(isBusStopDimmed(true, true, false)).toBe(false)
+    expect(isBusStopDimmed(true, false, true)).toBe(false)
+    expect(isBusStopDimmed(true, false, false)).toBe(true)
+  })
+
+  it('creates short-name point features and skips invalid coordinates', () => {
+    expect(createBusStopLabelGeoJson(stops)).toEqual({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { stopId: 'STOP-A', shortName: 'Library' },
+        geometry: { type: 'Point', coordinates: [103.77, 1.3] },
+      }],
+    })
+  })
+
+  it('shows stops at the normal threshold or when route/stop content is focused', () => {
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, false, false)).toBe(false)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM, false, false)).toBe(true)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, true, false)).toBe(true)
+    expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, false, true)).toBe(true)
   })
 })

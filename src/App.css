@@ -48,11 +48,11 @@
 }
 
 .venue-marker {
-  background: #d94f70;
+  background: #64748b;
 }
 
 .bus-marker {
-  background: #2563eb;
+  background: #64748b;
 }
 
 .map-overlay-right {
@@ -81,6 +81,7 @@
   box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .contextual-panel-header,
@@ -206,28 +207,75 @@
 }
 
 .bus-stop-marker {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #2563eb;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid #64748b;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
   box-sizing: border-box;
   cursor: pointer;
+  appearance: none;
 }
 
 .bus-stop-marker-selected {
-  border-color: var(--bus-stop-selected-color, #2563eb);
-  border-radius: 50%;
+  border-color: var(--bus-stop-selected-color, #334155);
+  background: #f1f5f9;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
-  z-index: 2;
+}
+
+.bus-stop-marker-dimmed {
+  opacity: 0.2;
 }
 
 .bus-stop-marker-hidden {
   display: none;
 }
 
+.bus-stop-legend {
+  display: grid;
+  grid-column: 1;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  pointer-events: auto;
+}
+
+.bus-stop-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bus-stop-legend-marker {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
+}
+
+.bus-stop-legend-marker-selected {
+  border-color: var(--bus-stop-selected-color, #334155);
+  background: #f1f5f9;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
+}
+
+.bus-stop-legend-marker-other {
+  border-color: #64748b;
+  background: #fff;
+}
+
 .route-control {
+  position: static;
   width: auto;
   max-height: min(66vh, calc(100vh - 36px));
   padding: 12px;
@@ -238,6 +286,7 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .route-control > label {
@@ -308,26 +357,6 @@
 .route-selection-status {
   margin: 10px 0 0;
   color: #475569;
-}
-
-@media (max-width: 600px) {
-  .map-overlay-right {
-    top: 50%;
-    bottom: 12px;
-    max-height: calc(50vh - 12px);
-  }
-
-  .trip-controls {
-    max-height: min(58vh, calc(100vh - 36px));
-  }
-
-  .contextual-panel {
-    max-height: min(58vh, calc(100vh - 36px));
-  }
-
-  .route-control {
-    max-height: none;
-  }
 }
 
 .trip-controls {
@@ -523,7 +552,18 @@ select:focus-visible {
 
 
 @media (max-width: 600px) {
-  .trip-controls {
+  .map-overlay-right {
+    top: 50%;
+    bottom: 12px;
+    max-height: calc(50vh - 12px);
+  }
+
+  .trip-controls,
+  .contextual-panel {
     max-height: min(58vh, calc(100vh - 36px));
+  }
+
+  .route-control {
+    max-height: none;
   }
 }

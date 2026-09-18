@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   Map,
   NavigationControl,
@@ -77,6 +77,7 @@ function App() {
     setBusStopMarkerSelection(
       busStopMarkersRef.current,
       selectedRoute?.stopIds ?? null,
+      selectedRoute?.color ?? null,
     )
   }, [])
 
@@ -217,6 +218,8 @@ function App() {
     }
   }, [handleRouteSelect])
 
+  const selectedRouteColor = transitNetwork?.routes.find((route) => route.id === selectedRouteId)?.color ?? '#334155'
+
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
@@ -226,7 +229,7 @@ function App() {
           selectedRouteId={selectedRouteId}
           onRouteSelect={handleRouteSelect}
         />
-        <aside className="bus-stop-legend" aria-label="Bus stop legend">
+        <aside className="bus-stop-legend" aria-label="Bus stop legend" style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}>
           <strong>Bus stop rings</strong>
           <div className="bus-stop-legend-item">
             <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />

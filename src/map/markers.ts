@@ -152,6 +152,7 @@ type BusStopMarkerState = {
   map: Map
   markers: Marker[]
   selectedStopIds: ReadonlySet<string> | null
+  selectedRouteColor: string | null
   focusedStopIds: Set<string>
   handleZoom: () => void
 }
@@ -178,8 +179,10 @@ function updateBusStopMarkerElement(
   marker: Marker,
   isSelected: boolean,
   isVisible: boolean,
+  selectedRouteColor: string | null,
 ): void {
   const element = marker.getElement()
+  element.style.setProperty('--bus-stop-selected-color', selectedRouteColor ?? '')
   element.classList.toggle('bus-stop-marker-selected', isSelected)
   element.classList.toggle('bus-stop-marker-hidden', !isVisible)
   element.style.display = isVisible ? '' : 'none'
@@ -199,7 +202,7 @@ function updateBusStopMarkerPresentation(state: BusStopMarkerState): void {
     const isSelected = selectedIds.has(stopId)
     const isFocused = state.focusedStopIds.has(stopId)
     const isVisible = isBusStopVisible(zoom, selectedStopIds !== null && isSelected, isFocused)
-    updateBusStopMarkerElement(marker, isSelected, isVisible)
+    updateBusStopMarkerElement(marker, isSelected, isVisible, state.selectedRouteColor)
   }
 
   if (state.map.getLayer(BUS_STOP_LABEL_LAYER_ID)) {
@@ -222,6 +225,7 @@ export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
     map,
     markers,
     selectedStopIds: null,
+    selectedRouteColor: null,
     focusedStopIds: new Set<string>(),
     handleZoom: () => updateBusStopMarkerPresentation(state),
   }
@@ -294,6 +298,7 @@ export function removeBusStopMarkers(map: Map, markers: Marker[]): void {
 export function setBusStopMarkerSelection(
   markers: Marker[],
   selectedStopIds: readonly string[] | null,
+  selectedRouteColor: string | null = null,
 ): void {
   const state = busStopMarkerStates.get(markers)
   if (!state) {
@@ -305,11 +310,13 @@ export function setBusStopMarkerSelection(
         marker,
         selectedStopIds !== null && isSelected,
         selectedStopIds === null || isSelected,
+        selectedRouteColor,
       )
     }
     return
   }
 
   state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)
+  state.selectedRouteColor = selectedRouteColor
   updateBusStopMarkerPresentation(state)
 }

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Popup } from 'maplibre-gl'
+import type { Marker, Popup } from 'maplibre-gl'
 import {
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
   createBusStopPopupCoordinator,
   isBusStopVisible,
+  setBusStopMarkerSelection,
 } from './markers'
 import type { TransitStop } from '../types/transit'
 
@@ -82,6 +83,25 @@ describe('bus-stop presentation', () => {
       services: ['A1'],
     },
   ]
+
+  it('uses the selected route color for selected stop rings', () => {
+    const style = {
+      display: '',
+      setProperty: vi.fn(),
+    }
+    const marker = {
+      getElement: () => ({
+        dataset: { stopId: 'STOP-A' },
+        classList: { toggle: vi.fn() },
+        style,
+      }),
+      getPopup: () => null,
+    } as unknown as Marker
+
+    setBusStopMarkerSelection([marker], ['STOP-A'], '#e3cf0e')
+
+    expect(style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#e3cf0e')
+  })
 
   it('creates short-name point features and skips invalid coordinates', () => {
     expect(createBusStopLabelGeoJson(stops)).toEqual({

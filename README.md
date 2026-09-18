@@ -6,6 +6,8 @@ An experimental campus transit and indoor navigation web app for the National Un
 
 Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented; navigation, route geometry, live transit, and calendar import are not implemented yet.
 
+See [`CONTEXT.md`](CONTEXT.md) for shared domain language and [`docs/project-status.md`](docs/project-status.md) for the detailed implementation status and milestones.
+
 OpenFreeMap attribution is included by the MapLibre style. Review the provider's usage terms before deploying the app publicly or at scale.
 
 ## Development
@@ -23,6 +25,21 @@ Useful checks:
 npm run lint
 npm run build
 ```
+
+## GitHub Pages deployment
+
+The `development` workflow builds and deploys the app to GitHub Pages whenever
+changes reach `main`. It uses a GitHub Actions environment named `development`.
+
+After merging the deployment branch, a repository administrator must enable the
+Pages source:
+
+1. Open **Settings → Pages** in the repository.
+2. Under **Build and deployment → Source**, select **GitHub Actions**.
+3. Save the setting and check the **Actions** tab for the `development` workflow.
+
+The project Pages URL is expected to be:
+`https://limzijing.github.io/NavUS/`.
 
 ## Local NUS bus API checks
 

@@ -120,7 +120,7 @@ function App() {
     const loadVenues = async () => {
       try {
         const venueData = await fetchJson<VenueLocationMap>(
-          '/data/venues.json',
+          'data/venues.json',
           controller.signal,
           'Venue data',
         )
@@ -140,9 +140,11 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
+
         const [networkInput, geometryInput] = await Promise.all([
           fetchJson<unknown>(
             '/data/shuttle-network.json',
+
             controller.signal,
             'Shuttle network',
           ),

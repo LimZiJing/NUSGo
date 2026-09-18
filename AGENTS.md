@@ -1,102 +1,50 @@
-# NavUS Project Context
+# NavUS Agent Guide
 
-## Project
+## Read before work
 
-NavUS is an experimental multimodal campus transit and indoor-navigation Progressive Web App for the National University of Singapore (NUS).
+Before exploring or changing the repository, read the relevant repository guidance:
 
-The immediate goal is a functional transit prototype: users should be able to find venues, see shuttle stops and routes, and eventually receive route recommendations.
+1. `CONTEXT.md` for the domain glossary and canonical terminology.
+2. `docs/project-status.md` when the product, stack, current implementation, limitations, or roadmap matters.
+3. `docs/agents/domain.md` for the single-context layout and ADR guidance; read relevant ADRs under `docs/adr/` when that directory exists.
+4. `docs/agents/coding-standards.md` for engineering, verification, and handoff rules.
+5. `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md` for GitHub issue workflow and labels.
 
-## Stack
+Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain language, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
 
-- React 19, TypeScript, and Vite
-- MapLibre GL JS for map rendering
-- Static JSON data in `public/data`
-- Application code and types under `src`
+Task-specific user instructions take precedence over this guidance. If two repository documents conflict, use the authority described in the coding standards and call out the conflict in the handoff.
 
-Potential future tools:
+## Mandatory repository rules
 
-- `ngraph.graph`/`ngraph.path` for a small client-side routing prototype
-- GraphHopper, OSRM, or pgRouting for a future routing backend
-- `@turf/turf` for spatial calculations and snapping
-- `ical.js` for calendar import
-- PostgreSQL/PostGIS behind a future Node.js or Go API
+- Inspect repository status before editing and preserve unrelated user changes.
+- Keep main stable. Use one direct, descriptive branch per coherent feature or larger refactor; do not use a codex/ prefix.
+- Use Conventional Commits. Do not create WIP, fixup, temporary, or checkpoint commits, and do not amend or rewrite a commit after reporting it.
+- Do not commit node_modules, dist, generated caches, temporary files, secrets, .env files, credentials, or machine-specific output.
+- Do not add a dependency unless the current requirement needs it and existing capabilities are insufficient.
+- Keep external data validated at its boundary and preserve the project’s canonical sources of truth.
+- Run and report the exact results of `npm test`, `npm run lint`, `npm run build`, and `git diff --check` when available and applicable. UI or map changes also require a documented manual smoke check of affected interactions, responsive states, and keyboard behavior.
+- Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
 
-## Current implementation
+## GitHub issue workflow
 
-- Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style.
-- Map tile error reporting and MapLibre navigation controls.
-- Venue data loaded from `public/data/venues.json`.
-- Venue search by venue code or room name, with ranked results and a selected venue marker.
-- Venue selection flies to the venue and opens its popup; all venue markers are not displayed at once.
-- Shuttle-stop data is loaded from the bundled `public/data/shuttle-network.json` model.
-- Shuttle stops rendered as blue markers with route and opposite-stop information in popups.
-- The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
-- Transit model references are validated before shuttle markers are rendered.
-- Venue markers, shuttle-stop markers, and popup creation organized in `src/map/markers.ts`.
-- Shared JSON loading organized in `src/map/data.ts`.
-- Shared data types are under `src/types`.
+Issues and specs live in GitHub Issues, and pull requests are not a request surface for this repository. Use the `gh` CLI for issue operations and follow `docs/agents/issue-tracker.md` for the exact commands and conventions.
 
-## Current data limitations
+Use the configured triage vocabulary in `docs/agents/triage-labels.md` when triaging issues.
 
-- `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
-- The model's stop ordering is inherited from the source stop dataset and must be verified before production use.
-- The model does not yet contain road-following route geometry.
-- Accurate route display therefore requires verified route directions, ordered stops, and road-following geometries.
-- NUSMods is useful for venue/stop associations and bus arrival integration, but its current NextBus client does not provide route geometry. Live arrival data may also require a separate reliability check.
-- The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
+## Repository-local skills
 
-## Recommended next milestones
+The selected Matt Pocock skills are installed under `.agents/skills/` and pinned in `skills-lock.json`. Treat them as reusable guidance, not application dependencies.
 
-Complete the functional transit foundation before a broad UI redesign:
+- Use `/setup-matt-pocock-skills` only when repository skill configuration needs to be checked or changed.
+- Use `/grill-with-docs` to clarify a feature and record domain decisions.
+- Use `/to-spec` to turn an agreed conversation into a GitHub issue/spec.
+- Use `/to-tickets` to break a spec into dependent implementation tickets.
+- Use `/implement` to execute a spec or ticket set.
+- Use `/tdd` for test-first feature work or fixes.
+- Use `/code-review` before committing substantial changes.
+- Use `/codebase-design` when designing or deepening module boundaries.
+- Use `/domain-modeling` when changing the domain glossary or recording an ADR.
+- Use `/research` when investigating a question against primary sources and capturing findings in the repository.
+- Use `/diagnosing-bugs` for difficult bugs or regressions.
 
-1. Verify the static model's route directions and ordered stops.
-2. Add route shapes as GeoJSON under `public/data`.
-3. Render route shapes with MapLibre GeoJSON sources and line layers.
-4. Add shuttle route selection and route highlighting.
-5. Add origin and destination selection.
-6. Add walking connections and routing.
-7. Investigate live shuttle arrivals after static routes work reliably.
-
-The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
-
-## Routing principles
-
-- MapLibre renders maps; it is not a routing engine.
-- Do not implement A* or another routing algorithm from scratch unless existing options cannot support the required constraints.
-- Prototype custom campus or indoor graphs with `ngraph.graph` and `ngraph.path` if client-side routing is needed quickly.
-- Evaluate a backend routing engine before committing to a permanent architecture.
-- Model stairs, lifts, accessibility, shelter, indoor floors, and bus transfers as graph edges, costs, or routing profiles.
-
-## Development rules
-
-- Keep `main` stable.
-- Use a separate branch for each coherent feature or larger refactor.
-- Branch names created by Codex must not be prefixed with `codex/`. Use direct names such as `venue-search`, `shuttle-route-layers`, or `live-arrivals`.
-- Commit coherent milestones with clear messages.
-- Do not commit `node_modules`, `dist`, secrets, or local environment files.
-- Do not install future dependencies until their feature is being implemented.
-- Validate with `npm run lint` and `npm run build` before committing.
-- Preserve existing user changes and inspect `git status` before editing.
-
-## Recent milestone commits
-
-```text
-401e062 Add venue search and selection
-2abb96b Organize map data and marker logic
-d1b08d8 Use detailed OpenStreetMap basemap
-1cbaf98 Render static shuttle stops
-```
-
-## Agent skills
-
-### Issue tracker
-
-Issues and specs live in GitHub Issues. Use the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Use `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This is a single-context repository. See `docs/agents/domain.md`.
+Skills are reusable guidance, not application dependencies. Review their instructions and keep user intent and this file's repository rules authoritative.

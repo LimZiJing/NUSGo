@@ -41,8 +41,34 @@ export function getVenueCount(venues: VenueLocationMap): number {
   return Object.values(venues).filter((venue) => venue.location).length
 }
 
+export function createBusStopPopupCoordinator() {
+  let activePopup: Popup | null = null
+
+  return {
+    register(popup: Popup): void {
+      popup.on('open', () => {
+        const previousPopup = activePopup
+        activePopup = popup
+        if (previousPopup && previousPopup !== popup) previousPopup.remove()
+      })
+      popup.on('close', () => {
+        if (activePopup === popup) activePopup = null
+      })
+    },
+  }
+}
+
+function createBusStopMarkerElement(stop: TransitStop): HTMLDivElement {
+  const element = document.createElement('div')
+  element.className = 'bus-stop-marker'
+  element.setAttribute('role', 'button')
+  element.setAttribute('aria-label', `${stop.longName} shuttle stop`)
+  return element
+}
+
 export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
   const markers: Marker[] = []
+  const popupCoordinator = createBusStopPopupCoordinator()
 
   for (const stop of busStops) {
     if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) continue
@@ -53,9 +79,18 @@ export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
     ]
     if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
 
-    const marker = new Marker({ color: '#2563eb' })
+    const marker = new Marker({
+      anchor: 'center',
+      element: createBusStopMarkerElement(stop),
+    })
+    const element = marker.getElement()
+    element.dataset.stopId = stop.id
+    const popup = new Popup({ offset: 24 })
+      .setDOMContent(createPopupContent(stop.longName, details))
+    popupCoordinator.register(popup)
+    marker
       .setLngLat([stop.longitude, stop.latitude])
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(createPopupContent(stop.longName, details)))
+      .setPopup(popup)
       .addTo(map)
 
     markers.push(marker)

@@ -3,6 +3,11 @@
   "reviewedAt": "2026-09-17",
   "routeOrderSource": "NUSMods bus route and stop service data; route sequences manually reviewed for prototype",
   "coordinateSource": "NUS bus-stops API snapshot in public/data/bus-stops.json",
+  "geometry": {
+    "source": "OpenStreetMap road network via OSRM driving-route geometry",
+    "reviewedAt": "2026-09-17",
+    "reviewNotes": "Curated LineStrings follow the road network in verified stop order; every ordered stop was checked within 50 metres of its route line."
+  },
   "routes": [
     {"routeId":"A1","direction":"Kent Ridge MRT to Opp TCOMS","orderedStopIds":["KR-MRT","LT27","UHALL","UHC-OPP","YIH","CLB","LT13","AS5","BIZ2","PGP","KRB","TCOMS-OPP"]},
     {"routeId":"A2","direction":"Museum to TCOMS","orderedStopIds":["MUSEUM","IT","YIH-OPP","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR","HSSML-OPP","NUSS-OPP","LT13-OPP","KRB","TCOMS"]},

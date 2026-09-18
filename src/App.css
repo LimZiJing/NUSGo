@@ -126,3 +126,118 @@
   margin: 4px 0;
   color: #475569;
 }
+.bus-stop-marker {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.bus-stop-marker-selected {
+  border-color: var(--bus-stop-selected-color, #2563eb);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
+  z-index: 2;
+}
+
+.bus-stop-marker-hidden {
+  display: none;
+}
+
+.route-control {
+  position: absolute;
+  z-index: 1;
+  top: 96px;
+  left: 12px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 130px);
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.route-control > label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.route-control select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #fff;
+  font: inherit;
+}
+
+.route-details {
+  margin-top: 12px;
+}
+
+.route-details-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-details-heading h2 {
+  margin: 0;
+  color: #1f2937;
+  font: 600 18px/1.2 system-ui, sans-serif;
+}
+
+.route-details-heading button {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.route-direction {
+  margin: 10px 0;
+}
+
+.route-stop-count {
+  margin: 10px 0 0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.route-stop-heading {
+  margin: 10px 0 4px;
+  font-weight: 600;
+}
+
+.route-stop-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.route-selection-status {
+  margin: 10px 0 0;
+  color: #475569;
+}
+
+@media (max-width: 600px) {
+  .route-control {
+    top: 150px;
+    max-height: min(50vh, calc(100vh - 185px));
+  }
+}

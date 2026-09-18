@@ -197,6 +197,14 @@ export function validateTransitVerificationManifest(
     issues.push(`Transit verification manifest version must be 1: ${describe(input.version)}`)
   }
   addRequiredTextIssue(input.reviewedAt, 'Transit verification manifest reviewedAt', issues)
+  if (!isRecord(input.geometry)) {
+    issues.push('Transit verification manifest geometry must be an object')
+  } else {
+    addRequiredTextIssue(input.geometry.source, 'Transit verification manifest geometry source', issues)
+    addRequiredTextIssue(input.geometry.reviewedAt, 'Transit verification manifest geometry reviewedAt', issues)
+    addRequiredTextIssue(input.geometry.reviewNotes, 'Transit verification manifest geometry reviewNotes', issues)
+  }
+
   addRequiredTextIssue(input.routeOrderSource, 'Transit verification manifest routeOrderSource', issues)
   addRequiredTextIssue(input.coordinateSource, 'Transit verification manifest coordinateSource', issues)
 

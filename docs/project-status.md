@@ -17,7 +17,8 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Map tile error reporting and MapLibre navigation controls.
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
-- Venue selection flies to the venue and opens its popup; all venue markers are not displayed at once.
+- Venue selection opens the venue-first contextual panel, flies to the venue, and shows a selected venue marker without a duplicate map popup.
+- The contextual panel supports venue search, venue details, and a shuttle-browsing mode with Back, Close, Escape, and map-click context handling.
 - Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.
 - Shuttle-stop popups can assign a stop directly as a trip origin or destination.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
@@ -27,6 +28,7 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Venue markers, shuttle-stop markers, and popup creation are organized in `src/map/markers.ts`.
 - Shared JSON loading is organized in `src/map/data.ts`.
 - Shared data types are under `src/types`.
+- Manual smoke check (2026-09-18): desktop venue search, query preservation, venue details without a popup, shuttle mode, route selection, Back, Escape, empty-map click, and panel close with route emphasis were verified against the local development build. Mobile bottom-sheet behavior is tracked in issue #30.
 
 ## Current limitations
 

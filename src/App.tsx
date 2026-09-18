@@ -226,6 +226,17 @@ function App() {
           selectedRouteId={selectedRouteId}
           onRouteSelect={handleRouteSelect}
         />
+        <aside className="bus-stop-legend" aria-label="Bus stop legend">
+          <strong>Bus stop rings</strong>
+          <div className="bus-stop-legend-item">
+            <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
+            On selected route
+          </div>
+          <div className="bus-stop-legend-item">
+            <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
+            Other shuttle stop
+          </div>
+        </aside>
         <VenueSearch venues={venues} onSelect={handleVenueSelect} />
       </div>
       <div className="map-status" role="status">

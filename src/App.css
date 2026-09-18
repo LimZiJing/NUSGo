@@ -133,6 +133,47 @@
   display: none;
 }
 
+.bus-stop-legend {
+  display: grid;
+  grid-column: 1;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  pointer-events: auto;
+}
+
+.bus-stop-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bus-stop-legend-marker {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
+}
+
+.bus-stop-legend-marker-selected {
+  border-color: #334155;
+  background: #f1f5f9;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
+}
+
+.bus-stop-legend-marker-other {
+  border-color: #64748b;
+  background: #fff;
+}
+
 .route-control {
   position: static;
   width: auto;

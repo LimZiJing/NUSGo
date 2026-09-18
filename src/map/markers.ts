@@ -44,20 +44,15 @@ function createPopupContent(
 
 export function addVenueMarker(
   map: Map,
-  venueCode: string,
   venue: VenueLocation,
 ): Marker | null {
   if (!venue.location) return null
 
-  const details = [venue.roomName]
-  if (venue.floor !== undefined && venue.floor !== null) {
-    details.push(`Floor: ${venue.floor}`)
-  }
-
+  // The contextual panel is the canonical venue detail surface, so this marker
+  // deliberately has no popup that could duplicate the panel.
   return new Marker({ color: '#d94f70' })
     // Venue data stores x/y as longitude/latitude.
     .setLngLat([venue.location.x, venue.location.y])
-    .setPopup(new Popup({ offset: 24 }).setDOMContent(createPopupContent(venueCode, details)))
     .addTo(map)
 }
 

@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import {
   Map,
   NavigationControl,
   setWorkerUrl,
   type LngLatLike,
+  type MapMouseEvent,
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
-import { TransitRouteControl } from './components/TransitRouteControl'
-import { VenueSearch } from './components/VenueSearch'
+import {
+  contextualPanelReducer,
+  createInitialContextualPanelState,
+} from './contextual-panel/state'
 import { fetchJson } from './map/data'
 import {
   addBusStopMarkers,
@@ -25,6 +29,9 @@ import {
   removeTransitRouteLayers,
   setBusStopMarkerSelection,
   setTransitRouteSelection,
+  TRANSIT_ROUTE_CASING_LAYER_ID,
+  TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+  TRANSIT_ROUTE_LAYER_ID,
   validateTransitMapData,
   waitForMapStyleLoaded,
 } from './transit/render'
@@ -62,14 +69,24 @@ function App() {
   const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
   const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
   const selectedRouteIdRef = useRef<string | null>(null)
+  const contextualPanelStateRef = useRef(createInitialContextualPanelState())
   const [venues, setVenues] = useState<VenueLocationMap | null>(null)
   const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const [contextualPanelState, dispatchContextualPanel] = useReducer(
+    contextualPanelReducer,
+    undefined,
+    createInitialContextualPanelState,
+  )
   const [tripRequest, setTripRequest] = useState<TripRequest>(() => createEmptyTripRequest())
   const [originSearchQuery, setOriginSearchQuery] = useState('')
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('')
   const [status, setStatus] = useState('Loading map data…')
   const tripValidation = validateTripRequest(tripRequest)
+
+  useEffect(() => {
+    contextualPanelStateRef.current = contextualPanelState
+  }, [contextualPanelState])
 
   const handleRouteSelect = useCallback((routeId: string | null) => {
     const previousRouteId = selectedRouteIdRef.current
@@ -121,12 +138,19 @@ function App() {
     setDestinationSearchQuery('')
   }, [])
 
-  const handleVenueSelect = (result: VenueSearchResult) => {
+  const clearSelectedVenueMarker = useCallback(() => {
+    // Venue details live in the contextual panel; the map only keeps the selected marker.
+    selectedVenueMarkerRef.current?.remove()
+    selectedVenueMarkerRef.current = null
+  }, [])
+
+  const handleVenueSelect = useCallback((result: VenueSearchResult) => {
+    dispatchContextualPanel({ type: 'select-venue', result })
     const map = mapRef.current
     if (!map || !result.venue.location) return
 
-    selectedVenueMarkerRef.current?.remove()
-    const marker = addVenueMarker(map, result.code, result.venue)
+    clearSelectedVenueMarker()
+    const marker = addVenueMarker(map, result.venue)
     if (!marker) return
 
     selectedVenueMarkerRef.current = marker
@@ -135,8 +159,60 @@ function App() {
       zoom: Math.max(map.getZoom(), 17),
       essential: true,
     })
-    marker.togglePopup()
-  }
+  }, [clearSelectedVenueMarker])
+
+  const handlePanelClose = useCallback(() => {
+    clearSelectedVenueMarker()
+    dispatchContextualPanel({ type: 'close' })
+  }, [clearSelectedVenueMarker])
+
+  const handlePanelEscape = useCallback(() => {
+    const currentState = contextualPanelStateRef.current
+    const previousState = currentState.history.at(-1)
+    if (
+      !previousState ||
+      (currentState.mode === 'venue-detail' && previousState.mode !== 'venue-detail')
+    ) {
+      clearSelectedVenueMarker()
+    }
+    dispatchContextualPanel({ type: 'escape' })
+  }, [clearSelectedVenueMarker])
+
+  const handlePanelBack = useCallback(() => {
+    const currentState = contextualPanelStateRef.current
+    const previousState = currentState.history.at(-1)
+    if (
+      currentState.mode === 'venue-detail' &&
+      previousState?.mode !== 'venue-detail'
+    ) {
+      clearSelectedVenueMarker()
+    }
+    dispatchContextualPanel({ type: 'back' })
+  }, [clearSelectedVenueMarker])
+
+  const handlePanelMapClick = useCallback((event: MapMouseEvent) => {
+    if (contextualPanelStateRef.current.mode !== 'venue-detail') return
+
+    // Only an empty map click dismisses venue detail. Marker, popup, control, and
+    // route-line clicks belong to their own interactions.
+    const eventTarget = event.originalEvent.target
+    if (eventTarget instanceof Element && eventTarget.closest(
+      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control',
+    )) return
+
+    const routeLayerIds = [
+      TRANSIT_ROUTE_CASING_LAYER_ID,
+      TRANSIT_ROUTE_LAYER_ID,
+      TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+    ].filter((layerId) => mapRef.current?.getLayer(layerId))
+    if (routeLayerIds.length > 0 && mapRef.current?.queryRenderedFeatures(
+      event.point,
+      { layers: routeLayerIds },
+    ).length) return
+
+    clearSelectedVenueMarker()
+    dispatchContextualPanel({ type: 'map-click' })
+  }, [clearSelectedVenueMarker])
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -162,6 +238,7 @@ function App() {
       console.error('Map error:', event.error)
       if (isMounted) setStatus('Unable to load map tiles')
     })
+    map.on('click', handlePanelMapClick)
 
     const loadVenues = async () => {
       try {
@@ -249,11 +326,12 @@ function App() {
       transitGeometryRef.current = null
       transitRouteOverlapMapRef.current = new globalThis.Map()
       selectedRouteIdRef.current = null
+      map.off('click', handlePanelMapClick)
       removeTransitRouteLayers(map)
       mapRef.current = null
       map.remove()
     }
-  }, [handleRouteSelect, handleSetTripEndpoint])
+  }, [handlePanelMapClick, handleRouteSelect, handleSetTripEndpoint])
 
   useEffect(() => {
     endpointMarkersRef.current.forEach((marker) => marker.remove())
@@ -280,11 +358,6 @@ function App() {
   return (
     <main className="map-shell">
       <div ref={mapContainer} className="map" />
-      <TransitRouteControl
-        network={transitNetwork}
-        selectedRouteId={selectedRouteId}
-        onRouteSelect={handleRouteSelect}
-      />
       <div className="map-overlay-right">
         <section className="trip-controls" aria-label="Trip endpoints">
           <div className="trip-controls-heading">
@@ -330,7 +403,20 @@ function App() {
             {tripValidation ?? 'Origin and destination are set.'}
           </p>
         </section>
-        <VenueSearch venues={venues} onSelect={handleVenueSelect} />
+        <ContextualPanel
+          state={contextualPanelState}
+          venues={venues}
+          network={transitNetwork}
+          selectedRouteId={selectedRouteId}
+          onQueryChange={(query) => dispatchContextualPanel({ type: 'set-query', query })}
+          onVenueSelect={handleVenueSelect}
+          onOpenVenueSearch={() => dispatchContextualPanel({ type: 'open-venue-search' })}
+          onOpenShuttle={() => dispatchContextualPanel({ type: 'open-shuttle' })}
+          onBack={handlePanelBack}
+          onClose={handlePanelClose}
+          onEscape={handlePanelEscape}
+          onRouteSelect={handleRouteSelect}
+        />
       </div>
       <div className="map-legend" aria-label="Map legend">
         <div><span className="legend-marker venue-marker" /> Venues</div>

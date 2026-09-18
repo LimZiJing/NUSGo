@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Map, Marker } from 'maplibre-gl'
-import { addBusStopMarkers } from '../map/markers'
+import { addBusStopMarkers, setBusStopMarkerSelection } from '../map/markers'
 import {
   addTransitRouteLayers,
   addValidatedBusStopMarkers,
@@ -9,7 +9,6 @@ import {
   getTransitRouteBounds,
   getTransitRouteFitPadding,
   removeTransitRouteLayers,
-  setBusStopMarkerSelection,
   setTransitRouteSelection,
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
@@ -23,6 +22,18 @@ import type { TransitRouteGeometry } from '../types/transit'
 
 vi.mock('../map/markers', () => ({
   addBusStopMarkers: vi.fn(() => []),
+  setBusStopMarkerSelection: vi.fn((markers: Marker[], selectedStopIds: readonly string[] | null) => {
+    const selectedIds = new Set(selectedStopIds ?? [])
+    for (const marker of markers) {
+      const element = marker.getElement()
+      const isSelected = selectedIds.has(element.dataset.stopId ?? '')
+      element.classList.toggle('bus-stop-marker-selected', selectedStopIds !== null && isSelected)
+      element.classList.toggle('bus-stop-marker-hidden', selectedStopIds !== null && !isSelected)
+      element.style.display = selectedStopIds === null || isSelected ? '' : 'none'
+      const popup = marker.getPopup()
+      if (selectedStopIds !== null && !isSelected && popup?.isOpen()) popup.remove()
+    }
+  }),
 }))
 
 function createValidGeometry(): TransitRouteGeometry {
@@ -236,7 +247,7 @@ describe('validated transit map data', () => {
         'line-join': 'round',
       },
       paint: {
-        'line-color': ['get', 'color'],
+        'line-color': '#64748b',
       },
     })
     expect(state.addedLayers[2]).toMatchObject({
@@ -286,8 +297,8 @@ describe('validated transit map data', () => {
       name: 'line-opacity',
       value: ['case', ['==', ['get', 'routeId'], 'A1'], 1, 0.18],
     })
-    expect(state.paintProperties[1].name).toBe('line-width')
-    expect(state.paintProperties[1].value).toEqual([
+    expect(state.paintProperties[2].name).toBe('line-width')
+    expect(state.paintProperties[2].value).toEqual([
       'interpolate',
       ['linear'],
       ['zoom'],
@@ -298,8 +309,9 @@ describe('validated transit map data', () => {
 
     setTransitRouteSelection(state.map, null)
 
-    expect(state.paintProperties.slice(-2)).toEqual([
-      { name: 'line-opacity', value: 0.85 },
+    expect(state.paintProperties.slice(-3)).toEqual([
+      { name: 'line-color', value: '#64748b' },
+      { name: 'line-opacity', value: 0.55 },
       {
         name: 'line-width',
         value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],
@@ -319,6 +331,10 @@ describe('validated transit map data', () => {
       name: 'line-opacity',
       value: ['case', ['==', ['get', 'routeId'], 'A1'], 0.95, 0.45],
     })
+    expect(state.paintProperties[3]).toEqual({
+      name: 'line-color',
+      value: ['case', ['==', ['get', 'routeId'], 'A1'], ['get', 'color'], '#64748b'],
+    })
     expect(state.filters).toEqual([{
       id: TRANSIT_ROUTE_DIRECTION_LAYER_ID,
       value: ['==', ['get', 'routeId'], 'A1'],
@@ -336,16 +352,15 @@ describe('validated transit map data', () => {
     const first = createFakeMarker('STOP-A')
     const second = createFakeMarker('STOP-B', true)
 
-    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-A'], '#fb0101')
+    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-A'])
 
     expect(first.classes).toContain('bus-stop-marker-selected')
     expect(second.classes).not.toContain('bus-stop-marker-selected')
-    expect(first.element.style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#fb0101')
     expect(first.element.style.display).toBe('')
     expect(second.element.style.display).toBe('none')
     expect(second.popup.remove).toHaveBeenCalledOnce()
 
-    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-B'], '#008000')
+    setBusStopMarkerSelection([first.marker, second.marker], ['STOP-B'])
 
     expect(first.element.style.display).toBe('none')
     expect(second.element.style.display).toBe('')
@@ -382,13 +397,14 @@ describe('validated transit map data', () => {
 
     setTransitRouteSelection(state.map, null)
 
-    expect(state.paintProperties.slice(-4)).toEqual([
-      { name: 'line-opacity', value: 0.65 },
+    expect(state.paintProperties.slice(-5)).toEqual([
+      { name: 'line-opacity', value: 0.35 },
       {
         name: 'line-width',
         value: ['interpolate', ['linear'], ['zoom'], 12, 4, 15, 6, 18, 8],
       },
-      { name: 'line-opacity', value: 0.85 },
+      { name: 'line-color', value: '#64748b' },
+      { name: 'line-opacity', value: 0.55 },
       {
         name: 'line-width',
         value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],

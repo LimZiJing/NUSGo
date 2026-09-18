@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import {
   Map,
   NavigationControl,
@@ -14,12 +14,15 @@ import {
   contextualPanelReducer,
   createInitialContextualPanelState,
 } from './contextual-panel/state'
+import { applyBasemapPresentation } from './map/basemap'
 import { fetchJson } from './map/data'
 import {
   addBusStopMarkers,
   addTripEndpointMarkers,
   addVenueMarker,
   getVenueCount,
+  removeBusStopMarkers,
+  setBusStopMarkerSelection,
 } from './map/markers'
 import { TransitValidationError } from './transit/model'
 import { deriveTransitRouteOverlapMap } from './transit/overlap'
@@ -27,7 +30,6 @@ import {
   addTransitRouteLayers,
   fitTransitRoute,
   removeTransitRouteLayers,
-  setBusStopMarkerSelection,
   setTransitRouteSelection,
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
@@ -219,7 +221,7 @@ function App() {
 
     // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
-    const busStopMarkers: Marker[] = []
+    let busStopMarkers: Marker[] = []
     let venueCount = 0
     let isMounted = true
     let transitFailure: string | null = null
@@ -239,6 +241,10 @@ function App() {
       if (isMounted) setStatus('Unable to load map tiles')
     })
     map.on('click', handlePanelMapClick)
+
+    const mapStyleReady = waitForMapStyleLoaded(map, controller.signal).then(() => {
+      applyBasemapPresentation(map)
+    })
 
     const loadVenues = async () => {
       try {
@@ -283,10 +289,10 @@ function App() {
         } = validateTransitMapData(networkInput, geometryInput)
         const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
-        await waitForMapStyleLoaded(map, controller.signal)
+        await mapStyleReady
         addTransitRouteLayers(map, geometry)
         const markers = addBusStopMarkers(map, transitNetwork.stops, handleSetTripEndpoint)
-        busStopMarkers.push(...markers)
+        busStopMarkers = markers
         busStopMarkersRef.current = markers
         transitNetworkRef.current = transitNetwork
         transitGeometryRef.current = geometry
@@ -320,6 +326,7 @@ function App() {
       selectedVenueMarkerRef.current = null
       endpointMarkersRef.current.forEach((marker) => marker.remove())
       endpointMarkersRef.current = []
+      removeBusStopMarkers(map, busStopMarkers)
       busStopMarkers.forEach((marker) => marker.remove())
       busStopMarkersRef.current = []
       transitNetworkRef.current = null
@@ -354,6 +361,8 @@ function App() {
   }, [tripRequest, transitNetwork, venues])
 
   const stops = transitNetwork?.stops ?? []
+
+  const selectedRouteColor = transitNetwork?.routes.find((route) => route.id === selectedRouteId)?.color ?? '#334155'
 
   return (
     <main className="map-shell">
@@ -418,12 +427,23 @@ function App() {
           onRouteSelect={handleRouteSelect}
         />
       </div>
-      <div className="map-legend" aria-label="Map legend">
+      <aside
+        className="map-legend"
+        aria-label="Map legend"
+        style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
+      >
         <div><span className="legend-marker venue-marker" /> Venues</div>
-        <div><span className="legend-marker bus-marker" /> Shuttle stops</div>
+        <div className="bus-stop-legend-item">
+          <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
+          On selected route
+        </div>
+        <div className="bus-stop-legend-item">
+          <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
+          Other shuttle stop
+        </div>
         <div><span className="legend-marker origin-marker" /> Origin</div>
         <div><span className="legend-marker destination-marker" /> Destination</div>
-      </div>
+      </aside>
       <div className="map-status" role="status">
         {status}
       </div>

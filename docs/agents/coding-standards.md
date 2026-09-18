@@ -16,6 +16,9 @@ Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-b
 
 - MUST keep main stable and work on a direct, descriptive branch for each coherent change. Branch names MUST NOT use a codex/ prefix.
 - MUST use Conventional Commits. Each commit SHOULD represent one coherent, buildable step with its tests or documentation where appropriate.
+- Commit headers MUST stay concise: use the Conventional Commit type and scope followed by a short imperative summary. Put rationale and implementation context in the commit body instead of making the header long.
+- Non-trivial code, test, documentation, or configuration commits MUST include a body separated from the header by a blank line. The body SHOULD explain the intent, the important scope or user-visible behavior, and the verification performed; mention meaningful limitations or follow-up work when relevant.
+- Commit bodies SHOULD be brief and factual. They are a durable change record, not a transcript of the implementation process or a duplicate of the full pull-request description.
 - MUST NOT create WIP, fixup, temporary, or checkpoint commits.
 - MUST NOT amend or rewrite a commit after reporting it to another agent or reviewer. Do not force-push.
 - MUST preserve unrelated commits and user changes. Do not use broad staging or destructive Git commands to clean a worktree.

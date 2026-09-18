@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Marker, Popup } from 'maplibre-gl'
 import {
+  BUS_STOP_INACTIVE_OPACITY,
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
   createBusStopPopupCoordinator,
+  getBusStopLabelFilters,
+  getBusStopLabelOpacity,
   isBusStopVisible,
+  isBusStopDimmed,
   setBusStopMarkerSelection,
 } from './markers'
 import type { TransitStop } from '../types/transit'
@@ -101,6 +105,61 @@ describe('bus-stop presentation', () => {
     setBusStopMarkerSelection([marker], ['STOP-A'], '#e3cf0e')
 
     expect(style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#e3cf0e')
+  })
+
+  it('dims only inactive stops when a route is selected', () => {
+    const activeClasses = new Set<string>()
+    const inactiveClasses = new Set<string>()
+    const createMarker = (stopId: string, classes: Set<string>) => ({
+      getElement: () => ({
+        dataset: { stopId },
+        classList: {
+          toggle(name: string, force: boolean) {
+            if (force) classes.add(name)
+            else classes.delete(name)
+          },
+        },
+        style: { setProperty: vi.fn(), display: '' },
+      }),
+      getPopup: () => null,
+    } as unknown as Marker)
+
+    setBusStopMarkerSelection(
+      [createMarker('STOP-A', activeClasses)],
+      ['STOP-A'],
+      '#e3cf0e',
+    )
+    setBusStopMarkerSelection(
+      [createMarker('STOP-B', inactiveClasses)],
+      ['STOP-A'],
+      '#e3cf0e',
+    )
+
+    expect(activeClasses).not.toContain('bus-stop-marker-dimmed')
+    expect(inactiveClasses).toContain('bus-stop-marker-dimmed')
+  })
+
+  it('keeps active and focused labels out of the inactive layer', () => {
+    expect(getBusStopLabelFilters(new Set(['STOP-A']), new Set(['STOP-B']))).toEqual({
+      active: ['in', ['get', 'stopId'], ['literal', ['STOP-A', 'STOP-B']]],
+      inactive: ['!', ['in', ['get', 'stopId'], ['literal', ['STOP-A', 'STOP-B']]]],
+    })
+    expect(getBusStopLabelFilters(null, new Set())).toEqual({
+      active: ['in', ['get', 'stopId'], ['literal', []]],
+      inactive: null,
+    })
+  })
+
+  it('uses full label opacity for all routes and the inactive opacity for a selection', () => {
+    expect(getBusStopLabelOpacity(null)).toBe(1)
+    expect(getBusStopLabelOpacity(new Set(['STOP-A']))).toBe(BUS_STOP_INACTIVE_OPACITY)
+  })
+
+  it('does not dim active or focused stops', () => {
+    expect(isBusStopDimmed(false, false, false)).toBe(false)
+    expect(isBusStopDimmed(true, true, false)).toBe(false)
+    expect(isBusStopDimmed(true, false, true)).toBe(false)
+    expect(isBusStopDimmed(true, false, false)).toBe(true)
   })
 
   it('creates short-name point features and skips invalid coordinates', () => {

@@ -19,7 +19,7 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
 - Venue selection flies to the venue and opens its popup; all venue markers are not displayed at once.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
-- Shuttle stops rendered as neutral transit-ring markers with collision-aware short-name labels from zoom 14 onward; selected-route and open-stop content remains visible below that threshold.
+- Shuttle stops rendered as neutral transit-ring markers with collision-aware short-name labels from zoom 14 onward; selected-route content remains full opacity, while inactive stops and labels fade to 20% from zoom 14 onward, and open-stop content remains visible below that threshold.
 - Venue markers use neutral map pins.
 - Validated route lines are neutral and subdued in the all-routes state, with official route colors reserved for the selected route.
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.

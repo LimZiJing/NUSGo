@@ -129,6 +129,10 @@
   box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
 }
 
+.bus-stop-marker-dimmed {
+  opacity: 0.2;
+}
+
 .bus-stop-marker-hidden {
   display: none;
 }

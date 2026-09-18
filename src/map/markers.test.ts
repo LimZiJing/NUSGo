@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Popup } from 'maplibre-gl'
-import { createBusStopPopupCoordinator } from './markers'
+import {
+  createBusStopPopupContent,
+  createBusStopPopupCoordinator,
+  getTripEndpointMarkerClass,
+} from './markers'
 
 type PopupEvent = 'open' | 'close'
 
@@ -54,5 +58,86 @@ describe('createBusStopPopupCoordinator', () => {
 
     expect(stop.remove).not.toHaveBeenCalled()
     expect(venue.remove).not.toHaveBeenCalled()
+  })
+})
+
+
+class FakeElement {
+  children: FakeElement[] = []
+  attributes = new Map<string, string>()
+  listeners = new Map<string, () => void>()
+  className = ''
+  dataset: Record<string, string> = {}
+  textContent = ''
+  type = ''
+  tagName: string
+
+  constructor(tagName: string) {
+    this.tagName = tagName.toUpperCase()
+  }
+
+  append(...children: FakeElement[]) {
+    this.children.push(...children)
+  }
+
+  addEventListener(event: string, listener: () => void) {
+    this.listeners.set(event, listener)
+  }
+
+  setAttribute(name: string, value: string) {
+    this.attributes.set(name, value)
+  }
+
+  click() {
+    this.listeners.get('click')?.()
+  }
+}
+
+describe('trip endpoint markers and shuttle-stop actions', () => {
+  it('uses distinct marker classes for origin and destination', () => {
+    expect(getTripEndpointMarkerClass('origin')).toBe(
+      'trip-endpoint-marker trip-endpoint-marker-origin',
+    )
+    expect(getTripEndpointMarkerClass('destination')).toBe(
+      'trip-endpoint-marker trip-endpoint-marker-destination',
+    )
+  })
+
+  it('exposes safe text actions for assigning a shuttle stop to either endpoint', () => {
+    const documentStub = {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    }
+    vi.stubGlobal('document', documentStub)
+    const onSetEndpoint = vi.fn()
+    const stop = {
+      id: 'STOP-A',
+      longName: '<Central Library>',
+      shortName: 'Library',
+      latitude: 1.3,
+      longitude: 103.77,
+      services: ['A1'],
+    }
+
+    const content = createBusStopPopupContent(stop, onSetEndpoint) as unknown as FakeElement
+    const buttons = content.children.filter((child) => child.tagName === 'BUTTON')
+
+    expect(content.children[0].textContent).toBe('<Central Library>')
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      'Set as origin',
+      'Set as destination',
+    ])
+
+    buttons[0].click()
+    buttons[1].click()
+    expect(onSetEndpoint).toHaveBeenNthCalledWith(1, 'origin', {
+      kind: 'stop',
+      id: 'STOP-A',
+    })
+    expect(onSetEndpoint).toHaveBeenNthCalledWith(2, 'destination', {
+      kind: 'stop',
+      id: 'STOP-A',
+    })
+
+    vi.unstubAllGlobals()
   })
 })

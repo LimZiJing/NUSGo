@@ -1,8 +1,23 @@
 import { Map, Marker, Popup } from 'maplibre-gl'
+import { getTripEndpointLabel } from '../location/search'
 import type { TransitStop } from '../types/transit'
+import type {
+  TripEndpoint,
+  TripEndpointRole,
+  TripRequest,
+} from '../types/trip'
 import type { VenueLocation, VenueLocationMap } from '../types/venues'
 
-function createPopupContent(titleText: string, details: string[]): HTMLDivElement {
+interface PopupAction {
+  label: string
+  onClick: () => void
+}
+
+function createPopupContent(
+  titleText: string,
+  details: string[],
+  actions: PopupAction[] = [],
+): HTMLDivElement {
   // Use text nodes instead of setHTML so values from external datasets remain text.
   const content = document.createElement('div')
   const title = document.createElement('strong')
@@ -13,6 +28,15 @@ function createPopupContent(titleText: string, details: string[]): HTMLDivElemen
     const line = document.createElement('div')
     line.textContent = detail
     content.append(line)
+  }
+
+  for (const action of actions) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = action.label
+    button.className = 'bus-stop-popup-action'
+    button.addEventListener('click', action.onClick)
+    content.append(button)
   }
 
   return content
@@ -66,18 +90,36 @@ function createBusStopMarkerElement(stop: TransitStop): HTMLDivElement {
   return element
 }
 
-export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
+export function createBusStopPopupContent(
+  stop: TransitStop,
+  onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
+): HTMLDivElement {
+  const details = [
+    `Stop: ${stop.id}`,
+    `Services: ${stop.services.join(', ')}`,
+  ]
+  if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
+
+  const actions = onSetEndpoint
+    ? (['origin', 'destination'] as const).map((role) => ({
+        label: role === 'origin' ? 'Set as origin' : 'Set as destination',
+        onClick: () => onSetEndpoint(role, { kind: 'stop', id: stop.id }),
+      }))
+    : []
+
+  return createPopupContent(stop.longName, details, actions)
+}
+
+export function addBusStopMarkers(
+  map: Map,
+  busStops: TransitStop[],
+  onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
+): Marker[] {
   const markers: Marker[] = []
   const popupCoordinator = createBusStopPopupCoordinator()
 
   for (const stop of busStops) {
     if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) continue
-
-    const details = [
-      `Stop: ${stop.id}`,
-      `Services: ${stop.services.join(', ')}`,
-    ]
-    if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
 
     const marker = new Marker({
       anchor: 'center',
@@ -86,11 +128,80 @@ export function addBusStopMarkers(map: Map, busStops: TransitStop[]): Marker[] {
     const element = marker.getElement()
     element.dataset.stopId = stop.id
     const popup = new Popup({ offset: 24 })
-      .setDOMContent(createPopupContent(stop.longName, details))
+      .setDOMContent(createBusStopPopupContent(stop, onSetEndpoint))
     popupCoordinator.register(popup)
     marker
       .setLngLat([stop.longitude, stop.latitude])
       .setPopup(popup)
+      .addTo(map)
+
+    markers.push(marker)
+  }
+
+  return markers
+}
+
+export function getTripEndpointMarkerClass(role: TripEndpointRole): string {
+  return `trip-endpoint-marker trip-endpoint-marker-${role}`
+}
+
+function createTripEndpointMarkerElement(
+  role: TripEndpointRole,
+  label: string,
+): HTMLDivElement {
+  const element = document.createElement('div')
+  const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
+  element.className = getTripEndpointMarkerClass(role)
+  element.setAttribute('role', 'img')
+  element.setAttribute('aria-label', `${roleLabel}: ${label}`)
+  return element
+}
+
+function getTripEndpointCoordinate(
+  endpoint: TripEndpoint,
+  venues: VenueLocationMap,
+  stops: TransitStop[],
+): [number, number] | null {
+  if (endpoint.kind === 'venue') {
+    const location = venues[endpoint.id]?.location
+    return location && Number.isFinite(location.x) && Number.isFinite(location.y)
+      ? [location.x, location.y]
+      : null
+  }
+
+  const stop = stops.find((candidate) => candidate.id === endpoint.id)
+  return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
+    ? [stop.longitude, stop.latitude]
+    : null
+}
+
+export function addTripEndpointMarkers(
+  map: Map,
+  request: TripRequest,
+  venues: VenueLocationMap,
+  stops: TransitStop[],
+): Marker[] {
+  const markers: Marker[] = []
+
+  for (const [role, endpoint] of [
+    ['origin', request.origin],
+    ['destination', request.destination],
+  ] as const) {
+    if (!endpoint) continue
+
+    const coordinate = getTripEndpointCoordinate(endpoint, venues, stops)
+    if (!coordinate) continue
+
+    const label = getTripEndpointLabel(endpoint, venues, stops)
+    const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
+    const marker = new Marker({
+      anchor: 'center',
+      element: createTripEndpointMarkerElement(role, label),
+    })
+      .setLngLat(coordinate)
+      .setPopup(new Popup({ offset: 24 }).setDOMContent(
+        createPopupContent(roleLabel, [label, `ID: ${endpoint.id}`]),
+      ))
       .addTo(map)
 
     markers.push(marker)

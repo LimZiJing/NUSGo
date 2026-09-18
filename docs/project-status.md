@@ -18,6 +18,8 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
 - Venue selection flies to the venue and opens its popup; all venue markers are not displayed at once.
+- Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.
+- Shuttle-stop popups can assign a stop directly as a trip origin or destination.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
 - Shuttle stops rendered as blue markers with route and opposite-stop information in popups.
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
@@ -43,7 +45,7 @@ Complete the functional transit foundation before a broad UI redesign:
 2. Add route shapes as GeoJSON under `public/data`.
 3. Render route shapes with MapLibre GeoJSON sources and line layers.
 4. Add shuttle route selection and route highlighting.
-5. Add origin and destination selection.
+5. Add origin and destination selection (implemented; routing remains out of scope).
 6. Add walking connections and routing.
 7. Investigate live shuttle arrivals after static routes work reliably.
 

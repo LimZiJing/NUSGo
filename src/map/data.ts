@@ -3,7 +3,9 @@ export async function fetchJson<T>(
   signal: AbortSignal,
   resourceName: string,
 ): Promise<T> {
-  const response = await fetch(path, { signal })
+  const basePath = import.meta.env.BASE_URL
+  const relativePath = path.replace(/^\/+/, '')
+  const response = await fetch(`${basePath}${relativePath}`, { signal })
 
   if (!response.ok) {
     throw new Error(`${resourceName} request failed: ${response.status}`)

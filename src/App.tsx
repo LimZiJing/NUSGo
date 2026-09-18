@@ -72,7 +72,7 @@ function App() {
     const loadVenues = async () => {
       try {
         const venueData = await fetchJson<VenueLocationMap>(
-          '/data/venues.json',
+          'data/venues.json',
           controller.signal,
           'Venue data',
         )
@@ -93,7 +93,7 @@ function App() {
         const { network: transitNetwork, markers } = addValidatedBusStopMarkers(
           map,
           await fetchJson<unknown>(
-            '/data/shuttle-network.json',
+            'data/shuttle-network.json',
             controller.signal,
             'Shuttle network',
           ),

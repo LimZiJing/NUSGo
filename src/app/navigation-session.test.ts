@@ -444,4 +444,114 @@ describe('navigation session', () => {
     session.reportMapError(new Error('late map error'))
     expect(listener).not.toHaveBeenCalled()
   })
+
+  it('owns startup cancellation and removes the external listener after settlement', async () => {
+    const venue = createDeferred<LoadedVenueData>()
+    const transit = createDeferred<LoadedTransitData>()
+    const loadVenues = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return venue.promise
+    })
+    const loadTransit = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return transit.promise
+    })
+    const dependencies = createDependencies({
+      loadVenues,
+      loadTransit,
+    })
+    const session = createNavigationSession(dependencies)
+    const externalController = new AbortController()
+    const start = session.start(externalController.signal)
+
+    await Promise.resolve()
+    const venueSignal = loadVenues.mock.calls[0]?.[0]
+    const transitSignal = loadTransit.mock.calls[0]?.[0]
+    expect(venueSignal).toBeDefined()
+    expect(transitSignal).toBe(venueSignal)
+    expect(venueSignal?.aborted).toBe(false)
+
+    venue.resolve(dependencies.venues)
+    transit.resolve(dependencies.transit)
+    await start
+    externalController.abort()
+    expect(venueSignal?.aborted).toBe(false)
+    expect(transitSignal?.aborted).toBe(false)
+
+    session.dispose()
+    expect(venueSignal?.aborted).toBe(true)
+    expect(transitSignal?.aborted).toBe(true)
+  })
+
+  it('propagates external abort to both loaders and keeps late results inert', async () => {
+    const venue = createDeferred<LoadedVenueData>()
+    const transit = createDeferred<LoadedTransitData>()
+    const loadVenues = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return venue.promise
+    })
+    const loadTransit = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return transit.promise
+    })
+    const dependencies = createDependencies({
+      loadVenues,
+      loadTransit,
+    })
+    const session = createNavigationSession(dependencies)
+    const listener = vi.fn()
+    session.subscribe(listener)
+    const externalController = new AbortController()
+    const start = session.start(externalController.signal)
+
+    await Promise.resolve()
+    const venueSignal = loadVenues.mock.calls[0]?.[0]
+    const transitSignal = loadTransit.mock.calls[0]?.[0]
+    externalController.abort()
+    expect(venueSignal?.aborted).toBe(true)
+    expect(transitSignal?.aborted).toBe(true)
+
+    venue.resolve(dependencies.venues)
+    transit.resolve(dependencies.transit)
+    await start
+
+    expect(session.getState().venues).toBeNull()
+    expect(session.getState().transitIndex).toBeNull()
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('aborts both loader signals exactly once when disposed while loading', async () => {
+    const venue = createDeferred<LoadedVenueData>()
+    const transit = createDeferred<LoadedTransitData>()
+    const loadVenues = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return venue.promise
+    })
+    const loadTransit = vi.fn((signal: AbortSignal) => {
+      expect(signal).toBeDefined()
+      return transit.promise
+    })
+    const dependencies = createDependencies({
+      loadVenues,
+      loadTransit,
+    })
+    const session = createNavigationSession(dependencies)
+    const start = session.start(new AbortController().signal)
+
+    await Promise.resolve()
+    const venueSignal = loadVenues.mock.calls[0]?.[0]
+    const transitSignal = loadTransit.mock.calls[0]?.[0]
+    session.dispose()
+    session.dispose()
+
+    expect(venueSignal?.aborted).toBe(true)
+    expect(transitSignal?.aborted).toBe(true)
+    expect(dependencies.map.dispose).toHaveBeenCalledOnce()
+
+    venue.resolve(dependencies.venues)
+    transit.resolve(dependencies.transit)
+    await start
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+  })
 })

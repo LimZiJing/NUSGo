@@ -112,6 +112,8 @@ export function createNavigationSession(
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
   let disposed = false
   let startPromise: Promise<void> | null = null
+  let startupAbortController: AbortController | null = null
+  let removeExternalAbortListener: (() => void) | null = null
   const listeners = new Set<NavigationSessionListener>()
 
   const getStatus = (
@@ -247,14 +249,33 @@ export function createNavigationSession(
       })
   )
 
+  const clearExternalAbortListener = (): void => {
+    removeExternalAbortListener?.()
+    removeExternalAbortListener = null
+  }
+
   const start = (signal: AbortSignal): Promise<void> => {
     if (startPromise) return startPromise
-    if (disposed || signal.aborted) {
+    if (disposed) {
       startPromise = Promise.resolve()
       return startPromise
     }
 
-    startPromise = Promise.all([loadVenues(signal), loadTransit(signal)]).then(() => undefined)
+    const controller = new AbortController()
+    startupAbortController = controller
+    const handleExternalAbort = () => controller.abort()
+    signal.addEventListener('abort', handleExternalAbort, { once: true })
+    removeExternalAbortListener = () => {
+      signal.removeEventListener('abort', handleExternalAbort)
+    }
+    if (signal.aborted) controller.abort()
+
+    startPromise = Promise.all([
+      loadVenues(controller.signal),
+      loadTransit(controller.signal),
+    ])
+      .then(() => undefined)
+      .finally(clearExternalAbortListener)
     return startPromise
   }
 
@@ -387,6 +408,8 @@ export function createNavigationSession(
     dispose() {
       if (disposed) return
       disposed = true
+      startupAbortController?.abort()
+      clearExternalAbortListener()
       listeners.clear()
       dependencies.map.dispose()
     },

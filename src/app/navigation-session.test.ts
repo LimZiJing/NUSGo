@@ -667,6 +667,57 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
+  it('clears venue markers on Back only when leaving venue detail', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.back()
+    expect(dependencies.map.clearVenue).not.toHaveBeenCalled()
+
+    session.openShuttle()
+    session.back()
+    expect(dependencies.map.clearVenue).not.toHaveBeenCalled()
+
+    session.selectVenue(venueResult)
+    session.back()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.selectVenue(venueResult)
+    session.selectVenue(venueResult)
+    session.back()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+    session.back()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
+
+    session.close()
+    session.back()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
+  })
+
+  it('keeps Escape clearing its no-history and detail-leaving cases', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.escape()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.openShuttle()
+    session.escape()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.selectVenue(venueResult)
+    session.openShuttle()
+    session.escape()
+    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.escape()
+    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
+  })
+
   it('owns endpoint queries, trip commands, and map endpoint synchronization', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

@@ -193,7 +193,17 @@ export function createNavigationSession(
     return nextPanel
   }
 
-  const clearSelectedVenueMarkerWhenLeavingDetail = (): void => {
+  const clearVenueMarkerForBack = (): void => {
+    const previousState = state.contextualPanel.history.at(-1)
+    if (
+      state.contextualPanel.mode === 'venue-detail' &&
+      previousState?.mode !== 'venue-detail'
+    ) {
+      dependencies.map.clearVenue()
+    }
+  }
+
+  const clearVenueMarkerForEscape = (): void => {
     const previousState = state.contextualPanel.history.at(-1)
     if (
       !previousState ||
@@ -370,13 +380,13 @@ export function createNavigationSession(
 
     back() {
       if (disposed) return
-      clearSelectedVenueMarkerWhenLeavingDetail()
+      clearVenueMarkerForBack()
       updateContextualPanel({ type: 'back' })
     },
 
     escape() {
       if (disposed) return
-      clearSelectedVenueMarkerWhenLeavingDetail()
+      clearVenueMarkerForEscape()
       updateContextualPanel({ type: 'escape' })
     },
 

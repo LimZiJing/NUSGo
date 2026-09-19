@@ -4,16 +4,15 @@ import {
   BUS_STOP_INACTIVE_OPACITY,
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
-  createBusStopPopupContent,
-  createBusStopPopupCoordinator,
   getBusStopLabelFilters,
   getBusStopLabelOpacity,
-  getTripEndpointMarkerClass,
   isBusStopVisible,
   isBusStopDimmed,
   setBusStopMarkerSelection,
-} from './markers'
-import type { TransitStop } from '../domain/transit/types'
+} from './shuttle-stops'
+import { getTripEndpointMarkerClass } from './endpoint-markers'
+import type { TransitStop } from '../../domain/transit/types'
+import { createBusStopPopupContent, createPopupCoordinator } from './popup'
 
 type PopupEvent = 'open' | 'close'
 
@@ -27,6 +26,7 @@ function createFakePopup() {
       listeners[event].push(listener)
       return popup
     }),
+    off: vi.fn(() => popup),
     remove: vi.fn(() => {
       listeners.close.forEach((listener) => listener())
     }),
@@ -37,11 +37,11 @@ function createFakePopup() {
   return popup
 }
 
-describe('createBusStopPopupCoordinator', () => {
+describe('createPopupCoordinator', () => {
   it('closes the previously opened bus-stop popup', () => {
     const first = createFakePopup()
     const second = createFakePopup()
-    const coordinator = createBusStopPopupCoordinator()
+    const coordinator = createPopupCoordinator()
     coordinator.register(first as unknown as Popup)
     coordinator.register(second as unknown as Popup)
 
@@ -55,7 +55,7 @@ describe('createBusStopPopupCoordinator', () => {
   it('does not remove an already closed popup or an unregistered venue popup', () => {
     const stop = createFakePopup()
     const venue = createFakePopup()
-    const coordinator = createBusStopPopupCoordinator()
+    const coordinator = createPopupCoordinator()
     coordinator.register(stop as unknown as Popup)
 
     stop.emit('open')
@@ -92,6 +92,10 @@ class FakeElement {
     this.listeners.set(event, listener)
   }
 
+  removeEventListener(event: string, listener: () => void) {
+    if (this.listeners.get(event) === listener) this.listeners.delete(event)
+  }
+
   setAttribute(name: string, value: string) {
     this.attributes.set(name, value)
   }
@@ -126,7 +130,8 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
       services: ['A1'],
     }
 
-    const content = createBusStopPopupContent(stop, onSetEndpoint) as unknown as FakeElement
+    const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
+    const content = popupContent.element as unknown as FakeElement
     const buttons = content.children.filter((child) => child.tagName === 'BUTTON')
 
     expect(content.children[0].textContent).toBe('<Central Library>')
@@ -145,6 +150,10 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
       kind: 'stop',
       id: 'STOP-A',
     })
+
+    popupContent.dispose()
+    buttons[0].click()
+    expect(onSetEndpoint).toHaveBeenCalledTimes(2)
 
     vi.unstubAllGlobals()
   })

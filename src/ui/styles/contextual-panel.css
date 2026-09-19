@@ -1,0 +1,133 @@
+.contextual-panel {
+  display: grid;
+  gap: var(--space-4);
+  width: auto;
+  max-height: min(66vh, calc(100vh - 36px));
+  padding: var(--space-5);
+  overflow-y: auto;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-panel);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  font: var(--font-ui);
+  pointer-events: auto;
+}
+
+.contextual-panel-header,
+.contextual-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.contextual-panel-header h2 {
+  margin: 0;
+  color: var(--color-heading);
+  font: var(--font-heading);
+}
+
+.contextual-panel-header button,
+.contextual-panel button {
+  padding: 5px var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  font: inherit;
+  cursor: pointer;
+}
+
+.contextual-panel-content {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.contextual-panel-content p {
+  margin: 0;
+}
+
+.contextual-panel-content > label {
+  font-weight: 600;
+}
+
+.contextual-panel-search-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.contextual-panel-search-row input {
+  min-width: 0;
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: inherit;
+}
+
+.contextual-panel-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.contextual-panel-results {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.contextual-panel-result {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.contextual-panel-result span,
+.contextual-panel-status {
+  color: var(--color-muted);
+}
+
+.contextual-panel-detail h3 {
+  margin: 0;
+  color: var(--color-heading);
+  font: 600 20px/1.2 system-ui, sans-serif;
+}
+
+.contextual-panel-detail strong {
+  color: var(--color-heading);
+}
+
+.contextual-panel .route-control {
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contextual-panel .route-control > label {
+  margin-bottom: var(--space-2);
+}
+
+.contextual-panel .route-details {
+  margin-top: var(--space-3);
+}
+
+.contextual-panel .route-details-heading h2 {
+  font-size: 16px;
+}
+
+.contextual-panel .route-selection-status {
+  margin-bottom: 0;
+}
+
+.contextual-panel button:hover,
+.contextual-panel button:focus-visible {
+  border-color: var(--color-accent-neutral);
+  background: #f1f5f9;
+}

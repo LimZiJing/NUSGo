@@ -1,0 +1,22 @@
+@media (max-width: 1024px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .map-overlay-right {
+    top: 50%;
+    bottom: var(--space-5);
+    max-height: calc(50vh - 12px);
+  }
+
+  .trip-controls,
+  .contextual-panel {
+    max-height: min(58vh, calc(100vh - 36px));
+  }
+
+  .route-control {
+    max-height: none;
+  }
+}

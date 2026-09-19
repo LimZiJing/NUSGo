@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMapSession } from './session'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import { createTransitIndex } from '../../domain/transit'
@@ -22,6 +22,8 @@ vi.mock('maplibre-gl', () => {
     readonly removedSources: string[] = []
     readonly removedLayers: string[] = []
     readonly addedMarkers: FakeMarker[] = []
+    readonly paintProperties = new globalThis.Map<string, unknown>()
+    readonly filters = new globalThis.Map<string, unknown>()
     readonly on = vi.fn((event: string, handler: (...args: never[]) => void) => {
       const handlers = this.handlers.get(event) ?? new Set()
       handlers.add(handler)
@@ -45,9 +47,13 @@ vi.mock('maplibre-gl', () => {
       this.removedLayers.push(id)
       this.layers.delete(id)
     })
-    readonly setFilter = vi.fn()
+    readonly setFilter = vi.fn((id: string, filter: unknown) => {
+      this.filters.set(id, filter)
+    })
     readonly setLayerZoomRange = vi.fn()
-    readonly setPaintProperty = vi.fn()
+    readonly setPaintProperty = vi.fn((id: string, name: string, value: unknown) => {
+      this.paintProperties.set(`${id}:${name}`, value)
+    })
     readonly getContainer = vi.fn(() => ({ clientWidth: 1200 }))
     readonly fitBounds = vi.fn()
     readonly getZoom = vi.fn(() => 15)
@@ -154,7 +160,13 @@ class FakeElement {
     display: '',
     setProperty: vi.fn(),
   }
-  readonly classList = { toggle: vi.fn() }
+  readonly classes = new Set<string>()
+  readonly classList = {
+    toggle: vi.fn((name: string, force: boolean) => {
+      if (force) this.classes.add(name)
+      else this.classes.delete(name)
+    }),
+  }
   textContent = ''
   type = ''
   className = ''
@@ -185,6 +197,113 @@ function createTransitData() {
 }
 
 describe('MapSession', () => {
+  beforeEach(() => {
+    fakeMapState.maps.length = 0
+    fakeMapState.popups.length = 0
+    vi.unstubAllGlobals()
+  })
+
+  it('preserves a valid route presentation across transit reloads without refitting', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{ element: FakeElement; getElement: () => FakeElement }>
+      fitBounds: ReturnType<typeof vi.fn>
+      paintProperties: Map<string, unknown>
+    }
+
+    await session.ready
+    session.loadTransitData(transitData)
+    session.setRouteSelection({
+      route: transitData.index.routeById.get('A1') ?? null,
+      overlappingRouteIds: new Set(),
+    })
+
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    session.loadTransitData(transitData)
+
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
+      'case',
+      ['==', ['get', 'routeId'], 'A1'],
+      ['get', 'color'],
+      '#64748b',
+    ])
+    const reloadedMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
+    expect(reloadedMarkers.map((marker) => marker.element.classes.has('bus-stop-marker-selected')))
+      .toEqual([true, true])
+
+    session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
+
+    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.paintProperties.get('shuttle-route-lines:line-color')).toBe('#64748b')
+    expect(reloadedMarkers.every((marker) => (
+      !marker.element.classes.has('bus-stop-marker-selected') &&
+      !marker.element.classes.has('bus-stop-marker-dimmed')
+    ))).toBe(true)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('clears a route presentation when the selected route is missing from reloaded data', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const originalData = createTransitData()
+    const replacementNetwork = createValidTransitNetwork()
+    replacementNetwork.routes[0].id = 'B1'
+    replacementNetwork.routes[0].name = 'B1'
+    replacementNetwork.routes[0].color = '#654321'
+    replacementNetwork.stops.forEach((stop) => {
+      stop.services = ['B1']
+    })
+    const replacementIndex = createTransitIndex(replacementNetwork)
+    const replacementGeometry: TransitRouteGeometry = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { routeId: 'B1', name: 'B1', color: '#654321' },
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+      }],
+    }
+    const replacementData = {
+      network: replacementIndex.network,
+      geometry: replacementGeometry,
+      index: replacementIndex,
+    }
+    const map = fakeMapState.maps.at(-1) as {
+      paintProperties: Map<string, unknown>
+      addedMarkers: Array<{ element: FakeElement }>
+    }
+
+    await session.ready
+    session.loadTransitData(originalData)
+    session.setRouteSelection({
+      route: originalData.index.routeById.get('A1') ?? null,
+      overlappingRouteIds: new Set(),
+    })
+    session.loadTransitData(replacementData)
+
+    expect(map.paintProperties.get('shuttle-route-lines:line-color')).toBe('#64748b')
+    const reloadedMarkers = map.addedMarkers.slice(-replacementIndex.stops.length)
+    expect(reloadedMarkers.every((marker) => !marker.element.classes.has('bus-stop-marker-selected')))
+      .toBe(true)
+    expect(reloadedMarkers.every((marker) => !marker.element.classes.has('bus-stop-marker-dimmed')))
+      .toBe(true)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('replaces transit installations and makes disposal idempotent', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({

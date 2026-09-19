@@ -14,6 +14,8 @@ import { createVenueMarker, type VenueMarker } from './venue-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
+const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
+
 export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
@@ -31,7 +33,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
   let currentTransitIndex: TransitIndex | null = null
-  let selectedRouteId: string | null = null
+  let currentRouteSelection: MapRouteSelection = {
+    route: null,
+    overlappingRouteIds: EMPTY_ROUTE_OVERLAP,
+  }
   let disposed = false
 
   const ready = lifecycle.ready.then(() => {
@@ -57,7 +62,35 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     transitRouteLayers?.dispose()
     transitRouteLayers = null
     transitData = null
-    selectedRouteId = null
+  }
+
+  const reconcileRouteSelection = (selection: MapRouteSelection): MapRouteSelection => {
+    const routeId = selection.route?.id
+    const route = routeId && currentTransitIndex
+      ? currentTransitIndex.routeById.get(routeId) ?? null
+      : null
+    if (!route) {
+      return { route: null, overlappingRouteIds: EMPTY_ROUTE_OVERLAP }
+    }
+
+    const overlappingRouteIds = new Set<string>()
+    for (const overlappingRouteId of selection.overlappingRouteIds) {
+      if (currentTransitIndex?.routeById.has(overlappingRouteId)) {
+        overlappingRouteIds.add(overlappingRouteId)
+      }
+    }
+    return { route, overlappingRouteIds }
+  }
+
+  const applyRouteSelection = (selection: MapRouteSelection) => {
+    transitRouteLayers?.setSelection(
+      selection.route?.id ?? null,
+      selection.overlappingRouteIds,
+    )
+    shuttleStopMarkers?.setSelection(
+      selection.route?.stopIds ?? null,
+      selection.route?.color ?? null,
+    )
   }
 
   return {
@@ -74,6 +107,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
       currentTransitIndex = data.index
+      currentRouteSelection = reconcileRouteSelection(currentRouteSelection)
+      applyRouteSelection(currentRouteSelection)
       clearEndpointMarkers()
       if (currentTripRequest) {
         endpointMarkers = createTripEndpointMarkers(
@@ -89,16 +124,17 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setRouteSelection(selection: MapRouteSelection) {
       if (disposed) return
 
-      const nextRouteId = selection.route?.id ?? null
-      const routeChanged = nextRouteId !== selectedRouteId
-      selectedRouteId = nextRouteId
-      transitRouteLayers?.setSelection(nextRouteId, selection.overlappingRouteIds)
-      shuttleStopMarkers?.setSelection(
-        selection.route?.stopIds ?? null,
-        selection.route?.color ?? null,
-      )
+      const previousRouteId = currentRouteSelection.route?.id ?? null
+      currentRouteSelection = currentTransitIndex
+        ? reconcileRouteSelection(selection)
+        : {
+            route: selection.route,
+            overlappingRouteIds: new Set(selection.overlappingRouteIds),
+          }
+      const nextRouteId = currentRouteSelection.route?.id ?? null
+      applyRouteSelection(currentRouteSelection)
 
-      if (routeChanged && transitData) {
+      if (nextRouteId !== previousRouteId && transitData) {
         transitRouteLayers?.fitRoute(
           transitData.index,
           transitData.geometry,

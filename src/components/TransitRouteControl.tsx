@@ -32,7 +32,7 @@ export function TransitRouteControl({
   selectedRouteId,
   onRouteSelect,
 }: TransitRouteControlProps) {
-  const routes = network?.routes ?? []
+  const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
     ? networkIndex.routeById.get(selectedRouteId)
     : undefined
@@ -43,7 +43,7 @@ export function TransitRouteControl({
   const lastStopId = selectedRoute?.stopIds.at(-1) ?? ''
   const firstStop = stopsById.get(firstStopId)
   const lastStop = stopsById.get(lastStopId)
-  const totalStopCount = network?.stops.length ?? 0
+  const totalStopCount = networkIndex?.stops.length ?? network?.stops.length ?? 0
   const visibleStopCount = selectedRoute?.stopIds.length ?? totalStopCount
   const announcement = selectedRoute
     ? 'Route ' + selectedRoute.name + ' selected. Direction: ' +

@@ -14,7 +14,7 @@ interface ProjectedPosition {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function describe(value: unknown): string {
@@ -25,7 +25,7 @@ function describe(value: unknown): string {
 
 function featureRouteId(value: Record<string, unknown>, index: number): string {
   const properties = isRecord(value.properties) ? value.properties : null
-  return properties && typeof properties.routeId === 'string' && properties.routeId.length > 0
+  return properties && typeof properties.routeId === 'string' && properties.routeId.trim().length > 0
     ? properties.routeId
     : `<index ${index}>`
 }
@@ -152,6 +152,7 @@ export function validateTransitRouteGeometry(
   }
 
   const networkRoutes = new Map(network.routes.map((route) => [route.id, route]))
+  const networkStops = new Map(network.stops.map((stop) => [stop.id, stop]))
   const seenRouteIds = new Set<string>()
   const linesByRoute = new Map<string, TransitGeoJsonPosition[]>()
 
@@ -215,7 +216,7 @@ export function validateTransitRouteGeometry(
     const line = linesByRoute.get(route.id)
     if (!line) continue
 
-    const routeStops = route.stopIds.map((stopId) => network.stops.find((stop) => stop.id === stopId))
+    const routeStops = route.stopIds.map((stopId) => networkStops.get(stopId))
     const firstStop = routeStops[0]
     const lastStop = routeStops.at(-1)
     if (!firstStop || !lastStop) continue

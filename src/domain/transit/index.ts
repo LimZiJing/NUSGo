@@ -106,7 +106,7 @@ export function createTransitIndex(network: TransitNetwork): TransitIndex {
     createReadonlySet(route.stopIds),
   ] as const)
   const routeMembership = createReadonlyMap(routeMembershipEntries)
-  const routeIdsByStop = new Map<string, Set<string>>()
+  const routeIdsByStop = new Map<string, Set<string>>(stops.map((stop) => [stop.id, new Set<string>()]))
   for (const route of routes) {
     for (const stopId of route.stopIds) {
       const routeIds = routeIdsByStop.get(stopId) ?? new Set<string>()

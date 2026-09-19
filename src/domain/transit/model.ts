@@ -24,7 +24,7 @@ function describe(value: unknown): string {
 }
 
 function idFor(value: Record<string, unknown>, index: number): string {
-  return typeof value.id === 'string' && value.id.length > 0
+  return typeof value.id === 'string' && value.id.trim().length > 0
     ? value.id
     : `<index ${index}>`
 }
@@ -80,7 +80,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     }
 
     const routeId = idFor(value, index)
-    if (typeof value.id !== 'string' || value.id.length === 0) {
+    if (typeof value.id !== 'string' || value.id.trim().length === 0) {
       issues.push(`Transit route ${routeId} must have a non-empty ID`)
     } else if (routeIds.has(value.id)) {
       issues.push(`Duplicate transit route ID: ${value.id}`)
@@ -97,7 +97,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     }
 
     const stopId = idFor(value, index)
-    if (typeof value.id !== 'string' || value.id.length === 0) {
+    if (typeof value.id !== 'string' || value.id.trim().length === 0) {
       issues.push(`Transit stop ${stopId} must have a non-empty ID`)
     } else if (stopById.has(value.id)) {
       issues.push(`Duplicate transit stop ID: ${value.id}`)
@@ -282,8 +282,19 @@ export function validateTransitVerificationManifest(
       }
       if (!Array.isArray(value.orderedStopIds)) {
         issues.push(`Transit verification route ${value.routeId} ordered stop IDs must be an array`)
-      } else if (networkRoute && JSON.stringify(value.orderedStopIds) !== JSON.stringify(networkRoute.stopIds)) {
-        issues.push(`Transit verification route ${value.routeId} stop order does not match the network model`)
+      } else {
+        const seenStopIds = new Set<string>()
+        for (const [stopIndex, stopId] of value.orderedStopIds.entries()) {
+          if (typeof stopId !== 'string' || stopId.trim().length === 0) {
+            issues.push(`Transit verification route ${value.routeId} ordered stop ${stopIndex} must be a non-empty string`)
+          } else if (seenStopIds.has(stopId)) {
+            issues.push(`Transit verification route ${value.routeId} repeats stop: ${stopId}`)
+          }
+          if (typeof stopId === 'string') seenStopIds.add(stopId)
+        }
+        if (networkRoute && JSON.stringify(value.orderedStopIds) !== JSON.stringify(networkRoute.stopIds)) {
+          issues.push(`Transit verification route ${value.routeId} stop order does not match the network model`)
+        }
       }
     }
 

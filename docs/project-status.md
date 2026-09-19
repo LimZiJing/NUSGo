@@ -27,10 +27,10 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Validated route lines are neutral and subdued in the all-routes state, with official route colors reserved for the selected route.
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
 - Transit model references are validated before shuttle markers are rendered.
-- Venue markers, shuttle-stop markers, and popup creation are organized in `src/infrastructure/map/markers.ts`.
-- Shared JSON loading is organized in `src/infrastructure/data/`.
-- Shared data types are under `src/domain`.
-- Manual smoke check (2026-09-18, pre-refactor baseline): desktop venue search, query preservation, venue details without a popup, shuttle mode, route selection, Back, Escape, empty-map click, and panel close with route emphasis were verified against the local development build. Repeat desktop, narrow-screen, and keyboard verification after the external mobile/accessibility work in issue #30.
+- Venue markers, shuttle-stop markers, and popup creation are organized in `src/map/markers.ts`.
+- Shared JSON loading is organized in `src/map/data.ts`.
+- Shared data types are under `src/types`.
+- Manual smoke check (2026-09-18): desktop venue search, query preservation, venue details without a popup, shuttle mode, route selection, Back, Escape, empty-map click, and panel close with route emphasis were verified against the local development build. Mobile bottom-sheet behavior is tracked in issue #30.
 
 ## Current limitations
 

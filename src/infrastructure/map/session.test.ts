@@ -203,6 +203,11 @@ describe('MapSession', () => {
     }
 
     await session.ready
+    session.setTripRequest(
+      { origin: { kind: 'stop', id: 'STOP-A' }, destination: null },
+      {},
+      null,
+    )
     expect(session.loadTransitData(transitData)).toBe(transitData.index.stops.length)
     expect(session.loadTransitData(transitData)).toBe(transitData.index.stops.length)
 
@@ -210,9 +215,9 @@ describe('MapSession', () => {
     session.dispose()
     expect(map.removedLayers).toHaveLength(10)
     expect(map.removedSources).toHaveLength(4)
-    expect(map.addedMarkers).toHaveLength(transitData.index.stops.length * 2)
+    expect(map.addedMarkers).toHaveLength((transitData.index.stops.length + 1) * 2)
     expect(map.addedMarkers.every((marker) => marker.remove.mock.calls.length === 1)).toBe(true)
-    expect(fakeMapState.popups).toHaveLength(transitData.index.stops.length * 2)
+    expect(fakeMapState.popups).toHaveLength((transitData.index.stops.length + 1) * 2)
     expect(fakeMapState.popups.every((popup) => (
       (popup as { remove: ReturnType<typeof vi.fn> }).remove.mock.calls.length === 1
     ))).toBe(true)

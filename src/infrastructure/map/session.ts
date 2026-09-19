@@ -28,6 +28,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
   let transitRouteLayers: TransitRouteLayers | null = null
   let transitData: LoadedTransitData | null = null
+  let currentTripRequest: TripRequest | null = null
+  let currentVenues: VenueLocationMap = {}
+  let currentTransitIndex: TransitIndex | null = null
   let selectedRouteId: string | null = null
   let disposed = false
 
@@ -70,6 +73,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       transitData = data
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
+      currentTransitIndex = data.index
+      clearEndpointMarkers()
+      if (currentTripRequest) {
+        endpointMarkers = createTripEndpointMarkers(
+          map,
+          currentTripRequest,
+          currentVenues,
+          currentTransitIndex,
+        )
+      }
       return shuttleStopMarkers.markers.length
     },
 
@@ -97,6 +110,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setTripRequest(request: TripRequest, venues: VenueLocationMap, transitIndex: TransitIndex | null) {
       if (disposed) return
 
+      currentTripRequest = request
+      currentVenues = venues
+      currentTransitIndex = transitIndex
       clearEndpointMarkers()
       endpointMarkers = createTripEndpointMarkers(map, request, venues, transitIndex)
     },

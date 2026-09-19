@@ -26,6 +26,7 @@ export interface MapSession {
   readonly ready: Promise<void>
   loadTransitData(
     data: LoadedTransitData,
+    selection: MapRouteSelection,
     onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
   ): void
   setRouteSelection(selection: MapRouteSelection): void

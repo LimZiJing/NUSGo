@@ -17,7 +17,6 @@ export const BUS_STOP_MIN_ZOOM = 14
 export const BUS_STOP_LABEL_SOURCE_ID = 'shuttle-stop-labels'
 export const BUS_STOP_ACTIVE_LABEL_LAYER_ID = 'shuttle-stop-active-labels'
 export const BUS_STOP_INACTIVE_LABEL_LAYER_ID = 'shuttle-stop-inactive-labels'
-export const BUS_STOP_LABEL_LAYER_ID = BUS_STOP_INACTIVE_LABEL_LAYER_ID
 export const BUS_STOP_INACTIVE_OPACITY = 0.2
 
 const BUS_STOP_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {

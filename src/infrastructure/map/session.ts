@@ -98,16 +98,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     loadTransitData(
       data: LoadedTransitData,
+      selection: MapRouteSelection,
       onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
     ) {
       if (disposed) return
 
+      const previousRouteId = currentRouteSelection.route?.id ?? null
       clearTransitData()
       transitData = data
+      currentTransitIndex = data.index
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
-      currentTransitIndex = data.index
-      currentRouteSelection = reconcileRouteSelection(currentRouteSelection)
+      currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
       clearEndpointMarkers()
       if (currentTripRequest) {
@@ -116,6 +118,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           currentTripRequest,
           currentVenues,
           currentTransitIndex,
+        )
+      }
+      const nextRouteId = currentRouteSelection.route?.id ?? null
+      if (nextRouteId !== previousRouteId) {
+        transitRouteLayers.fitRoute(
+          data.index,
+          data.geometry,
+          nextRouteId,
         )
       }
     },

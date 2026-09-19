@@ -184,18 +184,31 @@ class FakeElement {
   setAttribute() {}
 }
 
-function createTransitData() {
+function createTransitData(routeId = 'A1', color = '#123456') {
   const network = createValidTransitNetwork()
+  network.routes[0].id = routeId
+  network.routes[0].name = routeId
+  network.routes[0].color = color
+  network.stops.forEach((stop) => {
+    stop.services = [routeId, ...(stop.id === 'STOP-A' ? ['PUB:95'] : [])]
+  })
   const geometry: TransitRouteGeometry = {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
-      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      properties: { routeId, name: routeId, color },
       geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
     }],
   }
   const index = createTransitIndex(network)
   return { network: index.network, geometry, index }
+}
+
+function createRouteSelection(data: ReturnType<typeof createTransitData>) {
+  return {
+    route: data.index.routes[0],
+    overlappingRouteIds: new Set<string>(),
+  }
 }
 
 describe('MapSession', () => {
@@ -220,14 +233,15 @@ describe('MapSession', () => {
     }
 
     await session.ready
-    session.loadTransitData(transitData)
-    session.setRouteSelection({
-      route: transitData.index.routeById.get('A1') ?? null,
+    const selectedRoute = createRouteSelection(transitData)
+    session.loadTransitData(transitData, {
+      route: null,
       overlappingRouteIds: new Set(),
     })
+    session.setRouteSelection(selectedRoute)
 
     expect(map.fitBounds).toHaveBeenCalledOnce()
-    session.loadTransitData(transitData)
+    session.loadTransitData(transitData, selectedRoute)
 
     expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
@@ -261,46 +275,62 @@ describe('MapSession', () => {
       onEmptyMapClick: vi.fn(),
     })
     const originalData = createTransitData()
-    const replacementNetwork = createValidTransitNetwork()
-    replacementNetwork.routes[0].id = 'B1'
-    replacementNetwork.routes[0].name = 'B1'
-    replacementNetwork.routes[0].color = '#654321'
-    replacementNetwork.stops.forEach((stop) => {
-      stop.services = ['B1']
+    const replacementData = createTransitData('B1', '#654321')
+    replacementData.geometry.features.push({
+      type: 'Feature',
+      properties: { routeId: 'B2', name: 'B2', color: '#abcdef' },
+      geometry: { type: 'LineString', coordinates: [[104, 2], [104.1, 2.1]] },
     })
-    const replacementIndex = createTransitIndex(replacementNetwork)
-    const replacementGeometry: TransitRouteGeometry = {
-      type: 'FeatureCollection',
-      features: [{
-        type: 'Feature',
-        properties: { routeId: 'B1', name: 'B1', color: '#654321' },
-        geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
-      }],
-    }
-    const replacementData = {
-      network: replacementIndex.network,
-      geometry: replacementGeometry,
-      index: replacementIndex,
-    }
     const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
       paintProperties: Map<string, unknown>
       addedMarkers: Array<{ element: FakeElement }>
     }
 
     await session.ready
-    session.loadTransitData(originalData)
-    session.setRouteSelection({
-      route: originalData.index.routeById.get('A1') ?? null,
-      overlappingRouteIds: new Set(),
-    })
-    session.loadTransitData(replacementData)
+    const selectedRoute = createRouteSelection(originalData)
+    session.loadTransitData(originalData, selectedRoute)
+    session.loadTransitData(replacementData, selectedRoute)
+
+    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [104.1, 2.1]],
+      expect.objectContaining({ duration: 500 }),
+    )
 
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toBe('#64748b')
-    const reloadedMarkers = map.addedMarkers.slice(-replacementIndex.stops.length)
+    const reloadedMarkers = map.addedMarkers.slice(-replacementData.index.stops.length)
     expect(reloadedMarkers.every((marker) => !marker.element.classes.has('bus-stop-marker-selected')))
       .toBe(true)
     expect(reloadedMarkers.every((marker) => !marker.element.classes.has('bus-stop-marker-dimmed')))
       .toBe(true)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('fits the replacement route when the selected route changes during reload', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const firstData = createTransitData()
+    const replacementData = createTransitData('B1', '#654321')
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+    }
+
+    await session.ready
+    session.loadTransitData(firstData, createRouteSelection(firstData))
+    session.loadTransitData(replacementData, createRouteSelection(replacementData))
+
+    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.1, 1.1]],
+      expect.objectContaining({ duration: 500 }),
+    )
 
     session.dispose()
     vi.unstubAllGlobals()
@@ -380,7 +410,10 @@ describe('MapSession', () => {
 
     await session.ready
     session.setTripRequest(request, venues, firstTransitData.index)
-    session.loadTransitData(firstTransitData)
+    session.loadTransitData(firstTransitData, {
+      route: null,
+      overlappingRouteIds: new Set(),
+    })
     const initialEndpointMarkers = map.addedMarkers.slice(-2)
     expect(initialEndpointMarkers.map((marker) => marker.coordinate)).toEqual([
       [103, 1],
@@ -391,6 +424,9 @@ describe('MapSession', () => {
       network: secondIndex.network,
       geometry: firstTransitData.geometry,
       index: secondIndex,
+    }, {
+      route: null,
+      overlappingRouteIds: new Set(),
     })
 
     expect(initialEndpointMarkers[0].remove).toHaveBeenCalledOnce()
@@ -423,6 +459,7 @@ describe('MapSession', () => {
       remove: ReturnType<typeof vi.fn>
       removeControl: ReturnType<typeof vi.fn>
       flyTo: ReturnType<typeof vi.fn>
+      fitBounds: ReturnType<typeof vi.fn>
     }
 
     await session.ready
@@ -431,8 +468,15 @@ describe('MapSession', () => {
       {},
       null,
     )
-    session.loadTransitData(transitData)
-    session.loadTransitData(transitData)
+    session.loadTransitData(transitData, {
+      route: null,
+      overlappingRouteIds: new Set(),
+    })
+    session.loadTransitData(transitData, {
+      route: null,
+      overlappingRouteIds: new Set(),
+    })
+    expect(map.fitBounds).not.toHaveBeenCalled()
 
     session.dispose()
     session.dispose()
@@ -458,7 +502,10 @@ describe('MapSession', () => {
     expect(map.addedMarkers).toHaveLength(markerCount)
     expect(map.removedLayers).toHaveLength(removedLayerCount)
     expect(map.flyTo).toHaveBeenCalledTimes(flyToCount)
-    session.loadTransitData(transitData)
+    session.loadTransitData(transitData, {
+      route: null,
+      overlappingRouteIds: new Set(),
+    })
 
     vi.unstubAllGlobals()
   })

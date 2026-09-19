@@ -187,27 +187,32 @@ function App() {
       try {
         const transitData = await loadTransitMapData(controller.signal)
         const routeOverlapMap = deriveTransitRouteOverlapMap(transitData.geometry)
-
-        await mapSession.ready
-        mapSession.loadTransitData(
-          transitData,
-          handleSetTripEndpoint,
-        )
-        transitIndexRef.current = transitData.index
-        transitRouteOverlapMapRef.current = routeOverlapMap
         const reconciledSelection = reconcileRouteSelection(
           transitData.index,
           selectedRouteIdRef.current,
           routeOverlapMap,
         )
-        handleRouteSelect(reconciledSelection.route?.id ?? null)
-        if (isMounted) {
-          setTransitIndex(transitData.index)
-          setResourceStatus((current) => markTransitLoaded(current, {
-            stopCount: transitData.index.stops.length,
-            routeCount: transitData.index.routes.length,
-          }))
-        }
+
+        if (!isMounted) return
+
+        transitIndexRef.current = transitData.index
+        transitRouteOverlapMapRef.current = routeOverlapMap
+        selectedRouteIdRef.current = reconciledSelection.route?.id ?? null
+        setTransitIndex(transitData.index)
+        setSelectedRouteId(reconciledSelection.route?.id ?? null)
+
+        await mapSession.ready
+        if (!isMounted) return
+
+        mapSession.loadTransitData(
+          transitData,
+          reconciledSelection,
+          handleSetTripEndpoint,
+        )
+        setResourceStatus((current) => markTransitLoaded(current, {
+          stopCount: transitData.index.stops.length,
+          routeCount: transitData.index.routes.length,
+        }))
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
         const message = error instanceof TransitValidationError

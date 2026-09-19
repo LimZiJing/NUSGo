@@ -20,14 +20,6 @@ export function isTripEndpointRole(value: unknown): value is TripEndpointRole {
   return value === 'origin' || value === 'destination'
 }
 
-export function isKnownTripEndpoint(
-  endpoint: unknown,
-  venues: VenueLocationMap | null,
-  transitIndex: TransitIndex | null,
-): endpoint is TripEndpoint {
-  return canonicalizeTripEndpoint(endpoint, venues, transitIndex) !== null
-}
-
 export function canonicalizeTripEndpoint(
   endpoint: unknown,
   venues: VenueLocationMap | null,

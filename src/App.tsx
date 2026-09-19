@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'
+import {
+  createNavigationSessionCommandAdapter,
+  createNavigationSessionMount,
+} from './app/navigation-session-mount'
 import { useNavigationSession } from './app/use-navigation-session'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
 import { createMapSession } from './infrastructure/map/session'
@@ -16,54 +20,21 @@ function App() {
   useEffect(() => {
     if (!mapContainer.current) return
 
-    let navigationSession: NavigationSession | null = null
-    const mapSession = createMapSession({
-      container: mapContainer.current,
-      onMapError: (error) => navigationSession?.reportMapError(error),
-      onEmptyMapClick: () => navigationSession?.handleMapClick(),
-    })
-    navigationSession = createNavigationSession({
-      map: mapSession,
+    const mount = createNavigationSessionMount(mapContainer.current, {
+      createMapSession,
+      createNavigationSession,
       loadVenues: loadVenueData,
       loadTransit: loadTransitMapData,
     })
-    setSession(navigationSession)
-
-    const controller = new AbortController()
-    void navigationSession.start(controller.signal).catch((error: unknown) => {
-      if (error instanceof Error && error.name === 'AbortError') return
-      console.error('Navigation session startup failed:', error)
-    })
+    setSession(mount.session)
 
     return () => {
-      controller.abort()
-      navigationSession?.dispose()
-      navigationSession = null
+      mount.dispose()
     }
   }, [])
 
-  const commands = useMemo(() => ({
-    swapTripEndpoints: () => session?.swapTripEndpoints(),
-    setOriginSearchQuery: (query: string) => session?.setOriginSearchQuery(query),
-    selectOriginEndpoint: (endpoint: Parameters<NavigationSession['setTripEndpoint']>[1]) => (
-      session?.setTripEndpoint('origin', endpoint)
-    ),
-    clearOriginEndpoint: () => session?.clearTripEndpoint('origin'),
-    setDestinationSearchQuery: (query: string) => session?.setDestinationSearchQuery(query),
-    selectDestinationEndpoint: (endpoint: Parameters<NavigationSession['setTripEndpoint']>[1]) => (
-      session?.setTripEndpoint('destination', endpoint)
-    ),
-    clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
-    clearTrip: () => session?.clearTrip(),
-    setContextualPanelQuery: (query: string) => session?.setContextualPanelQuery(query),
-    selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => session?.selectVenue(result),
-    openVenueSearch: () => session?.openVenueSearch(),
-    openShuttle: () => session?.openShuttle(),
-    back: () => session?.back(),
-    close: () => session?.close(),
-    escape: () => session?.escape(),
-    selectRoute: (routeId: string | null) => session?.selectRoute(routeId),
-  }), [session])
+  const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
+  const commands = commandAdapter(session)
 
   const tripValidation = validateTripRequest(state.tripRequest)
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'

@@ -954,6 +954,121 @@ describe('navigation session', () => {
     ])
   })
 
+  it('propagates map and subscriber failures from venue and transit completion', async () => {
+    const createPendingSession = () => {
+      const venue = createDeferred<LoadedVenueData>()
+      const transit = createDeferred<LoadedTransitData>()
+      const dependencies = createDependencies({
+        loadVenues: vi.fn(() => venue.promise),
+        loadTransit: vi.fn(() => transit.promise),
+      })
+      const session = createNavigationSession(dependencies)
+      const start = session.start(new AbortController().signal)
+      return { venue, transit, dependencies, session, start }
+    }
+
+    {
+      const { venue, transit, dependencies, session, start } = createPendingSession()
+      const map = dependencies.map as ReturnType<typeof createMapDouble>
+      map.setTripRequest.mockImplementation(() => {
+        throw new Error('venue map synchronization failed')
+      })
+      venue.resolve(dependencies.venues)
+
+      await expect(start).rejects.toThrow('venue map synchronization failed')
+      expect(session.getState().status).toBe('Loading map data…')
+      expect(map.setTripRequest).toHaveBeenCalledOnce()
+      session.dispose()
+      transit.resolve(dependencies.transit)
+    }
+
+    {
+      const { venue, transit, dependencies, session, start } = createPendingSession()
+      const map = dependencies.map as ReturnType<typeof createMapDouble>
+      map.loadTransitData.mockImplementation(() => {
+        throw new Error('transit map installation failed')
+      })
+      venue.resolve(dependencies.venues)
+      await waitForState(
+        session,
+        (state) => state.resourceStatus.venue.status === 'loaded',
+      )
+      transit.resolve(dependencies.transit)
+
+      await expect(start).rejects.toThrow('transit map installation failed')
+      expect(session.getState().status).toBe(
+        '1 venues available; loading shuttle routes…',
+      )
+      expect(map.loadTransitData).toHaveBeenCalledOnce()
+      session.dispose()
+    }
+
+    {
+      const { venue, transit, dependencies, session, start } = createPendingSession()
+      const map = dependencies.map as ReturnType<typeof createMapDouble>
+      map.setTripRequest
+        .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => {
+          throw new Error('transit endpoint synchronization failed')
+        })
+      venue.resolve(dependencies.venues)
+      await waitForState(
+        session,
+        (state) => state.resourceStatus.venue.status === 'loaded',
+      )
+      transit.resolve(dependencies.transit)
+
+      await expect(start).rejects.toThrow('transit endpoint synchronization failed')
+      expect(session.getState().status).toBe(
+        '1 venues available; loading shuttle routes…',
+      )
+      expect(map.setTripRequest).toHaveBeenCalledTimes(2)
+      session.dispose()
+    }
+
+    {
+      const { venue, transit, session, start } = createPendingSession()
+      session.subscribe(() => {
+        throw new Error('venue subscriber failed')
+      })
+      venue.resolve({
+        venues: {
+          COM1: {
+            roomName: 'Computing 1',
+            location: { x: 103, y: 1 },
+          },
+        },
+        venueCount: 1,
+      })
+
+      await expect(start).rejects.toThrow('venue subscriber failed')
+      expect(session.getState().status).toBe(
+        '1 venues available; loading shuttle routes…',
+      )
+      session.dispose()
+      transit.resolve(createDependencies().transit)
+    }
+
+    {
+      const { venue, transit, dependencies, session, start } = createPendingSession()
+      venue.resolve(dependencies.venues)
+      await waitForState(
+        session,
+        (state) => state.resourceStatus.venue.status === 'loaded',
+      )
+      session.subscribe(() => {
+        throw new Error('transit subscriber failed')
+      })
+      transit.resolve(dependencies.transit)
+
+      await expect(start).rejects.toThrow('transit subscriber failed')
+      expect(session.getState().status).toBe(
+        '1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+      )
+      session.dispose()
+    }
+  })
+
   it('waits for map readiness before installing transit data', async () => {
     const mapReady = createDeferred<void>()
     const dependencies = createDependencies({ map: createMapDouble(mapReady.promise) })
@@ -975,6 +1090,76 @@ describe('navigation session', () => {
     await expect(session.start(new AbortController().signal)).rejects.toThrow('map startup failed')
     expect(session.getState().resourceStatus.transit).toEqual({ status: 'pending' })
     expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+  })
+
+  it('keeps map-readiness failures distinct across venue completion orderings', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const scenarios = [
+        {
+          venueFailed: false,
+          readinessFirst: false,
+          expectedStatus: '1 venues available; loading shuttle routes…',
+        },
+        {
+          venueFailed: false,
+          readinessFirst: true,
+          expectedStatus: '1 venues available; loading shuttle routes…',
+        },
+        {
+          venueFailed: true,
+          readinessFirst: false,
+          expectedStatus: 'Unable to load venue data',
+        },
+        {
+          venueFailed: true,
+          readinessFirst: true,
+          expectedStatus: 'Unable to load venue data',
+        },
+      ] as const
+
+      for (const scenario of scenarios) {
+        const mapReady = createDeferred<void>()
+        const venue = createDeferred<LoadedVenueData>()
+        const transit = createDeferred<LoadedTransitData>()
+        const dependencies = createDependencies({
+          map: createMapDouble(mapReady.promise),
+          loadVenues: vi.fn(() => venue.promise),
+          loadTransit: vi.fn(() => transit.promise),
+        })
+        const session = createNavigationSession(dependencies)
+        const start = session.start(new AbortController().signal)
+        transit.resolve(dependencies.transit)
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const completeVenue = async (): Promise<void> => {
+          const completed = waitForState(
+            session,
+            (state) => state.resourceStatus.venue.status !== 'pending',
+          )
+          if (scenario.venueFailed) venue.reject(new Error('venues unavailable'))
+          else venue.resolve(dependencies.venues)
+          await completed
+        }
+
+        if (scenario.readinessFirst) {
+          mapReady.reject(new Error('map startup failed'))
+          await expect(start).rejects.toThrow('map startup failed')
+          await completeVenue()
+        } else {
+          await completeVenue()
+          mapReady.reject(new Error('map startup failed'))
+          await expect(start).rejects.toThrow('map startup failed')
+        }
+
+        expect(session.getState().resourceStatus.transit).toEqual({ status: 'pending' })
+        expect(session.getState().status).toBe(scenario.expectedStatus)
+        session.dispose()
+      }
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   it('does not label map synchronization failures as data load failures', async () => {
@@ -1213,5 +1398,62 @@ describe('navigation session', () => {
     transit.resolve(dependencies.transit)
     await start
     expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+  })
+
+  it('keeps mixed venue and transit outcomes deterministic for either completion order', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const scenarios = [
+        {
+          venueFailed: false,
+          transitFailed: true,
+          expectedStatus: '1 venues available; Unable to load shuttle route data',
+        },
+        {
+          venueFailed: true,
+          transitFailed: false,
+          expectedStatus: '2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data',
+        },
+      ] as const
+      const completionOrders = [
+        ['venue', 'transit'],
+        ['transit', 'venue'],
+      ] as const
+
+      for (const scenario of scenarios) {
+        for (const completionOrder of completionOrders) {
+          const venue = createDeferred<LoadedVenueData>()
+          const transit = createDeferred<LoadedTransitData>()
+          const dependencies = createDependencies({
+            loadVenues: vi.fn(() => venue.promise),
+            loadTransit: vi.fn(() => transit.promise),
+          })
+          const session = createNavigationSession(dependencies)
+          const start = session.start(new AbortController().signal)
+
+          for (const resource of completionOrder) {
+            const completed = waitForState(
+              session,
+              (state) => state.resourceStatus[resource].status !== 'pending',
+            )
+            if (resource === 'venue') {
+              if (scenario.venueFailed) venue.reject(new Error('venues unavailable'))
+              else venue.resolve(dependencies.venues)
+            } else if (scenario.transitFailed) {
+              transit.reject(new Error('transit unavailable'))
+            } else {
+              transit.resolve(dependencies.transit)
+            }
+            await completed
+          }
+
+          await start
+          expect(session.getState().status).toBe(scenario.expectedStatus)
+          session.dispose()
+        }
+      }
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 })

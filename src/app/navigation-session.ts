@@ -9,7 +9,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocationMap } from '../domain/venue/types'
+import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 import {
   createInitialResourceStatus,
   deriveResourceStatus,
@@ -104,6 +104,26 @@ function getTransitFailureMessage(error: unknown): string {
   return 'Unable to load shuttle route data'
 }
 
+function hasMappedLocation(venue: VenueLocation | undefined): venue is VenueLocation & {
+  readonly location: { readonly x: number; readonly y: number }
+} {
+  const location = venue?.location
+  return location !== undefined &&
+    Number.isFinite(location.x) &&
+    Number.isFinite(location.y)
+}
+
+function venuesMatch(first: VenueLocation, second: VenueLocation): boolean {
+  const firstLocation = first.location
+  const secondLocation = second.location
+  const locationsMatch = firstLocation === undefined || secondLocation === undefined
+    ? firstLocation === secondLocation
+    : firstLocation.x === secondLocation.x && firstLocation.y === secondLocation.y
+  return first.roomName === second.roomName &&
+    first.floor === second.floor &&
+    locationsMatch
+}
+
 export function createNavigationSession(
   dependencies: NavigationSessionDependencies,
 ): NavigationSession {
@@ -157,6 +177,26 @@ export function createNavigationSession(
     syncTripRequest(request)
   }
 
+  const isKnownTripEndpoint = (endpoint: TripEndpoint): boolean => {
+    if (typeof endpoint !== 'object' || endpoint === null || typeof endpoint.id !== 'string') {
+      return false
+    }
+    if (endpoint.kind === 'venue') {
+      return state.venues !== null && state.venues[endpoint.id] !== undefined
+    }
+    if (endpoint.kind === 'stop') {
+      return transitIndex?.stopById.has(endpoint.id) ?? false
+    }
+    return false
+  }
+
+  const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
+    if (disposed || !isKnownTripEndpoint(endpoint)) return
+    updateTripRequest(setTripEndpoint(state.tripRequest, role, endpoint), {
+      ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
+    })
+  }
+
   const dispatchContextualPanel = (action: ContextualPanelAction): ContextualPanelState => {
     if (disposed) return state.contextualPanel
     const nextPanel = contextualPanelReducer(state.contextualPanel, action)
@@ -194,7 +234,7 @@ export function createNavigationSession(
     dependencies.map.loadTransitData(
       data,
       reconciledSelection,
-      (role, endpoint) => updateTripRequest(setTripEndpoint(state.tripRequest, role, endpoint)),
+      setTripEndpointCommand,
     )
 
     const resourceStatus = markTransitLoaded(state.resourceStatus, {
@@ -318,9 +358,7 @@ export function createNavigationSession(
     },
 
     setTripEndpoint(role, endpoint) {
-      updateTripRequest(setTripEndpoint(state.tripRequest, role, endpoint), {
-        ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
-      })
+      setTripEndpointCommand(role, endpoint)
     },
 
     clearTripEndpoint(role) {
@@ -360,8 +398,12 @@ export function createNavigationSession(
 
     selectVenue(result) {
       if (disposed) return
-      dispatchContextualPanel({ type: 'select-venue', result })
-      dependencies.map.selectVenue(result.venue)
+      if (typeof result?.code !== 'string') return
+      const venue = state.venues?.[result.code]
+      if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
+      const canonicalResult = { code: result.code, venue }
+      dispatchContextualPanel({ type: 'select-venue', result: canonicalResult })
+      dependencies.map.selectVenue(venue)
     },
 
     openVenueSearch() {

@@ -322,9 +322,70 @@ describe('navigation session', () => {
     expect(dependencies.map.setRouteSelection).toHaveBeenCalledTimes(3)
   })
 
+  it('rejects unknown venue and stop endpoints without changing state or synchronizing the map', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    const stateBefore = session.getState()
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    const mapCallCount = map.setTripRequest.mock.calls.length
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'MISSING' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'MISSING' })
+
+    expect(session.getState()).toBe(stateBefore)
+    expect(map.setTripRequest).toHaveBeenCalledTimes(mapCallCount)
+  })
+
+  it('canonicalizes venue selection by loaded code and rejects mismatched or unmapped results', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    const stateBefore = session.getState()
+
+    session.selectVenue({
+      code: 'COM1',
+      venue: { roomName: 'Wrong venue', location: { x: 104, y: 2 } },
+    })
+    session.selectVenue({
+      code: 'MISSING',
+      venue: venueResult.venue,
+    })
+
+    expect(session.getState()).toBe(stateBefore)
+    expect(dependencies.map.selectVenue).not.toHaveBeenCalled()
+
+    session.selectVenue(venueResult)
+    expect(session.getState().contextualPanel.selectedVenue).toEqual({
+      code: 'COM1',
+      venue: dependencies.venues.venues.COM1,
+    })
+    expect(dependencies.map.selectVenue).toHaveBeenCalledOnce()
+    expect(dependencies.map.selectVenue).toHaveBeenCalledWith(dependencies.venues.venues.COM1)
+
+    const unmappedData: LoadedVenueData = {
+      venues: {
+        UNMAPPED: { roomName: 'Unmapped venue' },
+      },
+      venueCount: 1,
+    }
+    const unmappedDependencies = createDependencies({
+      loadVenues: vi.fn(async () => unmappedData),
+    })
+    const unmappedSession = createNavigationSession(unmappedDependencies)
+    await unmappedSession.start(new AbortController().signal)
+    unmappedSession.selectVenue({
+      code: 'UNMAPPED',
+      venue: { roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
+    })
+    expect(unmappedSession.getState().contextualPanel.selectedVenue).toBeNull()
+    expect(unmappedDependencies.map.selectVenue).not.toHaveBeenCalled()
+  })
+
   it('owns contextual panel history, venue selection, and map-click dismissal', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
 
     session.setContextualPanelQuery('COM1')
     session.selectVenue(venueResult)

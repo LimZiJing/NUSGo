@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { TransitRouteControl } from './TransitRouteControl'
-import { createValidTransitNetwork } from '../transit/test-fixtures'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 
 function createEightRouteNetwork() {
   const network = createValidTransitNetwork()

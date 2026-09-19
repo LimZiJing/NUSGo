@@ -1,9 +1,9 @@
-import type { TransitStop } from '../types/transit'
+import type { TransitStop } from '../transit/types'
 import type {
   TripEndpoint,
   TripLocationSearchResult,
-} from '../types/trip'
-import type { VenueLocationMap } from '../types/venues'
+} from '../trip/types'
+import type { VenueLocationMap } from '../venue/types'
 
 const MAX_RESULTS = 8
 

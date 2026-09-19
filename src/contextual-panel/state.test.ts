@@ -3,7 +3,7 @@ import {
   contextualPanelReducer,
   createInitialContextualPanelState,
 } from './state'
-import type { VenueSearchResult } from '../venue/search'
+import type { VenueSearchResult } from '../domain/venue/search'
 
 const selectedVenue: VenueSearchResult = {
   code: 'COM1-0210',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
-import { searchVenues, type VenueSearchResult } from '../venue/search'
-import type { TransitNetwork } from '../types/transit'
-import type { VenueLocationMap } from '../types/venues'
+import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
+import type { TransitNetwork } from '../domain/transit/types'
+import type { VenueLocationMap } from '../domain/venue/types'
 import type { ContextualPanelState } from '../contextual-panel/state'
 import { TransitRouteControl } from './TransitRouteControl'
 

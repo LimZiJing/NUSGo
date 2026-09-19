@@ -5,14 +5,14 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { getTripEndpointLabel } from '../location/search'
-import type { TransitStop } from '../types/transit'
+import { getTripEndpointLabel } from '../domain/location/search'
+import type { TransitStop } from '../domain/transit/types'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from '../types/trip'
-import type { VenueLocation, VenueLocationMap } from '../types/venues'
+} from '../domain/trip/types'
+import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 
 interface PopupAction {
   label: string
@@ -149,9 +149,6 @@ export function addVenueMarker(
     .addTo(map)
 }
 
-export function getVenueCount(venues: VenueLocationMap): number {
-  return Object.values(venues).filter((venue) => venue.location).length
-}
 
 export function createBusStopPopupCoordinator() {
   let activePopup: Popup | null = null

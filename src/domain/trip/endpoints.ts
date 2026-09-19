@@ -2,7 +2,7 @@ import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from '../types/trip'
+} from './types'
 
 export function createEmptyTripRequest(): TripRequest {
   return { origin: null, destination: null }

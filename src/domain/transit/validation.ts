@@ -1,7 +1,7 @@
 import type {
   TransitNetwork,
   TransitVerificationManifest,
-} from '../types/transit'
+} from './types'
 
 export class TransitValidationError extends Error {
   readonly issues: readonly string[]

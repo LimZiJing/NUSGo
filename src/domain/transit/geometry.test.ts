@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { TransitNetwork, TransitRouteGeometry } from '../types/transit'
+import type { TransitNetwork, TransitRouteGeometry } from './types'
 import { validateTransitRouteGeometry } from './geometry'
-import { validateTransitNetwork } from './model'
+import { validateTransitNetwork } from './validation'
 import { createValidTransitNetwork } from './test-fixtures'
 
 function createValidGeometry(): TransitRouteGeometry {
@@ -50,16 +50,16 @@ describe('validateTransitRouteGeometry', () => {
     expect(validateTransitRouteGeometry(network, geometry)).toBe(geometry)
   })
   it('accepts the committed geometry for all verified routes', () => {
-    const network = validateTransitNetwork(readJson('../../public/data/shuttle-network.json'))
-    const geometry = readJson('../../public/data/shuttle-routes.geojson')
+    const network = validateTransitNetwork(readJson('../../../public/data/shuttle-network.json'))
+    const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 
     expect(validateTransitRouteGeometry(network, geometry)).toBe(geometry)
   })
 
 
   it('uses the official route colors in both transit payloads', () => {
-    const network = validateTransitNetwork(readJson('../../public/data/shuttle-network.json'))
-    const geometry = readJson('../../public/data/shuttle-routes.geojson') as TransitRouteGeometry
+    const network = validateTransitNetwork(readJson('../../../public/data/shuttle-network.json'))
+    const geometry = readJson('../../../public/data/shuttle-routes.geojson') as TransitRouteGeometry
 
     expect(Object.fromEntries(network.routes.map(({ id, color }) => [id, color]))).toEqual(
       OFFICIAL_ROUTE_COLORS,

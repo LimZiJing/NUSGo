@@ -3,7 +3,7 @@ import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
   TransitRouteGeometryFeature,
-} from '../types/transit'
+} from './types'
 import { deriveTransitRouteOverlapMap } from './overlap'
 
 function createFeature(

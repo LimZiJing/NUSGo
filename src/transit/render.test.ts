@@ -14,11 +14,11 @@ import {
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
-  validateTransitMapData,
   waitForMapStyleLoaded,
 } from './render'
-import { createValidTransitNetwork } from './test-fixtures'
-import type { TransitRouteGeometry } from '../types/transit'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { TransitRouteGeometry } from '../domain/transit/types'
+import { validateTransitMapData } from '../domain/transit/map-data'
 
 vi.mock('../map/markers', () => ({
   addBusStopMarkers: vi.fn(() => []),

@@ -7,13 +7,14 @@ import type {
   SymbolLayerSpecification,
 } from 'maplibre-gl'
 import { addBusStopMarkers } from '../map/markers'
-import { validateTransitNetwork } from './model'
-import { validateTransitRouteGeometry } from './geometry'
+import { validateTransitMapData } from '../domain/transit/map-data'
+import { validateTransitNetwork } from '../domain/transit/validation'
+
 import type {
   TransitNetwork,
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../types/transit'
+} from '../domain/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
@@ -127,15 +128,6 @@ export interface ValidatedTransitMarkers {
 
 export interface ValidatedTransitMapData extends ValidatedTransitMarkers {
   geometry: TransitRouteGeometry
-}
-
-export function validateTransitMapData(
-  networkInput: unknown,
-  geometryInput: unknown,
-): { network: TransitNetwork; geometry: TransitRouteGeometry } {
-  const network = validateTransitNetwork(networkInput)
-  const geometry = validateTransitRouteGeometry(network, geometryInput)
-  return { network, geometry }
 }
 
 export type TransitRouteBounds = [[number, number], [number, number]]

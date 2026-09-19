@@ -1,4 +1,4 @@
-import type { VenueSearchResult } from '../venue/search'
+import type { VenueSearchResult } from '../domain/venue/search'
 
 export type ContextualPanelMode =
   | 'neutral'

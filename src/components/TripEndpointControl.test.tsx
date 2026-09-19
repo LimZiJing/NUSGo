@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { TripEndpointControl } from './TripEndpointControl'
-import type { TransitStop } from '../types/transit'
-import type { VenueLocationMap } from '../types/venues'
+import type { TransitStop } from '../domain/transit/types'
+import type { VenueLocationMap } from '../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

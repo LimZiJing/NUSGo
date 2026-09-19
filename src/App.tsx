@@ -15,17 +15,16 @@ import {
   createInitialContextualPanelState,
 } from './contextual-panel/state'
 import { applyBasemapPresentation } from './map/basemap'
-import { fetchJson } from './map/data'
 import {
   addBusStopMarkers,
   addTripEndpointMarkers,
   addVenueMarker,
-  getVenueCount,
   removeBusStopMarkers,
   setBusStopMarkerSelection,
 } from './map/markers'
-import { TransitValidationError } from './transit/model'
-import { deriveTransitRouteOverlapMap } from './transit/overlap'
+import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
+import { TransitValidationError } from './domain/transit/validation'
+import { deriveTransitRouteOverlapMap } from './domain/transit/overlap'
 import {
   addTransitRouteLayers,
   fitTransitRoute,
@@ -34,7 +33,6 @@ import {
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
-  validateTransitMapData,
   waitForMapStyleLoaded,
 } from './transit/render'
 import {
@@ -43,15 +41,16 @@ import {
   setTripEndpoint,
   swapTripEndpoints,
   validateTripRequest,
-} from './trip/endpoints'
+} from './domain/trip/endpoints'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from './types/trip'
-import type { TransitNetwork, TransitRouteGeometry } from './types/transit'
-import type { VenueLocationMap } from './types/venues'
-import type { VenueSearchResult } from './venue/search'
+} from './domain/trip/types'
+import type { TransitNetworkIndex } from './domain/transit'
+import type { TransitNetwork, TransitRouteGeometry } from './domain/transit/types'
+import type { VenueLocationMap } from './domain/venue/types'
+import type { VenueSearchResult } from './domain/venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 
@@ -68,6 +67,7 @@ function App() {
   const endpointMarkersRef = useRef<Marker[]>([])
   const busStopMarkersRef = useRef<Marker[]>([])
   const transitNetworkRef = useRef<TransitNetwork | null>(null)
+  const transitNetworkIndexRef = useRef<TransitNetworkIndex | null>(null)
   const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
   const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
   const selectedRouteIdRef = useRef<string | null>(null)
@@ -93,8 +93,9 @@ function App() {
   const handleRouteSelect = useCallback((routeId: string | null) => {
     const previousRouteId = selectedRouteIdRef.current
     const network = transitNetworkRef.current
-    const selectedRoute = routeId && network
-      ? network.routes.find((route) => route.id === routeId)
+    const networkIndex = transitNetworkIndexRef.current
+    const selectedRoute = routeId && networkIndex
+      ? networkIndex.routeById.get(routeId)
       : undefined
     const nextRouteId = selectedRoute?.id ?? null
     selectedRouteIdRef.current = nextRouteId
@@ -248,14 +249,10 @@ function App() {
 
     const loadVenues = async () => {
       try {
-        const venueData = await fetchJson<VenueLocationMap>(
-          'data/venues.json',
-          controller.signal,
-          'Venue data',
-        )
-        venueCount = getVenueCount(venueData)
+        const venueData = await loadVenueData(controller.signal)
+        venueCount = venueData.venueCount
         if (isMounted) {
-          setVenues(venueData)
+          setVenues(venueData.venues)
           if (!transitFailure) {
             setStatus(`${venueCount} venues available; loading shuttle routes…`)
           }
@@ -269,24 +266,8 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
-
-        const [networkInput, geometryInput] = await Promise.all([
-          fetchJson<unknown>(
-            '/data/shuttle-network.json',
-
-            controller.signal,
-            'Shuttle network',
-          ),
-          fetchJson<unknown>(
-            '/data/shuttle-routes.geojson',
-            controller.signal,
-            'Shuttle route geometry',
-          ),
-        ])
-        const {
-          network: transitNetwork,
-          geometry,
-        } = validateTransitMapData(networkInput, geometryInput)
+        const { network: transitNetwork, geometry, index } =
+          await loadTransitMapData(controller.signal)
         const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
         await mapStyleReady
@@ -295,6 +276,7 @@ function App() {
         busStopMarkers = markers
         busStopMarkersRef.current = markers
         transitNetworkRef.current = transitNetwork
+        transitNetworkIndexRef.current = index
         transitGeometryRef.current = geometry
         transitRouteOverlapMapRef.current = routeOverlapMap
         setTransitNetwork(transitNetwork)
@@ -330,6 +312,7 @@ function App() {
       busStopMarkers.forEach((marker) => marker.remove())
       busStopMarkersRef.current = []
       transitNetworkRef.current = null
+      transitNetworkIndexRef.current = null
       transitGeometryRef.current = null
       transitRouteOverlapMapRef.current = new globalThis.Map()
       selectedRouteIdRef.current = null
@@ -362,7 +345,7 @@ function App() {
 
   const stops = transitNetwork?.stops ?? []
 
-  const selectedRouteColor = transitNetwork?.routes.find((route) => route.id === selectedRouteId)?.color ?? '#334155'
+  const selectedRouteColor = transitNetworkIndexRef.current?.routeById.get(selectedRouteId ?? '')?.color ?? '#334155'
 
   return (
     <main className="map-shell">

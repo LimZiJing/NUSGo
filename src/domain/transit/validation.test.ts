@@ -3,9 +3,9 @@ import {
   TransitValidationError,
   validateTransitNetwork,
   validateTransitVerificationManifest,
-} from './model'
+} from './validation'
 import { createValidTransitNetwork } from './test-fixtures'
-import type { TransitNetwork } from '../types/transit'
+import type { TransitNetwork } from './types'
 
 type Mutation = (network: TransitNetwork) => void
 type ValidationCase = [name: string, mutate: Mutation, expected: RegExp]

@@ -3,6 +3,7 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
 import type { TripEndpointRole } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
+import { validateVenueLocationMap } from '../domain/venue/validation'
 import type { LoadedTransitData } from './contracts/map'
 import {
   createInitialNavigationSessionState,
@@ -463,30 +464,81 @@ describe('navigation session', () => {
   })
 
   it('publishes immutable controller-owned snapshots without cloning canonical loaded values', async () => {
-    const dependencies = createDependencies()
+    const canonicalVenues = validateVenueLocationMap({
+      COM1: {
+        roomName: 'Computing 1',
+        location: { x: 103, y: 1 },
+      },
+    })
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(async () => ({ venues: canonicalVenues, venueCount: 1 })),
+    })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
     const loadedState = session.getState()
-    expect(loadedState.venues).toBe(dependencies.venues.venues)
+    expect(loadedState.venues).toBe(canonicalVenues)
+    expect(Object.isFrozen(loadedState.venues)).toBe(true)
+    expect(Object.isFrozen(canonicalVenues.COM1)).toBe(true)
+    expect(Object.isFrozen(canonicalVenues.COM1.location)).toBe(true)
     expect(loadedState.transitIndex).toBe(dependencies.transit.index)
+    expect(Object.isFrozen(loadedState.transitIndex)).toBe(true)
     expect(Object.isFrozen(loadedState)).toBe(true)
     expect(Object.isFrozen(loadedState.contextualPanel)).toBe(true)
     expect(Object.isFrozen(loadedState.contextualPanel.history)).toBe(true)
     expect(Object.isFrozen(loadedState.tripRequest)).toBe(true)
     expect(Object.isFrozen(loadedState.resourceStatus)).toBe(true)
+    expect(Object.isFrozen(loadedState.resourceStatus.venue)).toBe(true)
+    expect(Object.isFrozen(loadedState.resourceStatus.transit)).toBe(true)
+    if (loadedState.resourceStatus.transit.status === 'loaded') {
+      expect(Object.isFrozen(loadedState.resourceStatus.transit.value)).toBe(true)
+    }
 
-    const endpoint = { kind: 'venue' as const, id: 'COM1' }
-    session.setTripEndpoint('origin', endpoint)
-    expect(endpoint).toEqual({ kind: 'venue', id: 'COM1' })
+    const originEndpoint = { kind: 'venue' as const, id: 'COM1' }
+    const destinationEndpoint = { kind: 'stop' as const, id: 'STOP-A' }
+    session.setTripEndpoint('origin', originEndpoint)
+    session.setTripEndpoint('destination', destinationEndpoint)
+    expect(originEndpoint).toEqual({ kind: 'venue', id: 'COM1' })
+    expect(destinationEndpoint).toEqual({ kind: 'stop', id: 'STOP-A' })
+    expect(Object.isFrozen(session.getState().tripRequest)).toBe(true)
     expect(Object.isFrozen(session.getState().tripRequest.origin)).toBe(true)
-    expect(session.getState().tripRequest.origin).not.toBe(endpoint)
+    expect(Object.isFrozen(session.getState().tripRequest.destination)).toBe(true)
+    expect(session.getState().tripRequest.origin).not.toBe(originEndpoint)
+    expect(session.getState().tripRequest.destination).not.toBe(destinationEndpoint)
 
-    session.selectVenue(venueResult)
+    session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
+    session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
     const selectedVenue = session.getState().contextualPanel.selectedVenue
-    expect(selectedVenue?.venue).toBe(dependencies.venues.venues.COM1)
+    expect(selectedVenue?.venue).toBe(canonicalVenues.COM1)
     expect(Object.isFrozen(selectedVenue)).toBe(true)
+    expect(Object.isFrozen(selectedVenue?.venue)).toBe(true)
     expect(Object.isFrozen(session.getState().contextualPanel.history)).toBe(true)
+    expect(session.getState().contextualPanel.history).toHaveLength(2)
+    expect(session.getState().contextualPanel.history.every((entry) => Object.isFrozen(entry))).toBe(true)
+    expect(Object.isFrozen(session.getState().contextualPanel.history[1]?.selectedVenue)).toBe(true)
+    expect(session.getState().contextualPanel.history[1]?.selectedVenue?.venue).toBe(canonicalVenues.COM1)
+  })
+
+  it('freezes pending and failed resource branches', async () => {
+    const initialState = createInitialNavigationSessionState()
+    expect(Object.isFrozen(initialState.resourceStatus.venue)).toBe(true)
+    expect(Object.isFrozen(initialState.resourceStatus.transit)).toBe(true)
+
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const dependencies = createDependencies({
+        loadTransit: vi.fn(async () => {
+          throw new Error('transit unavailable')
+        }),
+      })
+      const session = createNavigationSession(dependencies)
+      await session.start(new AbortController().signal)
+
+      expect(Object.isFrozen(session.getState().resourceStatus.venue)).toBe(true)
+      expect(Object.isFrozen(session.getState().resourceStatus.transit)).toBe(true)
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   it('canonicalizes venue selection by loaded code and rejects mismatched or unmapped results', async () => {

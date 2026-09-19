@@ -545,9 +545,22 @@
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+h2:focus,
+h3:focus {
   outline: 3px solid rgb(37 99 235 / 45%);
   outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 

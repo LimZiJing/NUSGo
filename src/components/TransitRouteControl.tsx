@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import type { TransitNetworkIndex } from '../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../domain/transit/types'
 
@@ -6,6 +7,7 @@ interface TransitRouteControlProps {
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onRouteSelect: (routeId: string | null) => void
+  selectRef?: RefObject<HTMLSelectElement | null>
 }
 
 function getRouteStops(
@@ -31,6 +33,7 @@ export function TransitRouteControl({
   networkIndex,
   selectedRouteId,
   onRouteSelect,
+  selectRef,
 }: TransitRouteControlProps) {
   const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
@@ -59,6 +62,7 @@ export function TransitRouteControl({
       <label htmlFor="route-select">Shuttle route</label>
       <select
         id="route-select"
+        ref={selectRef}
         value={selectedRouteId ?? ''}
         onChange={(event) => onRouteSelect(event.target.value || null)}
         disabled={routes.length === 0}

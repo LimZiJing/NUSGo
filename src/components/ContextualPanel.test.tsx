@@ -57,7 +57,8 @@ describe('ContextualPanel', () => {
     }
     const markup = renderPanel(state)
 
-    expect(markup).toContain('<h3>COM1-0210</h3>')
+    expect(markup).toContain('id="contextual-venue-detail-heading"')
+    expect(markup).toContain('>COM1-0210</h3>')
     expect(markup).toContain('Computing 1, Level 2')
     expect(markup).toContain('<strong>Floor:</strong> 2')
     expect(markup).not.toContain('maplibregl-popup')

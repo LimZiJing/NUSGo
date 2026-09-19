@@ -1,10 +1,16 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, type MouseEvent } from 'react'
 import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
 import type { TransitNetwork } from '../domain/transit/types'
 import type { TransitNetworkIndex } from '../domain/transit'
 import type { VenueLocationMap } from '../domain/venue/types'
 import type { ContextualPanelState } from '../domain/contextual-panel/state'
 import { TransitRouteControl } from './TransitRouteControl'
+
+interface FocusTarget {
+  readonly element: HTMLElement
+  readonly key: string | null
+  readonly fallbackKey: string | null
+}
 
 interface ContextualPanelProps {
   state: ContextualPanelState
@@ -28,6 +34,20 @@ function getPanelHeading(state: ContextualPanelState): string {
   return 'Explore NUS'
 }
 
+function findFocusTarget(key: string): HTMLElement | undefined {
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-contextual-focus-id]'))
+    .find((element) => element.dataset.contextualFocusId === key)
+}
+
+function getPanelAnnouncement(state: ContextualPanelState): string {
+  if (state.mode === 'shuttle') return 'Shuttle routes opened.'
+  if (state.mode === 'venue-detail' && state.selectedVenue) {
+    return `Venue details opened for ${state.selectedVenue.code}.`
+  }
+  if (state.mode === 'venue-search') return 'Venue search opened.'
+  return 'Map context closed.'
+}
+
 export function ContextualPanel({
   state,
   venues,
@@ -43,16 +63,95 @@ export function ContextualPanel({
   onEscape,
   onRouteSelect,
 }: ContextualPanelProps) {
+  const panelHeadingRef = useRef<HTMLHeadingElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const detailHeadingRef = useRef<HTMLHeadingElement>(null)
+  const routeSelectRef = useRef<HTMLSelectElement>(null)
+  const focusHistoryRef = useRef<FocusTarget[]>([])
+  const pendingFocusRef = useRef<FocusTarget | null>(null)
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.preventDefault()
+      pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
       onEscape()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onEscape])
+
+  useEffect(() => {
+    const pendingFocus = pendingFocusRef.current
+    pendingFocusRef.current = null
+    const focusTarget = pendingFocus?.element.isConnected
+      ? pendingFocus.element
+      : pendingFocus?.key
+        ? findFocusTarget(pendingFocus.key)
+        : undefined
+    const fallbackTarget = pendingFocus?.fallbackKey
+      ? findFocusTarget(pendingFocus.fallbackKey)
+      : undefined
+    const target = focusTarget ?? fallbackTarget
+    if (target) {
+      target.focus()
+      return
+    }
+
+    if (state.mode === 'venue-search') {
+      searchInputRef.current?.focus()
+      return
+    }
+    if (state.mode === 'venue-detail') {
+      detailHeadingRef.current?.focus()
+      return
+    }
+    if (state.mode === 'shuttle') {
+      routeSelectRef.current?.focus()
+      return
+    }
+
+    focusHistoryRef.current = []
+    panelHeadingRef.current?.focus()
+  }, [state.mode, state.selectedVenue?.code])
+
+  const rememberCurrentControl = (event: MouseEvent<HTMLElement>): void => {
+    focusHistoryRef.current.push({
+      element: event.currentTarget,
+      key: event.currentTarget.dataset.contextualFocusId ?? null,
+      fallbackKey: state.mode === 'shuttle' ? 'neutral-shuttle-opener' : 'venue-search-opener',
+    })
+  }
+
+  const handleOpenVenueSearch = (event: MouseEvent<HTMLButtonElement>): void => {
+    if (state.mode !== 'venue-search') rememberCurrentControl(event)
+    onOpenVenueSearch()
+  }
+
+  const handleOpenShuttle = (event: MouseEvent<HTMLButtonElement>): void => {
+    if (state.mode !== 'shuttle') rememberCurrentControl(event)
+    onOpenShuttle()
+  }
+
+  const handleVenueSelect = (
+    result: VenueSearchResult,
+    event: MouseEvent<HTMLButtonElement>,
+  ): void => {
+    rememberCurrentControl(event)
+    onVenueSelect(result)
+  }
+
+  const handleBack = (): void => {
+    pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
+    onBack()
+  }
+
+  const handleClose = (): void => {
+    pendingFocusRef.current = focusHistoryRef.current.at(-1) ?? null
+    focusHistoryRef.current = []
+    onClose()
+  }
 
   const searchState = useMemo(() => {
     if (!venues) return { results: [], failed: false }
@@ -70,12 +169,14 @@ export function ContextualPanel({
   return (
     <section
       className={`contextual-panel contextual-panel-${state.mode}`}
-      aria-label="Map context"
+      aria-labelledby="contextual-panel-heading"
     >
       <div className="contextual-panel-header">
-        <h2>{getPanelHeading(state)}</h2>
+        <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
+          {getPanelHeading(state)}
+        </h2>
         {state.mode !== 'neutral' && (
-          <button type="button" onClick={onClose} aria-label="Close map context">
+          <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>
         )}
@@ -85,10 +186,18 @@ export function ContextualPanel({
         <div className="contextual-panel-content">
           <p>Search for a venue or browse the shuttle network.</p>
           <div className="contextual-panel-actions">
-            <button type="button" onClick={onOpenVenueSearch}>
+            <button
+              data-contextual-focus-id="venue-search-opener"
+              type="button"
+              onClick={handleOpenVenueSearch}
+            >
               Find a venue
             </button>
-            <button type="button" onClick={onOpenShuttle}>
+            <button
+              data-contextual-focus-id="neutral-shuttle-opener"
+              type="button"
+              onClick={handleOpenShuttle}
+            >
               Browse shuttle routes
             </button>
           </div>
@@ -104,6 +213,7 @@ export function ContextualPanel({
               type="search"
               placeholder="e.g. COM1-0210"
               value={state.query}
+              ref={searchInputRef}
               onChange={(event) => onQueryChange(event.target.value)}
               autoComplete="off"
             />
@@ -118,7 +228,7 @@ export function ContextualPanel({
             )}
           </div>
           {venues === null || searchState.failed ? (
-            <p className="contextual-panel-status" role="status">
+            <p className="contextual-panel-status" role="status" aria-live="polite">
               Venue search is unavailable right now. Shuttle browsing is still available.
             </p>
           ) : state.query.trim() ? (
@@ -127,22 +237,27 @@ export function ContextualPanel({
                 searchState.results.map((result) => (
                   <button
                     className="contextual-panel-result"
+                    data-contextual-focus-id={`venue-result-${result.code}`}
                     type="button"
                     key={result.code}
-                    onClick={() => onVenueSelect(result)}
+                    onClick={(event) => handleVenueSelect(result, event)}
                   >
                     <strong>{result.code}</strong>
                     <span>{result.venue.roomName}</span>
                   </button>
                 ))
               ) : (
-                <p className="contextual-panel-status" role="status">No matching venues.</p>
+                <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
               )}
             </div>
           ) : (
             <p className="contextual-panel-status">Search by venue code or room name.</p>
           )}
-          <button type="button" onClick={onOpenShuttle}>
+          <button
+            data-contextual-focus-id="venue-search-shuttle-opener"
+            type="button"
+            onClick={handleOpenShuttle}
+          >
             Browse shuttle routes
           </button>
         </div>
@@ -150,15 +265,21 @@ export function ContextualPanel({
 
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div className="contextual-panel-content contextual-panel-detail">
-          <button type="button" onClick={onBack} aria-label="Back to venue search">
+          <button type="button" onClick={handleBack} aria-label="Back to venue search">
             Back
           </button>
-          <h3>{state.selectedVenue.code}</h3>
+          <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+            {state.selectedVenue.code}
+          </h3>
           <p><strong>Room:</strong> {state.selectedVenue.venue.roomName}</p>
           {state.selectedVenue.venue.floor !== undefined && state.selectedVenue.venue.floor !== null && (
             <p><strong>Floor:</strong> {state.selectedVenue.venue.floor}</p>
           )}
-          <button type="button" onClick={onOpenShuttle}>
+          <button
+            data-contextual-focus-id="venue-detail-shuttle-opener"
+            type="button"
+            onClick={handleOpenShuttle}
+          >
             Browse shuttle routes
           </button>
         </div>
@@ -166,7 +287,7 @@ export function ContextualPanel({
 
       {state.mode === 'shuttle' && (
         <div className="contextual-panel-content">
-          <button type="button" onClick={onBack} aria-label="Back to previous map context">
+          <button type="button" onClick={handleBack} aria-label="Back to previous map context">
             Back
           </button>
           <TransitRouteControl
@@ -174,9 +295,13 @@ export function ContextualPanel({
             networkIndex={networkIndex}
             selectedRouteId={selectedRouteId}
             onRouteSelect={onRouteSelect}
+            selectRef={routeSelectRef}
           />
         </div>
       )}
+      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+        {getPanelAnnouncement(state)}
+      </p>
     </section>
   )
 }

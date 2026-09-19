@@ -553,14 +553,42 @@ select:focus-visible {
 
 @media (max-width: 600px) {
   .map-overlay-right {
-    top: 50%;
-    bottom: 12px;
-    max-height: calc(50vh - 12px);
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(360px, calc(100vw - 24px));
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .map-overlay-right > * {
+    width: 100%;
+    pointer-events: auto;
+  }
+
+  .trip-controls {
+    align-self: flex-start;
+    max-height: min(30vh, calc(100vh - 36px));
+  }
+
+  .contextual-panel {
+    align-self: flex-end;
+    max-height: min(50vh, calc(100vh - 36px));
+    max-height: min(50dvh, calc(100dvh - 36px));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    border-radius: 10px;
   }
 
   .trip-controls,
   .contextual-panel {
-    max-height: min(58vh, calc(100vh - 36px));
+    overflow-y: auto;
   }
 
   .route-control {

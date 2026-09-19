@@ -1,8 +1,8 @@
-export async function fetchJson<T>(
+export async function fetchJson(
   path: string,
   signal: AbortSignal,
   resourceName: string,
-): Promise<T> {
+): Promise<unknown> {
   const basePath = import.meta.env.BASE_URL
   const relativePath = path.replace(/^\/+/, '')
   const response = await fetch(`${basePath}${relativePath}`, { signal })
@@ -11,5 +11,6 @@ export async function fetchJson<T>(
     throw new Error(`${resourceName} request failed: ${response.status}`)
   }
 
-  return (await response.json()) as T
+  const payload: unknown = await response.json()
+  return payload
 }

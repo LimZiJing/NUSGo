@@ -1,20 +1,21 @@
-import type { TransitNetwork, TransitRoute } from '../types/transit'
+import type { TransitNetworkIndex } from '../domain/transit'
+import type { TransitNetwork, TransitRoute } from '../domain/transit/types'
 
 interface TransitRouteControlProps {
   network: TransitNetwork | null
+  networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onRouteSelect: (routeId: string | null) => void
 }
 
 function getRouteStops(
-  network: TransitNetwork,
+  networkIndex: TransitNetworkIndex,
   route: TransitRoute,
 ): Map<string, TransitNetwork['stops'][number]> {
+  const stopsById = networkIndex.stopById
   return new Map(
-    route.stopIds.map((stopId) => [
-      stopId,
-      network.stops.find((stop) => stop.id === stopId),
-    ]).filter((entry): entry is [string, TransitNetwork['stops'][number]] => entry[1] !== undefined),
+    route.stopIds.map((stopId) => [stopId, stopsById.get(stopId)])
+      .filter((entry): entry is [string, TransitNetwork['stops'][number]] => entry[1] !== undefined),
   )
 }
 
@@ -27,13 +28,16 @@ function getStopLabel(
 
 export function TransitRouteControl({
   network,
+  networkIndex,
   selectedRouteId,
   onRouteSelect,
 }: TransitRouteControlProps) {
   const routes = network?.routes ?? []
-  const selectedRoute = routes.find((route) => route.id === selectedRouteId)
-  const stopsById = selectedRoute && network
-    ? getRouteStops(network, selectedRoute)
+  const selectedRoute = selectedRouteId && networkIndex
+    ? networkIndex.routeById.get(selectedRouteId)
+    : undefined
+  const stopsById = selectedRoute && networkIndex
+    ? getRouteStops(networkIndex, selectedRoute)
     : new Map<string, TransitNetwork['stops'][number]>()
   const firstStopId = selectedRoute?.stopIds[0] ?? ''
   const lastStopId = selectedRoute?.stopIds.at(-1) ?? ''

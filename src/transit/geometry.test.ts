@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { TransitNetwork, TransitRouteGeometry } from '../types/transit'
-import { validateTransitRouteGeometry } from './geometry'
-import { validateTransitNetwork } from './model'
-import { createValidTransitNetwork } from './test-fixtures'
+import type { TransitNetwork, TransitRouteGeometry } from '../domain/transit/types'
+import { validateTransitRouteGeometry } from '../domain/transit/geometry'
+import { validateTransitNetwork } from '../domain/transit/model'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 
 function createValidGeometry(): TransitRouteGeometry {
   return {

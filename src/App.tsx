@@ -13,19 +13,18 @@ import { TripEndpointControl } from './components/TripEndpointControl'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
-} from './contextual-panel/state'
+} from './domain/contextual-panel/state'
 import { applyBasemapPresentation } from './map/basemap'
-import { fetchJson } from './map/data'
 import {
   addBusStopMarkers,
   addTripEndpointMarkers,
   addVenueMarker,
-  getVenueCount,
   removeBusStopMarkers,
   setBusStopMarkerSelection,
 } from './map/markers'
-import { TransitValidationError } from './transit/model'
-import { deriveTransitRouteOverlapMap } from './transit/overlap'
+import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
+import { TransitValidationError } from './domain/transit/model'
+import { deriveTransitRouteOverlapMap } from './domain/transit/overlap'
 import {
   addTransitRouteLayers,
   fitTransitRoute,
@@ -34,7 +33,6 @@ import {
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
-  validateTransitMapData,
   waitForMapStyleLoaded,
 } from './transit/render'
 import {
@@ -43,15 +41,16 @@ import {
   setTripEndpoint,
   swapTripEndpoints,
   validateTripRequest,
-} from './trip/endpoints'
+} from './domain/trip/endpoints'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from './types/trip'
-import type { TransitNetwork, TransitRouteGeometry } from './types/transit'
-import type { VenueLocationMap } from './types/venues'
-import type { VenueSearchResult } from './venue/search'
+} from './domain/trip/types'
+import type { TransitIndex } from './domain/transit'
+import type { TransitRouteGeometry } from './domain/transit/types'
+import type { VenueLocationMap } from './domain/venue/types'
+import type { VenueSearchResult } from './domain/venue/search'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 
@@ -67,13 +66,13 @@ function App() {
   const selectedVenueMarkerRef = useRef<Marker | null>(null)
   const endpointMarkersRef = useRef<Marker[]>([])
   const busStopMarkersRef = useRef<Marker[]>([])
-  const transitNetworkRef = useRef<TransitNetwork | null>(null)
+  const transitIndexRef = useRef<TransitIndex | null>(null)
   const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
   const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
   const selectedRouteIdRef = useRef<string | null>(null)
   const contextualPanelStateRef = useRef(createInitialContextualPanelState())
   const [venues, setVenues] = useState<VenueLocationMap | null>(null)
-  const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
+  const [transitIndex, setTransitIndex] = useState<TransitIndex | null>(null)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const [contextualPanelState, dispatchContextualPanel] = useReducer(
     contextualPanelReducer,
@@ -92,9 +91,9 @@ function App() {
 
   const handleRouteSelect = useCallback((routeId: string | null) => {
     const previousRouteId = selectedRouteIdRef.current
-    const network = transitNetworkRef.current
-    const selectedRoute = routeId && network
-      ? network.routes.find((route) => route.id === routeId)
+    const networkIndex = transitIndexRef.current
+    const selectedRoute = routeId && networkIndex
+      ? networkIndex.routeById.get(routeId)
       : undefined
     const nextRouteId = selectedRoute?.id ?? null
     selectedRouteIdRef.current = nextRouteId
@@ -106,8 +105,8 @@ function App() {
         ? transitRouteOverlapMapRef.current.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
         : EMPTY_ROUTE_OVERLAP
       setTransitRouteSelection(map, nextRouteId, overlappingRouteIds)
-      if (nextRouteId !== previousRouteId && network && transitGeometryRef.current) {
-        fitTransitRoute(map, network, transitGeometryRef.current, nextRouteId)
+      if (nextRouteId !== previousRouteId && networkIndex && transitGeometryRef.current) {
+        fitTransitRoute(map, networkIndex, transitGeometryRef.current, nextRouteId)
       }
     }
     setBusStopMarkerSelection(
@@ -248,14 +247,10 @@ function App() {
 
     const loadVenues = async () => {
       try {
-        const venueData = await fetchJson<VenueLocationMap>(
-          'data/venues.json',
-          controller.signal,
-          'Venue data',
-        )
-        venueCount = getVenueCount(venueData)
+        const venueData = await loadVenueData(controller.signal)
+        venueCount = venueData.venueCount
         if (isMounted) {
-          setVenues(venueData)
+          setVenues(venueData.venues)
           if (!transitFailure) {
             setStatus(`${venueCount} venues available; loading shuttle routes…`)
           }
@@ -269,35 +264,19 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
-
-        const [networkInput, geometryInput] = await Promise.all([
-          fetchJson<unknown>(
-            '/data/shuttle-network.json',
-
-            controller.signal,
-            'Shuttle network',
-          ),
-          fetchJson<unknown>(
-            '/data/shuttle-routes.geojson',
-            controller.signal,
-            'Shuttle route geometry',
-          ),
-        ])
-        const {
-          network: transitNetwork,
-          geometry,
-        } = validateTransitMapData(networkInput, geometryInput)
+        const { network: transitNetwork, geometry, index } =
+          await loadTransitMapData(controller.signal)
         const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
         await mapStyleReady
         addTransitRouteLayers(map, geometry)
-        const markers = addBusStopMarkers(map, transitNetwork.stops, handleSetTripEndpoint)
+        const markers = addBusStopMarkers(map, index.stops, handleSetTripEndpoint)
         busStopMarkers = markers
         busStopMarkersRef.current = markers
-        transitNetworkRef.current = transitNetwork
+        transitIndexRef.current = index
         transitGeometryRef.current = geometry
         transitRouteOverlapMapRef.current = routeOverlapMap
-        setTransitNetwork(transitNetwork)
+        setTransitIndex(index)
 
         if (isMounted) {
           setStatus(
@@ -329,7 +308,7 @@ function App() {
       removeBusStopMarkers(map, busStopMarkers)
       busStopMarkers.forEach((marker) => marker.remove())
       busStopMarkersRef.current = []
-      transitNetworkRef.current = null
+      transitIndexRef.current = null
       transitGeometryRef.current = null
       transitRouteOverlapMapRef.current = new globalThis.Map()
       selectedRouteIdRef.current = null
@@ -351,18 +330,16 @@ function App() {
       map,
       tripRequest,
       venues ?? {},
-      transitNetwork?.stops ?? [],
+      transitIndex,
     )
 
     return () => {
       endpointMarkersRef.current.forEach((marker) => marker.remove())
       endpointMarkersRef.current = []
     }
-  }, [tripRequest, transitNetwork, venues])
+  }, [tripRequest, transitIndex, venues])
 
-  const stops = transitNetwork?.stops ?? []
-
-  const selectedRouteColor = transitNetwork?.routes.find((route) => route.id === selectedRouteId)?.color ?? '#334155'
+  const selectedRouteColor = transitIndex?.routeById.get(selectedRouteId ?? '')?.color ?? '#334155'
 
   return (
     <main className="map-shell">
@@ -384,7 +361,7 @@ function App() {
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
-            stops={stops}
+            networkIndex={transitIndex}
             searchQuery={originSearchQuery}
             onSearchQueryChange={setOriginSearchQuery}
             onSelect={(endpoint) => handleSetTripEndpoint('origin', endpoint)}
@@ -394,7 +371,7 @@ function App() {
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
-            stops={stops}
+            networkIndex={transitIndex}
             searchQuery={destinationSearchQuery}
             onSearchQueryChange={setDestinationSearchQuery}
             onSelect={(endpoint) => handleSetTripEndpoint('destination', endpoint)}
@@ -415,7 +392,8 @@ function App() {
         <ContextualPanel
           state={contextualPanelState}
           venues={venues}
-          network={transitNetwork}
+          network={transitIndex?.network ?? null}
+          networkIndex={transitIndex}
           selectedRouteId={selectedRouteId}
           onQueryChange={(query) => dispatchContextualPanel({ type: 'set-query', query })}
           onVenueSelect={handleVenueSelect}

@@ -1,18 +1,18 @@
 import { useMemo } from 'react'
-import { getTripEndpointLabel, searchTripLocations } from '../location/search'
-import type { TransitStop } from '../types/transit'
+import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
+import type { TransitIndex } from '../domain/transit'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripLocationSearchResult,
-} from '../types/trip'
-import type { VenueLocationMap } from '../types/venues'
+} from '../domain/trip/types'
+import type { VenueLocationMap } from '../domain/venue/types'
 
 interface TripEndpointControlProps {
   role: TripEndpointRole
   endpoint: TripEndpoint | null
   venues: VenueLocationMap | null
-  stops: TransitStop[]
+  networkIndex: TransitIndex | null
   searchQuery: string
   onSearchQueryChange: (query: string) => void
   onSelect: (endpoint: TripEndpoint) => void
@@ -26,9 +26,9 @@ function getRoleLabel(role: TripEndpointRole): string {
 function getEndpointLabel(
   endpoint: TripEndpoint,
   venues: VenueLocationMap | null,
-  stops: TransitStop[],
+  networkIndex: TransitIndex | null,
 ): string {
-  return getTripEndpointLabel(endpoint, venues ?? {}, stops)
+  return getTripEndpointLabel(endpoint, venues ?? {}, networkIndex ?? [])
 }
 
 function getResultLabel(result: TripLocationSearchResult): string {
@@ -39,7 +39,7 @@ export function TripEndpointControl({
   role,
   endpoint,
   venues,
-  stops,
+  networkIndex,
   searchQuery,
   onSearchQueryChange,
   onSelect,
@@ -48,10 +48,10 @@ export function TripEndpointControl({
   const roleLabel = getRoleLabel(role)
   const inputId = `trip-${role}-search`
   const statusId = `trip-${role}-search-status`
-  const hasLocationData = venues !== null || stops.length > 0
+  const hasLocationData = venues !== null || networkIndex !== null
   const results = useMemo(
-    () => searchTripLocations(venues ?? {}, stops, searchQuery),
-    [searchQuery, stops, venues],
+    () => searchTripLocations(venues ?? {}, networkIndex ?? [], searchQuery),
+    [searchQuery, networkIndex, venues],
   )
   const showResults = searchQuery.trim().length > 0
   const searchStatus = !hasLocationData
@@ -101,7 +101,7 @@ export function TripEndpointControl({
         <span>Selected:</span>{' '}
         <strong>
           {endpoint
-            ? getEndpointLabel(endpoint, venues, stops)
+            ? getEndpointLabel(endpoint, venues, networkIndex)
             : `No ${roleLabel.toLocaleLowerCase()} selected`}
         </strong>
         {endpoint && <span className="trip-endpoint-id"> ({endpoint.id})</span>}

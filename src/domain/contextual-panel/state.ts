@@ -10,7 +10,6 @@ export interface ContextualPanelState {
   mode: ContextualPanelMode
   query: string
   selectedVenue: VenueSearchResult | null
-  // History stores view snapshots so Back restores both the mode and its query.
   history: ContextualPanelSnapshot[]
 }
 
@@ -58,7 +57,6 @@ function pushCurrentState(
 }
 
 function closePanel(state: ContextualPanelState): ContextualPanelState {
-  // Keep the query available when the panel is reopened, but clear the active detail.
   return {
     mode: 'neutral',
     query: state.query,

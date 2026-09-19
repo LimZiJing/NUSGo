@@ -1,7 +1,7 @@
 import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../types/transit'
+} from './types'
 
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
@@ -86,7 +86,6 @@ function getSegmentOverlapInterval(
   const firstLength = length(firstDirection)
   const secondLength = length(secondDirection)
   if (firstLength === 0 || secondLength === 0) return null
-
 
   const firstUnit = { x: firstDirection.x / firstLength, y: firstDirection.y / firstLength }
   const secondStartProjection = dot(subtract(secondStart, firstStart), firstUnit)

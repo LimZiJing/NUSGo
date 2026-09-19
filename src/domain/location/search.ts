@@ -1,9 +1,10 @@
-import type { TransitStop } from '../types/transit'
+import type { TransitIndex } from '../transit'
+import type { TransitStop } from '../transit/types'
 import type {
   TripEndpoint,
   TripLocationSearchResult,
-} from '../types/trip'
-import type { VenueLocationMap } from '../types/venues'
+} from '../trip/types'
+import type { VenueLocationMap } from '../venue/types'
 
 const MAX_RESULTS = 8
 
@@ -49,14 +50,20 @@ function getResultLimit(limit: number): number {
   return Math.max(0, Math.min(MAX_RESULTS, Math.floor(limit)))
 }
 
-function getStop(stops: TransitStop[], id: string): TransitStop | undefined {
-  return stops.find((stop) => stop.id === id)
+type TransitStopSource = TransitIndex | readonly TransitStop[] | null
+
+function getStops(source: TransitStopSource): readonly TransitStop[] {
+  return source === null ? [] : 'stops' in source ? source.stops : source
+}
+
+function getStop(source: TransitStopSource, id: string): TransitStop | undefined {
+  return source === null ? undefined : 'stopById' in source ? source.stopById.get(id) : source.find((stop) => stop.id === id)
 }
 
 export function getTripEndpointLabel(
   endpoint: TripEndpoint,
   venues: VenueLocationMap,
-  stops: TransitStop[],
+  stops: TransitStopSource,
 ): string {
   if (endpoint.kind === 'venue') {
     return venues[endpoint.id]?.roomName ?? endpoint.id
@@ -67,7 +74,7 @@ export function getTripEndpointLabel(
 
 export function searchTripLocations(
   venues: VenueLocationMap,
-  stops: TransitStop[],
+  stops: TransitStopSource,
   query: string,
   limit = MAX_RESULTS,
 ): TripLocationSearchResult[] {
@@ -91,7 +98,7 @@ export function searchTripLocations(
     })
   }
 
-  for (const stop of stops) {
+  for (const stop of getStops(stops)) {
     candidates.push({
       result: {
         endpoint: { kind: 'stop', id: stop.id },

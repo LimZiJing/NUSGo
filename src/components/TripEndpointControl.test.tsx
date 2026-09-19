@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { TripEndpointControl } from './TripEndpointControl'
-import type { TransitStop } from '../types/transit'
-import type { VenueLocationMap } from '../types/venues'
+import { createTransitIndex } from '../domain/transit'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { TransitStop } from '../domain/transit/types'
+import type { VenueLocationMap } from '../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -22,6 +24,10 @@ const stops: TransitStop[] = [
   },
 ]
 
+const transitNetwork = createValidTransitNetwork()
+transitNetwork.stops = [stops[0], transitNetwork.stops[1]]
+const networkIndex = createTransitIndex(transitNetwork)
+
 describe('TripEndpointControl', () => {
   it('shows the selected endpoint and a stable ID for a destination', () => {
     const markup = renderToStaticMarkup(
@@ -29,7 +35,7 @@ describe('TripEndpointControl', () => {
         role="destination"
         endpoint={{ kind: 'stop', id: 'STOP-A' }}
         venues={venues}
-        stops={stops}
+        networkIndex={networkIndex}
         searchQuery=""
         onSearchQueryChange={() => undefined}
         onSelect={() => undefined}
@@ -49,7 +55,7 @@ describe('TripEndpointControl', () => {
         role="origin"
         endpoint={null}
         venues={venues}
-        stops={stops}
+        networkIndex={networkIndex}
         searchQuery="COM1"
         onSearchQueryChange={() => undefined}
         onSelect={() => undefined}
@@ -61,7 +67,7 @@ describe('TripEndpointControl', () => {
         role="origin"
         endpoint={null}
         venues={venues}
-        stops={stops}
+        networkIndex={networkIndex}
         searchQuery="STOP-A"
         onSearchQueryChange={() => undefined}
         onSelect={() => undefined}
@@ -80,7 +86,7 @@ describe('TripEndpointControl', () => {
         role="origin"
         endpoint={null}
         venues={null}
-        stops={[]}
+        networkIndex={null}
         searchQuery="COM1"
         onSearchQueryChange={() => undefined}
         onSelect={() => undefined}
@@ -97,7 +103,7 @@ describe('TripEndpointControl', () => {
         role="origin"
         endpoint={{ kind: 'stop', id: 'STOP-A' }}
         venues={null}
-        stops={stops}
+        networkIndex={networkIndex}
         searchQuery="STOP-A"
         onSearchQueryChange={() => undefined}
         onSelect={() => undefined}

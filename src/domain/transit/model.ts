@@ -1,7 +1,7 @@
 import type {
   TransitNetwork,
   TransitVerificationManifest,
-} from '../types/transit'
+} from './types'
 
 export class TransitValidationError extends Error {
   readonly issues: readonly string[]
@@ -14,7 +14,7 @@ export class TransitValidationError extends Error {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function describe(value: unknown): string {
@@ -46,6 +46,17 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     throw new TransitValidationError(['Transit network must be an object'])
   }
 
+  if (input.version !== 1) {
+    issues.push(`Transit network version must be 1: ${describe(input.version)}`)
+  }
+  if (!isRecord(input.metadata)) {
+    issues.push('Transit network metadata must be an object')
+  } else {
+    for (const field of ['source', 'routeStopOrder', 'routeGeometry', 'verifiedAt', 'routeOrderSource', 'coordinateSource'] as const) {
+      addRequiredTextIssue(input.metadata[field], `Transit network metadata ${field}`, issues)
+    }
+  }
+
   const stops = input.stops
   const routes = input.routes
   if (!Array.isArray(stops)) {
@@ -60,6 +71,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
 
   const stopById = new Map<string, Record<string, unknown>>()
   const routeIds = new Set<string>()
+  const routeById = new Map<string, Record<string, unknown>>()
 
   for (const [index, value] of routes.entries()) {
     if (!isRecord(value)) {
@@ -74,6 +86,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
       issues.push(`Duplicate transit route ID: ${value.id}`)
     } else {
       routeIds.add(value.id)
+      routeById.set(value.id, value)
     }
   }
 
@@ -91,6 +104,9 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     } else {
       stopById.set(value.id, value)
     }
+
+    addRequiredTextIssue(value.longName, `Transit stop ${stopId} longName`, issues)
+    addRequiredTextIssue(value.shortName, `Transit stop ${stopId} shortName`, issues)
 
     if (
       typeof value.latitude !== 'number' ||
@@ -111,11 +127,20 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
 
     if (!Array.isArray(value.services)) {
       issues.push(`Transit stop ${stopId} services must be an array`)
+    } else if (value.services.length === 0) {
+      issues.push(`Transit stop ${stopId} services must contain at least one service`)
     } else {
+      const serviceIds = new Set<string>()
       for (const service of value.services) {
-        if (typeof service !== 'string') {
+        if (typeof service !== 'string' || service.trim().length === 0) {
           issues.push(`Transit stop ${stopId} has invalid service ID: ${describe(service)}`)
-        } else if (!service.startsWith('PUB:') && !routeIds.has(service)) {
+          continue
+        }
+        if (serviceIds.has(service)) {
+          issues.push(`Transit stop ${stopId} repeats service: ${service}`)
+        }
+        serviceIds.add(service)
+        if (!service.startsWith('PUB:') && !routeIds.has(service)) {
           issues.push(`Transit stop ${stopId} references unknown internal route service: ${service}`)
         }
       }
@@ -126,6 +151,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     if (!isRecord(value)) continue
     const routeId = idFor(value, index)
 
+    addRequiredTextIssue(value.name, `Transit route ${routeId} name`, issues)
     if (typeof value.color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(value.color)) {
       issues.push(`Transit route ${routeId} has non-hex route color: ${describe(value.color)}`)
     }
@@ -140,7 +166,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
 
     const routeStopIds = new Set<string>()
     for (const stopIdValue of value.stopIds) {
-      if (typeof stopIdValue !== 'string') {
+      if (typeof stopIdValue !== 'string' || stopIdValue.trim().length === 0) {
         issues.push(`Transit route ${routeId} has an invalid stop ID: ${describe(stopIdValue)}`)
         continue
       }
@@ -167,7 +193,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     const stopId = idFor(value, index)
     const opposite = value.opposite
     if (opposite === undefined || opposite === null) continue
-    if (typeof opposite !== 'string') {
+    if (typeof opposite !== 'string' || opposite.trim().length === 0) {
       issues.push(`Transit stop ${stopId} has an invalid opposite stop reference: ${describe(opposite)}`)
       continue
     }
@@ -177,6 +203,21 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
       issues.push(`Transit stop ${stopId} references unknown opposite stop: ${opposite}`)
     } else if (oppositeStop.opposite !== value.id) {
       issues.push(`Transit stop ${stopId} opposite reference is not reciprocal with ${opposite}`)
+    }
+  }
+
+  for (const [stopId, stop] of stopById) {
+    if (!Array.isArray(stop.services)) continue
+    for (const service of stop.services) {
+      if (!routeIds.has(service)) continue
+      const route = routeById.get(service)
+      if (
+        route &&
+        Array.isArray(route.stopIds) &&
+        !route.stopIds.includes(stopId)
+      ) {
+        issues.push(`Transit stop ${stopId} service ${service} is missing stop membership on route ${service}`)
+      }
     }
   }
 
@@ -225,7 +266,7 @@ export function validateTransitVerificationManifest(
         continue
       }
       const routeId = idFor(value, index)
-      if (typeof value.routeId !== 'string' || value.routeId.length === 0) {
+      if (typeof value.routeId !== 'string' || value.routeId.trim().length === 0) {
         issues.push(`Transit verification route ${routeId} must have a non-empty route ID`)
         continue
       }

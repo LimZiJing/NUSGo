@@ -7,13 +7,15 @@ import type {
   SymbolLayerSpecification,
 } from 'maplibre-gl'
 import { addBusStopMarkers } from '../map/markers'
-import { validateTransitNetwork } from './model'
-import { validateTransitRouteGeometry } from './geometry'
+import { validateTransitMapData } from '../domain/transit/map-data'
+import type { TransitIndex } from '../domain/transit'
+import { validateTransitNetwork } from '../domain/transit/model'
+
 import type {
   TransitNetwork,
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../types/transit'
+} from '../domain/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
@@ -129,24 +131,15 @@ export interface ValidatedTransitMapData extends ValidatedTransitMarkers {
   geometry: TransitRouteGeometry
 }
 
-export function validateTransitMapData(
-  networkInput: unknown,
-  geometryInput: unknown,
-): { network: TransitNetwork; geometry: TransitRouteGeometry } {
-  const network = validateTransitNetwork(networkInput)
-  const geometry = validateTransitRouteGeometry(network, geometryInput)
-  return { network, geometry }
-}
-
 export type TransitRouteBounds = [[number, number], [number, number]]
 
 export function getTransitRouteBounds(
-  network: TransitNetwork,
+  index: TransitIndex,
   geometry: TransitRouteGeometry,
   routeId: string | null,
 ): TransitRouteBounds | null {
   const selectedRoute = routeId
-    ? network.routes.find((route) => route.id === routeId) ?? null
+    ? index.routeById.get(routeId) ?? null
     : null
   const selectedRouteIds = selectedRoute ? new Set([selectedRoute.id]) : null
   const positions: TransitGeoJsonPosition[] = geometry.features
@@ -154,7 +147,7 @@ export function getTransitRouteBounds(
     .flatMap(({ geometry: routeGeometry }) => routeGeometry.coordinates)
   const selectedStopIds = selectedRoute ? new Set(selectedRoute.stopIds) : null
 
-  for (const stop of network.stops) {
+  for (const stop of index.stops) {
     if (selectedStopIds === null || selectedStopIds.has(stop.id)) {
       positions.push([stop.longitude, stop.latitude])
     }
@@ -187,11 +180,11 @@ export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions
 
 export function fitTransitRoute(
   map: Map,
-  network: TransitNetwork,
+  index: TransitIndex,
   geometry: TransitRouteGeometry,
   routeId: string | null,
 ): void {
-  const bounds = getTransitRouteBounds(network, geometry, routeId)
+  const bounds = getTransitRouteBounds(index, geometry, routeId)
   if (!bounds) return
 
   map.fitBounds(bounds, {

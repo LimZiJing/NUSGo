@@ -14,11 +14,12 @@ import {
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
-  validateTransitMapData,
   waitForMapStyleLoaded,
 } from './render'
-import { createValidTransitNetwork } from './test-fixtures'
-import type { TransitRouteGeometry } from '../types/transit'
+import { createTransitIndex } from '../domain/transit'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { TransitRouteGeometry } from '../domain/transit/types'
+import { validateTransitMapData } from '../domain/transit/map-data'
 
 vi.mock('../map/markers', () => ({
   addBusStopMarkers: vi.fn(() => []),
@@ -419,7 +420,7 @@ describe('transit route camera', () => {
     const geometry = createValidGeometry()
     geometry.features[0].geometry.coordinates = [[102.9, 0.9], [103.2, 1.2]]
 
-    expect(getTransitRouteBounds(network, geometry, 'A1')).toEqual([
+    expect(getTransitRouteBounds(createTransitIndex(network), geometry, 'A1')).toEqual([
       [102.9, 0.9],
       [103.2, 1.2],
     ])
@@ -441,8 +442,8 @@ describe('transit route camera', () => {
     })
 
     const allBounds = [[103, 1], [104.1, 2.1]]
-    expect(getTransitRouteBounds(network, geometry, null)).toEqual(allBounds)
-    expect(getTransitRouteBounds(network, geometry, 'UNKNOWN')).toEqual(allBounds)
+    expect(getTransitRouteBounds(createTransitIndex(network), geometry, null)).toEqual(allBounds)
+    expect(getTransitRouteBounds(createTransitIndex(network), geometry, 'UNKNOWN')).toEqual(allBounds)
   })
 
   it('uses overlay-aware responsive padding for route fitting', () => {
@@ -465,7 +466,7 @@ describe('transit route camera', () => {
     const network = createValidTransitNetwork()
     const geometry = createValidGeometry()
 
-    fitTransitRoute(state.map, network, geometry, 'A1')
+    fitTransitRoute(state.map, createTransitIndex(network), geometry, 'A1')
 
     expect(state.fitBoundsCalls).toEqual([{
       bounds: [[103, 1], [103.1, 1.1]],

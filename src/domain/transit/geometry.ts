@@ -2,7 +2,7 @@ import type {
   TransitGeoJsonPosition,
   TransitNetwork,
   TransitRouteGeometry,
-} from '../types/transit'
+} from './types'
 import { TransitValidationError } from './model'
 
 const MAX_STOP_DISTANCE_METRES = 50
@@ -103,7 +103,7 @@ function readLineCoordinates(
 
   const coordinates: TransitGeoJsonPosition[] = []
   for (const [index, position] of value.entries()) {
-    if (!Array.isArray(position) || position.length < 2) {
+    if (!Array.isArray(position) || position.length !== 2) {
       issues.push(`Transit route ${routeId} geometry coordinate ${index} must be [longitude, latitude]`)
       continue
     }
@@ -171,7 +171,7 @@ export function validateTransitRouteGeometry(
     }
     const routeId = featureRouteId(value, index)
     const route = networkRoutes.get(routeId)
-    if (typeof properties.routeId !== 'string' || properties.routeId.length === 0) {
+    if (typeof properties.routeId !== 'string' || properties.routeId.trim().length === 0) {
       issues.push(`Transit route geometry feature ${routeId} must have a non-empty route ID`)
     } else if (!route) {
       issues.push(`Transit route geometry references unknown route: ${routeId}`)
@@ -180,10 +180,14 @@ export function validateTransitRouteGeometry(
         issues.push(`Duplicate transit route geometry feature for route: ${routeId}`)
       }
       seenRouteIds.add(routeId)
-      if (properties.name !== route.name) {
+      if (typeof properties.name !== 'string' || properties.name.trim().length === 0) {
+        issues.push(`Transit route geometry ${routeId} name must be a non-empty string`)
+      } else if (properties.name !== route.name) {
         issues.push(`Transit route geometry ${routeId} name does not match the network model`)
       }
-      if (properties.color !== route.color) {
+      if (typeof properties.color !== 'string' || properties.color.trim().length === 0) {
+        issues.push(`Transit route geometry ${routeId} color must be a non-empty string`)
+      } else if (properties.color !== route.color) {
         issues.push(`Transit route geometry ${routeId} color does not match the network model`)
       }
     }

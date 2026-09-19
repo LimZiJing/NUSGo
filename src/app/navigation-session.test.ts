@@ -127,8 +127,6 @@ describe('navigation session', () => {
         history: [],
       },
       tripRequest: { origin: null, destination: null },
-      originSearchQuery: '',
-      destinationSearchQuery: '',
       resourceStatus: {
         venue: { status: 'pending' },
         transit: { status: 'pending' },
@@ -144,11 +142,11 @@ describe('navigation session', () => {
     const listener = vi.fn()
     const cleanup = session.subscribe(listener)
 
-    session.setOriginSearchQuery('COM1')
+    session.setContextualPanelQuery('COM1')
     expect(listener).toHaveBeenCalledOnce()
 
     cleanup()
-    session.setDestinationSearchQuery('STOP')
+    session.setContextualPanelQuery('STOP')
     expect(listener).toHaveBeenCalledOnce()
   })
 
@@ -756,18 +754,14 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
-  it('owns endpoint queries, trip commands, and map endpoint synchronization', async () => {
+  it('owns trip commands and map endpoint synchronization', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.setOriginSearchQuery('COM')
-    session.setDestinationSearchQuery('STOP')
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
     expect(session.getState()).toMatchObject({
-      originSearchQuery: '',
-      destinationSearchQuery: '',
       tripRequest: {
         origin: { kind: 'venue', id: 'COM1' },
         destination: { kind: 'stop', id: 'STOP-A' },
@@ -784,8 +778,6 @@ describe('navigation session', () => {
     session.clearTrip()
     expect(session.getState()).toMatchObject({
       tripRequest: { origin: null, destination: null },
-      originSearchQuery: '',
-      destinationSearchQuery: '',
     })
     expect(dependencies.map.setTripRequest).toHaveBeenLastCalledWith(
       session.getState().tripRequest,
@@ -890,20 +882,19 @@ describe('navigation session', () => {
 
     session.subscribe(() => {
       events.push('first')
-      session.setDestinationSearchQuery('queued')
+      session.setContextualPanelQuery('queued')
       session.dispose()
     })
     session.subscribe(() => {
       events.push('second')
     })
 
-    session.setOriginSearchQuery('COM1')
+    session.setContextualPanelQuery('COM1')
 
     expect(events).toEqual(['first'])
     expect(map.setTripRequest).not.toHaveBeenCalled()
     expect(map.dispose).toHaveBeenCalledOnce()
-    expect(session.getState().originSearchQuery).toBe('COM1')
-    expect(session.getState().destinationSearchQuery).toBe('')
+    expect(session.getState().contextualPanel.query).toBe('COM1')
   })
 
   it('synchronizes loaded transit resources before a subscriber can dispose the session', async () => {
@@ -1189,13 +1180,45 @@ describe('navigation session', () => {
       throw new Error('subscriber failed')
     })
 
-    expect(() => session.setOriginSearchQuery('COM1')).toThrow('subscriber failed')
+    expect(() => session.setContextualPanelQuery('COM1')).toThrow('subscriber failed')
     expect(session.getState().resourceStatus).toMatchObject({
       venue: { status: 'loaded' },
       transit: { status: 'loaded' },
     })
     expect(session.getState().status).not.toContain('Unable to load venue data')
     expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+  })
+
+  it('stores startup failure without re-running map effects or propagating listener errors', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    const mapCallCount = map.setTripRequest.mock.calls.length
+    const listenerError = new Error('startup listener failed')
+    const listener = vi.fn(() => {
+      throw listenerError
+    })
+    const cleanup = session.subscribe(listener)
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    try {
+      expect(() => session.reportStartupFailure()).not.toThrow()
+      expect(session.getState().status).toBe('Unable to start map navigation')
+      expect(map.setTripRequest).toHaveBeenCalledTimes(mapCallCount)
+      expect(listener).toHaveBeenCalledOnce()
+      expect(consoleError).toHaveBeenCalledWith(
+        'Navigation session startup failure listener failed:',
+        listenerError,
+      )
+
+      cleanup()
+      session.reportMapError(new Error('late map error'))
+      expect(session.getState().status).toBe('Unable to start map navigation')
+    } finally {
+      consoleError.mockRestore()
+      session.dispose()
+    }
   })
 
   it('settles startup on external abort while map readiness is pending', async () => {

@@ -6,6 +6,12 @@ import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/t
 import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
 import type { LoadedTransitData } from './data'
 
+export interface MapSessionOptions {
+  readonly container: HTMLElement
+  readonly onMapError: (error: unknown) => void
+  readonly onEmptyMapClick: () => void
+}
+
 export interface MapRouteSelection {
   readonly route: TransitRoute | null
   readonly overlappingRouteIds: ReadonlySet<string>

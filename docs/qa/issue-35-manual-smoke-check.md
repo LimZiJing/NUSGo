@@ -4,7 +4,7 @@ This checklist records the manual verification still needed after moving navigat
 
 ## Automated evidence
 
-- [x] `npm test` passes (158 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, canonical trip endpoints, serialized route/trip reentry, contextual-panel history and venue marker rules, trip commands, abort, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and the framework-free mount/command-identity seam.
+- [x] `npm test` passes (160 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, startup-failure reporting with isolated listener errors, canonical trip endpoints, serialized route/trip reentry, contextual-panel history and venue marker rules, feature-local endpoint query presentation, trip commands, abort, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and mount callback forwarding/cleanup.
 - [x] `npm run lint` passes.
 - [x] `npm run build` passes.
 - [x] `git diff --check` passes before each Issue #35 commit.

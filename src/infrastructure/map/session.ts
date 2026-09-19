@@ -1,5 +1,9 @@
 import type { LoadedTransitData } from '../../app/contracts/data'
-import type { MapRouteSelection, MapSession } from '../../app/contracts/map'
+import type {
+  MapRouteSelection,
+  MapSession,
+  MapSessionOptions,
+} from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { VenueLocation } from '../../domain/venue/types'
 import { applyBasemapPresentation } from './basemap'
@@ -12,12 +16,6 @@ import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
-
-export interface MapSessionOptions {
-  readonly container: HTMLElement
-  readonly onMapError: (error: unknown) => void
-  readonly onEmptyMapClick: () => void
-}
 
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)

@@ -31,6 +31,7 @@ import {
   createNavigationSessionTransitionQueue,
 } from './navigation-session-transitions'
 
+const STARTUP_FAILURE_STATUS = 'Unable to start map navigation'
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 
 export interface NavigationSessionState {
@@ -40,8 +41,6 @@ export interface NavigationSessionState {
   readonly selectedRouteColor: string | null
   readonly contextualPanel: ContextualPanelState
   readonly tripRequest: TripRequest
-  readonly originSearchQuery: string
-  readonly destinationSearchQuery: string
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
   readonly status: string
@@ -64,10 +63,9 @@ export interface NavigationSession {
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
   clearTrip(): void
-  setOriginSearchQuery(query: string): void
-  setDestinationSearchQuery(query: string): void
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
+  reportStartupFailure(): void
   openVenueSearch(): void
   openShuttle(): void
   back(): void
@@ -86,8 +84,6 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
     selectedRouteColor: null,
     contextualPanel: createInitialContextualPanelState(),
     tripRequest: createEmptyTripRequest(),
-    originSearchQuery: '',
-    destinationSearchQuery: '',
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
     status: 'Loading map data…',
@@ -113,10 +109,12 @@ export function createNavigationSession(
   const transitionQueue = createNavigationSessionTransitionQueue(() => disposed)
   const enqueueTransition = transitionQueue.enqueue
 
+  let startupFailureReported = false
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
   ): string => {
+    if (startupFailureReported) return STARTUP_FAILURE_STATUS
     const resourceStatusMessage = deriveResourceStatus(resourceStatus)
     return mapError
       ? `${mapError}; ${resourceStatusMessage}`
@@ -135,6 +133,23 @@ export function createNavigationSession(
 
   const publish = (nextState: NavigationSessionState): void => {
     publishSnapshot(freezeNavigationSessionSnapshot(nextState))
+  }
+
+  const publishStartupFailure = (): void => {
+    if (disposed) return
+    state = freezeNavigationSessionSnapshot({
+      ...state,
+      status: STARTUP_FAILURE_STATUS,
+    })
+    const listenerSnapshot = [...listeners]
+    for (const listener of listenerSnapshot) {
+      if (disposed) return
+      try {
+        listener()
+      } catch (error) {
+        console.error('Navigation session startup failure listener failed:', error)
+      }
+    }
   }
 
   const updateState = (patch: Partial<NavigationSessionState>): void => {
@@ -180,9 +195,7 @@ export function createNavigationSession(
     ) return
     enqueueTransition(() => {
       if (disposed) return
-      updateTripRequest(setTripEndpoint(state.tripRequest, role, canonicalEndpoint), {
-        ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
-      })
+      updateTripRequest(setTripEndpoint(state.tripRequest, role, canonicalEndpoint))
     })
   }
 
@@ -322,24 +335,7 @@ export function createNavigationSession(
     clearTrip() {
       enqueueTransition(() => {
         if (disposed) return
-        updateTripRequest(createEmptyTripRequest(), {
-          originSearchQuery: '',
-          destinationSearchQuery: '',
-        })
-      })
-    },
-
-    setOriginSearchQuery(query) {
-      enqueueTransition(() => {
-        if (disposed) return
-        updateState({ originSearchQuery: query })
-      })
-    },
-
-    setDestinationSearchQuery(query) {
-      enqueueTransition(() => {
-        if (disposed) return
-        updateState({ destinationSearchQuery: query })
+        updateTripRequest(createEmptyTripRequest())
       })
     },
 
@@ -350,6 +346,14 @@ export function createNavigationSession(
         if (disposed) return
         updateState({ mapError: 'Unable to load map tiles' })
         console.error('Map error:', error)
+      })
+    },
+
+    reportStartupFailure() {
+      enqueueTransition(() => {
+        if (disposed || startupFailureReported) return
+        startupFailureReported = true
+        publishStartupFailure()
       })
     },
 

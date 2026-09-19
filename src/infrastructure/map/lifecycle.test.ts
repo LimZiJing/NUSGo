@@ -135,6 +135,28 @@ describe('map lifecycle style readiness', () => {
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
   })
 
+  it('resolves through a pending load event and removes load and abort listeners', async () => {
+    let loadHandler: (() => void) | undefined
+    const map = {
+      isStyleLoaded: vi.fn(() => false),
+      once: vi.fn((_event: string, handler: () => void) => {
+        loadHandler = handler
+        return map
+      }),
+      off: vi.fn(() => map),
+    }
+    const controller = new AbortController()
+    const removeEventListener = vi.spyOn(controller.signal, 'removeEventListener')
+    const pending = waitForMapStyleLoaded(map as never, controller.signal)
+
+    expect(loadHandler).toBeDefined()
+    loadHandler?.()
+
+    await expect(pending).resolves.toBeUndefined()
+    expect(map.off).toHaveBeenCalledWith('load', loadHandler)
+    expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
+  })
+
   it('reports errors, filters non-empty map clicks, and cleans up idempotently', async () => {
     vi.stubGlobal('Element', FakeElement)
     const onMapError = vi.fn()

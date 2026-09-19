@@ -187,22 +187,20 @@ function App() {
       try {
         const transitData = await loadTransitMapData(controller.signal)
         const routeOverlapMap = deriveTransitRouteOverlapMap(transitData.geometry)
+
+        await mapSession.ready
+        if (!isMounted) return
+
         const reconciledSelection = reconcileRouteSelection(
           transitData.index,
           selectedRouteIdRef.current,
           routeOverlapMap,
         )
-
-        if (!isMounted) return
-
         transitIndexRef.current = transitData.index
         transitRouteOverlapMapRef.current = routeOverlapMap
         selectedRouteIdRef.current = reconciledSelection.route?.id ?? null
         setTransitIndex(transitData.index)
         setSelectedRouteId(reconciledSelection.route?.id ?? null)
-
-        await mapSession.ready
-        if (!isMounted) return
 
         mapSession.loadTransitData(
           transitData,

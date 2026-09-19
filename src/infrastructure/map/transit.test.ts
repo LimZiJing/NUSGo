@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Map, Marker } from 'maplibre-gl'
-import { setBusStopMarkerSelection } from './shuttle-stops'
+import type { Map } from 'maplibre-gl'
 import {
   createTransitRouteLayers,
   getTransitRouteBounds,
@@ -219,33 +218,5 @@ describe('transit route camera', () => {
         padding: { top: 112, right: 360, bottom: 64, left: 360 },
       },
     }])
-  })
-})
-
-describe('fallback shuttle-stop presentation', () => {
-  it('hides irrelevant stops, closes their popup, and restores all markers', () => {
-    const classes = new Set<string>()
-    const first = {
-      getElement: () => ({
-        dataset: { stopId: 'STOP-A' },
-        classList: { toggle: (name: string, force: boolean) => force ? classes.add(name) : classes.delete(name) },
-        style: { display: '', setProperty: vi.fn() },
-      }),
-      getPopup: () => null,
-    }
-    const popup = { isOpen: vi.fn(() => true), remove: vi.fn() }
-    const second = {
-      getElement: () => ({
-        dataset: { stopId: 'STOP-B' },
-        classList: { toggle: vi.fn() },
-        style: { display: '', setProperty: vi.fn() },
-      }),
-      getPopup: () => popup,
-    }
-
-    setBusStopMarkerSelection([first, second] as unknown as Marker[], ['STOP-A'])
-
-    expect(classes).toContain('bus-stop-marker-selected')
-    expect(popup.remove).toHaveBeenCalledOnce()
   })
 })

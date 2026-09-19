@@ -338,22 +338,3 @@ export function createShuttleStopMarkers(
     },
   }
 }
-
-export function setBusStopMarkerSelection(
-  markers: Marker[],
-  selectedStopIds: readonly string[] | null,
-  selectedRouteColor: string | null = null,
-): void {
-  const selectedIds = new Set(selectedStopIds ?? [])
-  for (const marker of markers) {
-    const element = marker.getElement()
-    const isSelected = selectedIds.has(element.dataset.stopId ?? '')
-    updateBusStopMarkerElement(
-      marker,
-      selectedStopIds !== null && isSelected,
-      selectedStopIds === null || isSelected,
-      selectedStopIds !== null && !isSelected,
-      selectedRouteColor,
-    )
-  }
-}

@@ -1,40 +1,14 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
-import {
-  Map,
-  NavigationControl,
-  setWorkerUrl,
-  type LngLatLike,
-  type MapMouseEvent,
-  type Marker,
-} from 'maplibre-gl'
-import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
 } from './contextual-panel/state'
-import { applyBasemapPresentation } from './map/basemap'
-import {
-  addBusStopMarkers,
-  addTripEndpointMarkers,
-  addVenueMarker,
-  removeBusStopMarkers,
-  setBusStopMarkerSelection,
-} from './map/markers'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
+import { createMapSession, type MapSession } from './infrastructure/map/session'
 import { TransitValidationError } from './domain/transit/validation'
 import { deriveTransitRouteOverlapMap } from './domain/transit/overlap'
-import {
-  addTransitRouteLayers,
-  fitTransitRoute,
-  removeTransitRouteLayers,
-  setTransitRouteSelection,
-  TRANSIT_ROUTE_CASING_LAYER_ID,
-  TRANSIT_ROUTE_DIRECTION_LAYER_ID,
-  TRANSIT_ROUTE_LAYER_ID,
-  waitForMapStyleLoaded,
-} from './transit/render'
 import {
   clearTripEndpoint,
   createEmptyTripRequest,
@@ -48,27 +22,18 @@ import type {
   TripRequest,
 } from './domain/trip/types'
 import type { TransitNetworkIndex } from './domain/transit'
-import type { TransitNetwork, TransitRouteGeometry } from './domain/transit/types'
+import type { TransitNetwork } from './domain/transit/types'
 import type { VenueLocationMap } from './domain/venue/types'
 import type { VenueSearchResult } from './domain/venue/search'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
-
-// MapLibre processes vector tiles in a browser worker; Vite bundles this worker
-// and provides its URL through the `?worker&url` import above.
-setWorkerUrl(maplibreWorkerUrl)
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<Map | null>(null)
-  const selectedVenueMarkerRef = useRef<Marker | null>(null)
-  const endpointMarkersRef = useRef<Marker[]>([])
-  const busStopMarkersRef = useRef<Marker[]>([])
+  const mapSessionRef = useRef<MapSession | null>(null)
   const transitNetworkRef = useRef<TransitNetwork | null>(null)
   const transitNetworkIndexRef = useRef<TransitNetworkIndex | null>(null)
-  const transitGeometryRef = useRef<TransitRouteGeometry | null>(null)
   const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
   const selectedRouteIdRef = useRef<string | null>(null)
   const contextualPanelStateRef = useRef(createInitialContextualPanelState())
@@ -91,8 +56,6 @@ function App() {
   }, [contextualPanelState])
 
   const handleRouteSelect = useCallback((routeId: string | null) => {
-    const previousRouteId = selectedRouteIdRef.current
-    const network = transitNetworkRef.current
     const networkIndex = transitNetworkIndexRef.current
     const selectedRoute = routeId && networkIndex
       ? networkIndex.routeById.get(routeId)
@@ -101,21 +64,13 @@ function App() {
     selectedRouteIdRef.current = nextRouteId
     setSelectedRouteId(nextRouteId)
 
-    const map = mapRef.current
-    if (map) {
-      const overlappingRouteIds = nextRouteId
-        ? transitRouteOverlapMapRef.current.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
-        : EMPTY_ROUTE_OVERLAP
-      setTransitRouteSelection(map, nextRouteId, overlappingRouteIds)
-      if (nextRouteId !== previousRouteId && network && transitGeometryRef.current) {
-        fitTransitRoute(map, network, transitGeometryRef.current, nextRouteId)
-      }
-    }
-    setBusStopMarkerSelection(
-      busStopMarkersRef.current,
-      selectedRoute?.stopIds ?? null,
-      selectedRoute?.color ?? null,
-    )
+    const overlappingRouteIds = nextRouteId
+      ? transitRouteOverlapMapRef.current.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
+      : EMPTY_ROUTE_OVERLAP
+    mapSessionRef.current?.setRouteSelection({
+      route: selectedRoute ?? null,
+      overlappingRouteIds,
+    })
   }, [])
 
   const handleSetTripEndpoint = useCallback((role: TripEndpointRole, endpoint: TripEndpoint) => {
@@ -143,26 +98,13 @@ function App() {
 
   const clearSelectedVenueMarker = useCallback(() => {
     // Venue details live in the contextual panel; the map only keeps the selected marker.
-    selectedVenueMarkerRef.current?.remove()
-    selectedVenueMarkerRef.current = null
+    mapSessionRef.current?.clearVenue()
   }, [])
 
   const handleVenueSelect = useCallback((result: VenueSearchResult) => {
     dispatchContextualPanel({ type: 'select-venue', result })
-    const map = mapRef.current
-    if (!map || !result.venue.location) return
-
-    clearSelectedVenueMarker()
-    const marker = addVenueMarker(map, result.venue)
-    if (!marker) return
-
-    selectedVenueMarkerRef.current = marker
-    map.flyTo({
-      center: [result.venue.location.x, result.venue.location.y],
-      zoom: Math.max(map.getZoom(), 17),
-      essential: true,
-    })
-  }, [clearSelectedVenueMarker])
+    mapSessionRef.current?.selectVenue(result.venue)
+  }, [])
 
   const handlePanelClose = useCallback(() => {
     clearSelectedVenueMarker()
@@ -193,25 +135,8 @@ function App() {
     dispatchContextualPanel({ type: 'back' })
   }, [clearSelectedVenueMarker])
 
-  const handlePanelMapClick = useCallback((event: MapMouseEvent) => {
+  const handlePanelMapClick = useCallback(() => {
     if (contextualPanelStateRef.current.mode !== 'venue-detail') return
-
-    // Only an empty map click dismisses venue detail. Marker, popup, control, and
-    // route-line clicks belong to their own interactions.
-    const eventTarget = event.originalEvent.target
-    if (eventTarget instanceof Element && eventTarget.closest(
-      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control',
-    )) return
-
-    const routeLayerIds = [
-      TRANSIT_ROUTE_CASING_LAYER_ID,
-      TRANSIT_ROUTE_LAYER_ID,
-      TRANSIT_ROUTE_DIRECTION_LAYER_ID,
-    ].filter((layerId) => mapRef.current?.getLayer(layerId))
-    if (routeLayerIds.length > 0 && mapRef.current?.queryRenderedFeatures(
-      event.point,
-      { layers: routeLayerIds },
-    ).length) return
 
     clearSelectedVenueMarker()
     dispatchContextualPanel({ type: 'map-click' })
@@ -220,32 +145,19 @@ function App() {
   useEffect(() => {
     if (!mapContainer.current) return
 
-    // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
-    let busStopMarkers: Marker[] = []
     let venueCount = 0
     let isMounted = true
     let transitFailure: string | null = null
-    const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
-    const map = new Map({
+    const mapSession = createMapSession({
       container: mapContainer.current,
-      // OpenFreeMap provides the OSM-based prototype basemap.
-      style: 'https://tiles.openfreemap.org/styles/liberty',
-      center: kentRidgeLocation,
-      zoom: 15,
+      onMapError: (error) => {
+        console.error('Map error:', error)
+        if (isMounted) setStatus('Unable to load map tiles')
+      },
+      onEmptyMapClick: handlePanelMapClick,
     })
-    mapRef.current = map
-
-    map.addControl(new NavigationControl(), 'top-right')
-    map.on('error', (event) => {
-      console.error('Map error:', event.error)
-      if (isMounted) setStatus('Unable to load map tiles')
-    })
-    map.on('click', handlePanelMapClick)
-
-    const mapStyleReady = waitForMapStyleLoaded(map, controller.signal).then(() => {
-      applyBasemapPresentation(map)
-    })
+    mapSessionRef.current = mapSession
 
     const loadVenues = async () => {
       try {
@@ -266,24 +178,22 @@ function App() {
 
     const loadTransitNetwork = async () => {
       try {
-        const { network: transitNetwork, geometry, index } =
-          await loadTransitMapData(controller.signal)
-        const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
+        const transitData = await loadTransitMapData(controller.signal)
+        const routeOverlapMap = deriveTransitRouteOverlapMap(transitData.geometry)
 
-        await mapStyleReady
-        addTransitRouteLayers(map, geometry)
-        const markers = addBusStopMarkers(map, transitNetwork.stops, handleSetTripEndpoint)
-        busStopMarkers = markers
-        busStopMarkersRef.current = markers
-        transitNetworkRef.current = transitNetwork
-        transitNetworkIndexRef.current = index
-        transitGeometryRef.current = geometry
+        await mapSession.ready
+        const markerCount = mapSession.loadTransitData(
+          transitData,
+          handleSetTripEndpoint,
+        )
+        transitNetworkRef.current = transitData.network
+        transitNetworkIndexRef.current = transitData.index
         transitRouteOverlapMapRef.current = routeOverlapMap
-        setTransitNetwork(transitNetwork)
+        setTransitNetwork(transitData.network)
 
         if (isMounted) {
           setStatus(
-            `${venueCount} venues · ${busStopMarkers.length} shuttle stops · ${transitNetwork.routes.length} shuttle routes loaded`,
+            `${venueCount} venues · ${markerCount} shuttle stops · ${transitData.network.routes.length} shuttle routes loaded`,
           )
         }
       } catch (error) {
@@ -302,49 +212,25 @@ function App() {
 
     return () => {
       isMounted = false
-      // Abort pending work and remove stale MapLibre objects on unmount.
       controller.abort()
-      selectedVenueMarkerRef.current?.remove()
-      selectedVenueMarkerRef.current = null
-      endpointMarkersRef.current.forEach((marker) => marker.remove())
-      endpointMarkersRef.current = []
-      removeBusStopMarkers(map, busStopMarkers)
-      busStopMarkers.forEach((marker) => marker.remove())
-      busStopMarkersRef.current = []
+      mapSession.dispose()
+      mapSessionRef.current = null
       transitNetworkRef.current = null
       transitNetworkIndexRef.current = null
-      transitGeometryRef.current = null
       transitRouteOverlapMapRef.current = new globalThis.Map()
       selectedRouteIdRef.current = null
-      map.off('click', handlePanelMapClick)
-      removeTransitRouteLayers(map)
-      mapRef.current = null
-      map.remove()
     }
-  }, [handlePanelMapClick, handleRouteSelect, handleSetTripEndpoint])
+  }, [handlePanelMapClick, handleSetTripEndpoint])
 
   useEffect(() => {
-    endpointMarkersRef.current.forEach((marker) => marker.remove())
-    endpointMarkersRef.current = []
-
-    const map = mapRef.current
-    if (!map) return
-
-    endpointMarkersRef.current = addTripEndpointMarkers(
-      map,
+    mapSessionRef.current?.setTripRequest(
       tripRequest,
       venues ?? {},
       transitNetwork?.stops ?? [],
     )
-
-    return () => {
-      endpointMarkersRef.current.forEach((marker) => marker.remove())
-      endpointMarkersRef.current = []
-    }
   }, [tripRequest, transitNetwork, venues])
 
   const stops = transitNetwork?.stops ?? []
-
   const selectedRouteColor = transitNetworkIndexRef.current?.routeById.get(selectedRouteId ?? '')?.color ?? '#334155'
 
   return (

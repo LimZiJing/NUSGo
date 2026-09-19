@@ -13,7 +13,7 @@ import {
   isBusStopDimmed,
   setBusStopMarkerSelection,
 } from './markers'
-import type { TransitStop } from '../domain/transit/types'
+import type { TransitStop } from '../../domain/transit/types'
 
 type PopupEvent = 'open' | 'close'
 

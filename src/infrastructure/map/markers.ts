@@ -5,14 +5,14 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { getTripEndpointLabel } from '../domain/location/search'
-import type { TransitStop } from '../domain/transit/types'
+import { getTripEndpointLabel } from '../../domain/location/search'
+import type { TransitStop } from '../../domain/transit/types'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from '../domain/trip/types'
-import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
+} from '../../domain/trip/types'
+import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
 
 interface PopupAction {
   label: string

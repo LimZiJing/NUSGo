@@ -6,15 +6,15 @@ import type {
   PaddingOptions,
   SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { addBusStopMarkers } from '../map/markers'
-import { validateTransitMapData } from '../domain/transit/map-data'
-import { validateTransitNetwork } from '../domain/transit/validation'
+import { addBusStopMarkers } from './markers'
+import { validateTransitMapData } from '../../domain/transit/map-data'
+import { validateTransitNetwork } from '../../domain/transit/validation'
 
 import type {
   TransitNetwork,
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../domain/transit/types'
+} from '../../domain/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'

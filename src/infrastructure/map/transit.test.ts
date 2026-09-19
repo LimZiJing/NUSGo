@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Map, Marker } from 'maplibre-gl'
-import { addBusStopMarkers, setBusStopMarkerSelection } from '../map/markers'
+import { addBusStopMarkers, setBusStopMarkerSelection } from './markers'
 import {
   addTransitRouteLayers,
   addValidatedBusStopMarkers,
@@ -15,12 +15,12 @@ import {
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
   waitForMapStyleLoaded,
-} from './render'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitRouteGeometry } from '../domain/transit/types'
-import { validateTransitMapData } from '../domain/transit/map-data'
+} from './transit'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import type { TransitRouteGeometry } from '../../domain/transit/types'
+import { validateTransitMapData } from '../../domain/transit/map-data'
 
-vi.mock('../map/markers', () => ({
+vi.mock('./markers', () => ({
   addBusStopMarkers: vi.fn(() => []),
   setBusStopMarkerSelection: vi.fn((markers: Marker[], selectedStopIds: readonly string[] | null) => {
     const selectedIds = new Set(selectedStopIds ?? [])

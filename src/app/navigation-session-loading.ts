@@ -29,8 +29,12 @@ export function createNavigationSessionResourceLoading(
 ): NavigationSessionResourceLoading {
   const loadVenues = (signal: AbortSignal): Promise<void> => (
     Promise.resolve()
-      .then(() => dependencies.loadVenues(signal))
+      .then(() => {
+        if (dependencies.isDisposed() || signal.aborted) return
+        return dependencies.loadVenues(signal)
+      })
       .then((data) => {
+        if (data === undefined) return
         if (!dependencies.isDisposed() && !signal.aborted) {
           dependencies.enqueue(() => {
             if (!dependencies.isDisposed() && !signal.aborted) {
@@ -46,22 +50,28 @@ export function createNavigationSessionResourceLoading(
 
   const loadTransit = (signal: AbortSignal): Promise<void> => (
     Promise.resolve()
-      .then(() => dependencies.loadTransit(signal))
-      .then((data) => waitForAbortablePromise(dependencies.mapReady, signal).then(
-        () => {
-          if (!dependencies.isDisposed() && !signal.aborted) {
-            dependencies.enqueue(() => {
-              if (!dependencies.isDisposed() && !signal.aborted) {
-                dependencies.onTransitLoaded(data)
-              }
-            })
-          }
-        },
-        (error: unknown) => {
-          if (isAbortError(error)) return
-          throw error
-        },
-      ), (error: unknown) => {
+      .then(() => {
+        if (dependencies.isDisposed() || signal.aborted) return
+        return dependencies.loadTransit(signal)
+      })
+      .then((data) => {
+        if (data === undefined) return
+        return waitForAbortablePromise(dependencies.mapReady, signal).then(
+          () => {
+            if (!dependencies.isDisposed() && !signal.aborted) {
+              dependencies.enqueue(() => {
+                if (!dependencies.isDisposed() && !signal.aborted) {
+                  dependencies.onTransitLoaded(data)
+                }
+              })
+            }
+          },
+          (error: unknown) => {
+            if (isAbortError(error)) return
+            throw error
+          },
+        )
+      }, (error: unknown) => {
         if (dependencies.isDisposed() || signal.aborted || isAbortError(error)) return
         dependencies.enqueue(() => dependencies.onLoadFailure('transit', error))
       })

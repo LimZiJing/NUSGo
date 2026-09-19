@@ -1282,6 +1282,8 @@ describe('navigation session', () => {
     const secondStart = session.start(new AbortController().signal)
     expect(secondStart).toBe(firstStart)
 
+    await Promise.resolve()
+
     controller.abort()
     session.dispose()
     session.dispose()
@@ -1311,6 +1313,18 @@ describe('navigation session', () => {
     expect(dependencies.loadTransit).not.toHaveBeenCalled()
     expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
     expect(session.getState()).toEqual(createInitialNavigationSessionState())
+  })
+
+  it('does not invoke deferred loaders after immediate disposal', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    const start = session.start(new AbortController().signal)
+    session.dispose()
+
+    await expect(start).resolves.toBeUndefined()
+    expect(dependencies.loadVenues).not.toHaveBeenCalled()
+    expect(dependencies.loadTransit).not.toHaveBeenCalled()
   })
 
   it('owns startup cancellation and removes the external listener after settlement', async () => {

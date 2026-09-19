@@ -54,7 +54,6 @@ export type NavigationSessionListener = () => void
 export interface NavigationSession {
   getState(): NavigationSessionState
   subscribe(listener: NavigationSessionListener): () => void
-  unsubscribe(listener: NavigationSessionListener): void
   start(signal: AbortSignal): Promise<void>
   selectRoute(routeId: string | null): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
@@ -63,7 +62,6 @@ export interface NavigationSession {
   clearTrip(): void
   setOriginSearchQuery(query: string): void
   setDestinationSearchQuery(query: string): void
-  dispatchContextualPanel(action: ContextualPanelAction): void
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   openVenueSearch(): void
@@ -331,10 +329,6 @@ export function createNavigationSession(
       }
     },
 
-    unsubscribe(listener) {
-      listeners.delete(listener)
-    },
-
     start,
 
     selectRoute(routeId) {
@@ -384,11 +378,6 @@ export function createNavigationSession(
     setDestinationSearchQuery(query) {
       if (disposed) return
       updateState({ destinationSearchQuery: query })
-    },
-
-    dispatchContextualPanel(action) {
-      if (disposed) return
-      dispatchContextualPanel(action)
     },
 
     setContextualPanelQuery(query) {

@@ -109,7 +109,7 @@ describe('navigation session', () => {
     })
   })
 
-  it('publishes commands and supports returned and explicit unsubscription', () => {
+  it('publishes commands and supports returned subscription cleanup', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     const listener = vi.fn()
@@ -120,11 +120,6 @@ describe('navigation session', () => {
 
     unsubscribe()
     session.setDestinationSearchQuery('STOP')
-    expect(listener).toHaveBeenCalledOnce()
-
-    session.subscribe(listener)
-    session.unsubscribe(listener)
-    session.setContextualPanelQuery('venue')
     expect(listener).toHaveBeenCalledOnce()
   })
 
@@ -396,7 +391,7 @@ describe('navigation session', () => {
     })
     expect(dependencies.map.selectVenue).toHaveBeenCalledWith(venueResult.venue)
 
-    session.dispatchContextualPanel({ type: 'set-query', query: 'COM1-0210' })
+    session.setContextualPanelQuery('COM1-0210')
     expect(session.getState().contextualPanel.query).toBe('COM1-0210')
 
     session.back()

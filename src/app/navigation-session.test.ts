@@ -68,6 +68,18 @@ function createDependencies(
   }
 }
 
+function createTwoRouteTransit(): LoadedTransitData {
+  const network = createValidTransitNetwork()
+  const index = createTransitIndex({
+    ...network,
+    routes: [
+      ...network.routes,
+      { id: 'B1', name: 'B1', color: '#654321', stopIds: ['STOP-B', 'STOP-A'] },
+    ],
+  })
+  return { network: index.network, geometry, index }
+}
+
 function createDeferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (error: unknown) => void
@@ -386,6 +398,34 @@ describe('navigation session', () => {
     expect(dependencies.map.setRouteSelection).toHaveBeenCalledTimes(3)
   })
 
+  it('keeps the final route selection aligned after a reentrant notification', async () => {
+    const transit = createTwoRouteTransit()
+    const dependencies = createDependencies({
+      loadTransit: vi.fn(async () => transit),
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    let redirected = false
+    session.subscribe(() => {
+      if (!redirected && session.getState().selectedRouteId === 'A1') {
+        redirected = true
+        session.selectRoute('B1')
+      }
+    })
+
+    session.selectRoute('A1')
+
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: 'B1',
+      selectedRouteColor: '#654321',
+    })
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: expect.objectContaining({ id: 'B1' }),
+      overlappingRouteIds: expect.any(Set),
+    })
+  })
+
   it('rejects unknown, unmapped, and malformed endpoint commands', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -494,6 +534,26 @@ describe('navigation session', () => {
     expect(unmappedDependencies.map.selectVenue).not.toHaveBeenCalled()
   })
 
+  it('selects the venue before notifying a subscriber that disposes the session', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const events: string[] = []
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.selectVenue.mockImplementation(() => {
+      events.push('map')
+    })
+    session.subscribe(() => {
+      events.push('notify')
+      session.dispose()
+    })
+
+    session.selectVenue(venueResult)
+
+    expect(events).toEqual(['map', 'notify'])
+  })
+
   it('owns contextual panel history, venue selection, and map-click dismissal', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -592,6 +652,84 @@ describe('navigation session', () => {
       dependencies.venues.venues,
       dependencies.transit.index,
     )
+  })
+
+  it('synchronizes a trip request before a subscriber can clear its endpoint', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const events: string[] = []
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.setTripRequest.mockImplementation((request) => {
+      events.push(`map:${request.origin?.id ?? 'none'}`)
+    })
+    let cleared = false
+    session.subscribe(() => {
+      events.push('notify')
+      if (!cleared && session.getState().tripRequest.origin?.id === 'COM1') {
+        cleared = true
+        session.clearTripEndpoint('origin')
+      }
+    })
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+
+    expect(session.getState().tripRequest.origin).toBeNull()
+    expect(events).toEqual(['map:COM1', 'notify', 'map:none', 'notify'])
+    expect(map.setTripRequest).toHaveBeenLastCalledWith(
+      session.getState().tripRequest,
+      dependencies.venues.venues,
+      dependencies.transit.index,
+    )
+  })
+
+  it('synchronizes loaded transit resources before a subscriber can dispose the session', async () => {
+    const venue = createDeferred<LoadedVenueData>()
+    const transit = createDeferred<LoadedTransitData>()
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(() => venue.promise),
+      loadTransit: vi.fn(() => transit.promise),
+    })
+    const session = createNavigationSession(dependencies)
+    const events: string[] = []
+    const venueLoaded = createDeferred<void>()
+    let venueNotified = false
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.setTripRequest.mockImplementation(() => {
+      events.push('trip-map')
+    })
+    map.loadTransitData.mockImplementation(() => {
+      events.push('transit-map')
+    })
+    session.subscribe(() => {
+      if (
+        !venueNotified &&
+        session.getState().resourceStatus.venue.status === 'loaded'
+      ) {
+        venueNotified = true
+        events.push('venue-notify')
+        venueLoaded.resolve()
+      }
+      if (session.getState().resourceStatus.transit.status === 'loaded') {
+        events.push('transit-notify')
+        session.dispose()
+      }
+    })
+
+    const start = session.start(new AbortController().signal)
+    venue.resolve(dependencies.venues)
+    await venueLoaded.promise
+    transit.resolve(dependencies.transit)
+    await start
+
+    expect(events).toEqual([
+      'trip-map',
+      'venue-notify',
+      'transit-map',
+      'trip-map',
+      'transit-notify',
+    ])
   })
 
   it('waits for map readiness before installing transit data', async () => {

@@ -148,11 +148,15 @@ export function createNavigationSession(
     publish(nextState)
   }
 
-  const syncTripRequest = (request: TripRequest): void => {
+  const syncTripRequest = (
+    request: TripRequest,
+    venues: VenueLocationMap,
+    nextTransitIndex: TransitIndex | null,
+  ): void => {
     dependencies.map.setTripRequest(
       request,
-      state.venues ?? {},
-      transitIndex,
+      venues,
+      nextTransitIndex,
     )
   }
 
@@ -161,8 +165,8 @@ export function createNavigationSession(
     patch: Partial<NavigationSessionState> = {},
   ): void => {
     if (disposed) return
+    syncTripRequest(request, state.venues ?? {}, transitIndex)
     updateState({ ...patch, tripRequest: request })
-    syncTripRequest(state.tripRequest)
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
@@ -195,8 +199,8 @@ export function createNavigationSession(
 
   const handleVenueLoad = (data: LoadedVenueData): void => {
     const resourceStatus = markVenueLoaded(state.resourceStatus, data.venueCount)
+    syncTripRequest(state.tripRequest, data.venues, transitIndex)
     updateState({ venues: data.venues, resourceStatus })
-    syncTripRequest(state.tripRequest)
   }
 
   const handleTransitLoad = (data: LoadedTransitData): void => {
@@ -215,6 +219,7 @@ export function createNavigationSession(
       reconciledSelection,
       setTripEndpointCommand,
     )
+    syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
 
     const resourceStatus = markTransitLoaded(state.resourceStatus, {
       stopCount: data.index.stops.length,
@@ -226,7 +231,6 @@ export function createNavigationSession(
       selectedRouteColor: reconciledSelection.route?.color ?? null,
       resourceStatus,
     })
-    syncTripRequest(state.tripRequest)
   }
 
   const handleLoadFailure = (
@@ -293,13 +297,13 @@ export function createNavigationSession(
         ? routeOverlapMap.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
         : EMPTY_ROUTE_OVERLAP
 
-      updateState({
-        selectedRouteId: nextRouteId,
-        selectedRouteColor: selectedRoute?.color ?? null,
-      })
       dependencies.map.setRouteSelection({
         route: selectedRoute ?? null,
         overlappingRouteIds,
+      })
+      updateState({
+        selectedRouteId: nextRouteId,
+        selectedRouteColor: selectedRoute?.color ?? null,
       })
     },
 
@@ -344,8 +348,8 @@ export function createNavigationSession(
       const venue = state.venues?.[result.code]
       if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
       const canonicalResult = createVenueSearchResultSnapshot(result.code, venue)
-      updateContextualPanel({ type: 'select-venue', result: canonicalResult })
       dependencies.map.selectVenue(venue)
+      updateContextualPanel({ type: 'select-venue', result: canonicalResult })
     },
 
     openVenueSearch() {

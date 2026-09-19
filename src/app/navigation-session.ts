@@ -1,4 +1,4 @@
-import { contextualPanelReducer, createInitialContextualPanelState, type ContextualPanelAction, type ContextualPanelState } from '../domain/contextual-panel/state'
+import { createInitialContextualPanelState, type ContextualPanelState } from '../domain/contextual-panel/state'
 import type { TransitIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import {
@@ -20,20 +20,16 @@ import {
   type ResourceStatusState,
 } from './resource-status'
 import { reconcileRouteSelection } from './route-selection'
-import {
-  createNavigationSessionStartup,
-  waitForAbortablePromise,
-} from './navigation-session-startup'
+import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession } from './contracts/map'
-import {
-  createVenueSearchResultSnapshot,
-  canonicalizeTripEndpoint,
-  hasMappedLocation,
-  isTripEndpointRole,
-  venuesMatch,
-} from './navigation-session-validation'
+import { createNavigationSessionResourceLoading } from './navigation-session-loading'
+import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
 import { freezeNavigationSessionSnapshot } from './navigation-session-snapshot'
+import {
+  createNavigationSessionPanelTransitions,
+  createNavigationSessionTransitionQueue,
+} from './navigation-session-transitions'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 
@@ -98,11 +94,6 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
   })
 }
 
-function isAbortError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null &&
-    'name' in error && error.name === 'AbortError'
-}
-
 function getTransitFailureMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'TransitValidationError') {
     return `Transit route data validation failed: ${error.message}`
@@ -119,27 +110,8 @@ export function createNavigationSession(
   let disposed = false
   const startup = createNavigationSessionStartup()
   const listeners = new Set<NavigationSessionListener>()
-  const transitionQueue: Array<() => void> = []
-  let processingTransitions = false
-
-  const enqueueTransition = (transition: () => void): void => {
-    if (disposed) return
-    transitionQueue.push(transition)
-    if (processingTransitions) return
-
-    processingTransitions = true
-    try {
-      while (!disposed && transitionQueue.length > 0) {
-        transitionQueue.shift()?.()
-      }
-    } catch (error) {
-      transitionQueue.length = 0
-      throw error
-    } finally {
-      processingTransitions = false
-      if (disposed) transitionQueue.length = 0
-    }
-  }
+  const transitionQueue = createNavigationSessionTransitionQueue(() => disposed)
+  const enqueueTransition = transitionQueue.enqueue
 
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
@@ -214,33 +186,6 @@ export function createNavigationSession(
     })
   }
 
-  const updateContextualPanel = (action: ContextualPanelAction): ContextualPanelState => {
-    if (disposed) return state.contextualPanel
-    const nextPanel = contextualPanelReducer(state.contextualPanel, action)
-    updateState({ contextualPanel: nextPanel })
-    return nextPanel
-  }
-
-  const clearVenueMarkerForBack = (): void => {
-    const previousState = state.contextualPanel.history.at(-1)
-    if (
-      state.contextualPanel.mode === 'venue-detail' &&
-      previousState?.mode !== 'venue-detail'
-    ) {
-      dependencies.map.clearVenue()
-    }
-  }
-
-  const clearVenueMarkerForEscape = (): void => {
-    const previousState = state.contextualPanel.history.at(-1)
-    if (
-      !previousState ||
-      (state.contextualPanel.mode === 'venue-detail' && previousState.mode !== 'venue-detail')
-    ) {
-      dependencies.map.clearVenue()
-    }
-  }
-
   const handleVenueLoad = (data: LoadedVenueData): void => {
     const resourceStatus = markVenueLoaded(state.resourceStatus, data.venueCount)
     syncTripRequest(state.tripRequest, data.venues, transitIndex)
@@ -298,41 +243,26 @@ export function createNavigationSession(
     console.error(error)
   }
 
-  const loadVenues = (signal: AbortSignal): Promise<void> => (
-    Promise.resolve()
-      .then(() => dependencies.loadVenues(signal))
-      .then((data) => {
-        if (!disposed && !signal.aborted) {
-          enqueueTransition(() => {
-            if (!disposed && !signal.aborted) handleVenueLoad(data)
-          })
-        }
-      }, (error: unknown) => {
-        if (disposed || signal.aborted || isAbortError(error)) return
-        enqueueTransition(() => handleLoadFailure('venue', error))
-      })
-  )
+  const resourceLoading = createNavigationSessionResourceLoading({
+    mapReady: dependencies.map.ready,
+    isDisposed: () => disposed,
+    loadVenues: dependencies.loadVenues,
+    loadTransit: dependencies.loadTransit,
+    enqueue: enqueueTransition,
+    onVenueLoaded: handleVenueLoad,
+    onTransitLoaded: handleTransitLoad,
+    onLoadFailure: handleLoadFailure,
+  })
 
-  const loadTransit = (signal: AbortSignal): Promise<void> => (
-    Promise.resolve()
-      .then(() => dependencies.loadTransit(signal))
-      .then((data) => waitForAbortablePromise(dependencies.map.ready, signal).then(
-        () => {
-          if (!disposed && !signal.aborted) {
-            enqueueTransition(() => {
-              if (!disposed && !signal.aborted) handleTransitLoad(data)
-            })
-          }
-        },
-        (error: unknown) => {
-          if (isAbortError(error)) return
-          throw error
-        },
-      ), (error: unknown) => {
-        if (disposed || signal.aborted || isAbortError(error)) return
-        enqueueTransition(() => handleLoadFailure('transit', error))
-      })
-  )
+  const panelTransitions = createNavigationSessionPanelTransitions({
+    isDisposed: () => disposed,
+    enqueue: enqueueTransition,
+    getContextualPanel: () => state.contextualPanel,
+    getVenues: () => state.venues,
+    setContextualPanel: (contextualPanel) => updateState({ contextualPanel }),
+    selectVenue: (venue) => dependencies.map.selectVenue(venue),
+    clearVenue: () => dependencies.map.clearVenue(),
+  })
 
 
   return {
@@ -347,7 +277,7 @@ export function createNavigationSession(
       }
     },
 
-    start: (signal) => startup.start(signal, { loadVenues, loadTransit }),
+    start: (signal) => startup.start(signal, resourceLoading),
 
     selectRoute(routeId) {
       enqueueTransition(() => {
@@ -413,71 +343,7 @@ export function createNavigationSession(
       })
     },
 
-    setContextualPanelQuery(query) {
-      enqueueTransition(() => {
-        if (disposed) return
-        updateContextualPanel({ type: 'set-query', query })
-      })
-    },
-
-    selectVenue(result) {
-      enqueueTransition(() => {
-        if (disposed) return
-        if (typeof result?.code !== 'string') return
-        const venue = state.venues?.[result.code]
-        if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
-        const canonicalResult = createVenueSearchResultSnapshot(result.code, venue)
-        dependencies.map.selectVenue(venue)
-        updateContextualPanel({ type: 'select-venue', result: canonicalResult })
-      })
-    },
-
-    openVenueSearch() {
-      enqueueTransition(() => {
-        if (disposed) return
-        updateContextualPanel({ type: 'open-venue-search' })
-      })
-    },
-
-    openShuttle() {
-      enqueueTransition(() => {
-        if (disposed) return
-        updateContextualPanel({ type: 'open-shuttle' })
-      })
-    },
-
-    back() {
-      enqueueTransition(() => {
-        if (disposed) return
-        clearVenueMarkerForBack()
-        updateContextualPanel({ type: 'back' })
-      })
-    },
-
-    escape() {
-      enqueueTransition(() => {
-        if (disposed) return
-        clearVenueMarkerForEscape()
-        updateContextualPanel({ type: 'escape' })
-      })
-    },
-
-    close() {
-      enqueueTransition(() => {
-        if (disposed) return
-        dependencies.map.clearVenue()
-        updateContextualPanel({ type: 'close' })
-      })
-    },
-
-    handleMapClick() {
-      enqueueTransition(() => {
-        if (disposed) return
-        if (state.contextualPanel.mode !== 'venue-detail') return
-        dependencies.map.clearVenue()
-        updateContextualPanel({ type: 'map-click' })
-      })
-    },
+    ...panelTransitions,
 
     reportMapError(error) {
       enqueueTransition(() => {
@@ -490,7 +356,7 @@ export function createNavigationSession(
     dispose() {
       if (disposed) return
       disposed = true
-      transitionQueue.length = 0
+      transitionQueue.clear()
       startup.dispose()
       listeners.clear()
       dependencies.map.dispose()

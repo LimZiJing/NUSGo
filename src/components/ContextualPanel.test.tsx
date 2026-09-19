@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ContextualPanel } from './ContextualPanel'
-import { createInitialContextualPanelState } from '../contextual-panel/state'
-import { createValidTransitNetwork } from '../transit/test-fixtures'
-import type { VenueLocationMap } from '../types/venues'
+import { createInitialContextualPanelState } from '../domain/contextual-panel/state'
+import { createTransitIndex } from '../domain/transit'
+import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { VenueLocationMap } from '../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -22,6 +23,7 @@ function renderPanel(
       state={state}
       venues={venueData}
       network={createValidTransitNetwork()}
+      networkIndex={createTransitIndex(createValidTransitNetwork())}
       selectedRouteId={null}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}

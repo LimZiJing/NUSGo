@@ -1,4 +1,21 @@
 export interface TransitStop {
+  readonly id: string
+  readonly longName: string
+  readonly shortName: string
+  readonly latitude: number
+  readonly longitude: number
+  readonly services: readonly string[]
+  readonly opposite?: string | null
+}
+
+export interface TransitRoute {
+  readonly id: string
+  readonly name: string
+  readonly color: string
+  readonly stopIds: readonly string[]
+}
+
+export interface TransitStopInput {
   id: string
   longName: string
   shortName: string
@@ -8,7 +25,7 @@ export interface TransitStop {
   opposite?: string | null
 }
 
-export interface TransitRoute {
+export interface TransitRouteInput {
   id: string
   name: string
   color: string
@@ -16,6 +33,15 @@ export interface TransitRoute {
 }
 
 export interface TransitNetworkMetadata {
+  readonly source: string
+  readonly routeStopOrder: string
+  readonly routeGeometry: string
+  readonly verifiedAt: string
+  readonly routeOrderSource: string
+  readonly coordinateSource: string
+}
+
+export interface TransitNetworkMetadataInput {
   source: string
   routeStopOrder: string
   routeGeometry: string
@@ -68,8 +94,15 @@ export interface TransitVerificationManifest {
 }
 
 export interface TransitNetwork {
+  readonly version: number
+  readonly metadata: TransitNetworkMetadata
+  readonly routes: readonly TransitRoute[]
+  readonly stops: readonly TransitStop[]
+}
+
+export interface TransitNetworkInput {
   version: number
-  metadata: TransitNetworkMetadata
-  routes: TransitRoute[]
-  stops: TransitStop[]
+  metadata: TransitNetworkMetadataInput
+  routes: TransitRouteInput[]
+  stops: TransitStopInput[]
 }

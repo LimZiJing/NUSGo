@@ -1,4 +1,4 @@
-import type { VenueLocation, VenueLocationMap } from '../types/venues'
+import type { VenueLocation, VenueLocationMap } from './types'
 
 export interface VenueSearchResult {
   code: string

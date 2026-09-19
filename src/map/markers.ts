@@ -5,14 +5,15 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { getTripEndpointLabel } from '../location/search'
-import type { TransitStop } from '../types/transit'
+import { getTripEndpointLabel } from '../domain/location/search'
+import type { TransitIndex } from '../domain/transit'
+import type { TransitStop } from '../domain/transit/types'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from '../types/trip'
-import type { VenueLocation, VenueLocationMap } from '../types/venues'
+} from '../domain/trip/types'
+import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 
 interface PopupAction {
   label: string
@@ -79,7 +80,7 @@ export type BusStopLabelGeoJson = {
   features: BusStopLabelFeature[]
 }
 
-export function createBusStopLabelGeoJson(stops: TransitStop[]): BusStopLabelGeoJson {
+export function createBusStopLabelGeoJson(stops: readonly TransitStop[]): BusStopLabelGeoJson {
   return {
     type: 'FeatureCollection',
     features: stops
@@ -149,9 +150,6 @@ export function addVenueMarker(
     .addTo(map)
 }
 
-export function getVenueCount(venues: VenueLocationMap): number {
-  return Object.values(venues).filter((venue) => venue.location).length
-}
 
 export function createBusStopPopupCoordinator() {
   let activePopup: Popup | null = null
@@ -311,7 +309,7 @@ function updateBusStopMarkerPresentation(state: BusStopMarkerState): void {
 
 export function addBusStopMarkers(
   map: Map,
-  busStops: TransitStop[],
+  busStops: readonly TransitStop[],
   onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
 ): Marker[] {
   const markers: Marker[] = []
@@ -392,7 +390,7 @@ function createTripEndpointMarkerElement(
 function getTripEndpointCoordinate(
   endpoint: TripEndpoint,
   venues: VenueLocationMap,
-  stops: TransitStop[],
+  transitIndex: TransitIndex | null,
 ): [number, number] | null {
   if (endpoint.kind === 'venue') {
     const location = venues[endpoint.id]?.location
@@ -401,7 +399,7 @@ function getTripEndpointCoordinate(
       : null
   }
 
-  const stop = stops.find((candidate) => candidate.id === endpoint.id)
+  const stop = transitIndex?.stopById.get(endpoint.id)
   return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
     ? [stop.longitude, stop.latitude]
     : null
@@ -411,7 +409,7 @@ export function addTripEndpointMarkers(
   map: Map,
   request: TripRequest,
   venues: VenueLocationMap,
-  stops: TransitStop[],
+  transitIndex: TransitIndex | null,
 ): Marker[] {
   const markers: Marker[] = []
 
@@ -421,10 +419,10 @@ export function addTripEndpointMarkers(
   ] as const) {
     if (!endpoint) continue
 
-    const coordinate = getTripEndpointCoordinate(endpoint, venues, stops)
+    const coordinate = getTripEndpointCoordinate(endpoint, venues, transitIndex)
     if (!coordinate) continue
 
-    const label = getTripEndpointLabel(endpoint, venues, stops)
+    const label = getTripEndpointLabel(endpoint, venues, transitIndex)
     const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
     const marker = new Marker({
       anchor: 'center',

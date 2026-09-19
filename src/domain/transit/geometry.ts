@@ -2,7 +2,7 @@ import type {
   TransitGeoJsonPosition,
   TransitNetwork,
   TransitRouteGeometry,
-} from '../types/transit'
+} from './types'
 import { TransitValidationError } from './model'
 
 const MAX_STOP_DISTANCE_METRES = 50
@@ -14,7 +14,7 @@ interface ProjectedPosition {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function describe(value: unknown): string {
@@ -25,7 +25,7 @@ function describe(value: unknown): string {
 
 function featureRouteId(value: Record<string, unknown>, index: number): string {
   const properties = isRecord(value.properties) ? value.properties : null
-  return properties && typeof properties.routeId === 'string' && properties.routeId.length > 0
+  return properties && typeof properties.routeId === 'string' && properties.routeId.trim().length > 0
     ? properties.routeId
     : `<index ${index}>`
 }
@@ -103,7 +103,7 @@ function readLineCoordinates(
 
   const coordinates: TransitGeoJsonPosition[] = []
   for (const [index, position] of value.entries()) {
-    if (!Array.isArray(position) || position.length < 2) {
+    if (!Array.isArray(position) || position.length !== 2) {
       issues.push(`Transit route ${routeId} geometry coordinate ${index} must be [longitude, latitude]`)
       continue
     }
@@ -152,6 +152,7 @@ export function validateTransitRouteGeometry(
   }
 
   const networkRoutes = new Map(network.routes.map((route) => [route.id, route]))
+  const networkStops = new Map(network.stops.map((stop) => [stop.id, stop]))
   const seenRouteIds = new Set<string>()
   const linesByRoute = new Map<string, TransitGeoJsonPosition[]>()
 
@@ -171,7 +172,7 @@ export function validateTransitRouteGeometry(
     }
     const routeId = featureRouteId(value, index)
     const route = networkRoutes.get(routeId)
-    if (typeof properties.routeId !== 'string' || properties.routeId.length === 0) {
+    if (typeof properties.routeId !== 'string' || properties.routeId.trim().length === 0) {
       issues.push(`Transit route geometry feature ${routeId} must have a non-empty route ID`)
     } else if (!route) {
       issues.push(`Transit route geometry references unknown route: ${routeId}`)
@@ -180,10 +181,14 @@ export function validateTransitRouteGeometry(
         issues.push(`Duplicate transit route geometry feature for route: ${routeId}`)
       }
       seenRouteIds.add(routeId)
-      if (properties.name !== route.name) {
+      if (typeof properties.name !== 'string' || properties.name.trim().length === 0) {
+        issues.push(`Transit route geometry ${routeId} name must be a non-empty string`)
+      } else if (properties.name !== route.name) {
         issues.push(`Transit route geometry ${routeId} name does not match the network model`)
       }
-      if (properties.color !== route.color) {
+      if (typeof properties.color !== 'string' || properties.color.trim().length === 0) {
+        issues.push(`Transit route geometry ${routeId} color must be a non-empty string`)
+      } else if (properties.color !== route.color) {
         issues.push(`Transit route geometry ${routeId} color does not match the network model`)
       }
     }
@@ -211,7 +216,7 @@ export function validateTransitRouteGeometry(
     const line = linesByRoute.get(route.id)
     if (!line) continue
 
-    const routeStops = route.stopIds.map((stopId) => network.stops.find((stop) => stop.id === stopId))
+    const routeStops = route.stopIds.map((stopId) => networkStops.get(stopId))
     const firstStop = routeStops[0]
     const lastStop = routeStops.at(-1)
     if (!firstStop || !lastStop) continue

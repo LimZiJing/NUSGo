@@ -2,7 +2,7 @@ import type {
   TripEndpoint,
   TripEndpointRole,
   TripRequest,
-} from '../types/trip'
+} from './types'
 
 export function createEmptyTripRequest(): TripRequest {
   return { origin: null, destination: null }
@@ -62,9 +62,7 @@ export function validateTripRequest(request: TripRequest): string | null {
   const destinationError = validateEndpoint(destination, 'Destination')
   if (destinationError) return destinationError
 
-  if (origin === null || destination === null) {
-    return null
-  }
+  if (origin === null || destination === null) return null
 
   if (origin.kind === destination.kind && origin.id === destination.id) {
     return 'Origin and destination must be different locations.'

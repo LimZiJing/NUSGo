@@ -1,14 +1,16 @@
 import { useEffect, useMemo } from 'react'
-import { searchVenues, type VenueSearchResult } from '../venue/search'
-import type { TransitNetwork } from '../types/transit'
-import type { VenueLocationMap } from '../types/venues'
-import type { ContextualPanelState } from '../contextual-panel/state'
+import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
+import type { TransitNetwork } from '../domain/transit/types'
+import type { TransitNetworkIndex } from '../domain/transit'
+import type { VenueLocationMap } from '../domain/venue/types'
+import type { ContextualPanelState } from '../domain/contextual-panel/state'
 import { TransitRouteControl } from './TransitRouteControl'
 
 interface ContextualPanelProps {
   state: ContextualPanelState
   venues: VenueLocationMap | null
   network: TransitNetwork | null
+  networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
@@ -30,6 +32,7 @@ export function ContextualPanel({
   state,
   venues,
   network,
+  networkIndex,
   selectedRouteId,
   onQueryChange,
   onVenueSelect,
@@ -168,6 +171,7 @@ export function ContextualPanel({
           </button>
           <TransitRouteControl
             network={network}
+            networkIndex={networkIndex}
             selectedRouteId={selectedRouteId}
             onRouteSelect={onRouteSelect}
           />

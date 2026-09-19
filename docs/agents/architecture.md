@@ -14,23 +14,24 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 ## Contracts and dependency direction
 
-Application contracts must be small, framework-free interfaces. Define a contract in `src/app` when it describes an effect the application needs, such as map presentation or data loading. Concrete MapLibre and network implementations belong in `src/infrastructure`; `src/app` wires those adapters into the application.
+Application contracts must be small, framework-free interfaces in `src/app/contracts`. Define a contract there when it describes an effect the application needs, such as map presentation or data loading. Concrete MapLibre and network implementations belong in `src/infrastructure`; the app composition root wires those adapters and feature entry points together with runtime imports.
 
 The intended direction is:
 
 ```text
-                 src/app
-              /     |      \
-             v      v       v
-       src/features  src/ui  src/infrastructure
-             |        |          |
-             +--------+----------+
-                      v
-                  src/domain
+             src/app (composition)
+              | runtime --> src/features
+              | runtime --> src/ui
+              | runtime --> src/infrastructure --> src/domain
+
+       src/infrastructure - - import type only - -> src/app/contracts
+       src/features -------------------------------> src/domain
 ```
 
 - Domain modules must not import React, MapLibre, browser DOM APIs, network clients, or other infrastructure.
-- Infrastructure may depend on domain types and implement framework-free app contracts. It owns all MapLibre, network, DOM, listener, timer, and asynchronous effects.
+- The app composition root may runtime-import feature entry points, UI entry points, and infrastructure adapters to wire the application.
+- Infrastructure may depend on domain types and implement framework-free app contracts. It may use `import type` from `src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
+- Infrastructure must not make any other import from `src/app`, including runtime imports or imports from app controllers. It owns all MapLibre, network, DOM, listener, timer, and asynchronous effects.
 - Features may depend on domain values, framework-free app contracts, and shared UI primitives, but must not import concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
 - Cross-feature coordination goes through app-owned state, commands, or contracts rather than direct feature-to-feature imports.
 - UI modules must not reach into application internals or infrastructure. They receive state and callbacks through props or small framework-free interfaces.
@@ -48,10 +49,10 @@ The diagram describes allowed ownership and dependency direction; it does not re
 
 | Current area | Target owner |
 | --- | --- |
-| `src/types`, `src/transit`, `src/venue`, `src/location`, `src/trip`, and pure contextual-panel state | `src/domain` |
-| `src/components` and feature-specific React state | `src/features` |
-| Shared React primitives and layouts | `src/ui` |
-| `src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `src/infrastructure` |
+| `src/types`, pure `src/transit` types/validation/geometry, `src/venue`, `src/location`, `src/trip`, and pure contextual-panel state | `src/domain` |
+| Feature-specific components and React state currently under `src/components` | `src/features` |
+| Genuinely reusable primitives and layouts currently under `src/components` | `src/ui` |
+| `src/transit/render.ts`, `src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `src/infrastructure` |
 | `src/App.tsx` and composition in `src/main.tsx` | `src/app` |
 
 Apply the architecture work in this exact order: **#38 → #39 → #34 → #35 → #30 → #40 → #36 → #37**. Complete **#30 before starting #40 or #36**. Move imports atomically with each step and keep one canonical source of truth.

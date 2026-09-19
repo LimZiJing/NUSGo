@@ -285,6 +285,9 @@ describe('navigation session', () => {
     })
     expect(dependencies.map.selectVenue).toHaveBeenCalledWith(venueResult.venue)
 
+    session.dispatchContextualPanel({ type: 'set-query', query: 'COM1-0210' })
+    expect(session.getState().contextualPanel.query).toBe('COM1-0210')
+
     session.back()
     expect(session.getState().contextualPanel).toMatchObject({
       mode: 'venue-search',

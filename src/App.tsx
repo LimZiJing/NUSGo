@@ -36,7 +36,6 @@ function App() {
       controller.abort()
       navigationSession?.dispose()
       navigationSession = null
-      setSession(null)
     }
   }, [])
 

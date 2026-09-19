@@ -63,6 +63,7 @@ export interface NavigationSession {
   clearTrip(): void
   setOriginSearchQuery(query: string): void
   setDestinationSearchQuery(query: string): void
+  dispatchContextualPanel(action: ContextualPanelAction): void
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   openVenueSearch(): void
@@ -319,6 +320,11 @@ export function createNavigationSession(
     setDestinationSearchQuery(query) {
       if (disposed) return
       updateState({ destinationSearchQuery: query })
+    },
+
+    dispatchContextualPanel(action) {
+      if (disposed) return
+      dispatchContextualPanel(action)
     },
 
     setContextualPanelQuery(query) {

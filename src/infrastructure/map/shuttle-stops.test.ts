@@ -68,6 +68,24 @@ describe('createPopupCoordinator', () => {
     expect(stop.remove).not.toHaveBeenCalled()
     expect(venue.remove).not.toHaveBeenCalled()
   })
+
+  it('unregisters popup listeners and disposes active coordination', () => {
+    const popup = createFakePopup()
+    const coordinator = createPopupCoordinator()
+    const unregister = coordinator.register(popup as unknown as Popup)
+
+    unregister()
+    popup.emit('open')
+    expect(popup.remove).not.toHaveBeenCalled()
+
+    coordinator.register(popup as unknown as Popup)
+    popup.emit('open')
+    coordinator.dispose()
+    popup.emit('open')
+
+    expect(popup.off).toHaveBeenCalled()
+    expect(popup.remove).toHaveBeenCalledOnce()
+  })
 })
 
 class FakeElement {

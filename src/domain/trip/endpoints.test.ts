@@ -5,8 +5,8 @@ import {
   setTripEndpoint,
   swapTripEndpoints,
   validateTripRequest,
-} from '../domain/trip/endpoints'
-import type { TripEndpoint, TripRequest } from '../domain/trip/types'
+} from './endpoints'
+import type { TripEndpoint, TripRequest } from './types'
 
 const venue: TripEndpoint = { kind: 'venue', id: 'LT17' }
 const stop: TripEndpoint = { kind: 'stop', id: 'STOP-A' }

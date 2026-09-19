@@ -3,9 +3,9 @@ import {
   TransitValidationError,
   validateTransitNetwork,
   validateTransitVerificationManifest,
-} from '../domain/transit/model'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitNetworkInput } from '../domain/transit/types'
+} from './model'
+import { createValidTransitNetwork } from './test-fixtures'
+import type { TransitNetworkInput } from './types'
 
 type Mutation = (network: TransitNetworkInput) => void
 type ValidationCase = [name: string, mutate: Mutation, expected: RegExp]
@@ -123,6 +123,33 @@ describe('validateTransitVerificationManifest', () => {
     }
 
     expect(validateTransitVerificationManifest(network, manifest)).toBe(manifest)
+  })
+
+  it('rejects malformed manifest route fields with deterministic identifiers', () => {
+    const network = createValidTransitNetwork()
+    const manifest = {
+      version: 1,
+      reviewedAt: '2026-09-17',
+      routeOrderSource: 'test route source',
+      coordinateSource: 'test coordinate source',
+      geometry: {
+        source: 'test geometry source',
+        reviewedAt: '2026-09-17',
+        reviewNotes: 'test geometry review',
+      },
+      routes: [{
+        routeId: 'A1',
+        direction: '',
+        orderedStopIds: ['STOP-A', 42],
+      }],
+    }
+
+    expect(() => validateTransitVerificationManifest(network, manifest)).toThrowError(
+      /Transit verification route A1 direction must be a non-empty string/,
+    )
+    expect(() => validateTransitVerificationManifest(network, manifest)).toThrowError(
+      /Transit verification route A1 ordered stop 1 must be a non-empty string/,
+    )
   })
 
   it('rejects manifest route-order drift with the route ID', () => {

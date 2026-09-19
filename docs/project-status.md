@@ -28,16 +28,16 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
 - Transit model references are validated before shuttle markers are rendered.
 - Venue markers, shuttle-stop markers, and popup creation are organized in `src/map/markers.ts`.
-- Shared JSON loading is organized in `src/map/data.ts`.
-- Shared data types are under `src/types`.
-- Manual smoke check (2026-09-18): desktop venue search, query preservation, venue details without a popup, shuttle mode, route selection, Back, Escape, empty-map click, and panel close with route emphasis were verified against the local development build. Mobile bottom-sheet behavior is tracked in issue #30.
+- JSON fetching and validated resource loaders are organized in `src/infrastructure/data/`.
+- The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
+- Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
+- Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The manual desktop/map smoke checklist is in `docs/qa/issue-39-manual-smoke-check.md` and remains pending; no browser QA is claimed.
 
 ## Current limitations
 
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
-- The model's stop ordering is inherited from the source stop dataset and must be verified before production use.
-- The model does not yet contain road-following route geometry.
-- Accurate route display requires verified route directions, ordered stops, and road-following geometries.
+- The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; production deployment still needs manual smoke verification.
+- Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
 
@@ -45,13 +45,9 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 
 Complete the functional transit foundation before a broad UI redesign:
 
-1. Verify the static model's route directions and ordered stops.
-2. Add route shapes as GeoJSON under `public/data`.
-3. Render route shapes with MapLibre GeoJSON sources and line layers.
-4. Add shuttle route selection and route highlighting.
-5. Add origin and destination selection (implemented; routing remains out of scope).
-6. Add walking connections and routing.
-7. Investigate live shuttle arrivals after static routes work reliably.
+1. Complete the pending desktop/map smoke checklist for the validated static transit resources.
+2. Add walking connections and routing.
+3. Investigate live shuttle arrivals after static routes work reliably.
 
 The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
 

@@ -426,6 +426,23 @@ describe('transit route camera', () => {
     ])
   })
 
+  it('uses the indexed route stop lookup instead of unrelated network stops', () => {
+    const network = createValidTransitNetwork()
+    network.stops.push({
+      id: 'UNRELATED',
+      longName: 'Unrelated stop',
+      shortName: 'Unrelated',
+      latitude: 10,
+      longitude: 110,
+      services: ['PUB:unrelated'],
+    })
+
+    expect(getTransitRouteBounds(createTransitIndex(network), createValidGeometry(), 'A1')).toEqual([
+      [103, 1],
+      [103.1, 1.1],
+    ])
+  })
+
   it('uses all network bounds for cleared and unknown selections', () => {
     const network = createValidTransitNetwork()
     network.routes.push({

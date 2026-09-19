@@ -33,8 +33,10 @@ describe('data loaders', () => {
       }),
     )
 
-    expect(result.index.network.routes.length).toBeGreaterThan(0)
-    expect(result.geometry.features.length).toBe(result.index.network.routes.length)
+    expect(result.network).toBe(result.index.network)
+    expect(Object.isFrozen(result.network)).toBe(true)
+    expect(result.network.routes.length).toBeGreaterThan(0)
+    expect(result.geometry.features.length).toBe(result.network.routes.length)
     expect(result.index.routeById.get('A1')?.id).toBe('A1')
     expect(result.index.stopById.get('KR-MRT')?.id).toBe('KR-MRT')
   })
@@ -47,6 +49,27 @@ describe('data loaders', () => {
 
     expect(result.venueCount).toBeGreaterThan(0)
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
+  })
+
+  it('starts both transit fetches in parallel and validates network errors first', async () => {
+    const calls: string[] = []
+    const malformedNetwork = { ...(network as Record<string, unknown>), version: 2 }
+    const malformedGeometry = { type: 'NotFeatureCollection', features: [] }
+    const fetcher: JsonFetcher = (path) => {
+      calls.push(path)
+      const payload = path.includes('network') ? malformedNetwork : malformedGeometry
+      const delay = path.includes('network') ? 20 : 0
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(payload), delay)
+      })
+    }
+
+    const pending = loadTransitMapData(new AbortController().signal, fetcher)
+    expect(calls).toEqual([
+      '/data/shuttle-network.json',
+      '/data/shuttle-routes.geojson',
+    ])
+    await expect(pending).rejects.toThrow('Transit network version must be 1: 2')
   })
 
   it('rejects malformed resources independently', async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
-import type { TransitStop } from '../domain/transit/types'
-import type { VenueLocationMap } from '../domain/venue/types'
+import { getTripEndpointLabel, searchTripLocations } from './search'
+import type { TransitStop } from '../transit/types'
+import type { VenueLocationMap } from '../venue/types'
 
 const venues: VenueLocationMap = {
   LT17: {

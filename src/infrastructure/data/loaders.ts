@@ -2,7 +2,7 @@ import { createTransitNetworkIndex, type TransitNetworkIndex } from '../../domai
 import { validateTransitMapData } from '../../domain/transit/map-data'
 import { validateVenueLocationMap, getVenueCount } from '../../domain/venue/validation'
 import { fetchJson } from './json'
-import type { TransitRouteGeometry } from '../../domain/transit/types'
+import type { TransitNetwork, TransitRouteGeometry } from '../../domain/transit/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 export type JsonFetcher = (
@@ -17,6 +17,7 @@ export interface LoadedVenueData {
 }
 
 export interface LoadedTransitMapData {
+  readonly network: TransitNetwork
   readonly geometry: TransitRouteGeometry
   readonly index: TransitNetworkIndex
 }
@@ -44,5 +45,5 @@ export async function loadTransitMapData(
   ])
   const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
   const index = createTransitNetworkIndex(network)
-  return { geometry, index }
+  return { network: index.network, geometry, index }
 }

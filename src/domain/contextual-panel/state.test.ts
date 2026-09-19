@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
-} from '../domain/contextual-panel/state'
-import type { VenueSearchResult } from '../domain/venue/search'
+} from './state'
+import type { VenueSearchResult } from '../venue/search'
 
 const selectedVenue: VenueSearchResult = {
   code: 'COM1-0210',

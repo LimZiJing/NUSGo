@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from './index'
+import { validateTransitNetwork } from './model'
 import { createValidTransitNetwork } from './test-fixtures'
 
 function createIndexedNetwork() {
@@ -38,6 +39,24 @@ describe('createTransitIndex', () => {
     expect(index.routeById.get('A1')?.name).toBe('A1')
     expect(index.routeById.get('A1')?.stopIds[0]).toBe('STOP-A')
     expect(index.stopById.get('STOP-A')?.longName).toBe('Stop A')
+  })
+
+  it('keeps validated snapshots deeply readonly at runtime', () => {
+    const source = createValidTransitNetwork()
+    const validated = validateTransitNetwork(source)
+
+    expect(validated).not.toBe(source)
+    expect(Object.isFrozen(validated)).toBe(true)
+    expect(Object.isFrozen(validated.metadata)).toBe(true)
+    expect(Object.isFrozen(validated.routes)).toBe(true)
+    expect(Object.isFrozen(validated.routes[0])).toBe(true)
+    expect(Object.isFrozen(validated.routes[0].stopIds)).toBe(true)
+    expect(Object.isFrozen(validated.stops)).toBe(true)
+    expect(Object.isFrozen(validated.stops[0])).toBe(true)
+    expect(Object.isFrozen(validated.stops[0].services)).toBe(true)
+    expect(() => {
+      ;(validated.routes as unknown as Array<unknown>).push({})
+    }).toThrow(TypeError)
   })
 
   it('exposes mutation-free map and set facades', () => {

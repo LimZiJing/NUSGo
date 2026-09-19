@@ -15,7 +15,6 @@ import {
 } from './app/navigation-session'
 import { useNavigationSession } from './app/use-navigation-session'
 import type { VenueSearchResult } from './domain/venue/search'
-import './App.css'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)

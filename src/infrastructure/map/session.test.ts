@@ -380,15 +380,21 @@ describe('MapSession', () => {
 
     await session.ready
     session.setTripRequest(request, venues, firstTransitData.index)
-    expect(map.addedMarkers.map((marker) => marker.coordinate)).toEqual([
+    session.loadTransitData(firstTransitData)
+    const initialEndpointMarkers = map.addedMarkers.slice(-2)
+    expect(initialEndpointMarkers.map((marker) => marker.coordinate)).toEqual([
       [103, 1],
       [103.9, 1.5],
     ])
 
-    session.setTripRequest(request, venues, secondIndex)
+    session.loadTransitData({
+      network: secondIndex.network,
+      geometry: firstTransitData.geometry,
+      index: secondIndex,
+    })
 
-    expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
-    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
+    expect(initialEndpointMarkers[0].remove).toHaveBeenCalledOnce()
+    expect(initialEndpointMarkers[1].remove).toHaveBeenCalledOnce()
     expect(map.addedMarkers.slice(-2).map((marker) => marker.coordinate)).toEqual([
       [104, 1],
       [103.9, 1.5],
@@ -425,8 +431,8 @@ describe('MapSession', () => {
       {},
       null,
     )
-    expect(session.loadTransitData(transitData)).toBe(transitData.index.stops.length)
-    expect(session.loadTransitData(transitData)).toBe(transitData.index.stops.length)
+    session.loadTransitData(transitData)
+    session.loadTransitData(transitData)
 
     session.dispose()
     session.dispose()
@@ -452,7 +458,7 @@ describe('MapSession', () => {
     expect(map.addedMarkers).toHaveLength(markerCount)
     expect(map.removedLayers).toHaveLength(removedLayerCount)
     expect(map.flyTo).toHaveBeenCalledTimes(flyToCount)
-    expect(session.loadTransitData(transitData)).toBe(0)
+    session.loadTransitData(transitData)
 
     vi.unstubAllGlobals()
   })

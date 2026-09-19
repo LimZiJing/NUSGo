@@ -100,7 +100,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       data: LoadedTransitData,
       onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
     ) {
-      if (disposed) return 0
+      if (disposed) return
 
       clearTransitData()
       transitData = data
@@ -118,7 +118,6 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           currentTransitIndex,
         )
       }
-      return shuttleStopMarkers.markers.length
     },
 
     setRouteSelection(selection: MapRouteSelection) {

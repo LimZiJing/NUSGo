@@ -33,6 +33,9 @@ export function waitForMapStyleLoaded(
   map: Map,
   signal: AbortSignal,
 ): Promise<void> {
+  if (signal.aborted) {
+    return Promise.reject(new DOMException('The map style load was aborted', 'AbortError'))
+  }
   if (map.isStyleLoaded()) return Promise.resolve()
 
   return new Promise((resolve, reject) => {

@@ -13,6 +13,7 @@ import {
   contextualPanelReducer,
   createInitialContextualPanelState,
 } from './domain/contextual-panel/state'
+import { reconcileRouteSelection } from './app/route-selection'
 import type { MapSession } from './app/contracts/map'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
 import { createMapSession } from './infrastructure/map/session'
@@ -194,6 +195,12 @@ function App() {
         )
         transitIndexRef.current = transitData.index
         transitRouteOverlapMapRef.current = routeOverlapMap
+        const reconciledSelection = reconcileRouteSelection(
+          transitData.index,
+          selectedRouteIdRef.current,
+          routeOverlapMap,
+        )
+        handleRouteSelect(reconciledSelection.route?.id ?? null)
         if (isMounted) {
           setTransitIndex(transitData.index)
           setResourceStatus((current) => markTransitLoaded(current, {

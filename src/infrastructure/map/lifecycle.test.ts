@@ -93,6 +93,25 @@ beforeEach(() => {
 })
 
 describe('map lifecycle style readiness', () => {
+  it('rejects immediately for an already-aborted signal without registering listeners', async () => {
+    const map = {
+      isStyleLoaded: vi.fn(() => false),
+      once: vi.fn(),
+      off: vi.fn(),
+    }
+    const controller = new AbortController()
+    controller.abort()
+    const addEventListener = vi.spyOn(controller.signal, 'addEventListener')
+
+    const pending = waitForMapStyleLoaded(map as never, controller.signal)
+
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    expect(map.isStyleLoaded).not.toHaveBeenCalled()
+    expect(map.once).not.toHaveBeenCalled()
+    expect(map.off).not.toHaveBeenCalled()
+    expect(addEventListener).not.toHaveBeenCalled()
+  })
+
   it('removes load and abort listeners when a pending style load is aborted', async () => {
     let loadHandler: (() => void) | undefined
     const map = {
@@ -104,9 +123,11 @@ describe('map lifecycle style readiness', () => {
       off: vi.fn(() => map),
     }
     const controller = new AbortController()
+    const addEventListener = vi.spyOn(controller.signal, 'addEventListener')
     const removeEventListener = vi.spyOn(controller.signal, 'removeEventListener')
     const pending = waitForMapStyleLoaded(map as never, controller.signal)
 
+    expect(addEventListener).toHaveBeenCalledWith('abort', expect.any(Function), { once: true })
     controller.abort()
 
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' })

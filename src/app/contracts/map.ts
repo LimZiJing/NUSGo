@@ -27,7 +27,7 @@ export interface MapSession {
   loadTransitData(
     data: LoadedTransitData,
     onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
-  ): number
+  ): void
   setRouteSelection(selection: MapRouteSelection): void
   setTripRequest(
     request: TripRequest,

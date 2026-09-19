@@ -58,6 +58,48 @@ describe('validateTransitNetwork', () => {
       'Transit route A1 has non-hex route color: blue',
     ])
   })
+
+describe('deterministic malformed field reporting', () => {
+  it('identifies metadata, route, stop, service, and opposite field failures', () => {
+    const network = createValidTransitNetwork()
+    network.version = 2
+    network.metadata.source = ''
+    network.routes[0].id = ' '
+    network.routes[0].name = ''
+    network.routes[0].stopIds = ['STOP-A', ' ']
+    network.stops[0].id = ' '
+    network.stops[0].longName = ''
+    network.stops[0].shortName = ''
+    network.stops[0].services = ['A1', 'A1']
+    network.stops[0].opposite = 42 as unknown as string
+
+    let error: unknown
+    try {
+      validateTransitNetwork(network)
+    } catch (caught) {
+      error = caught
+    }
+
+    expect(error).toBeInstanceOf(TransitValidationError)
+    expect((error as TransitValidationError).issues).toEqual([
+      'Transit network version must be 1: 2',
+      'Transit network metadata source must be a non-empty string',
+      'Transit route <index 0> must have a non-empty ID',
+      'Transit stop <index 0> must have a non-empty ID',
+      'Transit stop <index 0> longName must be a non-empty string',
+      'Transit stop <index 0> shortName must be a non-empty string',
+      'Transit stop <index 0> references unknown internal route service: A1',
+      'Transit stop <index 0> repeats service: A1',
+      'Transit stop <index 0> references unknown internal route service: A1',
+      'Transit stop STOP-B references unknown internal route service: A1',
+      'Transit route <index 0> name must be a non-empty string',
+      'Transit route <index 0> references unknown stop: STOP-A',
+      'Transit route <index 0> has an invalid stop ID:  ',
+      'Transit stop <index 0> has an invalid opposite stop reference: 42',
+      'Transit stop STOP-B references unknown opposite stop: STOP-A',
+    ])
+  })
+})
 })
 
 describe('validateTransitVerificationManifest', () => {

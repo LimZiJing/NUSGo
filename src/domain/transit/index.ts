@@ -1,5 +1,13 @@
 import type { TransitNetwork, TransitRoute, TransitStop } from './types'
 
+export class TransitIndexPreconditionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'TransitIndexPreconditionError'
+  }
+}
+
+/** Immutable canonical network route/stop snapshots; geometry and manifests are validated separately. */
 export interface TransitIndex {
   readonly network: TransitNetwork
   readonly routes: readonly TransitRoute[]
@@ -120,10 +128,19 @@ export function createTransitIndex(network: TransitNetwork): TransitIndex {
       createReadonlySet(Array.from(routeIds)),
     ] as const),
   )
-  const stopsByRouteEntries = routes.map((route) => [
-    route.id,
-    Object.freeze(route.stopIds.map((stopId) => stopById.get(stopId)!)),
-  ] as const)
+  const stopsByRouteEntries = routes.map((route) => {
+    const routeStops: TransitStop[] = []
+    for (const stopId of route.stopIds) {
+      const stop = stopById.get(stopId)
+      if (!stop) {
+        throw new TransitIndexPreconditionError(
+          `Transit index route ${route.id} references missing stop ${stopId}`,
+        )
+      }
+      routeStops.push(stop)
+    }
+    return [route.id, Object.freeze(routeStops)] as const
+  })
   const stopsByRouteId = createReadonlyMap(stopsByRouteEntries)
 
   const routeStops = (routeId: string): readonly TransitStop[] => (

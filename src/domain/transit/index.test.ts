@@ -73,6 +73,15 @@ describe('createTransitIndex', () => {
     expect(index.routeById.get('A1')?.color).toBe('#123456')
   })
 
+  it('rejects an unvalidated route with a missing stop deterministically', () => {
+    const network = createValidTransitNetwork()
+    network.routes[0].stopIds = ['STOP-A', 'MISSING']
+
+    expect(() => createTransitIndex(network)).toThrowError(
+      'Transit index route A1 references missing stop MISSING',
+    )
+  })
+
   it('supports forward and reverse route membership and ordered stop lookup', () => {
     const index = createTransitIndex(createIndexedNetwork())
 

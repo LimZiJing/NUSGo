@@ -17,7 +17,7 @@ import {
   markTransitLoaded,
   markVenueFailed,
   markVenueLoaded,
-} from './application/resource-status'
+} from './app/resource-status'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,

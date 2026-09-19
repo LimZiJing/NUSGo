@@ -705,6 +705,26 @@ describe('navigation session', () => {
     )
   })
 
+  it('keeps caller endpoint mutation out of state and map synchronization', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const endpoint: { kind: 'venue'; id: string } = { kind: 'venue', id: 'COM1' }
+    session.setTripEndpoint('origin', endpoint)
+    endpoint.id = 'MUTATED'
+
+    const request = session.getState().tripRequest
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    expect(request).toEqual({ origin: { kind: 'venue', id: 'COM1' }, destination: null })
+    expect(map.setTripRequest).toHaveBeenLastCalledWith(
+      request,
+      dependencies.venues.venues,
+      dependencies.transit.index,
+    )
+    expect(map.setTripRequest.mock.lastCall?.[0]).toBe(request)
+  })
+
   it('synchronizes a trip request before a subscriber can clear its endpoint', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

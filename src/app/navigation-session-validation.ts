@@ -25,10 +25,22 @@ export function isKnownTripEndpoint(
   venues: VenueLocationMap | null,
   transitIndex: TransitIndex | null,
 ): endpoint is TripEndpoint {
-  if (!isRecord(endpoint) || typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return false
-  if (endpoint.kind === 'venue') return hasMappedLocation(venues?.[endpoint.id])
-  if (endpoint.kind === 'stop') return transitIndex?.stopById.has(endpoint.id) ?? false
-  return false
+  return canonicalizeTripEndpoint(endpoint, venues, transitIndex) !== null
+}
+
+export function canonicalizeTripEndpoint(
+  endpoint: unknown,
+  venues: VenueLocationMap | null,
+  transitIndex: TransitIndex | null,
+): TripEndpoint | null {
+  if (!isRecord(endpoint) || typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return null
+  if (endpoint.kind === 'venue' && hasMappedLocation(venues?.[endpoint.id])) {
+    return { kind: 'venue', id: endpoint.id }
+  }
+  if (endpoint.kind === 'stop' && transitIndex?.stopById.has(endpoint.id)) {
+    return { kind: 'stop', id: endpoint.id }
+  }
+  return null
 }
 
 export function venuesMatch(first: VenueLocation, second: VenueLocation): boolean {

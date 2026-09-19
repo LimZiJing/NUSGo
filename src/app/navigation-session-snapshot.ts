@@ -30,6 +30,12 @@ function snapshotContextualPanel(panel: ContextualPanelState): ContextualPanelSt
 }
 
 function snapshotTripRequest(request: TripRequest): TripRequest {
+  if (
+    Object.isFrozen(request) &&
+    (request.origin === null || Object.isFrozen(request.origin)) &&
+    (request.destination === null || Object.isFrozen(request.destination))
+  ) return request
+
   const snapshotEndpoint = (endpoint: TripEndpoint | null): TripEndpoint | null => (
     endpoint === null ? null : freeze({ kind: endpoint.kind, id: endpoint.id })
   )

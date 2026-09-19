@@ -28,8 +28,8 @@ import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession } from './contracts/map'
 import {
   createVenueSearchResultSnapshot,
+  canonicalizeTripEndpoint,
   hasMappedLocation,
-  isKnownTripEndpoint,
   isTripEndpointRole,
   venuesMatch,
 } from './navigation-session-validation'
@@ -130,10 +130,14 @@ export function createNavigationSession(
       : resourceStatusMessage
   }
 
-  const publish = (nextState: NavigationSessionState): void => {
+  const publishSnapshot = (nextState: NavigationSessionState): void => {
     if (disposed) return
-    state = freezeNavigationSessionSnapshot(nextState)
+    state = nextState
     for (const listener of listeners) listener()
+  }
+
+  const publish = (nextState: NavigationSessionState): void => {
+    publishSnapshot(freezeNavigationSessionSnapshot(nextState))
   }
 
   const updateState = (patch: Partial<NavigationSessionState>): void => {
@@ -161,17 +165,23 @@ export function createNavigationSession(
     patch: Partial<NavigationSessionState> = {},
   ): void => {
     if (disposed) return
-    syncTripRequest(request, state.venues ?? {}, transitIndex)
-    updateState({ ...patch, tripRequest: request })
+    const nextState = freezeNavigationSessionSnapshot({
+      ...state,
+      ...patch,
+      tripRequest: request,
+    })
+    syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
+    publishSnapshot(nextState)
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
+    const canonicalEndpoint = canonicalizeTripEndpoint(endpoint, state.venues, transitIndex)
     if (
       disposed ||
       !isTripEndpointRole(role) ||
-      !isKnownTripEndpoint(endpoint, state.venues, transitIndex)
+      canonicalEndpoint === null
     ) return
-    updateTripRequest(setTripEndpoint(state.tripRequest, role, endpoint), {
+    updateTripRequest(setTripEndpoint(state.tripRequest, role, canonicalEndpoint), {
       ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
     })
   }

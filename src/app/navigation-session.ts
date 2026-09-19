@@ -20,6 +20,7 @@ import {
   type ResourceStatusState,
 } from './resource-status'
 import { reconcileRouteSelection } from './route-selection'
+import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, MapSession } from './contracts/map'
 import {
   createVenueSearchResultSnapshot,
@@ -117,9 +118,7 @@ export function createNavigationSession(
   let transitIndex: TransitIndex | null = null
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
   let disposed = false
-  let startPromise: Promise<void> | null = null
-  let startupAbortController: AbortController | null = null
-  let removeExternalAbortListener: (() => void) | null = null
+  const startup = createNavigationSessionStartup()
   const listeners = new Set<NavigationSessionListener>()
 
   const getStatus = (
@@ -266,35 +265,6 @@ export function createNavigationSession(
       })
   )
 
-  const clearExternalAbortListener = (): void => {
-    removeExternalAbortListener?.()
-    removeExternalAbortListener = null
-  }
-
-  const start = (signal: AbortSignal): Promise<void> => {
-    if (startPromise) return startPromise
-    if (disposed || signal.aborted) {
-      startPromise = Promise.resolve()
-      return startPromise
-    }
-
-    const controller = new AbortController()
-    startupAbortController = controller
-    const handleExternalAbort = () => controller.abort()
-    signal.addEventListener('abort', handleExternalAbort, { once: true })
-    removeExternalAbortListener = () => {
-      signal.removeEventListener('abort', handleExternalAbort)
-    }
-    if (signal.aborted) controller.abort()
-
-    startPromise = Promise.all([
-      loadVenues(controller.signal),
-      loadTransit(controller.signal),
-    ])
-      .then(() => undefined)
-      .finally(clearExternalAbortListener)
-    return startPromise
-  }
 
   return {
     getState() {
@@ -308,7 +278,7 @@ export function createNavigationSession(
       }
     },
 
-    start,
+    start: (signal) => startup.start(signal, { loadVenues, loadTransit }),
 
     selectRoute(routeId) {
       if (disposed) return
@@ -419,8 +389,7 @@ export function createNavigationSession(
     dispose() {
       if (disposed) return
       disposed = true
-      startupAbortController?.abort()
-      clearExternalAbortListener()
+      startup.dispose()
       listeners.clear()
       dependencies.map.dispose()
     },

@@ -119,6 +119,27 @@ export function createNavigationSession(
   let disposed = false
   const startup = createNavigationSessionStartup()
   const listeners = new Set<NavigationSessionListener>()
+  const transitionQueue: Array<() => void> = []
+  let processingTransitions = false
+
+  const enqueueTransition = (transition: () => void): void => {
+    if (disposed) return
+    transitionQueue.push(transition)
+    if (processingTransitions) return
+
+    processingTransitions = true
+    try {
+      while (!disposed && transitionQueue.length > 0) {
+        transitionQueue.shift()?.()
+      }
+    } catch (error) {
+      transitionQueue.length = 0
+      throw error
+    } finally {
+      processingTransitions = false
+      if (disposed) transitionQueue.length = 0
+    }
+  }
 
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
@@ -133,7 +154,11 @@ export function createNavigationSession(
   const publishSnapshot = (nextState: NavigationSessionState): void => {
     if (disposed) return
     state = nextState
-    for (const listener of listeners) listener()
+    const listenerSnapshot = [...listeners]
+    for (const listener of listenerSnapshot) {
+      if (disposed) return
+      listener()
+    }
   }
 
   const publish = (nextState: NavigationSessionState): void => {
@@ -181,8 +206,11 @@ export function createNavigationSession(
       !isTripEndpointRole(role) ||
       canonicalEndpoint === null
     ) return
-    updateTripRequest(setTripEndpoint(state.tripRequest, role, canonicalEndpoint), {
-      ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
+    enqueueTransition(() => {
+      if (disposed) return
+      updateTripRequest(setTripEndpoint(state.tripRequest, role, canonicalEndpoint), {
+        ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
+      })
     })
   }
 
@@ -227,15 +255,22 @@ export function createNavigationSession(
       nextRouteOverlapMap,
     )
 
+    const previousTransitIndex = transitIndex
+    const previousRouteOverlapMap = routeOverlapMap
     transitIndex = data.index
     routeOverlapMap = nextRouteOverlapMap
-
-    dependencies.map.loadTransitData(
-      data,
-      reconciledSelection,
-      setTripEndpointCommand,
-    )
-    syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
+    try {
+      dependencies.map.loadTransitData(
+        data,
+        reconciledSelection,
+        setTripEndpointCommand,
+      )
+      syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
+    } catch (error) {
+      transitIndex = previousTransitIndex
+      routeOverlapMap = previousRouteOverlapMap
+      throw error
+    }
 
     const resourceStatus = markTransitLoaded(state.resourceStatus, {
       stopCount: data.index.stops.length,
@@ -267,24 +302,35 @@ export function createNavigationSession(
     Promise.resolve()
       .then(() => dependencies.loadVenues(signal))
       .then((data) => {
-        if (!disposed && !signal.aborted) handleVenueLoad(data)
-      })
-      .catch((error: unknown) => {
+        if (!disposed && !signal.aborted) {
+          enqueueTransition(() => {
+            if (!disposed && !signal.aborted) handleVenueLoad(data)
+          })
+        }
+      }, (error: unknown) => {
         if (disposed || signal.aborted || isAbortError(error)) return
-        handleLoadFailure('venue', error)
+        enqueueTransition(() => handleLoadFailure('venue', error))
       })
   )
 
   const loadTransit = (signal: AbortSignal): Promise<void> => (
     Promise.resolve()
       .then(() => dependencies.loadTransit(signal))
-      .then(async (data) => {
-        await waitForAbortablePromise(dependencies.map.ready, signal)
-        if (!disposed && !signal.aborted) handleTransitLoad(data)
-      })
-      .catch((error: unknown) => {
+      .then((data) => waitForAbortablePromise(dependencies.map.ready, signal).then(
+        () => {
+          if (!disposed && !signal.aborted) {
+            enqueueTransition(() => {
+              if (!disposed && !signal.aborted) handleTransitLoad(data)
+            })
+          }
+        },
+        (error: unknown) => {
+          if (isAbortError(error)) return
+          throw error
+        },
+      ), (error: unknown) => {
         if (disposed || signal.aborted || isAbortError(error)) return
-        handleLoadFailure('transit', error)
+        enqueueTransition(() => handleLoadFailure('transit', error))
       })
   )
 
@@ -304,22 +350,24 @@ export function createNavigationSession(
     start: (signal) => startup.start(signal, { loadVenues, loadTransit }),
 
     selectRoute(routeId) {
-      if (disposed) return
-      const selectedRoute = routeId && transitIndex
-        ? transitIndex.routeById.get(routeId)
-        : undefined
-      const nextRouteId = selectedRoute?.id ?? null
-      const overlappingRouteIds = nextRouteId
-        ? routeOverlapMap.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
-        : EMPTY_ROUTE_OVERLAP
+      enqueueTransition(() => {
+        if (disposed) return
+        const selectedRoute = routeId && transitIndex
+          ? transitIndex.routeById.get(routeId)
+          : undefined
+        const nextRouteId = selectedRoute?.id ?? null
+        const overlappingRouteIds = nextRouteId
+          ? routeOverlapMap.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
+          : EMPTY_ROUTE_OVERLAP
 
-      dependencies.map.setRouteSelection({
-        route: selectedRoute ?? null,
-        overlappingRouteIds,
-      })
-      updateState({
-        selectedRouteId: nextRouteId,
-        selectedRouteColor: selectedRoute?.color ?? null,
+        dependencies.map.setRouteSelection({
+          route: selectedRoute ?? null,
+          overlappingRouteIds,
+        })
+        updateState({
+          selectedRouteId: nextRouteId,
+          selectedRouteColor: selectedRoute?.color ?? null,
+        })
       })
     },
 
@@ -328,90 +376,121 @@ export function createNavigationSession(
     },
 
     clearTripEndpoint(role) {
-      if (disposed || !isTripEndpointRole(role)) return
-      updateTripRequest(clearTripEndpoint(state.tripRequest, role))
+      enqueueTransition(() => {
+        if (disposed || !isTripEndpointRole(role)) return
+        updateTripRequest(clearTripEndpoint(state.tripRequest, role))
+      })
     },
 
     swapTripEndpoints() {
-      updateTripRequest(swapTripEndpoints(state.tripRequest))
+      enqueueTransition(() => {
+        if (disposed) return
+        updateTripRequest(swapTripEndpoints(state.tripRequest))
+      })
     },
 
     clearTrip() {
-      updateTripRequest(createEmptyTripRequest(), {
-        originSearchQuery: '',
-        destinationSearchQuery: '',
+      enqueueTransition(() => {
+        if (disposed) return
+        updateTripRequest(createEmptyTripRequest(), {
+          originSearchQuery: '',
+          destinationSearchQuery: '',
+        })
       })
     },
 
     setOriginSearchQuery(query) {
-      if (disposed) return
-      updateState({ originSearchQuery: query })
+      enqueueTransition(() => {
+        if (disposed) return
+        updateState({ originSearchQuery: query })
+      })
     },
 
     setDestinationSearchQuery(query) {
-      if (disposed) return
-      updateState({ destinationSearchQuery: query })
+      enqueueTransition(() => {
+        if (disposed) return
+        updateState({ destinationSearchQuery: query })
+      })
     },
 
     setContextualPanelQuery(query) {
-      if (disposed) return
-      updateContextualPanel({ type: 'set-query', query })
+      enqueueTransition(() => {
+        if (disposed) return
+        updateContextualPanel({ type: 'set-query', query })
+      })
     },
 
     selectVenue(result) {
-      if (disposed) return
-      if (typeof result?.code !== 'string') return
-      const venue = state.venues?.[result.code]
-      if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
-      const canonicalResult = createVenueSearchResultSnapshot(result.code, venue)
-      dependencies.map.selectVenue(venue)
-      updateContextualPanel({ type: 'select-venue', result: canonicalResult })
+      enqueueTransition(() => {
+        if (disposed) return
+        if (typeof result?.code !== 'string') return
+        const venue = state.venues?.[result.code]
+        if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
+        const canonicalResult = createVenueSearchResultSnapshot(result.code, venue)
+        dependencies.map.selectVenue(venue)
+        updateContextualPanel({ type: 'select-venue', result: canonicalResult })
+      })
     },
 
     openVenueSearch() {
-      if (disposed) return
-      updateContextualPanel({ type: 'open-venue-search' })
+      enqueueTransition(() => {
+        if (disposed) return
+        updateContextualPanel({ type: 'open-venue-search' })
+      })
     },
 
     openShuttle() {
-      if (disposed) return
-      updateContextualPanel({ type: 'open-shuttle' })
+      enqueueTransition(() => {
+        if (disposed) return
+        updateContextualPanel({ type: 'open-shuttle' })
+      })
     },
 
     back() {
-      if (disposed) return
-      clearVenueMarkerForBack()
-      updateContextualPanel({ type: 'back' })
+      enqueueTransition(() => {
+        if (disposed) return
+        clearVenueMarkerForBack()
+        updateContextualPanel({ type: 'back' })
+      })
     },
 
     escape() {
-      if (disposed) return
-      clearVenueMarkerForEscape()
-      updateContextualPanel({ type: 'escape' })
+      enqueueTransition(() => {
+        if (disposed) return
+        clearVenueMarkerForEscape()
+        updateContextualPanel({ type: 'escape' })
+      })
     },
 
     close() {
-      if (disposed) return
-      dependencies.map.clearVenue()
-      updateContextualPanel({ type: 'close' })
+      enqueueTransition(() => {
+        if (disposed) return
+        dependencies.map.clearVenue()
+        updateContextualPanel({ type: 'close' })
+      })
     },
 
     handleMapClick() {
-      if (disposed) return
-      if (state.contextualPanel.mode !== 'venue-detail') return
-      dependencies.map.clearVenue()
-      updateContextualPanel({ type: 'map-click' })
+      enqueueTransition(() => {
+        if (disposed) return
+        if (state.contextualPanel.mode !== 'venue-detail') return
+        dependencies.map.clearVenue()
+        updateContextualPanel({ type: 'map-click' })
+      })
     },
 
     reportMapError(error) {
-      if (disposed) return
-      updateState({ mapError: 'Unable to load map tiles' })
-      console.error('Map error:', error)
+      enqueueTransition(() => {
+        if (disposed) return
+        updateState({ mapError: 'Unable to load map tiles' })
+        console.error('Map error:', error)
+      })
     },
 
     dispose() {
       if (disposed) return
       disposed = true
+      transitionQueue.length = 0
       startup.dispose()
       listeners.clear()
       dependencies.map.dispose()

@@ -426,6 +426,44 @@ describe('navigation session', () => {
     })
   })
 
+  it('serializes reentrant route transitions for a stable subscriber snapshot', async () => {
+    const dependencies = createDependencies({
+      loadTransit: vi.fn(async () => createTwoRouteTransit()),
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const events: string[] = []
+    let redirected = false
+    session.subscribe(() => {
+      events.push(`first:${session.getState().selectedRouteId ?? 'none'}`)
+      if (!redirected && session.getState().selectedRouteId === 'A1') {
+        redirected = true
+        session.selectRoute('B1')
+      }
+    })
+    session.subscribe(() => {
+      events.push(`second:${session.getState().selectedRouteId ?? 'none'}`)
+    })
+
+    session.selectRoute('A1')
+
+    expect(events).toEqual([
+      'first:A1',
+      'second:A1',
+      'first:B1',
+      'second:B1',
+    ])
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: 'B1',
+      selectedRouteColor: '#654321',
+    })
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: expect.objectContaining({ id: 'B1' }),
+      overlappingRouteIds: expect.any(Set),
+    })
+  })
+
   it('rejects unknown, unmapped, and malformed endpoint commands', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -806,6 +844,68 @@ describe('navigation session', () => {
     )
   })
 
+  it('serializes reentrant trip endpoint transitions for every subscriber', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const events: string[] = []
+    let selectedDestination = false
+    session.subscribe(() => {
+      const request = session.getState().tripRequest
+      events.push(`first:${request.origin?.id ?? 'none'}>${request.destination?.id ?? 'none'}`)
+      if (!selectedDestination && request.origin?.id === 'COM1') {
+        selectedDestination = true
+        session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+      }
+    })
+    session.subscribe(() => {
+      const request = session.getState().tripRequest
+      events.push(`second:${request.origin?.id ?? 'none'}>${request.destination?.id ?? 'none'}`)
+    })
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+
+    expect(events).toEqual([
+      'first:COM1>none',
+      'second:COM1>none',
+      'first:COM1>STOP-A',
+      'second:COM1>STOP-A',
+    ])
+    expect(session.getState().tripRequest).toEqual({
+      origin: { kind: 'venue', id: 'COM1' },
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    expect(map.setTripRequest.mock.lastCall?.[0]).toBe(session.getState().tripRequest)
+  })
+
+  it('stops notification and queued work when a subscriber disposes the session', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.setTripRequest.mockClear()
+    const events: string[] = []
+
+    session.subscribe(() => {
+      events.push('first')
+      session.setDestinationSearchQuery('queued')
+      session.dispose()
+    })
+    session.subscribe(() => {
+      events.push('second')
+    })
+
+    session.setOriginSearchQuery('COM1')
+
+    expect(events).toEqual(['first'])
+    expect(map.setTripRequest).not.toHaveBeenCalled()
+    expect(map.dispose).toHaveBeenCalledOnce()
+    expect(session.getState().originSearchQuery).toBe('COM1')
+    expect(session.getState().destinationSearchQuery).toBe('')
+  })
+
   it('synchronizes loaded transit resources before a subscriber can dispose the session', async () => {
     const venue = createDeferred<LoadedVenueData>()
     const transit = createDeferred<LoadedTransitData>()
@@ -865,6 +965,52 @@ describe('navigation session', () => {
     mapReady.resolve()
     await start
     expect(dependencies.map.loadTransitData).toHaveBeenCalledOnce()
+  })
+
+  it('propagates map readiness failures without marking transit data failed', async () => {
+    const mapReady = Promise.reject(new Error('map startup failed'))
+    const dependencies = createDependencies({ map: createMapDouble(mapReady) })
+    const session = createNavigationSession(dependencies)
+
+    await expect(session.start(new AbortController().signal)).rejects.toThrow('map startup failed')
+    expect(session.getState().resourceStatus.transit).toEqual({ status: 'pending' })
+    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+  })
+
+  it('does not label map synchronization failures as data load failures', async () => {
+    const dependencies = createDependencies()
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    map.setTripRequest.mockImplementation(() => {
+      throw new Error('map endpoint synchronization failed')
+    })
+
+    expect(() => session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' }))
+      .toThrow('map endpoint synchronization failed')
+    expect(session.getState().resourceStatus).toMatchObject({
+      venue: { status: 'loaded' },
+      transit: { status: 'loaded' },
+    })
+    expect(session.getState().status).not.toContain('Unable to load venue data')
+    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+  })
+
+  it('does not label subscriber failures as data load failures', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.subscribe(() => {
+      throw new Error('subscriber failed')
+    })
+
+    expect(() => session.setOriginSearchQuery('COM1')).toThrow('subscriber failed')
+    expect(session.getState().resourceStatus).toMatchObject({
+      venue: { status: 'loaded' },
+      transit: { status: 'loaded' },
+    })
+    expect(session.getState().status).not.toContain('Unable to load venue data')
+    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
   })
 
   it('settles startup on external abort while map readiness is pending', async () => {

@@ -30,7 +30,10 @@ function App() {
     setSession(navigationSession)
 
     const controller = new AbortController()
-    void navigationSession.start(controller.signal)
+    void navigationSession.start(controller.signal).catch((error: unknown) => {
+      if (error instanceof Error && error.name === 'AbortError') return
+      console.error('Navigation session startup failed:', error)
+    })
 
     return () => {
       controller.abort()

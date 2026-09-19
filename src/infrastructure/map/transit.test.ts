@@ -17,6 +17,7 @@ import {
   waitForMapStyleLoaded,
 } from './transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import { createTransitNetworkIndex } from '../../domain/transit'
 import type { TransitRouteGeometry } from '../../domain/transit/types'
 import { validateTransitMapData } from '../../domain/transit/map-data'
 
@@ -418,8 +419,9 @@ describe('transit route camera', () => {
     const network = createValidTransitNetwork()
     const geometry = createValidGeometry()
     geometry.features[0].geometry.coordinates = [[102.9, 0.9], [103.2, 1.2]]
+    const index = createTransitNetworkIndex(network)
 
-    expect(getTransitRouteBounds(network, geometry, 'A1')).toEqual([
+    expect(getTransitRouteBounds(geometry, 'A1', index)).toEqual([
       [102.9, 0.9],
       [103.2, 1.2],
     ])
@@ -441,8 +443,9 @@ describe('transit route camera', () => {
     })
 
     const allBounds = [[103, 1], [104.1, 2.1]]
-    expect(getTransitRouteBounds(network, geometry, null)).toEqual(allBounds)
-    expect(getTransitRouteBounds(network, geometry, 'UNKNOWN')).toEqual(allBounds)
+    const index = createTransitNetworkIndex(network)
+    expect(getTransitRouteBounds(geometry, null, index)).toEqual(allBounds)
+    expect(getTransitRouteBounds(geometry, 'UNKNOWN', index)).toEqual(allBounds)
   })
 
   it('uses overlay-aware responsive padding for route fitting', () => {
@@ -464,8 +467,9 @@ describe('transit route camera', () => {
     const state = createFakeMap()
     const network = createValidTransitNetwork()
     const geometry = createValidGeometry()
+    const index = createTransitNetworkIndex(network)
 
-    fitTransitRoute(state.map, network, geometry, 'A1')
+    fitTransitRoute(state.map, geometry, 'A1', index)
 
     expect(state.fitBoundsCalls).toEqual([{
       bounds: [[103, 1], [103.1, 1.1]],

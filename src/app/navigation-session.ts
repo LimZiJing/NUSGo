@@ -1,4 +1,4 @@
-import { createTransitNetworkIndex, type TransitNetworkIndex } from '../domain/transit'
+import type { TransitNetworkIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import { TransitValidationError } from '../domain/transit/validation'
 import type { TransitNetwork } from '../domain/transit/types'
@@ -10,7 +10,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
-import type { MapSession, TransitMapData, VenueData } from './contracts'
+import type { MapSession, LoadedTransitData, VenueData } from './contracts'
 import type { VenueSearchResult } from '../domain/venue/search'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
@@ -18,6 +18,8 @@ const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 export interface NavigationSessionState {
   readonly venues: VenueLocationMap | null
   readonly transitNetwork: TransitNetwork | null
+  readonly transitNetworkIndex: TransitNetworkIndex | null
+  readonly selectedVenue: VenueSearchResult | null
   readonly selectedRouteId: string | null
   readonly selectedRouteColor: string | null
   readonly tripRequest: TripRequest
@@ -27,7 +29,7 @@ export interface NavigationSessionState {
 export interface NavigationSessionDependencies {
   readonly map: MapSession
   readonly loadVenues: (signal: AbortSignal) => Promise<VenueData>
-  readonly loadTransit: (signal: AbortSignal) => Promise<TransitMapData>
+  readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
 }
 
 export interface NavigationSession {
@@ -49,6 +51,8 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
   return {
     venues: null,
     transitNetwork: null,
+    transitNetworkIndex: null,
+    selectedVenue: null,
     selectedRouteId: null,
     selectedRouteColor: null,
     tripRequest: createEmptyTripRequest(),
@@ -62,6 +66,9 @@ export function createNavigationSession(
   let state = createInitialNavigationSessionState()
   let transitIndex: TransitNetworkIndex | null = null
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
+  let venueCount = 0
+  let transitLoaded = false
+  let transitMarkerCount = 0
   let disposed = false
   let started = false
   const listeners = new Set<() => void>()
@@ -93,25 +100,30 @@ export function createNavigationSession(
     signal.aborted ||
     (error instanceof DOMException && error.name === 'AbortError')
 
-  const handleVenueLoad = (data: VenueData, transitLoaded: boolean) => {
+  const handleVenueLoad = (data: VenueData) => {
+    venueCount = data.venueCount
+    const routeCount = state.transitNetwork?.routes.length ?? 0
     updateState({
       venues: data.venues,
       status: transitLoaded
-        ? state.status
-        : data.venueCount + ' venues available; loading shuttle routes…',
+        ? venueCount + ' venues · ' + transitMarkerCount + ' shuttle stops · ' +
+          routeCount + ' shuttle routes loaded'
+        : venueCount + ' venues available; loading shuttle routes…',
     })
     syncTripRequest(state.tripRequest)
   }
 
-  const handleTransitLoad = (data: TransitMapData, venueCount: number) => {
-    transitIndex = createTransitNetworkIndex(data.network)
+  const handleTransitLoad = (data: LoadedTransitData) => {
+    transitIndex = data.index
     routeOverlapMap = deriveTransitRouteOverlapMap(data.geometry)
     const markerCount = dependencies.map.loadTransitData(
       data,
       (role, endpoint) => setRequest(setTripEndpoint(state.tripRequest, role, endpoint)),
     )
+    transitMarkerCount = markerCount
     updateState({
       transitNetwork: data.network,
+      transitNetworkIndex: data.index,
       status: venueCount + ' venues · ' +
         markerCount + ' shuttle stops · ' +
         data.network.routes.length + ' shuttle routes loaded',
@@ -141,14 +153,11 @@ export function createNavigationSession(
       if (started || disposed) return
       started = true
 
-      let venueCount = 0
-      let transitLoaded = false
       let transitFailure = false
 
       const venuesPromise = dependencies.loadVenues(signal)
         .then((data) => {
-          venueCount = data.venueCount
-          if (!disposed) handleVenueLoad(data, transitLoaded)
+          if (!disposed) handleVenueLoad(data)
         })
         .catch((error: unknown) => {
           if (isAborted(error, signal) || disposed) return
@@ -161,7 +170,7 @@ export function createNavigationSession(
           await dependencies.map.ready
           if (disposed || signal.aborted) return
           transitLoaded = true
-          handleTransitLoad(data, venueCount)
+          handleTransitLoad(data)
         })
         .catch((error: unknown) => {
           if (isAborted(error, signal) || disposed) return
@@ -207,10 +216,12 @@ export function createNavigationSession(
     },
 
     selectVenue(result) {
+      updateState({ selectedVenue: result })
       dependencies.map.selectVenue(result.venue)
     },
 
     clearVenue() {
+      updateState({ selectedVenue: null })
       dependencies.map.clearVenue()
     },
 

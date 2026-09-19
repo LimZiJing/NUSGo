@@ -15,6 +15,7 @@ import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
 } from '../../domain/transit/types'
+import type { TransitNetworkIndex } from '../../domain/transit'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
@@ -133,23 +134,26 @@ export interface ValidatedTransitMapData extends ValidatedTransitMarkers {
 export type TransitRouteBounds = [[number, number], [number, number]]
 
 export function getTransitRouteBounds(
-  network: TransitNetwork,
   geometry: TransitRouteGeometry,
   routeId: string | null,
+  networkIndex: TransitNetworkIndex,
 ): TransitRouteBounds | null {
   const selectedRoute = routeId
-    ? network.routes.find((route) => route.id === routeId) ?? null
+    ? networkIndex.routeById.get(routeId) ?? null
     : null
   const selectedRouteIds = selectedRoute ? new Set([selectedRoute.id]) : null
   const positions: TransitGeoJsonPosition[] = geometry.features
     .filter(({ properties }) => selectedRouteIds === null || selectedRouteIds.has(properties.routeId))
     .flatMap(({ geometry: routeGeometry }) => routeGeometry.coordinates)
   const selectedStopIds = selectedRoute ? new Set(selectedRoute.stopIds) : null
+  const stops = selectedStopIds
+    ? Array.from(selectedStopIds)
+      .map((stopId) => networkIndex.stopById.get(stopId))
+      .filter((stop): stop is NonNullable<typeof stop> => stop !== undefined)
+    : networkIndex.stopById.values()
 
-  for (const stop of network.stops) {
-    if (selectedStopIds === null || selectedStopIds.has(stop.id)) {
-      positions.push([stop.longitude, stop.latitude])
-    }
+  for (const stop of stops) {
+    positions.push([stop.longitude, stop.latitude])
   }
 
   if (positions.length === 0) return null
@@ -179,11 +183,11 @@ export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions
 
 export function fitTransitRoute(
   map: Map,
-  network: TransitNetwork,
   geometry: TransitRouteGeometry,
   routeId: string | null,
+  networkIndex: TransitNetworkIndex,
 ): void {
-  const bounds = getTransitRouteBounds(network, geometry, routeId)
+  const bounds = getTransitRouteBounds(geometry, routeId, networkIndex)
   if (!bounds) return
 
   map.fitBounds(bounds, {

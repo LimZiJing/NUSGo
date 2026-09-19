@@ -9,10 +9,10 @@ describe('createTransitNetworkIndex', () => {
 
     expect(index.routeById.get('A1')).toBe(network.routes[0])
     expect(index.stopById.get('STOP-A')).toBe(network.stops[0])
-    expect(index.stopIdsByRouteId.get('A1')).toEqual(
-      new Set(['STOP-A', 'STOP-B']),
+    expect(Array.from(index.stopIdsByRouteId.get('A1') ?? [])).toEqual(
+      ['STOP-A', 'STOP-B'],
     )
-    expect(index.routeIdsByStopId.get('STOP-A')).toEqual(new Set(['A1']))
+    expect(Array.from(index.routeIdsByStopId.get('STOP-A') ?? [])).toEqual(['A1'])
   })
 
   it('does not expose mutable arrays as part of the index interface', () => {
@@ -20,5 +20,11 @@ describe('createTransitNetworkIndex', () => {
 
     expect(index).not.toHaveProperty('routes')
     expect(index).not.toHaveProperty('stops')
+  })
+  it('does not expose mutating collection methods', () => {
+    const index = createTransitNetworkIndex(createValidTransitNetwork())
+
+    expect(index.routeById).not.toHaveProperty('set')
+    expect(index.stopIdsByRouteId.get('A1')).not.toHaveProperty('add')
   })
 })

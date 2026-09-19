@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { TransitRouteControl } from './TransitRouteControl'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import { createTransitNetworkIndex } from '../../domain/transit'
 
 function createEightRouteNetwork() {
   const network = createValidTransitNetwork()
@@ -19,6 +20,7 @@ describe('TransitRouteControl', () => {
     const markup = renderToStaticMarkup(
       <TransitRouteControl
         network={createEightRouteNetwork()}
+        networkIndex={createTransitNetworkIndex(createEightRouteNetwork())}
         selectedRouteId="A1"
         onRouteSelect={() => undefined}
       />,
@@ -38,6 +40,7 @@ describe('TransitRouteControl', () => {
     const markup = renderToStaticMarkup(
       <TransitRouteControl
         network={createEightRouteNetwork()}
+        networkIndex={createTransitNetworkIndex(createEightRouteNetwork())}
         selectedRouteId={null}
         onRouteSelect={() => undefined}
       />,
@@ -51,6 +54,7 @@ describe('TransitRouteControl', () => {
     const markup = renderToStaticMarkup(
       <TransitRouteControl
         network={createEightRouteNetwork()}
+        networkIndex={createTransitNetworkIndex(createEightRouteNetwork())}
         selectedRouteId="UNKNOWN"
         onRouteSelect={() => undefined}
       />,

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitMapData } from './contracts'
+import { createTransitNetworkIndex } from '../domain/transit'
+import type { LoadedTransitData } from './contracts'
 import {
   createInitialNavigationSessionState,
   createNavigationSession,
@@ -37,7 +38,11 @@ function createDependencies(
   overrides: Partial<NavigationSessionDependencies> = {},
 ) {
   const network = createValidTransitNetwork()
-  const transit: TransitMapData = { network, geometry }
+  const transit: LoadedTransitData = {
+    network,
+    geometry,
+    index: createTransitNetworkIndex(network),
+  }
   const map = createMapDouble()
 
   return {
@@ -61,6 +66,8 @@ describe('navigation session', () => {
     expect(createInitialNavigationSessionState()).toEqual({
       venues: null,
       transitNetwork: null,
+      transitNetworkIndex: null,
+      selectedVenue: null,
       selectedRouteId: null,
       selectedRouteColor: null,
       tripRequest: { origin: null, destination: null },

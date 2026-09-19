@@ -6,7 +6,7 @@ import {
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import type { MapSession, TransitMapData } from '../../app/contracts'
+import type { LoadedTransitData, MapSession } from '../../app/contracts'
 import {
   addBusStopMarkers,
   addTripEndpointMarkers,
@@ -47,7 +47,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let selectedVenueMarker: Marker | null = null
   let endpointMarkers: Marker[] = []
   let busStopMarkers: Marker[] = []
-  let transitData: TransitMapData | null = null
+  let transitData: LoadedTransitData | null = null
   let selectedRouteId: string | null = null
   let disposed = false
 
@@ -101,7 +101,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   return {
     ready,
 
-    loadTransitData(data: TransitMapData, onSetEndpoint) {
+    loadTransitData(data: LoadedTransitData, onSetEndpoint) {
       if (disposed) return 0
 
       clearBusStopMarkers()
@@ -135,9 +135,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       ) {
         fitTransitRoute(
           map,
-          transitData.network,
           transitData.geometry,
           selection.route.id,
+          transitData.index,
         )
       }
     },

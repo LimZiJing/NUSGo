@@ -1,25 +1,26 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
-import { validateTripRequest } from './domain/trip/endpoints'
-import type { TripEndpoint, TripEndpointRole } from './domain/trip/types'
-import { ContextualPanel } from './features/contextual-panel/ContextualPanel'
-import { TripEndpointControl } from './features/trip-endpoints/TripEndpointControl'
+import { validateTripRequest } from '../domain/trip/endpoints'
+import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
+import { ContextualPanel } from '../features/contextual-panel/ContextualPanel'
+import { TripEndpointControl } from '../features/trip-endpoints/TripEndpointControl'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
-} from './features/contextual-panel/state'
-import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
-import { createMapSession } from './infrastructure/map/session'
+} from '../features/contextual-panel/state'
+import { loadTransitMapData, loadVenueData } from '../infrastructure/data/loaders'
+import { createMapSession } from '../infrastructure/map/session'
 import {
   createNavigationSession,
   type NavigationSession,
-} from './app/navigation-session'
-import { useNavigationSession } from './app/use-navigation-session'
-import type { VenueSearchResult } from './domain/venue/search'
+} from './navigation-session'
+import { useNavigationSession } from './use-navigation-session'
+import type { VenueSearchResult } from '../domain/venue/search'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const contextualPanelStateRef = useRef(createInitialContextualPanelState())
   const [navigationSession, setNavigationSession] = useState<NavigationSession | null>(null)
+  const navigationSessionRef = useRef<NavigationSession | null>(null)
   const [originSearchQuery, setOriginSearchQuery] = useState('')
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('')
   const [contextualPanelState, dispatchContextualPanel] = useReducer(
@@ -31,6 +32,8 @@ function App() {
   const {
     venues,
     transitNetwork,
+    transitNetworkIndex,
+    selectedVenue,
     selectedRouteId,
     selectedRouteColor,
     tripRequest,
@@ -71,8 +74,8 @@ function App() {
 
   const clearSelectedVenueMarker = useCallback(() => {
     // Venue details live in the contextual panel; the map only keeps the selected marker.
-    navigationSession?.clearVenue()
-  }, [navigationSession])
+    navigationSessionRef.current?.clearVenue()
+  }, [])
 
   const handleVenueSelect = useCallback((result: VenueSearchResult) => {
     dispatchContextualPanel({ type: 'select-venue', result })
@@ -128,16 +131,15 @@ function App() {
     session = createNavigationSession({
       map: mapSession,
       loadVenues: loadVenueData,
-      loadTransit: async (signal) => {
-        const data = await loadTransitMapData(signal)
-        return { network: data.network, geometry: data.geometry }
-      },
+      loadTransit: loadTransitMapData,
     })
+    navigationSessionRef.current = session
     setNavigationSession(session)
     void session.start(controller.signal)
 
     return () => {
       controller.abort()
+      if (navigationSessionRef.current === session) navigationSessionRef.current = null
       session?.dispose()
       setNavigationSession(null)
     }
@@ -194,9 +196,10 @@ function App() {
           </p>
         </section>
         <ContextualPanel
-          state={contextualPanelState}
+          state={navigationSession ? { ...contextualPanelState, selectedVenue } : contextualPanelState}
           venues={venues}
           network={transitNetwork}
+          networkIndex={transitNetworkIndex}
           selectedRouteId={selectedRouteId}
           onQueryChange={(query) => dispatchContextualPanel({ type: 'set-query', query })}
           onVenueSelect={handleVenueSelect}

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ContextualPanel } from './ContextualPanel'
 import { createInitialContextualPanelState } from './state'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import { createTransitNetworkIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -22,6 +23,7 @@ function renderPanel(
       state={state}
       venues={venueData}
       network={createValidTransitNetwork()}
+      networkIndex={createTransitNetworkIndex(createValidTransitNetwork())}
       selectedRouteId={null}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}

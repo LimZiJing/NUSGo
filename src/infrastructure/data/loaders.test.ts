@@ -33,8 +33,8 @@ describe('data loaders', () => {
       }),
     )
 
-    expect(result.network.routes.length).toBeGreaterThan(0)
-    expect(result.geometry.features.length).toBe(result.network.routes.length)
+    expect(result.index.network.routes.length).toBeGreaterThan(0)
+    expect(result.geometry.features.length).toBe(result.index.network.routes.length)
     expect(result.index.routeById.get('A1')?.id).toBe('A1')
     expect(result.index.stopById.get('KR-MRT')?.id).toBe('KR-MRT')
   })

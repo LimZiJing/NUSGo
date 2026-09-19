@@ -5,9 +5,9 @@ import {
   validateTransitVerificationManifest,
 } from '../domain/transit/model'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitNetwork } from '../domain/transit/types'
+import type { TransitNetworkInput } from '../domain/transit/types'
 
-type Mutation = (network: TransitNetwork) => void
+type Mutation = (network: TransitNetworkInput) => void
 type ValidationCase = [name: string, mutate: Mutation, expected: RegExp]
 
 const invalidCases: ValidationCase[] = [
@@ -28,7 +28,7 @@ describe('validateTransitNetwork', () => {
     const network = createValidTransitNetwork()
     network.stops[0].services.push('PUB:999')
 
-    expect(validateTransitNetwork(network)).toBe(network)
+    expect(validateTransitNetwork(network)).toEqual(network)
   })
 
   for (const [name, mutate, expected] of invalidCases) {

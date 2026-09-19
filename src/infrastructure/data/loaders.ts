@@ -2,7 +2,7 @@ import { createTransitNetworkIndex, type TransitNetworkIndex } from '../../domai
 import { validateTransitMapData } from '../../domain/transit/map-data'
 import { validateVenueLocationMap, getVenueCount } from '../../domain/venue/validation'
 import { fetchJson } from './json'
-import type { TransitRouteGeometry, TransitNetwork } from '../../domain/transit/types'
+import type { TransitRouteGeometry } from '../../domain/transit/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 export type JsonFetcher = (
@@ -17,7 +17,6 @@ export interface LoadedVenueData {
 }
 
 export interface LoadedTransitMapData {
-  readonly network: TransitNetwork
   readonly geometry: TransitRouteGeometry
   readonly index: TransitNetworkIndex
 }
@@ -39,13 +38,11 @@ export async function loadTransitMapData(
   signal: AbortSignal,
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedTransitMapData> {
-  const { network, geometry } = validateTransitMapData(
-    await fetcher('/data/shuttle-network.json', signal, 'Shuttle network'),
-    await fetcher('/data/shuttle-routes.geojson', signal, 'Shuttle route geometry'),
-  )
-  return {
-    network,
-    geometry,
-    index: createTransitNetworkIndex(network),
-  }
+  const [networkInput, geometryInput] = await Promise.all([
+    fetcher('/data/shuttle-network.json', signal, 'Shuttle network'),
+    fetcher('/data/shuttle-routes.geojson', signal, 'Shuttle route geometry'),
+  ])
+  const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
+  const index = createTransitNetworkIndex(network)
+  return { geometry, index }
 }

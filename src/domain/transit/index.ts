@@ -90,7 +90,7 @@ function cloneNetwork(network: TransitNetwork): TransitNetwork {
     metadata,
     routes: Object.freeze(routes),
     stops: Object.freeze(stops),
-  }) as unknown as TransitNetwork
+  })
 }
 
 const EMPTY_STOPS: readonly TransitStop[] = Object.freeze([])

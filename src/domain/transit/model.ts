@@ -1,5 +1,8 @@
 import type {
   TransitNetwork,
+  TransitNetworkMetadata,
+  TransitRoute,
+  TransitStop,
   TransitVerificationManifest,
 } from './types'
 
@@ -37,6 +40,72 @@ function addRequiredTextIssue(
   if (typeof value !== 'string' || value.trim().length === 0) {
     issues.push(`${label} must be a non-empty string`)
   }
+}
+
+function requireValidatedText(value: unknown, label: string): string {
+  if (typeof value !== 'string') throw new Error(`Validated transit ${label} is not text`)
+  return value
+}
+
+function createTransitNetworkSnapshot(input: Record<string, unknown>): TransitNetwork {
+  const metadataInput = input.metadata
+  const routesInput = input.routes
+  const stopsInput = input.stops
+  if (!isRecord(metadataInput) || !Array.isArray(routesInput) || !Array.isArray(stopsInput)) {
+    throw new Error('Transit network snapshot received invalid validated input')
+  }
+
+  const metadata: TransitNetworkMetadata = Object.freeze({
+    source: requireValidatedText(metadataInput.source, 'metadata source'),
+    routeStopOrder: requireValidatedText(metadataInput.routeStopOrder, 'metadata routeStopOrder'),
+    routeGeometry: requireValidatedText(metadataInput.routeGeometry, 'metadata routeGeometry'),
+    verifiedAt: requireValidatedText(metadataInput.verifiedAt, 'metadata verifiedAt'),
+    routeOrderSource: requireValidatedText(metadataInput.routeOrderSource, 'metadata routeOrderSource'),
+    coordinateSource: requireValidatedText(metadataInput.coordinateSource, 'metadata coordinateSource'),
+  })
+
+  const routes = routesInput.map((value): TransitRoute => {
+    if (!isRecord(value) || !Array.isArray(value.stopIds) ||
+      typeof value.id !== 'string' || typeof value.name !== 'string' || typeof value.color !== 'string' ||
+      !value.stopIds.every((stopId): stopId is string => typeof stopId === 'string')) {
+      throw new Error('Transit network snapshot received invalid validated route')
+    }
+    return Object.freeze({
+      id: value.id,
+      name: value.name,
+      color: value.color,
+      stopIds: Object.freeze([...value.stopIds]),
+    })
+  })
+
+  const stops = stopsInput.map((value): TransitStop => {
+    if (!isRecord(value) || !Array.isArray(value.services) ||
+      typeof value.id !== 'string' || typeof value.longName !== 'string' || typeof value.shortName !== 'string' ||
+      typeof value.latitude !== 'number' || typeof value.longitude !== 'number' ||
+      !value.services.every((service): service is string => typeof service === 'string')) {
+      throw new Error('Transit network snapshot received invalid validated stop')
+    }
+    const opposite = value.opposite
+    if (opposite !== undefined && opposite !== null && typeof opposite !== 'string') {
+      throw new Error('Transit network snapshot received invalid validated opposite stop')
+    }
+    return Object.freeze({
+      id: value.id,
+      longName: value.longName,
+      shortName: value.shortName,
+      latitude: value.latitude,
+      longitude: value.longitude,
+      services: Object.freeze([...value.services]),
+      ...(opposite === undefined ? {} : { opposite }),
+    })
+  })
+
+  return Object.freeze({
+    version: 1,
+    metadata,
+    routes: Object.freeze(routes),
+    stops: Object.freeze(stops),
+  })
 }
 
 export function validateTransitNetwork(input: unknown): TransitNetwork {
@@ -222,7 +291,7 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
   }
 
   if (issues.length > 0) throw new TransitValidationError(issues)
-  return input as unknown as TransitNetwork
+  return createTransitNetworkSnapshot(input)
 }
 
 export function validateTransitVerificationManifest(

@@ -11,6 +11,14 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
 import {
+  createInitialResourceStatus,
+  deriveResourceStatus,
+  markTransitFailed,
+  markTransitLoaded,
+  markVenueFailed,
+  markVenueLoaded,
+} from './application/resource-status'
+import {
   contextualPanelReducer,
   createInitialContextualPanelState,
 } from './domain/contextual-panel/state'
@@ -82,7 +90,9 @@ function App() {
   const [tripRequest, setTripRequest] = useState<TripRequest>(() => createEmptyTripRequest())
   const [originSearchQuery, setOriginSearchQuery] = useState('')
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('')
-  const [status, setStatus] = useState('Loading map data…')
+  const [resourceStatus, setResourceStatus] = useState(createInitialResourceStatus)
+  const [mapError, setMapError] = useState<string | null>(null)
+  const status = mapError ?? deriveResourceStatus(resourceStatus)
   const tripValidation = validateTripRequest(tripRequest)
 
   useEffect(() => {
@@ -221,9 +231,7 @@ function App() {
     // Keep fetches and MapLibre objects tied to this component instance.
     const controller = new AbortController()
     let busStopMarkers: Marker[] = []
-    let venueCount = 0
     let isMounted = true
-    let transitFailure: string | null = null
     const kentRidgeLocation: LngLatLike = [103.7844, 1.2933]
     const map = new Map({
       container: mapContainer.current,
@@ -237,7 +245,7 @@ function App() {
     map.addControl(new NavigationControl(), 'top-right')
     map.on('error', (event) => {
       console.error('Map error:', event.error)
-      if (isMounted) setStatus('Unable to load map tiles')
+      if (isMounted) setMapError('Unable to load map tiles')
     })
     map.on('click', handlePanelMapClick)
 
@@ -248,24 +256,22 @@ function App() {
     const loadVenues = async () => {
       try {
         const venueData = await loadVenueData(controller.signal)
-        venueCount = venueData.venueCount
         if (isMounted) {
           setVenues(venueData.venues)
-          if (!transitFailure) {
-            setStatus(`${venueCount} venues available; loading shuttle routes…`)
-          }
+          setResourceStatus((current) => markVenueLoaded(current, venueData.venueCount))
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        if (isMounted) setStatus('Unable to load venue data')
+        if (isMounted) {
+          setResourceStatus((current) => markVenueFailed(current, 'Unable to load venue data'))
+        }
         console.error(error)
       }
     }
 
     const loadTransitNetwork = async () => {
       try {
-        const { network: transitNetwork, geometry, index } =
-          await loadTransitMapData(controller.signal)
+        const { geometry, index } = await loadTransitMapData(controller.signal)
         const routeOverlapMap = deriveTransitRouteOverlapMap(geometry)
 
         await mapStyleReady
@@ -276,20 +282,21 @@ function App() {
         transitIndexRef.current = index
         transitGeometryRef.current = geometry
         transitRouteOverlapMapRef.current = routeOverlapMap
-        setTransitIndex(index)
-
         if (isMounted) {
-          setStatus(
-            `${venueCount} venues · ${busStopMarkers.length} shuttle stops · ${transitNetwork.routes.length} shuttle routes loaded`,
-          )
+          setTransitIndex(index)
+          setResourceStatus((current) => markTransitLoaded(current, {
+            stopCount: index.stops.length,
+            routeCount: index.routes.length,
+          }))
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
         const message = error instanceof TransitValidationError
           ? `Transit route data validation failed: ${error.message}`
           : 'Unable to load shuttle route data'
-        transitFailure = message
-        if (isMounted) setStatus(message)
+        if (isMounted) {
+          setResourceStatus((current) => markTransitFailed(current, message))
+        }
         console.error(error)
       }
     }

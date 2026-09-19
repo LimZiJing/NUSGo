@@ -145,12 +145,9 @@ export function getTransitRouteBounds(
   const positions: TransitGeoJsonPosition[] = geometry.features
     .filter(({ properties }) => selectedRouteIds === null || selectedRouteIds.has(properties.routeId))
     .flatMap(({ geometry: routeGeometry }) => routeGeometry.coordinates)
-  const selectedStopIds = selectedRoute ? new Set(selectedRoute.stopIds) : null
-
-  for (const stop of index.stops) {
-    if (selectedStopIds === null || selectedStopIds.has(stop.id)) {
-      positions.push([stop.longitude, stop.latitude])
-    }
+  const routeStops = selectedRoute ? index.routeStops(selectedRoute.id) : index.stops
+  for (const stop of routeStops) {
+    positions.push([stop.longitude, stop.latitude])
   }
 
   if (positions.length === 0) return null

@@ -180,7 +180,7 @@ describe('addValidatedBusStopMarkers', () => {
 
     const result = addValidatedBusStopMarkers(map, network)
 
-    expect(result.network).toBe(network)
+    expect(result.network).toEqual(network)
     expect(result.markers).toEqual([])
     expect(addBusStopMarkers).toHaveBeenCalledOnce()
     expect(addBusStopMarkers).toHaveBeenCalledWith(map, network.stops)
@@ -214,7 +214,7 @@ describe('validated transit map data', () => {
 
     const result = addValidatedTransitMapData(state.map, network, geometry)
 
-    expect(result.network).toBe(network)
+    expect(result.network).toEqual(network)
     expect(result.geometry).toBe(geometry)
     expect(result.markers).toEqual([])
     expect(state.events).toEqual(['source', 'layer', 'layer', 'layer'])

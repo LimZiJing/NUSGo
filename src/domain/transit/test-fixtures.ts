@@ -1,6 +1,6 @@
-import type { TransitNetwork } from './types'
+import type { TransitNetworkInput } from './types'
 
-export function createValidTransitNetwork(): TransitNetwork {
+export function createValidTransitNetwork(): TransitNetworkInput {
   return {
     version: 1,
     metadata: {

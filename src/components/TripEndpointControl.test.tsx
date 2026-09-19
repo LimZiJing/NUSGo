@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { TripEndpointControl } from './TripEndpointControl'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitStop } from '../domain/transit/types'
+import type { TransitStopInput } from '../domain/transit/types'
 import type { VenueLocationMap } from '../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -13,7 +13,7 @@ const venues: VenueLocationMap = {
   },
 }
 
-const stops: TransitStop[] = [
+const stops: TransitStopInput[] = [
   {
     id: 'STOP-A',
     longName: 'Central Library',

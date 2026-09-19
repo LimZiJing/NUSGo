@@ -6,14 +6,7 @@ import {
   type Marker,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import { type LoadedTransitMapData } from '../data/loaders'
-import type {
-  TripEndpoint,
-  TripEndpointRole,
-  TripRequest,
-} from '../../domain/trip/types'
-import type { TransitRoute, TransitStop } from '../../domain/transit/types'
-import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
+import type { MapSession, TransitMapData } from '../../app/contracts'
 import {
   addBusStopMarkers,
   addTripEndpointMarkers,
@@ -42,28 +35,6 @@ export interface MapSessionOptions {
   readonly onEmptyMapClick: () => void
 }
 
-export interface MapRouteSelection {
-  readonly route: TransitRoute | null
-  readonly overlappingRouteIds: ReadonlySet<string>
-}
-
-export interface MapSession {
-  readonly ready: Promise<void>
-  loadTransitData(
-    data: LoadedTransitMapData,
-    onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
-  ): number
-  setRouteSelection(selection: MapRouteSelection): void
-  setTripRequest(
-    request: TripRequest,
-    venues: VenueLocationMap,
-    stops: readonly TransitStop[],
-  ): void
-  selectVenue(venue: VenueLocation): void
-  clearVenue(): void
-  dispose(): void
-}
-
 export function createMapSession(options: MapSessionOptions): MapSession {
   const controller = new AbortController()
   const map = new Map({
@@ -76,7 +47,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let selectedVenueMarker: Marker | null = null
   let endpointMarkers: Marker[] = []
   let busStopMarkers: Marker[] = []
-  let transitData: LoadedTransitMapData | null = null
+  let transitData: TransitMapData | null = null
   let selectedRouteId: string | null = null
   let disposed = false
 
@@ -130,7 +101,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   return {
     ready,
 
-    loadTransitData(data, onSetEndpoint) {
+    loadTransitData(data: TransitMapData, onSetEndpoint) {
       if (disposed) return 0
 
       clearBusStopMarkers()

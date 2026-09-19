@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { validateTripRequest } from './domain/trip/endpoints'
+import type { TripEndpoint, TripEndpointRole } from './domain/trip/types'
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
 import {
@@ -6,49 +8,35 @@ import {
   createInitialContextualPanelState,
 } from './contextual-panel/state'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
-import { createMapSession, type MapSession } from './infrastructure/map/session'
-import { TransitValidationError } from './domain/transit/validation'
-import { deriveTransitRouteOverlapMap } from './domain/transit/overlap'
+import { createMapSession } from './infrastructure/map/session'
 import {
-  clearTripEndpoint,
-  createEmptyTripRequest,
-  setTripEndpoint,
-  swapTripEndpoints,
-  validateTripRequest,
-} from './domain/trip/endpoints'
-import type {
-  TripEndpoint,
-  TripEndpointRole,
-  TripRequest,
-} from './domain/trip/types'
-import type { TransitNetworkIndex } from './domain/transit'
-import type { TransitNetwork } from './domain/transit/types'
-import type { VenueLocationMap } from './domain/venue/types'
+  createNavigationSession,
+  type NavigationSession,
+} from './app/navigation-session'
+import { useNavigationSession } from './app/use-navigation-session'
 import type { VenueSearchResult } from './domain/venue/search'
 import './App.css'
 
-const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
-
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
-  const mapSessionRef = useRef<MapSession | null>(null)
-  const transitNetworkRef = useRef<TransitNetwork | null>(null)
-  const transitNetworkIndexRef = useRef<TransitNetworkIndex | null>(null)
-  const transitRouteOverlapMapRef = useRef<ReadonlyMap<string, ReadonlySet<string>>>(new globalThis.Map())
-  const selectedRouteIdRef = useRef<string | null>(null)
   const contextualPanelStateRef = useRef(createInitialContextualPanelState())
-  const [venues, setVenues] = useState<VenueLocationMap | null>(null)
-  const [transitNetwork, setTransitNetwork] = useState<TransitNetwork | null>(null)
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const [navigationSession, setNavigationSession] = useState<NavigationSession | null>(null)
+  const [originSearchQuery, setOriginSearchQuery] = useState('')
+  const [destinationSearchQuery, setDestinationSearchQuery] = useState('')
   const [contextualPanelState, dispatchContextualPanel] = useReducer(
     contextualPanelReducer,
     undefined,
     createInitialContextualPanelState,
   )
-  const [tripRequest, setTripRequest] = useState<TripRequest>(() => createEmptyTripRequest())
-  const [originSearchQuery, setOriginSearchQuery] = useState('')
-  const [destinationSearchQuery, setDestinationSearchQuery] = useState('')
-  const [status, setStatus] = useState('Loading map data…')
+  const navigationState = useNavigationSession(navigationSession)
+  const {
+    venues,
+    transitNetwork,
+    selectedRouteId,
+    selectedRouteColor,
+    tripRequest,
+    status,
+  } = navigationState
   const tripValidation = validateTripRequest(tripRequest)
 
   useEffect(() => {
@@ -56,55 +44,41 @@ function App() {
   }, [contextualPanelState])
 
   const handleRouteSelect = useCallback((routeId: string | null) => {
-    const networkIndex = transitNetworkIndexRef.current
-    const selectedRoute = routeId && networkIndex
-      ? networkIndex.routeById.get(routeId)
-      : undefined
-    const nextRouteId = selectedRoute?.id ?? null
-    selectedRouteIdRef.current = nextRouteId
-    setSelectedRouteId(nextRouteId)
-
-    const overlappingRouteIds = nextRouteId
-      ? transitRouteOverlapMapRef.current.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
-      : EMPTY_ROUTE_OVERLAP
-    mapSessionRef.current?.setRouteSelection({
-      route: selectedRoute ?? null,
-      overlappingRouteIds,
-    })
-  }, [])
+    navigationSession?.selectRoute(routeId)
+  }, [navigationSession])
 
   const handleSetTripEndpoint = useCallback((role: TripEndpointRole, endpoint: TripEndpoint) => {
-    setTripRequest((request) => setTripEndpoint(request, role, endpoint))
+    navigationSession?.setTripEndpoint(role, endpoint)
     if (role === 'origin') {
       setOriginSearchQuery('')
     } else {
       setDestinationSearchQuery('')
     }
-  }, [])
+  }, [navigationSession])
 
   const handleClearTripEndpoint = useCallback((role: TripEndpointRole) => {
-    setTripRequest((request) => clearTripEndpoint(request, role))
-  }, [])
+    navigationSession?.clearTripEndpoint(role)
+  }, [navigationSession])
 
   const handleSwapTripEndpoints = useCallback(() => {
-    setTripRequest((request) => swapTripEndpoints(request))
-  }, [])
+    navigationSession?.swapTripEndpoints()
+  }, [navigationSession])
 
   const handleClearTrip = useCallback(() => {
-    setTripRequest(createEmptyTripRequest())
+    navigationSession?.clearTrip()
     setOriginSearchQuery('')
     setDestinationSearchQuery('')
-  }, [])
+  }, [navigationSession])
 
   const clearSelectedVenueMarker = useCallback(() => {
     // Venue details live in the contextual panel; the map only keeps the selected marker.
-    mapSessionRef.current?.clearVenue()
-  }, [])
+    navigationSession?.clearVenue()
+  }, [navigationSession])
 
   const handleVenueSelect = useCallback((result: VenueSearchResult) => {
     dispatchContextualPanel({ type: 'select-venue', result })
-    mapSessionRef.current?.selectVenue(result.venue)
-  }, [])
+    navigationSession?.selectVenue(result)
+  }, [navigationSession])
 
   const handlePanelClose = useCallback(() => {
     clearSelectedVenueMarker()
@@ -146,92 +120,31 @@ function App() {
     if (!mapContainer.current) return
 
     const controller = new AbortController()
-    let venueCount = 0
-    let isMounted = true
-    let transitFailure: string | null = null
+    let session: NavigationSession | null = null
     const mapSession = createMapSession({
       container: mapContainer.current,
-      onMapError: (error) => {
-        console.error('Map error:', error)
-        if (isMounted) setStatus('Unable to load map tiles')
-      },
+      onMapError: (error) => session?.reportMapError(error),
       onEmptyMapClick: handlePanelMapClick,
     })
-    mapSessionRef.current = mapSession
-
-    const loadVenues = async () => {
-      try {
-        const venueData = await loadVenueData(controller.signal)
-        venueCount = venueData.venueCount
-        if (isMounted) {
-          setVenues(venueData.venues)
-          if (!transitFailure) {
-            setStatus(`${venueCount} venues available; loading shuttle routes…`)
-          }
-        }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        if (isMounted) setStatus('Unable to load venue data')
-        console.error(error)
-      }
-    }
-
-    const loadTransitNetwork = async () => {
-      try {
-        const transitData = await loadTransitMapData(controller.signal)
-        const routeOverlapMap = deriveTransitRouteOverlapMap(transitData.geometry)
-
-        await mapSession.ready
-        const markerCount = mapSession.loadTransitData(
-          transitData,
-          handleSetTripEndpoint,
-        )
-        transitNetworkRef.current = transitData.network
-        transitNetworkIndexRef.current = transitData.index
-        transitRouteOverlapMapRef.current = routeOverlapMap
-        setTransitNetwork(transitData.network)
-
-        if (isMounted) {
-          setStatus(
-            `${venueCount} venues · ${markerCount} shuttle stops · ${transitData.network.routes.length} shuttle routes loaded`,
-          )
-        }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        const message = error instanceof TransitValidationError
-          ? `Transit route data validation failed: ${error.message}`
-          : 'Unable to load shuttle route data'
-        transitFailure = message
-        if (isMounted) setStatus(message)
-        console.error(error)
-      }
-    }
-
-    void loadVenues()
-    void loadTransitNetwork()
+    session = createNavigationSession({
+      map: mapSession,
+      loadVenues: loadVenueData,
+      loadTransit: async (signal) => {
+        const data = await loadTransitMapData(signal)
+        return { network: data.network, geometry: data.geometry }
+      },
+    })
+    setNavigationSession(session)
+    void session.start(controller.signal)
 
     return () => {
-      isMounted = false
       controller.abort()
-      mapSession.dispose()
-      mapSessionRef.current = null
-      transitNetworkRef.current = null
-      transitNetworkIndexRef.current = null
-      transitRouteOverlapMapRef.current = new globalThis.Map()
-      selectedRouteIdRef.current = null
+      session?.dispose()
+      setNavigationSession(null)
     }
-  }, [handlePanelMapClick, handleSetTripEndpoint])
-
-  useEffect(() => {
-    mapSessionRef.current?.setTripRequest(
-      tripRequest,
-      venues ?? {},
-      transitNetwork?.stops ?? [],
-    )
-  }, [tripRequest, transitNetwork, venues])
+  }, [handlePanelMapClick])
 
   const stops = transitNetwork?.stops ?? []
-  const selectedRouteColor = transitNetworkIndexRef.current?.routeById.get(selectedRouteId ?? '')?.color ?? '#334155'
 
   return (
     <main className="map-shell">
@@ -299,7 +212,7 @@ function App() {
       <aside
         className="map-legend"
         aria-label="Map legend"
-        style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
+        style={{ '--bus-stop-selected-color': selectedRouteColor ?? '#334155' } as CSSProperties}
       >
         <div><span className="legend-marker venue-marker" /> Venues</div>
         <div className="bus-stop-legend-item">

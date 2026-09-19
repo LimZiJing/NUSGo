@@ -1327,6 +1327,19 @@ describe('navigation session', () => {
     expect(dependencies.loadTransit).not.toHaveBeenCalled()
   })
 
+  it('does not invoke deferred loaders after immediate external abort', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const externalController = new AbortController()
+
+    const start = session.start(externalController.signal)
+    externalController.abort()
+
+    await expect(start).resolves.toBeUndefined()
+    expect(dependencies.loadVenues).not.toHaveBeenCalled()
+    expect(dependencies.loadTransit).not.toHaveBeenCalled()
+  })
+
   it('owns startup cancellation and removes the external listener after settlement', async () => {
     const venue = createDeferred<LoadedVenueData>()
     const transit = createDeferred<LoadedTransitData>()

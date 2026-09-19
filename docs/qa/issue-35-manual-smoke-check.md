@@ -4,7 +4,7 @@ This checklist records the manual verification still needed after moving navigat
 
 ## Automated evidence
 
-- [x] `npm test` passes (161 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, startup-failure reporting with isolated listener errors, canonical trip endpoints, serialized route/trip reentry, contextual-panel history and venue marker rules, abort, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and mount callback forwarding/cleanup.
+- [x] `npm test` passes (162 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, startup-failure reporting with isolated listener errors, canonical trip endpoints, serialized route/trip reentry, contextual-panel history and venue marker rules, abort-before-deferred-loader execution, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and mount callback forwarding/cleanup.
 Interactive query/reset/swap/clear behavior for the stateful `TripEndpointControls` wrapper is not covered by this automated evidence; verification is deferred to the manual desktop/map QA below and the Issue #30 DOM tests.
 - [x] `npm run lint` passes.
 - [x] `npm run build` passes.

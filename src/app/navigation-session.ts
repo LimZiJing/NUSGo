@@ -69,6 +69,9 @@ export function createNavigationSession(
   let venueCount = 0
   let transitLoaded = false
   let transitMarkerCount = 0
+  let transitRouteCount = 0
+  let venueFailure: string | null = null
+  let transitFailure: string | null = null
   let disposed = false
   let started = false
   const listeners = new Set<() => void>()
@@ -100,21 +103,32 @@ export function createNavigationSession(
     signal.aborted ||
     (error instanceof DOMException && error.name === 'AbortError')
 
+  const getResourceStatus = (): string => {
+    if (venueFailure && transitFailure) return venueFailure + ' · ' + transitFailure
+    if (transitFailure) return transitFailure
+    if (venueFailure) return venueFailure
+    if (transitLoaded) {
+      return venueCount + ' venues · ' + transitMarkerCount + ' shuttle stops · ' +
+        transitRouteCount + ' shuttle routes loaded'
+    }
+    if (venueCount > 0) return venueCount + ' venues available; loading shuttle routes…'
+    return 'Loading map data…'
+  }
+
   const handleVenueLoad = (data: VenueData) => {
     venueCount = data.venueCount
-    const routeCount = state.transitNetwork?.routes.length ?? 0
+    venueFailure = null
     updateState({
       venues: data.venues,
-      status: transitLoaded
-        ? venueCount + ' venues · ' + transitMarkerCount + ' shuttle stops · ' +
-          routeCount + ' shuttle routes loaded'
-        : venueCount + ' venues available; loading shuttle routes…',
+      status: getResourceStatus(),
     })
     syncTripRequest(state.tripRequest)
   }
 
   const handleTransitLoad = (data: LoadedTransitData) => {
     transitIndex = data.index
+    transitRouteCount = data.network.routes.length
+    transitFailure = null
     routeOverlapMap = deriveTransitRouteOverlapMap(data.geometry)
     const markerCount = dependencies.map.loadTransitData(
       data,
@@ -124,18 +138,16 @@ export function createNavigationSession(
     updateState({
       transitNetwork: data.network,
       transitNetworkIndex: data.index,
-      status: venueCount + ' venues · ' +
-        markerCount + ' shuttle stops · ' +
-        data.network.routes.length + ' shuttle routes loaded',
+      status: getResourceStatus(),
     })
     syncTripRequest(state.tripRequest)
   }
 
   const reportTransitFailure = (error: unknown) => {
-    const message = error instanceof TransitValidationError
+    transitFailure = error instanceof TransitValidationError
       ? 'Transit route data validation failed: ' + error.message
       : 'Unable to load shuttle route data'
-    updateState({ status: message })
+    updateState({ status: getResourceStatus() })
     console.error(error)
   }
 
@@ -153,15 +165,14 @@ export function createNavigationSession(
       if (started || disposed) return
       started = true
 
-      let transitFailure = false
-
       const venuesPromise = dependencies.loadVenues(signal)
         .then((data) => {
           if (!disposed) handleVenueLoad(data)
         })
         .catch((error: unknown) => {
           if (isAborted(error, signal) || disposed) return
-          updateState({ status: 'Unable to load venue data' })
+          venueFailure = 'Unable to load venue data'
+          updateState({ status: getResourceStatus() })
           console.error(error)
         })
 
@@ -174,7 +185,6 @@ export function createNavigationSession(
         })
         .catch((error: unknown) => {
           if (isAborted(error, signal) || disposed) return
-          transitFailure = true
           reportTransitFailure(error)
         })
 

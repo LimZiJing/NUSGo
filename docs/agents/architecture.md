@@ -63,4 +63,3 @@ Move imports atomically with each migration step. Do not preserve obsolete modul
 - Do not add a global state library or a schema-validation dependency.
 - Keep pure transformations and validators free of I/O, DOM work, MapLibre effects, and mutation.
 - Every adapter-created listener, layer, source, marker, popup, timer, and asynchronous operation needs an explicit cleanup path.
-

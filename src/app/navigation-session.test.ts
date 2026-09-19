@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitNetworkIndex } from '../domain/transit'
-import type { LoadedTransitData } from './contracts'
+import type { LoadedTransitData, VenueData } from './contracts'
 import {
   createInitialNavigationSessionState,
   createNavigationSession,
@@ -151,6 +151,52 @@ describe('navigation session', () => {
     expect(session.getState().status).toBe('Unable to load shuttle route data')
     session.reportMapError(new Error('tile failure'))
     expect(session.getState().status).toBe('Unable to load map tiles')
+  })
+
+  it('owns active venue selection and clears the map selection', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const result = {
+      code: 'COM1',
+      venue: {
+        roomName: 'Computing 1',
+        location: { x: 103, y: 1 },
+      },
+    }
+
+    await session.start(new AbortController().signal)
+    session.selectVenue(result)
+
+    expect(session.getState().selectedVenue).toEqual(result)
+    expect(dependencies.map.selectVenue).toHaveBeenCalledWith(result.venue)
+
+    session.clearVenue()
+    expect(session.getState().selectedVenue).toBeNull()
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+  })
+
+  it('preserves a transit failure when venue loading completes afterward', async () => {
+    let resolveVenues: ((data: VenueData) => void) | undefined
+    const venuesPromise = new Promise<VenueData>((resolve) => {
+      resolveVenues = resolve
+    })
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(() => venuesPromise),
+      loadTransit: vi.fn(async () => {
+        throw new Error('bad transit payload')
+      }),
+    })
+    const session = createNavigationSession(dependencies)
+    const start = session.start(new AbortController().signal)
+
+    await Promise.resolve()
+    resolveVenues?.({
+      venues: { COM1: { roomName: 'Computing 1', location: { x: 103, y: 1 } } },
+      venueCount: 1,
+    })
+    await start
+
+    expect(session.getState().status).toBe('Unable to load shuttle route data')
   })
 
   it('disposes the map port and stops publishing state', () => {

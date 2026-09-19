@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControl } from './components/TripEndpointControl'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'
@@ -39,8 +39,31 @@ function App() {
     }
   }, [])
 
+  const commands = useMemo(() => ({
+    swapTripEndpoints: () => session?.swapTripEndpoints(),
+    setOriginSearchQuery: (query: string) => session?.setOriginSearchQuery(query),
+    selectOriginEndpoint: (endpoint: Parameters<NavigationSession['setTripEndpoint']>[1]) => (
+      session?.setTripEndpoint('origin', endpoint)
+    ),
+    clearOriginEndpoint: () => session?.clearTripEndpoint('origin'),
+    setDestinationSearchQuery: (query: string) => session?.setDestinationSearchQuery(query),
+    selectDestinationEndpoint: (endpoint: Parameters<NavigationSession['setTripEndpoint']>[1]) => (
+      session?.setTripEndpoint('destination', endpoint)
+    ),
+    clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
+    clearTrip: () => session?.clearTrip(),
+    setContextualPanelQuery: (query: string) => session?.setContextualPanelQuery(query),
+    selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => session?.selectVenue(result),
+    openVenueSearch: () => session?.openVenueSearch(),
+    openShuttle: () => session?.openShuttle(),
+    back: () => session?.back(),
+    close: () => session?.close(),
+    escape: () => session?.escape(),
+    selectRoute: (routeId: string | null) => session?.selectRoute(routeId),
+  }), [session])
+
   const tripValidation = validateTripRequest(state.tripRequest)
-  const selectedRouteColor = state.transitIndex?.routeById.get(state.selectedRouteId ?? '')?.color ?? '#334155'
+  const selectedRouteColor = state.selectedRouteColor ?? '#334155'
 
   return (
     <main className="map-shell">
@@ -51,7 +74,7 @@ function App() {
             <h2>Trip endpoints</h2>
             <button
               type="button"
-              onClick={() => session?.swapTripEndpoints()}
+              onClick={commands.swapTripEndpoints}
               disabled={!state.tripRequest.origin || !state.tripRequest.destination}
               aria-label="Swap origin and destination"
             >
@@ -64,9 +87,9 @@ function App() {
             venues={state.venues}
             networkIndex={state.transitIndex}
             searchQuery={state.originSearchQuery}
-            onSearchQueryChange={(query) => session?.setOriginSearchQuery(query)}
-            onSelect={(endpoint) => session?.setTripEndpoint('origin', endpoint)}
-            onClear={() => session?.clearTripEndpoint('origin')}
+            onSearchQueryChange={commands.setOriginSearchQuery}
+            onSelect={commands.selectOriginEndpoint}
+            onClear={commands.clearOriginEndpoint}
           />
           <TripEndpointControl
             role="destination"
@@ -74,14 +97,14 @@ function App() {
             venues={state.venues}
             networkIndex={state.transitIndex}
             searchQuery={state.destinationSearchQuery}
-            onSearchQueryChange={(query) => session?.setDestinationSearchQuery(query)}
-            onSelect={(endpoint) => session?.setTripEndpoint('destination', endpoint)}
-            onClear={() => session?.clearTripEndpoint('destination')}
+            onSearchQueryChange={commands.setDestinationSearchQuery}
+            onSelect={commands.selectDestinationEndpoint}
+            onClear={commands.clearDestinationEndpoint}
           />
           <button
             type="button"
             className="trip-clear-both"
-            onClick={() => session?.clearTrip()}
+            onClick={commands.clearTrip}
             disabled={!state.tripRequest.origin && !state.tripRequest.destination}
           >
             Clear both endpoints
@@ -96,14 +119,14 @@ function App() {
           network={state.transitIndex?.network ?? null}
           networkIndex={state.transitIndex}
           selectedRouteId={state.selectedRouteId}
-          onQueryChange={(query) => session?.setContextualPanelQuery(query)}
-          onVenueSelect={(result) => session?.selectVenue(result)}
-          onOpenVenueSearch={() => session?.openVenueSearch()}
-          onOpenShuttle={() => session?.openShuttle()}
-          onBack={() => session?.back()}
-          onClose={() => session?.close()}
-          onEscape={() => session?.escape()}
-          onRouteSelect={(routeId) => session?.selectRoute(routeId)}
+          onQueryChange={commands.setContextualPanelQuery}
+          onVenueSelect={commands.selectVenue}
+          onOpenVenueSearch={commands.openVenueSearch}
+          onOpenShuttle={commands.openShuttle}
+          onBack={commands.back}
+          onClose={commands.close}
+          onEscape={commands.escape}
+          onRouteSelect={commands.selectRoute}
         />
       </div>
       <aside

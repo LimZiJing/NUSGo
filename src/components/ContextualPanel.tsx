@@ -116,21 +116,24 @@ export function ContextualPanel({
     panelHeadingRef.current?.focus()
   }, [state.mode, state.selectedVenue?.code])
 
-  const rememberCurrentControl = (event: MouseEvent<HTMLElement>): void => {
+  const rememberCurrentControl = (
+    event: MouseEvent<HTMLElement>,
+    fallbackKey = state.mode === 'shuttle' ? 'neutral-shuttle-opener' : 'venue-search-opener',
+  ): void => {
     focusHistoryRef.current.push({
       element: event.currentTarget,
       key: event.currentTarget.dataset.contextualFocusId ?? null,
-      fallbackKey: state.mode === 'shuttle' ? 'neutral-shuttle-opener' : 'venue-search-opener',
+      fallbackKey,
     })
   }
 
   const handleOpenVenueSearch = (event: MouseEvent<HTMLButtonElement>): void => {
-    if (state.mode !== 'venue-search') rememberCurrentControl(event)
+    if (state.mode !== 'venue-search') rememberCurrentControl(event, 'venue-search-opener')
     onOpenVenueSearch()
   }
 
   const handleOpenShuttle = (event: MouseEvent<HTMLButtonElement>): void => {
-    if (state.mode !== 'shuttle') rememberCurrentControl(event)
+    if (state.mode !== 'shuttle') rememberCurrentControl(event, 'neutral-shuttle-opener')
     onOpenShuttle()
   }
 
@@ -138,7 +141,7 @@ export function ContextualPanel({
     result: VenueSearchResult,
     event: MouseEvent<HTMLButtonElement>,
   ): void => {
-    rememberCurrentControl(event)
+    rememberCurrentControl(event, 'venue-search-opener')
     onVenueSelect(result)
   }
 

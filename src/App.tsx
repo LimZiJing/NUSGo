@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { validateTripRequest } from './domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole } from './domain/trip/types'
-import { ContextualPanel } from './components/ContextualPanel'
-import { TripEndpointControl } from './components/TripEndpointControl'
+import { ContextualPanel } from './features/contextual-panel/ContextualPanel'
+import { TripEndpointControl } from './features/trip-endpoints/TripEndpointControl'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
-} from './contextual-panel/state'
+} from './features/contextual-panel/state'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
 import { createMapSession } from './infrastructure/map/session'
 import {

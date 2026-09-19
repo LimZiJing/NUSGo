@@ -1,4 +1,4 @@
-import type { TransitNetwork, TransitRoute } from '../domain/transit/types'
+import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 
 interface TransitRouteControlProps {
   network: TransitNetwork | null

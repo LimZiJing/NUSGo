@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ContextualPanel } from './ContextualPanel'
-import { createInitialContextualPanelState } from '../contextual-panel/state'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { VenueLocationMap } from '../domain/venue/types'
+import { createInitialContextualPanelState } from './state'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

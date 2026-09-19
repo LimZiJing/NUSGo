@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
-import type { TransitStop } from '../domain/transit/types'
+import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
+import type { TransitStop } from '../../domain/transit/types'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripLocationSearchResult,
-} from '../domain/trip/types'
-import type { VenueLocationMap } from '../domain/venue/types'
+} from '../../domain/trip/types'
+import type { VenueLocationMap } from '../../domain/venue/types'
 
 interface TripEndpointControlProps {
   role: TripEndpointRole

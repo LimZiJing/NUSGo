@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
+import type { TripEndpointRole } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { LoadedTransitData } from './contracts/map'
 import {
   createInitialNavigationSessionState,
   createNavigationSession,
   type LoadedVenueData,
+  type NavigationSession,
   type NavigationSessionDependencies,
 } from './navigation-session'
 
@@ -74,6 +76,21 @@ function createDeferred<T>() {
     reject = rejectPromise
   })
   return { promise, resolve, reject }
+}
+
+async function waitForState(
+  session: NavigationSession,
+  predicate: (state: ReturnType<NavigationSession['getState']>) => boolean,
+): Promise<void> {
+  if (predicate(session.getState())) return
+
+  await new Promise<void>((resolve) => {
+    const unsubscribe = session.subscribe(() => {
+      if (!predicate(session.getState())) return
+      unsubscribe()
+      resolve()
+    })
+  })
 }
 
 const venueResult: VenueSearchResult = {
@@ -158,8 +175,12 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     const start = session.start(new AbortController().signal)
 
+    const venueLoaded = waitForState(
+      session,
+      (state) => state.status === '1 venues available; loading shuttle routes…',
+    )
     venueDeferred.resolve(dependencies.venues)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await venueLoaded
     expect(session.getState().status).toBe('1 venues available; loading shuttle routes…')
 
     transitDeferred.resolve(dependencies.transit)
@@ -175,8 +196,12 @@ describe('navigation session', () => {
     const reverseSession = createNavigationSession(reverseDependencies)
     const reverseStart = reverseSession.start(new AbortController().signal)
 
+    const transitLoaded = waitForState(
+      reverseSession,
+      (state) => state.status === '2 shuttle stops · 1 shuttle routes loaded; loading venue data…',
+    )
     reverseTransit.resolve(reverseDependencies.transit)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await transitLoaded
     reverseVenue.resolve(reverseDependencies.venues)
     await reverseStart
     expect(reverseSession.getState().status).toBe('1 venues · 2 shuttle stops · 1 shuttle routes loaded')
@@ -307,11 +332,20 @@ describe('navigation session', () => {
           if (event === 'map') {
             session.reportMapError(new Error('tiles unavailable'))
           } else if (event === 'venue') {
+            const venueFailed = waitForState(
+              session,
+              (state) => state.resourceStatus.venue.status === 'failed',
+            )
             venue.reject(new Error('venues unavailable'))
+            await venueFailed
           } else {
+            const transitFailed = waitForState(
+              session,
+              (state) => state.resourceStatus.transit.status === 'failed',
+            )
             transit.reject(new Error('transit unavailable'))
+            await transitFailed
           }
-          await Promise.resolve()
         }
 
         await start
@@ -352,7 +386,7 @@ describe('navigation session', () => {
     expect(dependencies.map.setRouteSelection).toHaveBeenCalledTimes(3)
   })
 
-  it('rejects unknown venue and stop endpoints without changing state or synchronizing the map', async () => {
+  it('rejects unknown, unmapped, and malformed endpoint commands', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
@@ -362,9 +396,57 @@ describe('navigation session', () => {
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'MISSING' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'MISSING' })
+    session.setTripEndpoint('origin', { kind: 'venue', id: ' ' })
+    session.setTripEndpoint('invalid' as unknown as TripEndpointRole, { kind: 'venue', id: 'COM1' })
+    session.clearTripEndpoint('invalid' as unknown as TripEndpointRole)
 
     expect(session.getState()).toBe(stateBefore)
     expect(map.setTripRequest).toHaveBeenCalledTimes(mapCallCount)
+
+    const unmappedData: LoadedVenueData = {
+      venues: {
+        UNMAPPED: { roomName: 'Unmapped venue' },
+      },
+      venueCount: 0,
+    }
+    const unmappedDependencies = createDependencies({
+      loadVenues: vi.fn(async () => unmappedData),
+    })
+    const unmappedSession = createNavigationSession(unmappedDependencies)
+    await unmappedSession.start(new AbortController().signal)
+    const unmappedStateBefore = unmappedSession.getState()
+    const unmappedMap = unmappedDependencies.map as ReturnType<typeof createMapDouble>
+    const unmappedMapCallCount = unmappedMap.setTripRequest.mock.calls.length
+    unmappedSession.setTripEndpoint('origin', { kind: 'venue', id: 'UNMAPPED' })
+    expect(unmappedSession.getState()).toBe(unmappedStateBefore)
+    expect(unmappedMap.setTripRequest).toHaveBeenCalledTimes(unmappedMapCallCount)
+  })
+
+  it('publishes immutable controller-owned snapshots without cloning canonical loaded values', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    const loadedState = session.getState()
+    expect(loadedState.venues).toBe(dependencies.venues.venues)
+    expect(loadedState.transitIndex).toBe(dependencies.transit.index)
+    expect(Object.isFrozen(loadedState)).toBe(true)
+    expect(Object.isFrozen(loadedState.contextualPanel)).toBe(true)
+    expect(Object.isFrozen(loadedState.contextualPanel.history)).toBe(true)
+    expect(Object.isFrozen(loadedState.tripRequest)).toBe(true)
+    expect(Object.isFrozen(loadedState.resourceStatus)).toBe(true)
+
+    const endpoint = { kind: 'venue' as const, id: 'COM1' }
+    session.setTripEndpoint('origin', endpoint)
+    expect(endpoint).toEqual({ kind: 'venue', id: 'COM1' })
+    expect(Object.isFrozen(session.getState().tripRequest.origin)).toBe(true)
+    expect(session.getState().tripRequest.origin).not.toBe(endpoint)
+
+    session.selectVenue(venueResult)
+    const selectedVenue = session.getState().contextualPanel.selectedVenue
+    expect(selectedVenue?.venue).toBe(dependencies.venues.venues.COM1)
+    expect(Object.isFrozen(selectedVenue)).toBe(true)
+    expect(Object.isFrozen(session.getState().contextualPanel.history)).toBe(true)
   })
 
   it('canonicalizes venue selection by loaded code and rejects mismatched or unmapped results', async () => {
@@ -555,6 +637,20 @@ describe('navigation session', () => {
 
     session.reportMapError(new Error('late map error'))
     expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('does not invoke loaders when startup is already aborted', async () => {
+    const dependencies = createDependencies()
+    const controller = new AbortController()
+    controller.abort()
+    const session = createNavigationSession(dependencies)
+
+    await session.start(controller.signal)
+
+    expect(dependencies.loadVenues).not.toHaveBeenCalled()
+    expect(dependencies.loadTransit).not.toHaveBeenCalled()
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+    expect(session.getState()).toEqual(createInitialNavigationSessionState())
   })
 
   it('owns startup cancellation and removes the external listener after settlement', async () => {

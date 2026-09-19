@@ -8,6 +8,49 @@ export interface NavigationSessionStartup {
   dispose(): void
 }
 
+function createAbortError(): Error {
+  const error = new Error('The operation was aborted')
+  error.name = 'AbortError'
+  return error
+}
+
+export function waitForAbortablePromise<T>(
+  dependency: PromiseLike<T>,
+  signal: AbortSignal,
+): Promise<T> {
+  if (signal.aborted) return Promise.reject(createAbortError())
+
+  return new Promise<T>((resolve, reject) => {
+    let settled = false
+
+    const cleanup = (): void => {
+      signal.removeEventListener('abort', handleAbort)
+    }
+
+    const settle = (callback: () => void): void => {
+      if (settled) return
+      settled = true
+      cleanup()
+      callback()
+    }
+
+    const handleAbort = (): void => {
+      settle(() => reject(createAbortError()))
+    }
+
+    signal.addEventListener('abort', handleAbort, { once: true })
+    if (signal.aborted) {
+      handleAbort()
+      return
+    }
+
+    Promise.resolve(dependency).then(
+      (value) => settle(() => resolve(value)),
+      (error: unknown) => settle(() => reject(error)),
+    )
+  })
+}
+
 export function createNavigationSessionStartup(): NavigationSessionStartup {
   let startPromise: Promise<void> | null = null
   let startupAbortController: AbortController | null = null

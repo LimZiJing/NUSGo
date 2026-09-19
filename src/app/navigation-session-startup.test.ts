@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createNavigationSessionStartup } from './navigation-session-startup'
+import {
+  createNavigationSessionStartup,
+  waitForAbortablePromise,
+} from './navigation-session-startup'
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void
@@ -8,6 +11,36 @@ function createDeferred<T>() {
   })
   return { promise, resolve }
 }
+
+describe('waitForAbortablePromise', () => {
+  it('rejects on abort, removes its listener, and ignores late settlement', async () => {
+    const deferred = createDeferred<void>()
+    const controller = new AbortController()
+    const removeAbortListener = vi.spyOn(controller.signal, 'removeEventListener')
+
+    const waiting = waitForAbortablePromise(deferred.promise, controller.signal)
+    controller.abort()
+
+    await expect(waiting).rejects.toMatchObject({ name: 'AbortError' })
+    expect(removeAbortListener).toHaveBeenCalledOnce()
+
+    deferred.resolve()
+    await Promise.resolve()
+    expect(removeAbortListener).toHaveBeenCalledOnce()
+  })
+
+  it('removes its listener after the dependency settles', async () => {
+    const deferred = createDeferred<string>()
+    const controller = new AbortController()
+    const removeAbortListener = vi.spyOn(controller.signal, 'removeEventListener')
+
+    const waiting = waitForAbortablePromise(deferred.promise, controller.signal)
+    deferred.resolve('ready')
+
+    await expect(waiting).resolves.toBe('ready')
+    expect(removeAbortListener).toHaveBeenCalledOnce()
+  })
+})
 
 describe('createNavigationSessionStartup', () => {
   it('does not invoke loaders when the caller signal is already aborted', async () => {

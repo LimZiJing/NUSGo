@@ -607,6 +607,52 @@ describe('navigation session', () => {
     expect(dependencies.map.loadTransitData).toHaveBeenCalledOnce()
   })
 
+  it('settles startup on external abort while map readiness is pending', async () => {
+    const mapReady = createDeferred<void>()
+    const dependencies = createDependencies({ map: createMapDouble(mapReady.promise) })
+    const session = createNavigationSession(dependencies)
+    const listener = vi.fn()
+    session.subscribe(listener)
+    const external = new AbortController()
+    const start = session.start(external.signal)
+
+    await waitForState(
+      session,
+      (state) => state.resourceStatus.venue.status === 'loaded',
+    )
+    external.abort()
+    await expect(start).resolves.toBeUndefined()
+
+    expect(session.getState().resourceStatus.transit).toEqual({ status: 'pending' })
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+    expect(listener).toHaveBeenCalledOnce()
+
+    mapReady.resolve()
+    await Promise.resolve()
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+  })
+
+  it('settles startup on disposal while map readiness is pending', async () => {
+    const mapReady = createDeferred<void>()
+    const dependencies = createDependencies({ map: createMapDouble(mapReady.promise) })
+    const session = createNavigationSession(dependencies)
+    const start = session.start(new AbortController().signal)
+
+    await waitForState(
+      session,
+      (state) => state.resourceStatus.venue.status === 'loaded',
+    )
+    session.dispose()
+    await expect(start).resolves.toBeUndefined()
+
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+    expect(dependencies.map.dispose).toHaveBeenCalledOnce()
+
+    mapReady.resolve()
+    await Promise.resolve()
+    expect(dependencies.map.loadTransitData).not.toHaveBeenCalled()
+  })
+
   it('is single-shot and safe across abort, late completion, and idempotent disposal', async () => {
     const venueDeferred = createDeferred<LoadedVenueData>()
     const transitDeferred = createDeferred<LoadedTransitData>()

@@ -20,7 +20,10 @@ import {
   type ResourceStatusState,
 } from './resource-status'
 import { reconcileRouteSelection } from './route-selection'
-import { createNavigationSessionStartup } from './navigation-session-startup'
+import {
+  createNavigationSessionStartup,
+  waitForAbortablePromise,
+} from './navigation-session-startup'
 import type { LoadedTransitData, MapSession } from './contracts/map'
 import {
   createVenueSearchResultSnapshot,
@@ -256,7 +259,7 @@ export function createNavigationSession(
     Promise.resolve()
       .then(() => dependencies.loadTransit(signal))
       .then(async (data) => {
-        await dependencies.map.ready
+        await waitForAbortablePromise(dependencies.map.ready, signal)
         if (!disposed && !signal.aborted) handleTransitLoad(data)
       })
       .catch((error: unknown) => {

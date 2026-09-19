@@ -83,6 +83,7 @@ vi.mock('maplibre-gl', () => {
   class FakeMarker {
     readonly element: HTMLElement
     popup: FakePopup | null = null
+    coordinate: unknown = null
     readonly remove = vi.fn()
 
     constructor(options: { element?: HTMLElement }) {
@@ -93,7 +94,8 @@ vi.mock('maplibre-gl', () => {
       return this.element
     }
 
-    setLngLat() {
+    setLngLat(coordinate: unknown) {
+      this.coordinate = coordinate
       return this
     }
 
@@ -304,6 +306,101 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('replaces and clears venue markers while flying to the selected venue', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const venueOne: VenueLocation = {
+      roomName: 'Venue One',
+      location: { x: 103.7, y: 1.3 },
+    }
+    const venueTwo: VenueLocation = {
+      roomName: 'Venue Two',
+      location: { x: 103.8, y: 1.4 },
+    }
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{ coordinate: unknown; remove: ReturnType<typeof vi.fn> }>
+      flyTo: ReturnType<typeof vi.fn>
+    }
+
+    await session.ready
+    session.selectVenue(venueOne)
+    session.selectVenue(venueTwo)
+
+    expect(map.addedMarkers).toHaveLength(2)
+    expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers[1].remove).not.toHaveBeenCalled()
+    expect(map.flyTo).toHaveBeenNthCalledWith(1, {
+      center: [103.7, 1.3],
+      zoom: 17,
+      essential: true,
+    })
+    expect(map.flyTo).toHaveBeenNthCalledWith(2, {
+      center: [103.8, 1.4],
+      zoom: 17,
+      essential: true,
+    })
+
+    session.clearVenue()
+    session.clearVenue()
+
+    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('replaces endpoint markers from the current immutable transit index and clears them', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const firstTransitData = createTransitData()
+    const changedNetwork = createValidTransitNetwork()
+    changedNetwork.stops[0].longitude = 104
+    const secondIndex = createTransitIndex(changedNetwork)
+    const request = {
+      origin: { kind: 'stop' as const, id: 'STOP-A' },
+      destination: { kind: 'venue' as const, id: 'VENUE-A' },
+    }
+    const venues = {
+      'VENUE-A': {
+        roomName: 'Venue A',
+        location: { x: 103.9, y: 1.5 },
+      },
+    }
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{ coordinate: unknown; remove: ReturnType<typeof vi.fn> }>
+    }
+
+    await session.ready
+    session.setTripRequest(request, venues, firstTransitData.index)
+    expect(map.addedMarkers.map((marker) => marker.coordinate)).toEqual([
+      [103, 1],
+      [103.9, 1.5],
+    ])
+
+    session.setTripRequest(request, venues, secondIndex)
+
+    expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers.slice(-2).map((marker) => marker.coordinate)).toEqual([
+      [104, 1],
+      [103.9, 1.5],
+    ])
+
+    session.setTripRequest({ origin: null, destination: null }, venues, secondIndex)
+
+    expect(map.addedMarkers.slice(-2).every((marker) => marker.remove.mock.calls.length === 1)).toBe(true)
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('replaces transit installations and makes disposal idempotent', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
@@ -319,6 +416,7 @@ describe('MapSession', () => {
       off: ReturnType<typeof vi.fn>
       remove: ReturnType<typeof vi.fn>
       removeControl: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
     }
 
     await session.ready
@@ -346,12 +444,14 @@ describe('MapSession', () => {
 
     const markerCount = map.addedMarkers.length
     const removedLayerCount = map.removedLayers.length
+    const flyToCount = map.flyTo.mock.calls.length
     session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
     session.setTripRequest({ origin: null, destination: null }, {}, null)
     session.selectVenue({} as VenueLocation)
     session.clearVenue()
     expect(map.addedMarkers).toHaveLength(markerCount)
     expect(map.removedLayers).toHaveLength(removedLayerCount)
+    expect(map.flyTo).toHaveBeenCalledTimes(flyToCount)
     expect(session.loadTransitData(transitData)).toBe(0)
 
     vi.unstubAllGlobals()

@@ -4,11 +4,10 @@ import { createTransitIndex } from '../domain/transit'
 import type { TripEndpointRole } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '../domain/venue/validation'
-import type { LoadedTransitData } from './contracts/map'
+import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import {
   createInitialNavigationSessionState,
   createNavigationSession,
-  type LoadedVenueData,
   type NavigationSession,
   type NavigationSessionDependencies,
 } from './navigation-session'

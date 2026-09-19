@@ -1,8 +1,5 @@
-import type {
-  LoadedTransitData,
-  MapRouteSelection,
-  MapSession,
-} from '../../app/contracts/map'
+import type { LoadedTransitData } from '../../app/contracts/data'
+import type { MapRouteSelection, MapSession } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { VenueLocation } from '../../domain/venue/types'
 import { applyBasemapPresentation } from './basemap'

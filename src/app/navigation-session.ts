@@ -24,7 +24,8 @@ import {
   createNavigationSessionStartup,
   waitForAbortablePromise,
 } from './navigation-session-startup'
-import type { LoadedTransitData, MapSession } from './contracts/map'
+import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
+import type { MapSession } from './contracts/map'
 import {
   createVenueSearchResultSnapshot,
   hasMappedLocation,
@@ -35,11 +36,6 @@ import {
 import { freezeNavigationSessionSnapshot } from './navigation-session-snapshot'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
-
-export interface LoadedVenueData {
-  readonly venues: VenueLocationMap
-  readonly venueCount: number
-}
 
 export interface NavigationSessionState {
   readonly venues: VenueLocationMap | null

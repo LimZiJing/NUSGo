@@ -1,17 +1,10 @@
 import type { TransitIndex } from '../../domain/transit'
 import type {
-  TransitNetwork,
   TransitRoute,
-  TransitRouteGeometry,
 } from '../../domain/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
-
-export interface LoadedTransitData {
-  readonly network: TransitNetwork
-  readonly geometry: TransitRouteGeometry
-  readonly index: TransitIndex
-}
+import type { LoadedTransitData } from './data'
 
 export interface MapRouteSelection {
   readonly route: TransitRoute | null

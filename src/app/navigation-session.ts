@@ -189,13 +189,17 @@ export function createNavigationSession(
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
-    if (disposed || !isKnownTripEndpoint(endpoint)) return
+    if (
+      disposed ||
+      (role !== 'origin' && role !== 'destination') ||
+      !isKnownTripEndpoint(endpoint)
+    ) return
     updateTripRequest(setTripEndpoint(state.tripRequest, role, endpoint), {
       ...(role === 'origin' ? { originSearchQuery: '' } : { destinationSearchQuery: '' }),
     })
   }
 
-  const dispatchContextualPanel = (action: ContextualPanelAction): ContextualPanelState => {
+  const updateContextualPanel = (action: ContextualPanelAction): ContextualPanelState => {
     if (disposed) return state.contextualPanel
     const nextPanel = contextualPanelReducer(state.contextualPanel, action)
     updateState({ contextualPanel: nextPanel })
@@ -382,7 +386,7 @@ export function createNavigationSession(
 
     setContextualPanelQuery(query) {
       if (disposed) return
-      dispatchContextualPanel({ type: 'set-query', query })
+      updateContextualPanel({ type: 'set-query', query })
     },
 
     selectVenue(result) {
@@ -391,43 +395,43 @@ export function createNavigationSession(
       const venue = state.venues?.[result.code]
       if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
       const canonicalResult = { code: result.code, venue }
-      dispatchContextualPanel({ type: 'select-venue', result: canonicalResult })
+      updateContextualPanel({ type: 'select-venue', result: canonicalResult })
       dependencies.map.selectVenue(venue)
     },
 
     openVenueSearch() {
       if (disposed) return
-      dispatchContextualPanel({ type: 'open-venue-search' })
+      updateContextualPanel({ type: 'open-venue-search' })
     },
 
     openShuttle() {
       if (disposed) return
-      dispatchContextualPanel({ type: 'open-shuttle' })
+      updateContextualPanel({ type: 'open-shuttle' })
     },
 
     back() {
       if (disposed) return
       clearSelectedVenueMarkerWhenLeavingDetail()
-      dispatchContextualPanel({ type: 'back' })
+      updateContextualPanel({ type: 'back' })
     },
 
     escape() {
       if (disposed) return
       clearSelectedVenueMarkerWhenLeavingDetail()
-      dispatchContextualPanel({ type: 'escape' })
+      updateContextualPanel({ type: 'escape' })
     },
 
     close() {
       if (disposed) return
       dependencies.map.clearVenue()
-      dispatchContextualPanel({ type: 'close' })
+      updateContextualPanel({ type: 'close' })
     },
 
     handleMapClick() {
       if (disposed) return
       if (state.contextualPanel.mode !== 'venue-detail') return
       dependencies.map.clearVenue()
-      dispatchContextualPanel({ type: 'map-click' })
+      updateContextualPanel({ type: 'map-click' })
     },
 
     reportMapError(error) {

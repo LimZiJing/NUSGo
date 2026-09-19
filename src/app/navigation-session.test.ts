@@ -113,12 +113,12 @@ describe('navigation session', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     const listener = vi.fn()
-    const unsubscribe = session.subscribe(listener)
+    const cleanup = session.subscribe(listener)
 
     session.setOriginSearchQuery('COM1')
     expect(listener).toHaveBeenCalledOnce()
 
-    unsubscribe()
+    cleanup()
     session.setDestinationSearchQuery('STOP')
     expect(listener).toHaveBeenCalledOnce()
   })
@@ -212,6 +212,41 @@ describe('navigation session', () => {
       expect(combinedSession.getState().status).toBe(
         'Unable to load venue data; Unable to load shuttle route data',
       )
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it('formats every map and resource outcome with stable details', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const scenarios = [
+        [false, false, false, '1 venues · 2 shuttle stops · 1 shuttle routes loaded'],
+        [false, false, true, '1 venues available; Unable to load shuttle route data'],
+        [false, true, false, '2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data'],
+        [false, true, true, 'Unable to load venue data; Unable to load shuttle route data'],
+        [true, false, false, 'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded'],
+        [true, false, true, 'Unable to load map tiles; 1 venues available; Unable to load shuttle route data'],
+        [true, true, false, 'Unable to load map tiles; 2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data'],
+        [true, true, true, 'Unable to load map tiles; Unable to load venue data; Unable to load shuttle route data'],
+      ] as const
+
+      for (const [mapFailed, venueFailed, transitFailed, expectedStatus] of scenarios) {
+        const dependencies = createDependencies({
+          loadVenues: vi.fn(async () => {
+            if (venueFailed) throw new Error('venues unavailable')
+            return dependencies.venues
+          }),
+          loadTransit: vi.fn(async () => {
+            if (transitFailed) throw new Error('transit unavailable')
+            return dependencies.transit
+          }),
+        })
+        const session = createNavigationSession(dependencies)
+        if (mapFailed) session.reportMapError(new Error('tiles unavailable'))
+        await session.start(new AbortController().signal)
+        expect(session.getState().status).toBe(expectedStatus)
+      }
     } finally {
       consoleError.mockRestore()
     }
@@ -416,6 +451,27 @@ describe('navigation session', () => {
     session.close()
     expect(session.getState().contextualPanel.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
+  })
+
+  it('escapes through panel history while retaining venue marker context', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.selectVenue(venueResult)
+    session.escape()
+    expect(session.getState().contextualPanel.mode).toBe('venue-search')
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.selectVenue(venueResult)
+    session.openShuttle()
+    session.escape()
+    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
+    expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
+
+    session.close()
+    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
   it('owns endpoint queries, trip commands, and map endpoint synchronization', async () => {

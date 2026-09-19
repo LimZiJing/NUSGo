@@ -117,7 +117,12 @@ export function createNavigationSession(
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
-  ): string => mapError ?? deriveResourceStatus(resourceStatus)
+  ): string => {
+    const resourceStatusMessage = deriveResourceStatus(resourceStatus)
+    return mapError
+      ? `${mapError}; ${resourceStatusMessage}`
+      : resourceStatusMessage
+  }
 
   const publish = (nextState: NavigationSessionState): void => {
     if (disposed) return

@@ -222,7 +222,7 @@ describe('navigation session', () => {
     }
   })
 
-  it('keeps map failure state when resource loading later completes', async () => {
+  it('aggregates map failure before and after resource completion', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     try {
       const dependencies = createDependencies()
@@ -233,12 +233,62 @@ describe('navigation session', () => {
 
       expect(session.getState()).toMatchObject({
         mapError: 'Unable to load map tiles',
-        status: 'Unable to load map tiles',
+        status: 'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded',
         resourceStatus: {
           venue: { status: 'loaded', value: 1 },
           transit: { status: 'loaded', value: { stopCount: 2, routeCount: 1 } },
         },
       })
+
+      const laterMapError = createNavigationSession(createDependencies())
+      await laterMapError.start(new AbortController().signal)
+      laterMapError.reportMapError(new Error('tiles unavailable'))
+      expect(laterMapError.getState().status).toBe(
+        'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it('keeps map, venue, and transit status deterministic for every completion order', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const eventOrders = [
+        ['map', 'venue', 'transit'],
+        ['map', 'transit', 'venue'],
+        ['venue', 'map', 'transit'],
+        ['venue', 'transit', 'map'],
+        ['transit', 'map', 'venue'],
+        ['transit', 'venue', 'map'],
+      ] as const
+
+      for (const eventOrder of eventOrders) {
+        const venue = createDeferred<LoadedVenueData>()
+        const transit = createDeferred<LoadedTransitData>()
+        const dependencies = createDependencies({
+          loadVenues: vi.fn(() => venue.promise),
+          loadTransit: vi.fn(() => transit.promise),
+        })
+        const session = createNavigationSession(dependencies)
+        const start = session.start(new AbortController().signal)
+
+        for (const event of eventOrder) {
+          if (event === 'map') {
+            session.reportMapError(new Error('tiles unavailable'))
+          } else if (event === 'venue') {
+            venue.reject(new Error('venues unavailable'))
+          } else {
+            transit.reject(new Error('transit unavailable'))
+          }
+          await Promise.resolve()
+        }
+
+        await start
+        expect(session.getState().status).toBe(
+          'Unable to load map tiles; Unable to load venue data; Unable to load shuttle route data',
+        )
+      }
     } finally {
       consoleError.mockRestore()
     }

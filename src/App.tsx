@@ -28,7 +28,6 @@ import type { MapViewportInsets } from './app/map-camera'
 import { applyMapOverlayMeasurements } from './app/map-insets-controller'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
 import { createMapSession } from './infrastructure/map/session'
-import './App.css'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)

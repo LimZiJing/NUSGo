@@ -1,0 +1,140 @@
+.contextual-panel {
+  display: grid;
+  gap: 10px;
+  width: auto;
+  max-height: min(66vh, calc(100vh - 36px));
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.contextual-panel-header,
+.contextual-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.contextual-panel-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font: 600 18px/1.2 system-ui, sans-serif;
+}
+
+.contextual-panel-header button,
+.contextual-panel button {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.contextual-panel-content {
+  display: grid;
+  gap: 8px;
+}
+
+.contextual-panel-content p {
+  margin: 0;
+}
+
+.contextual-panel-content > label {
+  font-weight: 600;
+}
+
+.contextual-panel-search-row {
+  display: flex;
+  gap: 6px;
+}
+
+.contextual-panel-search-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #fff;
+  font: inherit;
+}
+
+.contextual-panel-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.contextual-panel-results {
+  display: grid;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.contextual-panel-result {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.contextual-panel-result span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.contextual-panel-status {
+  color: #475569;
+}
+
+.contextual-panel-status-success {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.contextual-panel-status-loading {
+  margin: 0;
+}
+
+.contextual-panel-status-failure {
+  margin: 0;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.contextual-panel-failure-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  background: #b91c1c;
+  font-weight: 700;
+}
+
+.contextual-panel-detail h3 {
+  margin: 0;
+  color: #1f2937;
+  font: 600 20px/1.2 system-ui, sans-serif;
+}
+
+.contextual-panel-detail strong {
+  color: #1f2937;
+}
+
+.contextual-panel button:hover,
+.contextual-panel button:focus-visible {
+  border-color: #64748b;
+  background: #f1f5f9;
+}

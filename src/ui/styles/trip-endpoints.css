@@ -1,0 +1,167 @@
+.trip-controls {
+  display: grid;
+  gap: 10px;
+  max-height: min(66vh, calc(100vh - 36px));
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.trip-controls-heading,
+.trip-endpoint-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trip-controls-title {
+  min-width: 0;
+}
+
+.trip-controls-summary {
+  display: none;
+  max-width: 100%;
+  overflow: hidden;
+  color: #475569;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-controls-toggle {
+  display: none;
+}
+
+.trip-controls-body {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-controls-heading h2 {
+  margin: 0;
+  color: #1f2937;
+  font: 600 18px/1.2 system-ui, sans-serif;
+}
+
+.trip-controls-heading button,
+.trip-endpoint-clear,
+.trip-endpoint-search-clear,
+.trip-clear-both {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.trip-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.trip-endpoint-control {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: rgb(248 250 252 / 70%);
+}
+
+.trip-endpoint-heading label {
+  font-weight: 600;
+}
+
+.trip-endpoint-search-row {
+  display: flex;
+  gap: 6px;
+}
+
+.trip-endpoint-search-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #fff;
+  font: inherit;
+}
+
+.trip-endpoint-selection,
+.trip-endpoint-search-status,
+.trip-validation {
+  margin: 0;
+}
+
+.trip-endpoint-selection {
+  color: #475569;
+}
+
+.trip-endpoint-selection strong,
+.trip-endpoint-id {
+  color: #1f2937;
+}
+
+.trip-endpoint-id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.trip-endpoint-search-status,
+.trip-validation {
+  color: #475569;
+  font-size: 13px;
+}
+
+.trip-endpoint-results {
+  display: grid;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.trip-endpoint-result {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  text-align: left;
+  color: #1f2937;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.trip-endpoint-result:hover,
+.trip-endpoint-result:focus-visible {
+  border-color: #64748b;
+  background: #f8fafc;
+}
+
+.trip-endpoint-result span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.trip-endpoint-empty {
+  margin: 4px 0;
+  color: #475569;
+}
+
+.trip-clear-both {
+  justify-self: start;
+}
+
+.trip-validation {
+  padding-top: 2px;
+}

@@ -1,0 +1,109 @@
+.contextual-panel .route-control {
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contextual-panel .route-control > label {
+  margin-bottom: 6px;
+}
+
+.contextual-panel .route-details {
+  margin-top: 8px;
+}
+
+.contextual-panel .route-details-heading h2 {
+  font-size: 16px;
+}
+
+.contextual-panel .route-selection-status {
+  margin-bottom: 0;
+}
+
+.route-control {
+  position: static;
+  width: auto;
+  max-height: min(66vh, calc(100vh - 36px));
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.route-control > label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.route-control select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #fff;
+  font: inherit;
+}
+
+.route-details {
+  margin-top: 12px;
+}
+
+.route-details-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-details-heading h2 {
+  margin: 0;
+  color: #1f2937;
+  font: 600 18px/1.2 system-ui, sans-serif;
+}
+
+.route-details-heading button {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #1f2937;
+  background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.route-direction {
+  margin: 10px 0;
+}
+
+.route-stop-count {
+  margin: 10px 0 0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.route-stop-heading {
+  margin: 10px 0 4px;
+  font-weight: 600;
+}
+
+.route-stop-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.route-selection-status {
+  margin: 10px 0 0;
+  color: #475569;
+}

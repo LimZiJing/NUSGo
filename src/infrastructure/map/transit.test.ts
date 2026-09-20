@@ -204,6 +204,18 @@ describe('transit route camera', () => {
       bottom: 64,
       left: 24,
     })
+    expect(getTransitRouteFitPadding(768)).toEqual({
+      top: 280,
+      right: 24,
+      bottom: 64,
+      left: 24,
+    })
+    expect(getTransitRouteFitPadding(769)).toEqual({
+      top: 112,
+      right: 231,
+      bottom: 64,
+      left: 231,
+    })
 
     const state = createFakeMap()
     const geometry = createValidGeometry()

@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { ContextualPanel } from './components/ContextualPanel'
 import { TripEndpointControls } from './components/TripEndpointControl'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'
@@ -7,6 +14,12 @@ import {
   createNavigationSessionMount,
 } from './app/navigation-session-mount'
 import { useNavigationSession } from './app/use-navigation-session'
+import {
+  createInitialMobileOverlayState,
+  getIsMobileViewport,
+  mobileOverlayReducer,
+  subscribeToMobileViewport,
+} from './app/mobile-overlay-state'
 import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
 import { createMapSession } from './infrastructure/map/session'
 import './App.css'
@@ -15,6 +28,34 @@ function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const state = useNavigationSession(session)
+  const [mobileOverlay, dispatchMobileOverlay] = useReducer(
+    mobileOverlayReducer,
+    undefined,
+    createInitialMobileOverlayState,
+  )
+  const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
+  const previousContextualStateRef = useRef<typeof state.contextualPanel | null>(null)
+
+  useEffect(() => {
+    const updateViewport = (): void => {
+      const isMobile = getIsMobileViewport()
+      setIsMobileViewport(isMobile)
+      dispatchMobileOverlay({ type: 'viewport-changed', isMobile })
+    }
+    updateViewport()
+    return subscribeToMobileViewport(updateViewport)
+  }, [])
+
+  useEffect(() => {
+    const previous = previousContextualStateRef.current
+    previousContextualStateRef.current = state.contextualPanel
+    if (!previous) return
+    const changed = previous.mode !== state.contextualPanel.mode ||
+      previous.query !== state.contextualPanel.query ||
+      previous.selectedVenue?.code !== state.contextualPanel.selectedVenue?.code ||
+      previous.history.length !== state.contextualPanel.history.length
+    if (changed) dispatchMobileOverlay({ type: 'contextual-state-changed' })
+  }, [state.contextualPanel])
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -39,7 +80,29 @@ function App() {
 
   return (
     <main className="map-shell">
-      <div ref={mapContainer} className="map" />
+      <div className="map-stage">
+        <div ref={mapContainer} className="map" />
+        <aside
+          className="map-legend"
+          aria-label="Map legend"
+          style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
+        >
+          <div><span className="legend-marker venue-marker" /> Venues</div>
+          <div className="bus-stop-legend-item">
+            <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
+            On selected route
+          </div>
+          <div className="bus-stop-legend-item">
+            <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
+            Other shuttle stop
+          </div>
+          <div><span className="legend-marker origin-marker" /> Origin</div>
+          <div><span className="legend-marker destination-marker" /> Destination</div>
+        </aside>
+        <div className="map-status" role="status">
+          {state.status}
+        </div>
+      </div>
       <div className="map-overlay-right">
         <TripEndpointControls
           tripRequest={state.tripRequest}
@@ -51,6 +114,12 @@ function App() {
           onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
           onClearDestinationEndpoint={commands.clearDestinationEndpoint}
           onClearTrip={commands.clearTrip}
+          expanded={isMobileViewport && mobileOverlay.tripExpanded}
+          mobileViewport={isMobileViewport}
+          onExpandedChange={(expanded) => dispatchMobileOverlay({
+            type: 'set-trip-expanded',
+            expanded,
+          })}
         />
         <ContextualPanel
           state={state.contextualPanel}
@@ -58,6 +127,9 @@ function App() {
           network={state.transitIndex?.network ?? null}
           networkIndex={state.transitIndex}
           selectedRouteId={state.selectedRouteId}
+          minimized={isMobileViewport && mobileOverlay.contextualPanelMinimized}
+          mobileViewport={isMobileViewport}
+          onRestore={() => dispatchMobileOverlay({ type: 'restore-contextual-panel' })}
           onQueryChange={commands.setContextualPanelQuery}
           onVenueSelect={commands.selectVenue}
           onOpenVenueSearch={commands.openVenueSearch}
@@ -67,26 +139,6 @@ function App() {
           onEscape={commands.escape}
           onRouteSelect={commands.selectRoute}
         />
-      </div>
-      <aside
-        className="map-legend"
-        aria-label="Map legend"
-        style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
-      >
-        <div><span className="legend-marker venue-marker" /> Venues</div>
-        <div className="bus-stop-legend-item">
-          <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
-          On selected route
-        </div>
-        <div className="bus-stop-legend-item">
-          <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
-          Other shuttle stop
-        </div>
-        <div><span className="legend-marker origin-marker" /> Origin</div>
-        <div><span className="legend-marker destination-marker" /> Destination</div>
-      </aside>
-      <div className="map-status" role="status">
-        {state.status}
       </div>
     </main>
   )

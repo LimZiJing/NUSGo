@@ -126,7 +126,7 @@ export function getTransitRouteBounds(
 }
 
 export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions {
-  if (viewportWidth <= 600) {
+  if (viewportWidth <= 768) {
     return { top: 280, right: 24, bottom: 64, left: 24 }
   }
 

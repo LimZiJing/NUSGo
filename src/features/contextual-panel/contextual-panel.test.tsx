@@ -1,10 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ContextualPanel } from './ContextualPanel'
-import { createInitialContextualPanelState } from '../domain/contextual-panel/state'
-import { createTransitIndex } from '../domain/transit'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { VenueLocationMap } from '../domain/venue/types'
+import { ContextualPanel } from './contextual-panel'
+import { createInitialContextualPanelState } from './state'
+import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -22,9 +20,8 @@ function renderPanel(
     <ContextualPanel
       state={state}
       venues={venueData}
-      network={createValidTransitNetwork()}
-      networkIndex={createTransitIndex(createValidTransitNetwork())}
-      selectedRouteId={null}
+      shuttleRoutesAvailable
+      renderShuttleRoutes={() => <span>Showing all 1 shuttle routes and all 2 shuttle stops.</span>}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
       onOpenVenueSearch={() => undefined}
@@ -32,7 +29,6 @@ function renderPanel(
       onBack={() => undefined}
       onClose={() => undefined}
       onEscape={() => undefined}
-      onRouteSelect={() => undefined}
     />,
   )
 }

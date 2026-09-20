@@ -1,22 +1,22 @@
 // @vitest-environment jsdom
 
-import { useState, type ReactNode } from 'react'
+import { useState, type ReactNode, type RefObject } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ContextualPanel } from './ContextualPanel'
+import { ContextualPanel } from './contextual-panel'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
   type ContextualPanelAction,
   type ContextualPanelState,
-} from '../domain/contextual-panel/state'
-import { createTransitIndex } from '../domain/transit'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { TransitNetwork } from '../domain/transit/types'
-import type { TransitNetworkIndex } from '../domain/transit'
-import type { VenueLocationMap } from '../domain/venue/types'
-import type { ResourceStatusState } from '../app/resource-status'
+} from './state'
+import { createTransitIndex } from '../../domain/transit'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import type { TransitNetwork } from '../../domain/transit/types'
+import type { TransitNetworkIndex } from '../../domain/transit'
+import type { VenueLocationMap } from '../../domain/venue/types'
+import type { ResourceStatusState } from '../../app/resource-status'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -24,6 +24,45 @@ const venues: VenueLocationMap = {
     floor: 2,
     location: { x: 103.77, y: 1.3 },
   },
+}
+
+function renderShuttleRoutes(
+  selectRef: RefObject<HTMLSelectElement | null>,
+  network: TransitNetwork | null,
+  networkIndex: TransitNetworkIndex | null,
+  selectedRouteId: string | null,
+  onRouteSelect: (routeId: string | null) => void,
+): ReactNode {
+  const routes = networkIndex?.routes ?? network?.routes ?? []
+  const selectedRoute = selectedRouteId && networkIndex
+    ? networkIndex.routeById.get(selectedRouteId)
+    : undefined
+  const stopCount = networkIndex?.stops.length ?? network?.stops.length ?? 0
+  const message = !network
+    ? 'Loading shuttle routes…'
+    : selectedRoute
+      ? `Route ${selectedRoute.name} selected.`
+      : `Showing all ${routes.length} shuttle routes and all ${stopCount} shuttle stops.`
+
+  return (
+    <>
+      <label htmlFor="route-select">Shuttle route</label>
+      <select
+        id="route-select"
+        ref={selectRef}
+        aria-label="Shuttle route"
+        value={selectedRouteId ?? ''}
+        disabled={routes.length === 0}
+        onChange={(event) => onRouteSelect(event.target.value || null)}
+      >
+        <option value="">Show all routes</option>
+        {routes.map((route) => (
+          <option key={route.id} value={route.id}>{route.name}</option>
+        ))}
+      </select>
+      <p>{message}</p>
+    </>
+  )
 }
 
 function PanelHarness({
@@ -59,9 +98,14 @@ function PanelHarness({
     <ContextualPanel
       state={state}
       venues={venues}
-      network={network}
-      networkIndex={networkIndex}
-      selectedRouteId={selectedRouteId}
+      shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
+      renderShuttleRoutes={(selectRef) => renderShuttleRoutes(
+        selectRef,
+        network,
+        networkIndex,
+        selectedRouteId,
+        setSelectedRouteId,
+      )}
       mobileViewport={mobileViewport}
       minimized={minimized}
       resourceStatus={resourceStatus}
@@ -74,7 +118,6 @@ function PanelHarness({
       onBack={() => dispatch({ type: 'back' })}
       onClose={() => dispatch({ type: 'close' })}
       onEscape={() => dispatch({ type: 'escape' })}
-      onRouteSelect={setSelectedRouteId}
     />
   )
 }
@@ -112,9 +155,14 @@ function MinimizedPanelHarness() {
     <ContextualPanel
       state={state}
       venues={venues}
-      network={network}
-      networkIndex={networkIndex}
-      selectedRouteId={null}
+      shuttleRoutesAvailable={networkIndex.routes.length > 0}
+      renderShuttleRoutes={(selectRef) => renderShuttleRoutes(
+        selectRef,
+        network,
+        networkIndex,
+        null,
+        () => undefined,
+      )}
       minimized={minimized}
       onRestore={() => setMinimized(false)}
       onQueryChange={(query) => setState((current) => ({ ...current, query }))}
@@ -124,7 +172,6 @@ function MinimizedPanelHarness() {
       onBack={() => undefined}
       onClose={() => undefined}
       onEscape={() => undefined}
-      onRouteSelect={() => undefined}
     />
   )
 }
@@ -227,9 +274,14 @@ describe('ContextualPanel accessibility workflows', () => {
     const panelProps = {
       state,
       venues,
-      network,
-      networkIndex,
-      selectedRouteId: null,
+      shuttleRoutesAvailable: networkIndex.routes.length > 0,
+      renderShuttleRoutes: (selectRef: RefObject<HTMLSelectElement | null>) => renderShuttleRoutes(
+        selectRef,
+        network,
+        networkIndex,
+        null,
+        () => undefined,
+      ),
       onQueryChange: () => undefined,
       onVenueSelect: () => undefined,
       onOpenVenueSearch: () => undefined,
@@ -237,7 +289,6 @@ describe('ContextualPanel accessibility workflows', () => {
       onBack: () => undefined,
       onClose: () => undefined,
       onEscape: () => undefined,
-      onRouteSelect: () => undefined,
     }
     const { rerender } = render(
       <>

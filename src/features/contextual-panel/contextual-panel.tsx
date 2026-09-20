@@ -6,15 +6,14 @@ import {
   type FocusEvent,
   type MouseEvent,
   type Ref,
+  type RefObject,
+  type ReactNode,
 } from 'react'
-import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
-import type { TransitNetwork } from '../domain/transit/types'
-import type { TransitNetworkIndex } from '../domain/transit'
-import type { VenueLocationMap } from '../domain/venue/types'
-import type { ContextualPanelState } from '../domain/contextual-panel/state'
-import type { ResourceStatusState } from '../app/resource-status'
-import type { NavigationSessionStartupFailure } from '../app/navigation-session'
-import { TransitRouteControl } from './TransitRouteControl'
+import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
+import type { VenueLocationMap } from '../../domain/venue/types'
+import type { ContextualPanelState } from './state'
+import type { ResourceStatusState } from '../../app/resource-status'
+import type { NavigationSessionStartupFailure } from '../../app/navigation-session'
 
 interface FocusTarget {
   readonly element: HTMLElement
@@ -27,9 +26,8 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
 interface ContextualPanelProps {
   state: ContextualPanelState
   venues: VenueLocationMap | null
-  network: TransitNetwork | null
-  networkIndex: TransitNetworkIndex | null
-  selectedRouteId: string | null
+  shuttleRoutesAvailable: boolean
+  renderShuttleRoutes: (selectRef: RefObject<HTMLSelectElement | null>) => ReactNode
   minimized?: boolean
   mobileViewport?: boolean
   onRestore?: () => void
@@ -44,7 +42,6 @@ interface ContextualPanelProps {
   onBack: () => void
   onClose: () => void
   onEscape: () => void
-  onRouteSelect: (routeId: string | null) => void
 }
 
 function getPanelHeading(state: ContextualPanelState): string {
@@ -112,9 +109,8 @@ function getPanelStatus(
 export function ContextualPanel({
   state,
   venues,
-  network,
-  networkIndex,
-  selectedRouteId,
+  shuttleRoutesAvailable,
+  renderShuttleRoutes,
   minimized = false,
   mobileViewport = true,
   onRestore,
@@ -129,7 +125,6 @@ export function ContextualPanel({
   onBack,
   onClose,
   onEscape,
-  onRouteSelect,
 }: ContextualPanelProps) {
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -172,7 +167,7 @@ export function ContextualPanel({
     }
   }
 
-  const routesAvailable = (networkIndex?.routes ?? network?.routes ?? []).length > 0
+  const routesAvailable = shuttleRoutesAvailable
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -469,13 +464,7 @@ export function ContextualPanel({
           >
             Back
           </button>
-          <TransitRouteControl
-            network={network}
-            networkIndex={networkIndex}
-            selectedRouteId={selectedRouteId}
-            onRouteSelect={onRouteSelect}
-            selectRef={routeSelectRef}
-          />
+          {renderShuttleRoutes(routeSelectRef)}
         </div>
       )}
       {panelStatus && (

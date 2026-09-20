@@ -1,4 +1,4 @@
-import type { ContextualPanelSnapshot, ContextualPanelState } from '../domain/contextual-panel/state'
+import type { ContextualPanelSnapshot, ContextualPanelState } from '../features/contextual-panel/state'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'

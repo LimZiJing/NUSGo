@@ -7,10 +7,11 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
-import { ContextualPanel } from './components/ContextualPanel'
+import { ContextualPanel } from './features/contextual-panel/contextual-panel'
 import { MapControls } from './components/MapControls'
 import { isFocusInsideMapControls } from './components/map-controls-focus'
 import { TripEndpointControls } from './components/TripEndpointControl'
+import { TransitRouteControl } from './components/TransitRouteControl'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'
 import {
   createNavigationSessionCommandAdapter,
@@ -219,9 +220,16 @@ function App() {
         <ContextualPanel
           state={state.contextualPanel}
           venues={state.venues}
-          network={state.transitIndex?.network ?? null}
-          networkIndex={state.transitIndex}
-          selectedRouteId={state.selectedRouteId}
+          shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
+          renderShuttleRoutes={(selectRef) => (
+            <TransitRouteControl
+              network={state.transitIndex?.network ?? null}
+              networkIndex={state.transitIndex}
+              selectedRouteId={state.selectedRouteId}
+              onRouteSelect={commands.selectRoute}
+              selectRef={selectRef}
+            />
+          )}
           minimized={isMobileViewport && mobileOverlay.contextualPanelMinimized}
           mobileViewport={isMobileViewport}
           onRestore={() => dispatchMobileOverlay({ type: 'restore-contextual-panel' })}
@@ -236,7 +244,6 @@ function App() {
           onBack={commands.back}
           onClose={commands.close}
           onEscape={commands.escape}
-          onRouteSelect={commands.selectRoute}
         />
       </div>
     </main>

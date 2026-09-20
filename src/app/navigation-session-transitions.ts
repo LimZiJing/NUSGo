@@ -1,4 +1,4 @@
-import { contextualPanelReducer, type ContextualPanelAction, type ContextualPanelState } from '../domain/contextual-panel/state'
+import { contextualPanelReducer, type ContextualPanelAction, type ContextualPanelState } from '../features/contextual-panel/state'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 import {

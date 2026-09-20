@@ -1,4 +1,4 @@
-import type { ContextualPanelMode } from '../domain/contextual-panel/state'
+import type { ContextualPanelMode } from '../features/contextual-panel/state'
 import type { TransitIndex } from '../domain/transit'
 import type { TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'

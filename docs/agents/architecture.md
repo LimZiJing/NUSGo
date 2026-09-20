@@ -58,7 +58,7 @@ Split `src/transit/render.ts` at its pure/effect boundary: pure transit validati
 | Feature-specific components and React state currently under `src/components` | `src/features` |
 | Genuinely reusable primitives and layouts currently under `src/components` | `src/ui` |
 | Only the remaining MapLibre rendering and effect responsibilities in `src/transit/render.ts`, plus `src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `src/infrastructure` |
-| `src/App.tsx` and composition in `src/main.tsx` | `src/app` |
+| `src/app/app.tsx` and composition in `src/main.tsx` | `src/app` |
 
 Apply the architecture work in this exact order: **#38 → #39 → #34 → #35 → #30 → #40 → #36 → #37**. Complete **#30 before starting #40 or #36**. Move imports atomically with each step and keep one canonical source of truth.
 

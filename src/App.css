@@ -1,28 +1,24 @@
 .map-shell {
   position: relative;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  min-height: 100svh;
+}
+
+.map-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+
+.map-stage > .map {
+  position: absolute;
+  inset: 0;
 }
 
 .map {
   width: 100%;
   height: 100%;
-}
-
-.map-status {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #1f2937;
-  background: rgb(255 255 255 / 90%);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
-  font: 14px/1.2 system-ui, sans-serif;
-}
-
-.map-status::first-line {
-  font-weight: 600;
 }
 
 .map-legend {
@@ -163,6 +159,38 @@
 
 .contextual-panel-status {
   color: #475569;
+}
+
+.contextual-panel-status-success {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.contextual-panel-status-loading {
+  margin: 0;
+}
+
+.contextual-panel-status-failure {
+  margin: 0;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.contextual-panel-failure-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  background: #b91c1c;
+  font-weight: 700;
+}
+
+.map-controls {
+  display: none;
 }
 
 .contextual-panel-detail h3 {
@@ -381,6 +409,29 @@
   gap: 8px;
 }
 
+.trip-controls-title {
+  min-width: 0;
+}
+
+.trip-controls-summary {
+  display: none;
+  max-width: 100%;
+  overflow: hidden;
+  color: #475569;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-controls-toggle {
+  display: none;
+}
+
+.trip-controls-body {
+  display: grid;
+  gap: 10px;
+}
+
 .trip-controls-heading h2 {
   margin: 0;
   color: #1f2937;
@@ -564,43 +615,192 @@ h3:focus {
 }
 
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .map-shell {
+    height: 100dvh;
+    min-height: 100svh;
+  }
+
   .map-overlay-right {
-    top: max(12px, env(safe-area-inset-top));
-    right: max(12px, env(safe-area-inset-right));
-    bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(360px, calc(100vw - 24px));
-    height: auto;
-    max-height: none;
-    overflow: visible;
-    align-items: stretch;
-    align-content: space-between;
-    gap: 12px;
+    display: contents;
     pointer-events: none;
   }
 
   .map-overlay-right > * {
-    width: 100%;
     pointer-events: auto;
   }
 
-  .trip-controls {
-    align-self: flex-start;
-    max-height: min(30vh, calc(100vh - 36px));
+  .map-legend {
+    display: none;
   }
 
-  .contextual-panel {
-    align-self: flex-end;
-    max-height: min(50vh, calc(100vh - 36px));
+  .map-controls {
+    position: absolute;
+    z-index: 13;
+    top: var(--map-controls-top, 76px);
+    left: max(12px, env(safe-area-inset-left));
+    display: grid;
+    gap: 6px;
+    pointer-events: auto;
+  }
+
+  .map-controls-chip,
+  .map-controls-popover button {
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #1f2937;
+    background: rgb(255 255 255 / 95%);
+    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+    font: 14px/1.2 system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  .map-controls-popover {
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 95%);
+    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  }
+
+  .map-controls-popover button {
+    min-width: 108px;
+    text-align: left;
+  }
+
+  .trip-controls {
+    position: absolute;
+    z-index: 11;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    width: auto;
     max-height: min(50dvh, calc(100dvh - 36px));
+    overflow: hidden;
+    padding: 10px;
+  }
+
+  .trip-controls-heading {
+    min-height: 44px;
+  }
+
+  .trip-controls-title {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .trip-controls-title h2 {
+    font-size: 16px;
+  }
+
+  .trip-controls-summary {
+    display: block;
+  }
+
+  .trip-controls-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  .trip-controls-swap {
+    display: none;
+  }
+
+  .trip-controls-body {
+    min-height: 0;
+    max-height: calc(50dvh - 72px);
+    overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    border-radius: 10px;
   }
 
-  .trip-controls,
+  .trip-controls:focus-within,
+  .contextual-panel:focus-within {
+    z-index: 12;
+  }
+
+  .trip-controls-collapsed .trip-controls-body {
+    display: none;
+  }
+
   .contextual-panel {
+    position: absolute;
+    z-index: 10;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    min-height: 0;
+    max-height: min(50dvh, calc(100dvh - 24px));
+    align-content: start;
+    grid-auto-rows: max-content;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     overflow-y: auto;
+    padding: 12px max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    border-radius: 12px 12px 0 0;
+  }
+
+  .contextual-panel-minimized {
+    max-height: none;
+  }
+
+  .contextual-panel-minimized .contextual-panel-content {
+    display: none;
+  }
+
+  .contextual-panel-header button,
+  .contextual-panel button,
+  .contextual-panel input,
+  .contextual-panel select,
+  .trip-controls button,
+  .trip-controls input,
+  .trip-controls select {
+    min-height: 44px;
+  }
+
+  .contextual-panel-content,
+  .contextual-panel-results,
+  .route-control {
+    min-height: 0;
+  }
+
+  .contextual-panel-results {
+    max-height: 30dvh;
+    overflow-y: auto;
+  }
+
+  .map .maplibregl-ctrl-top-right,
+  .map .maplibregl-ctrl-bottom-right,
+  .map .maplibregl-ctrl-bottom-left {
+    z-index: 9;
+  }
+
+  .map .maplibregl-ctrl-top-right {
+    display: none;
+  }
+
+  .map .maplibregl-ctrl-bottom-right,
+  .map .maplibregl-ctrl-bottom-left {
+    bottom: max(12px, var(--map-overlay-bottom-inset, 0px));
+  }
+
+  .map .maplibregl-ctrl-bottom-right {
+    right: max(12px, env(safe-area-inset-right));
+  }
+
+  .map .maplibregl-ctrl-bottom-left {
+    left: max(12px, env(safe-area-inset-left));
   }
 
   .route-control {

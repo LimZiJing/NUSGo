@@ -69,12 +69,13 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
 
   const handleMapClick = (event: MapMouseEvent) => {
     if (disposed) return
+    options.onMapInteraction?.()
 
     // Only an empty map click dismisses venue detail. Marker, popup, control,
     // and route-line clicks belong to their own interactions.
     const eventTarget = event.originalEvent.target
     if (eventTarget instanceof Element && eventTarget.closest(
-      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control',
+      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .map-controls',
     )) return
 
     const routeLayerIds = [

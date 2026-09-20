@@ -16,6 +16,7 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { TransitNetwork } from '../domain/transit/types'
 import type { TransitNetworkIndex } from '../domain/transit'
 import type { VenueLocationMap } from '../domain/venue/types'
+import type { ResourceStatusState } from '../app/resource-status'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -29,10 +30,20 @@ function PanelHarness({
   initialState = createInitialContextualPanelState(),
   network: networkOverride,
   networkIndex: networkIndexOverride,
+  mobileViewport = true,
+  minimized = false,
+  resourceStatus,
+  mapError = null,
+  startupFailure = null,
 }: {
   initialState?: ContextualPanelState
   network?: TransitNetwork | null
   networkIndex?: TransitNetworkIndex | null
+  mobileViewport?: boolean
+  minimized?: boolean
+  resourceStatus?: ResourceStatusState
+  mapError?: string | null
+  startupFailure?: { message: string } | null
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -51,6 +62,11 @@ function PanelHarness({
       network={network}
       networkIndex={networkIndex}
       selectedRouteId={selectedRouteId}
+      mobileViewport={mobileViewport}
+      minimized={minimized}
+      resourceStatus={resourceStatus}
+      mapError={mapError}
+      startupFailure={startupFailure}
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
@@ -72,9 +88,222 @@ function PanelWithOutsideControl({ children }: { children: ReactNode }) {
   )
 }
 
+function PanelWithOutsideControls({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <button type="button">Map control</button>
+      <input aria-label="Contextual panel search outside" />
+      <button type="button">Other visible control</button>
+      {children}
+    </>
+  )
+}
+
+function MinimizedPanelHarness() {
+  const [state, setState] = useState({
+    ...createInitialContextualPanelState(),
+    query: 'COM1',
+  })
+  const [minimized, setMinimized] = useState(true)
+  const network = createValidTransitNetwork()
+  const networkIndex = createTransitIndex(network)
+
+  return (
+    <ContextualPanel
+      state={state}
+      venues={venues}
+      network={network}
+      networkIndex={networkIndex}
+      selectedRouteId={null}
+      minimized={minimized}
+      onRestore={() => setMinimized(false)}
+      onQueryChange={(query) => setState((current) => ({ ...current, query }))}
+      onVenueSelect={() => undefined}
+      onOpenVenueSearch={() => undefined}
+      onOpenShuttle={() => undefined}
+      onBack={() => undefined}
+      onClose={() => undefined}
+      onEscape={() => undefined}
+      onRouteSelect={() => undefined}
+    />
+  )
+}
+
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('shows successful resource counts in Explore and Shuttle modes but not venue detail', async () => {
+    const resourceStatus: ResourceStatusState = {
+      venue: { status: 'loaded', value: 42 },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    const { rerender } = render(<PanelHarness resourceStatus={resourceStatus} />)
+
+    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+
+    const shuttleState = {
+      ...createInitialContextualPanelState(),
+      mode: 'shuttle' as const,
+    }
+    rerender(<PanelHarness initialState={shuttleState} resourceStatus={resourceStatus} />)
+    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+
+    const detailState = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    cleanup()
+    render(<PanelHarness initialState={detailState} resourceStatus={resourceStatus} />)
+    expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
+  })
+
+  it('shows loading in every mode and announces failures with a minimized indicator', () => {
+    const loading: ResourceStatusState = {
+      venue: { status: 'pending' },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    render(<PanelHarness resourceStatus={loading} />)
+    expect(screen.getByText('Loading map data…')).toBeTruthy()
+
+    const failed: ResourceStatusState = {
+      venue: { status: 'failed', message: 'Unable to load venue data' },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    const detailState = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    cleanup()
+    render(<PanelHarness initialState={detailState} resourceStatus={failed} mapError="Unable to load map tiles" />)
+    expect(screen.getByText(/Unable to load map tiles/)).toBeTruthy()
+
+    cleanup()
+    render(<PanelHarness resourceStatus={failed} mapError="Unable to load map tiles" minimized />)
+    expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
+  })
+
+  it('announces structured startup failure and keeps its minimized indicator', () => {
+    render(<PanelHarness startupFailure={{ message: 'Unable to start map navigation' }} />)
+    expect(screen.getByText('Unable to start map navigation')).toBeTruthy()
+
+    cleanup()
+    render(
+      <PanelHarness
+        startupFailure={{ message: 'Unable to start map navigation' }}
+        minimized
+      />,
+    )
+    expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
+  })
+
+  it('minimizes to an actionable header and restores the current search with safe focus', async () => {
+    const user = userEvent.setup()
+    render(<MinimizedPanelHarness />)
+
+    const panel = screen.getByRole('region', { name: 'Explore NUS' })
+    expect(panel.getAttribute('data-minimized')).toBe('true')
+    expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Show contextual panel' }))
+
+    const search = await screen.findByRole('searchbox', { name: 'Find a venue' })
+    await waitFor(() => expect(document.activeElement).toBe(search))
+    expect((search as HTMLInputElement).value).toBe('COM1')
+    expect(panel.getAttribute('data-minimized')).toBe('false')
+  })
+
+  it('preserves an endpoint input when a minimized mobile sheet becomes desktop content', async () => {
+    const network = createValidTransitNetwork()
+    const networkIndex = createTransitIndex(network)
+    const state = createInitialContextualPanelState()
+    const panelProps = {
+      state,
+      venues,
+      network,
+      networkIndex,
+      selectedRouteId: null,
+      onQueryChange: () => undefined,
+      onVenueSelect: () => undefined,
+      onOpenVenueSearch: () => undefined,
+      onOpenShuttle: () => undefined,
+      onBack: () => undefined,
+      onClose: () => undefined,
+      onEscape: () => undefined,
+      onRouteSelect: () => undefined,
+    }
+    const { rerender } = render(
+      <>
+        <input aria-label="Trip endpoint input" />
+        <ContextualPanel {...panelProps} minimized mobileViewport />
+      </>,
+    )
+    const endpointInput = screen.getByRole('textbox', { name: 'Trip endpoint input' })
+    endpointInput.focus()
+
+    rerender(
+      <>
+        <input aria-label="Trip endpoint input" />
+        <ContextualPanel {...panelProps} minimized={false} mobileViewport={false} />
+      </>,
+    )
+
+    await waitFor(() => expect(document.activeElement).toBe(endpointInput))
+    expect(screen.queryByRole('button', { name: 'Show contextual panel' })).toBeNull()
+  })
+
+  it('preserves visible contextual, map, and other control focus when entering mobile', async () => {
+    const { rerender } = render(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport={false} />
+      </PanelWithOutsideControls>,
+    )
+    const mapControl = screen.getByRole('button', { name: 'Map control' })
+    const contextualSearch = screen.getByRole('searchbox', { name: 'Find a venue' })
+    const otherControl = screen.getByRole('button', { name: 'Other visible control' })
+
+    mapControl.focus()
+    rerender(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport />
+      </PanelWithOutsideControls>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(mapControl))
+
+    contextualSearch.focus()
+    rerender(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport={false} />
+      </PanelWithOutsideControls>,
+    )
+    rerender(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport />
+      </PanelWithOutsideControls>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(contextualSearch))
+
+    otherControl.focus()
+    rerender(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport={false} />
+      </PanelWithOutsideControls>,
+    )
+    rerender(
+      <PanelWithOutsideControls>
+        <PanelHarness mobileViewport />
+      </PanelWithOutsideControls>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(otherControl))
+  })
+
   it('uses labelled native structure and focuses venue search on entry', async () => {
     render(<PanelHarness />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })

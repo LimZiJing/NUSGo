@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { useState } from 'react'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import { TripEndpointControls } from './TripEndpointControl'
@@ -46,6 +46,228 @@ function TripEndpointHarness() {
 afterEach(cleanup)
 
 describe('TripEndpointControls interactions', () => {
+  it('provides a labelled collapsed plan summary for empty endpoints and a stable toggle', async () => {
+    const user = userEvent.setup()
+    function CollapsedHarness() {
+      const [expanded, setExpanded] = useState(false)
+      return (
+        <TripEndpointControls
+          tripRequest={{ origin: null, destination: null }}
+          venues={venues}
+          networkIndex={createTransitIndex(createValidTransitNetwork())}
+          expanded={expanded}
+          onExpandedChange={setExpanded}
+          onSwap={() => undefined}
+          onSelectOriginEndpoint={() => undefined}
+          onClearOriginEndpoint={() => undefined}
+          onSelectDestinationEndpoint={() => undefined}
+          onClearDestinationEndpoint={() => undefined}
+          onClearTrip={() => undefined}
+        />
+      )
+    }
+
+    render(<CollapsedHarness />)
+
+    const toggle = screen.getByRole('button', { name: /Plan trip/ })
+    expect(toggle.getAttribute('aria-controls')).toBe('trip-controls-panel-content')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText('Choose origin → Choose destination')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Trip endpoints' })
+      .querySelector('.trip-controls-body')?.getAttribute('data-expanded')).toBe('false')
+
+    await user.click(toggle)
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(document.activeElement).toBe(toggle)
+    await user.tab()
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Origin' }))
+
+    await user.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(toggle)
+  })
+
+  it('keeps full endpoint names available while visually truncating a complete summary', () => {
+    const longVenue = {
+      ...venues,
+      'COM1-0210': {
+        roomName: 'A very long venue name used to verify accessible endpoint summaries',
+        location: { x: 103.77, y: 1.3 },
+      },
+    }
+    const networkIndex = createTransitIndex(createValidTransitNetwork())
+    render(
+      <TripEndpointControls
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+        venues={longVenue}
+        networkIndex={networkIndex}
+        expanded={false}
+        onExpandedChange={() => undefined}
+        onSwap={() => undefined}
+        onSelectOriginEndpoint={() => undefined}
+        onClearOriginEndpoint={() => undefined}
+        onSelectDestinationEndpoint={() => undefined}
+        onClearDestinationEndpoint={() => undefined}
+        onClearTrip={() => undefined}
+      />,
+    )
+
+    const toggle = screen.getByRole('button', { name: /Plan trip/ })
+    expect(toggle.getAttribute('aria-label')).toContain(
+      'A very long venue name used to verify accessible endpoint summaries',
+    )
+    expect(toggle.getAttribute('aria-label')).toContain('Stop A')
+    expect(screen.getByText(/A very long venue name/, { selector: '.trip-controls-summary' }).className)
+      .toContain('trip-controls-summary')
+  })
+
+  it('preserves contextual and map focus when entering mobile while the trip card is collapsed', async () => {
+    const props = {
+      tripRequest: { origin: null, destination: null },
+      venues,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
+      expanded: false,
+      onExpandedChange: () => undefined,
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+    }
+    const { rerender } = render(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport={false} />
+      </>,
+    )
+
+    const mapControl = screen.getByRole('button', { name: 'Map control' })
+    const contextualSearch = screen.getByRole('textbox', { name: 'Contextual panel search' })
+
+    mapControl.focus()
+    rerender(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport />
+      </>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(mapControl))
+
+    contextualSearch.focus()
+    rerender(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport={false} />
+      </>,
+    )
+    rerender(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport />
+      </>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(contextualSearch))
+
+    const contextualAction = screen.getByRole('button', { name: 'Contextual action' })
+    contextualAction.focus()
+    rerender(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport={false} />
+      </>,
+    )
+    rerender(
+      <>
+        <button type="button">Map control</button>
+        <input aria-label="Contextual panel search" />
+        <button type="button">Contextual action</button>
+        <TripEndpointControls {...props} mobileViewport />
+      </>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(contextualAction))
+  })
+
+  it('moves an endpoint input to the same visible input when leaving mobile for desktop', async () => {
+    const props = {
+      tripRequest: { origin: null, destination: null },
+      venues,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
+      expanded: true,
+      mobileViewport: true,
+      onExpandedChange: () => undefined,
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+    }
+    const { rerender } = render(<TripEndpointControls {...props} />)
+    const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
+    destinationSearch.focus()
+
+    rerender(<TripEndpointControls {...props} expanded={false} mobileViewport={false} />)
+    await waitFor(() => expect(document.activeElement).toBe(destinationSearch))
+  })
+
+  it('labels a partial summary with the selected origin and a destination prompt', () => {
+    render(
+      <TripEndpointControls
+        tripRequest={{ origin: { kind: 'venue', id: 'COM1-0210' }, destination: null }}
+        venues={venues}
+        networkIndex={createTransitIndex(createValidTransitNetwork())}
+        expanded={false}
+        onExpandedChange={() => undefined}
+        onSwap={() => undefined}
+        onSelectOriginEndpoint={() => undefined}
+        onClearOriginEndpoint={() => undefined}
+        onSelectDestinationEndpoint={() => undefined}
+        onClearDestinationEndpoint={() => undefined}
+        onClearTrip={() => undefined}
+      />,
+    )
+
+    expect(screen.getByText('Computing 1, Level 2 → Choose destination')).toBeTruthy()
+  })
+
+  it('labels a complete summary with both selected endpoint names', () => {
+    render(
+      <TripEndpointControls
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+        venues={venues}
+        networkIndex={createTransitIndex(createValidTransitNetwork())}
+        expanded={false}
+        onExpandedChange={() => undefined}
+        onSwap={() => undefined}
+        onSelectOriginEndpoint={() => undefined}
+        onClearOriginEndpoint={() => undefined}
+        onSelectDestinationEndpoint={() => undefined}
+        onClearDestinationEndpoint={() => undefined}
+        onClearTrip={() => undefined}
+      />,
+    )
+
+    expect(screen.getByText('Computing 1, Level 2 → Stop A')).toBeTruthy()
+  })
+
   it('keeps empty endpoint results in a labelled group with native semantics', async () => {
     const user = userEvent.setup()
     render(<TripEndpointHarness />)

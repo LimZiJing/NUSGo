@@ -1,5 +1,6 @@
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession, MapSessionOptions } from './contracts/map'
+import type { MapViewportInsets } from './contracts/map'
 import type {
   NavigationSession,
   NavigationSessionDependencies,
@@ -12,6 +13,7 @@ export interface NavigationSessionMountDependencies {
   ) => NavigationSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
+  readonly onMapInteraction?: () => void
 }
 
 export interface NavigationSessionMount {
@@ -28,6 +30,7 @@ export function createNavigationSessionMount(
     container,
     onMapError: (error) => session?.reportMapError(error),
     onEmptyMapClick: () => session?.handleMapClick(),
+    onMapInteraction: dependencies.onMapInteraction,
   })
   session = dependencies.createNavigationSession({
     map,
@@ -75,6 +78,10 @@ export interface NavigationSessionCommands {
   readonly close: () => void
   readonly escape: () => void
   readonly selectRoute: (routeId: string | null) => void
+  readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly zoomIn: () => void
+  readonly zoomOut: () => void
+  readonly resetView: () => void
 }
 
 function createNavigationSessionCommands(
@@ -95,6 +102,10 @@ function createNavigationSessionCommands(
     close: () => session?.close(),
     escape: () => session?.escape(),
     selectRoute: (routeId) => session?.selectRoute(routeId),
+    setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    zoomIn: () => session?.zoomIn(),
+    zoomOut: () => session?.zoomOut(),
+    resetView: () => session?.resetView(),
   }
 }
 

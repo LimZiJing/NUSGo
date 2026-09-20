@@ -16,6 +16,10 @@ function createMapDouble(): MapSession {
     loadTransitData: vi.fn(),
     setRouteSelection: vi.fn(),
     setTripRequest: vi.fn(),
+    setViewportInsets: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
+    resetView: vi.fn(),
     selectVenue: vi.fn(),
     clearVenue: vi.fn(),
     dispose: vi.fn(),
@@ -28,6 +32,10 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     subscribe: vi.fn(() => () => undefined),
     start: vi.fn(async () => undefined),
     selectRoute: vi.fn(),
+    setViewportInsets: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
+    resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
@@ -107,7 +115,11 @@ describe('navigation session application seam', () => {
     const startupError = new Error('map effect failed')
     let state = createInitialNavigationSessionState()
     const reportStartupFailure = vi.fn(() => {
-      state = { ...state, status: 'Unable to start map navigation' }
+      state = {
+        ...state,
+        startupFailure: { message: 'Unable to start map navigation' },
+        status: 'Unable to start map navigation',
+      }
     })
     const session = createSessionDouble({
       getState: vi.fn(() => state),

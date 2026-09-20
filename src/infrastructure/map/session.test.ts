@@ -58,6 +58,8 @@ vi.mock('maplibre-gl', () => {
     readonly fitBounds = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly flyTo = vi.fn()
+    readonly zoomIn = vi.fn()
+    readonly zoomOut = vi.fn()
     readonly queryRenderedFeatures = vi.fn(() => [])
     readonly remove = vi.fn()
 
@@ -240,6 +242,8 @@ describe('MapSession', () => {
     })
     session.setRouteSelection(selectedRoute)
 
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
     expect(map.fitBounds).toHaveBeenCalledOnce()
     session.loadTransitData(transitData, selectedRoute)
 
@@ -256,6 +260,8 @@ describe('MapSession', () => {
 
     session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
 
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
     expect(map.fitBounds).toHaveBeenCalledTimes(2)
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toBe('#64748b')
     expect(reloadedMarkers.every((marker) => (
@@ -267,7 +273,7 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
-  it('clears a route presentation when the selected route is missing from reloaded data', async () => {
+  it('replaces pending route framing when the selected route is missing from reloaded data', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -292,7 +298,9 @@ describe('MapSession', () => {
     session.loadTransitData(originalData, selectedRoute)
     session.loadTransitData(replacementData, selectedRoute)
 
-    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [104.1, 2.1]],
       expect.objectContaining({ duration: 500 }),
@@ -326,7 +334,9 @@ describe('MapSession', () => {
     session.loadTransitData(firstData, createRouteSelection(firstData))
     session.loadTransitData(replacementData, createRouteSelection(replacementData))
 
-    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [103.1, 1.1]],
       expect.objectContaining({ duration: 500 }),
@@ -336,7 +346,7 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
-  it('replaces and clears venue markers while flying to the selected venue', async () => {
+  it('queues the latest venue fit and cancels pending framing on clear or dispose', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -358,27 +368,98 @@ describe('MapSession', () => {
 
     await session.ready
     session.selectVenue(venueOne)
-    session.selectVenue(venueTwo)
+    expect(map.flyTo).not.toHaveBeenCalled()
+    session.clearVenue()
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+    expect(map.flyTo).not.toHaveBeenCalled()
 
-    expect(map.addedMarkers).toHaveLength(2)
+    session.selectVenue(venueOne)
+    session.selectVenue(venueTwo)
+    expect(map.flyTo).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 88, right: 12, bottom: 196, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
+
+    expect(map.addedMarkers).toHaveLength(3)
     expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
-    expect(map.addedMarkers[1].remove).not.toHaveBeenCalled()
-    expect(map.flyTo).toHaveBeenNthCalledWith(1, {
-      center: [103.7, 1.3],
-      zoom: 17,
-      essential: true,
-    })
-    expect(map.flyTo).toHaveBeenNthCalledWith(2, {
+    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers[2].remove).not.toHaveBeenCalled()
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
       center: [103.8, 1.4],
       zoom: 17,
       essential: true,
+    }))
+    session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
+
+    session.clearVenue()
+    session.clearVenue()
+
+    session.selectVenue(venueOne)
+    expect(map.flyTo).toHaveBeenCalledOnce()
+    session.dispose()
+    session.setViewportInsets({ top: 100, right: 12, bottom: 220, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('uses measured insets for route, endpoint, zoom, and reset camera actions', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
     })
+    const transitData = createTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
+      zoomIn: ReturnType<typeof vi.fn>
+      zoomOut: ReturnType<typeof vi.fn>
+    }
+    const insets = { top: 88, right: 12, bottom: 196, left: 12 }
 
-    session.clearVenue()
-    session.clearVenue()
+    await session.ready
+    session.setViewportInsets(insets)
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    session.setRouteSelection(createRouteSelection(transitData))
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets(insets)
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.1, 1.1]],
+      expect.objectContaining({
+        padding: { top: 88, right: 24, bottom: 196, left: 24 },
+      }),
+    )
 
-    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
-    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    session.resetView({ kind: 'campus', center: [103.7844, 1.2933], zoom: 15 })
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
+      center: [103.7844, 1.2933],
+      zoom: 15,
+    }))
+    session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+
+    session.resetView({ kind: 'trip', coordinates: [[103, 1], [103.1, 1.1]] })
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.1, 1.1]],
+      expect.objectContaining({
+        padding: { top: 96, right: 12, bottom: 208, left: 12 },
+        maxZoom: 17,
+      }),
+    )
+    session.resetView({ kind: 'trip', coordinates: [[103.2, 1.2]] })
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103.2, 1.2],
+      zoom: 17,
+      padding: { top: 96, right: 12, bottom: 208, left: 12 },
+    }))
+    session.zoomIn()
+    session.zoomOut()
+    expect(map.zoomIn).toHaveBeenCalledWith({ duration: 200 })
+    expect(map.zoomOut).toHaveBeenCalledWith({ duration: 200 })
+
     session.dispose()
     vi.unstubAllGlobals()
   })

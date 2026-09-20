@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
 import { validateTripRequest } from '../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
 import type { TransitIndex } from '../domain/transit'
@@ -9,11 +9,16 @@ import type {
   TripRequest,
 } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
+import { getTripPlanSummary } from './trip-summary'
 
 interface TripEndpointControlsProps {
   tripRequest: TripRequest
   venues: VenueLocationMap | null
   networkIndex: TransitIndex | null
+  expanded?: boolean
+  mobileViewport?: boolean
+  containerRef?: Ref<HTMLElement>
+  onExpandedChange?: (expanded: boolean) => void
   onSwap: () => void
   onSelectOriginEndpoint: (endpoint: TripEndpoint) => void
   onClearOriginEndpoint: () => void
@@ -49,10 +54,16 @@ function getResultLabel(result: TripLocationSearchResult): string {
   return result.endpoint.id
 }
 
+const TRIP_CONTROLS_CONTENT_ID = 'trip-controls-panel-content'
+
 export function TripEndpointControls({
   tripRequest,
   venues,
   networkIndex,
+  expanded,
+  mobileViewport = true,
+  containerRef,
+  onExpandedChange,
   onSwap,
   onSelectOriginEndpoint,
   onClearOriginEndpoint,
@@ -60,6 +71,11 @@ export function TripEndpointControls({
   onClearDestinationEndpoint,
   onClearTrip,
 }: TripEndpointControlsProps) {
+  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
+  const isExpanded = expanded ?? uncontrolledExpanded
+  const tripToggleRef = useRef<HTMLButtonElement>(null)
+  const previousExpandedRef = useRef(isExpanded)
+  const previousMobileViewportRef = useRef(mobileViewport)
   const [searchQueries, setSearchQueries] = useState({
     origin: '',
     destination: '',
@@ -85,6 +101,40 @@ export function TripEndpointControls({
     onSwap()
   }
 
+  const setExpanded = (nextExpanded: boolean): void => {
+    if (expanded === undefined) setUncontrolledExpanded(nextExpanded)
+    onExpandedChange?.(nextExpanded)
+  }
+
+  const tripSummary = getTripPlanSummary(tripRequest, venues, networkIndex)
+
+  useEffect(() => {
+    const wasExpanded = previousExpandedRef.current
+    previousExpandedRef.current = isExpanded
+    if (!wasExpanded || isExpanded || !mobileViewport) return
+    const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
+    if (body?.contains(document.activeElement)) tripToggleRef.current?.focus()
+  }, [isExpanded, mobileViewport])
+
+  useEffect(() => {
+    const wasMobileViewport = previousMobileViewportRef.current
+    previousMobileViewportRef.current = mobileViewport
+    if (wasMobileViewport === mobileViewport) return
+
+    const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
+    if (!mobileViewport && document.activeElement === tripToggleRef.current) {
+      const firstFormControl = body?.querySelector<HTMLElement>('input, select, textarea')
+      const firstFocusable = firstFormControl ?? body?.querySelector<HTMLElement>('button')
+      firstFocusable?.focus()
+      return
+    }
+    if (
+      mobileViewport &&
+      !isExpanded &&
+      body?.contains(document.activeElement)
+    ) tripToggleRef.current?.focus()
+  }, [isExpanded, mobileViewport])
+
   useEffect(() => {
     const previous = previousTripRequest.current
     previousTripRequest.current = tripRequest
@@ -104,11 +154,33 @@ export function TripEndpointControls({
   }, [tripRequest])
 
   return (
-    <section className="trip-controls" aria-label="Trip endpoints">
+    <section
+      className={`trip-controls${isExpanded ? ' trip-controls-expanded' : ' trip-controls-collapsed'}`}
+      ref={containerRef}
+      aria-label="Trip endpoints"
+      data-expanded={isExpanded}
+    >
       <div className="trip-controls-heading">
-        <h2>Trip endpoints</h2>
+        <div className="trip-controls-title">
+          <h2>Plan trip</h2>
+          <span className="trip-controls-summary" title={tripSummary.visible}>
+            {tripSummary.visible}
+          </span>
+        </div>
         <button
           type="button"
+          className="trip-controls-toggle"
+          ref={tripToggleRef}
+          aria-controls={TRIP_CONTROLS_CONTENT_ID}
+          aria-expanded={isExpanded}
+          aria-label={tripSummary.accessible}
+          onClick={() => setExpanded(!isExpanded)}
+        >
+          {isExpanded ? 'Hide trip plan' : 'Plan trip'}
+        </button>
+        <button
+          type="button"
+          className="trip-controls-swap"
           onClick={swapTripEndpoints}
           disabled={!tripRequest.origin || !tripRequest.destination}
           aria-label="Swap origin and destination"
@@ -116,37 +188,43 @@ export function TripEndpointControls({
           Swap
         </button>
       </div>
-      <TripEndpointControl
-        role="origin"
-        endpoint={tripRequest.origin}
-        venues={venues}
-        networkIndex={networkIndex}
-        searchQuery={searchQueries.origin}
-        onSearchQueryChange={(query) => setSearchQuery('origin', query)}
-        onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
-        onClear={onClearOriginEndpoint}
-      />
-      <TripEndpointControl
-        role="destination"
-        endpoint={tripRequest.destination}
-        venues={venues}
-        networkIndex={networkIndex}
-        searchQuery={searchQueries.destination}
-        onSearchQueryChange={(query) => setSearchQuery('destination', query)}
-        onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
-        onClear={onClearDestinationEndpoint}
-      />
-      <button
-        type="button"
-        className="trip-clear-both"
-        onClick={clearTrip}
-        disabled={!tripRequest.origin && !tripRequest.destination}
+      <div
+        id={TRIP_CONTROLS_CONTENT_ID}
+        className="trip-controls-body"
+        data-expanded={isExpanded}
       >
-        Clear both endpoints
-      </button>
-      <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
-        {tripValidation ?? 'Origin and destination are set.'}
-      </p>
+        <TripEndpointControl
+          role="origin"
+          endpoint={tripRequest.origin}
+          venues={venues}
+          networkIndex={networkIndex}
+          searchQuery={searchQueries.origin}
+          onSearchQueryChange={(query) => setSearchQuery('origin', query)}
+          onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
+          onClear={onClearOriginEndpoint}
+        />
+        <TripEndpointControl
+          role="destination"
+          endpoint={tripRequest.destination}
+          venues={venues}
+          networkIndex={networkIndex}
+          searchQuery={searchQueries.destination}
+          onSearchQueryChange={(query) => setSearchQuery('destination', query)}
+          onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
+          onClear={onClearDestinationEndpoint}
+        />
+        <button
+          type="button"
+          className="trip-clear-both"
+          onClick={clearTrip}
+          disabled={!tripRequest.origin && !tripRequest.destination}
+        >
+          Clear both endpoints
+        </button>
+        <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
+          {tripValidation ?? 'Origin and destination are set.'}
+        </p>
+      </div>
     </section>
   )
 }

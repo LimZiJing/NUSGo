@@ -32,6 +32,10 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     loadTransitData: vi.fn(),
     setRouteSelection: vi.fn(),
     setTripRequest: vi.fn(),
+    setViewportInsets: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
+    resetView: vi.fn(),
     selectVenue: vi.fn(),
     clearVenue: vi.fn(),
     dispose: vi.fn(),
@@ -132,6 +136,7 @@ describe('navigation session', () => {
         transit: { status: 'pending' },
       },
       mapError: null,
+      startupFailure: null,
       status: 'Loading map data…',
     })
   })
@@ -1205,6 +1210,7 @@ describe('navigation session', () => {
     try {
       expect(() => session.reportStartupFailure()).not.toThrow()
       expect(session.getState().status).toBe('Unable to start map navigation')
+      expect(session.getState().startupFailure).toEqual({ message: 'Unable to start map navigation' })
       expect(map.setTripRequest).toHaveBeenCalledTimes(mapCallCount)
       expect(listener).toHaveBeenCalledOnce()
       expect(consoleError).toHaveBeenCalledWith(

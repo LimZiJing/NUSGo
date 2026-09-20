@@ -3,13 +3,17 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  type FocusEvent,
   type MouseEvent,
+  type Ref,
 } from 'react'
 import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
 import type { TransitNetwork } from '../domain/transit/types'
 import type { TransitNetworkIndex } from '../domain/transit'
 import type { VenueLocationMap } from '../domain/venue/types'
 import type { ContextualPanelState } from '../domain/contextual-panel/state'
+import type { ResourceStatusState } from '../app/resource-status'
+import type { NavigationSessionStartupFailure } from '../app/navigation-session'
 import { TransitRouteControl } from './TransitRouteControl'
 
 interface FocusTarget {
@@ -26,6 +30,13 @@ interface ContextualPanelProps {
   network: TransitNetwork | null
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
+  minimized?: boolean
+  mobileViewport?: boolean
+  onRestore?: () => void
+  containerRef?: Ref<HTMLElement>
+  resourceStatus?: ResourceStatusState
+  mapError?: string | null
+  startupFailure?: NavigationSessionStartupFailure | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
   onOpenVenueSearch: () => void
@@ -56,12 +67,61 @@ function getPanelAnnouncement(state: ContextualPanelState): string | null {
   return 'Map context closed.'
 }
 
+interface PanelStatus {
+  readonly kind: 'loading' | 'success' | 'failure'
+  readonly message: string
+}
+
+function getPanelStatus(
+  mode: ContextualPanelState['mode'],
+  resourceStatus: ResourceStatusState | undefined,
+  mapError: string | null | undefined,
+  startupFailure: NavigationSessionStartupFailure | null | undefined,
+): PanelStatus | null {
+  if (!resourceStatus && !mapError && !startupFailure) return null
+
+  const failures = [
+    startupFailure?.message ?? null,
+    mapError,
+    resourceStatus?.venue.status === 'failed' ? resourceStatus.venue.message : null,
+    resourceStatus?.transit.status === 'failed' ? resourceStatus.transit.message : null,
+  ].filter((message): message is string => Boolean(message))
+  if (failures.length > 0) {
+    return { kind: 'failure', message: failures.join('; ') }
+  }
+
+  if (
+    resourceStatus?.venue.status === 'pending' ||
+    resourceStatus?.transit.status === 'pending'
+  ) return { kind: 'loading', message: 'Loading map data…' }
+
+  if (
+    mode !== 'venue-detail' &&
+    resourceStatus?.venue.status === 'loaded' &&
+    resourceStatus.transit.status === 'loaded'
+  ) {
+    return {
+      kind: 'success',
+      message: `${resourceStatus.venue.value} venues · ${resourceStatus.transit.value.stopCount} shuttle stops · ${resourceStatus.transit.value.routeCount} shuttle routes loaded`,
+    }
+  }
+
+  return null
+}
+
 export function ContextualPanel({
   state,
   venues,
   network,
   networkIndex,
   selectedRouteId,
+  minimized = false,
+  mobileViewport = true,
+  onRestore,
+  containerRef,
+  resourceStatus,
+  mapError,
+  startupFailure,
   onQueryChange,
   onVenueSelect,
   onOpenVenueSearch,
@@ -79,6 +139,9 @@ export function ContextualPanel({
   const focusHistoryRef = useRef<FocusTarget[]>([])
   const pendingFocusRef = useRef<FocusTarget | null>(null)
   const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
+  const previousMinimizedRef = useRef(minimized)
+  const previousMobileViewportRef = useRef(mobileViewport)
+  const panelFocusRef = useRef(false)
   const shuttleRouteFocusPendingRef = useRef(false)
   const shuttleFocusMovedRef = useRef(false)
   const programmaticFocusRef = useRef(false)
@@ -91,6 +154,7 @@ export function ContextualPanel({
   }
 
   const handlePanelFocusCapture = (): void => {
+    panelFocusRef.current = true
     if (
       state.mode === 'shuttle' &&
       shuttleRouteFocusPendingRef.current &&
@@ -98,6 +162,13 @@ export function ContextualPanel({
     ) {
       shuttleRouteFocusPendingRef.current = false
       shuttleFocusMovedRef.current = true
+    }
+  }
+
+  const handlePanelBlurCapture = (event: FocusEvent<HTMLElement>): void => {
+    const relatedTarget = event.relatedTarget
+    if (relatedTarget && !event.currentTarget.contains(relatedTarget)) {
+      panelFocusRef.current = false
     }
   }
 
@@ -116,6 +187,17 @@ export function ContextualPanel({
   }, [onEscape])
 
   useIsomorphicLayoutEffect(() => {
+    const wasMinimized = previousMinimizedRef.current
+    previousMinimizedRef.current = minimized
+    const wasMobileViewport = previousMobileViewportRef.current
+    previousMobileViewportRef.current = mobileViewport
+    if (minimized) return
+
+    if (wasMobileViewport !== mobileViewport && !wasMinimized) {
+      previousModeRef.current = state.mode
+      return
+    }
+
     const pendingFocus = pendingFocusRef.current
     pendingFocusRef.current = null
     const focusTarget = pendingFocus?.element.isConnected
@@ -129,6 +211,26 @@ export function ContextualPanel({
     const target = focusTarget ?? fallbackTarget
     if (target) {
       focusElement(target)
+      previousModeRef.current = state.mode
+      return
+    }
+
+    if (wasMinimized) {
+      if (!mobileViewport && !panelFocusRef.current) {
+        previousModeRef.current = state.mode
+        return
+      }
+      if (state.mode === 'venue-search') {
+        focusElement(searchInputRef.current)
+      } else if (state.mode === 'venue-detail') {
+        focusElement(detailHeadingRef.current)
+      } else if (state.mode === 'shuttle') {
+        focusElement(routeSelectRef.current && !routeSelectRef.current.disabled
+          ? routeSelectRef.current
+          : shuttleBackRef.current)
+      } else {
+        focusElement(panelHeadingRef.current)
+      }
       previousModeRef.current = state.mode
       return
     }
@@ -173,7 +275,7 @@ export function ContextualPanel({
     focusHistoryRef.current = []
     focusElement(panelHeadingRef.current)
     previousModeRef.current = state.mode
-  }, [routesAvailable, state.mode, state.selectedVenue?.code])
+  }, [minimized, mobileViewport, routesAvailable, state.mode, state.selectedVenue?.code])
 
   const rememberCurrentControl = (
     event: MouseEvent<HTMLElement>,
@@ -228,22 +330,30 @@ export function ContextualPanel({
     }
   }, [state.query, venues])
   const panelAnnouncement = getPanelAnnouncement(state)
+  const panelStatus = getPanelStatus(state.mode, resourceStatus, mapError, startupFailure)
 
   return (
     <section
-      className={`contextual-panel contextual-panel-${state.mode}`}
+      className={`contextual-panel contextual-panel-${state.mode}${minimized ? ' contextual-panel-minimized' : ''}`}
+      ref={containerRef}
       aria-labelledby="contextual-panel-heading"
+      data-minimized={minimized}
       onFocusCapture={handlePanelFocusCapture}
+      onBlurCapture={handlePanelBlurCapture}
     >
       <div className="contextual-panel-header">
         <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
           {getPanelHeading(state)}
         </h2>
-        {state.mode !== 'neutral' && (
+        {minimized ? (
+          <button type="button" onClick={onRestore} aria-label="Show contextual panel">
+            Show panel
+          </button>
+        ) : state.mode !== 'neutral' ? (
           <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>
-        )}
+        ) : null}
       </div>
 
       {state.mode === 'neutral' && (
@@ -367,6 +477,25 @@ export function ContextualPanel({
             selectRef={routeSelectRef}
           />
         </div>
+      )}
+      {panelStatus && (
+        <p
+          className={`contextual-panel-status contextual-panel-status-${panelStatus.kind}`}
+          role="status"
+          aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {panelStatus.message}
+        </p>
+      )}
+      {minimized && panelStatus?.kind === 'failure' && (
+        <span
+          className="contextual-panel-failure-indicator"
+          role="img"
+          aria-label={`Map data unavailable: ${panelStatus.message}`}
+        >
+          !
+        </span>
       )}
       {panelAnnouncement && (
         <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">

@@ -22,7 +22,8 @@ import {
 import { reconcileRouteSelection } from './route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
-import type { MapSession } from './contracts/map'
+import type { MapSession, MapViewportInsets } from './contracts/map'
+import { getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
 import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
 import { freezeNavigationSessionSnapshot } from './navigation-session-snapshot'
@@ -34,6 +35,10 @@ import {
 const STARTUP_FAILURE_STATUS = 'Unable to start map navigation'
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 
+export interface NavigationSessionStartupFailure {
+  readonly message: string
+}
+
 export interface NavigationSessionState {
   readonly venues: VenueLocationMap | null
   readonly transitIndex: TransitIndex | null
@@ -43,6 +48,7 @@ export interface NavigationSessionState {
   readonly tripRequest: TripRequest
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
+  readonly startupFailure: NavigationSessionStartupFailure | null
   readonly status: string
 }
 
@@ -72,6 +78,10 @@ export interface NavigationSession {
   escape(): void
   close(): void
   handleMapClick(): void
+  setViewportInsets(insets: MapViewportInsets): void
+  zoomIn(): void
+  zoomOut(): void
+  resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
 }
@@ -86,6 +96,7 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
     tripRequest: createEmptyTripRequest(),
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
+    startupFailure: null,
     status: 'Loading map data…',
   })
 }
@@ -110,6 +121,7 @@ export function createNavigationSession(
   const enqueueTransition = transitionQueue.enqueue
 
   let startupFailureReported = false
+  let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
@@ -139,6 +151,7 @@ export function createNavigationSession(
     if (disposed) return
     state = freezeNavigationSessionSnapshot({
       ...state,
+      startupFailure: { message: STARTUP_FAILURE_STATUS },
       status: STARTUP_FAILURE_STATUS,
     })
     const listenerSnapshot = [...listeners]
@@ -340,6 +353,36 @@ export function createNavigationSession(
     },
 
     ...panelTransitions,
+
+    setViewportInsets(insets: MapViewportInsets) {
+      if (disposed) return
+      viewportInsets = { ...insets }
+      dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    zoomIn() {
+      if (disposed) return
+      dependencies.map.zoomIn()
+    },
+
+    zoomOut() {
+      if (disposed) return
+      dependencies.map.zoomOut()
+    },
+
+    resetView() {
+      enqueueTransition(() => {
+        if (disposed) return
+        dependencies.map.resetView(getResetTarget({
+          panelMode: state.contextualPanel.mode,
+          selectedVenue: state.contextualPanel.selectedVenue,
+          selectedRouteId: state.selectedRouteId,
+          tripRequest: state.tripRequest,
+          venues: state.venues,
+          transitIndex,
+        }))
+      })
+    },
 
     reportMapError(error) {
       enqueueTransition(() => {

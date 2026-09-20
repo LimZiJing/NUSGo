@@ -10,7 +10,23 @@ export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
   readonly onEmptyMapClick: () => void
+  readonly onMapInteraction?: () => void
 }
+
+export type MapCoordinate = readonly [number, number]
+
+export interface MapViewportInsets {
+  readonly top: number
+  readonly right: number
+  readonly bottom: number
+  readonly left: number
+}
+
+export type MapResetTarget =
+  | { readonly kind: 'venue'; readonly center: MapCoordinate; readonly zoom: number }
+  | { readonly kind: 'route'; readonly routeId: string }
+  | { readonly kind: 'trip'; readonly coordinates: readonly MapCoordinate[] }
+  | { readonly kind: 'campus'; readonly center: MapCoordinate; readonly zoom: number }
 
 export interface MapRouteSelection {
   readonly route: TransitRoute | null
@@ -34,6 +50,15 @@ export interface MapSession {
     venues: VenueLocationMap,
     transitIndex: TransitIndex | null,
   ): void
+  /**
+   * Post-render synchronization point for measured map overlays. Implementations
+   * consume at most the latest pending route/venue automatic fit here; later
+   * inset reports update padding without refitting the user's camera.
+   */
+  setViewportInsets(insets: MapViewportInsets): void
+  zoomIn(): void
+  zoomOut(): void
+  resetView(target: MapResetTarget): void
   selectVenue(venue: VenueLocation): void
   clearVenue(): void
   dispose(): void

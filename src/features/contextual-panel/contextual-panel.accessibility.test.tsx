@@ -16,7 +16,7 @@ import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitNetwork } from '../../domain/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
-import type { ResourceStatusState } from '../../app/resource-status'
+import type { PanelStatus } from './status'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -71,18 +71,14 @@ function PanelHarness({
   networkIndex: networkIndexOverride,
   mobileViewport = true,
   minimized = false,
-  resourceStatus,
-  mapError = null,
-  startupFailure = null,
+  status,
 }: {
   initialState?: ContextualPanelState
   network?: TransitNetwork | null
   networkIndex?: TransitNetworkIndex | null
   mobileViewport?: boolean
   minimized?: boolean
-  resourceStatus?: ResourceStatusState
-  mapError?: string | null
-  startupFailure?: { message: string } | null
+  status?: PanelStatus | null
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -108,9 +104,7 @@ function PanelHarness({
       )}
       mobileViewport={mobileViewport}
       minimized={minimized}
-      resourceStatus={resourceStatus}
-      mapError={mapError}
-      startupFailure={startupFailure}
+      status={status}
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
@@ -180,11 +174,11 @@ afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
   it('shows successful resource counts in Explore and Shuttle modes but not venue detail', async () => {
-    const resourceStatus: ResourceStatusState = {
-      venue: { status: 'loaded', value: 42 },
-      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    const status: PanelStatus = {
+      kind: 'success',
+      message: '42 venues · 33 shuttle stops · 8 shuttle routes loaded',
     }
-    const { rerender } = render(<PanelHarness resourceStatus={resourceStatus} />)
+    const { rerender } = render(<PanelHarness status={status} />)
 
     expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
 
@@ -192,7 +186,7 @@ describe('ContextualPanel accessibility workflows', () => {
       ...createInitialContextualPanelState(),
       mode: 'shuttle' as const,
     }
-    rerender(<PanelHarness initialState={shuttleState} resourceStatus={resourceStatus} />)
+    rerender(<PanelHarness initialState={shuttleState} status={status} />)
     expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
 
     const detailState = {
@@ -204,21 +198,21 @@ describe('ContextualPanel accessibility workflows', () => {
       },
     }
     cleanup()
-    render(<PanelHarness initialState={detailState} resourceStatus={resourceStatus} />)
+    render(<PanelHarness initialState={detailState} status={status} />)
     expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
   })
 
   it('shows loading in every mode and announces failures with a minimized indicator', () => {
-    const loading: ResourceStatusState = {
-      venue: { status: 'pending' },
-      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    const loading: PanelStatus = {
+      kind: 'loading',
+      message: 'Loading map data…',
     }
-    render(<PanelHarness resourceStatus={loading} />)
+    render(<PanelHarness status={loading} />)
     expect(screen.getByText('Loading map data…')).toBeTruthy()
 
-    const failed: ResourceStatusState = {
-      venue: { status: 'failed', message: 'Unable to load venue data' },
-      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    const failed: PanelStatus = {
+      kind: 'failure',
+      message: 'Unable to load map tiles; Unable to load venue data',
     }
     const detailState = {
       ...createInitialContextualPanelState(),
@@ -229,22 +223,22 @@ describe('ContextualPanel accessibility workflows', () => {
       },
     }
     cleanup()
-    render(<PanelHarness initialState={detailState} resourceStatus={failed} mapError="Unable to load map tiles" />)
+    render(<PanelHarness initialState={detailState} status={failed} />)
     expect(screen.getByText(/Unable to load map tiles/)).toBeTruthy()
 
     cleanup()
-    render(<PanelHarness resourceStatus={failed} mapError="Unable to load map tiles" minimized />)
+    render(<PanelHarness status={failed} minimized />)
     expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
   })
 
   it('announces structured startup failure and keeps its minimized indicator', () => {
-    render(<PanelHarness startupFailure={{ message: 'Unable to start map navigation' }} />)
+    render(<PanelHarness status={{ kind: 'failure', message: 'Unable to start map navigation' }} />)
     expect(screen.getByText('Unable to start map navigation')).toBeTruthy()
 
     cleanup()
     render(
       <PanelHarness
-        startupFailure={{ message: 'Unable to start map navigation' }}
+        status={{ kind: 'failure', message: 'Unable to start map navigation' }}
         minimized
       />,
     )

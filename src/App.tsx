@@ -18,6 +18,7 @@ import {
   createNavigationSessionMount,
 } from './app/navigation-session-mount'
 import { useNavigationSession } from './app/use-navigation-session'
+import { deriveContextualPanelStatus } from './app/contextual-panel-status'
 import {
   createInitialMobileOverlayState,
   getIsMobileViewport,
@@ -36,6 +37,11 @@ function App() {
   const contextualPanelRef = useRef<HTMLElement>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const state = useNavigationSession(session)
+  const panelStatus = deriveContextualPanelStatus(
+    state.resourceStatus,
+    state.mapError,
+    state.startupFailure,
+  )
   const [mobileOverlay, dispatchMobileOverlay] = useReducer(
     mobileOverlayReducer,
     undefined,
@@ -233,9 +239,7 @@ function App() {
           mobileViewport={isMobileViewport}
           onRestore={() => dispatchMobileOverlay({ type: 'restore-contextual-panel' })}
           containerRef={contextualPanelRef}
-          resourceStatus={state.resourceStatus}
-          mapError={state.mapError}
-          startupFailure={state.startupFailure}
+          status={panelStatus}
           onQueryChange={commands.setContextualPanelQuery}
           onVenueSelect={commands.selectVenue}
           onOpenVenueSearch={commands.openVenueSearch}

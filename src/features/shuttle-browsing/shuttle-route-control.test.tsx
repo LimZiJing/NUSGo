@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { TransitRouteControl } from './shuttle-route-control'
+import { ShuttleRouteControl } from './shuttle-route-control'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
@@ -15,10 +15,10 @@ function createEightRouteNetwork() {
   return network
 }
 
-describe('TransitRouteControl', () => {
+describe('ShuttleRouteControl', () => {
   it('lists all routes and shows the selected route details', () => {
     const markup = renderToStaticMarkup(
-      <TransitRouteControl
+      <ShuttleRouteControl
         network={createEightRouteNetwork()}
         networkIndex={createTransitIndex(createEightRouteNetwork())}
         selectedRouteId="A1"
@@ -38,7 +38,7 @@ describe('TransitRouteControl', () => {
 
   it('announces that all routes are shown when selection is cleared', () => {
     const markup = renderToStaticMarkup(
-      <TransitRouteControl
+      <ShuttleRouteControl
         network={createEightRouteNetwork()}
         networkIndex={createTransitIndex(createEightRouteNetwork())}
         selectedRouteId={null}
@@ -52,7 +52,7 @@ describe('TransitRouteControl', () => {
 
   it('treats an unknown selection as the all-routes state', () => {
     const markup = renderToStaticMarkup(
-      <TransitRouteControl
+      <ShuttleRouteControl
         network={createEightRouteNetwork()}
         networkIndex={createTransitIndex(createEightRouteNetwork())}
         selectedRouteId="UNKNOWN"

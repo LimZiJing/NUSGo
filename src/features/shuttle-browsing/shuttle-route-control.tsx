@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 
-interface TransitRouteControlProps {
+interface ShuttleRouteControlProps {
   network: TransitNetwork | null
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
@@ -28,13 +28,13 @@ function getStopLabel(
   return stop ? stop.longName + ' (' + stop.id + ')' : fallbackId
 }
 
-export function TransitRouteControl({
+export function ShuttleRouteControl({
   network,
   networkIndex,
   selectedRouteId,
   onRouteSelect,
   selectRef,
-}: TransitRouteControlProps) {
+}: ShuttleRouteControlProps) {
   const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
     ? networkIndex.routeById.get(selectedRouteId)

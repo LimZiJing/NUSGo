@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MapControls } from './MapControls'
@@ -25,19 +25,34 @@ describe('MapControls', () => {
     expect(screen.getByRole('button', { name: 'Reset view' })).toBeTruthy()
   })
 
-  it('closes after an action and restores chip focus on Escape', async () => {
+  it('keeps the popover open and focus on each zoom action', async () => {
     const user = userEvent.setup()
     const onZoomIn = vi.fn()
-    render(<MapControls visible topOffset={84} onZoomIn={onZoomIn} onZoomOut={vi.fn()} onReset={vi.fn()} />)
+    const onZoomOut = vi.fn()
+    render(<MapControls visible topOffset={84} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onReset={vi.fn()} />)
 
     const chip = screen.getByRole('button', { name: 'Map controls' })
     await user.click(chip)
     await user.click(screen.getByRole('button', { name: 'Zoom in' }))
     expect(onZoomIn).toHaveBeenCalledOnce()
-    expect(screen.queryByRole('button', { name: 'Zoom out' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Zoom in' })).toBe(document.activeElement)
+    expect(screen.getByRole('button', { name: 'Zoom out' })).toBeTruthy()
 
+    await user.click(screen.getByRole('button', { name: 'Zoom out' }))
+    expect(onZoomOut).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Zoom out' })).toBe(document.activeElement)
+    expect(screen.getByRole('button', { name: 'Reset view' })).toBeTruthy()
+  })
+
+  it('closes after Reset view and restores chip focus', async () => {
+    const user = userEvent.setup()
+    const onReset = vi.fn()
+    render(<MapControls visible topOffset={84} onZoomIn={vi.fn()} onZoomOut={vi.fn()} onReset={onReset} />)
+
+    const chip = screen.getByRole('button', { name: 'Map controls' })
     await user.click(chip)
-    await user.keyboard('{Escape}')
+    await user.click(screen.getByRole('button', { name: 'Reset view' }))
+    expect(onReset).toHaveBeenCalledOnce()
     expect(screen.queryByRole('button', { name: 'Zoom in' })).toBeNull()
     expect(document.activeElement).toBe(chip)
   })
@@ -145,5 +160,36 @@ describe('MapControls', () => {
     await user.click(screen.getByRole('button', { name: 'Trip endpoint fallback' }))
     expect(screen.queryByRole('button', { name: 'Map controls' })).toBeNull()
     expect(document.activeElement).toBe(fallback)
+  })
+
+  it('owns the first Escape and lets a later Escape reach the contextual panel', async () => {
+    const user = userEvent.setup()
+    const onContextualEscape = vi.fn()
+    function EscapeHarness() {
+      useEffect(() => {
+        window.addEventListener('keydown', onContextualEscape)
+        return () => window.removeEventListener('keydown', onContextualEscape)
+      }, [])
+
+      return (
+        <MapControls
+          visible
+          topOffset={84}
+          onZoomIn={vi.fn()}
+          onZoomOut={vi.fn()}
+          onReset={vi.fn()}
+        />
+      )
+    }
+
+    render(<EscapeHarness />)
+    const chip = screen.getByRole('button', { name: 'Map controls' })
+    await user.click(chip)
+    await user.keyboard('{Escape}')
+    expect(onContextualEscape).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(chip)
+
+    await user.keyboard('{Escape}')
+    expect(onContextualEscape).toHaveBeenCalledOnce()
   })
 })

@@ -28,7 +28,7 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 - [ ] Back, Escape, and Close restore focus to the control that initiated the current view, with no focus left on removed content.
 - [ ] Trip endpoint search, selection, swap, clear, and validation remain usable.
 - [ ] The collapsed mobile Map controls chip appears below Plan trip and opens a labelled popover.
-- [ ] Zoom in and Zoom out each move the map by one animated step and dismiss the popover.
+- [ ] Zoom in and Zoom out each move the map by one animated step while keeping the popover open with action focus; Reset view closes the popover and restores chip focus.
 - [ ] Reset view targets the visible venue detail before other targets.
 - [ ] Reset view targets the visible selected shuttle route before trip endpoints.
 - [ ] Reset view fits two mapped trip endpoints, centers one mapped endpoint at venue level, and falls back to the campus view when no target is available.
@@ -60,3 +60,17 @@ The following facts were verified in Edge headless/device emulation at 320 × 56
 - The contextual venue input measured 44px in the mobile layout.
 
 Chrome, a real software keyboard, and the full manual pointer/keyboard smoke remain unverified. External basemap and glyph loading was inconsistent in headless runs, so this evidence does not claim complete map-data QA.
+
+## Edge headless Pixel 7/CDP evidence (2026-09-20)
+
+The following additional facts were verified at 390 × 844, with the responsive matrix also checked at 320 × 568, 568 × 320, 768 × 900, 769 × 900, and 1440 × 900. The broad checklist above remains intentionally unchecked.
+
+- Attribution stayed visible about 12px above the Explore sheet top (596px), expanded route sheet (422px), and minimized trip sheet (751.6px). Measured mobile bottom insets tracked 260px, 434px, and 105px respectively; desktop reset the inset to 0px.
+- A1 framing kept all 12 markers within the available map gap; a rapid A1 → D1 selection ended on D1.
+- Pan coordinates persisted exactly through Plan trip expansion/restoration while attribution moved with the measured inset.
+- Zoom in/out kept the popover open with focus on the activated action; Reset closed it and restored chip focus.
+- The first Escape closed only Map controls; a second Escape returned the contextual sheet to Explore.
+- Venue detail selection completed and attribution continued tracking the measured inset.
+- Map tiles loaded. OpenFreeMap glyph requests returned 404, the sprite was missing, and filter warnings remained; this is not complete map-data QA.
+
+Real Chrome, a real software keyboard, physical safe-area hardware, and the full manual pointer/keyboard smoke remain unverified. Any local screenshot reference is local and uncommitted only.

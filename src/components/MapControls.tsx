@@ -43,6 +43,7 @@ export function MapControls({
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
       event.preventDefault()
+      event.stopPropagation()
       setOpen(false)
       chipRef.current?.focus()
     }
@@ -62,8 +63,16 @@ export function MapControls({
     onRootChange?.(element)
   }
 
-  const runAction = (action: () => void): void => {
+  const runZoomAction = (
+    action: () => void,
+    button: HTMLButtonElement,
+  ): void => {
     action()
+    button.focus()
+  }
+
+  const runResetAction = (): void => {
+    onReset()
     setOpen(false)
     chipRef.current?.focus()
   }
@@ -91,9 +100,13 @@ export function MapControls({
           role="group"
           aria-label="Map controls"
         >
-          <button type="button" onClick={() => runAction(onZoomIn)}>Zoom in</button>
-          <button type="button" onClick={() => runAction(onZoomOut)}>Zoom out</button>
-          <button type="button" onClick={() => runAction(onReset)}>Reset view</button>
+          <button type="button" onClick={(event) => runZoomAction(onZoomIn, event.currentTarget)}>
+            Zoom in
+          </button>
+          <button type="button" onClick={(event) => runZoomAction(onZoomOut, event.currentTarget)}>
+            Zoom out
+          </button>
+          <button type="button" onClick={runResetAction}>Reset view</button>
         </div>
       )}
     </div>

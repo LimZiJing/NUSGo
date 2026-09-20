@@ -32,12 +32,12 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - JSON fetching and validated resource loaders are organized in `src/infrastructure/data/`.
 - The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
-- Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The manual desktop/map smoke checklist is in `docs/qa/issue-39-manual-smoke-check.md` and remains pending; no browser QA is claimed.
+- Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; no browser QA is claimed for the release pass yet.
 
 ## Current limitations
 
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
-- The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; production deployment still needs manual smoke verification.
+- The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; a release/deployment smoke pass still needs manual verification.
 - Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
@@ -46,7 +46,7 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 
 Complete the functional transit foundation before a broad UI redesign:
 
-1. Complete the pending desktop/map smoke checklist for the validated static transit resources.
+1. Complete the release desktop/map smoke checklist for the validated static transit resources.
 2. Add walking connections and routing.
 3. Investigate live shuttle arrivals after static routes work reliably.
 

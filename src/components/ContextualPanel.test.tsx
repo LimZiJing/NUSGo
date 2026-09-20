@@ -57,7 +57,8 @@ describe('ContextualPanel', () => {
     }
     const markup = renderPanel(state)
 
-    expect(markup).toContain('<h3>COM1-0210</h3>')
+    expect(markup).toContain('id="contextual-venue-detail-heading"')
+    expect(markup).toContain('>COM1-0210</h3>')
     expect(markup).toContain('Computing 1, Level 2')
     expect(markup).toContain('<strong>Floor:</strong> 2')
     expect(markup).not.toContain('maplibregl-popup')
@@ -69,6 +70,14 @@ describe('ContextualPanel', () => {
 
     expect(markup).toContain('Shuttle routes')
     expect(markup).toContain('Shuttle route')
+  })
+
+  it('leaves shuttle route announcements to the route control', () => {
+    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const markup = renderPanel(state)
+
+    expect(markup).not.toContain('Shuttle routes opened.')
+    expect(markup).toContain('Showing all 1 shuttle routes and all 2 shuttle stops.')
   })
 
   it('keeps the panel available when venue search throws', () => {

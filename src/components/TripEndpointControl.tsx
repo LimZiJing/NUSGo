@@ -228,13 +228,12 @@ export function TripEndpointControl({
       </p>
 
       {showResults && hasLocationData && (
-        <div className="trip-endpoint-results" role="listbox" aria-label={`${roleLabel} search results`}>
+        <div className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
           {results.length > 0 ? (
             results.map((result) => (
               <button
                 className="trip-endpoint-result"
                 type="button"
-                role="option"
                 key={`${result.endpoint.kind}:${result.endpoint.id}`}
                 onClick={() => onSelect(result.endpoint)}
                 aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}

@@ -5,26 +5,18 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { getTripEndpointLabel } from '../domain/location/search'
-import type { TransitIndex } from '../domain/transit'
-import type { TransitStop } from '../domain/transit/types'
-import type {
-  TripEndpoint,
-  TripEndpointRole,
-  TripRequest,
-} from '../domain/trip/types'
-import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
-
-interface PopupAction {
-  label: string
-  onClick: () => void
-}
+import type { TransitStop } from '../../domain/transit/types'
+import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
+import {
+  createBusStopPopupContent,
+  createPopupCoordinator,
+  type PopupContent,
+} from './popup'
 
 export const BUS_STOP_MIN_ZOOM = 14
 export const BUS_STOP_LABEL_SOURCE_ID = 'shuttle-stop-labels'
 export const BUS_STOP_ACTIVE_LABEL_LAYER_ID = 'shuttle-stop-active-labels'
 export const BUS_STOP_INACTIVE_LABEL_LAYER_ID = 'shuttle-stop-inactive-labels'
-export const BUS_STOP_LABEL_LAYER_ID = BUS_STOP_INACTIVE_LABEL_LAYER_ID
 export const BUS_STOP_INACTIVE_OPACITY = 0.2
 
 const BUS_STOP_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
@@ -107,67 +99,6 @@ export function isBusStopVisible(
   return zoom >= BUS_STOP_MIN_ZOOM || isSelected || isFocused
 }
 
-function createPopupContent(
-  titleText: string,
-  details: string[],
-  actions: PopupAction[] = [],
-): HTMLDivElement {
-  // Use text nodes instead of setHTML so values from external datasets remain text.
-  const content = document.createElement('div')
-  const title = document.createElement('strong')
-  title.textContent = titleText
-  content.append(title)
-
-  for (const detail of details) {
-    const line = document.createElement('div')
-    line.textContent = detail
-    content.append(line)
-  }
-
-  for (const action of actions) {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.textContent = action.label
-    button.className = 'bus-stop-popup-action'
-    button.addEventListener('click', action.onClick)
-    content.append(button)
-  }
-
-  return content
-}
-
-export function addVenueMarker(
-  map: Map,
-  venue: VenueLocation,
-): Marker | null {
-  if (!venue.location) return null
-
-  // The contextual panel is the canonical venue detail surface, so this marker
-  // deliberately has no popup that could duplicate the panel.
-  return new Marker({ color: '#64748b' })
-    // Venue data stores x/y as longitude/latitude.
-    .setLngLat([venue.location.x, venue.location.y])
-    .addTo(map)
-}
-
-
-export function createBusStopPopupCoordinator() {
-  let activePopup: Popup | null = null
-
-  return {
-    register(popup: Popup): void {
-      popup.on('open', () => {
-        const previousPopup = activePopup
-        activePopup = popup
-        if (previousPopup && previousPopup !== popup) previousPopup.remove()
-      })
-      popup.on('close', () => {
-        if (activePopup === popup) activePopup = null
-      })
-    },
-  }
-}
-
 function createBusStopMarkerElement(stop: TransitStop): HTMLButtonElement {
   const element = document.createElement('button')
   element.type = 'button'
@@ -176,27 +107,22 @@ function createBusStopMarkerElement(stop: TransitStop): HTMLButtonElement {
   return element
 }
 
-export function createBusStopPopupContent(
-  stop: TransitStop,
-  onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
-): HTMLDivElement {
-  const details = [
-    `Stop: ${stop.id}`,
-    `Services: ${stop.services.join(', ')}`,
-  ]
-  if (stop.opposite) details.push(`Opposite stop: ${stop.opposite}`)
-
-  const actions = onSetEndpoint
-    ? (['origin', 'destination'] as const).map((role) => ({
-        label: role === 'origin' ? 'Set as origin' : 'Set as destination',
-        onClick: () => onSetEndpoint(role, { kind: 'stop', id: stop.id }),
-      }))
-    : []
-
-  return createPopupContent(stop.longName, details, actions)
+type BusStopMarker = {
+  marker: Marker
+  popup: Popup
+  popupContent: PopupContent
+  unregisterPopup: () => void
+  handleOpen: () => void
+  handleClose: () => void
 }
 
-type BusStopMarkerState = {
+export interface ShuttleStopMarkers {
+  readonly markers: readonly Marker[]
+  setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
+  dispose(): void
+}
+
+type ShuttleStopMarkerState = {
   map: Map
   markers: Marker[]
   selectedStopIds: ReadonlySet<string> | null
@@ -204,8 +130,6 @@ type BusStopMarkerState = {
   focusedStopIds: Set<string>
   handleZoom: () => void
 }
-
-const busStopMarkerStates = new WeakMap<Marker[], BusStopMarkerState>()
 
 function getStopIdsFilter(stopIds: ReadonlySet<string>): FilterSpecification {
   return [
@@ -264,7 +188,7 @@ function updateBusStopMarkerElement(
   if (!isVisible && popup?.isOpen()) popup.remove()
 }
 
-function updateBusStopLabelPresentation(state: BusStopMarkerState): void {
+function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
   const filters = getBusStopLabelFilters(state.selectedStopIds, state.focusedStopIds)
   const activeMinZoom = state.selectedStopIds !== null || state.focusedStopIds.size > 0
     ? 0
@@ -288,7 +212,7 @@ function updateBusStopLabelPresentation(state: BusStopMarkerState): void {
   }
 }
 
-function updateBusStopMarkerPresentation(state: BusStopMarkerState): void {
+function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
   const zoom = state.map.getZoom()
   const selectedStopIds = state.selectedStopIds
   const selectedIds = selectedStopIds ?? new Set<string>()
@@ -307,14 +231,15 @@ function updateBusStopMarkerPresentation(state: BusStopMarkerState): void {
   updateBusStopLabelPresentation(state)
 }
 
-export function addBusStopMarkers(
+export function createShuttleStopMarkers(
   map: Map,
   busStops: readonly TransitStop[],
   onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
-): Marker[] {
+): ShuttleStopMarkers {
   const markers: Marker[] = []
-  const popupCoordinator = createBusStopPopupCoordinator()
-  const state: BusStopMarkerState = {
+  const markerDetails: BusStopMarker[] = []
+  const popupCoordinator = createPopupCoordinator()
+  const state: ShuttleStopMarkerState = {
     map,
     markers,
     selectedStopIds: null,
@@ -322,19 +247,18 @@ export function addBusStopMarkers(
     focusedStopIds: new Set<string>(),
     handleZoom: () => updateBusStopMarkerPresentation(state),
   }
+  const ownsSource = !map.getSource(BUS_STOP_LABEL_SOURCE_ID)
+  const ownsInactiveLayer = !map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
+  const ownsActiveLayer = !map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
 
-  if (!map.getSource(BUS_STOP_LABEL_SOURCE_ID)) {
+  if (ownsSource) {
     map.addSource(BUS_STOP_LABEL_SOURCE_ID, {
       type: 'geojson',
       data: createBusStopLabelGeoJson(busStops),
     })
   }
-  if (!map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)) {
-    map.addLayer(BUS_STOP_INACTIVE_LABEL_LAYER)
-  }
-  if (!map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
-    map.addLayer(BUS_STOP_ACTIVE_LABEL_LAYER)
-  }
+  if (ownsInactiveLayer) map.addLayer(BUS_STOP_INACTIVE_LABEL_LAYER)
+  if (ownsActiveLayer) map.addLayer(BUS_STOP_ACTIVE_LABEL_LAYER)
 
   for (const stop of busStops) {
     if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) continue
@@ -345,141 +269,71 @@ export function addBusStopMarkers(
     })
     const element = marker.getElement()
     element.dataset.stopId = stop.id
-    const popup = new Popup({ offset: 24 })
-      .setDOMContent(createBusStopPopupContent(stop, onSetEndpoint))
-    popupCoordinator.register(popup)
-    popup.on('open', () => {
+    const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
+    const popup = new Popup({ offset: 24 }).setDOMContent(popupContent.element)
+    const unregisterPopup = popupCoordinator.register(popup)
+    const handleOpen = () => {
       state.focusedStopIds.add(stop.id)
       updateBusStopMarkerPresentation(state)
-    })
-    popup.on('close', () => {
+    }
+    const handleClose = () => {
       state.focusedStopIds.delete(stop.id)
       updateBusStopMarkerPresentation(state)
-    })
+    }
+    popup.on('open', handleOpen)
+    popup.on('close', handleClose)
     marker
       .setLngLat([stop.longitude, stop.latitude])
       .setPopup(popup)
       .addTo(map)
 
+    markerDetails.push({
+      marker,
+      popup,
+      popupContent,
+      unregisterPopup,
+      handleOpen,
+      handleClose,
+    })
     markers.push(marker)
   }
 
-  busStopMarkerStates.set(markers, state)
   map.on('zoom', state.handleZoom)
   updateBusStopMarkerPresentation(state)
+  let disposed = false
 
-  return markers
-}
-
-export function getTripEndpointMarkerClass(role: TripEndpointRole): string {
-  return `trip-endpoint-marker trip-endpoint-marker-${role}`
-}
-
-function createTripEndpointMarkerElement(
-  role: TripEndpointRole,
-  label: string,
-): HTMLDivElement {
-  const element = document.createElement('div')
-  const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
-  element.className = getTripEndpointMarkerClass(role)
-  element.setAttribute('role', 'img')
-  element.setAttribute('aria-label', `${roleLabel}: ${label}`)
-  return element
-}
-
-function getTripEndpointCoordinate(
-  endpoint: TripEndpoint,
-  venues: VenueLocationMap,
-  transitIndex: TransitIndex | null,
-): [number, number] | null {
-  if (endpoint.kind === 'venue') {
-    const location = venues[endpoint.id]?.location
-    return location && Number.isFinite(location.x) && Number.isFinite(location.y)
-      ? [location.x, location.y]
-      : null
+  return {
+    markers,
+    setSelection(selectedStopIds, selectedRouteColor = null) {
+      if (disposed) return
+      state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)
+      state.selectedRouteColor = selectedRouteColor
+      updateBusStopMarkerPresentation(state)
+    },
+    dispose() {
+      if (disposed) return
+      disposed = true
+      map.off('zoom', state.handleZoom)
+      for (const detail of markerDetails) {
+        detail.unregisterPopup()
+        detail.popup.off('open', detail.handleOpen)
+        detail.popup.off('close', detail.handleClose)
+        detail.popup.remove()
+        detail.popupContent.dispose()
+        detail.marker.remove()
+      }
+      markerDetails.length = 0
+      markers.length = 0
+      popupCoordinator.dispose()
+      if (ownsActiveLayer && map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
+        map.removeLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
+      }
+      if (ownsInactiveLayer && map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)) {
+        map.removeLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
+      }
+      if (ownsSource && map.getSource(BUS_STOP_LABEL_SOURCE_ID)) {
+        map.removeSource(BUS_STOP_LABEL_SOURCE_ID)
+      }
+    },
   }
-
-  const stop = transitIndex?.stopById.get(endpoint.id)
-  return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
-    ? [stop.longitude, stop.latitude]
-    : null
-}
-
-export function addTripEndpointMarkers(
-  map: Map,
-  request: TripRequest,
-  venues: VenueLocationMap,
-  transitIndex: TransitIndex | null,
-): Marker[] {
-  const markers: Marker[] = []
-
-  for (const [role, endpoint] of [
-    ['origin', request.origin],
-    ['destination', request.destination],
-  ] as const) {
-    if (!endpoint) continue
-
-    const coordinate = getTripEndpointCoordinate(endpoint, venues, transitIndex)
-    if (!coordinate) continue
-
-    const label = getTripEndpointLabel(endpoint, venues, transitIndex)
-    const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
-    const marker = new Marker({
-      anchor: 'center',
-      element: createTripEndpointMarkerElement(role, label),
-    })
-      .setLngLat(coordinate)
-      .setPopup(new Popup({ offset: 24 }).setDOMContent(
-        createPopupContent(roleLabel, [label, `ID: ${endpoint.id}`]),
-      ))
-      .addTo(map)
-
-    markers.push(marker)
-  }
-
-  return markers
-}
-
-export function removeBusStopMarkers(map: Map, markers: Marker[]): void {
-  const state = busStopMarkerStates.get(markers)
-  if (!state) return
-
-  map.off('zoom', state.handleZoom)
-  if (map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
-    map.removeLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
-  }
-  if (map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)) {
-    map.removeLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
-  }
-  if (map.getSource(BUS_STOP_LABEL_SOURCE_ID)) {
-    map.removeSource(BUS_STOP_LABEL_SOURCE_ID)
-  }
-  busStopMarkerStates.delete(markers)
-}
-
-export function setBusStopMarkerSelection(
-  markers: Marker[],
-  selectedStopIds: readonly string[] | null,
-  selectedRouteColor: string | null = null,
-): void {
-  const state = busStopMarkerStates.get(markers)
-  if (!state) {
-    const selectedIds = new Set(selectedStopIds ?? [])
-    for (const marker of markers) {
-      const element = marker.getElement()
-      const isSelected = selectedIds.has(element.dataset.stopId ?? '')
-      updateBusStopMarkerElement(
-        marker,
-        selectedStopIds !== null && isSelected,
-        selectedStopIds === null || isSelected,
-        selectedStopIds !== null && !isSelected,
-        selectedRouteColor,
-      )
-    }
-    return
-  }
-
-  state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)
-  state.selectedRouteColor = selectedRouteColor
-  updateBusStopMarkerPresentation(state)
 }

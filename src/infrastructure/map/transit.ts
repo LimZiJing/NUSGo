@@ -2,20 +2,14 @@ import type {
   FilterSpecification,
   LineLayerSpecification,
   Map,
-  Marker,
   PaddingOptions,
   SymbolLayerSpecification,
 } from 'maplibre-gl'
-import { addBusStopMarkers } from '../map/markers'
-import { validateTransitMapData } from '../domain/transit/map-data'
-import type { TransitIndex } from '../domain/transit'
-import { validateTransitNetwork } from '../domain/transit/model'
-
+import type { TransitIndex } from '../../domain/transit'
 import type {
-  TransitNetwork,
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../domain/transit/types'
+} from '../../domain/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
@@ -23,7 +17,6 @@ export const TRANSIT_ROUTE_LAYER_ID = 'shuttle-route-lines'
 export const TRANSIT_ROUTE_DIRECTION_LAYER_ID = 'shuttle-route-directions'
 
 const BASE_ROUTE_LINE_COLOR = '#64748b'
-
 const NO_ROUTE_FILTER: FilterSpecification = ['==', ['get', 'routeId'], '']
 
 const BASE_ROUTE_CASING_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-width'] = [
@@ -97,40 +90,6 @@ const TRANSIT_ROUTE_DIRECTION_LAYER: SymbolLayerSpecification = {
   },
 }
 
-export function waitForMapStyleLoaded(
-  map: Map,
-  signal: AbortSignal,
-): Promise<void> {
-  if (map.isStyleLoaded()) return Promise.resolve()
-
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      map.off('load', handleLoad)
-      signal.removeEventListener('abort', handleAbort)
-    }
-    const handleLoad = () => {
-      cleanup()
-      resolve()
-    }
-    const handleAbort = () => {
-      cleanup()
-      reject(new DOMException('The map style load was aborted', 'AbortError'))
-    }
-
-    map.once('load', handleLoad)
-    signal.addEventListener('abort', handleAbort, { once: true })
-  })
-}
-
-export interface ValidatedTransitMarkers {
-  network: TransitNetwork
-  markers: Marker[]
-}
-
-export interface ValidatedTransitMapData extends ValidatedTransitMarkers {
-  geometry: TransitRouteGeometry
-}
-
 export type TransitRouteBounds = [[number, number], [number, number]]
 
 export function getTransitRouteBounds(
@@ -175,57 +134,10 @@ export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions
   return { top: 112, right: sidePadding, bottom: 64, left: sidePadding }
 }
 
-export function fitTransitRoute(
-  map: Map,
-  index: TransitIndex,
-  geometry: TransitRouteGeometry,
-  routeId: string | null,
-): void {
-  const bounds = getTransitRouteBounds(index, geometry, routeId)
-  if (!bounds) return
-
-  map.fitBounds(bounds, {
-    duration: 500,
-    maxZoom: 16,
-    padding: getTransitRouteFitPadding(map.getContainer().clientWidth),
-  })
-}
-
-export function addTransitRouteLayers(
-  map: Map,
-  geometry: TransitRouteGeometry,
-): void {
-  if (!map.getSource(TRANSIT_ROUTE_SOURCE_ID)) {
-    map.addSource(TRANSIT_ROUTE_SOURCE_ID, {
-      type: 'geojson',
-      data: geometry,
-    })
-  }
-
-  if (!map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
-    map.addLayer(TRANSIT_ROUTE_CASING_LAYER)
-  }
-  if (!map.getLayer(TRANSIT_ROUTE_LAYER_ID)) {
-    map.addLayer(TRANSIT_ROUTE_LAYER)
-  }
-  if (!map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
-    map.addLayer(TRANSIT_ROUTE_DIRECTION_LAYER)
-  }
-}
-
-export function removeTransitRouteLayers(map: Map): void {
-  if (map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
-    map.removeLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
-  }
-  if (map.getLayer(TRANSIT_ROUTE_LAYER_ID)) {
-    map.removeLayer(TRANSIT_ROUTE_LAYER_ID)
-  }
-  if (map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
-    map.removeLayer(TRANSIT_ROUTE_CASING_LAYER_ID)
-  }
-  if (map.getSource(TRANSIT_ROUTE_SOURCE_ID)) {
-    map.removeSource(TRANSIT_ROUTE_SOURCE_ID)
-  }
+export interface TransitRouteLayers {
+  setSelection(routeId: string | null, overlappingRouteIds?: ReadonlySet<string>): void
+  fitRoute(index: TransitIndex, geometry: TransitRouteGeometry, routeId: string | null): void
+  dispose(): void
 }
 
 const BASE_ROUTE_LINE_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-width'] = [
@@ -263,10 +175,10 @@ function createRouteOpacityExpression(
   ]
 }
 
-export function setTransitRouteSelection(
+function setTransitRouteSelection(
   map: Map,
   routeId: string | null,
-  overlappingRouteIds: ReadonlySet<string> = new Set(),
+  overlappingRouteIds: ReadonlySet<string>,
 ): void {
   if (!map.getLayer(TRANSIT_ROUTE_LAYER_ID)) return
 
@@ -331,27 +243,66 @@ export function setTransitRouteSelection(
   }
 }
 
-export function addValidatedTransitMapData(
+function fitTransitRoute(
   map: Map,
-  networkInput: unknown,
-  geometryInput: unknown,
-): ValidatedTransitMapData {
-  const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
-  addTransitRouteLayers(map, geometry)
-  return {
-    network,
-    geometry,
-    markers: addBusStopMarkers(map, network.stops),
-  }
+  index: TransitIndex,
+  geometry: TransitRouteGeometry,
+  routeId: string | null,
+): void {
+  const bounds = getTransitRouteBounds(index, geometry, routeId)
+  if (!bounds) return
+
+  map.fitBounds(bounds, {
+    duration: 500,
+    maxZoom: 16,
+    padding: getTransitRouteFitPadding(map.getContainer().clientWidth),
+  })
 }
 
-export function addValidatedBusStopMarkers(
+export function createTransitRouteLayers(
   map: Map,
-  input: unknown,
-): ValidatedTransitMarkers {
-  const network = validateTransitNetwork(input)
+  geometry: TransitRouteGeometry,
+): TransitRouteLayers {
+  const ownsSource = !map.getSource(TRANSIT_ROUTE_SOURCE_ID)
+  const ownsCasingLayer = !map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)
+  const ownsRouteLayer = !map.getLayer(TRANSIT_ROUTE_LAYER_ID)
+  const ownsDirectionLayer = !map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
+
+  if (ownsSource) {
+    map.addSource(TRANSIT_ROUTE_SOURCE_ID, {
+      type: 'geojson',
+      data: geometry,
+    })
+  }
+  if (ownsCasingLayer) map.addLayer(TRANSIT_ROUTE_CASING_LAYER)
+  if (ownsRouteLayer) map.addLayer(TRANSIT_ROUTE_LAYER)
+  if (ownsDirectionLayer) map.addLayer(TRANSIT_ROUTE_DIRECTION_LAYER)
+
+  let disposed = false
   return {
-    network,
-    markers: addBusStopMarkers(map, network.stops),
+    setSelection(routeId, overlappingRouteIds = new Set()) {
+      if (disposed) return
+      setTransitRouteSelection(map, routeId, overlappingRouteIds)
+    },
+    fitRoute(index, routeGeometry, routeId) {
+      if (disposed) return
+      fitTransitRoute(map, index, routeGeometry, routeId)
+    },
+    dispose() {
+      if (disposed) return
+      disposed = true
+      if (ownsDirectionLayer && map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
+        map.removeLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
+      }
+      if (ownsRouteLayer && map.getLayer(TRANSIT_ROUTE_LAYER_ID)) {
+        map.removeLayer(TRANSIT_ROUTE_LAYER_ID)
+      }
+      if (ownsCasingLayer && map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
+        map.removeLayer(TRANSIT_ROUTE_CASING_LAYER_ID)
+      }
+      if (ownsSource && map.getSource(TRANSIT_ROUTE_SOURCE_ID)) {
+        map.removeSource(TRANSIT_ROUTE_SOURCE_ID)
+      }
+    },
   }
 }

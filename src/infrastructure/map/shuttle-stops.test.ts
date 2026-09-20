@@ -1,19 +1,89 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Marker, Popup } from 'maplibre-gl'
+import type { Map as MapLibreMap, Popup } from 'maplibre-gl'
 import {
   BUS_STOP_INACTIVE_OPACITY,
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
-  createBusStopPopupContent,
-  createBusStopPopupCoordinator,
   getBusStopLabelFilters,
   getBusStopLabelOpacity,
-  getTripEndpointMarkerClass,
   isBusStopVisible,
   isBusStopDimmed,
-  setBusStopMarkerSelection,
-} from './markers'
-import type { TransitStop } from '../domain/transit/types'
+  createShuttleStopMarkers,
+} from './shuttle-stops'
+import { getTripEndpointMarkerClass } from './endpoint-markers'
+import type { TransitStop } from '../../domain/transit/types'
+import { createBusStopPopupContent, createPopupCoordinator } from './popup'
+
+vi.mock('maplibre-gl', () => {
+  class FakeMarker {
+    readonly element: HTMLElement
+    popup: FakePopup | null = null
+
+    constructor(options: { element?: HTMLElement }) {
+      this.element = options.element ?? document.createElement('div')
+    }
+
+    getElement() {
+      return this.element
+    }
+
+    setLngLat() {
+      return this
+    }
+
+    setPopup(popup: FakePopup) {
+      this.popup = popup
+      return this
+    }
+
+    getPopup() {
+      return this.popup
+    }
+
+    remove() {
+      return this
+    }
+
+    addTo() {
+      return this
+    }
+  }
+
+  class FakePopup {
+    readonly handlers = new globalThis.Map<string, Set<() => void>>()
+
+    setDOMContent() {
+      return this
+    }
+
+    on(event: string, handler: () => void) {
+      const handlers = this.handlers.get(event) ?? new Set()
+      handlers.add(handler)
+      this.handlers.set(event, handlers)
+      return this
+    }
+
+    off(event: string, handler: () => void) {
+      this.handlers.get(event)?.delete(handler)
+      return this
+    }
+
+    isOpen() {
+      return false
+    }
+
+    remove() {
+      this.handlers.get('close')?.forEach((handler) => handler())
+      return this
+    }
+  }
+
+  return {
+    Map: class {},
+    Marker: FakeMarker,
+    Popup: FakePopup,
+  }
+})
 
 type PopupEvent = 'open' | 'close'
 
@@ -27,6 +97,7 @@ function createFakePopup() {
       listeners[event].push(listener)
       return popup
     }),
+    off: vi.fn(() => popup),
     remove: vi.fn(() => {
       listeners.close.forEach((listener) => listener())
     }),
@@ -37,11 +108,11 @@ function createFakePopup() {
   return popup
 }
 
-describe('createBusStopPopupCoordinator', () => {
+describe('createPopupCoordinator', () => {
   it('closes the previously opened bus-stop popup', () => {
     const first = createFakePopup()
     const second = createFakePopup()
-    const coordinator = createBusStopPopupCoordinator()
+    const coordinator = createPopupCoordinator()
     coordinator.register(first as unknown as Popup)
     coordinator.register(second as unknown as Popup)
 
@@ -55,7 +126,7 @@ describe('createBusStopPopupCoordinator', () => {
   it('does not remove an already closed popup or an unregistered venue popup', () => {
     const stop = createFakePopup()
     const venue = createFakePopup()
-    const coordinator = createBusStopPopupCoordinator()
+    const coordinator = createPopupCoordinator()
     coordinator.register(stop as unknown as Popup)
 
     stop.emit('open')
@@ -68,6 +139,24 @@ describe('createBusStopPopupCoordinator', () => {
     expect(stop.remove).not.toHaveBeenCalled()
     expect(venue.remove).not.toHaveBeenCalled()
   })
+
+  it('unregisters popup listeners and disposes active coordination', () => {
+    const popup = createFakePopup()
+    const coordinator = createPopupCoordinator()
+    const unregister = coordinator.register(popup as unknown as Popup)
+
+    unregister()
+    popup.emit('open')
+    expect(popup.remove).not.toHaveBeenCalled()
+
+    coordinator.register(popup as unknown as Popup)
+    popup.emit('open')
+    coordinator.dispose()
+    popup.emit('open')
+
+    expect(popup.off).toHaveBeenCalled()
+    expect(popup.remove).toHaveBeenCalledOnce()
+  })
 })
 
 class FakeElement {
@@ -75,6 +164,17 @@ class FakeElement {
   attributes = new Map<string, string>()
   listeners = new Map<string, () => void>()
   className = ''
+  classes = new Set<string>()
+  classList = {
+    toggle: (name: string, force: boolean) => {
+      if (force) this.classes.add(name)
+      else this.classes.delete(name)
+    },
+  }
+  style = {
+    display: '',
+    setProperty: vi.fn(),
+  }
   dataset: Record<string, string> = {}
   textContent = ''
   type = ''
@@ -90,6 +190,10 @@ class FakeElement {
 
   addEventListener(event: string, listener: () => void) {
     this.listeners.set(event, listener)
+  }
+
+  removeEventListener(event: string, listener: () => void) {
+    if (this.listeners.get(event) === listener) this.listeners.delete(event)
   }
 
   setAttribute(name: string, value: string) {
@@ -126,7 +230,8 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
       services: ['A1'],
     }
 
-    const content = createBusStopPopupContent(stop, onSetEndpoint) as unknown as FakeElement
+    const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
+    const content = popupContent.element as unknown as FakeElement
     const buttons = content.children.filter((child) => child.tagName === 'BUTTON')
 
     expect(content.children[0].textContent).toBe('<Central Library>')
@@ -145,6 +250,10 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
       kind: 'stop',
       id: 'STOP-A',
     })
+
+    popupContent.dispose()
+    buttons[0].click()
+    expect(onSetEndpoint).toHaveBeenCalledTimes(2)
 
     vi.unstubAllGlobals()
   })
@@ -170,55 +279,47 @@ describe('bus-stop presentation', () => {
     },
   ]
 
-  it('uses the selected route color for selected stop rings', () => {
-    const style = {
-      display: '',
-      setProperty: vi.fn(),
-    }
-    const marker = {
-      getElement: () => ({
-        dataset: { stopId: 'STOP-A' },
-        classList: { toggle: vi.fn() },
-        style,
-      }),
-      getPopup: () => null,
-    } as unknown as Marker
+  it('applies and clears route selection through the public marker adapter', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const map = {
+      getSource: vi.fn(() => undefined),
+      getLayer: vi.fn(() => ({})),
+      addSource: vi.fn(),
+      addLayer: vi.fn(),
+      removeSource: vi.fn(),
+      removeLayer: vi.fn(),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => 15),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const adapter = createShuttleStopMarkers(map, stops.map((stop, index) => ({
+      ...stop,
+      latitude: 1.3 + index / 10,
+    })))
+    const markers = adapter.markers.map((marker) => marker.getElement() as unknown as FakeElement)
 
-    setBusStopMarkerSelection([marker], ['STOP-A'], '#e3cf0e')
+    adapter.setSelection(['STOP-A'], '#e3cf0e')
 
-    expect(style.setProperty).toHaveBeenCalledWith('--bus-stop-selected-color', '#e3cf0e')
-  })
-
-  it('dims only inactive stops when a route is selected', () => {
-    const activeClasses = new Set<string>()
-    const inactiveClasses = new Set<string>()
-    const createMarker = (stopId: string, classes: Set<string>) => ({
-      getElement: () => ({
-        dataset: { stopId },
-        classList: {
-          toggle(name: string, force: boolean) {
-            if (force) classes.add(name)
-            else classes.delete(name)
-          },
-        },
-        style: { setProperty: vi.fn(), display: '' },
-      }),
-      getPopup: () => null,
-    } as unknown as Marker)
-
-    setBusStopMarkerSelection(
-      [createMarker('STOP-A', activeClasses)],
-      ['STOP-A'],
-      '#e3cf0e',
-    )
-    setBusStopMarkerSelection(
-      [createMarker('STOP-B', inactiveClasses)],
-      ['STOP-A'],
+    expect(markers[0].classes).toContain('bus-stop-marker-selected')
+    expect(markers[1].classes).toContain('bus-stop-marker-dimmed')
+    expect(markers[0].style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-selected-color',
       '#e3cf0e',
     )
 
-    expect(activeClasses).not.toContain('bus-stop-marker-dimmed')
-    expect(inactiveClasses).toContain('bus-stop-marker-dimmed')
+    adapter.setSelection(null)
+
+    expect(markers.every((marker) => (
+      !marker.classes.has('bus-stop-marker-selected') &&
+      !marker.classes.has('bus-stop-marker-dimmed')
+    ))).toBe(true)
+    adapter.dispose()
+    vi.unstubAllGlobals()
   })
 
   it('keeps active and focused labels out of the inactive layer', () => {

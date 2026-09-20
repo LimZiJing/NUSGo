@@ -27,7 +27,7 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - Validated route lines are neutral and subdued in the all-routes state, with official route colors reserved for the selected route.
 - The transit model contains 8 internal shuttle routes, 33 stops, service associations, and ordered stop IDs.
 - Transit model references are validated before shuttle markers are rendered.
-- Venue markers, shuttle-stop markers, and popup creation are organized in `src/map/markers.ts`.
+- MapLibre lifecycle, basemap presentation, transit layers, venue markers, shuttle-stop markers/popups, and trip endpoint markers are composed from focused adapters under `src/infrastructure/map/`; the application consumes the framework-free session contract under `src/app/contracts/`.
 - JSON fetching and validated resource loaders are organized in `src/infrastructure/data/`.
 - The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.

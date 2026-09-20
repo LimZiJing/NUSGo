@@ -11,7 +11,7 @@ import { ContextualPanel } from './features/contextual-panel/contextual-panel'
 import { MapControls } from './components/MapControls'
 import { isFocusInsideMapControls } from './components/map-controls-focus'
 import { TripEndpointControls } from './components/TripEndpointControl'
-import { TransitRouteControl } from './components/TransitRouteControl'
+import { TransitRouteControl } from './features/shuttle-browsing/shuttle-route-control'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'
 import {
   createNavigationSessionCommandAdapter,

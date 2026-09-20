@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
-import type { TransitNetworkIndex } from '../domain/transit'
-import type { TransitNetwork, TransitRoute } from '../domain/transit/types'
+import type { TransitNetworkIndex } from '../../domain/transit'
+import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 
 interface TransitRouteControlProps {
   network: TransitNetwork | null

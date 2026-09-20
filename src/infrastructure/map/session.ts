@@ -37,8 +37,13 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentVenues: VenueLocationMap = {}
   let currentTransitIndex: TransitIndex | null = null
   let viewportInsets: MapViewportInsets = EMPTY_VIEWPORT_INSETS
-  let pendingVenueFit: VenueLocation | null = null
-  let venueFitFrame: number | null = null
+  let pendingCameraFit: {
+    readonly kind: 'venue'
+    readonly venue: VenueLocation
+  } | {
+    readonly kind: 'route'
+    readonly routeId: string | null
+  } | null = null
   let currentRouteSelection: MapRouteSelection = {
     route: null,
     overlappingRouteIds: EMPTY_ROUTE_OVERLAP,
@@ -55,7 +60,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const clearVenueMarker = () => {
     selectedVenueMarker?.dispose()
     selectedVenueMarker = null
-    pendingVenueFit = null
+    if (pendingCameraFit?.kind === 'venue') pendingCameraFit = null
   }
 
   const getFitPadding = (): MapViewportInsets => viewportInsets
@@ -70,23 +75,6 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       padding: getFitPadding(),
       essential: true,
     })
-  }
-
-  const scheduleVenueFit = (venue: VenueLocation): void => {
-    pendingVenueFit = venue
-    if (venueFitFrame !== null) return
-    const fit = (): void => {
-      venueFitFrame = null
-      if (disposed) return
-      const pendingVenue = pendingVenueFit
-      pendingVenueFit = null
-      if (pendingVenue) fitVenue(pendingVenue)
-    }
-    if (typeof requestAnimationFrame === 'function') {
-      venueFitFrame = requestAnimationFrame(fit)
-    } else {
-      venueFitFrame = Number(setTimeout(fit, 0))
-    }
   }
 
   const fitTripEndpoints = (coordinates: readonly (readonly [number, number])[]): void => {
@@ -184,12 +172,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
       const nextRouteId = currentRouteSelection.route?.id ?? null
       if (nextRouteId !== previousRouteId) {
-        transitRouteLayers.fitRoute(
-          data.index,
-          data.geometry,
-          nextRouteId,
-          viewportInsets,
-        )
+        pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
 
@@ -207,12 +190,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       applyRouteSelection(currentRouteSelection)
 
       if (nextRouteId !== previousRouteId && transitData) {
-        transitRouteLayers?.fitRoute(
-          transitData.index,
-          transitData.geometry,
-          nextRouteId,
-          viewportInsets,
-        )
+        pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
 
@@ -229,6 +207,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }
+      const pendingFit = pendingCameraFit
+      pendingCameraFit = null
+      if (pendingFit?.kind === 'venue') {
+        fitVenue(pendingFit.venue)
+      } else if (pendingFit?.kind === 'route' && transitData) {
+        transitRouteLayers?.fitRoute(
+          transitData.index,
+          transitData.geometry,
+          pendingFit.routeId,
+          viewportInsets,
+        )
+      }
     },
 
     zoomIn() {
@@ -243,6 +233,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     resetView(target: MapResetTarget) {
       if (disposed) return
+      pendingCameraFit = null
       if (target.kind === 'venue' || target.kind === 'campus') {
         map.flyTo({
           center: [target.center[0], target.center[1]],
@@ -275,7 +266,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (!marker || !venue.location) return
 
       selectedVenueMarker = marker
-      scheduleVenueFit(venue)
+      pendingCameraFit = { kind: 'venue', venue }
     },
 
     clearVenue() {
@@ -285,12 +276,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     dispose() {
       if (disposed) return
       disposed = true
-      pendingVenueFit = null
-      if (venueFitFrame !== null) {
-        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(venueFitFrame)
-        else clearTimeout(venueFitFrame)
-        venueFitFrame = null
-      }
+      pendingCameraFit = null
       clearVenueMarker()
       clearEndpointMarkers()
       clearTransitData()

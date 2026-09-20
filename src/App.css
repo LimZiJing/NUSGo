@@ -792,7 +792,7 @@ h3:focus {
 
   .map .maplibregl-ctrl-bottom-right,
   .map .maplibregl-ctrl-bottom-left {
-    bottom: calc(50dvh + 12px);
+    bottom: max(12px, var(--map-overlay-bottom-inset, 0px));
   }
 
   .map .maplibregl-ctrl-bottom-right {

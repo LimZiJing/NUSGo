@@ -373,7 +373,6 @@ export function createNavigationSession(
     resetView() {
       enqueueTransition(() => {
         if (disposed) return
-        dependencies.map.setViewportInsets(viewportInsets)
         dependencies.map.resetView(getResetTarget({
           panelMode: state.contextualPanel.mode,
           selectedVenue: state.contextualPanel.selectedVenue,

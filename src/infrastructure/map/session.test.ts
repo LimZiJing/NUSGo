@@ -242,6 +242,8 @@ describe('MapSession', () => {
     })
     session.setRouteSelection(selectedRoute)
 
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
     expect(map.fitBounds).toHaveBeenCalledOnce()
     session.loadTransitData(transitData, selectedRoute)
 
@@ -258,6 +260,8 @@ describe('MapSession', () => {
 
     session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
 
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
     expect(map.fitBounds).toHaveBeenCalledTimes(2)
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toBe('#64748b')
     expect(reloadedMarkers.every((marker) => (
@@ -269,7 +273,7 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
-  it('clears a route presentation when the selected route is missing from reloaded data', async () => {
+  it('replaces pending route framing when the selected route is missing from reloaded data', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -294,7 +298,9 @@ describe('MapSession', () => {
     session.loadTransitData(originalData, selectedRoute)
     session.loadTransitData(replacementData, selectedRoute)
 
-    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [104.1, 2.1]],
       expect.objectContaining({ duration: 500 }),
@@ -328,7 +334,9 @@ describe('MapSession', () => {
     session.loadTransitData(firstData, createRouteSelection(firstData))
     session.loadTransitData(replacementData, createRouteSelection(replacementData))
 
-    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [103.1, 1.1]],
       expect.objectContaining({ duration: 500 }),
@@ -338,7 +346,7 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
-  it('replaces and clears venue markers while flying to the selected venue', async () => {
+  it('queues the latest venue fit and cancels pending framing on clear or dispose', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -361,34 +369,36 @@ describe('MapSession', () => {
     await session.ready
     session.selectVenue(venueOne)
     expect(map.flyTo).not.toHaveBeenCalled()
-    await vi.waitFor(() => expect(map.flyTo).toHaveBeenCalledTimes(1))
-    session.selectVenue(venueTwo)
-    expect(map.flyTo).toHaveBeenCalledTimes(1)
-    await vi.waitFor(() => expect(map.flyTo).toHaveBeenCalledTimes(2))
+    session.clearVenue()
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+    expect(map.flyTo).not.toHaveBeenCalled()
 
-    expect(map.addedMarkers).toHaveLength(2)
-    expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
-    expect(map.addedMarkers[1].remove).not.toHaveBeenCalled()
-    expect(map.flyTo).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      center: [103.7, 1.3],
-      zoom: 17,
-      essential: true,
-    }))
+    session.selectVenue(venueOne)
+    session.selectVenue(venueTwo)
+    expect(map.flyTo).not.toHaveBeenCalled()
     session.setViewportInsets({ top: 88, right: 12, bottom: 196, left: 12 })
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(map.flyTo).toHaveBeenCalledTimes(2)
-    expect(map.flyTo).toHaveBeenNthCalledWith(2, expect.objectContaining({
+    expect(map.flyTo).toHaveBeenCalledOnce()
+
+    expect(map.addedMarkers).toHaveLength(3)
+    expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
+    expect(map.addedMarkers[2].remove).not.toHaveBeenCalled()
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
       center: [103.8, 1.4],
       zoom: 17,
       essential: true,
     }))
+    session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
 
     session.clearVenue()
     session.clearVenue()
 
-    expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
-    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.selectVenue(venueOne)
+    expect(map.flyTo).toHaveBeenCalledOnce()
     session.dispose()
+    session.setViewportInsets({ top: 100, right: 12, bottom: 220, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
     vi.unstubAllGlobals()
   })
 
@@ -412,6 +422,8 @@ describe('MapSession', () => {
     session.setViewportInsets(insets)
     session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
     session.setRouteSelection(createRouteSelection(transitData))
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets(insets)
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [103.1, 1.1]],
       expect.objectContaining({
@@ -419,16 +431,29 @@ describe('MapSession', () => {
       }),
     )
 
+    session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    session.resetView({ kind: 'campus', center: [103.7844, 1.2933], zoom: 15 })
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
+      center: [103.7844, 1.2933],
+      zoom: 15,
+    }))
+    session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+
     session.resetView({ kind: 'trip', coordinates: [[103, 1], [103.1, 1.1]] })
     expect(map.fitBounds).toHaveBeenLastCalledWith(
       [[103, 1], [103.1, 1.1]],
-      expect.objectContaining({ padding: insets, maxZoom: 17 }),
+      expect.objectContaining({
+        padding: { top: 96, right: 12, bottom: 208, left: 12 },
+        maxZoom: 17,
+      }),
     )
     session.resetView({ kind: 'trip', coordinates: [[103.2, 1.2]] })
     expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
       center: [103.2, 1.2],
       zoom: 17,
-      padding: insets,
+      padding: { top: 96, right: 12, bottom: 208, left: 12 },
     }))
     session.zoomIn()
     session.zoomOut()

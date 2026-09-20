@@ -50,6 +50,11 @@ export interface MapSession {
     venues: VenueLocationMap,
     transitIndex: TransitIndex | null,
   ): void
+  /**
+   * Post-render synchronization point for measured map overlays. Implementations
+   * consume at most the latest pending route/venue automatic fit here; later
+   * inset reports update padding without refitting the user's camera.
+   */
   setViewportInsets(insets: MapViewportInsets): void
   zoomIn(): void
   zoomOut(): void

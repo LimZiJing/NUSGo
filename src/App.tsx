@@ -115,7 +115,15 @@ function App() {
       window.removeEventListener('resize', updateInsets)
       resizeObserver?.disconnect()
     }
-  }, [commands, isMobileViewport, mobileOverlay.contextualPanelMinimized, mobileOverlay.tripExpanded, state.contextualPanel.mode])
+  }, [
+    commands,
+    isMobileViewport,
+    mobileOverlay.contextualPanelMinimized,
+    mobileOverlay.tripExpanded,
+    state.contextualPanel.mode,
+    state.contextualPanel.selectedVenue?.code,
+    state.selectedRouteId,
+  ])
 
   useLayoutEffect(() => {
     if (!focusTripControlAfterOverlayRef.current) return
@@ -148,7 +156,11 @@ function App() {
   return (
     <main className="map-shell">
       <div className="map-stage">
-        <div ref={mapContainer} className="map" />
+        <div
+          ref={mapContainer}
+          className="map"
+          style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
+        />
         <MapControls
           visible={isMobileViewport && !mobileOverlay.tripExpanded}
           topOffset={mapInsets.top || 76}

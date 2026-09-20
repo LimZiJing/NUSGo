@@ -18,7 +18,7 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 - [ ] The contextual panel is a persistent, non-modal bottom sheet capped at about half the viewport.
 - [ ] The bottom sheet respects the safe-area inset, scrolls internally, and has no drag affordance or gesture requirement.
 - [ ] There is enough map space between the top card and bottom sheet for pan and zoom interaction.
-- [ ] Venue search receives focus when opened; venue-detail heading receives focus after selection; route select receives focus when shuttle mode opens.
+- [ ] Venue search receives focus when opened; venue-detail heading receives focus after selection; route select receives focus when shuttle mode opens, or the Back fallback receives focus until routes become available.
 - [ ] Back, Escape, and Close restore focus to the control that initiated the current view, with no focus left on removed content.
 - [ ] Trip endpoint search, selection, swap, clear, and validation remain usable.
 

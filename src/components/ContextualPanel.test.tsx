@@ -72,6 +72,14 @@ describe('ContextualPanel', () => {
     expect(markup).toContain('Shuttle route')
   })
 
+  it('leaves shuttle route announcements to the route control', () => {
+    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const markup = renderPanel(state)
+
+    expect(markup).not.toContain('Shuttle routes opened.')
+    expect(markup).toContain('Showing all 1 shuttle routes and all 2 shuttle stops.')
+  })
+
   it('keeps the panel available when venue search throws', () => {
     const malformedVenues = { broken: null } as unknown as typeof venues
     const state = { ...createInitialContextualPanelState(), query: 'broken' }

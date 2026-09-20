@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -13,6 +13,8 @@ import {
 } from '../domain/contextual-panel/state'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { TransitNetwork } from '../domain/transit/types'
+import type { TransitNetworkIndex } from '../domain/transit'
 import type { VenueLocationMap } from '../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -25,13 +27,19 @@ const venues: VenueLocationMap = {
 
 function PanelHarness({
   initialState = createInitialContextualPanelState(),
+  network: networkOverride,
+  networkIndex: networkIndexOverride,
 }: {
   initialState?: ContextualPanelState
+  network?: TransitNetwork | null
+  networkIndex?: TransitNetworkIndex | null
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
-  const network = createValidTransitNetwork()
-  const networkIndex = createTransitIndex(network)
+  const network = networkOverride === undefined ? createValidTransitNetwork() : networkOverride
+  const networkIndex = networkIndexOverride === undefined
+    ? network ? createTransitIndex(network) : null
+    : networkIndexOverride
   const dispatch = (action: ContextualPanelAction): void => {
     setState((current) => contextualPanelReducer(current, action))
   }
@@ -52,6 +60,15 @@ function PanelHarness({
       onEscape={() => dispatch({ type: 'escape' })}
       onRouteSelect={setSelectedRouteId}
     />
+  )
+}
+
+function PanelWithOutsideControl({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <button type="button">Outside panel</button>
+      {children}
+    </>
   )
 }
 
@@ -101,7 +118,8 @@ describe('ContextualPanel accessibility workflows', () => {
     await user.click(opener)
     const routeSelect = await screen.findByRole('combobox', { name: 'Shuttle route' })
     await waitFor(() => expect(document.activeElement).toBe(routeSelect))
-    expect(screen.getByText('Shuttle routes opened.')).toBeTruthy()
+    expect(screen.queryByText('Shuttle routes opened.')).toBeNull()
+    expect(screen.getByText(/Showing all 1 shuttle routes/)).toBeTruthy()
 
     await user.selectOptions(routeSelect, 'A1')
     expect(screen.getByText(/Route A1 selected\./)).toBeTruthy()
@@ -132,6 +150,76 @@ describe('ContextualPanel accessibility workflows', () => {
     await user.click(findVenue)
     await user.click(screen.getByRole('button', { name: 'Close map context' }))
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Find a venue' })))
+  })
+
+  it('uses a deterministic Back fallback while routes load and focuses the select when they arrive', async () => {
+    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const validNetwork = createValidTransitNetwork()
+    const validNetworkIndex = createTransitIndex(validNetwork)
+    const { rerender } = render(
+      <PanelHarness initialState={state} network={null} networkIndex={null} />,
+    )
+    const back = screen.getByRole('button', { name: 'Back to previous map context' })
+    const routeSelect = screen.getByRole('combobox', { name: 'Shuttle route' })
+
+    await waitFor(() => expect(document.activeElement).toBe(back))
+    expect((routeSelect as HTMLSelectElement).disabled).toBe(true)
+    expect(screen.getByText('Loading shuttle routes…')).toBeTruthy()
+
+    rerender(
+      <PanelHarness
+        initialState={state}
+        network={validNetwork}
+        networkIndex={validNetworkIndex}
+      />,
+    )
+
+    await waitFor(() => expect(document.activeElement).toBe(routeSelect))
+  })
+
+  it('does not steal focus when routes become available after the user leaves the fallback', async () => {
+    const user = userEvent.setup()
+    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const validNetwork = createValidTransitNetwork()
+    const validNetworkIndex = createTransitIndex(validNetwork)
+    const { rerender } = render(
+      <PanelWithOutsideControl>
+        <PanelHarness initialState={state} network={null} networkIndex={null} />
+      </PanelWithOutsideControl>,
+    )
+    await waitFor(() => expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Back to previous map context' }),
+    ))
+
+    const outside = screen.getByRole('button', { name: 'Outside panel' })
+    await user.click(outside)
+    const routeSelect = screen.getByRole('combobox', { name: 'Shuttle route' })
+    rerender(
+      <PanelWithOutsideControl>
+        <PanelHarness
+          initialState={state}
+          network={validNetwork}
+          networkIndex={validNetworkIndex}
+        />
+      </PanelWithOutsideControl>,
+    )
+
+    expect(document.activeElement).toBe(outside)
+    expect(document.activeElement).not.toBe(routeSelect)
+  })
+
+  it('keeps focus on Back for an empty-route fallback', async () => {
+    const network = createValidTransitNetwork()
+    network.routes = []
+    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    render(<PanelHarness initialState={state} network={network} networkIndex={null} />)
+
+    await waitFor(() => expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Back to previous map context' }),
+    ))
+    expect((screen.getByRole('combobox', { name: 'Shuttle route' }) as HTMLSelectElement).disabled)
+      .toBe(true)
+    expect(screen.getByText('Showing all 0 shuttle routes and all 2 shuttle stops.')).toBeTruthy()
   })
 
   it('keeps responsive presentation structure semantic without a modal role', () => {

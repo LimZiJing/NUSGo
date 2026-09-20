@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, type MouseEvent } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type MouseEvent,
+} from 'react'
 import { searchVenues, type VenueSearchResult } from '../domain/venue/search'
 import type { TransitNetwork } from '../domain/transit/types'
 import type { TransitNetworkIndex } from '../domain/transit'
@@ -11,6 +17,8 @@ interface FocusTarget {
   readonly key: string | null
   readonly fallbackKey: string | null
 }
+
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 interface ContextualPanelProps {
   state: ContextualPanelState
@@ -39,8 +47,8 @@ function findFocusTarget(key: string): HTMLElement | undefined {
     .find((element) => element.dataset.contextualFocusId === key)
 }
 
-function getPanelAnnouncement(state: ContextualPanelState): string {
-  if (state.mode === 'shuttle') return 'Shuttle routes opened.'
+function getPanelAnnouncement(state: ContextualPanelState): string | null {
+  if (state.mode === 'shuttle') return null
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
   }
@@ -67,8 +75,33 @@ export function ContextualPanel({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
   const routeSelectRef = useRef<HTMLSelectElement>(null)
+  const shuttleBackRef = useRef<HTMLButtonElement>(null)
   const focusHistoryRef = useRef<FocusTarget[]>([])
   const pendingFocusRef = useRef<FocusTarget | null>(null)
+  const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
+  const shuttleRouteFocusPendingRef = useRef(false)
+  const shuttleFocusMovedRef = useRef(false)
+  const programmaticFocusRef = useRef(false)
+
+  const focusElement = (element: HTMLElement | null): void => {
+    if (!element) return
+    programmaticFocusRef.current = true
+    element.focus()
+    programmaticFocusRef.current = false
+  }
+
+  const handlePanelFocusCapture = (): void => {
+    if (
+      state.mode === 'shuttle' &&
+      shuttleRouteFocusPendingRef.current &&
+      !programmaticFocusRef.current
+    ) {
+      shuttleRouteFocusPendingRef.current = false
+      shuttleFocusMovedRef.current = true
+    }
+  }
+
+  const routesAvailable = (networkIndex?.routes ?? network?.routes ?? []).length > 0
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -82,7 +115,7 @@ export function ContextualPanel({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onEscape])
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const pendingFocus = pendingFocusRef.current
     pendingFocusRef.current = null
     const focusTarget = pendingFocus?.element.isConnected
@@ -95,26 +128,52 @@ export function ContextualPanel({
       : undefined
     const target = focusTarget ?? fallbackTarget
     if (target) {
-      target.focus()
+      focusElement(target)
+      previousModeRef.current = state.mode
       return
     }
 
     if (state.mode === 'venue-search') {
-      searchInputRef.current?.focus()
+      focusElement(searchInputRef.current)
+      previousModeRef.current = state.mode
       return
     }
     if (state.mode === 'venue-detail') {
-      detailHeadingRef.current?.focus()
+      focusElement(detailHeadingRef.current)
+      previousModeRef.current = state.mode
       return
     }
     if (state.mode === 'shuttle') {
-      routeSelectRef.current?.focus()
+      const enteringShuttle = previousModeRef.current !== 'shuttle'
+      const fallback = shuttleBackRef.current ?? panelHeadingRef.current
+
+      if (enteringShuttle) {
+        shuttleRouteFocusPendingRef.current = true
+        shuttleFocusMovedRef.current = false
+      }
+
+      if (routeSelectRef.current && !routeSelectRef.current.disabled) {
+        const mayFocusRouteSelect = enteringShuttle || (
+          shuttleRouteFocusPendingRef.current &&
+          !shuttleFocusMovedRef.current &&
+          document.activeElement === fallback
+        )
+        if (mayFocusRouteSelect) {
+          focusElement(routeSelectRef.current)
+        }
+        shuttleRouteFocusPendingRef.current = false
+      } else if (enteringShuttle) {
+        focusElement(fallback)
+      }
+
+      previousModeRef.current = state.mode
       return
     }
 
     focusHistoryRef.current = []
-    panelHeadingRef.current?.focus()
-  }, [state.mode, state.selectedVenue?.code])
+    focusElement(panelHeadingRef.current)
+    previousModeRef.current = state.mode
+  }, [routesAvailable, state.mode, state.selectedVenue?.code])
 
   const rememberCurrentControl = (
     event: MouseEvent<HTMLElement>,
@@ -168,11 +227,13 @@ export function ContextualPanel({
       return { results: [], failed: true }
     }
   }, [state.query, venues])
+  const panelAnnouncement = getPanelAnnouncement(state)
 
   return (
     <section
       className={`contextual-panel contextual-panel-${state.mode}`}
       aria-labelledby="contextual-panel-heading"
+      onFocusCapture={handlePanelFocusCapture}
     >
       <div className="contextual-panel-header">
         <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
@@ -290,7 +351,12 @@ export function ContextualPanel({
 
       {state.mode === 'shuttle' && (
         <div className="contextual-panel-content">
-          <button type="button" onClick={handleBack} aria-label="Back to previous map context">
+          <button
+            ref={shuttleBackRef}
+            type="button"
+            onClick={handleBack}
+            aria-label="Back to previous map context"
+          >
             Back
           </button>
           <TransitRouteControl
@@ -302,9 +368,11 @@ export function ContextualPanel({
           />
         </div>
       )}
-      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-        {getPanelAnnouncement(state)}
-      </p>
+      {panelAnnouncement && (
+        <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+          {panelAnnouncement}
+        </p>
+      )}
     </section>
   )
 }

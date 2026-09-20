@@ -574,7 +574,7 @@ h3:focus {
     max-height: none;
     overflow: visible;
     align-items: stretch;
-    justify-content: space-between;
+    align-content: space-between;
     gap: 12px;
     pointer-events: none;
   }
@@ -593,7 +593,6 @@ h3:focus {
     align-self: flex-end;
     max-height: min(50vh, calc(100vh - 36px));
     max-height: min(50dvh, calc(100dvh - 36px));
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     border-radius: 10px;

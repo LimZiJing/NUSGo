@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { useEffect, useRef, useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MapControls } from './MapControls'
+import { MapControls } from './map-controls'
 import { isFocusInsideMapControls } from './map-controls-focus'
 
 afterEach(cleanup)

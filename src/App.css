@@ -21,22 +21,6 @@
   height: 100%;
 }
 
-.map-status {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #1f2937;
-  background: rgb(255 255 255 / 90%);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
-  font: 14px/1.2 system-ui, sans-serif;
-}
-
-.map-status::first-line {
-  font-weight: 600;
-}
-
 .map-legend {
   position: absolute;
   top: 12px;
@@ -175,6 +159,38 @@
 
 .contextual-panel-status {
   color: #475569;
+}
+
+.contextual-panel-status-success {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.contextual-panel-status-loading {
+  margin: 0;
+}
+
+.contextual-panel-status-failure {
+  margin: 0;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.contextual-panel-failure-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  background: #b91c1c;
+  font-weight: 700;
+}
+
+.map-controls {
+  display: none;
 }
 
 .contextual-panel-detail h3 {
@@ -618,6 +634,43 @@ h3:focus {
     display: none;
   }
 
+  .map-controls {
+    position: absolute;
+    z-index: 13;
+    top: var(--map-controls-top, 76px);
+    left: max(12px, env(safe-area-inset-left));
+    display: grid;
+    gap: 6px;
+    pointer-events: auto;
+  }
+
+  .map-controls-chip,
+  .map-controls-popover button {
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #1f2937;
+    background: rgb(255 255 255 / 95%);
+    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+    font: 14px/1.2 system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  .map-controls-popover {
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 95%);
+    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  }
+
+  .map-controls-popover button {
+    min-width: 108px;
+    text-align: left;
+  }
+
   .trip-controls {
     position: absolute;
     z-index: 11;
@@ -727,15 +780,6 @@ h3:focus {
     overflow-y: auto;
   }
 
-  .map-status {
-    z-index: 9;
-    left: max(12px, env(safe-area-inset-left));
-    bottom: calc(50dvh + max(44px, env(safe-area-inset-bottom)));
-    max-width: min(60vw, 280px);
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-
   .map .maplibregl-ctrl-top-right,
   .map .maplibregl-ctrl-bottom-right,
   .map .maplibregl-ctrl-bottom-left {
@@ -743,9 +787,7 @@ h3:focus {
   }
 
   .map .maplibregl-ctrl-top-right {
-    top: auto;
-    right: max(12px, env(safe-area-inset-right));
-    bottom: calc(50dvh + 44px);
+    display: none;
   }
 
   .map .maplibregl-ctrl-bottom-right,

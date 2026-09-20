@@ -183,6 +183,8 @@ describe('map lifecycle style readiness', () => {
     click(new FakeElement('.maplibregl-marker'))
     click(new FakeElement('.maplibregl-popup'))
     click(new FakeElement('.maplibregl-control'))
+    click(new FakeElement('.maplibregl-ctrl'))
+    click(new FakeElement('.map-controls'))
     expect(onEmptyMapClick).not.toHaveBeenCalled()
 
     map.renderedFeatures.push({ routeId: 'A1' })

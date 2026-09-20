@@ -5,6 +5,7 @@ import type {
   PaddingOptions,
   SymbolLayerSpecification,
 } from 'maplibre-gl'
+import type { MapViewportInsets } from '../../app/contracts/map'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   TransitGeoJsonPosition,
@@ -125,7 +126,19 @@ export function getTransitRouteBounds(
   return [[west, south], [east, north]]
 }
 
-export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions {
+export function getTransitRouteFitPadding(
+  viewportWidth: number,
+  viewportInsets?: MapViewportInsets,
+): PaddingOptions {
+  if (viewportInsets && Object.values(viewportInsets).some((value) => value > 0)) {
+    return {
+      top: Math.max(24, viewportInsets.top),
+      right: Math.max(24, viewportInsets.right),
+      bottom: Math.max(64, viewportInsets.bottom),
+      left: Math.max(24, viewportInsets.left),
+    }
+  }
+
   if (viewportWidth <= 768) {
     return { top: 280, right: 24, bottom: 64, left: 24 }
   }
@@ -136,7 +149,12 @@ export function getTransitRouteFitPadding(viewportWidth: number): PaddingOptions
 
 export interface TransitRouteLayers {
   setSelection(routeId: string | null, overlappingRouteIds?: ReadonlySet<string>): void
-  fitRoute(index: TransitIndex, geometry: TransitRouteGeometry, routeId: string | null): void
+  fitRoute(
+    index: TransitIndex,
+    geometry: TransitRouteGeometry,
+    routeId: string | null,
+    viewportInsets?: MapViewportInsets,
+  ): void
   dispose(): void
 }
 
@@ -248,6 +266,7 @@ function fitTransitRoute(
   index: TransitIndex,
   geometry: TransitRouteGeometry,
   routeId: string | null,
+  viewportInsets?: MapViewportInsets,
 ): void {
   const bounds = getTransitRouteBounds(index, geometry, routeId)
   if (!bounds) return
@@ -255,7 +274,7 @@ function fitTransitRoute(
   map.fitBounds(bounds, {
     duration: 500,
     maxZoom: 16,
-    padding: getTransitRouteFitPadding(map.getContainer().clientWidth),
+    padding: getTransitRouteFitPadding(map.getContainer().clientWidth, viewportInsets),
   })
 }
 
@@ -284,9 +303,9 @@ export function createTransitRouteLayers(
       if (disposed) return
       setTransitRouteSelection(map, routeId, overlappingRouteIds)
     },
-    fitRoute(index, routeGeometry, routeId) {
+    fitRoute(index, routeGeometry, routeId, viewportInsets) {
       if (disposed) return
-      fitTransitRoute(map, index, routeGeometry, routeId)
+      fitTransitRoute(map, index, routeGeometry, routeId, viewportInsets)
     },
     dispose() {
       if (disposed) return

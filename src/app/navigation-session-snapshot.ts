@@ -1,7 +1,7 @@
 import type { ContextualPanelSnapshot, ContextualPanelState } from '../domain/contextual-panel/state'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { NavigationSessionState } from './navigation-session'
+import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'
 import type { ResourceState, ResourceStatusState } from './resource-status'
 
 function freeze<T>(value: T): T {
@@ -60,11 +60,18 @@ function snapshotResourceStatus(status: ResourceStatusState): ResourceStatusStat
   return freeze({ venue: snapshotResourceState(status.venue), transit })
 }
 
+function snapshotStartupFailure(
+  failure: NavigationSessionStartupFailure | null,
+): NavigationSessionStartupFailure | null {
+  return failure === null ? null : freeze({ message: failure.message })
+}
+
 export function freezeNavigationSessionSnapshot(state: NavigationSessionState): NavigationSessionState {
   return freeze({
     ...state,
     contextualPanel: snapshotContextualPanel(state.contextualPanel),
     tripRequest: snapshotTripRequest(state.tripRequest),
     resourceStatus: snapshotResourceStatus(state.resourceStatus),
+    startupFailure: snapshotStartupFailure(state.startupFailure),
   })
 }

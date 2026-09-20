@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
 import { validateTripRequest } from '../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
 import type { TransitIndex } from '../domain/transit'
@@ -17,6 +17,7 @@ interface TripEndpointControlsProps {
   networkIndex: TransitIndex | null
   expanded?: boolean
   mobileViewport?: boolean
+  containerRef?: Ref<HTMLElement>
   onExpandedChange?: (expanded: boolean) => void
   onSwap: () => void
   onSelectOriginEndpoint: (endpoint: TripEndpoint) => void
@@ -61,6 +62,7 @@ export function TripEndpointControls({
   networkIndex,
   expanded,
   mobileViewport = true,
+  containerRef,
   onExpandedChange,
   onSwap,
   onSelectOriginEndpoint,
@@ -154,6 +156,7 @@ export function TripEndpointControls({
   return (
     <section
       className={`trip-controls${isExpanded ? ' trip-controls-expanded' : ' trip-controls-collapsed'}`}
+      ref={containerRef}
       aria-label="Trip endpoints"
       data-expanded={isExpanded}
     >

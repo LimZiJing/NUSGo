@@ -58,6 +58,8 @@ vi.mock('maplibre-gl', () => {
     readonly fitBounds = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly flyTo = vi.fn()
+    readonly zoomIn = vi.fn()
+    readonly zoomOut = vi.fn()
     readonly queryRenderedFeatures = vi.fn(() => [])
     readonly remove = vi.fn()
 
@@ -358,27 +360,81 @@ describe('MapSession', () => {
 
     await session.ready
     session.selectVenue(venueOne)
+    expect(map.flyTo).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(map.flyTo).toHaveBeenCalledTimes(1))
     session.selectVenue(venueTwo)
+    expect(map.flyTo).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(map.flyTo).toHaveBeenCalledTimes(2))
 
     expect(map.addedMarkers).toHaveLength(2)
     expect(map.addedMarkers[0].remove).toHaveBeenCalledOnce()
     expect(map.addedMarkers[1].remove).not.toHaveBeenCalled()
-    expect(map.flyTo).toHaveBeenNthCalledWith(1, {
+    expect(map.flyTo).toHaveBeenNthCalledWith(1, expect.objectContaining({
       center: [103.7, 1.3],
       zoom: 17,
       essential: true,
-    })
-    expect(map.flyTo).toHaveBeenNthCalledWith(2, {
+    }))
+    session.setViewportInsets({ top: 88, right: 12, bottom: 196, left: 12 })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    expect(map.flyTo).toHaveBeenNthCalledWith(2, expect.objectContaining({
       center: [103.8, 1.4],
       zoom: 17,
       essential: true,
-    })
+    }))
 
     session.clearVenue()
     session.clearVenue()
 
     expect(map.addedMarkers[1].remove).toHaveBeenCalledOnce()
     expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('uses measured insets for route, endpoint, zoom, and reset camera actions', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
+      zoomIn: ReturnType<typeof vi.fn>
+      zoomOut: ReturnType<typeof vi.fn>
+    }
+    const insets = { top: 88, right: 12, bottom: 196, left: 12 }
+
+    await session.ready
+    session.setViewportInsets(insets)
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    session.setRouteSelection(createRouteSelection(transitData))
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.1, 1.1]],
+      expect.objectContaining({
+        padding: { top: 88, right: 24, bottom: 196, left: 24 },
+      }),
+    )
+
+    session.resetView({ kind: 'trip', coordinates: [[103, 1], [103.1, 1.1]] })
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.1, 1.1]],
+      expect.objectContaining({ padding: insets, maxZoom: 17 }),
+    )
+    session.resetView({ kind: 'trip', coordinates: [[103.2, 1.2]] })
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103.2, 1.2],
+      zoom: 17,
+      padding: insets,
+    }))
+    session.zoomIn()
+    session.zoomOut()
+    expect(map.zoomIn).toHaveBeenCalledWith({ duration: 200 })
+    expect(map.zoomOut).toHaveBeenCalledWith({ duration: 200 })
+
     session.dispose()
     vi.unstubAllGlobals()
   })

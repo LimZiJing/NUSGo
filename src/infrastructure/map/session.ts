@@ -3,6 +3,8 @@ import type {
   MapRouteSelection,
   MapSession,
   MapSessionOptions,
+  MapResetTarget,
+  MapViewportInsets,
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { VenueLocation } from '../../domain/venue/types'
@@ -16,6 +18,12 @@ import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
+const EMPTY_VIEWPORT_INSETS: MapViewportInsets = {
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+}
 
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
@@ -28,6 +36,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
   let currentTransitIndex: TransitIndex | null = null
+  let viewportInsets: MapViewportInsets = EMPTY_VIEWPORT_INSETS
+  let pendingVenueFit: VenueLocation | null = null
+  let venueFitFrame: number | null = null
   let currentRouteSelection: MapRouteSelection = {
     route: null,
     overlappingRouteIds: EMPTY_ROUTE_OVERLAP,
@@ -44,6 +55,62 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const clearVenueMarker = () => {
     selectedVenueMarker?.dispose()
     selectedVenueMarker = null
+    pendingVenueFit = null
+  }
+
+  const getFitPadding = (): MapViewportInsets => viewportInsets
+
+  const fitVenue = (venue: VenueLocation): void => {
+    const location = venue.location
+    if (!location) return
+    map.flyTo({
+      center: [location.x, location.y],
+      zoom: 17,
+      duration: 500,
+      padding: getFitPadding(),
+      essential: true,
+    })
+  }
+
+  const scheduleVenueFit = (venue: VenueLocation): void => {
+    pendingVenueFit = venue
+    if (venueFitFrame !== null) return
+    const fit = (): void => {
+      venueFitFrame = null
+      if (disposed) return
+      const pendingVenue = pendingVenueFit
+      pendingVenueFit = null
+      if (pendingVenue) fitVenue(pendingVenue)
+    }
+    if (typeof requestAnimationFrame === 'function') {
+      venueFitFrame = requestAnimationFrame(fit)
+    } else {
+      venueFitFrame = Number(setTimeout(fit, 0))
+    }
+  }
+
+  const fitTripEndpoints = (coordinates: readonly (readonly [number, number])[]): void => {
+    if (coordinates.length === 0) return
+    if (coordinates.length === 1) {
+      map.flyTo({
+        center: [coordinates[0][0], coordinates[0][1]],
+        zoom: 17,
+        duration: 500,
+        padding: getFitPadding(),
+        essential: true,
+      })
+      return
+    }
+    const longitudes = coordinates.map(([longitude]) => longitude)
+    const latitudes = coordinates.map(([, latitude]) => latitude)
+    map.fitBounds([
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ], {
+      duration: 500,
+      maxZoom: 17,
+      padding: getFitPadding(),
+    })
   }
 
   const clearEndpointMarkers = () => {
@@ -121,6 +188,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           data.index,
           data.geometry,
           nextRouteId,
+          viewportInsets,
         )
       }
     },
@@ -143,6 +211,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           transitData.index,
           transitData.geometry,
           nextRouteId,
+          viewportInsets,
         )
       }
     },
@@ -157,6 +226,47 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       endpointMarkers = createTripEndpointMarkers(map, request, venues, transitIndex)
     },
 
+    setViewportInsets(insets: MapViewportInsets) {
+      if (disposed) return
+      viewportInsets = { ...insets }
+    },
+
+    zoomIn() {
+      if (disposed) return
+      map.zoomIn({ duration: 200 })
+    },
+
+    zoomOut() {
+      if (disposed) return
+      map.zoomOut({ duration: 200 })
+    },
+
+    resetView(target: MapResetTarget) {
+      if (disposed) return
+      if (target.kind === 'venue' || target.kind === 'campus') {
+        map.flyTo({
+          center: [target.center[0], target.center[1]],
+          zoom: target.zoom,
+          duration: 500,
+          padding: getFitPadding(),
+          essential: true,
+        })
+        return
+      }
+      if (target.kind === 'trip') {
+        fitTripEndpoints(target.coordinates)
+        return
+      }
+      if (transitData) {
+        transitRouteLayers?.fitRoute(
+          transitData.index,
+          transitData.geometry,
+          target.routeId,
+          viewportInsets,
+        )
+      }
+    },
+
     selectVenue(venue: VenueLocation) {
       if (disposed) return
 
@@ -165,11 +275,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (!marker || !venue.location) return
 
       selectedVenueMarker = marker
-      map.flyTo({
-        center: [venue.location.x, venue.location.y],
-        zoom: Math.max(map.getZoom(), 17),
-        essential: true,
-      })
+      scheduleVenueFit(venue)
     },
 
     clearVenue() {
@@ -179,6 +285,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     dispose() {
       if (disposed) return
       disposed = true
+      pendingVenueFit = null
+      if (venueFitFrame !== null) {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(venueFitFrame)
+        else clearTimeout(venueFitFrame)
+        venueFitFrame = null
+      }
       clearVenueMarker()
       clearEndpointMarkers()
       clearTransitData()

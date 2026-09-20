@@ -27,6 +27,14 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 - [ ] Venue search receives focus when opened; venue-detail heading receives focus after selection; route select receives focus when shuttle mode opens, or the Back fallback receives focus until routes become available.
 - [ ] Back, Escape, and Close restore focus to the control that initiated the current view, with no focus left on removed content.
 - [ ] Trip endpoint search, selection, swap, clear, and validation remain usable.
+- [ ] The collapsed mobile Map controls chip appears below Plan trip and opens a labelled popover.
+- [ ] Zoom in and Zoom out each move the map by one animated step and dismiss the popover.
+- [ ] Reset view targets the visible venue detail before other targets.
+- [ ] Reset view targets the visible selected shuttle route before trip endpoints.
+- [ ] Reset view fits two mapped trip endpoints, centers one mapped endpoint at venue level, and falls back to the campus view when no target is available.
+- [ ] Escape and outside-map interaction dismiss the Map controls popover.
+- [ ] Keyboard dismissal restores focus to the Map controls chip.
+- [ ] Expanding Plan trip hides Map controls and moves focus to a visible trip control when the chip or an action has focus.
 
 ## Breakpoint resize across 768px / 769px
 
@@ -34,6 +42,11 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 - [ ] At 768px the layout remains the mobile full-viewport map with top card and bottom sheet; at 769px it uses the desktop persistent overlay layout.
 - [ ] Route camera fitting uses mobile overlay padding at 768px and desktop side padding at 769px.
 - [ ] No overlay covers the other control, traps focus, or leaves the map unavailable for interaction.
+
+## Desktop native map controls
+
+- [ ] The custom mobile Map controls chip and popover are absent above 768px.
+- [ ] Native MapLibre navigation controls remain present, usable, and non-overlapping on desktop.
 
 ## Edge headless/device-emulation evidence (2026-09-20)
 

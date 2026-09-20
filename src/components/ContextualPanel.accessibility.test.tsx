@@ -16,6 +16,7 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { TransitNetwork } from '../domain/transit/types'
 import type { TransitNetworkIndex } from '../domain/transit'
 import type { VenueLocationMap } from '../domain/venue/types'
+import type { ResourceStatusState } from '../app/resource-status'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -30,11 +31,19 @@ function PanelHarness({
   network: networkOverride,
   networkIndex: networkIndexOverride,
   mobileViewport = true,
+  minimized = false,
+  resourceStatus,
+  mapError = null,
+  startupFailure = null,
 }: {
   initialState?: ContextualPanelState
   network?: TransitNetwork | null
   networkIndex?: TransitNetworkIndex | null
   mobileViewport?: boolean
+  minimized?: boolean
+  resourceStatus?: ResourceStatusState
+  mapError?: string | null
+  startupFailure?: { message: string } | null
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -54,6 +63,10 @@ function PanelHarness({
       networkIndex={networkIndex}
       selectedRouteId={selectedRouteId}
       mobileViewport={mobileViewport}
+      minimized={minimized}
+      resourceStatus={resourceStatus}
+      mapError={mapError}
+      startupFailure={startupFailure}
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
@@ -119,6 +132,78 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('shows successful resource counts in Explore and Shuttle modes but not venue detail', async () => {
+    const resourceStatus: ResourceStatusState = {
+      venue: { status: 'loaded', value: 42 },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    const { rerender } = render(<PanelHarness resourceStatus={resourceStatus} />)
+
+    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+
+    const shuttleState = {
+      ...createInitialContextualPanelState(),
+      mode: 'shuttle' as const,
+    }
+    rerender(<PanelHarness initialState={shuttleState} resourceStatus={resourceStatus} />)
+    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+
+    const detailState = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    cleanup()
+    render(<PanelHarness initialState={detailState} resourceStatus={resourceStatus} />)
+    expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
+  })
+
+  it('shows loading in every mode and announces failures with a minimized indicator', () => {
+    const loading: ResourceStatusState = {
+      venue: { status: 'pending' },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    render(<PanelHarness resourceStatus={loading} />)
+    expect(screen.getByText('Loading map data…')).toBeTruthy()
+
+    const failed: ResourceStatusState = {
+      venue: { status: 'failed', message: 'Unable to load venue data' },
+      transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
+    }
+    const detailState = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    cleanup()
+    render(<PanelHarness initialState={detailState} resourceStatus={failed} mapError="Unable to load map tiles" />)
+    expect(screen.getByText(/Unable to load map tiles/)).toBeTruthy()
+
+    cleanup()
+    render(<PanelHarness resourceStatus={failed} mapError="Unable to load map tiles" minimized />)
+    expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
+  })
+
+  it('announces structured startup failure and keeps its minimized indicator', () => {
+    render(<PanelHarness startupFailure={{ message: 'Unable to start map navigation' }} />)
+    expect(screen.getByText('Unable to start map navigation')).toBeTruthy()
+
+    cleanup()
+    render(
+      <PanelHarness
+        startupFailure={{ message: 'Unable to start map navigation' }}
+        minimized
+      />,
+    )
+    expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
+  })
+
   it('minimizes to an actionable header and restores the current search with safe focus', async () => {
     const user = userEvent.setup()
     render(<MinimizedPanelHarness />)

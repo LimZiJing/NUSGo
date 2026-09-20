@@ -1,4 +1,4 @@
-import { createInitialContextualPanelState, type ContextualPanelState } from '../domain/contextual-panel/state'
+import { createInitialContextualPanelState, type ContextualPanelState } from '../features/contextual-panel/state'
 import type { TransitIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import {

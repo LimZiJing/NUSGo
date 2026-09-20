@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
-import { validateTripRequest } from '../domain/trip/endpoints'
-import { getTripEndpointLabel, searchTripLocations } from '../domain/location/search'
-import type { TransitIndex } from '../domain/transit'
+import { validateTripRequest } from '../../domain/trip/endpoints'
+import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
+import type { TransitIndex } from '../../domain/transit'
 import type {
   TripEndpoint,
   TripEndpointRole,
   TripLocationSearchResult,
   TripRequest,
-} from '../domain/trip/types'
-import type { VenueLocationMap } from '../domain/venue/types'
+} from '../../domain/trip/types'
+import type { VenueLocationMap } from '../../domain/venue/types'
 import { getTripPlanSummary } from './trip-summary'
 
 interface TripEndpointControlsProps {

@@ -4,17 +4,17 @@ import { useState } from 'react'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
-import { TripEndpointControls } from './TripEndpointControl'
-import { createTransitIndex } from '../domain/transit'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import { TripEndpointControls } from './trip-endpoint-controls'
+import { createTransitIndex } from '../../domain/transit'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import {
   clearTripEndpoint,
   createEmptyTripRequest,
   setTripEndpoint,
   swapTripEndpoints,
-} from '../domain/trip/endpoints'
-import type { TripRequest } from '../domain/trip/types'
-import type { VenueLocationMap } from '../domain/venue/types'
+} from '../../domain/trip/endpoints'
+import type { TripRequest } from '../../domain/trip/types'
+import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

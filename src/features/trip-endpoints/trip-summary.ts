@@ -1,7 +1,7 @@
-import { getTripEndpointLabel } from '../domain/location/search'
-import type { TransitIndex } from '../domain/transit'
-import type { TripEndpoint, TripRequest, TripEndpointRole } from '../domain/trip/types'
-import type { VenueLocationMap } from '../domain/venue/types'
+import { getTripEndpointLabel } from '../../domain/location/search'
+import type { TransitIndex } from '../../domain/transit'
+import type { TripEndpoint, TripRequest, TripEndpointRole } from '../../domain/trip/types'
+import type { VenueLocationMap } from '../../domain/venue/types'
 
 function getTripSummaryEndpointLabel(
   role: TripEndpointRole,

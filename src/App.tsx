@@ -8,8 +8,8 @@ import {
   type CSSProperties,
 } from 'react'
 import { ContextualPanel } from './features/contextual-panel/contextual-panel'
-import { MapControls } from './components/MapControls'
-import { isFocusInsideMapControls } from './components/map-controls-focus'
+import { MapControls } from './ui/map-controls'
+import { isFocusInsideMapControls } from './ui/map-controls-focus'
 import { TripEndpointControls } from './features/trip-endpoints/trip-endpoint-controls'
 import { ShuttleRouteControl } from './features/shuttle-browsing/shuttle-route-control'
 import { createNavigationSession, type NavigationSession } from './app/navigation-session'

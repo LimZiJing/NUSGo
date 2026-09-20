@@ -31,7 +31,7 @@ Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-b
 - MUST run and report npm test, npm run lint, npm run build, and git diff --check when those checks are available and applicable to the change.
 - Every commit described as buildable MUST pass the applicable checks at that point in history.
 - If a named script is unavailable on the intended base, report that fact rather than silently substituting another command. Add the script only when the current feature requires it.
-- Automated checks are required but are not sufficient for map or UI changes. MUST perform and document a manual smoke check of affected interactions, responsive states, keyboard behavior, and important viewport changes.
+- Automated checks are required for applicable changes. UI and map changes SHOULD include targeted local-browser smoke testing for affected interactions. Full responsive, keyboard, and map smoke testing MUST be completed before a release or when those behaviors change materially. If browser testing is unavailable, document the unverified areas and the environment blocker.
 
 ## Comments and documentation
 
@@ -94,7 +94,7 @@ Prefer the simplest explicit design that meets the requirement. Add abstractions
 - Co-locate tests with the module they exercise, use domain vocabulary in test names, and keep fixtures small and representative.
 - Prefer deterministic offline tests. Mock at external boundaries rather than calling live map or data services from unit tests.
 - Add regression coverage for discovered bugs and test both success and failure states when the behavior has meaningful failure modes.
-- For UI changes, cover semantic output, keyboard behavior, accessibility announcements, and state transitions where practical. Automated tests do not replace a documented browser smoke check.
+- For UI changes, cover semantic output, keyboard behavior, accessibility announcements, and state transitions where practical. Automated tests do not replace targeted browser verification when the changed behavior depends on layout, focus, keyboard interaction, MapLibre rendering, or external map resources.
 
 ## UI, accessibility, and map code
 

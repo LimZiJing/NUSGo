@@ -1,8 +1,8 @@
 import type { VenueLocation, VenueLocationMap } from './types'
 
 export interface VenueSearchResult {
-  code: string
-  venue: VenueLocation
+  readonly code: string
+  readonly venue: VenueLocation
 }
 
 const MAX_RESULTS = 8

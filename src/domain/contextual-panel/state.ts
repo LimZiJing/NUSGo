@@ -7,16 +7,16 @@ export type ContextualPanelMode =
   | 'shuttle'
 
 export interface ContextualPanelState {
-  mode: ContextualPanelMode
-  query: string
-  selectedVenue: VenueSearchResult | null
-  history: ContextualPanelSnapshot[]
+  readonly mode: ContextualPanelMode
+  readonly query: string
+  readonly selectedVenue: VenueSearchResult | null
+  readonly history: readonly ContextualPanelSnapshot[]
 }
 
 export interface ContextualPanelSnapshot {
-  mode: ContextualPanelMode
-  query: string
-  selectedVenue: VenueSearchResult | null
+  readonly mode: ContextualPanelMode
+  readonly query: string
+  readonly selectedVenue: VenueSearchResult | null
 }
 
 export type ContextualPanelAction =

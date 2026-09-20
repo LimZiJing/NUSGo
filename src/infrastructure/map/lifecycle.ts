@@ -5,6 +5,7 @@ import {
   type MapMouseEvent,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import type { MapSessionOptions } from '../../app/contracts/map'
 import {
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
@@ -16,12 +17,6 @@ setWorkerUrl(maplibreWorkerUrl)
 
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
-
-export interface MapLifecycleOptions {
-  readonly container: HTMLElement
-  readonly onMapError: (error: unknown) => void
-  readonly onEmptyMapClick: () => void
-}
 
 export interface MapLifecycle {
   readonly map: Map
@@ -57,7 +52,7 @@ export function waitForMapStyleLoaded(
   })
 }
 
-export function createMapLifecycle(options: MapLifecycleOptions): MapLifecycle {
+export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
   const map = new Map({
     container: options.container,

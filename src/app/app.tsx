@@ -7,28 +7,28 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
-import { ContextualPanel } from './features/contextual-panel/contextual-panel'
-import { MapControls } from './ui/map-controls'
-import { isFocusInsideMapControls } from './ui/map-controls-focus'
-import { TripEndpointControls } from './features/trip-endpoints/trip-endpoint-controls'
-import { ShuttleRouteControl } from './features/shuttle-browsing/shuttle-route-control'
-import { createNavigationSession, type NavigationSession } from './app/navigation-session'
+import { ContextualPanel } from '../features/contextual-panel/contextual-panel'
+import { MapControls } from '../ui/map-controls'
+import { isFocusInsideMapControls } from '../ui/map-controls-focus'
+import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
+import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
+import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,
   createNavigationSessionMount,
-} from './app/navigation-session-mount'
-import { useNavigationSession } from './app/use-navigation-session'
-import { deriveContextualPanelStatus } from './app/contextual-panel-status'
+} from './navigation-session-mount'
+import { useNavigationSession } from './use-navigation-session'
+import { deriveContextualPanelStatus } from './contextual-panel-status'
 import {
   createInitialMobileOverlayState,
   getIsMobileViewport,
   mobileOverlayReducer,
   subscribeToMobileViewport,
-} from './app/mobile-overlay-state'
-import type { MapViewportInsets } from './app/map-camera'
-import { applyMapOverlayMeasurements } from './app/map-insets-controller'
-import { loadTransitMapData, loadVenueData } from './infrastructure/data/loaders'
-import { createMapSession } from './infrastructure/map/session'
+} from './mobile-overlay-state'
+import type { MapViewportInsets } from './map-camera'
+import { applyMapOverlayMeasurements } from './map-insets-controller'
+import { loadTransitMapData, loadVenueData } from '../infrastructure/data/loaders'
+import { createMapSession } from '../infrastructure/map/session'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)

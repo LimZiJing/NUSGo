@@ -12,8 +12,7 @@ import {
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import type { ContextualPanelState } from './state'
-import type { ResourceStatusState } from '../../app/resource-status'
-import type { NavigationSessionStartupFailure } from '../../app/navigation-session'
+import type { PanelStatus } from './status'
 
 interface FocusTarget {
   readonly element: HTMLElement
@@ -32,9 +31,7 @@ interface ContextualPanelProps {
   mobileViewport?: boolean
   onRestore?: () => void
   containerRef?: Ref<HTMLElement>
-  resourceStatus?: ResourceStatusState
-  mapError?: string | null
-  startupFailure?: NavigationSessionStartupFailure | null
+  status?: PanelStatus | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
   onOpenVenueSearch: () => void
@@ -64,46 +61,12 @@ function getPanelAnnouncement(state: ContextualPanelState): string | null {
   return 'Map context closed.'
 }
 
-interface PanelStatus {
-  readonly kind: 'loading' | 'success' | 'failure'
-  readonly message: string
-}
-
-function getPanelStatus(
+function getVisiblePanelStatus(
   mode: ContextualPanelState['mode'],
-  resourceStatus: ResourceStatusState | undefined,
-  mapError: string | null | undefined,
-  startupFailure: NavigationSessionStartupFailure | null | undefined,
+  status: PanelStatus | null | undefined,
 ): PanelStatus | null {
-  if (!resourceStatus && !mapError && !startupFailure) return null
-
-  const failures = [
-    startupFailure?.message ?? null,
-    mapError,
-    resourceStatus?.venue.status === 'failed' ? resourceStatus.venue.message : null,
-    resourceStatus?.transit.status === 'failed' ? resourceStatus.transit.message : null,
-  ].filter((message): message is string => Boolean(message))
-  if (failures.length > 0) {
-    return { kind: 'failure', message: failures.join('; ') }
-  }
-
-  if (
-    resourceStatus?.venue.status === 'pending' ||
-    resourceStatus?.transit.status === 'pending'
-  ) return { kind: 'loading', message: 'Loading map data…' }
-
-  if (
-    mode !== 'venue-detail' &&
-    resourceStatus?.venue.status === 'loaded' &&
-    resourceStatus.transit.status === 'loaded'
-  ) {
-    return {
-      kind: 'success',
-      message: `${resourceStatus.venue.value} venues · ${resourceStatus.transit.value.stopCount} shuttle stops · ${resourceStatus.transit.value.routeCount} shuttle routes loaded`,
-    }
-  }
-
-  return null
+  if (!status || (mode === 'venue-detail' && status.kind === 'success')) return null
+  return status
 }
 
 export function ContextualPanel({
@@ -115,9 +78,7 @@ export function ContextualPanel({
   mobileViewport = true,
   onRestore,
   containerRef,
-  resourceStatus,
-  mapError,
-  startupFailure,
+  status,
   onQueryChange,
   onVenueSelect,
   onOpenVenueSearch,
@@ -325,7 +286,7 @@ export function ContextualPanel({
     }
   }, [state.query, venues])
   const panelAnnouncement = getPanelAnnouncement(state)
-  const panelStatus = getPanelStatus(state.mode, resourceStatus, mapError, startupFailure)
+  const panelStatus = getVisiblePanelStatus(state.mode, status)
 
   return (
     <section

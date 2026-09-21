@@ -20,4 +20,8 @@ This checklist is intentionally honest about the boundary between automated evid
 - [ ] Exercise Back, Escape, empty-map click, and panel close behavior.
 - [ ] Check the desktop layout at the supported viewport sizes.
 
-Manual desktop/map verification remains the only unresolved QA blocker. No browser QA result is claimed here.
+The original Issue #39 manual desktop/map verification was pending; PR9 follow-up evidence is recorded below.
+
+## PR9 follow-up — 2026-09-21
+
+The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview resource evidence: 719 venues, 33 shuttle stops, and 8 shuttle routes loaded, with route and endpoint workflows exercised. Independent failure injection and exact release viewport checks remain open.

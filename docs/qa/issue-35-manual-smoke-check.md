@@ -19,4 +19,8 @@ This checklist records the manual verification still needed after moving navigat
 - [ ] Manually verify the stateful `TripEndpointControls` wrapper's interactive query/reset/swap/clear behavior for venue and shuttle-stop endpoints; confirm each search query clears only after selection, and confirm endpoint swapping, per-endpoint clearing, clear-both, endpoint markers, and popups remain correct.
 - [ ] Exercise keyboard operation and responsive desktop/mobile overlays at the supported viewport sizes, including shuttle loading fallback and later route availability.
 
-Manual desktop/map verification remains pending; no browser QA result is claimed here.
+The original Issue #35 manual desktop/map verification was pending; PR9 follow-up evidence is recorded below.
+
+## PR9 follow-up — 2026-09-21
+
+The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview navigation-session evidence, including keyboard venue activation, contextual dismissal, all route selections, popup endpoint actions, endpoint swapping, and clearing. Mobile, breakpoint, real Chrome/Edge, and resource-failure checks remain open.

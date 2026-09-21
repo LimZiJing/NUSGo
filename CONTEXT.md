@@ -6,6 +6,9 @@ This document defines the domain language used by NavUS. It contains terminology
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
 - **Transit network**: The set of shuttle routes, shuttle stops, and service associations available for campus travel.
+- **Journey**: A complete, continuous ordered sequence of journey legs from an origin to a destination.
+- **Journey leg**: One part of a journey using one travel mode, such as walking or an internal shuttle.
+- **Recommended journey**: The best valid journey under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable.
 
 ## Shuttle transit
 

@@ -9,7 +9,7 @@ This document records the shared implementation status and near-term engineering
 - Static JSON data in `public/data`
 - Application code and types under `src`
 
-Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side routing prototype, GraphHopper/OSRM/pgRouting for a routing backend, `@turf/turf` for spatial calculations, `ical.js` for calendar import, and PostgreSQL/PostGIS behind a future API.
+The accepted route architecture uses a self-hosted Valhalla pedestrian service behind a server-side boundary and a pure planner that composes walking connections with the canonical shuttle network. OSRM and other routing engines remain replaceable alternatives behind that boundary. Other potential future tools include `ngraph.graph`/`ngraph.path` for a client-side routing prototype, `@turf/turf` for spatial calculations, `ical.js` for calendar import, and PostgreSQL/PostGIS behind a future API.
 
 ## Current implementation
 
@@ -39,6 +39,7 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
 - The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; targeted release smoke evidence exists at 1280 × 720, while exact release/mobile viewports and failure injection still need manual verification.
 - Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
+- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md), but no walking adapter or Journey planner has been implemented yet.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
 
@@ -47,8 +48,9 @@ Potential future tools include `ngraph.graph`/`ngraph.path` for a client-side ro
 Complete the functional transit foundation before a broad UI redesign:
 
 1. Complete the release desktop/map smoke checklist for the validated static transit resources.
-2. Add walking connections and routing.
-3. Investigate live shuttle arrivals after static routes work reliably.
+2. Implement the Valhalla walking boundary and validated walking connections (#71).
+3. Implement the pure composed Journey planner using verified shuttle timing estimates (#66).
+4. Investigate live shuttle arrivals after static routes work reliably.
 
 The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
 

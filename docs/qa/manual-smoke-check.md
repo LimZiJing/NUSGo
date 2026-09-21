@@ -13,11 +13,26 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Release record
 
-- Date:
-- Browser and version:
-- URL or build:
-- Tester:
-- Result: pending / passed / passed with limitations / blocked
+- Date: 2026-09-21
+- Browser and version: Codex In-app Browser, Chromium-based; exact version unavailable from the automation session
+- URL or build: `http://127.0.0.1:4173/NavUS/`, production preview from `npm run build` and `vite preview`
+- Build commit: `ffe891f` (merged PR8 state)
+- Tester: Codex
+- Result: passed with limitations
+
+## PR9 targeted verification — 2026-09-21
+
+The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 viewport. Earlier Edge headless/device-emulation evidence at the release and mobile sizes remains recorded in the Issue #30 document, but it is not a replacement for a full manual release pass. This session did not provide viewport overrides or a real Chrome/Edge window, so the checklist remains unchecked where those conditions matter.
+
+- The basemap, route lines, attribution, venue layer, and shuttle-stop markers rendered. The application reported 719 venues, 33 shuttle stops, and 8 shuttle routes loaded.
+- The existing OpenFreeMap glyph and sprite limitations remain relevant; the map still rendered with attribution and usable application controls.
+- Venue search for `COM1-0210` returned a result. Keyboard focus moved from the search field through the clear control to the result; Enter opened venue details and focused the venue heading.
+- Venue details showed the selected map marker without a duplicate popup. Back returned to search, Escape closed the map context, Close returned focus to Find a venue, and an empty-map click dismissed venue details.
+- Shuttle browsing opened with the route select focused. A1, A2, D1, D2, R1, R2, K, and P each displayed route-specific directions and ordered stop lists; Show all routes restored all 8 routes and 33 stops. Escape closed shuttle browsing.
+- Shuttle-stop popups displayed stop services and Set as origin, Set as destination, and Close popup controls. Direct origin and destination assignment from two popups worked, and Clear both endpoints removed them.
+- Trip endpoint search set origin `COM1-0210` and destination `LT13-OPP` (Ventus). Swap exchanged the endpoints and Clear both endpoints removed both markers and selections.
+- Automated and repository checks: `npm test` (31 files, 212 tests), `npm run lint`, `npm run build`, and `git diff --check` passed.
+- Not verified in this session: exact 1440 × 900 desktop, 390 × 844 mobile, 768/769px resize behavior, safe-area spacing, mobile map-controls focus flow, and injected resource failures. Real Chrome/Edge and a physical software keyboard were also not available.
 
 ## Desktop — 1440 × 900
 

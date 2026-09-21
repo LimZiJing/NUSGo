@@ -18,4 +18,8 @@ This checklist records the manual verification still needed after the MapLibre i
 - [ ] Set venue and shuttle-stop trip endpoints independently; verify distinct marker styling, popup content, and clearing/swapping behavior.
 - [ ] Exercise responsive desktop/mobile overlays and keyboard interactions at supported viewport sizes.
 
-Manual desktop/map verification remains pending; no browser QA result is claimed here.
+The original Issue #34 manual desktop/map verification was pending; PR9 follow-up evidence is recorded below.
+
+## PR9 follow-up — 2026-09-21
+
+The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview map evidence. The map, attribution, route lines, markers, route-specific lists, and shuttle-stop popup actions were verified; exact release viewports and external-resource failure injection remain open.

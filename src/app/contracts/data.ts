@@ -1,4 +1,5 @@
 import type { TransitIndex } from '../../domain/transit'
+import type { ShuttleTimingData } from '../../domain/transit/timing'
 import type {
   TransitNetwork,
   TransitRouteGeometry,
@@ -14,4 +15,5 @@ export interface LoadedTransitData {
   readonly network: TransitNetwork
   readonly geometry: TransitRouteGeometry
   readonly index: TransitIndex
+  readonly shuttleTiming: ShuttleTimingData
 }

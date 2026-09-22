@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMapSession } from './session'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import { createTransitIndex } from '../../domain/transit'
+import { createTransitIndex, generateShuttleTimingData } from '../../domain/transit'
 import type { TransitRouteGeometry } from '../../domain/transit/types'
 import type { VenueLocation } from '../../domain/venue/types'
 
@@ -203,7 +203,12 @@ function createTransitData(routeId = 'A1', color = '#123456') {
     }],
   }
   const index = createTransitIndex(network)
-  return { network: index.network, geometry, index }
+  return {
+    network: index.network,
+    geometry,
+    index,
+    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
+  }
 }
 
 function createRouteSelection(data: ReturnType<typeof createTransitData>) {
@@ -505,6 +510,7 @@ describe('MapSession', () => {
       network: secondIndex.network,
       geometry: firstTransitData.geometry,
       index: secondIndex,
+      shuttleTiming: firstTransitData.shuttleTiming,
     }, {
       route: null,
       overlappingRouteIds: new Set(),

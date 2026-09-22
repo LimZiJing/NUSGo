@@ -3,6 +3,7 @@ import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'
 import type { ResourceState, ResourceStatusState } from './resource-status'
+import type { JourneyState } from './journey-state'
 
 function freeze<T>(value: T): T {
   return Object.freeze(value) as T
@@ -45,6 +46,32 @@ function snapshotTripRequest(request: TripRequest): TripRequest {
   })
 }
 
+function snapshotJourneyState(state: JourneyState): JourneyState {
+  if (state.journey === null) return freeze({ ...state })
+
+  const journey = state.journey
+  const legs = journey.legs.map((leg) => freeze({
+    ...leg,
+    from: freeze({ ...leg.from }),
+    to: freeze({ ...leg.to }),
+    geometry: freeze({
+      ...leg.geometry,
+      coordinates: freeze(leg.geometry.coordinates.map((coordinate) => (
+        freeze([coordinate[0], coordinate[1]] as const)
+      ))),
+    }),
+  }))
+  return freeze({
+    ...state,
+    journey: freeze({
+      ...journey,
+      origin: freeze({ ...journey.origin }),
+      destination: freeze({ ...journey.destination }),
+      legs: freeze(legs),
+    }),
+  })
+}
+
 function snapshotResourceState<T>(resource: ResourceState<T>): ResourceState<T> {
   if (resource.status === 'pending') return freeze({ status: 'pending' })
   if (resource.status === 'failed') return freeze({ status: 'failed', message: resource.message })
@@ -71,6 +98,7 @@ export function freezeNavigationSessionSnapshot(state: NavigationSessionState): 
     ...state,
     contextualPanel: snapshotContextualPanel(state.contextualPanel),
     tripRequest: snapshotTripRequest(state.tripRequest),
+    journey: snapshotJourneyState(state.journey),
     resourceStatus: snapshotResourceStatus(state.resourceStatus),
     startupFailure: snapshotStartupFailure(state.startupFailure),
   })

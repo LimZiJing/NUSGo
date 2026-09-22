@@ -68,6 +68,7 @@ function createMountDependencies(
     createNavigationSession: vi.fn(() => session),
     loadVenues: vi.fn(async () => ({ venues: {}, venueCount: 0 })),
     loadTransit: vi.fn(async () => new Promise<LoadedTransitData>(() => undefined)),
+    journeyPlanner: vi.fn(async () => null),
     getMapOptions: () => mapOptions,
   }
 }
@@ -94,6 +95,7 @@ describe('navigation session application seam', () => {
       map,
       loadVenues: dependencies.loadVenues,
       loadTransit: dependencies.loadTransit,
+      journeyPlanner: dependencies.journeyPlanner,
     })
     expect(session.start).toHaveBeenCalledOnce()
 

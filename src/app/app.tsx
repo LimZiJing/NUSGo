@@ -29,6 +29,8 @@ import type { MapViewportInsets } from './map-camera'
 import { applyMapOverlayMeasurements } from './map-insets-controller'
 import { loadTransitMapData, loadVenueData } from '../infrastructure/data/loaders'
 import { createMapSession } from '../infrastructure/map/session'
+import { createValhallaRouteEngine } from '../infrastructure/routing/valhalla'
+import { createJourneyPlanningService } from './journey-planning'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -59,6 +61,11 @@ function App() {
   const focusTripControlAfterOverlayRef = useRef(false)
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
+  const journeyPlanner = useMemo(() => createJourneyPlanningService(
+    createValhallaRouteEngine({
+      baseUrl: import.meta.env.VITE_VALHALLA_BASE_URL ?? 'http://localhost:8002',
+    }),
+  ), [])
 
   useEffect(() => {
     const updateViewport = (): void => {
@@ -148,6 +155,7 @@ function App() {
       createNavigationSession,
       loadVenues: loadVenueData,
       loadTransit: loadTransitMapData,
+      journeyPlanner,
       onMapInteraction: () => setMapControlsOpen(false),
     })
     setSession(mount.session)
@@ -155,7 +163,7 @@ function App() {
     return () => {
       mount.dispose()
     }
-  }, [])
+  }, [journeyPlanner])
 
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'
 

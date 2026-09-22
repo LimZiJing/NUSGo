@@ -10,8 +10,12 @@ Before exploring or changing the repository, read the relevant repository guidan
 4. `docs/agents/architecture.md` for target module ownership and dependency direction.
 5. `docs/agents/coding-standards.md` for engineering, verification, and handoff rules.
 6. `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md` for GitHub issue workflow and labels.
+7. `docs/agents/workflow.md` for the standard Codex task lifecycle and efficiency guardrails.
+8. `docs/agents/task-template.md` for the reusable task kickoff prompt.
 
 Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain language, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
+
+Use `docs/agents/workflow.md` for the collaboration lifecycle and `docs/agents/task-template.md` for task kickoff structure; keep their guidance linked rather than duplicated here.
 
 Task-specific user instructions take precedence over this guidance. If two repository documents conflict, use the authority described in the coding standards and call out the conflict in the handoff.
 

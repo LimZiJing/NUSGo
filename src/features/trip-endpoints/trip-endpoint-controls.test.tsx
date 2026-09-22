@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { TripEndpointControl } from './trip-endpoint-controls'
+import { TripEndpointControl, TripEndpointControls } from './trip-endpoint-controls'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '../../domain/transit/types'
+import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -115,5 +116,46 @@ describe('TripEndpointControl', () => {
     expect(markup).toContain('STOP-A')
     expect(markup).toContain('Origin search results')
     expect(markup).not.toContain('waiting for location data')
+  })
+})
+
+describe('TripEndpointControls Journey result', () => {
+  it('shows the selected Journey inside the existing Plan trip experience', () => {
+    const journey: Journey = {
+      origin: { kind: 'venue', id: 'COM1-0210' },
+      destination: { kind: 'stop', id: 'STOP-A' },
+      legs: [{
+        mode: 'walking',
+        from: { kind: 'venue', id: 'COM1-0210' },
+        to: { kind: 'stop', id: 'STOP-A' },
+        durationSeconds: 60,
+        distanceMeters: 100,
+        geometry: { type: 'LineString', coordinates: [[103.77, 1.3], [103.771, 1.301]] },
+      }],
+      totalDurationSeconds: 60,
+      totalDistanceMeters: 100,
+      estimateStatus: 'estimated',
+    }
+
+    const markup = renderToStaticMarkup(
+      <TripEndpointControls
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        journey={{ status: 'ready', journey, error: null }}
+        onSwap={() => undefined}
+        onSelectOriginEndpoint={() => undefined}
+        onClearOriginEndpoint={() => undefined}
+        onSelectDestinationEndpoint={() => undefined}
+        onClearDestinationEndpoint={() => undefined}
+        onClearTrip={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('Fastest estimated Journey')
+    expect(markup).toContain('Walk')
   })
 })

@@ -165,3 +165,151 @@
 .trip-validation {
   padding-top: 2px;
 }
+
+.trip-journey-status {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.trip-journey-result {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #cbd5e1;
+}
+
+.trip-journey-result-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trip-journey-kicker {
+  margin: 0 0 2px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.trip-journey-result h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.trip-journey-metrics {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  text-align: right;
+}
+
+.trip-journey-metrics strong {
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.trip-journey-metrics span,
+.trip-journey-notice,
+.trip-journey-leg p {
+  color: #475569;
+  font-size: 13px;
+}
+
+.trip-journey-notice {
+  margin: 0;
+  padding: 8px;
+  border-left: 3px solid #d97706;
+  background: #fff7ed;
+}
+
+.trip-journey-legs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: journey-leg;
+}
+
+.trip-journey-leg {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 9px 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #fff;
+  counter-increment: journey-leg;
+}
+
+.trip-journey-leg::before {
+  position: absolute;
+  top: 9px;
+  left: 10px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #475569;
+  content: counter(journey-leg);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trip-journey-leg-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #1f2937;
+}
+
+.trip-journey-leg-heading span {
+  flex: 0 0 auto;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.trip-journey-leg p {
+  margin: 0;
+}
+
+.trip-journey-leg-detail {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.trip-journey-leg-details {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.trip-journey-leg-details div {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  gap: 6px;
+}
+
+.trip-journey-leg-details dt {
+  font-weight: 600;
+}
+
+.trip-journey-leg-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

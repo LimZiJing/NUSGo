@@ -10,6 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { getTripPlanSummary } from './trip-summary'
+import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 
 interface TripEndpointControlsProps {
   tripRequest: TripRequest
@@ -25,6 +26,7 @@ interface TripEndpointControlsProps {
   onSelectDestinationEndpoint: (endpoint: TripEndpoint) => void
   onClearDestinationEndpoint: () => void
   onClearTrip: () => void
+  journey?: TripJourneyState
 }
 
 interface TripEndpointControlProps {
@@ -70,6 +72,7 @@ export function TripEndpointControls({
   onSelectDestinationEndpoint,
   onClearDestinationEndpoint,
   onClearTrip,
+  journey = { status: 'idle', journey: null, error: null },
 }: TripEndpointControlsProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
   const isExpanded = expanded ?? uncontrolledExpanded
@@ -224,6 +227,11 @@ export function TripEndpointControls({
         <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
           {tripValidation ?? 'Origin and destination are set.'}
         </p>
+        <TripJourneyResult
+          state={journey}
+          venues={venues}
+          networkIndex={networkIndex}
+        />
       </div>
     </section>
   )

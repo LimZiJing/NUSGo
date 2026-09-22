@@ -14,7 +14,7 @@ const invalidCases: ValidationCase[] = [
   ['duplicate route IDs', (network) => network.routes.push({ ...network.routes[0] }), /Duplicate transit route ID: A1/],
   ['duplicate stop IDs', (network) => network.stops.push({ ...network.stops[0] }), /Duplicate transit stop ID: STOP-A/],
   ['route with fewer than two stops', (network) => { network.routes[0].stopIds = ['STOP-A'] }, /Transit route A1 must contain at least two stops/],
-  ['repeated stop in a route', (network) => { network.routes[0].stopIds = ['STOP-A', 'STOP-A'] }, /Transit route A1 repeats stop: STOP-A/],
+  ['repeated interior stop in a route', (network) => { network.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-A', 'STOP-B'] }, /Transit route A1 repeats stop: STOP-B/],
   ['unknown route stop reference', (network) => { network.routes[0].stopIds = ['STOP-A', 'MISSING'] }, /Transit route A1 references unknown stop: MISSING/],
   ['non-finite latitude', (network) => { network.stops[0].latitude = Number.NaN }, /Transit stop STOP-A has invalid latitude: NaN/],
   ['out-of-range longitude', (network) => { network.stops[0].longitude = 181 }, /Transit stop STOP-A has invalid longitude: 181/],
@@ -27,6 +27,13 @@ describe('validateTransitNetwork', () => {
   it('accepts a valid network and opaque public services', () => {
     const network = createValidTransitNetwork()
     network.stops[0].services.push('PUB:999')
+
+    expect(validateTransitNetwork(network)).toEqual(network)
+  })
+
+  it('accepts a route whose final stop closes the loop at its first stop', () => {
+    const network = createValidTransitNetwork()
+    network.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-A']
 
     expect(validateTransitNetwork(network)).toEqual(network)
   })
@@ -174,5 +181,28 @@ describe('validateTransitVerificationManifest', () => {
     expect(() => validateTransitVerificationManifest(network, manifest)).toThrowError(
       /Transit verification route A1 stop order does not match the network model/,
     )
+  })
+
+  it('accepts a manifest route that closes a loop at its first stop', () => {
+    const network = createValidTransitNetwork()
+    network.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-A']
+    const manifest = {
+      version: 1,
+      reviewedAt: '2026-09-17',
+      routeOrderSource: 'test route source',
+      coordinateSource: 'test coordinate source',
+      geometry: {
+        source: 'test geometry source',
+        reviewedAt: '2026-09-17',
+        reviewNotes: 'test geometry review',
+      },
+      routes: [{
+        routeId: 'A1',
+        direction: 'Stop A to Stop A',
+        orderedStopIds: ['STOP-A', 'STOP-B', 'STOP-A'],
+      }],
+    }
+
+    expect(validateTransitVerificationManifest(network, manifest)).toBe(manifest)
   })
 })

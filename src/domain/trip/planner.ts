@@ -134,9 +134,9 @@ function distanceBetween(
 function projectPointOntoLine(
   point: TransitGeoJsonPosition,
   line: readonly TransitGeoJsonPosition[],
-): ProjectedPoint | null {
+): readonly ProjectedPoint[] {
   let distanceAlongLine = 0
-  let best: ProjectedPoint | null = null
+  const candidates: ProjectedPoint[] = []
 
   for (let index = 1; index < line.length; index += 1) {
     const start = line[index - 1]
@@ -169,11 +169,11 @@ function projectPointOntoLine(
       distanceToLine,
       coordinate: projected,
     }
-    if (!best || candidate.distanceToLine < best.distanceToLine) best = candidate
+    candidates.push(candidate)
     distanceAlongLine += segmentLength
   }
 
-  return best
+  return candidates.sort((first, second) => first.distanceAlongLine - second.distanceAlongLine)
 }
 
 function withoutDuplicateCoordinates(
@@ -191,11 +191,26 @@ function sliceRouteGeometry(
   fromStop: TransitGeoJsonPosition,
   toStop: TransitGeoJsonPosition,
 ): { readonly geometry: JourneyLineString; readonly distanceMeters: number } | null {
-  const from = projectPointOntoLine(fromStop, line)
-  const to = projectPointOntoLine(toStop, line)
-  if (!from || !to || to.distanceAlongLine <= from.distanceAlongLine + PROJECTION_EPSILON_METRES) {
+  const fromCandidates = projectPointOntoLine(fromStop, line)
+  const toCandidates = projectPointOntoLine(toStop, line)
+  let selected: { readonly from: ProjectedPoint; readonly to: ProjectedPoint } | null = null
+  for (const from of fromCandidates) {
+    for (const to of toCandidates) {
+      if (to.distanceAlongLine <= from.distanceAlongLine + PROJECTION_EPSILON_METRES) continue
+      const candidate = { from, to }
+      if (
+        !selected ||
+        from.distanceToLine + to.distanceToLine <
+          selected.from.distanceToLine + selected.to.distanceToLine
+      ) {
+        selected = candidate
+      }
+    }
+  }
+  if (!selected) {
     return null
   }
+  const { from, to } = selected
 
   const coordinates = withoutDuplicateCoordinates([
     from.coordinate,
@@ -317,6 +332,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
       for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
         const fromStopId = route.stopIds[fromIndex]
         const toStopId = route.stopIds[toIndex]
+        if (fromStopId === toStopId) continue
         const record = timingByKey.get(`${route.id}:${fromStopId}->${toStopId}`)
         if (
           !record ||

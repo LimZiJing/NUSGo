@@ -216,6 +216,7 @@ function App() {
           onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
           onClearDestinationEndpoint={commands.clearDestinationEndpoint}
           onClearTrip={commands.clearTrip}
+          journey={state.journey}
           containerRef={tripControlsRef}
           expanded={isMobileViewport && mobileOverlay.tripExpanded}
           mobileViewport={isMobileViewport}

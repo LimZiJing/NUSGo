@@ -11,6 +11,11 @@ import {
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
 } from './transit'
+import {
+  JOURNEY_ROUTE_CASING_LAYER_ID,
+  JOURNEY_SHUTTLE_LAYER_ID,
+  JOURNEY_WALKING_LAYER_ID,
+} from './journey'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 setWorkerUrl(maplibreWorkerUrl)
@@ -82,6 +87,9 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       TRANSIT_ROUTE_CASING_LAYER_ID,
       TRANSIT_ROUTE_LAYER_ID,
       TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+      JOURNEY_ROUTE_CASING_LAYER_ID,
+      JOURNEY_WALKING_LAYER_ID,
+      JOURNEY_SHUTTLE_LAYER_ID,
     ].filter((layerId) => map.getLayer(layerId))
     if (routeLayerIds.length > 0 && map.queryRenderedFeatures(
       event.point,

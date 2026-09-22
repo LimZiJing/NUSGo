@@ -189,6 +189,7 @@ export function createNavigationSession(
 
   const resetJourney = (): void => {
     cancelJourneyPlanning()
+    dependencies.map.setJourney(null)
     if (state.journey.status !== 'idle' || state.journey.journey !== null || state.journey.error !== null) {
       updateState({ journey: createInitialJourneyState() })
     }
@@ -218,6 +219,7 @@ export function createNavigationSession(
       transit: transitData,
       signal: controller.signal,
     }
+    dependencies.map.setJourney(null)
     updateState({
       journey: { status: 'loading', journey: null, error: null },
     })
@@ -228,6 +230,7 @@ export function createNavigationSession(
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
+          dependencies.map.setJourney(journey)
           updateState({
             journey: journey
               ? { status: 'ready', journey, error: null }
@@ -240,6 +243,7 @@ export function createNavigationSession(
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
+          dependencies.map.setJourney(null)
           updateState({
             journey: {
               status: 'failed',

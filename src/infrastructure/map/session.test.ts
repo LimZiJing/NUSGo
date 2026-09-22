@@ -3,6 +3,7 @@ import { createMapSession } from './session'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import { createTransitIndex, generateShuttleTimingData } from '../../domain/transit'
 import type { TransitRouteGeometry } from '../../domain/transit/types'
+import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocation } from '../../domain/venue/types'
 
 const fakeMapState = vi.hoisted(() => ({
@@ -218,6 +219,24 @@ function createRouteSelection(data: ReturnType<typeof createTransitData>) {
   }
 }
 
+function createJourney(): Journey {
+  return {
+    origin: { kind: 'venue', id: 'ORIGIN' },
+    destination: { kind: 'venue', id: 'DESTINATION' },
+    legs: [{
+      mode: 'walking',
+      from: { kind: 'venue', id: 'ORIGIN' },
+      to: { kind: 'venue', id: 'DESTINATION' },
+      durationSeconds: 60,
+      distanceMeters: 100,
+      geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+    }],
+    totalDurationSeconds: 60,
+    totalDistanceMeters: 100,
+    estimateStatus: 'estimated',
+  }
+}
+
 describe('MapSession', () => {
   beforeEach(() => {
     fakeMapState.maps.length = 0
@@ -273,6 +292,36 @@ describe('MapSession', () => {
       !marker.element.classes.has('bus-stop-marker-selected') &&
       !marker.element.classes.has('bus-stop-marker-dimmed')
     ))).toBe(true)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('renders and clears the selected Journey independently of transit layers', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      layers: Set<string>
+      removedLayers: string[]
+      removedSources: string[]
+    }
+
+    await session.ready
+    session.setJourney(createJourney())
+    expect(map.layers).toEqual(new Set([
+      'journey-route-casing',
+      'journey-walking-lines',
+      'journey-shuttle-lines',
+    ]))
+
+    session.setJourney(null)
+    expect(map.layers).toEqual(new Set())
+    expect(map.removedLayers).toHaveLength(3)
+    expect(map.removedSources).toEqual(['journey-route-geometry'])
 
     session.dispose()
     vi.unstubAllGlobals()

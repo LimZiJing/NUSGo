@@ -3,6 +3,7 @@ import type {
   TransitRoute,
 } from '../../domain/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
+import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
 import type { LoadedTransitData } from './data'
 
@@ -50,6 +51,7 @@ export interface MapSession {
     venues: VenueLocationMap,
     transitIndex: TransitIndex | null,
   ): void
+  setJourney(journey: Journey | null): void
   /**
    * Post-render synchronization point for measured map overlays. Implementations
    * consume at most the latest pending route/venue automatic fit here; later

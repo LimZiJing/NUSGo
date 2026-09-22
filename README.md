@@ -4,7 +4,7 @@ An experimental campus transit and indoor navigation web app for the National Un
 
 ## Current status
 
-Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented; navigation, route geometry, live transit, and calendar import are not implemented yet.
+Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented, and the navigation session can calculate an estimated Journey when a Valhalla walking endpoint is configured. Journey map rendering, Plan trip presentation, live transit, and calendar import are still pending.
 
 See [`CONTEXT.md`](CONTEXT.md) for shared domain language and [`docs/project-status.md`](docs/project-status.md) for the detailed implementation status and milestones.
 
@@ -25,6 +25,10 @@ Useful checks:
 npm run lint
 npm run build
 ```
+
+Set `VITE_VALHALLA_BASE_URL` when the local Valhalla service is not running at
+`http://localhost:8002`. This value is only a routing endpoint URL, not an API
+credential.
 
 ## GitHub Pages deployment
 

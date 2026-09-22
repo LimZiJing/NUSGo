@@ -17,25 +17,36 @@ function runCompose(args) {
 }
 
 async function isReady() {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 1_500)
   try {
-    const response = await fetch(statusUrl, { signal: AbortSignal.timeout(1_500) })
+    const response = await fetch(statusUrl, { signal: controller.signal })
     return response.ok
   } catch {
     return false
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
-runCompose(['up', '-d'])
+async function main() {
+  runCompose(['up', '-d'])
 
-const deadline = Date.now() + waitTimeoutMs
-while (Date.now() < deadline) {
-  if (await isReady()) {
-    console.log('Valhalla is ready at http://127.0.0.1:8002')
-    process.exit(0)
+  const deadline = Date.now() + waitTimeoutMs
+  while (Date.now() < deadline) {
+    if (await isReady()) {
+      console.log('Valhalla is ready at http://127.0.0.1:8002')
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
   }
-  await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+
+  console.error('Valhalla did not become ready before the timeout.')
+  runCompose(['logs', '--tail', '80', 'valhalla'])
+  process.exitCode = 1
 }
 
-console.error('Valhalla did not become ready before the timeout.')
-runCompose(['logs', '--tail', '80', 'valhalla'])
-process.exit(1)
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})

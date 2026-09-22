@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev` starts the local Valhalla Docker service automatically. The first run downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles; later runs reuse the saved data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint.
+`npm run dev` starts the local Valhalla Docker service automatically. The first run downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles; later runs reuse the saved data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint. For the local Docker service, leave this variable unset or set it to `/valhalla`; NavUS uses the Vite proxy so browser requests do not hit local Valhalla directly.
 
 Use `npm run valhalla:down` to stop the local service without deleting its downloaded data.
 

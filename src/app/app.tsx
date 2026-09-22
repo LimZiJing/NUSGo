@@ -30,6 +30,7 @@ import { applyMapOverlayMeasurements } from './map-insets-controller'
 import { loadTransitMapData, loadVenueData } from '../infrastructure/data/loaders'
 import { createMapSession } from '../infrastructure/map/session'
 import { createValhallaRouteEngine } from '../infrastructure/routing/valhalla'
+import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
 
 function App() {
@@ -63,7 +64,7 @@ function App() {
   const commands = commandAdapter(session)
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
     createValhallaRouteEngine({
-      baseUrl: import.meta.env.VITE_VALHALLA_BASE_URL ?? 'http://localhost:8002',
+      baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
     }),
   ), [])
 

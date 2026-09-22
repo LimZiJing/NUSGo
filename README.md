@@ -19,6 +19,8 @@ npm install
 npm run dev
 ```
 
+Journey planning uses the public Valhalla development endpoint by default when running Vite locally. Set `VITE_VALHALLA_BASE_URL` in `.env` to use a local or self-hosted Valhalla service instead. The public endpoint is for local development only and may be rate-limited.
+
 Useful checks:
 
 ```bash

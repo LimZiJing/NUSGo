@@ -81,7 +81,42 @@ function requireJsonRecord(value: unknown, label: string): JsonRecord {
   return value
 }
 
+function decodePolylineComponent(value: string, index: { current: number }): number {
+  let result = 0
+  let shift = 0
+  while (true) {
+    if (index.current >= value.length || shift > 30) {
+      throw new ValhallaRouteError('Valhalla route response has invalid geometry')
+    }
+    const byte = value.charCodeAt(index.current) - 63
+    index.current += 1
+    result |= (byte & 0x1f) << shift
+    if (byte < 0x20) break
+    shift += 5
+  }
+  return (result & 1) === 1 ? ~(result >> 1) : result >> 1
+}
+
+function decodeEncodedPolyline(value: string): WalkingRoute['geometry'] {
+  const index = { current: 0 }
+  const coordinates: (readonly [number, number])[] = []
+  let latitude = 0
+  let longitude = 0
+
+  while (index.current < value.length) {
+    latitude += decodePolylineComponent(value, index)
+    longitude += decodePolylineComponent(value, index)
+    coordinates.push([longitude / 1_000_000, latitude / 1_000_000])
+  }
+
+  if (coordinates.length < 2) {
+    throw new ValhallaRouteError('Valhalla route response has invalid geometry')
+  }
+  return { type: 'LineString', coordinates }
+}
+
 function requireLineString(value: unknown): WalkingRoute['geometry'] {
+  if (typeof value === 'string') return decodeEncodedPolyline(value)
   const geometry = requireJsonRecord(value, 'geometry')
   if (geometry.type !== 'LineString' || !Array.isArray(geometry.coordinates)) {
     throw new ValhallaRouteError('Valhalla route response has invalid geometry')

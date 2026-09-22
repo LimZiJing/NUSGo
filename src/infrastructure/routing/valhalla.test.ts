@@ -13,6 +13,27 @@ function responseWithJson(payload: unknown, init: ResponseInit = {}): Response {
 }
 
 describe('Valhalla route engine', () => {
+  it('decodes encoded Valhalla leg shapes', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => responseWithJson({
+      trip: {
+        units: 'kilometers',
+        summary: { length: 0.498, time: 383 },
+        legs: [{
+          shape: 'qrdnA_v_}dEhHgX|@_C`D{FvLaUpMkVhAqDx@sDG_CaB{FUm@wATmKdAKeAiELsG[yFsAyCk@{Aw@Kc@Cq@qDy@fB}GvDuPbBoILiHIwGImCy@eGgAeFgBuGWaAqBkFi@_C',
+        }],
+      },
+    }))
+    const engine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })
+
+    await expect(engine.routeWalking({ origin, destination }, new AbortController().signal))
+      .resolves.toMatchObject({
+        geometry: {
+          type: 'LineString',
+          coordinates: expect.arrayContaining([[103.776624, 1.297209]]),
+        },
+      })
+  })
+
   it('requests a pedestrian route and returns validated metric values', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => responseWithJson({
       trip: {

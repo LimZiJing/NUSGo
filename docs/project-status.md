@@ -34,6 +34,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
 - Build-generated shuttle timing estimates use the canonical route geometry, are validated against the route and stop model, and are loaded through `loadShuttleTimingData`; waiting time remains explicitly unavailable until verified headway data exists.
+- The pure `planJourney` module composes validated walking connections with directed shuttle legs; its development-only `zeroShuttleWaitingTime` policy keeps the waiting-data decision explicit and replaceable. It is not yet connected to navigation-session state or the frontend.
 
 ## Current limitations
 

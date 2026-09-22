@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { getValhallaBaseUrl } from './routing-config'
 
 describe('getValhallaBaseUrl', () => {
-  it('uses the public development endpoint when no local endpoint is configured', () => {
-    expect(getValhallaBaseUrl(undefined, true)).toBe('https://valhalla1.openstreetmap.de')
+  it('uses the local Vite proxy when no endpoint is configured in development', () => {
+    expect(getValhallaBaseUrl(undefined, true)).toBe('/valhalla')
   })
 
   it('keeps an explicitly configured endpoint in development', () => {

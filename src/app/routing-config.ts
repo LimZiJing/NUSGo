@@ -1,4 +1,4 @@
-const DEVELOPMENT_VALHALLA_BASE_URL = 'https://valhalla1.openstreetmap.de'
+const DEVELOPMENT_VALHALLA_BASE_URL = '/valhalla'
 const LOCAL_VALHALLA_BASE_URL = 'http://localhost:8002'
 
 export function getValhallaBaseUrl(

@@ -19,7 +19,9 @@ npm install
 npm run dev
 ```
 
-Journey planning uses the public Valhalla development endpoint by default when running Vite locally. Set `VITE_VALHALLA_BASE_URL` in `.env` to use a local or self-hosted Valhalla service instead. The public endpoint is for local development only and may be rate-limited.
+`npm run dev` starts the local Valhalla Docker service automatically. The first run downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles; later runs reuse the saved data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint.
+
+Use `npm run valhalla:down` to stop the local service without deleting its downloaded data.
 
 Useful checks:
 

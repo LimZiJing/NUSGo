@@ -147,3 +147,7 @@ vite.config.ts.timestamp-*
 
 # Generated shuttle timing data
 /public/data/shuttle-timing.json
+
+# Local Valhalla map data
+/docker/valhalla/custom_files/*
+!/docker/valhalla/custom_files/.gitkeep

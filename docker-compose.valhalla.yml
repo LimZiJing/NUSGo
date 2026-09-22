@@ -1,0 +1,16 @@
+services:
+  valhalla:
+    image: ghcr.io/nilsnolde/docker-valhalla/valhalla:latest
+    container_name: navus-valhalla
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8002:8002'
+    volumes:
+      - ./docker/valhalla/custom_files:/custom_files
+    environment:
+      tile_urls: https://download.geofabrik.de/asia/malaysia-singapore-brunei-latest.osm.pbf
+      server_threads: '2'
+      serve_tiles: 'True'
+      use_tiles_ignore_pbf: 'False'
+      build_elevation: 'False'
+      build_admins: 'False'

@@ -2,6 +2,9 @@ import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
 import { validateTransitMapData } from '../../domain/transit/map-data'
 import { validateVenueLocationMap, getVenueCount } from '../../domain/venue/validation'
+import { validateShuttleTimingData } from '../../domain/transit/timing'
+import type { ShuttleTimingData } from '../../domain/transit/timing'
+import type { TransitNetwork } from '../../domain/transit/types'
 import { fetchJson } from './json'
 
 export type JsonFetcher = (
@@ -34,4 +37,15 @@ export async function loadTransitMapData(
   const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
   const index = createTransitNetworkIndex(network)
   return { network: index.network, geometry, index }
+}
+
+export async function loadShuttleTimingData(
+  network: TransitNetwork,
+  signal: AbortSignal,
+  fetcher: JsonFetcher = fetchJson,
+): Promise<ShuttleTimingData> {
+  return validateShuttleTimingData(
+    await fetcher('/data/shuttle-timing.json', signal, 'Shuttle timing'),
+    network,
+  )
 }

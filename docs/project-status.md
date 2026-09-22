@@ -33,13 +33,14 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
+- Checked-in shuttle timing estimates are generated from the canonical route geometry, validated against the route and stop model, and loaded through `loadShuttleTimingData`; waiting time remains explicitly unavailable until verified headway data exists.
 
 ## Current limitations
 
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
 - The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; targeted release smoke evidence exists at 1280 × 720, while exact release/mobile viewports and failure injection still need manual verification.
 - Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
-- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md), but no walking adapter or Journey planner has been implemented yet.
+- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md). The walking adapter and Journey planner are not wired into the frontend yet; shuttle ride estimates are available, but waiting time is still unavailable.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
 
@@ -48,9 +49,10 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 Complete the functional transit foundation before a broad UI redesign:
 
 1. Complete the release desktop/map smoke checklist for the validated static transit resources.
-2. Implement the Valhalla walking boundary and validated walking connections (#71).
-3. Implement the pure composed Journey planner using verified shuttle timing estimates (#66).
-4. Investigate live shuttle arrivals after static routes work reliably.
+2. Implement and verify the Valhalla walking boundary and validated walking connections (#71).
+3. Implement the pure composed Journey planner using the validated timing contract (#66).
+4. Connect the planner to application state and the frontend map/Plan trip experience (#67–#69).
+5. Investigate live shuttle arrivals after static routes work reliably.
 
 The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
 

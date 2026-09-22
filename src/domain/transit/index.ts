@@ -187,3 +187,18 @@ export { TransitValidationError, validateTransitNetwork, validateTransitVerifica
 export { validateTransitRouteGeometry } from './geometry'
 export { validateTransitMapData } from './map-data'
 export { deriveTransitRouteOverlapMap } from './overlap'
+export {
+  generateShuttleTimingData,
+  SHUTTLE_TIMING_DATA_VERSION,
+  SHUTTLE_TIMING_METHOD,
+  SHUTTLE_TIMING_METHOD_VERSION,
+  SHUTTLE_TIMING_SOURCE,
+  SHUTTLE_TIMING_WAITING_POLICY,
+  TransitTimingValidationError,
+  validateShuttleTimingData,
+} from './timing'
+export type {
+  ShuttleTimingData,
+  ShuttleTimingMetadata,
+  ShuttleTimingRecord,
+} from './timing'

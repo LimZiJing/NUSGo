@@ -33,6 +33,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     loadTransitData: vi.fn(),
     setRouteSelection: vi.fn(),
     setTripRequest: vi.fn(),
+    setJourney: vi.fn(),
     setViewportInsets: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -233,6 +234,7 @@ describe('navigation session', () => {
       journey,
       error: null,
     })
+    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(journey)
     expect(Object.isFrozen(session.getState().journey.journey)).toBe(true)
     expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
   })
@@ -285,6 +287,7 @@ describe('navigation session', () => {
       journey: null,
       error: null,
     })
+    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
   })
 
   it('preserves venue-first and transit-first completion behavior', async () => {

@@ -7,6 +7,7 @@ import type {
   MapViewportInsets,
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
+import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocation } from '../../domain/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
@@ -14,6 +15,7 @@ import { createMapLifecycle } from './lifecycle'
 import { createShuttleStopMarkers, type ShuttleStopMarkers } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { createVenueMarker, type VenueMarker } from './venue-markers'
+import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
 import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
@@ -32,6 +34,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let endpointMarkers: TripEndpointMarkers | null = null
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
   let transitRouteLayers: TransitRouteLayers | null = null
+  let journeyRouteLayers: JourneyRouteLayers | null = null
+  let currentJourney: Journey | null = null
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
@@ -114,6 +118,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     transitData = null
   }
 
+  const clearJourneyRouteLayers = (): void => {
+    journeyRouteLayers?.dispose()
+    journeyRouteLayers = null
+  }
+
+  const installJourneyRouteLayers = (): void => {
+    if (currentJourney === null || journeyRouteLayers) return
+    const nextJourneyRouteLayers = createJourneyRouteLayers(map)
+    nextJourneyRouteLayers.setJourney(currentJourney)
+    journeyRouteLayers = nextJourneyRouteLayers
+  }
+
   const reconcileRouteSelection = (selection: MapRouteSelection): MapRouteSelection => {
     const routeId = selection.route?.id
     const route = routeId && currentTransitIndex
@@ -154,6 +170,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
 
       const previousRouteId = currentRouteSelection.route?.id ?? null
+      clearJourneyRouteLayers()
       clearTransitData()
       transitData = data
       currentTransitIndex = data.index
@@ -174,6 +191,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (nextRouteId !== previousRouteId) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
+      installJourneyRouteLayers()
     },
 
     setRouteSelection(selection: MapRouteSelection) {
@@ -202,6 +220,13 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentTransitIndex = transitIndex
       clearEndpointMarkers()
       endpointMarkers = createTripEndpointMarkers(map, request, venues, transitIndex)
+    },
+
+    setJourney(journey: Journey | null) {
+      if (disposed) return
+      currentJourney = journey
+      clearJourneyRouteLayers()
+      installJourneyRouteLayers()
     },
 
     setViewportInsets(insets: MapViewportInsets) {
@@ -280,6 +305,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearVenueMarker()
       clearEndpointMarkers()
       clearTransitData()
+      currentJourney = null
+      clearJourneyRouteLayers()
       lifecycle.dispose()
     },
   }

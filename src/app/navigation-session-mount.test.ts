@@ -16,6 +16,7 @@ function createMapDouble(): MapSession {
     loadTransitData: vi.fn(),
     setRouteSelection: vi.fn(),
     setTripRequest: vi.fn(),
+    setJourney: vi.fn(),
     setViewportInsets: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),

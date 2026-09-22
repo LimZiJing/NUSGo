@@ -2,10 +2,16 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   loadTransitMapData,
+  loadShuttleTimingData,
   loadVenueData,
   type JsonFetcher,
 } from './loaders'
-import { TransitValidationError } from '../../domain/transit'
+import {
+  generateShuttleTimingData,
+  TransitValidationError,
+  validateTransitNetwork,
+} from '../../domain/transit'
+import { validateTransitRouteGeometry } from '../../domain/transit/geometry'
 import { VenueValidationError } from '../../domain/venue/validation'
 
 function readJson(path: string): unknown {
@@ -15,6 +21,9 @@ function readJson(path: string): unknown {
 const network = readJson('../../../public/data/shuttle-network.json')
 const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
+const validatedNetwork = validateTransitNetwork(network)
+const validatedGeometry = validateTransitRouteGeometry(validatedNetwork, geometry)
+const timing = generateShuttleTimingData(validatedNetwork, validatedGeometry, '2026-09-22')
 
 function createFetcher(payloads: Record<string, unknown>): JsonFetcher {
   return async (path) => {
@@ -49,6 +58,31 @@ describe('data loaders', () => {
 
     expect(result.venueCount).toBeGreaterThan(0)
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
+  })
+
+  it('loads shuttle timing and validates it against the canonical network', async () => {
+    const result = await loadShuttleTimingData(
+      validatedNetwork,
+      new AbortController().signal,
+      createFetcher({ '/data/shuttle-timing.json': timing }),
+    )
+
+    expect(result).toBe(timing)
+    expect(result.records.length).toBeGreaterThan(0)
+    expect(result.metadata.geometryVerifiedAt).toBe(validatedNetwork.metadata.verifiedAt)
+  })
+
+  it('rejects timing data that does not match the canonical network', async () => {
+    await expect(loadShuttleTimingData(
+      validatedNetwork,
+      new AbortController().signal,
+      createFetcher({
+        '/data/shuttle-timing.json': {
+          ...timing,
+          records: timing.records.slice(1),
+        },
+      }),
+    )).rejects.toBeInstanceOf(Error)
   })
 
   it('starts both transit fetches in parallel and validates network errors first', async () => {

@@ -12,16 +12,40 @@ OpenFreeMap attribution is included by the MapLibre style. Review the provider's
 
 ## Development
 
-Requirements: Node.js and npm.
+Requirements: Node.js, npm, and Docker Desktop with Docker Compose.
 
 ```bash
 npm install
 npm run dev
 ```
 
-`npm run dev` starts the local Valhalla Docker service automatically. The first run downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles; later runs reuse the saved data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint. For the local Docker service, leave this variable unset or set it to `/valhalla`; NavUS uses the Vite proxy so browser requests do not hit local Valhalla directly.
+### Local Valhalla routing with Docker
 
-Use `npm run valhalla:down` to stop the local service without deleting its downloaded data.
+NavUS uses [Valhalla](https://github.com/valhalla/valhalla) to calculate walking routes. Docker Desktop must be running before starting the app.
+
+The normal development command starts Valhalla automatically:
+
+```bash
+npm run dev
+```
+
+On the first run, Docker downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles. This can take several minutes and uses local disk space. Later runs reuse the saved data.
+
+To start Valhalla separately, run:
+
+```bash
+npm run valhalla:up
+```
+
+When it is ready, the service is available at `http://127.0.0.1:8002`. The Valhalla root URL may show a `404`; that is expected because the service exposes endpoints such as `/route` and `/sources_to_targets` instead.
+
+Stop the service with:
+
+```bash
+npm run valhalla:down
+```
+
+Stopping the service does not delete the downloaded routing data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint. For the local Docker service, leave this variable unset or set it to `/valhalla`; NavUS uses the Vite proxy so browser requests do not hit local Valhalla directly.
 
 Useful checks:
 

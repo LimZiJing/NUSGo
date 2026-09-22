@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import { createTransitIndex } from '../domain/transit'
-import type { TripEndpointRole } from '../domain/trip/types'
+import { createTransitIndex, generateShuttleTimingData } from '../domain/transit'
+import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
+import type { Journey } from '../domain/trip/journey'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '../domain/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -50,6 +51,7 @@ function createDependencies(
     network: index.network,
     geometry,
     index,
+    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
   }
   const venues: LoadedVenueData = {
     venues: {
@@ -81,7 +83,12 @@ function createTwoRouteTransit(): LoadedTransitData {
       { id: 'B1', name: 'B1', color: '#654321', stopIds: ['STOP-B', 'STOP-A'] },
     ],
   })
-  return { network: index.network, geometry, index }
+  return {
+    network: index.network,
+    geometry,
+    index,
+    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
+  }
 }
 
 function createDeferred<T>() {
@@ -109,6 +116,27 @@ async function waitForState(
   })
 }
 
+function createJourney(destination: TripEndpoint): Journey {
+  return {
+    origin: { kind: 'venue', id: 'COM1' },
+    destination,
+    legs: [{
+      mode: 'walking',
+      from: { kind: 'venue', id: 'COM1' },
+      to: destination,
+      durationSeconds: 60,
+      distanceMeters: 100,
+      geometry: {
+        type: 'LineString',
+        coordinates: [[103, 1], [103.001, 1.001]],
+      },
+    }],
+    totalDurationSeconds: 60,
+    totalDistanceMeters: 100,
+    estimateStatus: 'estimated',
+  }
+}
+
 const venueResult: VenueSearchResult = {
   code: 'COM1',
   venue: {
@@ -131,6 +159,7 @@ describe('navigation session', () => {
         history: [],
       },
       tripRequest: { origin: null, destination: null },
+      journey: { status: 'idle', journey: null, error: null },
       resourceStatus: {
         venue: { status: 'pending' },
         transit: { status: 'pending' },
@@ -178,6 +207,84 @@ describe('navigation session', () => {
       dependencies.venues.venues,
       dependencies.transit.index,
     )
+  })
+
+  it('publishes Journey loading and ready states for complete endpoints', async () => {
+    const planning = createDeferred<Journey | null>()
+    const journeyPlanner = vi.fn(() => planning.promise)
+    const dependencies = createDependencies({ journeyPlanner })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+
+    expect(session.getState().journey).toEqual({
+      status: 'loading',
+      journey: null,
+      error: null,
+    })
+    const journey = createJourney({ kind: 'stop', id: 'STOP-A' })
+    planning.resolve(journey)
+    await waitForState(session, (state) => state.journey.status === 'ready')
+
+    expect(session.getState().journey).toMatchObject({
+      status: 'ready',
+      journey,
+      error: null,
+    })
+    expect(Object.isFrozen(session.getState().journey.journey)).toBe(true)
+    expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
+  })
+
+  it('publishes a safe failure state when planning fails', async () => {
+    const journeyPlanner = vi.fn(async () => {
+      throw new Error('routing service unavailable')
+    })
+    const dependencies = createDependencies({ journeyPlanner })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    await waitForState(session, (state) => state.journey.status === 'failed')
+
+    expect(session.getState().journey).toEqual({
+      status: 'failed',
+      journey: null,
+      error: 'Unable to plan journey',
+    })
+  })
+
+  it('ignores stale Journey results and clears the current Journey when an endpoint is cleared', async () => {
+    const firstPlanning = createDeferred<Journey | null>()
+    const secondPlanning = createDeferred<Journey | null>()
+    const journeyPlanner = vi.fn()
+      .mockImplementationOnce(() => firstPlanning.promise)
+      .mockImplementationOnce(() => secondPlanning.promise)
+    const dependencies = createDependencies({ journeyPlanner })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    const firstSignal = journeyPlanner.mock.calls[0]?.[0].signal as AbortSignal
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+    expect(firstSignal.aborted).toBe(true)
+
+    const secondJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    secondPlanning.resolve(secondJourney)
+    await waitForState(session, (state) => state.journey.status === 'ready')
+    firstPlanning.resolve(createJourney({ kind: 'stop', id: 'STOP-A' }))
+    await Promise.resolve()
+
+    expect(session.getState().journey.journey?.destination).toEqual({ kind: 'stop', id: 'STOP-B' })
+    session.clearTripEndpoint('destination')
+    expect(session.getState().journey).toEqual({
+      status: 'idle',
+      journey: null,
+      error: null,
+    })
   })
 
   it('preserves venue-first and transit-first completion behavior', async () => {

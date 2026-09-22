@@ -39,6 +39,7 @@ describe('data loaders', () => {
       createFetcher({
         '/data/shuttle-network.json': network,
         '/data/shuttle-routes.geojson': geometry,
+        '/data/shuttle-timing.json': timing,
       }),
     )
 
@@ -85,13 +86,17 @@ describe('data loaders', () => {
     )).rejects.toBeInstanceOf(Error)
   })
 
-  it('starts both transit fetches in parallel and validates network errors first', async () => {
+  it('starts transit fetches in parallel and validates network errors first', async () => {
     const calls: string[] = []
     const malformedNetwork = { ...(network as Record<string, unknown>), version: 2 }
     const malformedGeometry = { type: 'NotFeatureCollection', features: [] }
     const fetcher: JsonFetcher = (path) => {
       calls.push(path)
-      const payload = path.includes('network') ? malformedNetwork : malformedGeometry
+      const payload = path.includes('network')
+        ? malformedNetwork
+        : path.includes('geometry')
+          ? malformedGeometry
+          : timing
       const delay = path.includes('network') ? 20 : 0
       return new Promise((resolve) => {
         setTimeout(() => resolve(payload), delay)
@@ -102,6 +107,7 @@ describe('data loaders', () => {
     expect(calls).toEqual([
       '/data/shuttle-network.json',
       '/data/shuttle-routes.geojson',
+      '/data/shuttle-timing.json',
     ])
     await expect(pending).rejects.toThrow('Transit network version must be 1: 2')
   })
@@ -118,6 +124,7 @@ describe('data loaders', () => {
       createFetcher({
         '/data/shuttle-network.json': malformedNetwork,
         '/data/shuttle-routes.geojson': geometry,
+        '/data/shuttle-timing.json': timing,
       }),
     )).rejects.toBeInstanceOf(TransitValidationError)
 
@@ -131,6 +138,7 @@ describe('data loaders', () => {
       createFetcher({
         '/data/shuttle-network.json': network,
         '/data/shuttle-routes.geojson': { type: 'FeatureCollection', features: [] },
+        '/data/shuttle-timing.json': timing,
       }),
     )).rejects.toThrow(/one feature per route/)
   })

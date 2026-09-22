@@ -1,6 +1,7 @@
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
+import type { JourneyPlanningService } from './journey-planning'
 import type {
   NavigationSession,
   NavigationSessionDependencies,
@@ -13,6 +14,7 @@ export interface NavigationSessionMountDependencies {
   ) => NavigationSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
+  readonly journeyPlanner: JourneyPlanningService
   readonly onMapInteraction?: () => void
 }
 
@@ -36,6 +38,7 @@ export function createNavigationSessionMount(
     map,
     loadVenues: dependencies.loadVenues,
     loadTransit: dependencies.loadTransit,
+    journeyPlanner: dependencies.journeyPlanner,
   })
 
   const controller = new AbortController()

@@ -23,6 +23,8 @@ import { reconcileRouteSelection } from './route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession, MapViewportInsets } from './contracts/map'
+import type { JourneyPlanningService } from './journey-planning'
+import { createInitialJourneyState, type JourneyState } from './journey-state'
 import { getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
 import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
@@ -46,6 +48,7 @@ export interface NavigationSessionState {
   readonly selectedRouteColor: string | null
   readonly contextualPanel: ContextualPanelState
   readonly tripRequest: TripRequest
+  readonly journey: JourneyState
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
   readonly startupFailure: NavigationSessionStartupFailure | null
@@ -56,6 +59,7 @@ export interface NavigationSessionDependencies {
   readonly map: MapSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
+  readonly journeyPlanner?: JourneyPlanningService
 }
 
 export type NavigationSessionListener = () => void
@@ -94,6 +98,7 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
     selectedRouteColor: null,
     contextualPanel: createInitialContextualPanelState(),
     tripRequest: createEmptyTripRequest(),
+    journey: createInitialJourneyState(),
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
     startupFailure: null,
@@ -113,6 +118,7 @@ export function createNavigationSession(
 ): NavigationSession {
   let state = createInitialNavigationSessionState()
   let transitIndex: TransitIndex | null = null
+  let transitData: LoadedTransitData | null = null
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
   let disposed = false
   const startup = createNavigationSessionStartup()
@@ -122,6 +128,8 @@ export function createNavigationSession(
 
   let startupFailureReported = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  let journeyPlanningAbortController: AbortController | null = null
+  let journeyPlanningRequestId = 0
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
@@ -173,6 +181,78 @@ export function createNavigationSession(
     publish(nextState)
   }
 
+  const cancelJourneyPlanning = (): void => {
+    journeyPlanningRequestId += 1
+    journeyPlanningAbortController?.abort()
+    journeyPlanningAbortController = null
+  }
+
+  const resetJourney = (): void => {
+    cancelJourneyPlanning()
+    if (state.journey.status !== 'idle' || state.journey.journey !== null || state.journey.error !== null) {
+      updateState({ journey: createInitialJourneyState() })
+    }
+  }
+
+  const requestJourneyPlanning = (): void => {
+    cancelJourneyPlanning()
+    const journeyPlanner = dependencies.journeyPlanner
+
+    if (
+      !journeyPlanner ||
+      !state.tripRequest.origin ||
+      !state.tripRequest.destination ||
+      !state.venues ||
+      !transitData
+    ) {
+      resetJourney()
+      return
+    }
+
+    const requestId = journeyPlanningRequestId
+    const controller = new AbortController()
+    journeyPlanningAbortController = controller
+    const request = {
+      tripRequest: state.tripRequest,
+      venues: state.venues,
+      transit: transitData,
+      signal: controller.signal,
+    }
+    updateState({
+      journey: { status: 'loading', journey: null, error: null },
+    })
+
+    void journeyPlanner(request).then(
+      (journey) => {
+        if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
+        enqueueTransition(() => {
+          if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
+          journeyPlanningAbortController = null
+          updateState({
+            journey: journey
+              ? { status: 'ready', journey, error: null }
+              : { status: 'no-route', journey: null, error: null },
+          })
+        })
+      },
+      (error: unknown) => {
+        if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
+        enqueueTransition(() => {
+          if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
+          journeyPlanningAbortController = null
+          updateState({
+            journey: {
+              status: 'failed',
+              journey: null,
+              error: 'Unable to plan journey',
+            },
+          })
+          console.error('Journey planning failed:', error)
+        })
+      },
+    )
+  }
+
   const syncTripRequest = (
     request: TripRequest,
     venues: VenueLocationMap,
@@ -197,6 +277,7 @@ export function createNavigationSession(
     })
     syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
     publishSnapshot(nextState)
+    requestJourneyPlanning()
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
@@ -216,6 +297,7 @@ export function createNavigationSession(
     const resourceStatus = markVenueLoaded(state.resourceStatus, data.venueCount)
     syncTripRequest(state.tripRequest, data.venues, transitIndex)
     updateState({ venues: data.venues, resourceStatus })
+    requestJourneyPlanning()
   }
 
   const handleTransitLoad = (data: LoadedTransitData): void => {
@@ -228,7 +310,9 @@ export function createNavigationSession(
 
     const previousTransitIndex = transitIndex
     const previousRouteOverlapMap = routeOverlapMap
+    const previousTransitData = transitData
     transitIndex = data.index
+    transitData = data
     routeOverlapMap = nextRouteOverlapMap
     try {
       dependencies.map.loadTransitData(
@@ -239,6 +323,7 @@ export function createNavigationSession(
       syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
     } catch (error) {
       transitIndex = previousTransitIndex
+      transitData = previousTransitData
       routeOverlapMap = previousRouteOverlapMap
       throw error
     }
@@ -253,12 +338,19 @@ export function createNavigationSession(
       selectedRouteColor: reconciledSelection.route?.color ?? null,
       resourceStatus,
     })
+    requestJourneyPlanning()
   }
 
   const handleLoadFailure = (
     resource: 'venue' | 'transit',
     error: unknown,
   ): void => {
+    if (resource === 'transit') {
+      transitData = null
+      resetJourney()
+    } else if (resource === 'venue') {
+      resetJourney()
+    }
     const message = resource === 'venue'
       ? 'Unable to load venue data'
       : getTransitFailureMessage(error)
@@ -405,6 +497,7 @@ export function createNavigationSession(
       disposed = true
       transitionQueue.clear()
       startup.dispose()
+      cancelJourneyPlanning()
       listeners.clear()
       dependencies.map.dispose()
     },

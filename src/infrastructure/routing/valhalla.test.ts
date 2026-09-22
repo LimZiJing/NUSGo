@@ -61,8 +61,10 @@ describe('Valhalla route engine', () => {
     const fetcher = vi.fn<typeof fetch>(async () => responseWithJson({
       units: 'kilometers',
       sources_to_targets: [
-        { from_index: 0, to_index: 0, distance: 0, time: 0 },
-        { from_index: 0, to_index: 1, distance: 0.4, time: 300 },
+        [
+          { from_index: 0, to_index: 0, distance: 0, time: 0 },
+          { from_index: 0, to_index: 1, distance: 0.4, time: 300 },
+        ],
       ],
     }))
     const engine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })

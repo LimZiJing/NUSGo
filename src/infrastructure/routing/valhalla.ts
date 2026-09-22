@@ -153,8 +153,11 @@ function requireMatrixResults(
     throw new ValhallaRouteError('Valhalla matrix response has invalid connections')
   }
 
+  const rawConnections = response.sources_to_targets.every(Array.isArray)
+    ? response.sources_to_targets.flat()
+    : response.sources_to_targets
   const connections: WalkingMatrixConnection[] = []
-  for (const value of response.sources_to_targets) {
+  for (const value of rawConnections) {
     const connection = requireJsonRecord(value, 'matrix connection')
     const fromIndex = connection.from_index
     const toIndex = connection.to_index

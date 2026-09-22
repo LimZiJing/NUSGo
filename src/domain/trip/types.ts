@@ -15,3 +15,8 @@ export type TripLocationSearchResult = {
   label: string
   detail: string
 }
+
+export interface TripCoordinate {
+  readonly longitude: number
+  readonly latitude: number
+}

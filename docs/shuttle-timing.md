@@ -20,6 +20,12 @@ waiting time as unavailable because the available NUS service-window response
 does not provide verified headways. The planner must not invent a waiting time
 from a first or last service time.
 
+The first planner prototype can still include shuttle legs by passing its
+explicit `zeroShuttleWaitingTime` policy. This is a temporary development
+policy, not a claim that a shuttle is immediately available. The policy is
+separate from the generated timing data, so a future live-arrival adapter can
+replace it without changing the planner's graph or ranking logic.
+
 To regenerate the local build data after reviewing the fallback decision, run:
 
 ```text

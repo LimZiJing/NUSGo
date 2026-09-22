@@ -33,7 +33,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
-- Checked-in shuttle timing estimates are generated from the canonical route geometry, validated against the route and stop model, and loaded through `loadShuttleTimingData`; waiting time remains explicitly unavailable until verified headway data exists.
+- Build-generated shuttle timing estimates use the canonical route geometry, are validated against the route and stop model, and are loaded through `loadShuttleTimingData`; waiting time remains explicitly unavailable until verified headway data exists.
 
 ## Current limitations
 

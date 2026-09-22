@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "npm run shuttle:timing:generate:geometry",
     "build": "tsc -b && vite build",
+    "prebuild": "npm run shuttle:timing:generate:geometry",
     "lint": "eslint .",
     "preview": "vite preview",
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",

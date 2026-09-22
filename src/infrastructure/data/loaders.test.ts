@@ -21,7 +21,6 @@ function readJson(path: string): unknown {
 const network = readJson('../../../public/data/shuttle-network.json')
 const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
-const checkedInTiming = readJson('../../../public/data/shuttle-timing.json')
 const validatedNetwork = validateTransitNetwork(network)
 const validatedGeometry = validateTransitRouteGeometry(validatedNetwork, geometry)
 const timing = generateShuttleTimingData(validatedNetwork, validatedGeometry, '2026-09-22')
@@ -65,10 +64,10 @@ describe('data loaders', () => {
     const result = await loadShuttleTimingData(
       validatedNetwork,
       new AbortController().signal,
-      createFetcher({ '/data/shuttle-timing.json': checkedInTiming }),
+      createFetcher({ '/data/shuttle-timing.json': timing }),
     )
 
-    expect(result).toBe(checkedInTiming)
+    expect(result).toBe(timing)
     expect(result.records.length).toBeGreaterThan(0)
     expect(result.metadata.geometryVerifiedAt).toBe(validatedNetwork.metadata.verifiedAt)
   })

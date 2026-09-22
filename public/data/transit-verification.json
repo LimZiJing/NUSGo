@@ -1,21 +1,21 @@
 {
   "version": 1,
-  "reviewedAt": "2026-09-17",
-  "routeOrderSource": "NUSMods bus route and stop service data; route sequences manually reviewed for prototype",
+  "reviewedAt": "2026-09-23",
+  "routeOrderSource": "User-provided corrected one-way route sequences",
   "coordinateSource": "NUS bus-stops API snapshot in public/data/bus-stops.json",
   "geometry": {
     "source": "OpenStreetMap road network via OSRM driving-route geometry",
-    "reviewedAt": "2026-09-17",
+    "reviewedAt": "2026-09-23",
     "reviewNotes": "Curated LineStrings follow the road network in verified stop order; every ordered stop was checked within 50 metres of its route line."
   },
   "routes": [
-    {"routeId":"A1","direction":"Kent Ridge MRT to Opp TCOMS","orderedStopIds":["KR-MRT","LT27","UHALL","UHC-OPP","YIH","CLB","LT13","AS5","BIZ2","PGP","KRB","TCOMS-OPP"]},
-    {"routeId":"A2","direction":"Museum to TCOMS","orderedStopIds":["MUSEUM","IT","YIH-OPP","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR","HSSML-OPP","NUSS-OPP","LT13-OPP","KRB","TCOMS"]},
-    {"routeId":"D1","direction":"University Town to Ventus","orderedStopIds":["UTOWN","MUSEUM","YIH","CLB","LT13","AS5","BIZ2","IT","YIH-OPP","COM3","HSSML-OPP","NUSS-OPP","LT13-OPP"]},
-    {"routeId":"D2","direction":"Kent Ridge MRT to Opp TCOMS","orderedStopIds":["KR-MRT","LT27","UHALL","UHC-OPP","UTOWN","MUSEUM","PGP","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR","COM3","TCOMS","TCOMS-OPP"]},
-    {"routeId":"R1","direction":"University Town to Prince George's Park","orderedStopIds":["UTOWN","KV","MUSEUM","YIH","CLB","LT13","AS5","BIZ2","PGP"]},
-    {"routeId":"R2","direction":"University Town to Ventus","orderedStopIds":["UTOWN","RAFFLES","KV","PGP","IT","YIH-OPP","HSSML-OPP","NUSS-OPP","LT13-OPP"]},
-    {"routeId":"K","direction":"Kent Ridge MRT to Prince George's Park Foyer","orderedStopIds":["KR-MRT","LT27","UHALL","UHC-OPP","KV","MUSEUM","YIH","CLB","PGP","SDE3-OPP","JP-SCH-16151","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR"]},
-    {"routeId":"P","direction":"Oei Tiong Ham Building to College Green","orderedStopIds":["OTH","BG-MRT","KR-MRT","UHC-OPP","UTOWN","KV","CG"]}
+    {"routeId":"A1","direction":"KR Bus Ter to KR Bus Ter","orderedStopIds":["KRB","LT13","AS5","BIZ2","TCOMS-OPP","PGP","KR-MRT","LT27","UHALL","UHC-OPP","YIH","CLB","KRB"]},
+    {"routeId":"A2","direction":"KR Bus Ter to KR Bus Ter","orderedStopIds":["KRB","IT","YIH-OPP","MUSEUM","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR","TCOMS","HSSML-OPP","NUSS-OPP","LT13-OPP","KRB"]},
+    {"routeId":"D1","direction":"COM 3 to COM 3","orderedStopIds":["COM3","HSSML-OPP","NUSS-OPP","LT13-OPP","IT","YIH-OPP","MUSEUM","UTOWN","YIH","CLB","LT13","AS5","BIZ2","COM3"]},
+    {"routeId":"D2","direction":"COM 3 to COM 3","orderedStopIds":["COM3","TCOMS-OPP","PGP","KR-MRT","LT27","UHALL","UHC-OPP","MUSEUM","UTOWN","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR","TCOMS","COM3"]},
+    {"routeId":"K","direction":"PGP to PGP Foyer","orderedStopIds":["PGP","KR-MRT","LT27","UHALL","UHC-OPP","YIH","CLB","SDE3-OPP","JP-SCH-16151","KV","MUSEUM","UHC","UHALL-OPP","S17","KR-MRT-OPP","PGPR"]},
+    {"routeId":"P","direction":"Kent Vale to Kent Vale","orderedStopIds":["KV","CG","OTH","BG-MRT","KR-MRT","UHC-OPP","UTOWN","KV"]},
+    {"routeId":"R1","direction":"Kent Vale to PGP","orderedStopIds":["KV","MUSEUM","UTOWN","YIH","CLB","LT13","AS5","BIZ2","PGP"]},
+    {"routeId":"R2","direction":"PGP to Kent Vale","orderedStopIds":["PGP","HSSML-OPP","NUSS-OPP","LT13-OPP","IT","YIH-OPP","UTOWN","RAFFLES","KV"]}
   ]
 }

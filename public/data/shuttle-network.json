@@ -2,10 +2,10 @@
   "version": 1,
   "metadata": {
     "source": "NUSMods route and stop metadata with NUS API coordinates",
-    "routeStopOrder": "Reviewed working order; NUSMods publishes stop memberships but not ordered route paths",
+    "routeStopOrder": "User-provided corrected one-way route sequences; repeated first stops mark ordinary final terminals",
     "routeGeometry": "Curated GeoJSON in public/data/shuttle-routes.geojson; reviewed against the OpenStreetMap road network",
-    "verifiedAt": "2026-09-17",
-    "routeOrderSource": "NUSMods bus route and stop service data, reviewed prototype route sequences",
+    "verifiedAt": "2026-09-23",
+    "routeOrderSource": "User-provided corrected one-way route sequences",
     "coordinateSource": "NUS bus-stops API snapshot in public/data/bus-stops.json"
   },
   "routes": [
@@ -14,18 +14,19 @@
       "name": "A1",
       "color": "#fb0101",
       "stopIds": [
+        "KRB",
+        "LT13",
+        "AS5",
+        "BIZ2",
+        "TCOMS-OPP",
+        "PGP",
         "KR-MRT",
         "LT27",
         "UHALL",
         "UHC-OPP",
         "YIH",
         "CLB",
-        "LT13",
-        "AS5",
-        "BIZ2",
-        "PGP",
-        "KRB",
-        "TCOMS-OPP"
+        "KRB"
       ]
     },
     {
@@ -33,19 +34,20 @@
       "name": "A2",
       "color": "#e3cf0e",
       "stopIds": [
-        "MUSEUM",
+        "KRB",
         "IT",
         "YIH-OPP",
+        "MUSEUM",
         "UHC",
         "UHALL-OPP",
         "S17",
         "KR-MRT-OPP",
         "PGPR",
+        "TCOMS",
         "HSSML-OPP",
         "NUSS-OPP",
         "LT13-OPP",
-        "KRB",
-        "TCOMS"
+        "KRB"
       ]
     },
     {
@@ -53,19 +55,20 @@
       "name": "D1",
       "color": "#c77de0",
       "stopIds": [
-        "UTOWN",
+        "COM3",
+        "HSSML-OPP",
+        "NUSS-OPP",
+        "LT13-OPP",
+        "IT",
+        "YIH-OPP",
         "MUSEUM",
+        "UTOWN",
         "YIH",
         "CLB",
         "LT13",
         "AS5",
         "BIZ2",
-        "IT",
-        "YIH-OPP",
-        "COM3",
-        "HSSML-OPP",
-        "NUSS-OPP",
-        "LT13-OPP"
+        "COM3"
       ]
     },
     {
@@ -73,21 +76,60 @@
       "name": "D2",
       "color": "#6e1d72",
       "stopIds": [
+        "COM3",
+        "TCOMS-OPP",
+        "PGP",
         "KR-MRT",
         "LT27",
         "UHALL",
         "UHC-OPP",
-        "UTOWN",
         "MUSEUM",
-        "PGP",
+        "UTOWN",
         "UHC",
         "UHALL-OPP",
         "S17",
         "KR-MRT-OPP",
         "PGPR",
-        "COM3",
         "TCOMS",
-        "TCOMS-OPP"
+        "COM3"
+      ]
+    },
+    {
+      "id": "K",
+      "name": "K",
+      "color": "#33599c",
+      "stopIds": [
+        "PGP",
+        "KR-MRT",
+        "LT27",
+        "UHALL",
+        "UHC-OPP",
+        "YIH",
+        "CLB",
+        "SDE3-OPP",
+        "JP-SCH-16151",
+        "KV",
+        "MUSEUM",
+        "UHC",
+        "UHALL-OPP",
+        "S17",
+        "KR-MRT-OPP",
+        "PGPR"
+      ]
+    },
+    {
+      "id": "P",
+      "name": "P",
+      "color": "#bebebe",
+      "stopIds": [
+        "KV",
+        "CG",
+        "OTH",
+        "BG-MRT",
+        "KR-MRT",
+        "UHC-OPP",
+        "UTOWN",
+        "KV"
       ]
     },
     {
@@ -95,9 +137,9 @@
       "name": "R1",
       "color": "#ee8136",
       "stopIds": [
-        "UTOWN",
         "KV",
         "MUSEUM",
+        "UTOWN",
         "YIH",
         "CLB",
         "LT13",
@@ -111,52 +153,15 @@
       "name": "R2",
       "color": "#008000",
       "stopIds": [
-        "UTOWN",
-        "RAFFLES",
-        "KV",
         "PGP",
-        "IT",
-        "YIH-OPP",
         "HSSML-OPP",
         "NUSS-OPP",
-        "LT13-OPP"
-      ]
-    },
-    {
-      "id": "K",
-      "name": "K",
-      "color": "#33599c",
-      "stopIds": [
-        "KR-MRT",
-        "LT27",
-        "UHALL",
-        "UHC-OPP",
-        "KV",
-        "MUSEUM",
-        "YIH",
-        "CLB",
-        "PGP",
-        "SDE3-OPP",
-        "JP-SCH-16151",
-        "UHC",
-        "UHALL-OPP",
-        "S17",
-        "KR-MRT-OPP",
-        "PGPR"
-      ]
-    },
-    {
-      "id": "P",
-      "name": "P",
-      "color": "#bebebe",
-      "stopIds": [
-        "OTH",
-        "BG-MRT",
-        "KR-MRT",
-        "UHC-OPP",
+        "LT13-OPP",
+        "IT",
+        "YIH-OPP",
         "UTOWN",
-        "KV",
-        "CG"
+        "RAFFLES",
+        "KV"
       ]
     }
   ],

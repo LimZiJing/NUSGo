@@ -81,6 +81,34 @@ describe('shuttle timing', () => {
       .toThrow('missing timing record for A1:STOP-A->STOP-B')
   })
 
+  it('generates the closing directed pair for a loop without a self-pair', () => {
+    const input = createValidTransitNetwork()
+    input.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-A']
+    input.stops[1].latitude = 1.001
+    input.stops[1].longitude = 103
+    const network = validateTransitNetwork(input)
+    const geometry: TransitRouteGeometry = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+        geometry: {
+          type: 'LineString',
+          coordinates: [[103, 1], [103, 1.001], [103, 1]],
+        },
+      }],
+    }
+
+    const data = generateShuttleTimingData(network, geometry, '2026-09-22')
+
+    expect(data.records.map((record) => `${record.fromStopId}->${record.toStopId}`)).toEqual([
+      'STOP-A->STOP-B',
+      'STOP-B->STOP-A',
+    ])
+    expect(data.records.some((record) => record.fromStopId === record.toStopId)).toBe(false)
+    expect(validateShuttleTimingData(data, network)).toEqual(data)
+  })
+
   it('rejects stale geometry provenance and route-stop mismatches', () => {
     const network = createTimingNetwork()
     const geometry = createTimingGeometry()

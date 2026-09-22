@@ -49,6 +49,8 @@ bus stops.
 
 1. Copy `.env.example` to `.env`.
 2. Fill in `NUS_X_API_KEY`, `NUS_UNIVUS_JWT`, and the matching `NUS_USER_ID`.
+   Keep `NUS_APP_VERSION` in the full ESB format used by the Android app, such
+   as `univus_android_2.59.2_140`.
 3. Run the internal bus-stop check:
 
 ```bash

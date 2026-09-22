@@ -67,6 +67,8 @@ function Assert-NoArguments {
 
 function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
     $proxyBaseUrl = Require-Setting 'NUS_BUS_PROXY_BASE_URL'
+    $htdApi = Require-Setting 'NUS_X_HTD_API'
+    $appApi = Require-Setting 'NUS_X_APP_API'
     $apiKey = Require-Setting 'NUS_X_API_KEY'
     $jwt = Require-Setting 'NUS_UNIVUS_JWT'
     $userId = Require-Setting 'NUS_USER_ID'
@@ -82,7 +84,7 @@ function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
         ipaddr   = Get-Setting 'NUS_IPADDR' '0.0.0.0'
         token    = $jwt
         userid   = $userId
-        version  = Get-Setting 'NUS_APP_VERSION' '2.56.0'
+        version  = Get-Setting 'NUS_APP_VERSION' 'univus_android_2.59.2_140'
     }
     # Each endpoint adds its own fields while sharing the common UniVus body.
     foreach ($entry in $Extra.GetEnumerator()) {
@@ -90,27 +92,24 @@ function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
     }
 
     $bodyJson = $body | ConvertTo-Json -Compress
-    $curlArgs = @(
-        '-sS'
-        '-X', 'POST'
-        "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint"
+    $headers = @{
         # The API contract requires the raw JWT in token and Bearer here.
-        '-H', "Authorization: Bearer $jwt"
-        '-H', "X-API-KEY: $apiKey"
-        '-H', 'Content-Type: application/json; charset=utf-8'
-        '--data-raw', $bodyJson
-    )
-
-    $response = & curl.exe @curlArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "curl.exe failed with exit code $LASTEXITCODE"
+        Authorization = "Bearer $jwt"
+        'X-HTD-API'   = $htdApi
+        'X-APP-API'   = $appApi
+        'X-API-KEY'   = $apiKey
     }
 
-    try {
-        ($response -join [Environment]::NewLine) | ConvertFrom-Json | ConvertTo-Json -Depth 20
-    } catch {
-        $response
-    }
+    # Invoke-RestMethod keeps the JSON string intact. Windows PowerShell can
+    # strip JSON quotes when the same body is passed to native curl.exe.
+    $response = Invoke-RestMethod `
+        -Uri "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint" `
+        -Method Post `
+        -Headers $headers `
+        -ContentType 'application/json; charset=utf-8' `
+        -Body $bodyJson
+
+    $response | ConvertTo-Json -Depth 20
 }
 
 if ($Command -in @('help', '--help', '-h')) {

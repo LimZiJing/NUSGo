@@ -40,7 +40,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
 - The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; targeted release smoke evidence exists at 1280 × 720, while exact release/mobile viewports and failure injection still need manual verification.
 - Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
-- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md). The walking adapter and Journey planner are not wired into the frontend yet; shuttle ride estimates are available, but waiting time is still unavailable.
+- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md). The Valhalla walking route-engine boundary now exists, but it is not wired into the Journey planner or frontend and still needs a configured self-hosted endpoint; shuttle ride estimates are available, but waiting time is still unavailable.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
 
@@ -49,7 +49,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 Complete the functional transit foundation before a broad UI redesign:
 
 1. Complete the release desktop/map smoke checklist for the validated static transit resources.
-2. Implement and verify the Valhalla walking boundary and validated walking connections (#71).
+2. Wire and verify the Valhalla walking boundary and validated walking connections (#71).
 3. Implement the pure composed Journey planner using the validated timing contract (#66).
 4. Connect the planner to application state and the frontend map/Plan trip experience (#67–#69).
 5. Investigate live shuttle arrivals after static routes work reliably.

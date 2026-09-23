@@ -129,7 +129,7 @@ function renderJourneyStatus(state: TripJourneyState) {
   if (state.status === 'no-route') {
     return (
       <p className="trip-journey-status" role="status" aria-live="polite">
-        No complete estimated Journey is available. Shuttle options may be excluded when timing data is missing.
+        {state.error ?? 'No complete estimated Journey is available. Shuttle options may be excluded when timing data is missing.'}
       </p>
     )
   }

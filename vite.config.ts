@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import type { ShuttleRouteArrivalData } from './src/domain/transit/arrivals.js'
 import { parseShuttleServiceResponse } from './src/infrastructure/shuttle-arrivals/response.js'
+import type { ShuttleServiceWindow } from './src/domain/transit/service-hours.js'
+import { parseRouteServiceWindows } from './src/infrastructure/shuttle-service-hours/response.js'
 
 interface RequestedStop {
   readonly stopId: string
@@ -16,8 +18,14 @@ interface CachedStopArrival {
   readonly routes: Record<string, ShuttleRouteArrivalData>
 }
 
+interface CachedServiceWindows {
+  readonly expiresAt: string
+  readonly windows: readonly ShuttleServiceWindow[]
+}
+
 const SHUTTLE_CACHE_TTL_MS = 45_000
 const SHUTTLE_STALE_CACHE_TTL_MS = 120_000
+const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
 
 function sendJson(
   response: ServerResponse,
@@ -88,9 +96,37 @@ function createShuttleServiceRequest(env: Record<string, string>, stopName: stri
   }
 }
 
+function createRouteServiceRequest(env: Record<string, string>, routeId: string): RequestInit & { url: string } {
+  const jwt = getRequiredEnv(env, 'NUS_UNIVUS_JWT')
+  const baseUrl = getRequiredEnv(env, 'NUS_BUS_PROXY_BASE_URL').replace(/\/+$/, '')
+  const body = {
+    route_code: routeId,
+    deviceid: env.NUS_DEVICE_ID?.trim() || randomUUID(),
+    domain: env.NUS_DOMAIN?.trim() || 'PUBLIC',
+    ipaddr: env.NUS_IPADDR?.trim() || '0.0.0.0',
+    token: jwt,
+    userid: getRequiredEnv(env, 'NUS_USER_ID'),
+    version: env.NUS_APP_VERSION?.trim() || 'univus_android_2.59.2_140',
+  }
+  return {
+    url: `${baseUrl}/univus/api/bus-proxy/route-min-max-time`,
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      'Content-Type': 'application/json; charset=utf-8',
+      'X-HTD-API': getRequiredEnv(env, 'NUS_X_HTD_API'),
+      'X-APP-API': getRequiredEnv(env, 'NUS_X_APP_API'),
+      'X-API-KEY': getRequiredEnv(env, 'NUS_X_API_KEY'),
+    },
+    body: JSON.stringify(body),
+  }
+}
+
 function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
   const cache = new Map<string, CachedStopArrival>()
   const inFlight = new Map<string, Promise<CachedStopArrival | null>>()
+  const serviceWindowsCache = new Map<string, CachedServiceWindows>()
+  const serviceWindowsInFlight = new Map<string, Promise<CachedServiceWindows | null>>()
 
   const loadStop = async (stopName: string): Promise<CachedStopArrival | null> => {
     const cached = cache.get(stopName)
@@ -121,6 +157,34 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
       }
     })()
     inFlight.set(stopName, request)
+    return request
+  }
+
+  const loadServiceWindows = async (routeId: string): Promise<CachedServiceWindows | null> => {
+    const cached = serviceWindowsCache.get(routeId)
+    if (cached && Date.parse(cached.expiresAt) > Date.now()) return cached
+    const existing = serviceWindowsInFlight.get(routeId)
+    if (existing) return existing
+
+    const request = (async () => {
+      try {
+        const requestOptions = createRouteServiceRequest(env, routeId)
+        const response = await fetch(requestOptions.url, requestOptions)
+        if (!response.ok) throw new Error(`NUS route-min-max-time request failed: ${response.status}`)
+        const entry: CachedServiceWindows = {
+          expiresAt: new Date(Date.now() + SERVICE_WINDOWS_CACHE_TTL_MS).toISOString(),
+          windows: parseRouteServiceWindows(await response.json() as unknown, routeId),
+        }
+        serviceWindowsCache.set(routeId, entry)
+        return entry
+      } catch (error: unknown) {
+        console.warn(`NUS route service-hour data unavailable for ${routeId}.`, error)
+        return null
+      } finally {
+        serviceWindowsInFlight.delete(routeId)
+      }
+    })()
+    serviceWindowsInFlight.set(routeId, request)
     return request
   }
 
@@ -156,6 +220,40 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
           } catch (error: unknown) {
             sendJson(response, 400, {
               error: error instanceof Error ? error.message : 'Invalid shuttle arrival request',
+            })
+          }
+        })()
+      })
+      server.middlewares.use('/api/shuttle-service-windows', (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          sendJson(response, 405, { error: 'Only GET is supported' })
+          return
+        }
+
+        void (async () => {
+          try {
+            const url = new URL(request.url ?? '/', 'http://localhost')
+            const routeIds = [...new Set((url.searchParams.get('routes') ?? '')
+              .split(',')
+              .map((routeId) => routeId.trim())
+              .filter((routeId) => /^[A-Za-z0-9_-]{1,40}$/.test(routeId)))]
+            if (routeIds.length === 0 || routeIds.length > 16) {
+              throw new Error('The routes query must contain between 1 and 16 route IDs')
+            }
+            const entries = await Promise.all(routeIds.map(async (routeId) => ({
+              routeId,
+              entry: await loadServiceWindows(routeId),
+            })))
+            if (entries.some(({ entry }) => entry === null)) {
+              sendJson(response, 503, { error: 'No shuttle service-hour data is available' })
+              return
+            }
+            sendJson(response, 200, {
+              routes: Object.fromEntries(entries.map(({ routeId, entry }) => [routeId, entry?.windows ?? []])),
+            })
+          } catch (error: unknown) {
+            sendJson(response, 400, {
+              error: error instanceof Error ? error.message : 'Invalid shuttle service-hour request',
             })
           }
         })()

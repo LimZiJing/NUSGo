@@ -161,4 +161,58 @@ describe('createJourneyPlanningService', () => {
     )
     expect(journey?.legs[1]).toMatchObject({ waitingSeconds: 20 })
   })
+
+  it('does not return a shuttle journey after the route service window ends', async () => {
+    const transit = createTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => ({
+        observedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        stops: {},
+      })),
+    }
+    const shuttleServiceHoursClient = {
+      getServiceWindows: vi.fn(async () => ({
+        A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '07:20', dayType: 'Mon-Fri', dates: [] }],
+      })),
+    }
+
+    await expect(createJourneyPlanningService(
+      routeEngine,
+      shuttleArrivalClient,
+      shuttleServiceHoursClient,
+      () => new Date('2026-09-23T02:00:00.000Z').getTime(),
+    )({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })).rejects.toMatchObject({
+      name: 'NoJourneyAvailableError',
+      message: 'Shuttle service has ended for today. It resumes tomorrow at 7:15 AM.',
+    })
+  })
 })

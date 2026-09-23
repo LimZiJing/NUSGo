@@ -94,8 +94,8 @@ export function ShuttleRouteControl({
           </p>
           <p className="route-stop-heading">Ordered stops</p>
           <ol className="route-stop-list">
-            {selectedRoute.stopIds.map((stopId) => (
-              <li key={stopId}>{getStopLabel(stopsById.get(stopId), stopId)}</li>
+            {selectedRoute.stopIds.map((stopId, index) => (
+              <li key={`${stopId}-${index}`}>{getStopLabel(stopsById.get(stopId), stopId)}</li>
             ))}
           </ol>
         </div>

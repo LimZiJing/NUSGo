@@ -246,6 +246,7 @@ export function generateShuttleTimingData(
       for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
         const fromStopId = route.stopIds[fromIndex]
         const toStopId = route.stopIds[toIndex]
+        if (fromStopId === toStopId) continue
         if (unavailableReason || !projections) {
           records.push(createUnavailableRecord(
             route,
@@ -385,12 +386,13 @@ function validateRecord(
     return
   }
   const fromIndex = route.stopIds.indexOf(fromStopId)
-  const toIndex = route.stopIds.indexOf(toStopId)
+  const laterToIndex = route.stopIds.findIndex((stopId, index) => index > fromIndex && stopId === toStopId)
+  const toIndex = laterToIndex >= 0 ? laterToIndex : route.stopIds.indexOf(toStopId)
   if (fromIndex < 0 || toIndex < 0) {
     issues.push(`Shuttle timing record ${index} references stops outside route ${routeId}`)
     return
   }
-  if (fromIndex >= toIndex) {
+  if (fromStopId === toStopId || fromIndex >= toIndex) {
     issues.push(`Shuttle timing record ${index} is not in the verified direction: ${routeId}:${fromStopId}->${toStopId}`)
     return
   }
@@ -449,6 +451,7 @@ export function validateShuttleTimingData(
   for (const route of network.routes) {
     for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
       for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
+        if (route.stopIds[fromIndex] === route.stopIds[toIndex]) continue
         expectedKeys.add(`${route.id}:${route.stopIds[fromIndex]}->${route.stopIds[toIndex]}`)
       }
     }

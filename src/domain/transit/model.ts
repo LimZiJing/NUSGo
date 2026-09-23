@@ -234,12 +234,17 @@ export function validateTransitNetwork(input: unknown): TransitNetwork {
     }
 
     const routeStopIds = new Set<string>()
-    for (const stopIdValue of value.stopIds) {
+    const finalStopIndex = value.stopIds.length - 1
+    const firstStopId = value.stopIds[0]
+    for (const [stopIndex, stopIdValue] of value.stopIds.entries()) {
       if (typeof stopIdValue !== 'string' || stopIdValue.trim().length === 0) {
         issues.push(`Transit route ${routeId} has an invalid stop ID: ${describe(stopIdValue)}`)
         continue
       }
-      if (routeStopIds.has(stopIdValue)) {
+      const isClosingTerminal =
+        stopIndex === finalStopIndex &&
+        stopIdValue === firstStopId
+      if (routeStopIds.has(stopIdValue) && !isClosingTerminal) {
         issues.push(`Transit route ${routeId} repeats stop: ${stopIdValue}`)
       }
       routeStopIds.add(stopIdValue)
@@ -353,10 +358,15 @@ export function validateTransitVerificationManifest(
         issues.push(`Transit verification route ${value.routeId} ordered stop IDs must be an array`)
       } else {
         const seenStopIds = new Set<string>()
+        const finalStopIndex = value.orderedStopIds.length - 1
+        const firstStopId = value.orderedStopIds[0]
         for (const [stopIndex, stopId] of value.orderedStopIds.entries()) {
           if (typeof stopId !== 'string' || stopId.trim().length === 0) {
             issues.push(`Transit verification route ${value.routeId} ordered stop ${stopIndex} must be a non-empty string`)
-          } else if (seenStopIds.has(stopId)) {
+          } else if (
+            seenStopIds.has(stopId) &&
+            !(stopIndex === finalStopIndex && stopId === firstStopId)
+          ) {
             issues.push(`Transit verification route ${value.routeId} repeats stop: ${stopId}`)
           }
           if (typeof stopId === 'string') seenStopIds.add(stopId)

@@ -209,6 +209,50 @@ describe('planJourney', () => {
     expect(journey?.totalDurationSeconds).toBe(500)
   })
 
+  it('plans the closing leg of a one-way loop', () => {
+    const network = validateTransitNetwork({
+      version: 1,
+      metadata: {
+        source: 'test',
+        routeStopOrder: 'test',
+        routeGeometry: 'test',
+        verifiedAt: '2026-09-22',
+        routeOrderSource: 'test',
+        coordinateSource: 'test',
+      },
+      routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-A'] }],
+      stops: [
+        { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+        { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1.001, longitude: 103, services: ['A1'] },
+      ],
+    })
+    const routeGeometry = validateTransitRouteGeometry(network, {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103, 1.001], [103, 1]] },
+      }],
+    })
+    const journey = planJourney({
+      origin: { endpoint: stopB, coordinate: { longitude: 103, latitude: 1.001 } },
+      destination: { endpoint: stopA, coordinate: { longitude: 103, latitude: 1 } },
+      transitIndex: createTransitNetworkIndex(network),
+      routeGeometry,
+      shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+      walkingConnections: [],
+      getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+    })
+
+    expect(journey?.legs).toHaveLength(1)
+    expect(journey?.legs[0]).toMatchObject({
+      mode: 'shuttle',
+      routeId: 'A1',
+      boardingStopId: 'STOP-B',
+      alightingStopId: 'STOP-A',
+    })
+  })
+
   it('returns no journey when no complete connection exists', () => {
     expect(planJourney(createInput([]))).toBeNull()
   })

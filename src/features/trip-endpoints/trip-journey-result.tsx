@@ -18,7 +18,7 @@ interface TripJourneyResultProps {
 }
 
 function formatDuration(seconds: number): string {
-  const minutes = Math.max(1, Math.ceil(seconds / 60))
+  const minutes = Math.max(0, Math.ceil(seconds / 60))
   if (minutes < 60) return `${minutes} min`
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
@@ -172,7 +172,7 @@ export function TripJourneyResult({
       </div>
       <p className="trip-journey-notice" role="note">
         {hasShuttleLeg
-          ? 'Verified shuttle waiting time is unavailable. Shuttle timing is an estimate, not a guaranteed arrival time.'
+          ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
           : 'Travel times are estimates, not guaranteed arrival times.'}
       </p>
       <ol className="trip-journey-legs" aria-label="Journey legs">

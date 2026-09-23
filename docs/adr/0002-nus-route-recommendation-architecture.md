@@ -145,7 +145,7 @@ Costs and limitations:
 - The first deployment needs a server-side routing service and an OSM walking graph.
 - A matrix plus selected-route geometry requires more than one routing operation and careful request cancellation.
 - OpenStreetMap coverage may miss NUS indoor links, covered walkways, entrances, or campus-only paths; NavUS may later need curated walking data or a custom graph.
-- Static shuttle timing is an estimate. Live arrivals and timetable-aware departure search remain future work.
+- Static shuttle timing is an estimate. Live arrivals are optional server-side data; timetable-aware departure search remains future work.
 - The public Valhalla demo, public OSM routing services, and unbounded client-side provider calls are not production fallbacks.
 
 ## Follow-up sequence

@@ -198,6 +198,11 @@ export {
   validateShuttleTimingData,
 } from './timing'
 export type {
+  ShuttleArrivalSnapshot,
+  ShuttleHeadwaySeconds,
+  ShuttleRouteArrivalData,
+} from './arrivals'
+export type {
   ShuttleTimingData,
   ShuttleTimingMetadata,
   ShuttleTimingRecord,

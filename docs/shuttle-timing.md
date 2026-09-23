@@ -15,16 +15,19 @@ The estimates use the reviewed route geometry in
   direction; and
 - every value records the geometry verification date and method version.
 
-These are planning estimates, not observed timetables. The current data marks
-waiting time as unavailable because the available NUS service-window response
-does not provide verified headways. The planner must not invent a waiting time
-from a first or last service time.
+These are planning estimates, not observed timetables. When the development
+server has the NUS bus API settings, NavUS also requests live stop arrivals
+through its same-origin `/api/shuttle-arrivals` endpoint. The server caches
+each stop response briefly and keeps the credentials out of the browser.
 
-The first planner prototype can still include shuttle legs by passing its
-explicit `zeroShuttleWaitingTime` policy. This is a temporary development
-policy, not a claim that a shuttle is immediately available. The policy is
-separate from the generated timing data, so a future live-arrival adapter can
-replace it without changing the planner's graph or ranking logic.
+The planner uses the next live arrival for the first boarding and the first
+arrival after the expected transfer time for later boardings. If the live
+response does not cover that time, it uses half the observed headway. The
+static ride estimate remains available when live data cannot be loaded.
+
+The planner still keeps an explicit `zeroShuttleWaitingTime` fallback for
+offline or unavailable live data. This is a fallback policy, not a claim that a
+shuttle is immediately available.
 
 To regenerate the local build data after reviewing the fallback decision, run:
 

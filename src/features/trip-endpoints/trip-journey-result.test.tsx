@@ -62,11 +62,12 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Walk')
     expect(markup).toContain(`Shuttle ${route.name}`)
     expect(markup).toContain('Wait')
+    expect(markup).toContain('0 min')
     expect(markup).toContain('Ride')
     expect(markup).toContain('Board')
     expect(markup).toContain('Alight')
     expect(markup).toContain('Stops:')
-    expect(markup).toContain('Verified shuttle waiting time is unavailable')
+    expect(markup).toContain('Live shuttle arrivals may be used when available')
   })
 
   it.each([

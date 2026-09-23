@@ -4,10 +4,16 @@ import type {
   WalkingRouteEngine,
 } from './contracts/routing'
 import type { LoadedTransitData } from './contracts/data'
-import { planJourney, zeroShuttleWaitingTime, type WalkingJourneyConnection } from '../domain/trip/planner'
+import {
+  planJourney,
+  zeroShuttleWaitingTime,
+  type WalkingJourneyConnection,
+} from '../domain/trip/planner'
+import { createLiveShuttleWaitingTimeProvider } from '../domain/trip/live-waiting'
 import type { Journey, JourneyEndpointLocation } from '../domain/trip/journey'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
+import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from '../infrastructure/shuttle-arrivals/client'
 
 export interface JourneyPlanningRequest {
   readonly tripRequest: TripRequest
@@ -175,6 +181,7 @@ async function loadWalkingConnections(
 
 export function createJourneyPlanningService(
   routeEngine: WalkingRouteEngine,
+  shuttleArrivalClient?: ShuttleArrivalClient,
 ): JourneyPlanningService {
   return async (request) => {
     const locations = resolveLocations(request)
@@ -199,7 +206,7 @@ export function createJourneyPlanningService(
       request.signal,
     )
 
-    return planJourney({
+    const planInput = {
       origin: locations.origin,
       destination: locations.destination,
       transitIndex: request.transit.index,
@@ -207,6 +214,32 @@ export function createJourneyPlanningService(
       shuttleTiming: request.transit.shuttleTiming,
       walkingConnections,
       getShuttleWaitingSeconds: zeroShuttleWaitingTime,
-    })
+    }
+    const staticJourney = planJourney(planInput)
+    if (!staticJourney || !shuttleArrivalClient) return staticJourney
+
+    const boardingStops = new Map<string, ShuttleArrivalStopRequest>()
+    for (const leg of staticJourney.legs) {
+      if (leg.mode !== 'shuttle') continue
+      const stop = request.transit.index.stopById.get(leg.boardingStopId)
+      if (!stop) continue
+      boardingStops.set(stop.id, { stopId: stop.id, stopName: stop.longName })
+    }
+    if (boardingStops.size === 0) return staticJourney
+
+    let liveArrivals
+    try {
+      liveArrivals = await shuttleArrivalClient.getArrivals([...boardingStops.values()], request.signal)
+    } catch (error: unknown) {
+      if (request.signal.aborted || isAbortError(error)) throw createAbortError()
+      console.warn('Live shuttle arrivals are unavailable; using static timing estimates.', error)
+      return staticJourney
+    }
+
+    const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)
+    return planJourney({
+      ...planInput,
+      getShuttleWaitingSeconds: liveWaiting,
+    }) ?? staticJourney
   }
 }

@@ -4,7 +4,7 @@ An experimental campus transit and indoor navigation web app for the National Un
 
 ## Current status
 
-Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented, and the navigation session can calculate an estimated Journey when a Valhalla walking endpoint is configured. Journey map rendering, Plan trip presentation, live transit, and calendar import are still pending.
+Early prototype built with React, TypeScript, and Vite. The map uses the OpenFreeMap Liberty vector style, which is based on OpenStreetMap data. Venue and static shuttle-stop markers are implemented, and the navigation session can calculate an estimated Journey when a Valhalla walking endpoint is configured. Live shuttle waiting estimates depend on the server-side NUS settings; calendar import remains pending.
 
 See [`CONTEXT.md`](CONTEXT.md) for shared domain language and [`docs/project-status.md`](docs/project-status.md) for the detailed implementation status and milestones.
 
@@ -94,6 +94,13 @@ same request shape as the known-good manual command. It uses the raw JWT in the
 JSON body and adds `Bearer` only to the internal proxy's `Authorization` header.
 The other documented internal endpoints are also available through the same
 command; run `npm run bus:call -- help` for the full list.
+
+When `npm run dev` is running with these settings, the Vite development server
+also exposes `/api/shuttle-arrivals`. The browser uses this same-origin endpoint
+for live journey waiting estimates; the server caches stop responses and keeps
+the NUS settings out of the client bundle. The GitHub Pages build has no server
+endpoint, so it continues to use static timing estimates when live data is not
+available.
 
 Examples:
 

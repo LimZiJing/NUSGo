@@ -66,7 +66,7 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Board')
     expect(markup).toContain('Alight')
     expect(markup).toContain('Stops:')
-    expect(markup).toContain('Verified shuttle waiting time is unavailable')
+    expect(markup).toContain('Live shuttle arrivals may be used when available')
   })
 
   it.each([

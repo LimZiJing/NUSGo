@@ -32,6 +32,7 @@ import { createMapSession } from '../infrastructure/map/session'
 import { createValhallaRouteEngine } from '../infrastructure/routing/valhalla'
 import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
+import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -62,11 +63,13 @@ function App() {
   const focusTripControlAfterOverlayRef = useRef(false)
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
+  const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
     createValhallaRouteEngine({
       baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
     }),
-  ), [])
+    shuttleArrivalClient,
+  ), [shuttleArrivalClient])
 
   useEffect(() => {
     const updateViewport = (): void => {

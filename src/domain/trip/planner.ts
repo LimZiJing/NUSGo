@@ -25,8 +25,15 @@ export interface WalkingJourneyConnection {
   readonly geometry: JourneyLineString
 }
 
+export interface ShuttleWaitingTimeContext {
+  readonly routeId: string
+  readonly boardingStopId: string
+  readonly elapsedSeconds: number
+}
+
 export type ShuttleWaitingTimeProvider = (
   record: ShuttleTimingRecord,
+  context: ShuttleWaitingTimeContext,
 ) => number | null
 
 export const zeroShuttleWaitingTime: ShuttleWaitingTimeProvider = () => 0
@@ -41,7 +48,33 @@ export interface PlanJourneyInput {
   readonly getShuttleWaitingSeconds: ShuttleWaitingTimeProvider
 }
 
-interface JourneyEdge {
+interface JourneyEdgeBase {
+  readonly to: TripEndpoint
+  readonly distanceMeters: number
+  readonly walkingDistanceMeters: number
+  readonly shuttleBoardings: number
+  readonly sequenceKey: string
+}
+
+interface WalkingJourneyEdge extends JourneyEdgeBase {
+  readonly kind: 'walking'
+  readonly durationSeconds: number
+  readonly leg: WalkingJourneyLeg
+}
+
+interface ShuttleJourneyEdge extends JourneyEdgeBase {
+  readonly kind: 'shuttle'
+  readonly routeId: string
+  readonly fromStopId: string
+  readonly toStopId: string
+  readonly rideSeconds: number
+  readonly record: ShuttleTimingRecord
+  readonly geometry: JourneyLineString
+}
+
+type JourneyEdge = WalkingJourneyEdge | ShuttleJourneyEdge
+
+interface ResolvedJourneyEdge {
   readonly to: TripEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
@@ -259,7 +292,7 @@ function comparePaths(first: JourneyPath, second: JourneyPath): number {
   return compareText(first.sequenceKey, second.sequenceKey)
 }
 
-function extendPath(path: JourneyPath, edge: JourneyEdge): JourneyPath {
+function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
   return {
     nodeKey: endpointKey(edge.to),
     durationSeconds: path.durationSeconds + edge.durationSeconds,
@@ -270,6 +303,43 @@ function extendPath(path: JourneyPath, edge: JourneyEdge): JourneyPath {
     sequenceKey: path.sequenceKey
       ? `${path.sequenceKey}|${edge.sequenceKey}`
       : edge.sequenceKey,
+  }
+}
+
+function resolveJourneyEdge(
+  edge: JourneyEdge,
+  elapsedSeconds: number,
+  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
+): ResolvedJourneyEdge | null {
+  if (edge.kind === 'walking') return edge
+
+  const waitingSeconds = getShuttleWaitingSeconds(edge.record, {
+    routeId: edge.routeId,
+    boardingStopId: edge.fromStopId,
+    elapsedSeconds,
+  })
+  if (
+    waitingSeconds === null ||
+    !isFiniteNonNegativeInteger(waitingSeconds) ||
+    !isFiniteNonNegativeInteger(edge.rideSeconds)
+  ) return null
+
+  return {
+    to: edge.to,
+    durationSeconds: waitingSeconds + edge.rideSeconds,
+    distanceMeters: edge.distanceMeters,
+    walkingDistanceMeters: edge.walkingDistanceMeters,
+    shuttleBoardings: edge.shuttleBoardings,
+    leg: createShuttleLeg(
+      edge.routeId,
+      edge.fromStopId,
+      edge.toStopId,
+      waitingSeconds,
+      edge.rideSeconds,
+      edge.geometry,
+      edge.distanceMeters,
+    ),
+    sequenceKey: edge.sequenceKey,
   }
 }
 
@@ -289,6 +359,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
 
     const leg = createWalkingLeg(connection)
     addEdge(graph, connection.from, {
+      kind: 'walking',
       to: connection.to,
       durationSeconds: connection.durationSeconds,
       distanceMeters: connection.distanceMeters,
@@ -324,12 +395,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
           record.rideSeconds === null
         ) continue
 
-        const waitingSeconds = input.getShuttleWaitingSeconds(record)
-        if (
-          waitingSeconds === null ||
-          !isFiniteNonNegativeInteger(waitingSeconds) ||
-          !isFiniteNonNegativeInteger(record.rideSeconds)
-        ) continue
+        if (!isFiniteNonNegativeInteger(record.rideSeconds)) continue
 
         const fromStop = input.transitIndex.stopById.get(fromStopId)
         const toStop = input.transitIndex.stopById.get(toStopId)
@@ -341,22 +407,18 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
         )
         if (!sliced) continue
 
-        const leg = createShuttleLeg(
-          route.id,
-          fromStopId,
-          toStopId,
-          waitingSeconds,
-          record.rideSeconds,
-          sliced.geometry,
-          sliced.distanceMeters,
-        )
         addEdge(graph, { kind: 'stop', id: fromStopId }, {
+          kind: 'shuttle',
           to: { kind: 'stop', id: toStopId },
-          durationSeconds: leg.durationSeconds,
-          distanceMeters: leg.distanceMeters,
+          distanceMeters: sliced.distanceMeters,
           walkingDistanceMeters: 0,
           shuttleBoardings: 1,
-          leg,
+          routeId: route.id,
+          fromStopId,
+          toStopId,
+          rideSeconds: record.rideSeconds,
+          record,
+          geometry: sliced.geometry,
           sequenceKey: `shuttle:${route.id}:${fromStopId}>${toStopId}`,
         })
       }
@@ -373,6 +435,7 @@ function findBestPath(
   graph: Map<string, JourneyEdge[]>,
   origin: TripEndpoint,
   destination: TripEndpoint,
+  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
 ): JourneyPath | null {
   const originKey = endpointKey(origin)
   const destinationKey = endpointKey(destination)
@@ -396,7 +459,9 @@ function findBestPath(
     if (path.nodeKey === destinationKey) return path
 
     for (const edge of graph.get(path.nodeKey) ?? []) {
-      const nextPath = extendPath(path, edge)
+      const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
+      if (!resolvedEdge) continue
+      const nextPath = extendPath(path, resolvedEdge)
       const currentBest = bestByNode.get(nextPath.nodeKey)
       if (!currentBest || comparePaths(nextPath, currentBest) < 0) {
         bestByNode.set(nextPath.nodeKey, nextPath)
@@ -410,7 +475,12 @@ function findBestPath(
 
 export function planJourney(input: PlanJourneyInput): Journey | null {
   const graph = buildGraph(input)
-  const path = findBestPath(graph, input.origin.endpoint, input.destination.endpoint)
+  const path = findBestPath(
+    graph,
+    input.origin.endpoint,
+    input.destination.endpoint,
+    input.getShuttleWaitingSeconds,
+  )
   if (!path || path.legs.length === 0) return null
 
   return {

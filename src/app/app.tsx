@@ -33,6 +33,7 @@ import { createValhallaRouteEngine } from '../infrastructure/routing/valhalla'
 import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
+import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -64,12 +65,14 @@ function App() {
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
+  const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
     createValhallaRouteEngine({
       baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
     }),
     shuttleArrivalClient,
-  ), [shuttleArrivalClient])
+    shuttleServiceHoursClient,
+  ), [shuttleArrivalClient, shuttleServiceHoursClient])
 
   useEffect(() => {
     const updateViewport = (): void => {

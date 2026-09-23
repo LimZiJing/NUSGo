@@ -25,6 +25,12 @@ arrival after the expected transfer time for later boardings. If the live
 response does not cover that time, it uses half the observed headway. The
 static ride estimate remains available when live data cannot be loaded.
 
+When the NUS route service-hour endpoint is available, the planner also checks
+the route's weekday, weekend, public-holiday, and dated special-day windows in
+Singapore local time. A route outside its service window is excluded instead
+of receiving a zero or short wait. If no complete shuttle journey remains, the
+trip panel explains when service is expected to resume.
+
 The planner still keeps an explicit `zeroShuttleWaitingTime` fallback for
 offline or unavailable live data. This is a fallback policy, not a claim that a
 shuttle is immediately available.

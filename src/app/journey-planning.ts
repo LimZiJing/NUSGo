@@ -10,10 +10,17 @@ import {
   type WalkingJourneyConnection,
 } from '../domain/trip/planner'
 import { createLiveShuttleWaitingTimeProvider } from '../domain/trip/live-waiting'
+import {
+  describeShuttleServiceUnavailable,
+  evaluateShuttleService,
+  type ShuttleServiceEvaluation,
+  type ShuttleServiceWindow,
+} from '../domain/transit/service-hours'
 import type { Journey, JourneyEndpointLocation } from '../domain/trip/journey'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
 import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from '../infrastructure/shuttle-arrivals/client'
+import type { ShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 
 export interface JourneyPlanningRequest {
   readonly tripRequest: TripRequest
@@ -25,6 +32,13 @@ export interface JourneyPlanningRequest {
 export type JourneyPlanningService = (
   request: JourneyPlanningRequest,
 ) => Promise<Journey | null>
+
+export class NoJourneyAvailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'NoJourneyAvailableError'
+  }
+}
 
 interface ResolvedLocation extends JourneyEndpointLocation {
   readonly key: string
@@ -148,6 +162,25 @@ function createAbortError(): Error {
   return error
 }
 
+function getStaticServiceEvaluation(
+  journey: Journey,
+  serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
+  nowMs: number,
+): ShuttleServiceEvaluation | null {
+  let elapsedSeconds = 0
+  for (const leg of journey.legs) {
+    if (leg.mode === 'shuttle') {
+      const windows = serviceWindows[leg.routeId]
+      if (windows) {
+        const evaluation = evaluateShuttleService(windows, new Date(nowMs + elapsedSeconds * 1000))
+        if (evaluation.status !== 'active') return evaluation
+      }
+    }
+    elapsedSeconds += leg.durationSeconds
+  }
+  return null
+}
+
 async function loadWalkingConnections(
   routeEngine: WalkingRouteEngine,
   candidates: readonly WalkingCandidate[],
@@ -182,6 +215,8 @@ async function loadWalkingConnections(
 export function createJourneyPlanningService(
   routeEngine: WalkingRouteEngine,
   shuttleArrivalClient?: ShuttleArrivalClient,
+  shuttleServiceHoursClient?: ShuttleServiceHoursClient,
+  now: () => number = Date.now,
 ): JourneyPlanningService {
   return async (request) => {
     const locations = resolveLocations(request)
@@ -218,6 +253,19 @@ export function createJourneyPlanningService(
     const staticJourney = planJourney(planInput)
     if (!staticJourney || !shuttleArrivalClient) return staticJourney
 
+    let serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null = null
+    if (shuttleServiceHoursClient) {
+      const routeIds = request.transit.index.routes.map((route) => route.id)
+      try {
+        serviceWindows = await shuttleServiceHoursClient.getServiceWindows(routeIds, request.signal)
+      } catch (error: unknown) {
+        if (request.signal.aborted || isAbortError(error)) throw createAbortError()
+        console.warn('Shuttle service-hour data is unavailable; using static timing estimates.', error)
+        return staticJourney
+      }
+      if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) return staticJourney
+    }
+
     const boardingStops = new Map<string, ShuttleArrivalStopRequest>()
     for (const leg of staticJourney.legs) {
       if (leg.mode !== 'shuttle') continue
@@ -233,13 +281,31 @@ export function createJourneyPlanningService(
     } catch (error: unknown) {
       if (request.signal.aborted || isAbortError(error)) throw createAbortError()
       console.warn('Live shuttle arrivals are unavailable; using static timing estimates.', error)
+      const unavailable = serviceWindows
+        ? getStaticServiceEvaluation(staticJourney, serviceWindows, now())
+        : null
+      if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
       return staticJourney
     }
 
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)
-    return planJourney({
+    const nowMs = now()
+    const liveJourney = planJourney({
       ...planInput,
-      getShuttleWaitingSeconds: liveWaiting,
-    }) ?? staticJourney
+      getShuttleWaitingSeconds: (record, context) => {
+        const windows = serviceWindows?.[record.routeId]
+        if (!windows) return liveWaiting(record, context)
+        const service = evaluateShuttleService(windows, new Date(nowMs + context.elapsedSeconds * 1000))
+        if (service.status !== 'active') return null
+        return liveWaiting(record, context)
+      },
+    })
+    if (liveJourney) return liveJourney
+
+    const unavailable = serviceWindows
+      ? getStaticServiceEvaluation(staticJourney, serviceWindows, nowMs)
+      : null
+    if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
+    return staticJourney
   }
 }

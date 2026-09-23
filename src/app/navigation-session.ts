@@ -23,7 +23,7 @@ import { reconcileRouteSelection } from './route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { MapSession, MapViewportInsets } from './contracts/map'
-import type { JourneyPlanningService } from './journey-planning'
+import { NoJourneyAvailableError, type JourneyPlanningService } from './journey-planning'
 import { createInitialJourneyState, type JourneyState } from './journey-state'
 import { getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
@@ -244,6 +244,16 @@ export function createNavigationSession(
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
           dependencies.map.setJourney(null)
+          if (error instanceof NoJourneyAvailableError) {
+            updateState({
+              journey: {
+                status: 'no-route',
+                journey: null,
+                error: error.message,
+              },
+            })
+            return
+          }
           updateState({
             journey: {
               status: 'failed',

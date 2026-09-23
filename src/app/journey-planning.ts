@@ -239,7 +239,7 @@ export function createJourneyPlanningService(
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)
     return planJourney({
       ...planInput,
-      getShuttleWaitingSeconds: (record, context) => liveWaiting(record, context) ?? 0,
+      getShuttleWaitingSeconds: liveWaiting,
     }) ?? staticJourney
   }
 }

@@ -22,6 +22,33 @@ describe('parseShuttleServiceResponse', () => {
     })
   })
 
+  it('parses the NUS shuttle-service response shape', () => {
+    const [route] = parseShuttleServiceResponse({
+      data: {
+        name: 'PGP',
+        shuttles: [{
+          name: 'D2',
+          routeid: 90295,
+          _etas: [
+            { eta: 2, eta_s: 140 },
+            { eta: 10, eta_s: 588 },
+            { eta: 18, eta_s: 1068 },
+            { eta: 26, eta_s: 1547 },
+            { eta: 34, eta_s: 2026 },
+          ],
+        }],
+      },
+    })
+
+    expect(route).toMatchObject({
+      routeId: 'D2',
+      arrival: {
+        nextArrivalSeconds: 140,
+        upcomingArrivalSeconds: [140, 588, 1068, 1547, 2026],
+      },
+    })
+  })
+
   it('ignores invalid and negative arrival values', () => {
     expect(parseShuttleServiceResponse({
       data: [

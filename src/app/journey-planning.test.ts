@@ -106,4 +106,59 @@ describe('createJourneyPlanningService', () => {
       signal: controller.signal,
     })).rejects.toMatchObject({ name: 'AbortError' })
   })
+
+  it('uses live arrival data for the boarding wait', async () => {
+    const transit = createTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 500, durationSeconds: 500 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => ({
+        observedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 120,
+              upcomingArrivalSeconds: [120, 480],
+              headwaySeconds: { min: 360, max: 360, median: 360 },
+            },
+          },
+        },
+      })),
+    }
+    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
+      [{ stopId: 'STOP-A', stopName: 'Stop A' }],
+      expect.any(AbortSignal),
+    )
+    expect(journey?.legs[1]).toMatchObject({ waitingSeconds: 20 })
+  })
 })

@@ -29,6 +29,15 @@ function getValue(record: RecordValue, keys: readonly string[]): unknown {
   return undefined
 }
 
+function getTextValue(record: RecordValue, keys: readonly string[]): string | null {
+  const normalizedKeys = new Set(keys.map(normalizeKey))
+  for (const [key, value] of Object.entries(record)) {
+    if (!normalizedKeys.has(normalizeKey(key)) || typeof value !== 'string') continue
+    if (value.trim()) return value.trim()
+  }
+  return null
+}
+
 function toNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
   if (typeof value !== 'string') return null
@@ -50,6 +59,8 @@ function parseArrivalSeconds(record: RecordValue): number | null {
     'next_arrival_seconds',
     'arrivalSeconds',
     'arrival_seconds',
+    'etaSeconds',
+    'eta_s',
   ]))
   if (seconds !== null) return seconds
 
@@ -58,6 +69,8 @@ function parseArrivalSeconds(record: RecordValue): number | null {
     'next_arrival_minutes',
     'arrivalMinutes',
     'arrival_minutes',
+    'etaMinutes',
+    'eta',
   ]), 60)
 }
 
@@ -68,6 +81,7 @@ function parseUpcomingSeconds(record: RecordValue): readonly number[] {
     'upcomingArrivals',
     'upcoming_arrivals',
     'arrivals',
+    '_etas',
   ])
   if (!Array.isArray(value)) return []
 
@@ -99,7 +113,7 @@ function createHeadwaySeconds(arrivals: readonly number[]): ShuttleHeadwaySecond
 }
 
 function routeIdFrom(record: RecordValue, routeHint: string | null): string | null {
-  const route = getValue(record, [
+  const route = getTextValue(record, [
     'routeId',
     'route_id',
     'routeCode',
@@ -110,9 +124,9 @@ function routeIdFrom(record: RecordValue, routeHint: string | null): string | nu
     'service_code',
     'busService',
     'bus_service',
+    'name',
   ])
-  if (typeof route === 'string' && route.trim()) return route.trim()
-  return routeHint
+  return route ?? routeHint
 }
 
 function parseCandidate(
@@ -139,7 +153,7 @@ function parseCandidate(
 }
 
 function isLikelyRouteKey(key: string): boolean {
-  return /^[A-Za-z]\w{0,5}$/.test(key.trim())
+  return /^[A-Za-z]\d{0,2}$/.test(key.trim())
 }
 
 function collectRoutes(
@@ -154,7 +168,10 @@ function collectRoutes(
   if (!isRecord(value)) return
 
   const candidate = parseCandidate(value, routeHint)
-  if (candidate) output.push(candidate)
+  if (candidate) {
+    output.push(candidate)
+    return
+  }
 
   for (const [key, child] of Object.entries(value)) {
     const childRouteHint = isLikelyRouteKey(key) ? key.trim() : routeHint

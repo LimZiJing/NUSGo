@@ -134,6 +134,48 @@ function createInput(
   }
 }
 
+function createSameRouteInput(): PlanJourneyInput {
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-C'] }],
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
+      { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1], [103.002, 1]] },
+    }],
+  })
+
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.002, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(origin, stopA, 10),
+      walking({ kind: 'stop', id: 'STOP-C' }, destination, 10),
+      walking(origin, destination, 1_000),
+    ],
+    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+  }
+}
+
 describe('planJourney', () => {
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
     const journey = planJourney(createInput([
@@ -163,6 +205,19 @@ describe('planJourney', () => {
 
     expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
     expect(journey?.totalDurationSeconds).toBe(500)
+  })
+
+  it('keeps a continuous same-route ride as one shuttle leg', () => {
+    const journey = planJourney(createSameRouteInput())
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle')).toHaveLength(1)
+    expect(journey?.legs[1]).toMatchObject({
+      routeId: 'A1',
+      boardingStopId: 'STOP-A',
+      alightingStopId: 'STOP-C',
+      waitingSeconds: 0,
+    })
   })
 
   it('passes the elapsed journey time to each shuttle wait calculation', () => {

@@ -207,6 +207,33 @@ describe('planJourney', () => {
     expect(journey?.totalDurationSeconds).toBe(500)
   })
 
+  it('merges consecutive walking legs around an internal shuttle-stop waypoint', () => {
+    const journey = planJourney(createInput([
+      walking(origin, stopA, 100, 120),
+      walking(stopA, destination, 200, 240),
+      walking(origin, destination, 500, 600),
+    ]))
+
+    expect(journey?.legs).toHaveLength(1)
+    expect(journey?.legs[0]).toMatchObject({
+      mode: 'walking',
+      from: origin,
+      to: destination,
+      durationSeconds: 300,
+      distanceMeters: 360,
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [102.999, 1],
+          [103, 1],
+          [103.002, 1],
+        ],
+      },
+    })
+    expect(journey?.totalDurationSeconds).toBe(300)
+    expect(journey?.totalDistanceMeters).toBe(360)
+  })
+
   it('keeps a continuous same-route ride as one shuttle leg', () => {
     const journey = planJourney(createSameRouteInput())
 

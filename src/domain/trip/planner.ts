@@ -90,6 +90,7 @@ interface JourneyPath {
   readonly distanceMeters: number
   readonly walkingDistanceMeters: number
   readonly shuttleBoardings: number
+  readonly lastShuttleRouteId: string | null
   readonly legs: readonly JourneyLeg[]
   readonly sequenceKey: string
 }
@@ -314,11 +315,16 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
     distanceMeters: path.distanceMeters + edge.distanceMeters,
     walkingDistanceMeters: path.walkingDistanceMeters + edge.walkingDistanceMeters,
     shuttleBoardings: path.shuttleBoardings + edge.shuttleBoardings,
+    lastShuttleRouteId: edge.leg.mode === 'shuttle' ? edge.leg.routeId : null,
     legs: [...path.legs, edge.leg],
     sequenceKey: path.sequenceKey
       ? `${path.sequenceKey}|${edge.sequenceKey}`
       : edge.sequenceKey,
   }
+}
+
+function journeyPathStateKey(path: JourneyPath): string {
+  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}`
 }
 
 function resolveJourneyEdge(
@@ -461,26 +467,30 @@ function findBestPath(
     distanceMeters: 0,
     walkingDistanceMeters: 0,
     shuttleBoardings: 0,
+    lastShuttleRouteId: null,
     legs: [],
     sequenceKey: '',
   }
   const queue: JourneyPath[] = [initialPath]
-  const bestByNode = new Map([[originKey, initialPath]])
+  const bestByState = new Map([[journeyPathStateKey(initialPath), initialPath]])
 
   while (queue.length > 0) {
     queue.sort(comparePaths)
     const path = queue.shift()!
-    const bestForNode = bestByNode.get(path.nodeKey)
-    if (!bestForNode || comparePaths(path, bestForNode) !== 0) continue
+    const bestForState = bestByState.get(journeyPathStateKey(path))
+    if (!bestForState || comparePaths(path, bestForState) !== 0) continue
     if (path.nodeKey === destinationKey) return path
 
     for (const edge of graph.get(path.nodeKey) ?? []) {
+      // A continuous ride cannot become another boarding on the same route.
+      if (edge.kind === 'shuttle' && path.lastShuttleRouteId === edge.routeId) continue
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
       if (!resolvedEdge) continue
       const nextPath = extendPath(path, resolvedEdge)
-      const currentBest = bestByNode.get(nextPath.nodeKey)
+      const nextStateKey = journeyPathStateKey(nextPath)
+      const currentBest = bestByState.get(nextStateKey)
       if (!currentBest || comparePaths(nextPath, currentBest) < 0) {
-        bestByNode.set(nextPath.nodeKey, nextPath)
+        bestByState.set(nextStateKey, nextPath)
         queue.push(nextPath)
       }
     }

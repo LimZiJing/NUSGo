@@ -52,6 +52,7 @@ interface NavigationSessionPanelHost {
   readonly setContextualPanel: (panel: ContextualPanelState) => void
   readonly selectVenue: (venue: VenueLocation) => void
   readonly clearVenue: () => void
+  readonly clearRouteSelection: () => void
 }
 
 export function createNavigationSessionPanelTransitions(
@@ -129,6 +130,7 @@ export function createNavigationSessionPanelTransitions(
       host.enqueue(() => {
         if (host.isDisposed()) return
         host.clearVenue()
+        host.clearRouteSelection()
         updatePanel({ type: 'close' })
       })
     },

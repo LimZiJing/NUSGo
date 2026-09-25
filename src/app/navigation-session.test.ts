@@ -797,6 +797,31 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
   })
 
+  it('clears the selected route when closing the shuttle panel', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.openShuttle()
+    session.selectRoute('A1')
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: 'A1',
+      selectedRouteColor: '#123456',
+    })
+
+    session.close()
+
+    expect(session.getState()).toMatchObject({
+      contextualPanel: { mode: 'neutral' },
+      selectedRouteId: null,
+      selectedRouteColor: null,
+    })
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: null,
+      overlappingRouteIds: expect.any(Set),
+    })
+  })
+
   it('escapes through panel history while retaining venue marker context', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

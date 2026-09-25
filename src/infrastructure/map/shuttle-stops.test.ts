@@ -369,10 +369,25 @@ describe('bus-stop presentation', () => {
     }
     inactivePopup.show()
 
-    adapter.setJourneyStops(new Set(['STOP-A']))
+    adapter.setJourneyStops(new Map([['STOP-A', [{
+      routeId: 'A1',
+      routeName: 'A1',
+      color: '#123456',
+    }]]]))
 
     expect(elements[0].disabled).toBe(false)
     expect(elements[0].classes).not.toContain('bus-stop-marker-dimmed')
+    expect(elements[0].classes).toContain('bus-stop-marker-journey')
+    expect(elements[0].style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-journey-color',
+      'linear-gradient(#123456, #123456)',
+    )
+    expect(elements[0].attributes.get('aria-label')).toBe(
+      'Central Library shuttle stop on Journey Route A1',
+    )
+    expect(elements[0].attributes.get('title')).toBe(
+      'Central Library shuttle stop on Journey Route A1',
+    )
     expect(elements[1].disabled).toBe(true)
     expect(elements[1].tabIndex).toBe(-1)
     expect(elements[1].attributes.get('aria-disabled')).toBe('true')
@@ -397,6 +412,13 @@ describe('bus-stop presentation', () => {
     expect(elements[1].attributes.get('aria-disabled')).toBe('false')
     expect(elements[1].style.pointerEvents).toBe('')
     expect(elements[1].classes).not.toContain('bus-stop-marker-dimmed')
+    expect(elements[0].classes).not.toContain('bus-stop-marker-journey')
+    expect(elements[0].style.setProperty).toHaveBeenLastCalledWith(
+      '--bus-stop-journey-color',
+      '',
+    )
+    expect(elements[0].attributes.get('aria-label')).toBe('Central Library shuttle stop')
+    expect(elements[0].attributes.get('title')).toBeUndefined()
     adapter.dispose()
     vi.unstubAllGlobals()
   })

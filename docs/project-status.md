@@ -34,33 +34,34 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
 - Build-generated shuttle timing estimates use the canonical route geometry, are validated against the route and stop model, and are loaded through `loadShuttleTimingData`. The provider-neutral timing contract and fallback policy are documented in [Shuttle timing policy](shuttle-timing.md) for Issue #104. Live stop arrivals use a cached server-side NUS adapter when configured; static ride estimates remain valid ride-time inputs, but a normal shuttle Journey also needs a valid waiting estimate. When available, route service-hour windows are checked in Singapore local time so after-hours routes are not treated as zero-wait options.
-- The pure `planJourney` module composes validated walking connections with directed shuttle legs. `zeroShuttleWaitingTime` is reserved for explicit offline or test use; normal live ranking must not use it and waiting estimates must be applied to every boarding and transfer. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and shuttle stops are highlighted only from each shuttle leg’s boarding stop through its alighting stop in the Route’s official color. Shared transfer stops show the colors of each Route used there, and marker labels name those Routes. The responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
+- The live-arrival client batches uncached stops in requests of up to 16 while retaining per-stop caching and in-flight deduplication. The pure `planJourney` module composes validated walking connections with directed shuttle legs. Normal live ranking collects eligible boarding and transfer stops before ranking, applies live waits to every shuttle edge, checks relevant route service windows, and removes edges with unavailable timing; valid walking-only Journeys remain eligible. `zeroShuttleWaitingTime` is reserved for explicit offline or test use. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and shuttle stops are highlighted only from each shuttle leg’s boarding stop through its alighting stop in the Route’s official color. Shared transfer stops show the colors of each Route used there, and marker labels name those Routes. The responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
 
 ## Current limitations
 
 - `public/data/bus-routes.json` is the original route-name source; the app now consumes the normalized `shuttle-network.json` model.
 - The checked-in model contains reviewed ordered stop IDs and bundled road-following GeoJSON route geometry; targeted release smoke evidence exists at 1280 × 720, while exact release/mobile viewports and failure injection still need manual verification.
 - Accurate transit behavior depends on the checked-in network, geometry, and verification manifest remaining in sync; CI validates that integrity gate.
-- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md), with the timing policy recorded in [Shuttle timing policy](shuttle-timing.md). The Valhalla walking route-engine boundary and pure Journey planner are now connected through the navigation session; the app still needs a configured self-hosted Valhalla endpoint for usable walking results. Shuttle ride estimates, optional live waiting estimates, and service-window checks are available; live data still depends on server-side NUS credentials.
+- The accepted Journey architecture is documented in [ADR 0002](adr/0002-nus-route-recommendation-architecture.md), with the timing policy recorded in [Shuttle timing policy](shuttle-timing.md). The Valhalla walking route-engine boundary and pure Journey planner are now connected through the navigation session; the app still needs a configured self-hosted Valhalla endpoint for usable walking results. Shuttle ride estimates, live waiting estimates, and service-window checks are implemented; live data still depends on server-side NUS credentials, and missing live timing removes shuttle options rather than creating a false zero-wait Journey.
 - NUSMods is useful for venue/stop associations and bus-arrival integration, but its current NextBus client does not provide route geometry. Live-arrival reliability also needs separate verification.
 - The OpenFreeMap basemap is suitable for the prototype. NUS-specific paths, entrances, covered walkways, and indoor connections may require custom GeoJSON or another licensed data source.
 
 ## Recommended milestones
 
-Complete the functional transit foundation before a broad UI redesign:
+Complete the remaining integration and release work before a broad UI redesign:
 
 1. Complete the release desktop/map smoke checklist for the validated static transit resources.
-2. Wire and verify the Valhalla walking boundary and validated walking connections (#71).
-3. Implement the pure composed Journey planner using the validated timing contract (#66).
-4. Connect the planner to application state with request identity and cancellation (#67).
-5. Render the selected Journey on the map and in the Plan trip panel (#68–#69).
-6. Verify live shuttle arrivals and the server-side deployment boundary.
+2. Verify the Valhalla walking boundary and validated walking connections (#71).
+3. Verify private live shuttle arrivals and the server-side deployment boundary (#23 and #102).
+4. Complete regression and release evidence for the live Journey flow (#103).
 
 The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
 
 ## Recent milestone commits
 
 ```text
+36ba317 feat(journey): rank all live shuttle candidates
+02f10ae feat(api): batch live shuttle stop requests
+cb80edb fix(api): enforce live shuttle contract
 401e062 Add venue search and selection
 2abb96b Organize map data and marker logic
 d1b08d8 Use detailed OpenStreetMap basemap

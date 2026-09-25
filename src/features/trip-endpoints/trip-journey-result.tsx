@@ -1,5 +1,6 @@
 import type { TransitIndex } from '../../domain/transit'
 import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/journey'
+import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
@@ -61,18 +62,15 @@ function getTravelledStopLabels(
   networkIndex: TransitIndex | null,
 ): string[] {
   const route = networkIndex?.routeById.get(leg.routeId)
-  const boardingIndex = route?.stopIds.indexOf(leg.boardingStopId) ?? -1
-  const alightingIndex = route?.stopIds.indexOf(leg.alightingStopId) ?? -1
-  if (!route || boardingIndex < 0 || alightingIndex < boardingIndex) {
+  const stopIds = getShuttleJourneyLegStopIds(leg, route ?? null)
+  if (!stopIds) {
     return [
       getStopLabel(leg.boardingStopId, networkIndex),
       getStopLabel(leg.alightingStopId, networkIndex),
     ]
   }
 
-  return route.stopIds
-    .slice(boardingIndex, alightingIndex + 1)
-    .map((stopId) => getStopLabel(stopId, networkIndex))
+  return stopIds.map((stopId) => getStopLabel(stopId, networkIndex))
 }
 
 function renderJourneyLeg(

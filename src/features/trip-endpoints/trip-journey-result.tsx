@@ -25,6 +25,13 @@ function formatDuration(seconds: number): string {
   return remainingMinutes === 0 ? `${hours} hr` : `${hours} hr ${remainingMinutes} min`
 }
 
+function formatWaitDuration(seconds: number): string {
+  const nonNegativeSeconds = Math.max(0, seconds)
+  if (nonNegativeSeconds === 0) return 'Arriving now'
+  if (nonNegativeSeconds < 60) return 'Arriving soon'
+  return formatDuration(nonNegativeSeconds)
+}
+
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1).replace('.0', '')} km`
@@ -100,7 +107,7 @@ function renderJourneyLeg(
       <dl className="trip-journey-leg-details">
         <div>
           <dt>Wait</dt>
-          <dd>{formatDuration(leg.waitingSeconds)}</dd>
+          <dd>{formatWaitDuration(leg.waitingSeconds)}</dd>
         </div>
         <div>
           <dt>Ride</dt>

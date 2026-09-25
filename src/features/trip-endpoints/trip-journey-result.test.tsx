@@ -46,6 +46,36 @@ const venues = {
   DESTINATION: { roomName: 'Destination venue', location: { x: 103.1, y: 1.1 } },
 }
 
+function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
+  const shuttleLeg = journey.legs[1]
+  if (!shuttleLeg || shuttleLeg.mode !== 'shuttle') {
+    throw new Error('Test journey is missing its shuttle leg')
+  }
+
+  return renderToStaticMarkup(
+    <TripJourneyResult
+      state={{
+        status: 'ready',
+        journey: {
+          ...journey,
+          legs: [
+            journey.legs[0],
+            {
+              ...shuttleLeg,
+              waitingSeconds,
+              durationSeconds: waitingSeconds + shuttleLeg.rideSeconds,
+            },
+          ],
+          totalDurationSeconds: journey.totalDurationSeconds + waitingSeconds,
+        },
+        error: null,
+      }}
+      venues={venues}
+      networkIndex={networkIndex}
+    />,
+  )
+}
+
 describe('TripJourneyResult', () => {
   it('shows the estimated Journey totals and ordered walking and shuttle details', () => {
     const markup = renderToStaticMarkup(
@@ -62,12 +92,23 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Walk')
     expect(markup).toContain(`Shuttle ${route.name}`)
     expect(markup).toContain('Wait')
-    expect(markup).toContain('0 min')
+    expect(markup).toContain('Arriving now')
     expect(markup).toContain('Ride')
     expect(markup).toContain('Board')
     expect(markup).toContain('Alight')
     expect(markup).toContain('Stops:')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
+  })
+
+  it.each([
+    [0, 'Arriving now'],
+    [29, 'Arriving soon'],
+    [60, '1 min'],
+    [119, '2 min'],
+  ])('uses threshold wording for a %s-second wait', (waitingSeconds, expected) => {
+    const markup = renderJourneyWithWaitingSeconds(waitingSeconds)
+
+    expect(markup).toContain(`<dt>Wait</dt><dd>${expected}</dd>`)
   })
 
   it.each([

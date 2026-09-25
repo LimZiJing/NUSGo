@@ -3,7 +3,7 @@
 import { useState, type ReactNode, type RefObject } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContextualPanel } from './contextual-panel'
 import {
   contextualPanelReducer,
@@ -71,14 +71,18 @@ function PanelHarness({
   networkIndex: networkIndexOverride,
   mobileViewport = true,
   minimized = false,
+  active = true,
   status,
+  onDismissMapPopup,
 }: {
   initialState?: ContextualPanelState
   network?: TransitNetwork | null
   networkIndex?: TransitNetworkIndex | null
   mobileViewport?: boolean
   minimized?: boolean
+  active?: boolean
   status?: PanelStatus | null
+  onDismissMapPopup?: () => boolean
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -104,6 +108,7 @@ function PanelHarness({
       )}
       mobileViewport={mobileViewport}
       minimized={minimized}
+      active={active}
       status={status}
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
@@ -112,6 +117,39 @@ function PanelHarness({
       onBack={() => dispatch({ type: 'back' })}
       onClose={() => dispatch({ type: 'close' })}
       onEscape={() => dispatch({ type: 'escape' })}
+      onDismissMapPopup={onDismissMapPopup}
+    />
+  )
+}
+
+function RootSheetEscapeHarness() {
+  const [minimized, setMinimized] = useState(false)
+  const state = { ...createInitialContextualPanelState(), mode: 'neutral' as const }
+  const network = createValidTransitNetwork()
+  const networkIndex = createTransitIndex(network)
+
+  return (
+    <ContextualPanel
+      state={state}
+      venues={venues}
+      shuttleRoutesAvailable={networkIndex.routes.length > 0}
+      renderShuttleRoutes={(selectRef) => renderShuttleRoutes(
+        selectRef,
+        network,
+        networkIndex,
+        null,
+        () => undefined,
+      )}
+      minimized={minimized}
+      onRestore={() => setMinimized(false)}
+      onMinimize={() => setMinimized(true)}
+      onQueryChange={() => undefined}
+      onVenueSelect={() => undefined}
+      onOpenVenueSearch={() => undefined}
+      onOpenShuttle={() => undefined}
+      onBack={() => undefined}
+      onClose={() => undefined}
+      onEscape={() => undefined}
     />
   )
 }
@@ -158,6 +196,7 @@ function MinimizedPanelHarness() {
         () => undefined,
       )}
       minimized={minimized}
+      onMinimize={() => setMinimized(true)}
       onRestore={() => setMinimized(false)}
       onQueryChange={(query) => setState((current) => ({ ...current, query }))}
       onVenueSelect={() => undefined}
@@ -173,6 +212,57 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('does not handle Escape while its tab is inactive', async () => {
+    const user = userEvent.setup()
+    render(<PanelHarness active={false} />)
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+  })
+
+  it('collapses the root sheet with Escape and restores focus to its expand control', async () => {
+    const user = userEvent.setup()
+    render(<RootSheetEscapeHarness />)
+
+    screen.getByRole('button', { name: 'Browse shuttle routes' }).focus()
+    await user.keyboard('{Escape}')
+
+    const restore = screen.getByRole('button', { name: 'Show contextual panel' })
+    expect(restore.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(restore)
+  })
+
+  it('closes a map popup before handling Escape in the current context', async () => {
+    const user = userEvent.setup()
+    const onDismissMapPopup = vi.fn(() => true)
+    const initialState = contextualPanelReducer(
+      createInitialContextualPanelState(),
+      { type: 'open-venue-search' },
+    )
+    render(<PanelHarness
+      initialState={initialState}
+      onDismissMapPopup={onDismissMapPopup}
+    />)
+
+    await user.keyboard('{Escape}')
+
+    expect(onDismissMapPopup).toHaveBeenCalledOnce()
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+  })
+
+  it('closes a map popup on Escape while the Explore sheet is compact', async () => {
+    const user = userEvent.setup()
+    const onDismissMapPopup = vi.fn(() => true)
+    render(<PanelHarness minimized onDismissMapPopup={onDismissMapPopup} />)
+
+    await user.keyboard('{Escape}')
+
+    expect(onDismissMapPopup).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Show contextual panel' }).getAttribute('aria-expanded'))
+      .toBe('false')
+  })
+
   it('shows successful resource counts in Explore and Shuttle modes but not venue detail', async () => {
     const status: PanelStatus = {
       kind: 'success',
@@ -253,12 +343,21 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(panel.getAttribute('data-minimized')).toBe('true')
     expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Show contextual panel' }))
+    const toggle = screen.getByRole('button', { name: 'Show contextual panel' })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    await user.click(toggle)
 
     const search = await screen.findByRole('searchbox', { name: 'Find a venue' })
     await waitFor(() => expect(document.activeElement).toBe(search))
     expect((search as HTMLInputElement).value).toBe('COM1')
-    expect(panel.getAttribute('data-minimized')).toBe('false')
+    const hideToggle = screen.getByRole('button', { name: 'Hide contextual panel' })
+    expect(hideToggle.getAttribute('aria-expanded')).toBe('true')
+    await user.click(hideToggle)
+
+    const showToggle = screen.getByRole('button', { name: 'Show contextual panel' })
+    await waitFor(() => expect(document.activeElement).toBe(showToggle))
+    expect(showToggle.getAttribute('aria-expanded')).toBe('false')
+    expect(panel.getAttribute('data-minimized')).toBe('true')
   })
 
   it('preserves an endpoint input when a minimized mobile sheet becomes desktop content', async () => {

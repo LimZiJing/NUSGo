@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react'
 import { validateTripRequest } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
@@ -284,6 +284,12 @@ export function TripEndpointControl({
           value={searchQuery}
           placeholder={`Search ${roleLabel.toLocaleLowerCase()} venue or stop`}
           onChange={(event) => onSearchQueryChange(event.target.value)}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key !== 'Escape' || !searchQuery) return
+            event.preventDefault()
+            event.stopPropagation()
+            onSearchQueryChange('')
+          }}
           autoComplete="off"
           aria-describedby={statusId}
         />

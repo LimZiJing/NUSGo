@@ -35,6 +35,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
     setViewportInsets: vi.fn(),
+    dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     resetView: vi.fn(),
@@ -818,6 +819,37 @@ describe('navigation session', () => {
     })
     expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
       route: null,
+      overlappingRouteIds: expect.any(Set),
+    })
+  })
+
+  it('returns to the mobile tab root without clearing map context or trip endpoints', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.selectVenue(venueResult)
+    session.selectRoute('A1')
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+
+    session.closeToRoot()
+
+    expect(session.getState()).toMatchObject({
+      contextualPanel: {
+        mode: 'neutral',
+        selectedVenue: venueResult,
+        history: [],
+      },
+      selectedRouteId: 'A1',
+      tripRequest: {
+        origin: { kind: 'venue', id: 'COM1' },
+        destination: { kind: 'stop', id: 'STOP-A' },
+      },
+    })
+    expect(dependencies.map.clearVenue).not.toHaveBeenCalled()
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: expect.objectContaining({ id: 'A1' }),
       overlappingRouteIds: expect.any(Set),
     })
   })

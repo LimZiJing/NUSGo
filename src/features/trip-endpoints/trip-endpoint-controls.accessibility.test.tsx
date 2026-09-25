@@ -88,6 +88,22 @@ describe('TripEndpointControls interactions', () => {
     expect(document.activeElement).toBe(toggle)
   })
 
+  it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {
+    const user = userEvent.setup()
+    render(<TripEndpointHarness />)
+
+    const origin = screen.getByRole('searchbox', { name: 'Origin' })
+    await user.type(origin, 'COM1')
+    expect(screen.getByRole('button', { name: /COM1-0210/ })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect((origin as HTMLInputElement).value).toBe('')
+    expect(screen.queryByRole('button', { name: /COM1-0210/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Plan trip/ }).getAttribute('aria-expanded'))
+      .toBe('true')
+  })
+
   it('keeps full endpoint names available while visually truncating a complete summary', () => {
     const longVenue = {
       ...venues,

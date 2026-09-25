@@ -81,8 +81,10 @@ export interface NavigationSession {
   back(): void
   escape(): void
   close(): void
+  closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
+  dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
   resetView(): void
@@ -474,6 +476,11 @@ export function createNavigationSession(
       if (disposed) return
       viewportInsets = { ...insets }
       dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    dismissMapPopup() {
+      if (disposed) return false
+      return dependencies.map.dismissPopup()
     },
 
     zoomIn() {

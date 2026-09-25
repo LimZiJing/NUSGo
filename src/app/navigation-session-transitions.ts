@@ -135,6 +135,13 @@ export function createNavigationSessionPanelTransitions(
       })
     },
 
+    closeToRoot(): void {
+      host.enqueue(() => {
+        if (host.isDisposed()) return
+        updatePanel({ type: 'close-to-root' })
+      })
+    },
+
     handleMapClick(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return

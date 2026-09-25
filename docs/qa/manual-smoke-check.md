@@ -46,16 +46,30 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 
 ## Mobile — 390 × 844
 
-- [ ] The map, Plan trip card, and contextual bottom sheet fit without overlap and leave usable map space.
-- [ ] Plan trip expands and collapses correctly, and the contextual sheet minimizes and restores correctly.
-- [ ] Venue search, route browsing, trip endpoints, Back, Close, Escape, and map-click behavior work.
-- [ ] Map controls open, keep action focus, dismiss correctly, and restore focus to the initiating control.
-- [ ] The bottom sheet respects safe-area spacing and scrolls internally when content is long.
+- [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
+- [ ] Explore and Stops start compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
+- [ ] Explicit controls expand and collapse the active sheet; uncovered map areas remain interactive and sheet surfaces block taps beneath them.
+- [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
+- [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
+- [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
+- [ ] Map controls remain usable in the exposed map area and do not cover active sheet controls.
 
 ## Responsive boundary — 768 / 769px
 
 - [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
+
+## Issue #117 targeted verification — 2026-09-25
+
+Codex In-App Browser (Chromium-based), local Vite app, mobile/touch emulation:
+
+- At 390 × 844, the shared map and persistent Explore / Stops / Plan tabs rendered. Explore and Stops started compact, Plan started expanded, and switching away from an expanded Stops sheet restored it when returning.
+- Stops and Plan sheets expanded/collapsed using visible controls. With a stop popup open over a compact Stops sheet, Escape closed the popup and left the sheet compact; with the sheet expanded, Escape closed the popup first and a second Escape compacted the sheet. In Plan, Escape first cleared endpoint search results. Explore root Escape compacted the sheet and restored focus to Show contextual panel.
+- At 390 × 844, the Plan content scrolled independently to Clear both endpoints. A DOM hit test inside the sheet resolved to the sheet, while an uncovered point resolved to the map.
+- With origin COM1-0201 and destination KR-MRT selected in Plan, switching to Stops and back retained both endpoints. The Kent Ridge stop marker stayed at the same screen position (189, 344) across the tab switch, providing a direct camera-preservation check.
+- At widths 768px and 769px, the mobile tab bar changed from visible to hidden at the breakpoint. At 568 × 320 landscape, the Plan panel remained above the tab bar, its body scrolled independently to expose the origin input, and the document had no overflow.
+- At 390 × 500, the tab bar stayed at the viewport bottom and the Plan origin search input remained visible above it. This viewport shrink approximated keyboard space; no real software keyboard or physical safe-area device was available.
+- The broader issue #89 map/responsive checklist was not repeated.
 
 ## Keyboard and accessibility
 

@@ -19,4 +19,8 @@ describe('parseRouteServiceWindows', () => {
   it('ignores malformed rows', () => {
     expect(parseRouteServiceWindows({ data: { RouteMinMaxTime: [{ Route: 'D2' }] } }, 'D2')).toEqual([])
   })
+
+  it('rejects a response without the expected records', () => {
+    expect(() => parseRouteServiceWindows({ data: {} }, 'D2')).toThrow('NUS route service-hour response was invalid')
+  })
 })

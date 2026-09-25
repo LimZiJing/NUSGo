@@ -30,7 +30,6 @@ interface CachedServiceWindows {
 }
 
 const SHUTTLE_CACHE_TTL_MS = 45_000
-const SHUTTLE_STALE_CACHE_TTL_MS = 120_000
 const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
 const DEFAULT_ACCESS_TOKEN_URL = 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
 
@@ -160,7 +159,6 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
         cache.set(stopName, entry)
         return entry
       } catch (error: unknown) {
-        if (cached && Date.parse(cached.observedAt) + SHUTTLE_STALE_CACHE_TTL_MS > Date.now()) return cached
         console.warn(`NUS shuttle-service data unavailable for ${stopName}.`, error)
         return null
       } finally {

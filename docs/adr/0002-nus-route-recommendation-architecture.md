@@ -96,7 +96,7 @@ Equal total durations use stable tie-breaking in this order:
 
 The UI should call the output a `Recommended journey` and show that its duration is estimated. It must not claim that a journey is fastest when required timing data is unavailable or when the comparison cannot be made from complete estimates.
 
-Issue #21 owns the verification and provenance of shuttle waiting and ride-time estimates. The planner consumes a validated estimate contract; it does not recalculate or silently replace those values.
+Issue #104 owns the provider-neutral shuttle timing policy and validated timing contract, recorded in [Shuttle timing policy](../shuttle-timing.md). Issue #25 owns provider/API normalization. The planner consumes the validated contract; it does not recalculate timing, silently replace missing values, or treat a transfer as free.
 
 ## Route-engine boundary
 
@@ -150,7 +150,7 @@ Costs and limitations:
 
 ## Follow-up sequence
 
-1. #21 verifies the shuttle timing estimates and publishes their validated input shape and provenance.
+1. #104 defines the provider-neutral shuttle timing policy and validated input shape; #25 verifies the provider-facing normalization.
 2. #71 implements the Valhalla-backed walking boundary and response validation.
 3. #66 implements the pure composed Journey planner and deterministic ranking.
 4. #67 connects planning to application state with request identity and cancellation.
@@ -160,7 +160,7 @@ Costs and limitations:
 ## References
 
 - [Issue #70](https://github.com/LimZiJing/NavUS/issues/70)
-- [Issue #21](https://github.com/LimZiJing/NavUS/issues/21)
+- [Issue #104](https://github.com/LimZiJing/NavUS/issues/104)
 - [Valhalla API](https://valhalla.github.io/valhalla/api/)
 - [Valhalla route API schema](https://github.com/valhalla/valhalla/blob/master/docs/docs/api/openapi.yaml)
 - [Valhalla license](https://github.com/valhalla/valhalla/blob/master/COPYING)

@@ -113,6 +113,11 @@ vi.mock('maplibre-gl', () => {
       return this
     }
 
+    setOpacity(opacity: string | number) {
+      this.element.style.opacity = String(opacity)
+      return this
+    }
+
     setPopup(popup: FakePopup) {
       this.popup = popup
       return this
@@ -182,6 +187,7 @@ class FakeElement {
   readonly attributes = new Map<string, string>()
   readonly style = {
     display: '',
+    opacity: '',
     pointerEvents: '',
     setProperty: vi.fn(),
   }

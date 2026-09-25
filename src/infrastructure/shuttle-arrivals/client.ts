@@ -30,6 +30,7 @@ interface ShuttleArrivalClientOptions {
 }
 
 const DEFAULT_CACHE_TTL_MS = 45_000
+const MAX_STOPS_PER_REQUEST = 16
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -105,6 +106,19 @@ function requestKey(stop: ShuttleArrivalStopRequest): string {
   return `${stop.stopId}\u0000${stop.stopName}`
 }
 
+function createCachedStop(
+  stop: ShuttleArrivalStopRequest,
+  snapshot: ShuttleArrivalSnapshot,
+  now: () => number,
+  cacheTtlMs: number,
+): CachedStop {
+  return {
+    observedAt: snapshot.observedAt,
+    expiresAt: new Date(now() + cacheTtlMs).toISOString(),
+    routes: snapshot.stops[stop.stopId] ?? {},
+  }
+}
+
 export function createShuttleArrivalClient(
   options: ShuttleArrivalClientOptions = {},
 ): ShuttleArrivalClient {
@@ -115,46 +129,72 @@ export function createShuttleArrivalClient(
   const cache = new Map<string, CachedStop>()
   const inFlight = new Map<string, Promise<CachedStop | null>>()
 
-  const loadStop = async (
-    stop: ShuttleArrivalStopRequest,
+  const loadStops = async (
+    stops: readonly ShuttleArrivalStopRequest[],
     signal: AbortSignal,
-  ): Promise<CachedStop | null> => {
-    const key = requestKey(stop)
-    const cached = cache.get(key)
-    if (cached && Date.parse(cached.expiresAt) > now()) return cached
+  ): Promise<readonly (CachedStop | null)[]> => {
+    const requests = new Map<string, Promise<CachedStop | null>>()
+    const uncachedStops: ShuttleArrivalStopRequest[] = []
 
-    const existing = inFlight.get(key)
-    if (existing) return existing
+    for (const stop of stops) {
+      const key = requestKey(stop)
+      const cached = cache.get(key)
+      if (cached && Date.parse(cached.expiresAt) > now()) {
+        requests.set(key, Promise.resolve(cached))
+        continue
+      }
+      const existing = inFlight.get(key)
+      if (existing) {
+        requests.set(key, existing)
+        continue
+      }
+      uncachedStops.push(stop)
+    }
 
-    const request = fetcher(`${endpoint}?stops=${encodeURIComponent(JSON.stringify([stop]))}`, { signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
-        return parseSnapshot(await response.json() as unknown)
-      })
-      .then((snapshot) => {
-        const entry: CachedStop = {
-          observedAt: snapshot.observedAt,
-          expiresAt: new Date(now() + cacheTtlMs).toISOString(),
-          routes: snapshot.stops[stop.stopId] ?? {},
-        }
-        cache.set(key, entry)
-        return entry
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'AbortError') throw error
-        return null
-      })
-      .finally(() => {
-        inFlight.delete(key)
-      })
-    inFlight.set(key, request)
-    return request
+    for (let index = 0; index < uncachedStops.length; index += MAX_STOPS_PER_REQUEST) {
+      const batch = uncachedStops.slice(index, index + MAX_STOPS_PER_REQUEST)
+      const batchRequest = fetcher(
+        `${endpoint}?stops=${encodeURIComponent(JSON.stringify(batch))}`,
+        { signal },
+      )
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
+          return parseSnapshot(await response.json() as unknown)
+        })
+        .then((snapshot) => new Map(
+          batch.map((stop) => [
+            requestKey(stop),
+            createCachedStop(stop, snapshot, now, cacheTtlMs),
+          ] as const),
+        ))
+
+      for (const stop of batch) {
+        const key = requestKey(stop)
+        const trackedRequest = batchRequest
+          .then((entries) => {
+            const entry = entries.get(key) ?? null
+            if (entry) cache.set(key, entry)
+            return entry
+          })
+          .catch((error: unknown) => {
+            if (error instanceof Error && error.name === 'AbortError') throw error
+            return null
+          })
+          .finally(() => {
+            inFlight.delete(key)
+          })
+        inFlight.set(key, trackedRequest)
+        requests.set(key, trackedRequest)
+      }
+    }
+
+    return Promise.all(stops.map((stop) => requests.get(requestKey(stop))!))
   }
 
   return {
     async getArrivals(stops, signal) {
       const uniqueStops = [...new Map(stops.map((stop) => [requestKey(stop), stop])).values()]
-      const entries = await Promise.all(uniqueStops.map((stop) => loadStop(stop, signal)))
+      const entries = await loadStops(uniqueStops, signal)
       const validEntries = entries.filter((entry): entry is CachedStop => entry !== null)
       const observedAt = validEntries
         .map((entry) => entry.observedAt)

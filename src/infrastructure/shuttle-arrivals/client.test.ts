@@ -18,6 +18,32 @@ function responseFor(stopId: string): Response {
 }
 
 describe('createShuttleArrivalClient', () => {
+  it('requests uncached stops in one batch', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: {
+        PGP: { D2: { nextArrivalSeconds: 264, upcomingArrivalSeconds: [264], headwaySeconds: null } },
+        'KR-MRT': { A1: { nextArrivalSeconds: 120, upcomingArrivalSeconds: [120], headwaySeconds: null } },
+      },
+    }), { status: 200 }))
+    const client = createShuttleArrivalClient({ fetcher })
+    const signal = new AbortController().signal
+
+    const result = await client.getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+      { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
+    ], signal)
+
+    expect(fetcher).toHaveBeenCalledOnce()
+    const requestUrl = new URL(String(fetcher.mock.calls[0][0]), 'http://localhost')
+    expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual([
+      { stopId: 'PGP', stopName: 'PGP' },
+      { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
+    ])
+    expect(Object.keys(result.stops)).toEqual(['PGP', 'KR-MRT'])
+  })
+
   it('reuses cached stop data and shares an in-progress request', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))
     const client = createShuttleArrivalClient({ fetcher })

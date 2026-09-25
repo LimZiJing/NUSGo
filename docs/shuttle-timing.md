@@ -9,7 +9,7 @@ provider API, credentials, deployment, or UI implementation.
 ## Ownership
 
 - Issue #104 owns this policy and the timing contract.
-- Issue #25 owns NUS provider/API normalization.
+- Issue #25 owns NUS provider/API normalization; its current contract is recorded in [the Issue #25 research note](research/issue-25-live-shuttle-contract.md).
 - Issue #101 applies the contract to every candidate Journey and transfer.
 - Issue #102 verifies the private and release boundaries.
 - Issue #103 owns regression and release evidence.

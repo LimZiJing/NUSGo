@@ -56,6 +56,13 @@
   box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
 }
 
+.bus-stop-marker-journey {
+  border-color: transparent;
+  background:
+    linear-gradient(#f1f5f9, #f1f5f9) padding-box,
+    var(--bus-stop-journey-color, #334155) border-box;
+}
+
 .bus-stop-marker-dimmed {
   opacity: 0.2;
 }

@@ -125,9 +125,28 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
   const installJourneyRouteLayers = (): void => {
     if (currentJourney === null || journeyRouteLayers) return
-    const nextJourneyRouteLayers = createJourneyRouteLayers(map)
+    const nextJourneyRouteLayers = createJourneyRouteLayers(map, currentTransitIndex)
     nextJourneyRouteLayers.setJourney(currentJourney)
     journeyRouteLayers = nextJourneyRouteLayers
+  }
+
+  const getJourneyStopIds = (): ReadonlySet<string> | null => {
+    if (currentJourney === null) return null
+    const stopIds = new Set<string>()
+    if (!currentTransitIndex) return stopIds
+
+    for (const leg of currentJourney.legs) {
+      if (leg.mode !== 'shuttle') continue
+      const route = currentTransitIndex.routeById.get(leg.routeId)
+      for (const stopId of route?.stopIds ?? []) stopIds.add(stopId)
+    }
+    return stopIds
+  }
+
+  const applyJourneyPresentation = (): void => {
+    const journeyActive = currentJourney !== null
+    transitRouteLayers?.setJourneyActive(journeyActive)
+    shuttleStopMarkers?.setJourneyStops(getJourneyStopIds())
   }
 
   const reconcileRouteSelection = (selection: MapRouteSelection): MapRouteSelection => {
@@ -178,6 +197,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
       currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
+      applyJourneyPresentation()
       clearEndpointMarkers()
       if (currentTripRequest) {
         endpointMarkers = createTripEndpointMarkers(
@@ -207,7 +227,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       const nextRouteId = currentRouteSelection.route?.id ?? null
       applyRouteSelection(currentRouteSelection)
 
-      if (nextRouteId !== previousRouteId && transitData) {
+      if (nextRouteId !== previousRouteId && transitData && currentJourney === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
@@ -225,8 +245,17 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setJourney(journey: Journey | null) {
       if (disposed) return
       currentJourney = journey
+      if (journey !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
       clearJourneyRouteLayers()
-      installJourneyRouteLayers()
+      try {
+        applyJourneyPresentation()
+        installJourneyRouteLayers()
+      } catch (error) {
+        currentJourney = null
+        clearJourneyRouteLayers()
+        applyJourneyPresentation()
+        options.onMapError(error)
+      }
     },
 
     setViewportInsets(insets: MapViewportInsets) {

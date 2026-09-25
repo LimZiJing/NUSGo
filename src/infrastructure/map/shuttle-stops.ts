@@ -119,6 +119,7 @@ type BusStopMarker = {
 export interface ShuttleStopMarkers {
   readonly markers: readonly Marker[]
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
+  setJourneyStops(stopIds: ReadonlySet<string> | null): void
   dispose(): void
 }
 
@@ -127,6 +128,7 @@ type ShuttleStopMarkerState = {
   markers: Marker[]
   selectedStopIds: ReadonlySet<string> | null
   selectedRouteColor: string | null
+  journeyStopIds: ReadonlySet<string> | null
   focusedStopIds: Set<string>
   handleZoom: () => void
 }
@@ -175,25 +177,33 @@ function updateBusStopMarkerElement(
   isSelected: boolean,
   isVisible: boolean,
   isDimmed: boolean,
+  isDisabled: boolean,
   selectedRouteColor: string | null,
 ): void {
   const element = marker.getElement()
+  const button = element as HTMLButtonElement
   element.style.setProperty('--bus-stop-selected-color', selectedRouteColor ?? '')
   element.classList.toggle('bus-stop-marker-selected', isSelected)
   element.classList.toggle('bus-stop-marker-dimmed', isDimmed)
+  element.classList.toggle('bus-stop-marker-disabled', isDisabled)
   element.classList.toggle('bus-stop-marker-hidden', !isVisible)
   element.style.display = isVisible ? '' : 'none'
+  element.style.pointerEvents = isDisabled ? 'none' : ''
+  button.disabled = isDisabled
+  button.tabIndex = isDisabled ? -1 : 0
+  element.setAttribute('aria-disabled', String(isDisabled))
 
   const popup = marker.getPopup()
-  if (!isVisible && popup?.isOpen()) popup.remove()
+  if ((!isVisible || isDisabled) && popup?.isOpen()) popup.remove()
 }
 
 function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
-  const filters = getBusStopLabelFilters(state.selectedStopIds, state.focusedStopIds)
-  const activeMinZoom = state.selectedStopIds !== null || state.focusedStopIds.size > 0
+  const prominentStopIds = state.journeyStopIds ?? state.selectedStopIds
+  const filters = getBusStopLabelFilters(prominentStopIds, state.focusedStopIds)
+  const activeMinZoom = prominentStopIds !== null || state.focusedStopIds.size > 0
     ? 0
     : BUS_STOP_MIN_ZOOM
-  const inactiveOpacity = getBusStopLabelOpacity(state.selectedStopIds)
+  const inactiveOpacity = getBusStopLabelOpacity(prominentStopIds)
 
   if (state.map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
     state.map.setFilter(BUS_STOP_ACTIVE_LABEL_LAYER_ID, filters.active)
@@ -202,8 +212,17 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
 
   if (state.map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)) {
     state.map.setFilter(BUS_STOP_INACTIVE_LABEL_LAYER_ID, filters.inactive)
-    state.map.setLayerZoomRange(BUS_STOP_INACTIVE_LABEL_LAYER_ID, BUS_STOP_MIN_ZOOM, 24)
+    state.map.setLayerZoomRange(
+      BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      state.journeyStopIds === null ? BUS_STOP_MIN_ZOOM : 0,
+      24,
+    )
     state.map.setPaintProperty(BUS_STOP_INACTIVE_LABEL_LAYER_ID, 'text-opacity', inactiveOpacity)
+    state.map.setPaintProperty(
+      BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      'text-color',
+      state.journeyStopIds === null ? '#334155' : '#64748b',
+    )
     state.map.setPaintProperty(
       BUS_STOP_INACTIVE_LABEL_LAYER_ID,
       'text-halo-color',
@@ -214,7 +233,8 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
 
 function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
   const zoom = state.map.getZoom()
-  const selectedStopIds = state.selectedStopIds
+  const journeyActive = state.journeyStopIds !== null
+  const selectedStopIds = state.journeyStopIds ?? state.selectedStopIds
   const selectedIds = selectedStopIds ?? new Set<string>()
 
   for (const marker of state.markers) {
@@ -223,9 +243,19 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
     const isSelected = selectedIds.has(stopId)
     const isFocused = state.focusedStopIds.has(stopId)
     const routeSelected = selectedStopIds !== null
-    const isVisible = isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
-    const isDimmed = isBusStopDimmed(routeSelected, isSelected, isFocused)
-    updateBusStopMarkerElement(marker, isSelected, isVisible, isDimmed, state.selectedRouteColor)
+    const isVisible = journeyActive || isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
+    const isDimmed = journeyActive
+      ? !isSelected
+      : isBusStopDimmed(routeSelected, isSelected, isFocused)
+    const isDisabled = journeyActive && !isSelected
+    updateBusStopMarkerElement(
+      marker,
+      isSelected,
+      isVisible,
+      isDimmed,
+      isDisabled,
+      journeyActive ? null : state.selectedRouteColor,
+    )
   }
 
   updateBusStopLabelPresentation(state)
@@ -244,6 +274,7 @@ export function createShuttleStopMarkers(
     markers,
     selectedStopIds: null,
     selectedRouteColor: null,
+    journeyStopIds: null,
     focusedStopIds: new Set<string>(),
     handleZoom: () => updateBusStopMarkerPresentation(state),
   }
@@ -308,6 +339,11 @@ export function createShuttleStopMarkers(
       if (disposed) return
       state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)
       state.selectedRouteColor = selectedRouteColor
+      updateBusStopMarkerPresentation(state)
+    },
+    setJourneyStops(stopIds) {
+      if (disposed) return
+      state.journeyStopIds = stopIds === null ? null : new Set(stopIds)
       updateBusStopMarkerPresentation(state)
     },
     dispose() {

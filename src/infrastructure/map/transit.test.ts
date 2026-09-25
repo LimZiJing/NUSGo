@@ -39,6 +39,7 @@ interface FakeMapState {
   paintProperties: Array<{ name: string; value: unknown }>
   filters: Array<{ id: string; value: unknown }>
   fitBoundsCalls: Array<{ bounds: unknown; options: unknown }>
+  layoutProperties: Array<{ id: string; name: string; value: unknown }>
 }
 
 function createFakeMap(): FakeMapState {
@@ -54,6 +55,7 @@ function createFakeMap(): FakeMapState {
     paintProperties: [],
     filters: [],
     fitBoundsCalls: [],
+    layoutProperties: [],
   }
 
   state.map = {
@@ -82,6 +84,9 @@ function createFakeMap(): FakeMapState {
     }),
     setFilter: vi.fn((id: string, value: unknown) => {
       state.filters.push({ id, value })
+    }),
+    setLayoutProperty: vi.fn((id: string, name: string, value: unknown) => {
+      state.layoutProperties.push({ id, name, value })
     }),
     getContainer: vi.fn(() => ({ clientWidth: 1200 })),
     fitBounds: vi.fn((bounds: unknown, options: unknown) => {
@@ -155,6 +160,33 @@ describe('transit route layer adapter', () => {
         value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],
       },
     ])
+  })
+
+  it('hides full-network layers during a Journey and restores the latest route selection', () => {
+    const state = createFakeMap()
+    const layers = createTransitRouteLayers(state.map, createValidGeometry())
+
+    layers.setSelection('A1')
+    layers.setJourneyActive(true)
+    layers.setSelection('B1')
+
+    expect(state.layoutProperties.slice(-3)).toEqual([
+      { id: TRANSIT_ROUTE_CASING_LAYER_ID, name: 'visibility', value: 'none' },
+      { id: TRANSIT_ROUTE_LAYER_ID, name: 'visibility', value: 'none' },
+      { id: TRANSIT_ROUTE_DIRECTION_LAYER_ID, name: 'visibility', value: 'none' },
+    ])
+
+    layers.setJourneyActive(false)
+
+    expect(state.layoutProperties.slice(-3)).toEqual([
+      { id: TRANSIT_ROUTE_CASING_LAYER_ID, name: 'visibility', value: 'visible' },
+      { id: TRANSIT_ROUTE_LAYER_ID, name: 'visibility', value: 'visible' },
+      { id: TRANSIT_ROUTE_DIRECTION_LAYER_ID, name: 'visibility', value: 'visible' },
+    ])
+    expect(state.paintProperties.at(-2)).toEqual({
+      name: 'line-color',
+      value: ['case', ['==', ['get', 'routeId'], 'B1'], ['get', 'color'], '#64748b'],
+    })
   })
 })
 

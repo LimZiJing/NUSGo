@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Map as MapLibreMap, Popup } from 'maplibre-gl'
 import {
   BUS_STOP_INACTIVE_OPACITY,
+  BUS_STOP_INACTIVE_LABEL_LAYER_ID,
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
   getBusStopLabelFilters,
@@ -51,6 +52,7 @@ vi.mock('maplibre-gl', () => {
 
   class FakePopup {
     readonly handlers = new globalThis.Map<string, Set<() => void>>()
+    open = false
 
     setDOMContent() {
       return this
@@ -69,10 +71,16 @@ vi.mock('maplibre-gl', () => {
     }
 
     isOpen() {
-      return false
+      return this.open
+    }
+
+    show() {
+      this.open = true
+      this.handlers.get('open')?.forEach((handler) => handler())
     }
 
     remove() {
+      this.open = false
       this.handlers.get('close')?.forEach((handler) => handler())
       return this
     }
@@ -173,12 +181,15 @@ class FakeElement {
   }
   style = {
     display: '',
+    pointerEvents: '',
     setProperty: vi.fn(),
   }
   dataset: Record<string, string> = {}
   textContent = ''
   type = ''
   tagName: string
+  disabled = false
+  tabIndex = 0
 
   constructor(tagName: string) {
     this.tagName = tagName.toUpperCase()
@@ -198,6 +209,10 @@ class FakeElement {
 
   setAttribute(name: string, value: string) {
     this.attributes.set(name, value)
+  }
+
+  removeAttribute(name: string) {
+    this.attributes.delete(name)
   }
 
   click() {
@@ -318,6 +333,70 @@ describe('bus-stop presentation', () => {
       !marker.classes.has('bus-stop-marker-selected') &&
       !marker.classes.has('bus-stop-marker-dimmed')
     ))).toBe(true)
+    adapter.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps journey stops prominent and disables other stop markers and popups until cleared', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const paintProperties: Array<{ id: string; name: string; value: unknown }> = []
+    const map = {
+      getSource: vi.fn(() => ({})),
+      getLayer: vi.fn(() => ({})),
+      addSource: vi.fn(),
+      addLayer: vi.fn(),
+      removeSource: vi.fn(),
+      removeLayer: vi.fn(),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn((id: string, name: string, value: unknown) => {
+        paintProperties.push({ id, name, value })
+      }),
+      getZoom: vi.fn(() => 12),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const adapter = createShuttleStopMarkers(map, stops.map((stop, index) => ({
+      ...stop,
+      latitude: 1.3 + index / 10,
+    })))
+    const elements = adapter.markers.map((marker) => marker.getElement() as unknown as FakeElement)
+    const inactivePopup = adapter.markers[1].getPopup() as unknown as {
+      show(): void
+      isOpen(): boolean
+    }
+    inactivePopup.show()
+
+    adapter.setJourneyStops(new Set(['STOP-A']))
+
+    expect(elements[0].disabled).toBe(false)
+    expect(elements[0].classes).not.toContain('bus-stop-marker-dimmed')
+    expect(elements[1].disabled).toBe(true)
+    expect(elements[1].tabIndex).toBe(-1)
+    expect(elements[1].attributes.get('aria-disabled')).toBe('true')
+    expect(elements[1].style.pointerEvents).toBe('none')
+    expect(elements[1].classes).toContain('bus-stop-marker-dimmed')
+    expect(inactivePopup.isOpen()).toBe(false)
+    expect(paintProperties).toContainEqual({
+      id: BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      name: 'text-color',
+      value: '#64748b',
+    })
+    expect(paintProperties).toContainEqual({
+      id: BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      name: 'text-opacity',
+      value: BUS_STOP_INACTIVE_OPACITY,
+    })
+
+    adapter.setJourneyStops(null)
+
+    expect(elements[1].disabled).toBe(false)
+    expect(elements[1].tabIndex).toBe(0)
+    expect(elements[1].attributes.get('aria-disabled')).toBe('false')
+    expect(elements[1].style.pointerEvents).toBe('')
+    expect(elements[1].classes).not.toContain('bus-stop-marker-dimmed')
     adapter.dispose()
     vi.unstubAllGlobals()
   })

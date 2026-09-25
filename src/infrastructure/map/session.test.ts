@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMapSession } from './session'
-import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import {
+  createTransferTransitNetwork,
+  createValidTransitNetwork,
+} from '../../domain/transit/test-fixtures'
 import { createTransitIndex, generateShuttleTimingData } from '../../domain/transit'
 import type { TransitRouteGeometry } from '../../domain/transit/types'
 import type { Journey } from '../../domain/trip/journey'
@@ -23,7 +26,9 @@ vi.mock('maplibre-gl', () => {
     readonly removedSources: string[] = []
     readonly removedLayers: string[] = []
     readonly addedMarkers: FakeMarker[] = []
+    readonly failingLayers = new Set<string>()
     readonly paintProperties = new globalThis.Map<string, unknown>()
+    readonly layoutProperties = new globalThis.Map<string, unknown>()
     readonly filters = new globalThis.Map<string, unknown>()
     readonly on = vi.fn((event: string, handler: (...args: never[]) => void) => {
       const handlers = this.handlers.get(event) ?? new Set()
@@ -39,7 +44,10 @@ vi.mock('maplibre-gl', () => {
     readonly addControl = vi.fn(() => this)
     readonly removeControl = vi.fn(() => this)
     readonly addSource = vi.fn((id: string) => this.sources.add(id))
-    readonly addLayer = vi.fn((layer: { id: string }) => this.layers.add(layer.id))
+    readonly addLayer = vi.fn((layer: { id: string }) => {
+      if (this.failingLayers.has(layer.id)) throw new Error(`Unable to add ${layer.id}`)
+      this.layers.add(layer.id)
+    })
     readonly removeSource = vi.fn((id: string) => {
       this.removedSources.push(id)
       this.sources.delete(id)
@@ -54,6 +62,9 @@ vi.mock('maplibre-gl', () => {
     readonly setLayerZoomRange = vi.fn()
     readonly setPaintProperty = vi.fn((id: string, name: string, value: unknown) => {
       this.paintProperties.set(`${id}:${name}`, value)
+    })
+    readonly setLayoutProperty = vi.fn((id: string, name: string, value: unknown) => {
+      this.layoutProperties.set(`${id}:${name}`, value)
     })
     readonly getContainer = vi.fn(() => ({ clientWidth: 1200 }))
     readonly fitBounds = vi.fn()
@@ -119,7 +130,9 @@ vi.mock('maplibre-gl', () => {
 
   class FakePopup {
     readonly handlers = new globalThis.Map<string, Set<() => void>>()
+    open = false
     readonly remove = vi.fn(() => {
+      this.open = false
       this.handlers.get('close')?.forEach((handler) => handler())
       return this
     })
@@ -145,7 +158,12 @@ vi.mock('maplibre-gl', () => {
     }
 
     isOpen() {
-      return false
+      return this.open
+    }
+
+    show() {
+      this.open = true
+      this.handlers.get('open')?.forEach((handler) => handler())
     }
   }
 
@@ -161,8 +179,10 @@ vi.mock('maplibre-gl', () => {
 class FakeElement {
   readonly children: FakeElement[] = []
   readonly dataset: Record<string, string> = {}
+  readonly attributes = new Map<string, string>()
   readonly style = {
     display: '',
+    pointerEvents: '',
     setProperty: vi.fn(),
   }
   readonly classes = new Set<string>()
@@ -175,6 +195,8 @@ class FakeElement {
   textContent = ''
   type = ''
   className = ''
+  disabled = false
+  tabIndex = 0
 
   append(...children: FakeElement[]) {
     this.children.push(...children)
@@ -184,7 +206,9 @@ class FakeElement {
 
   removeEventListener() {}
 
-  setAttribute() {}
+  setAttribute(name: string, value: string) {
+    this.attributes.set(name, value)
+  }
 }
 
 function createTransitData(routeId = 'A1', color = '#123456') {
@@ -233,6 +257,55 @@ function createJourney(): Journey {
     }],
     totalDurationSeconds: 60,
     totalDistanceMeters: 100,
+    estimateStatus: 'estimated',
+  }
+}
+
+function createTwoRouteTransitData() {
+  const index = createTransitIndex(createTransferTransitNetwork())
+  const geometry: TransitRouteGeometry = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+      },
+      {
+        type: 'Feature',
+        properties: { routeId: 'B1', name: 'B1', color: '#654321' },
+        geometry: { type: 'LineString', coordinates: [[103.1, 1.1], [103.2, 1.2]] },
+      },
+    ],
+  }
+
+  return {
+    network: index.network,
+    geometry,
+    index,
+    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
+  }
+}
+
+function createShuttleJourney(): Journey {
+  return {
+    origin: { kind: 'stop', id: 'STOP-A' },
+    destination: { kind: 'stop', id: 'STOP-B' },
+    legs: [{
+      mode: 'shuttle',
+      from: { kind: 'stop', id: 'STOP-A' },
+      to: { kind: 'stop', id: 'STOP-B' },
+      durationSeconds: 120,
+      distanceMeters: 900,
+      geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+      routeId: 'A1',
+      boardingStopId: 'STOP-A',
+      alightingStopId: 'STOP-B',
+      waitingSeconds: 0,
+      rideSeconds: 120,
+    }],
+    totalDurationSeconds: 120,
+    totalDistanceMeters: 900,
     estimateStatus: 'estimated',
   }
 }
@@ -322,6 +395,104 @@ describe('MapSession', () => {
     expect(map.layers).toEqual(new Set())
     expect(map.removedLayers).toHaveLength(3)
     expect(map.removedSources).toEqual(['journey-route-geometry'])
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('replaces route browsing with Journey legs and restores the prior route and stop interactions', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTwoRouteTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      layoutProperties: Map<string, unknown>
+      paintProperties: Map<string, unknown>
+      fitBounds: ReturnType<typeof vi.fn>
+      addedMarkers: Array<{
+        element: FakeElement
+        getPopup: () => {
+          show: () => void
+          isOpen: () => boolean
+        } | null
+      }>
+    }
+
+    await session.ready
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    session.setRouteSelection({
+      route: transitData.index.routeById.get('B1') ?? null,
+      overlappingRouteIds: new Set(),
+    })
+    const stopMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
+    const stopCMarker = stopMarkers.find((marker) => marker.element.dataset.stopId === 'STOP-C')
+    const stopCPopup = stopCMarker?.getPopup()
+    stopCPopup?.show()
+
+    session.setJourney(createShuttleJourney())
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('none')
+    expect(map.layoutProperties.get('shuttle-route-casing:visibility')).toBe('none')
+    expect(map.layoutProperties.get('shuttle-route-directions:visibility')).toBe('none')
+    expect(stopMarkers.map((marker) => marker.element.disabled)).toEqual([false, false, true])
+    expect(stopCMarker?.element.tabIndex).toBe(-1)
+    expect(stopCPopup?.isOpen()).toBe(false)
+    expect(map.paintProperties.get('shuttle-stop-inactive-labels:text-color')).toBe('#64748b')
+
+    session.setJourney(null)
+
+    expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('visible')
+    expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
+      'case', ['==', ['get', 'routeId'], 'B1'], ['get', 'color'], '#64748b',
+    ])
+    expect(stopMarkers.map((marker) => marker.element.disabled)).toEqual([false, false, false])
+    expect(stopMarkers.map((marker) => marker.element.classes.has('bus-stop-marker-selected')))
+      .toEqual([false, true, true])
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('restores route browsing when MapLibre rejects Journey layers', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const onMapError = vi.fn()
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError,
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTwoRouteTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      failingLayers: Set<string>
+      layoutProperties: Map<string, unknown>
+      paintProperties: Map<string, unknown>
+      addedMarkers: Array<{ element: FakeElement }>
+    }
+
+    await session.ready
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    session.setRouteSelection({
+      route: transitData.index.routeById.get('B1') ?? null,
+      overlappingRouteIds: new Set(),
+    })
+    const stopMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
+    map.failingLayers.add('journey-walking-lines')
+
+    session.setJourney(createShuttleJourney())
+
+    expect(onMapError).toHaveBeenCalledWith(new Error('Unable to add journey-walking-lines'))
+    expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('visible')
+    expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
+      'case', ['==', ['get', 'routeId'], 'B1'], ['get', 'color'], '#64748b',
+    ])
+    expect(stopMarkers.map((marker) => marker.element.disabled)).toEqual([false, false, false])
+    expect(stopMarkers.map((marker) => marker.element.classes.has('bus-stop-marker-selected')))
+      .toEqual([false, true, true])
 
     session.dispose()
     vi.unstubAllGlobals()

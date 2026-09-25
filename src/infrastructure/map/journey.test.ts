@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Map } from 'maplibre-gl'
 import type { Journey } from '../../domain/trip/journey'
+import { createTransitIndex } from '../../domain/transit'
+import {
+  createTransferTransitNetwork,
+  createValidTransitNetwork,
+} from '../../domain/transit/test-fixtures'
 import {
   createJourneyRouteLayers,
   JOURNEY_ROUTE_SOURCE_ID,
@@ -85,7 +90,8 @@ function createJourney(routeId: string): Journey {
 describe('journey route layer adapter', () => {
   it('renders each Journey leg with mode metadata and cleans up replacements and clears', () => {
     const state = createFakeMap()
-    const layers = createJourneyRouteLayers(state.map)
+    const index = createTransitIndex(createValidTransitNetwork())
+    const layers = createJourneyRouteLayers(state.map, index)
 
     layers.setJourney(createJourney('A1'))
 
@@ -99,8 +105,15 @@ describe('journey route layer adapter', () => {
     expect((state.addedSources[0].source as { data: { features: unknown[] } }).data.features)
       .toMatchObject([
         { properties: { legIndex: 0, mode: 'walking', routeId: null } },
-        { properties: { legIndex: 1, mode: 'shuttle', routeId: 'A1' } },
+        { properties: { legIndex: 1, mode: 'shuttle', routeId: 'A1', routeColor: '#123456' } },
       ])
+    expect(state.addedLayers[2]).toMatchObject({
+      id: JOURNEY_SHUTTLE_LAYER_ID,
+      paint: { 'line-color': ['coalesce', ['get', 'routeColor'], '#d97706'] },
+    })
+    expect(state.addedLayers[1]).toMatchObject({
+      paint: { 'line-color': '#2563eb' },
+    })
 
     layers.setJourney(createJourney('B1'))
     expect(state.removedLayers).toEqual([
@@ -124,9 +137,58 @@ describe('journey route layer adapter', () => {
     expect(state.removedLayers).toHaveLength(6)
   })
 
+  it('uses each canonical route color for transfer Journey shuttle legs', () => {
+    const index = createTransitIndex(createTransferTransitNetwork())
+    const state = createFakeMap()
+    const layers = createJourneyRouteLayers(state.map, index)
+    const journey: Journey = {
+      origin: { kind: 'stop', id: 'STOP-A' },
+      destination: { kind: 'stop', id: 'STOP-C' },
+      legs: [
+        {
+          mode: 'shuttle',
+          from: { kind: 'stop', id: 'STOP-A' },
+          to: { kind: 'stop', id: 'STOP-B' },
+          durationSeconds: 120,
+          distanceMeters: 900,
+          geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+          routeId: 'A1',
+          boardingStopId: 'STOP-A',
+          alightingStopId: 'STOP-B',
+          waitingSeconds: 0,
+          rideSeconds: 120,
+        },
+        {
+          mode: 'shuttle',
+          from: { kind: 'stop', id: 'STOP-B' },
+          to: { kind: 'stop', id: 'STOP-C' },
+          durationSeconds: 180,
+          distanceMeters: 1000,
+          geometry: { type: 'LineString', coordinates: [[103.1, 1.1], [103.2, 1.2]] },
+          routeId: 'B1',
+          boardingStopId: 'STOP-B',
+          alightingStopId: 'STOP-C',
+          waitingSeconds: 0,
+          rideSeconds: 180,
+        },
+      ],
+      totalDurationSeconds: 300,
+      totalDistanceMeters: 1900,
+      estimateStatus: 'estimated',
+    }
+
+    layers.setJourney(journey)
+
+    expect((state.addedSources[0].source as { data: { features: Array<{ properties: unknown }> } }).data.features)
+      .toMatchObject([
+        { properties: { routeId: 'A1', routeColor: '#123456' } },
+        { properties: { routeId: 'B1', routeColor: '#654321' } },
+      ])
+  })
+
   it('cleans up a partial installation when a layer cannot be added', () => {
     const state = createFakeMap(JOURNEY_WALKING_LAYER_ID)
-    const layers = createJourneyRouteLayers(state.map)
+    const layers = createJourneyRouteLayers(state.map, null)
 
     expect(() => layers.setJourney(createJourney('A1')))
       .toThrow('Unable to add journey-walking-lines')

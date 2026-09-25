@@ -1,5 +1,6 @@
 import type { FilterSpecification, LineLayerSpecification, Map } from 'maplibre-gl'
 import type { Journey } from '../../domain/trip/journey'
+import type { TransitIndex } from '../../domain/transit'
 
 export const JOURNEY_ROUTE_SOURCE_ID = 'journey-route-geometry'
 export const JOURNEY_ROUTE_CASING_LAYER_ID = 'journey-route-casing'
@@ -8,6 +9,7 @@ export const JOURNEY_SHUTTLE_LAYER_ID = 'journey-shuttle-lines'
 
 const JOURNEY_WALKING_FILTER: FilterSpecification = ['==', ['get', 'mode'], 'walking']
 const JOURNEY_SHUTTLE_FILTER: FilterSpecification = ['==', ['get', 'mode'], 'shuttle']
+const JOURNEY_SHUTTLE_FALLBACK_COLOR = '#d97706'
 
 const JOURNEY_ROUTE_CASING_LAYER: LineLayerSpecification = {
   id: JOURNEY_ROUTE_CASING_LAYER_ID,
@@ -65,7 +67,7 @@ const JOURNEY_SHUTTLE_LAYER: LineLayerSpecification = {
     'line-join': 'round',
   },
   paint: {
-    'line-color': '#d97706',
+    'line-color': ['coalesce', ['get', 'routeColor'], JOURNEY_SHUTTLE_FALLBACK_COLOR],
     'line-opacity': 0.98,
     'line-width': [
       'interpolate',
@@ -82,6 +84,7 @@ interface JourneyRouteProperties {
   readonly legIndex: number
   readonly mode: Journey['legs'][number]['mode']
   readonly routeId: string | null
+  readonly routeColor: string | null
 }
 
 interface JourneyRouteGeometry {
@@ -96,7 +99,10 @@ interface JourneyRouteGeometry {
   }>
 }
 
-function createJourneyRouteGeometry(journey: Journey): JourneyRouteGeometry {
+function createJourneyRouteGeometry(
+  journey: Journey,
+  transitIndex: TransitIndex | null,
+): JourneyRouteGeometry {
   return {
     type: 'FeatureCollection',
     features: journey.legs.map((leg, legIndex) => ({
@@ -105,6 +111,9 @@ function createJourneyRouteGeometry(journey: Journey): JourneyRouteGeometry {
         legIndex,
         mode: leg.mode,
         routeId: leg.mode === 'shuttle' ? leg.routeId : null,
+        routeColor: leg.mode === 'shuttle'
+          ? transitIndex?.routeById.get(leg.routeId)?.color ?? null
+          : null,
       },
       geometry: {
         type: 'LineString',
@@ -119,7 +128,10 @@ export interface JourneyRouteLayers {
   dispose(): void
 }
 
-export function createJourneyRouteLayers(map: Map): JourneyRouteLayers {
+export function createJourneyRouteLayers(
+  map: Map,
+  transitIndex: TransitIndex | null,
+): JourneyRouteLayers {
   let disposed = false
 
   const clearInstalledJourney = (): void => {
@@ -138,7 +150,7 @@ export function createJourneyRouteLayers(map: Map): JourneyRouteLayers {
       try {
         map.addSource(JOURNEY_ROUTE_SOURCE_ID, {
           type: 'geojson',
-          data: createJourneyRouteGeometry(journey),
+          data: createJourneyRouteGeometry(journey, transitIndex),
         })
         map.addLayer(JOURNEY_ROUTE_CASING_LAYER)
         map.addLayer(JOURNEY_WALKING_LAYER)

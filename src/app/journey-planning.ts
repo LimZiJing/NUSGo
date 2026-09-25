@@ -152,6 +152,92 @@ function selectWalkingCandidates(
   })
 }
 
+function collectReachableStops(
+  startStopIds: ReadonlySet<string>,
+  edges: ReadonlyMap<string, ReadonlySet<string>>,
+): Set<string> {
+  const reachable = new Set(startStopIds)
+  const queue = [...startStopIds]
+  while (queue.length > 0) {
+    const stopId = queue.shift()!
+    for (const nextStopId of edges.get(stopId) ?? []) {
+      if (reachable.has(nextStopId)) continue
+      reachable.add(nextStopId)
+      queue.push(nextStopId)
+    }
+  }
+  return reachable
+}
+
+function createTransitStopEdges(
+  transit: LoadedTransitData,
+): { readonly forward: ReadonlyMap<string, ReadonlySet<string>>; readonly reverse: ReadonlyMap<string, ReadonlySet<string>> } {
+  const forward = new Map<string, Set<string>>()
+  const reverse = new Map<string, Set<string>>()
+  for (const stop of transit.index.stops) {
+    forward.set(stop.id, new Set())
+    reverse.set(stop.id, new Set())
+  }
+  for (const route of transit.index.routes) {
+    for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
+      for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
+        const fromStopId = route.stopIds[fromIndex]
+        const toStopId = route.stopIds[toIndex]
+        if (fromStopId === toStopId) continue
+        forward.get(fromStopId)?.add(toStopId)
+        reverse.get(toStopId)?.add(fromStopId)
+      }
+    }
+  }
+  return { forward, reverse }
+}
+
+function collectEligibleBoardingStops(
+  transit: LoadedTransitData,
+  walkingConnections: readonly WalkingJourneyConnection[],
+  origin: ResolvedLocation,
+  destination: ResolvedLocation,
+): readonly ShuttleArrivalStopRequest[] {
+  const originStopIds = new Set<string>()
+  if (origin.endpoint.kind === 'stop') originStopIds.add(origin.endpoint.id)
+  for (const connection of walkingConnections) {
+    if (
+      endpointKey(connection.from) === origin.key &&
+      connection.to.kind === 'stop'
+    ) originStopIds.add(connection.to.id)
+  }
+
+  const destinationStopIds = new Set<string>()
+  if (destination.endpoint.kind === 'stop') destinationStopIds.add(destination.endpoint.id)
+  for (const connection of walkingConnections) {
+    if (
+      endpointKey(connection.to) === destination.key &&
+      connection.from.kind === 'stop'
+    ) destinationStopIds.add(connection.from.id)
+  }
+  if (originStopIds.size === 0 || destinationStopIds.size === 0) return []
+
+  const { forward, reverse } = createTransitStopEdges(transit)
+  const reachableFromOrigin = collectReachableStops(originStopIds, forward)
+  const canReachDestination = collectReachableStops(destinationStopIds, reverse)
+  return transit.index.stops
+    .filter((stop) => (
+      reachableFromOrigin.has(stop.id) &&
+      [...(forward.get(stop.id) ?? [])].some((nextStopId) => canReachDestination.has(nextStopId))
+    ))
+    .map((stop) => ({ stopId: stop.id, stopName: stop.longName }))
+}
+
+function collectEligibleRouteIds(
+  transit: LoadedTransitData,
+  boardingStops: readonly ShuttleArrivalStopRequest[],
+): readonly string[] {
+  const boardingStopIds = new Set(boardingStops.map((stop) => stop.stopId))
+  return transit.index.routes
+    .filter((route) => route.stopIds.some((stopId) => boardingStopIds.has(stopId)))
+    .map((route) => route.id)
+}
+
 function isAbortError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError'
 }
@@ -160,6 +246,15 @@ function createAbortError(): Error {
   const error = new Error('The journey planning request was aborted')
   error.name = 'AbortError'
   return error
+}
+
+function planWalkingOnly(
+  planInput: Parameters<typeof planJourney>[0],
+): Journey | null {
+  return planJourney({
+    ...planInput,
+    getShuttleWaitingSeconds: () => null,
+  })
 }
 
 function getStaticServiceEvaluation(
@@ -253,39 +348,41 @@ export function createJourneyPlanningService(
     const staticJourney = planJourney(planInput)
     if (!staticJourney || !shuttleArrivalClient) return staticJourney
 
+    const boardingStops = collectEligibleBoardingStops(
+      request.transit,
+      walkingConnections,
+      locations.origin,
+      locations.destination,
+    )
+    if (boardingStops.length === 0) return staticJourney
+
     let serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null = null
     if (shuttleServiceHoursClient) {
-      const routeIds = request.transit.index.routes.map((route) => route.id)
+      const routeIds = collectEligibleRouteIds(request.transit, boardingStops)
+      if (routeIds.length === 0) return staticJourney
       try {
         serviceWindows = await shuttleServiceHoursClient.getServiceWindows(routeIds, request.signal)
       } catch (error: unknown) {
         if (request.signal.aborted || isAbortError(error)) throw createAbortError()
-        console.warn('Shuttle service-hour data is unavailable; using static timing estimates.', error)
-        return staticJourney
+        console.warn('Shuttle service-hour data is unavailable; removing shuttle options.', error)
+        return planWalkingOnly(planInput)
       }
-      if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) return staticJourney
+      if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) {
+        return planWalkingOnly(planInput)
+      }
     }
-
-    const boardingStops = new Map<string, ShuttleArrivalStopRequest>()
-    for (const leg of staticJourney.legs) {
-      if (leg.mode !== 'shuttle') continue
-      const stop = request.transit.index.stopById.get(leg.boardingStopId)
-      if (!stop) continue
-      boardingStops.set(stop.id, { stopId: stop.id, stopName: stop.longName })
-    }
-    if (boardingStops.size === 0) return staticJourney
 
     let liveArrivals
     try {
       liveArrivals = await shuttleArrivalClient.getArrivals([...boardingStops.values()], request.signal)
     } catch (error: unknown) {
       if (request.signal.aborted || isAbortError(error)) throw createAbortError()
-      console.warn('Live shuttle arrivals are unavailable; using static timing estimates.', error)
+      console.warn('Live shuttle arrivals are unavailable; removing shuttle options.', error)
       const unavailable = serviceWindows
         ? getStaticServiceEvaluation(staticJourney, serviceWindows, now())
         : null
       if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-      return staticJourney
+      return planWalkingOnly(planInput)
     }
 
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)
@@ -306,6 +403,6 @@ export function createJourneyPlanningService(
       ? getStaticServiceEvaluation(staticJourney, serviceWindows, nowMs)
       : null
     if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-    return staticJourney
+    return planWalkingOnly(planInput)
   }
 }

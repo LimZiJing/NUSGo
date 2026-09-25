@@ -296,6 +296,47 @@ function createWalkingLeg(connection: WalkingJourneyConnection): WalkingJourneyL
   }
 }
 
+function withoutDuplicateJourneyCoordinates(
+  coordinates: readonly (readonly [number, number])[],
+): readonly (readonly [number, number])[] {
+  return coordinates.filter((coordinate, index) => {
+    if (index === 0) return true
+    const previous = coordinates[index - 1]
+    return coordinate[0] !== previous[0] || coordinate[1] !== previous[1]
+  })
+}
+
+function mergeConsecutiveWalkingLegs(
+  legs: readonly JourneyLeg[],
+): readonly JourneyLeg[] {
+  const normalized: JourneyLeg[] = []
+
+  for (const leg of legs) {
+    const previous = normalized.at(-1)
+    if (previous?.mode === 'walking' && leg.mode === 'walking') {
+      normalized[normalized.length - 1] = {
+        mode: 'walking',
+        from: previous.from,
+        to: leg.to,
+        durationSeconds: previous.durationSeconds + leg.durationSeconds,
+        distanceMeters: previous.distanceMeters + leg.distanceMeters,
+        geometry: {
+          type: 'LineString',
+          coordinates: withoutDuplicateJourneyCoordinates([
+            ...previous.geometry.coordinates,
+            ...leg.geometry.coordinates,
+          ]),
+        },
+      }
+      continue
+    }
+
+    normalized.push(leg)
+  }
+
+  return normalized
+}
+
 function comparePaths(first: JourneyPath, second: JourneyPath): number {
   for (const [firstValue, secondValue] of [
     [first.durationSeconds, second.durationSeconds],
@@ -509,10 +550,11 @@ export function planJourney(input: PlanJourneyInput): Journey | null {
   )
   if (!path || path.legs.length === 0) return null
 
+  const legs = mergeConsecutiveWalkingLegs(path.legs)
   return {
     origin: input.origin.endpoint,
     destination: input.destination.endpoint,
-    legs: path.legs,
+    legs,
     totalDurationSeconds: path.durationSeconds,
     totalDistanceMeters: path.distanceMeters,
     estimateStatus: 'estimated',

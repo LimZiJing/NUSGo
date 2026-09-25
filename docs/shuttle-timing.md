@@ -1,50 +1,165 @@
-# Shuttle timing estimates
+# Shuttle timing policy
 
-The build creates `public/data/shuttle-timing.json` with estimated directed
-ride times for the ordered stop pairs in the canonical shuttle network. The
-generated file is ignored by Git; the canonical sources and generator are the
-files kept in the repository.
+Status: accepted through Issue [#104](https://github.com/LimZiJing/NavUS/issues/104)
 
-The estimates use the reviewed route geometry in
-`public/data/shuttle-routes.geojson`:
+This is the provider-neutral timing policy for internal shuttle Journeys. It
+defines the inputs that the pure planner may consume; it does not define a
+provider API, credentials, deployment, or UI implementation.
 
-- baseline speed: 15 mph, a common local-bus planning baseline;
-- uncertainty range: 10–20 mph;
-- intermediate-stop dwell: 20 seconds, with a 10–30 second uncertainty range;
-- reverse-direction pairs are not created unless the canonical route has that
-  direction; and
-- every value records the geometry verification date and method version.
+## Ownership
 
-These are planning estimates, not observed timetables. When the development
-server has the NUS bus API settings, NavUS also requests live stop arrivals
-through its same-origin `/api/shuttle-arrivals` endpoint. The server caches
-each stop response briefly and keeps the credentials out of the browser.
-If a NUS response reports code `10011`, the server refreshes the UniVus access
-token from the configured access-token endpoint and retries that request once.
+- Issue #104 owns this policy and the timing contract.
+- Issue #25 owns NUS provider/API normalization; its current contract is recorded in [the Issue #25 research note](research/issue-25-live-shuttle-contract.md).
+- Issue #101 applies the contract to every candidate Journey and transfer.
+- Issue #102 verifies the private and release boundaries.
+- Issue #103 owns regression and release evidence.
 
-The planner uses the next live arrival for the first boarding and the first
-arrival after the expected transfer time for later boardings. If the live
-response does not cover that time, it uses half the observed headway. The
-static ride estimate remains available when live data cannot be loaded.
+## Units and terminology
 
-When the NUS route service-hour endpoint is available, the planner also checks
-the route's weekday, weekend, public-holiday, and dated special-day windows in
-Singapore local time. A route outside its service window is excluded instead
-of receiving a zero or short wait. If no complete shuttle journey remains, the
-trip panel explains when service is expected to resume.
+- Durations are integer seconds.
+- Distances are integer metres.
+- A **ride estimate** is the time between boarding and alighting, excluding
+  waiting.
+- A **waiting estimate** is the time from reaching a boarding stop until the
+  expected shuttle arrival.
+- A shuttle leg's duration is `waitingSeconds + rideSeconds`.
+- Every shuttle boarding, including a transfer, is a new waiting calculation.
 
-The planner still keeps an explicit `zeroShuttleWaitingTime` fallback for
-offline or unavailable live data. This is a fallback policy, not a claim that a
-shuttle is immediately available.
+## Static ride estimates
 
-To regenerate the local build data after reviewing the fallback decision, run:
+Static ride estimates are planning estimates derived from the canonical route
+geometry in `public/data/shuttle-routes.geojson` and the ordered stops in
+`public/data/shuttle-network.json`.
+
+The current approved method uses:
+
+- baseline speed: 15 mph;
+- speed range: 10–20 mph;
+- intermediate-stop dwell: 20 seconds; and
+- dwell range: 10–30 seconds.
+
+Each record must identify its source, method version, and geometry verification
+date. An estimated record must contain positive integer `rideSeconds`,
+`rideSecondsLowerBound`, and `rideSecondsUpperBound`, with the lower bound no
+greater than the estimate and the estimate no greater than the upper bound.
+
+The baseline estimate is used for Journey ranking. The bounds describe
+uncertainty and provenance; they are not separate Journey candidates.
+
+Records marked unavailable cannot create shuttle edges. Static ride timing may
+remain available when live arrivals fail, but ride timing alone is not enough
+to create a normal application shuttle Journey: the waiting estimate is also
+required.
+
+## Live arrival data
+
+The provider boundary must normalize live data before it reaches the planner.
+The normalized snapshot contains:
+
+- `observedAt`: when the provider data was observed;
+- `expiresAt`: when the server-side cache entry expires;
+- non-negative `nextArrivalSeconds`; and
+- a sorted, duplicate-free list of non-negative upcoming arrival seconds.
+
+A headway estimate is valid only when there are at least two upcoming arrivals
+with positive gaps. Its `min`, `median`, and `max` values must be finite,
+positive, ordered values satisfying:
+
+```text
+0 < min <= median <= max
+```
+
+The provider contract may apply stricter operational limits when it has enough
+evidence. Provider-specific fields and response shapes must not enter the pure
+planner.
+
+## Freshness and response age
+
+Freshness is measured from `observedAt`, not only from the time NavUS fetched
+the response.
+
+- A snapshot observed within 45 seconds is fresh and may be used for normal
+  live ranking.
+- A snapshot older than 45 seconds is stale for normal ranking. It may be kept
+  for diagnostics or retry handling, but it must not silently become a normal
+  live estimate.
+- A snapshot older than 120 seconds is expired and unavailable.
+
+The server may cache responses for up to 45 seconds. The 120-second limit is a
+maximum stale-data boundary, not permission to claim that a stale arrival is
+live.
+
+## Waiting calculation
+
+For the first boarding, use the first live arrival that remains after adjusting
+for the snapshot age:
+
+```text
+effective wait = arrival seconds - snapshot age seconds
+```
+
+For a transfer, also include the time already spent before reaching the next
+boarding stop:
+
+```text
+effective wait = arrival seconds
+               - snapshot age seconds
+               - elapsed journey seconds
+```
+
+The first non-negative future arrival is selected. If the response does not
+contain an arrival far enough into the future, half the observed median
+headway may be used only when the snapshot is fresh and the headway is valid.
+
+There is no separate arbitrary transfer discount or free transfer. A transfer
+is another shuttle boarding and must receive its own waiting estimate.
+
+## Service windows
+
+Service windows are separate from frequency and headway estimates. A route is
+not considered operating merely because arrival data contains a headway.
+
+The planner checks the route's weekday, weekend, public-holiday, and dated
+special-day windows in Singapore local time at the expected boarding time. A
+route outside its service window cannot create a shuttle edge.
+
+## Missing data and fallback policy
+
+The normal application policy is named
+`unavailable-without-verified-headway`:
+
+- missing, invalid, partial, stale, or expired waiting data removes only the
+  affected shuttle edge;
+- other complete shuttle paths remain eligible;
+- a valid walking-only Journey remains eligible; and
+- if no complete Journey remains, NavUS reports that no recommended Journey is
+  currently available and identifies the missing timing data.
+
+`zeroShuttleWaitingTime` is an explicit offline or test policy only. It must be
+selected deliberately and communicated as such. It must not be an unlabelled
+normal live-data assumption, and it must not make a transfer appear free in a
+normal recommendation.
+
+## Ranking and provenance
+
+All candidate Journeys must be evaluated with complete applicable timing
+inputs before ranking. The planner must not choose a static winner first and
+fetch live timing only for that winner.
+
+The Journey remains estimated. Its timing provenance should distinguish static
+ride estimates, live-arrival waits, headway-derived waits, and the explicit
+offline/test fallback.
+
+## Static data generation
+
+To regenerate the local static timing data:
 
 ```text
 npm run shuttle:timing:generate:geometry
 ```
 
-The explicit flag is required because geometry timing is a fallback until
-validated stop-to-stop observations or headway data are available. Set
-`NAVUS_TIMING_GENERATED_AT` when a reproducible generation date is needed.
+The explicit geometry flag is required because geometry timing is an estimate,
+not an observed timetable. Set `NAVUS_TIMING_GENERATED_AT` when a reproducible
+generation date is needed.
 
 `npm run dev` and `npm run build` run this generation step automatically.

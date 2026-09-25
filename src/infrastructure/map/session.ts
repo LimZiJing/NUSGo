@@ -8,11 +8,16 @@ import type {
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Journey } from '../../domain/trip/journey'
+import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
 import type { VenueLocation } from '../../domain/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
-import { createShuttleStopMarkers, type ShuttleStopMarkers } from './shuttle-stops'
+import {
+  createShuttleStopMarkers,
+  type JourneyStopRoute,
+  type ShuttleStopMarkers,
+} from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
@@ -130,23 +135,32 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     journeyRouteLayers = nextJourneyRouteLayers
   }
 
-  const getJourneyStopIds = (): ReadonlySet<string> | null => {
+  const getJourneyStopRoutes = (): ReadonlyMap<string, readonly JourneyStopRoute[]> | null => {
     if (currentJourney === null) return null
-    const stopIds = new Set<string>()
-    if (!currentTransitIndex) return stopIds
+    const stopRoutes = new Map<string, JourneyStopRoute[]>()
+    if (!currentTransitIndex) return stopRoutes
 
     for (const leg of currentJourney.legs) {
       if (leg.mode !== 'shuttle') continue
-      const route = currentTransitIndex.routeById.get(leg.routeId)
-      for (const stopId of route?.stopIds ?? []) stopIds.add(stopId)
+      const route = currentTransitIndex.routeById.get(leg.routeId) ?? null
+      const stopIds = getShuttleJourneyLegStopIds(leg, route)
+      if (!route || !stopIds) continue
+
+      for (const stopId of stopIds) {
+        const routes = stopRoutes.get(stopId) ?? []
+        if (!routes.some(({ routeId }) => routeId === route.id)) {
+          routes.push({ routeId: route.id, routeName: route.name, color: route.color })
+        }
+        stopRoutes.set(stopId, routes)
+      }
     }
-    return stopIds
+    return stopRoutes
   }
 
   const applyJourneyPresentation = (): void => {
     const journeyActive = currentJourney !== null
     transitRouteLayers?.setJourneyActive(journeyActive)
-    shuttleStopMarkers?.setJourneyStops(getJourneyStopIds())
+    shuttleStopMarkers?.setJourneyStops(getJourneyStopRoutes())
   }
 
   const reconcileRouteSelection = (selection: MapRouteSelection): MapRouteSelection => {

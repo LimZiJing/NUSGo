@@ -221,6 +221,10 @@ class FakeElement {
   setAttribute(name: string, value: string) {
     this.attributes.set(name, value)
   }
+
+  removeAttribute(name: string) {
+    this.attributes.delete(name)
+  }
 }
 
 function createTransitData(routeId = 'A1', color = '#123456') {
@@ -296,6 +300,106 @@ function createTwoRouteTransitData() {
     geometry,
     index,
     shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
+  }
+}
+
+function createJourneyStopTransitData() {
+  const network = createTransferTransitNetwork()
+  network.routes[0].stopIds = ['STOP-A', 'STOP-MIDDLE', 'STOP-B', 'STOP-AFTER']
+  network.stops.push(
+    {
+      id: 'STOP-MIDDLE',
+      longName: 'Middle Stop',
+      shortName: 'Middle',
+      latitude: 1.05,
+      longitude: 103.05,
+      services: ['A1'],
+      opposite: null,
+    },
+    {
+      id: 'STOP-AFTER',
+      longName: 'Stop After Alighting',
+      shortName: 'After',
+      latitude: 1.15,
+      longitude: 103.15,
+      services: ['A1'],
+      opposite: null,
+    },
+  )
+  const index = createTransitIndex(network)
+  const geometry: TransitRouteGeometry = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+        geometry: {
+          type: 'LineString',
+          coordinates: [[103, 1], [103.05, 1.05], [103.1, 1.1], [103.15, 1.15]],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: { routeId: 'B1', name: 'B1', color: '#654321' },
+        geometry: { type: 'LineString', coordinates: [[103.1, 1.1], [103.2, 1.2]] },
+      },
+    ],
+  }
+
+  return {
+    network: index.network,
+    geometry,
+    index,
+    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
+  }
+}
+
+function createTransferJourney(): Journey {
+  return {
+    origin: { kind: 'stop', id: 'STOP-A' },
+    destination: { kind: 'stop', id: 'STOP-C' },
+    legs: [
+      {
+        mode: 'shuttle',
+        from: { kind: 'stop', id: 'STOP-A' },
+        to: { kind: 'stop', id: 'STOP-B' },
+        durationSeconds: 120,
+        distanceMeters: 900,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+        routeId: 'A1',
+        boardingStopId: 'STOP-A',
+        alightingStopId: 'STOP-B',
+        waitingSeconds: 0,
+        rideSeconds: 120,
+      },
+      {
+        mode: 'shuttle',
+        from: { kind: 'stop', id: 'STOP-B' },
+        to: { kind: 'stop', id: 'STOP-C' },
+        durationSeconds: 180,
+        distanceMeters: 1000,
+        geometry: { type: 'LineString', coordinates: [[103.1, 1.1], [103.2, 1.2]] },
+        routeId: 'B1',
+        boardingStopId: 'STOP-B',
+        alightingStopId: 'STOP-C',
+        waitingSeconds: 0,
+        rideSeconds: 180,
+      },
+    ],
+    totalDurationSeconds: 300,
+    totalDistanceMeters: 1900,
+    estimateStatus: 'estimated',
+  }
+}
+
+function createSingleRouteJourney(): Journey {
+  return {
+    origin: { kind: 'stop', id: 'STOP-B' },
+    destination: { kind: 'stop', id: 'STOP-C' },
+    legs: [createTransferJourney().legs[1]],
+    totalDurationSeconds: 180,
+    totalDistanceMeters: 1000,
+    estimateStatus: 'estimated',
   }
 }
 
@@ -427,6 +531,89 @@ describe('MapSession', () => {
     expect(map.layers).toEqual(new Set())
     expect(map.removedLayers).toHaveLength(3)
     expect(map.removedSources).toEqual(['journey-route-geometry'])
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('highlights only stops traversed by each shuttle leg with its Route color', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createJourneyStopTransitData()
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{ element: FakeElement }>
+    }
+
+    await session.ready
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    const stopMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
+    const markerByStopId = new Map(
+      stopMarkers.map((marker) => [marker.element.dataset.stopId, marker.element]),
+    )
+
+    session.setJourney(createTransferJourney())
+
+    expect(Array.from(markerByStopId.entries()).map(([stopId, marker]) => [
+      stopId,
+      marker.classes.has('bus-stop-marker-selected'),
+    ])).toEqual([
+      ['STOP-A', true],
+      ['STOP-B', true],
+      ['STOP-C', true],
+      ['STOP-MIDDLE', true],
+      ['STOP-AFTER', false],
+    ])
+    expect(markerByStopId.get('STOP-A')?.style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-journey-color',
+      'linear-gradient(#123456, #123456)',
+    )
+    expect(markerByStopId.get('STOP-A')?.attributes.get('aria-label')).toBe(
+      'Stop A shuttle stop on Journey Route A1',
+    )
+    expect(markerByStopId.get('STOP-MIDDLE')?.style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-journey-color',
+      'linear-gradient(#123456, #123456)',
+    )
+    expect(markerByStopId.get('STOP-C')?.style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-journey-color',
+      'linear-gradient(#654321, #654321)',
+    )
+    expect(markerByStopId.get('STOP-B')?.style.setProperty).toHaveBeenCalledWith(
+      '--bus-stop-journey-color',
+      'conic-gradient(#123456 0deg 180deg, #654321 180deg 360deg)',
+    )
+    expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
+      'Stop B shuttle stop on Journey Routes A1, B1',
+    )
+    expect(markerByStopId.get('STOP-AFTER')?.attributes.get('title')).toBeUndefined()
+
+    session.setJourney(createSingleRouteJourney())
+
+    expect(markerByStopId.get('STOP-A')?.classes.has('bus-stop-marker-selected')).toBe(false)
+    expect(markerByStopId.get('STOP-MIDDLE')?.classes.has('bus-stop-marker-selected')).toBe(false)
+    expect(markerByStopId.get('STOP-B')?.style.setProperty).toHaveBeenLastCalledWith(
+      '--bus-stop-journey-color',
+      'linear-gradient(#654321, #654321)',
+    )
+    expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
+      'Stop B shuttle stop on Journey Route B1',
+    )
+
+    session.setJourney(null)
+
+    expect(markerByStopId.get('STOP-B')?.classes.has('bus-stop-marker-selected')).toBe(false)
+    expect(markerByStopId.get('STOP-B')?.style.setProperty).toHaveBeenLastCalledWith(
+      '--bus-stop-journey-color',
+      '',
+    )
+    expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
+      'Stop B shuttle stop',
+    )
+    expect(markerByStopId.get('STOP-B')?.attributes.get('title')).toBeUndefined()
 
     session.dispose()
     vi.unstubAllGlobals()

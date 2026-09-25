@@ -28,9 +28,13 @@ export function parseRouteServiceWindows(
   input: unknown,
   routeId: string,
 ): readonly ShuttleServiceWindow[] {
-  if (!isRecord(input) || !isRecord(input.data)) return []
+  if (!isRecord(input) || !isRecord(input.data)) {
+    throw new Error('NUS route service-hour response was invalid')
+  }
   const records = input.data.RouteMinMaxTime
-  if (!Array.isArray(records)) return []
+  if (!Array.isArray(records)) {
+    throw new Error('NUS route service-hour response was invalid')
+  }
   return records.flatMap((value) => {
     if (!isRecord(value)) return []
     const firstTime = text(value, ['FirstTime', 'firstTime', 'first_time'])

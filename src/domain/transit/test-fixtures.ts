@@ -18,3 +18,19 @@ export function createValidTransitNetwork(): TransitNetworkInput {
     ],
   }
 }
+
+export function createTransferTransitNetwork(): TransitNetworkInput {
+  const network = createValidTransitNetwork()
+  network.routes.push({ id: 'B1', name: 'B1', color: '#654321', stopIds: ['STOP-B', 'STOP-C'] })
+  network.stops[1].services.push('B1')
+  network.stops.push({
+    id: 'STOP-C',
+    longName: 'Stop C',
+    shortName: 'C',
+    latitude: 1.2,
+    longitude: 103.2,
+    services: ['B1'],
+    opposite: null,
+  })
+  return network
+}

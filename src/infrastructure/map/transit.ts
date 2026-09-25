@@ -149,6 +149,7 @@ export function getTransitRouteFitPadding(
 
 export interface TransitRouteLayers {
   setSelection(routeId: string | null, overlappingRouteIds?: ReadonlySet<string>): void
+  setJourneyActive(active: boolean): void
   fitRoute(
     index: TransitIndex,
     geometry: TransitRouteGeometry,
@@ -261,6 +262,17 @@ function setTransitRouteSelection(
   }
 }
 
+function setTransitRouteVisibility(map: Map, visible: boolean): void {
+  const visibility = visible ? 'visible' : 'none'
+  for (const layerId of [
+    TRANSIT_ROUTE_CASING_LAYER_ID,
+    TRANSIT_ROUTE_LAYER_ID,
+    TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+  ]) {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility)
+  }
+}
+
 function fitTransitRoute(
   map: Map,
   index: TransitIndex,
@@ -298,10 +310,28 @@ export function createTransitRouteLayers(
   if (ownsDirectionLayer) map.addLayer(TRANSIT_ROUTE_DIRECTION_LAYER)
 
   let disposed = false
+  let journeyActive = false
+  let selectedRouteId: string | null = null
+  let selectedOverlappingRouteIds: ReadonlySet<string> = new Set()
   return {
     setSelection(routeId, overlappingRouteIds = new Set()) {
       if (disposed) return
-      setTransitRouteSelection(map, routeId, overlappingRouteIds)
+      selectedRouteId = routeId
+      selectedOverlappingRouteIds = new Set(overlappingRouteIds)
+      if (!journeyActive) {
+        setTransitRouteSelection(map, selectedRouteId, selectedOverlappingRouteIds)
+      }
+    },
+    setJourneyActive(active) {
+      if (disposed || journeyActive === active) return
+      journeyActive = active
+      if (journeyActive) {
+        setTransitRouteVisibility(map, false)
+        return
+      }
+
+      setTransitRouteSelection(map, selectedRouteId, selectedOverlappingRouteIds)
+      setTransitRouteVisibility(map, true)
     },
     fitRoute(index, routeGeometry, routeId, viewportInsets) {
       if (disposed) return

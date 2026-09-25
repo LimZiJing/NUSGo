@@ -1,4 +1,8 @@
-import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import type {
+  ShuttleArrivalSnapshot,
+  ShuttleHeadwaySeconds,
+  ShuttleRouteArrivalData,
+} from '../../domain/transit/arrivals'
 
 export interface ShuttleArrivalStopRequest {
   readonly stopId: string
@@ -21,39 +25,67 @@ interface CachedStop {
 interface ShuttleArrivalClientOptions {
   readonly endpoint?: string
   readonly cacheTtlMs?: number
-  readonly staleTtlMs?: number
   readonly now?: () => number
   readonly fetcher?: typeof fetch
 }
 
 const DEFAULT_CACHE_TTL_MS = 45_000
-const DEFAULT_STALE_TTL_MS = 120_000
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isValidRouteData(value: unknown): value is ShuttleArrivalSnapshot['stops'][string][string] {
-  if (!isRecord(value)) return false
-  const upcoming = value.upcomingArrivalSeconds
-  const headway = value.headwaySeconds
-  const validHeadway = headway === null || (
-    isRecord(headway) &&
-    typeof headway.min === 'number' && Number.isFinite(headway.min) && headway.min > 0 &&
-    typeof headway.max === 'number' && Number.isFinite(headway.max) && headway.max >= headway.min &&
-    typeof headway.median === 'number' && Number.isFinite(headway.median) && headway.median >= headway.min && headway.median <= headway.max
-  )
-  return typeof value.nextArrivalSeconds === 'number' &&
-    Number.isFinite(value.nextArrivalSeconds) &&
-    value.nextArrivalSeconds >= 0 &&
-    Array.isArray(upcoming) &&
-    upcoming.every((arrival) => typeof arrival === 'number' && Number.isFinite(arrival) && arrival >= 0) &&
-    validHeadway
+function parseTimestamp(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) {
+    throw new Error(`Shuttle arrival response has an invalid ${label}`)
+  }
+  return value
+}
+
+function normalizeHeadway(
+  value: unknown,
+  arrivals: readonly number[],
+): ShuttleHeadwaySeconds | null {
+  if (arrivals.length < 2 || !isRecord(value)) return null
+  const min = value.min
+  const max = value.max
+  const median = value.median
+  if (
+    typeof min !== 'number' || !Number.isFinite(min) || min <= 0 ||
+    typeof max !== 'number' || !Number.isFinite(max) || max < min ||
+    typeof median !== 'number' || !Number.isFinite(median) || median < min || median > max
+  ) return null
+  const hasPositiveGap = arrivals.some((arrival, index) => index > 0 && arrival > arrivals[index - 1])
+  return hasPositiveGap ? { min, max, median } : null
+}
+
+function normalizeRouteData(value: unknown): ShuttleRouteArrivalData | null {
+  if (!isRecord(value)) return null
+  const nextArrival = value.nextArrivalSeconds
+  const upcoming = Array.isArray(value.upcomingArrivalSeconds)
+    ? value.upcomingArrivalSeconds
+      .filter((arrival): arrival is number => typeof arrival === 'number' && Number.isFinite(arrival) && arrival >= 0)
+    : []
+  const arrivals = [
+    ...(typeof nextArrival === 'number' && Number.isFinite(nextArrival) && nextArrival >= 0 ? [nextArrival] : []),
+    ...upcoming,
+  ].filter((arrival, index, values) => values.indexOf(arrival) === index).sort((first, second) => first - second)
+  if (arrivals.length === 0) return null
+  return {
+    nextArrivalSeconds: arrivals[0],
+    upcomingArrivalSeconds: arrivals,
+    headwaySeconds: normalizeHeadway(value.headwaySeconds, arrivals),
+  }
 }
 
 function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
-  if (!isRecord(input) || typeof input.observedAt !== 'string' || typeof input.expiresAt !== 'string' || !isRecord(input.stops)) {
+  if (!isRecord(input) || !isRecord(input.stops)) {
     throw new Error('Shuttle arrival response was invalid')
+  }
+  const observedAt = parseTimestamp(input.observedAt, 'observedAt')
+  const expiresAt = parseTimestamp(input.expiresAt, 'expiresAt')
+  if (Date.parse(expiresAt) <= Date.parse(observedAt)) {
+    throw new Error('Shuttle arrival response has an invalid expiry range')
   }
 
   const stops: Record<string, ShuttleArrivalSnapshot['stops'][string]> = {}
@@ -61,11 +93,12 @@ function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
     if (!isRecord(routeValue)) continue
     const routes: Record<string, ShuttleArrivalSnapshot['stops'][string][string]> = {}
     for (const [routeId, arrival] of Object.entries(routeValue)) {
-      if (isValidRouteData(arrival)) routes[routeId] = arrival
+      const normalized = normalizeRouteData(arrival)
+      if (normalized) routes[routeId] = normalized
     }
     stops[stopId] = routes
   }
-  return { observedAt: input.observedAt, expiresAt: input.expiresAt, stops }
+  return { observedAt, expiresAt, stops }
 }
 
 function requestKey(stop: ShuttleArrivalStopRequest): string {
@@ -77,7 +110,6 @@ export function createShuttleArrivalClient(
 ): ShuttleArrivalClient {
   const endpoint = options.endpoint ?? `${import.meta.env.BASE_URL}api/shuttle-arrivals`
   const cacheTtlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS
-  const staleTtlMs = options.staleTtlMs ?? DEFAULT_STALE_TTL_MS
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch
   const cache = new Map<string, CachedStop>()
@@ -109,7 +141,6 @@ export function createShuttleArrivalClient(
         return entry
       })
       .catch((error: unknown) => {
-        if (cached && Date.parse(cached.observedAt) + staleTtlMs > now()) return cached
         if (error instanceof Error && error.name === 'AbortError') throw error
         return null
       })

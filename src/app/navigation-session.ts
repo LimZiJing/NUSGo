@@ -394,6 +394,16 @@ export function createNavigationSession(
     setContextualPanel: (contextualPanel) => updateState({ contextualPanel }),
     selectVenue: (venue) => dependencies.map.selectVenue(venue),
     clearVenue: () => dependencies.map.clearVenue(),
+    clearRouteSelection: () => {
+      dependencies.map.setRouteSelection({
+        route: null,
+        overlappingRouteIds: EMPTY_ROUTE_OVERLAP,
+      })
+      updateState({
+        selectedRouteId: null,
+        selectedRouteColor: null,
+      })
+    },
   })
 
 

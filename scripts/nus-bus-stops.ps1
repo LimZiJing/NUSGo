@@ -11,6 +11,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $projectRoot '.env'
 $dotenv = @{}
+$script:nusSession = $null
+$script:nusDeviceId = $null
 
 # Keep credentials out of the client bundle. Process environment variables take
 # precedence over .env values so CI and deployment settings can override local
@@ -65,51 +67,164 @@ function Assert-NoArguments {
     }
 }
 
+function Read-ErrorResponse($ErrorRecord) {
+    $response = $ErrorRecord.Exception.Response
+    if ($null -eq $response) {
+        return $null
+    }
+    try {
+        $reader = [System.IO.StreamReader]::new($response.GetResponseStream())
+        try {
+            $content = $reader.ReadToEnd()
+        } finally {
+            $reader.Dispose()
+        }
+        if ([string]::IsNullOrWhiteSpace($content)) {
+            return $null
+        }
+        return $content | ConvertFrom-Json
+    } catch {
+        return $null
+    }
+}
+
+function Refresh-NusSession {
+    $accessTokenUrl = Get-Setting 'NUS_ACCESS_TOKEN_URL' 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
+    $htdApi = Require-Setting 'NUS_X_HTD_API'
+    $appApi = Require-Setting 'NUS_X_APP_API'
+    if ([string]::IsNullOrWhiteSpace($script:nusDeviceId)) {
+        $script:nusDeviceId = Get-Setting 'NUS_DEVICE_ID'
+        if ([string]::IsNullOrWhiteSpace($script:nusDeviceId)) {
+            $script:nusDeviceId = [guid]::NewGuid().ToString()
+        }
+    }
+
+    $bodyJson = [ordered]@{
+        deviceid = $script:nusDeviceId
+        ipaddr   = Get-Setting 'NUS_IPADDR' '0.0.0.0'
+        version  = Get-Setting 'NUS_APP_VERSION' 'univus_android_2.59.2_140'
+    } | ConvertTo-Json -Compress
+
+    try {
+        $response = Invoke-RestMethod `
+            -Uri $accessTokenUrl `
+            -Method Post `
+            -Headers @{
+                Accept       = 'application/json'
+                'X-HTD-API'  = $htdApi
+                'X-APP-API'  = $appApi
+            } `
+            -ContentType 'application/json' `
+            -Body $bodyJson
+    } catch {
+        throw "NUS access-token request failed: $($_.Exception.Message)"
+    }
+
+    if ($null -eq $response.data -or
+        [string]::IsNullOrWhiteSpace([string]$response.data.token) -or
+        [string]::IsNullOrWhiteSpace([string]$response.data.userid) -or
+        [string]::IsNullOrWhiteSpace([string]$response.data.domain)) {
+        throw 'NUS access-token response did not contain a usable session.'
+    }
+
+    $script:nusSession = [pscustomobject]@{
+        token  = [string]$response.data.token
+        userId = [string]$response.data.userid
+        domain = [string]$response.data.domain
+    }
+    return $script:nusSession
+}
+
+function Get-NusSession {
+    if ($null -ne $script:nusSession) {
+        return $script:nusSession
+    }
+
+    $token = Get-Setting 'NUS_UNIVUS_JWT'
+    $userId = Get-Setting 'NUS_USER_ID'
+    if (-not [string]::IsNullOrWhiteSpace($token) -and -not [string]::IsNullOrWhiteSpace($userId)) {
+        if ([string]::IsNullOrWhiteSpace($script:nusDeviceId)) {
+            $script:nusDeviceId = Get-Setting 'NUS_DEVICE_ID'
+            if ([string]::IsNullOrWhiteSpace($script:nusDeviceId)) {
+                $script:nusDeviceId = [guid]::NewGuid().ToString()
+            }
+        }
+        $script:nusSession = [pscustomobject]@{
+            token  = $token
+            userId = $userId
+            domain = Get-Setting 'NUS_DOMAIN' 'PUBLIC'
+        }
+        return $script:nusSession
+    }
+
+    return Refresh-NusSession
+}
+
+function Invoke-BusProxyRequest([string] $Uri, [hashtable] $Headers, [string] $BodyJson) {
+    try {
+        return Invoke-RestMethod `
+            -Uri $Uri `
+            -Method Post `
+            -Headers $Headers `
+            -ContentType 'application/json; charset=utf-8' `
+            -Body $BodyJson
+    } catch {
+        $errorResponse = Read-ErrorResponse $_
+        if ($null -ne $errorResponse -and [string]$errorResponse.code -eq '10011') {
+            return $errorResponse
+        }
+        throw
+    }
+}
+
 function Invoke-BusProxy([string] $Endpoint, [hashtable] $Extra = @{}) {
     $proxyBaseUrl = Require-Setting 'NUS_BUS_PROXY_BASE_URL'
     $htdApi = Require-Setting 'NUS_X_HTD_API'
     $appApi = Require-Setting 'NUS_X_APP_API'
     $apiKey = Require-Setting 'NUS_X_API_KEY'
-    $jwt = Require-Setting 'NUS_UNIVUS_JWT'
-    $userId = Require-Setting 'NUS_USER_ID'
-    $deviceId = Get-Setting 'NUS_DEVICE_ID'
-    if ([string]::IsNullOrWhiteSpace($deviceId)) {
-        # The proxy accepts a generated device ID for one-off diagnostic calls.
-        $deviceId = [guid]::NewGuid().ToString()
-    }
+    $session = Get-NusSession
 
-    $body = [ordered]@{
-        deviceid = $deviceId
-        domain   = Get-Setting 'NUS_DOMAIN' 'PUBLIC'
-        ipaddr   = Get-Setting 'NUS_IPADDR' '0.0.0.0'
-        token    = $jwt
-        userid   = $userId
-        version  = Get-Setting 'NUS_APP_VERSION' 'univus_android_2.59.2_140'
-    }
-    # Each endpoint adds its own fields while sharing the common UniVus body.
-    foreach ($entry in $Extra.GetEnumerator()) {
-        $body[$entry.Key] = $entry.Value
-    }
+    for ($attempt = 0; $attempt -lt 2; $attempt++) {
+        $body = [ordered]@{
+            deviceid = $script:nusDeviceId
+            domain   = $session.domain
+            ipaddr   = Get-Setting 'NUS_IPADDR' '0.0.0.0'
+            token    = $session.token
+            userid   = $session.userId
+            version  = Get-Setting 'NUS_APP_VERSION' 'univus_android_2.59.2_140'
+        }
+        # Each endpoint adds its own fields while sharing the common UniVus body.
+        foreach ($entry in $Extra.GetEnumerator()) {
+            $body[$entry.Key] = $entry.Value
+        }
 
-    $bodyJson = $body | ConvertTo-Json -Compress
-    $headers = @{
-        # The API contract requires the raw JWT in token and Bearer here.
-        Authorization = "Bearer $jwt"
-        'X-HTD-API'   = $htdApi
-        'X-APP-API'   = $appApi
-        'X-API-KEY'   = $apiKey
+        $bodyJson = $body | ConvertTo-Json -Compress
+        $headers = @{
+            # The API contract requires the raw JWT in token and Bearer here.
+            Authorization = "Bearer $($session.token)"
+            'X-HTD-API'   = $htdApi
+            'X-APP-API'   = $appApi
+            'X-API-KEY'   = $apiKey
+        }
+
+        # Invoke-RestMethod keeps the JSON string intact. Windows PowerShell can
+        # strip JSON quotes when the same body is passed to native curl.exe.
+        $response = Invoke-BusProxyRequest `
+            -Uri "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint" `
+            -Headers $headers `
+            -BodyJson $bodyJson
+
+        if ([string]$response.code -eq '10011') {
+            if ($attempt -eq 1) {
+                throw 'NUS session remained expired after refreshing the token.'
+            }
+            $session = Refresh-NusSession
+            continue
+        }
+
+        $response | ConvertTo-Json -Depth 20
+        return
     }
-
-    # Invoke-RestMethod keeps the JSON string intact. Windows PowerShell can
-    # strip JSON quotes when the same body is passed to native curl.exe.
-    $response = Invoke-RestMethod `
-        -Uri "$proxyBaseUrl/univus/api/bus-proxy/$Endpoint" `
-        -Method Post `
-        -Headers $headers `
-        -ContentType 'application/json; charset=utf-8' `
-        -Body $bodyJson
-
-    $response | ConvertTo-Json -Depth 20
 }
 
 if ($Command -in @('help', '--help', '-h')) {

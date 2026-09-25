@@ -19,6 +19,8 @@ These are planning estimates, not observed timetables. When the development
 server has the NUS bus API settings, NavUS also requests live stop arrivals
 through its same-origin `/api/shuttle-arrivals` endpoint. The server caches
 each stop response briefly and keeps the credentials out of the browser.
+If a NUS response reports code `10011`, the server refreshes the UniVus access
+token from the configured access-token endpoint and retries that request once.
 
 The planner uses the next live arrival for the first boarding and the first
 arrival after the expected transfer time for later boardings. If the live

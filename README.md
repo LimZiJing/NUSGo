@@ -80,10 +80,15 @@ a local PowerShell wrapper around the verified `curl.exe` request for NUS intern
 bus stops.
 
 1. Copy `.env.example` to `.env`.
-2. Fill in `NUS_X_API_KEY`, `NUS_UNIVUS_JWT`, and the matching `NUS_USER_ID`.
-   Keep `NUS_APP_VERSION` in the full ESB format used by the Android app, such
-   as `univus_android_2.59.2_140`.
-3. Run the internal bus-stop check:
+2. Fill in `NUS_X_API_KEY` and the two API header values. `NUS_UNIVUS_JWT` and
+   `NUS_USER_ID` may be supplied as bootstrap values, but they are optional when
+   the access-token settings are configured. Keep `NUS_APP_VERSION` in the full
+   ESB format used by the Android app, such as `univus_android_2.59.2_140`.
+3. Keep `NUS_ACCESS_TOKEN_URL` pointed at the UniVus access-token endpoint. The
+   server requests a replacement token when NUS returns code `10011`, retries
+   the failed request once, and keeps the refreshed token in memory. Tokens are
+   never sent to the browser or written to the repository.
+4. Run the internal bus-stop check:
 
 ```bash
 npm run bus:call -- bus-stops

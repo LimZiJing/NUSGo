@@ -6,6 +6,12 @@ import type { ShuttleRouteArrivalData } from './src/domain/transit/arrivals.js'
 import { parseShuttleServiceResponse } from './src/infrastructure/shuttle-arrivals/response.js'
 import type { ShuttleServiceWindow } from './src/domain/transit/service-hours.js'
 import { parseRouteServiceWindows } from './src/infrastructure/shuttle-service-hours/response.js'
+import {
+  createNusAuthenticatedClient,
+  type NusApiRequest,
+  type NusApiSession,
+  type NusAuthenticatedClient,
+} from './src/infrastructure/nus-api/client.js'
 
 interface RequestedStop {
   readonly stopId: string
@@ -26,6 +32,7 @@ interface CachedServiceWindows {
 const SHUTTLE_CACHE_TTL_MS = 45_000
 const SHUTTLE_STALE_CACHE_TTL_MS = 120_000
 const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
+const DEFAULT_ACCESS_TOKEN_URL = 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
 
 function sendJson(
   response: ServerResponse,
@@ -70,55 +77,36 @@ function getRequiredEnv(env: Record<string, string>, name: string): string {
   return value
 }
 
-function createShuttleServiceRequest(env: Record<string, string>, stopName: string): RequestInit & { url: string } {
-  const jwt = getRequiredEnv(env, 'NUS_UNIVUS_JWT')
+function createBusProxyRequest(
+  env: Record<string, string>,
+  session: NusApiSession,
+  deviceId: string,
+  endpoint: string,
+  extraBody: Record<string, string>,
+): NusApiRequest {
   const baseUrl = getRequiredEnv(env, 'NUS_BUS_PROXY_BASE_URL').replace(/\/+$/, '')
   const body = {
-    busstopname: stopName,
-    deviceid: env.NUS_DEVICE_ID?.trim() || randomUUID(),
-    domain: env.NUS_DOMAIN?.trim() || 'PUBLIC',
+    ...extraBody,
+    deviceid: deviceId,
+    domain: session.domain,
     ipaddr: env.NUS_IPADDR?.trim() || '0.0.0.0',
-    token: jwt,
-    userid: getRequiredEnv(env, 'NUS_USER_ID'),
+    token: session.token,
+    userid: session.userId,
     version: env.NUS_APP_VERSION?.trim() || 'univus_android_2.59.2_140',
   }
   return {
-    url: `${baseUrl}/univus/api/bus-proxy/shuttle-service`,
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json; charset=utf-8',
-      'X-HTD-API': getRequiredEnv(env, 'NUS_X_HTD_API'),
-      'X-APP-API': getRequiredEnv(env, 'NUS_X_APP_API'),
-      'X-API-KEY': getRequiredEnv(env, 'NUS_X_API_KEY'),
+    url: `${baseUrl}/univus/api/bus-proxy/${endpoint}`,
+    init: {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-HTD-API': getRequiredEnv(env, 'NUS_X_HTD_API'),
+        'X-APP-API': getRequiredEnv(env, 'NUS_X_APP_API'),
+        'X-API-KEY': getRequiredEnv(env, 'NUS_X_API_KEY'),
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  }
-}
-
-function createRouteServiceRequest(env: Record<string, string>, routeId: string): RequestInit & { url: string } {
-  const jwt = getRequiredEnv(env, 'NUS_UNIVUS_JWT')
-  const baseUrl = getRequiredEnv(env, 'NUS_BUS_PROXY_BASE_URL').replace(/\/+$/, '')
-  const body = {
-    route_code: routeId,
-    deviceid: env.NUS_DEVICE_ID?.trim() || randomUUID(),
-    domain: env.NUS_DOMAIN?.trim() || 'PUBLIC',
-    ipaddr: env.NUS_IPADDR?.trim() || '0.0.0.0',
-    token: jwt,
-    userid: getRequiredEnv(env, 'NUS_USER_ID'),
-    version: env.NUS_APP_VERSION?.trim() || 'univus_android_2.59.2_140',
-  }
-  return {
-    url: `${baseUrl}/univus/api/bus-proxy/route-min-max-time`,
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json; charset=utf-8',
-      'X-HTD-API': getRequiredEnv(env, 'NUS_X_HTD_API'),
-      'X-APP-API': getRequiredEnv(env, 'NUS_X_APP_API'),
-      'X-API-KEY': getRequiredEnv(env, 'NUS_X_API_KEY'),
-    },
-    body: JSON.stringify(body),
   }
 }
 
@@ -127,6 +115,25 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
   const inFlight = new Map<string, Promise<CachedStopArrival | null>>()
   const serviceWindowsCache = new Map<string, CachedServiceWindows>()
   const serviceWindowsInFlight = new Map<string, Promise<CachedServiceWindows | null>>()
+  let nusClient: NusAuthenticatedClient | null = null
+  let deviceId: string | null = null
+
+  const getNusClient = (): NusAuthenticatedClient => {
+    if (nusClient) return nusClient
+    deviceId = env.NUS_DEVICE_ID?.trim() || randomUUID()
+    nusClient = createNusAuthenticatedClient({
+      accessTokenUrl: env.NUS_ACCESS_TOKEN_URL?.trim() || DEFAULT_ACCESS_TOKEN_URL,
+      htdApi: getRequiredEnv(env, 'NUS_X_HTD_API'),
+      appApi: getRequiredEnv(env, 'NUS_X_APP_API'),
+      deviceId,
+      ipaddr: env.NUS_IPADDR?.trim() || '0.0.0.0',
+      version: env.NUS_APP_VERSION?.trim() || 'univus_android_2.59.2_140',
+      initialToken: env.NUS_UNIVUS_JWT,
+      initialUserId: env.NUS_USER_ID,
+      initialDomain: env.NUS_DOMAIN,
+    })
+    return nusClient
+  }
 
   const loadStop = async (stopName: string): Promise<CachedStopArrival | null> => {
     const cached = cache.get(stopName)
@@ -136,10 +143,14 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
 
     const request = (async () => {
       try {
-        const requestOptions = createShuttleServiceRequest(env, stopName)
-        const response = await fetch(requestOptions.url, requestOptions)
-        if (!response.ok) throw new Error(`NUS shuttle-service request failed: ${response.status}`)
-        const parsed = parseShuttleServiceResponse(await response.json() as unknown)
+        const payload = await getNusClient().requestJson((session) => createBusProxyRequest(
+          env,
+          session,
+          deviceId!,
+          'shuttle-service',
+          { busstopname: stopName },
+        ), 'shuttle-service')
+        const parsed = parseShuttleServiceResponse(payload)
         const observedAt = new Date().toISOString()
         const entry: CachedStopArrival = {
           observedAt,
@@ -168,12 +179,16 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
 
     const request = (async () => {
       try {
-        const requestOptions = createRouteServiceRequest(env, routeId)
-        const response = await fetch(requestOptions.url, requestOptions)
-        if (!response.ok) throw new Error(`NUS route-min-max-time request failed: ${response.status}`)
+        const payload = await getNusClient().requestJson((session) => createBusProxyRequest(
+          env,
+          session,
+          deviceId!,
+          'route-min-max-time',
+          { route_code: routeId },
+        ), 'route-min-max-time')
         const entry: CachedServiceWindows = {
           expiresAt: new Date(Date.now() + SERVICE_WINDOWS_CACHE_TTL_MS).toISOString(),
-          windows: parseRouteServiceWindows(await response.json() as unknown, routeId),
+          windows: parseRouteServiceWindows(payload, routeId),
         }
         serviceWindowsCache.set(routeId, entry)
         return entry

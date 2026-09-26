@@ -469,7 +469,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<MinimizedPanelHarness />)
 
-    const panel = screen.getByRole('region', { name: 'Explore NUS' })
+    const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('data-minimized')).toBe('true')
     expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
 
@@ -584,11 +584,13 @@ describe('ContextualPanel accessibility workflows', () => {
 
     await waitFor(() => expect(document.activeElement).toBe(search))
 
-    const panel = screen.getByRole('region', { name: 'Explore NUS' })
+    const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('aria-labelledby')).toBe('contextual-panel-heading')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Browse shuttle routes' })).toBeTruthy()
+    expect(screen.getByText('Search for a venue')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Browse shuttle routes' })).toBeNull()
+    expect(screen.queryByText('Search by venue code or room name.')).toBeNull()
   })
 
   it('preserves query history, operates by keyboard, and focuses venue details', async () => {
@@ -616,6 +618,7 @@ describe('ContextualPanel accessibility workflows', () => {
   it('keeps desktop route selection and its Back, Escape, and Close focus behavior', async () => {
     const user = userEvent.setup()
     render(<PanelHarness mobileViewport={false} />)
+    await user.click(screen.getByRole('button', { name: 'Close map context' }))
     const opener = screen.getByRole('button', { name: 'Browse shuttle routes' })
 
     await user.click(opener)
@@ -643,6 +646,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<PanelHarness />)
 
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
     await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
     expect(screen.getByRole('button', { name: 'Explore' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
@@ -678,7 +682,7 @@ describe('ContextualPanel accessibility workflows', () => {
 
     const findVenue = screen.getByRole('button', { name: 'Find a venue' })
     await user.click(findVenue)
-    await user.click(screen.getByRole('button', { name: 'Close map context' }))
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Find a venue' })))
   })
 

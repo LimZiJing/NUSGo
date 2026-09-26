@@ -34,12 +34,15 @@ function renderPanel(
 }
 
 describe('ContextualPanel', () => {
-  it('starts with venue search and a shuttle browsing action', () => {
+  it('starts with a venue search view without a route shortcut', () => {
     const markup = renderPanel()
 
     expect(markup).toContain('id="contextual-venue-search-input"')
-    expect(markup).toContain('Browse shuttle routes')
-    expect(markup).toContain('Search by venue code or room name.')
+    expect(markup).toContain('>Find a venue</h2>')
+    expect(markup).toContain('aria-labelledby="contextual-panel-heading"')
+    expect(markup).toContain('Search for a venue')
+    expect(markup).not.toContain('Browse shuttle routes')
+    expect(markup).not.toContain('Search by venue code or room name.')
   })
 
   it('shows venue details without rendering a map popup', () => {

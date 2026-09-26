@@ -72,6 +72,7 @@ function getPanelHeading(
     return selectedRouteId ? `${selectedRouteId} Shuttle` : 'Shuttle route details'
   }
   if (state.mode === 'venue-detail') return 'Venue details'
+  if (state.mode === 'venue-search') return 'Find a venue'
   return 'Explore NUS'
 }
 
@@ -548,10 +549,10 @@ export function ContextualPanel({
 
       {state.mode === 'venue-search' && (
         <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
-          <label htmlFor="contextual-venue-search-input">Find a venue</label>
           <div className="contextual-panel-search-row">
             <input
               id="contextual-venue-search-input"
+              aria-labelledby="contextual-panel-heading"
               type="search"
               placeholder="e.g. COM1-0210"
               value={state.query}
@@ -592,16 +593,15 @@ export function ContextualPanel({
                 <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
               )}
             </div>
-          ) : (
-            <p className="contextual-panel-status">Search by venue code or room name.</p>
-          )}
-          <button
-            data-contextual-focus-id="venue-search-shuttle-opener"
-            type="button"
-            onClick={handleOpenShuttle}
-          >
-            Browse shuttle routes
-          </button>
+          ) : mobileViewport ? (
+            <div className="contextual-panel-search-prompt">
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
+                <circle cx="14" cy="14" r="8" />
+                <path d="m20 20 7 7" />
+              </svg>
+              <p>Search for a venue</p>
+            </div>
+          ) : null}
         </div>
       )}
 

@@ -88,6 +88,39 @@ describe('TripEndpointControls interactions', () => {
     expect(document.activeElement).toBe(toggle)
   })
 
+  it('only shows endpoint validation when the request needs attention', () => {
+    const networkIndex = createTransitIndex(createValidTransitNetwork())
+    const controls = {
+      venues,
+      networkIndex,
+      onExpandedChange: () => undefined,
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+    }
+
+    const { rerender } = render(
+      <TripEndpointControls
+        {...controls}
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+      />,
+    )
+
+    expect(screen.queryByText('Origin and destination are set.')).toBeNull()
+    rerender(<TripEndpointControls {...controls} tripRequest={{ origin: null, destination: null }} />)
+    const validation = screen.getByText('Origin is required.')
+    expect(validation).toBeTruthy()
+    expect(within(validation.parentElement as HTMLElement)
+      .getByRole('button', { name: 'Clear all' }))
+      .toBeTruthy()
+  })
+
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {
     const user = userEvent.setup()
     render(<TripEndpointHarness />)
@@ -309,8 +342,9 @@ describe('TripEndpointControls interactions', () => {
     await user.tab()
     expect(document.activeElement).toBe(originResult)
     await user.keyboard('{Enter}')
-    expect(within(screen.getByRole('region', { name: 'Origin' })).getByText('Computing 1, Level 2')).toBeTruthy()
-    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
+    expect((within(screen.getByRole('region', { name: 'Origin' }))
+      .getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value)
+      .toBe('Computing 1, Level 2')
 
     const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
     await user.type(destinationSearch, 'STOP-A')
@@ -319,25 +353,41 @@ describe('TripEndpointControls interactions', () => {
     await user.tab()
     expect(document.activeElement).toBe(destinationResult)
     await user.keyboard('{Enter}')
-    expect(within(screen.getByRole('region', { name: 'Destination' })).getByText('Stop A')).toBeTruthy()
-    expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value).toBe('')
+    expect((within(screen.getByRole('region', { name: 'Destination' }))
+      .getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value)
+      .toBe('Stop A')
 
     const swap = screen.getByRole('button', { name: 'Swap origin and destination' })
     expect((swap as HTMLButtonElement).disabled).toBe(false)
     await user.click(swap)
-    expect(within(screen.getByRole('region', { name: 'Origin' })).getByText('Stop A')).toBeTruthy()
-    expect(within(screen.getByRole('region', { name: 'Destination' })).getByText('Computing 1, Level 2')).toBeTruthy()
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('Stop A')
+    expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value)
+      .toBe('Computing 1, Level 2')
 
     await user.type(screen.getByRole('searchbox', { name: 'Origin' }), 'STOP')
     await user.type(screen.getByRole('searchbox', { name: 'Destination' }), 'COM1')
 
-    await user.click(screen.getByRole('button', { name: 'Clear both endpoints' }))
-    expect(screen.getByText('No origin selected')).toBeTruthy()
-    expect(screen.getByText('No destination selected')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
     expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('group', { name: 'Origin search results' })).toBeNull()
     expect(screen.queryByRole('group', { name: 'Destination search results' })).toBeNull()
     expect(screen.getByRole('region', { name: 'Trip endpoints' })).toBeTruthy()
+  })
+
+  it('clears a selected endpoint with its inline X control', async () => {
+    const user = userEvent.setup()
+    render(<TripEndpointHarness />)
+
+    const originSearch = screen.getByRole('searchbox', { name: 'Origin' })
+    await user.type(originSearch, 'COM1')
+    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210' }))
+
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value)
+      .toBe('Computing 1, Level 2')
+    await user.click(screen.getByRole('button', { name: 'Clear origin' }))
+
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
+    expect(screen.queryByRole('button', { name: 'Clear origin' })).toBeNull()
   })
 })

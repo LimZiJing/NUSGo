@@ -128,12 +128,16 @@ route outside its service window cannot create a shuttle edge.
 The normal application policy is named
 `unavailable-without-verified-headway`:
 
-- missing, invalid, partial, stale, or expired waiting data removes only the
-  affected shuttle edge;
+- a valid snapshot with no arrival for a route removes only the affected
+  shuttle edge;
 - other complete shuttle paths remain eligible;
 - a valid walking-only Journey remains eligible; and
 - if no complete Journey remains, NavUS reports that no recommended Journey is
   currently available and identifies the missing timing data.
+
+Provider fetch, HTTP, authentication, and response-validation failures are
+different from a valid no-bus response. They fail journey planning and must
+not silently switch to walking.
 
 `zeroShuttleWaitingTime` is an explicit offline or test policy only. It must be
 selected deliberately and communicated as such. It must not be an unlabelled

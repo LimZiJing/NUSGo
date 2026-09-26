@@ -195,7 +195,9 @@ export function TripEndpointControls({
           disabled={!tripRequest.origin || !tripRequest.destination}
           aria-label="Swap origin and destination"
         >
-          Swap
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <path d="M7 5v14m0 0-4-4m4 4 4-4M17 19V5m0 0-4 4m4-4 4 4" />
+          </svg>
         </button>
       </div>
       <div
@@ -204,37 +206,45 @@ export function TripEndpointControls({
         data-expanded={isExpanded}
         data-mobile-sheet-content
       >
-        <TripEndpointControl
-          role="origin"
-          endpoint={tripRequest.origin}
-          venues={venues}
-          networkIndex={networkIndex}
-          searchQuery={searchQueries.origin}
-          onSearchQueryChange={(query) => setSearchQuery('origin', query)}
-          onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
-          onClear={onClearOriginEndpoint}
-        />
-        <TripEndpointControl
-          role="destination"
-          endpoint={tripRequest.destination}
-          venues={venues}
-          networkIndex={networkIndex}
-          searchQuery={searchQueries.destination}
-          onSearchQueryChange={(query) => setSearchQuery('destination', query)}
-          onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
-          onClear={onClearDestinationEndpoint}
-        />
-        <button
-          type="button"
-          className="trip-clear-both"
-          onClick={clearTrip}
-          disabled={!tripRequest.origin && !tripRequest.destination}
-        >
-          Clear both endpoints
-        </button>
-        <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
-          {tripValidation ?? 'Origin and destination are set.'}
-        </p>
+        <div className="trip-endpoint-picker">
+          <TripEndpointControl
+            key={`origin:${tripRequest.origin?.kind ?? 'none'}:${tripRequest.origin?.id ?? 'none'}`}
+            role="origin"
+            endpoint={tripRequest.origin}
+            venues={venues}
+            networkIndex={networkIndex}
+            searchQuery={searchQueries.origin}
+            onSearchQueryChange={(query) => setSearchQuery('origin', query)}
+            onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
+            onClear={onClearOriginEndpoint}
+          />
+          <TripEndpointControl
+            key={`destination:${tripRequest.destination?.kind ?? 'none'}:${tripRequest.destination?.id ?? 'none'}`}
+            role="destination"
+            endpoint={tripRequest.destination}
+            venues={venues}
+            networkIndex={networkIndex}
+            searchQuery={searchQueries.destination}
+            onSearchQueryChange={(query) => setSearchQuery('destination', query)}
+            onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
+            onClear={onClearDestinationEndpoint}
+          />
+        </div>
+        <div className="trip-controls-footer">
+          {tripValidation && (
+            <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
+              {tripValidation}
+            </p>
+          )}
+          <button
+            type="button"
+            className="trip-clear-both"
+            onClick={clearTrip}
+            disabled={!tripRequest.origin && !tripRequest.destination}
+          >
+            Clear all
+          </button>
+        </div>
         <TripJourneyResult
           state={journey}
           venues={venues}
@@ -259,94 +269,108 @@ export function TripEndpointControl({
   const inputId = `trip-${role}-search`
   const statusId = `trip-${role}-search-status`
   const hasLocationData = venues !== null || networkIndex !== null
+  const [editing, setEditing] = useState(endpoint === null)
   const results = useMemo(
     () => searchTripLocations(venues ?? {}, networkIndex ?? [], searchQuery),
     [searchQuery, networkIndex, venues],
   )
   const showResults = searchQuery.trim().length > 0
+  const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex) : ''
+  const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
   const searchStatus = !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : showResults
       ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`
-      : 'Search venues and shuttle stops by code, name, or stop ID.'
+      : endpoint
+        ? `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
+        : ''
+
+  const clearEndpoint = (): void => {
+    onSearchQueryChange('')
+    if (endpoint) onClear()
+  }
 
   return (
-    <section className="trip-endpoint-control" aria-labelledby={`${inputId}-label`}>
-      <div className="trip-endpoint-heading">
-        <label id={`${inputId}-label`} htmlFor={inputId}>{roleLabel}</label>
-        <button
-          type="button"
-          className="trip-endpoint-clear"
-          onClick={onClear}
-          disabled={!endpoint}
-          aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
-        >
-          Clear
-        </button>
-      </div>
-
-      <div className="trip-endpoint-search-row">
-        <SearchField
-          id={inputId}
-          value={searchQuery}
-          placeholder={`Search ${roleLabel.toLocaleLowerCase()} venue or stop`}
-          onChange={(event) => onSearchQueryChange(event.target.value)}
-          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-            if (event.key !== 'Escape' || !searchQuery) return
-            event.preventDefault()
-            event.stopPropagation()
-            onSearchQueryChange('')
-          }}
-          autoComplete="off"
-          aria-describedby={statusId}
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            className="trip-endpoint-search-clear"
-            onClick={() => onSearchQueryChange('')}
-            aria-label={`Clear ${roleLabel.toLocaleLowerCase()} search`}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      <p className="trip-endpoint-selection">
-        <span>Selected:</span>{' '}
-        <strong>
-          {endpoint
-            ? getEndpointLabel(endpoint, venues, networkIndex)
-            : `No ${roleLabel.toLocaleLowerCase()} selected`}
-        </strong>
-        {endpoint && <span className="trip-endpoint-id"> ({endpoint.id})</span>}
-      </p>
-
-      <p id={statusId} className="trip-endpoint-search-status" role="status" aria-live="polite">
-        {searchStatus}
-      </p>
-
-      {showResults && hasLocationData && (
-        <div className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
-          {results.length > 0 ? (
-            results.map((result) => (
-              <button
-                className="trip-endpoint-result"
-                type="button"
-                key={`${result.endpoint.kind}:${result.endpoint.id}`}
-                onClick={() => onSelect(result.endpoint)}
-                aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}
-              >
-                <strong>{getResultLabel(result)}</strong>
-                <span>{result.label}</span>
-                <span>{result.detail}</span>
-              </button>
-            ))
-          ) : (
-            <p className="trip-endpoint-empty">No matching venues or shuttle stops</p>
+    <section
+      className={`trip-endpoint-control trip-endpoint-control-${role}`}
+      aria-labelledby={`${inputId}-label`}
+    >
+      <span className="trip-endpoint-marker" aria-hidden="true" />
+      <div className="trip-endpoint-field">
+        <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
+        <div className="trip-endpoint-input-row">
+          <SearchField
+            id={inputId}
+            value={inputValue}
+            placeholder={role === 'origin' ? 'Choose starting point' : 'Choose destination'}
+            onFocus={() => {
+              if (endpoint && !editing) {
+                setEditing(true)
+                onSearchQueryChange('')
+              }
+            }}
+            onBlur={() => {
+              if (endpoint && !searchQuery) setEditing(false)
+            }}
+            onChange={(event) => {
+              setEditing(true)
+              onSearchQueryChange(event.target.value)
+            }}
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+              if (event.key !== 'Escape') return
+              if (!searchQuery && endpoint && editing) {
+                event.preventDefault()
+                event.stopPropagation()
+                setEditing(false)
+                return
+              }
+              if (!searchQuery) return
+              event.preventDefault()
+              event.stopPropagation()
+              onSearchQueryChange('')
+            }}
+            autoComplete="off"
+            aria-describedby={statusId}
+          />
+          {(endpoint || searchQuery) && (
+            <button
+              type="button"
+              className="trip-endpoint-clear"
+              onClick={clearEndpoint}
+              aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
+            >
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                <path d="m6 6 12 12M18 6 6 18" />
+              </svg>
+            </button>
           )}
         </div>
-      )}
+        <p id={statusId} className="trip-endpoint-search-status visually-hidden" role="status" aria-live="polite">
+          {searchStatus}
+        </p>
+
+        {showResults && hasLocationData && (
+          <div className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
+            {results.length > 0 ? (
+              results.map((result) => (
+                <button
+                  className="trip-endpoint-result"
+                  type="button"
+                  key={`${result.endpoint.kind}:${result.endpoint.id}`}
+                  onClick={() => onSelect(result.endpoint)}
+                  aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}
+                >
+                  <strong>{getResultLabel(result)}</strong>
+                  <span>{result.label}</span>
+                  <span>{result.detail}</span>
+                </button>
+              ))
+            ) : (
+              <p className="trip-endpoint-empty">No matching venues or shuttle stops</p>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   )
 }

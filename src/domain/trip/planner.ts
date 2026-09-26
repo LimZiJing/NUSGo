@@ -70,6 +70,7 @@ interface ShuttleJourneyEdge extends JourneyEdgeBase {
   readonly rideSeconds: number
   readonly record: ShuttleTimingRecord
   readonly geometry: JourneyLineString
+  readonly reachesRouteTerminal: boolean
 }
 
 type JourneyEdge = WalkingJourneyEdge | ShuttleJourneyEdge
@@ -80,6 +81,7 @@ interface ResolvedJourneyEdge {
   readonly distanceMeters: number
   readonly walkingDistanceMeters: number
   readonly shuttleBoardings: number
+  readonly reachesRouteTerminal: boolean
   readonly leg: JourneyLeg
   readonly sequenceKey: string
 }
@@ -91,6 +93,7 @@ interface JourneyPath {
   readonly walkingDistanceMeters: number
   readonly shuttleBoardings: number
   readonly lastShuttleRouteId: string | null
+  readonly lastShuttleReachedTerminal: boolean
   readonly legs: readonly JourneyLeg[]
   readonly sequenceKey: string
 }
@@ -105,6 +108,7 @@ interface ProjectedPoint {
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
+const MAX_PATH_LABELS_PER_STATE = 8
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -357,6 +361,7 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
     walkingDistanceMeters: path.walkingDistanceMeters + edge.walkingDistanceMeters,
     shuttleBoardings: path.shuttleBoardings + edge.shuttleBoardings,
     lastShuttleRouteId: edge.leg.mode === 'shuttle' ? edge.leg.routeId : null,
+    lastShuttleReachedTerminal: edge.leg.mode === 'shuttle' ? edge.reachesRouteTerminal : false,
     legs: [...path.legs, edge.leg],
     sequenceKey: path.sequenceKey
       ? `${path.sequenceKey}|${edge.sequenceKey}`
@@ -365,7 +370,50 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
 }
 
 function journeyPathStateKey(path: JourneyPath): string {
-  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}`
+  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}`
+}
+
+function retainPathLabels(
+  labelsByState: Map<string, JourneyPath[]>,
+  path: JourneyPath,
+): boolean {
+  const stateKey = journeyPathStateKey(path)
+  const labels = labelsByState.get(stateKey) ?? []
+  if (labels.some((label) => label.sequenceKey === path.sequenceKey)) return false
+
+  labels.push(path)
+  labels.sort(comparePaths)
+  if (labels.length > MAX_PATH_LABELS_PER_STATE) {
+    const earlyLabels = labels.slice(0, Math.floor(MAX_PATH_LABELS_PER_STATE / 2))
+    const lateLabels = labels.slice(-Math.ceil(MAX_PATH_LABELS_PER_STATE / 2))
+    labelsByState.set(stateKey, [...earlyLabels, ...lateLabels])
+  } else {
+    labelsByState.set(stateKey, labels)
+  }
+
+  return labelsByState.get(stateKey)?.some((label) => label.sequenceKey === path.sequenceKey) ?? false
+}
+
+function hasPathLabel(
+  labelsByState: ReadonlyMap<string, readonly JourneyPath[]>,
+  path: JourneyPath,
+): boolean {
+  return labelsByState.get(journeyPathStateKey(path))?.some(
+    (label) => label.sequenceKey === path.sequenceKey,
+  ) ?? false
+}
+
+function isUpstreamBoarding(
+  origin: TripEndpoint,
+  edge: ShuttleJourneyEdge,
+  transitIndex: TransitIndex,
+): boolean {
+  if (origin.kind !== 'stop') return false
+  const route = transitIndex.routeById.get(edge.routeId)
+  if (!route) return false
+  const originIndex = route.stopIds.indexOf(origin.id)
+  const boardingIndex = route.stopIds.indexOf(edge.fromStopId)
+  return originIndex >= 0 && boardingIndex >= 0 && boardingIndex < originIndex
 }
 
 function resolveJourneyEdge(
@@ -373,7 +421,9 @@ function resolveJourneyEdge(
   elapsedSeconds: number,
   getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
 ): ResolvedJourneyEdge | null {
-  if (edge.kind === 'walking') return edge
+  if (edge.kind === 'walking') {
+    return { ...edge, reachesRouteTerminal: false }
+  }
 
   const waitingSeconds = getShuttleWaitingSeconds(edge.record, {
     routeId: edge.routeId,
@@ -392,6 +442,7 @@ function resolveJourneyEdge(
     distanceMeters: edge.distanceMeters,
     walkingDistanceMeters: edge.walkingDistanceMeters,
     shuttleBoardings: edge.shuttleBoardings,
+    reachesRouteTerminal: edge.kind === 'shuttle' && edge.reachesRouteTerminal,
     leg: createShuttleLeg(
       edge.routeId,
       edge.fromStopId,
@@ -483,6 +534,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
           record,
           geometry: sliced.geometry,
           sequenceKey: `shuttle:${route.id}:${fromStopId}>${toStopId}`,
+          reachesRouteTerminal: toIndex === route.stopIds.length - 1 && toStopId === route.stopIds[0],
         })
       }
     }
@@ -498,6 +550,7 @@ function findBestPath(
   graph: Map<string, JourneyEdge[]>,
   origin: TripEndpoint,
   destination: TripEndpoint,
+  transitIndex: TransitIndex,
   getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
 ): JourneyPath | null {
   const originKey = endpointKey(origin)
@@ -509,35 +562,49 @@ function findBestPath(
     walkingDistanceMeters: 0,
     shuttleBoardings: 0,
     lastShuttleRouteId: null,
+    lastShuttleReachedTerminal: false,
     legs: [],
     sequenceKey: '',
   }
   const queue: JourneyPath[] = [initialPath]
-  const bestByState = new Map([[journeyPathStateKey(initialPath), initialPath]])
+  const labelsByState = new Map<string, JourneyPath[]>()
+  retainPathLabels(labelsByState, initialPath)
+  let bestDestinationPath: JourneyPath | null = null
 
   while (queue.length > 0) {
     queue.sort(comparePaths)
     const path = queue.shift()!
-    const bestForState = bestByState.get(journeyPathStateKey(path))
-    if (!bestForState || comparePaths(path, bestForState) !== 0) continue
-    if (path.nodeKey === destinationKey) return path
+    if (!hasPathLabel(labelsByState, path)) continue
+    if (bestDestinationPath && path.durationSeconds > bestDestinationPath.durationSeconds) continue
+    if (path.nodeKey === destinationKey) {
+      if (!bestDestinationPath || comparePaths(path, bestDestinationPath) < 0) {
+        bestDestinationPath = path
+      }
+      continue
+    }
 
     for (const edge of graph.get(path.nodeKey) ?? []) {
+      if (
+        edge.kind === 'shuttle' &&
+        path.shuttleBoardings === 0 &&
+        isUpstreamBoarding(origin, edge, transitIndex)
+      ) continue
       // A continuous ride cannot become another boarding on the same route.
-      if (edge.kind === 'shuttle' && path.lastShuttleRouteId === edge.routeId) continue
+      if (
+        edge.kind === 'shuttle' &&
+        path.lastShuttleRouteId === edge.routeId &&
+        !path.lastShuttleReachedTerminal
+      ) continue
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
       if (!resolvedEdge) continue
       const nextPath = extendPath(path, resolvedEdge)
-      const nextStateKey = journeyPathStateKey(nextPath)
-      const currentBest = bestByState.get(nextStateKey)
-      if (!currentBest || comparePaths(nextPath, currentBest) < 0) {
-        bestByState.set(nextStateKey, nextPath)
+      if (retainPathLabels(labelsByState, nextPath)) {
         queue.push(nextPath)
       }
     }
   }
 
-  return null
+  return bestDestinationPath
 }
 
 export function planJourney(input: PlanJourneyInput): Journey | null {
@@ -546,6 +613,7 @@ export function planJourney(input: PlanJourneyInput): Journey | null {
     graph,
     input.origin.endpoint,
     input.destination.endpoint,
+    input.transitIndex,
     input.getShuttleWaitingSeconds,
   )
   if (!path || path.legs.length === 0) return null

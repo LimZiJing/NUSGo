@@ -226,13 +226,17 @@ function MobileStopPopupHarness() {
             <button
               ref={options.firstRouteCardRef}
               type="button"
-              data-contextual-focus-id="shuttle-route-A1"
+              aria-label="Route A1"
               aria-pressed="true"
             >
-              Route A1
+              A1
             </button>
-            <button type="button" onClick={() => options.onFocusStop('STOP-A')}>
-              Stop A, stop STOP-A
+            <button
+              type="button"
+              aria-label="Stop A, stop STOP-A. Focus on map"
+              onClick={() => options.onFocusStop?.('STOP-A')}
+            >
+              Stop A
             </button>
           </>
         )}

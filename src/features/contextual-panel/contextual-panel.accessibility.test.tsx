@@ -5,7 +5,6 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContextualPanel } from './contextual-panel'
-import { ShuttleRouteControl } from '../shuttle-browsing/shuttle-route-control'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -77,6 +76,7 @@ function PanelHarness({
   active = true,
   status,
   onDismissMapPopup,
+  onNavigateToVenue,
 }: {
   initialState?: ContextualPanelState
   network?: TransitNetwork | null
@@ -86,6 +86,7 @@ function PanelHarness({
   active?: boolean
   status?: PanelStatus | null
   onDismissMapPopup?: () => boolean
+  onNavigateToVenue?: (venueCode: string) => void
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -115,6 +116,7 @@ function PanelHarness({
       status={status}
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
+      onNavigateToVenue={onNavigateToVenue}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
       onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
       onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
@@ -208,8 +210,6 @@ function RootSheetEscapeHarness() {
 }
 
 function MobileStopPopupHarness() {
-  const network = createValidTransitNetwork()
-  const index = createTransitIndex(network)
   const popupActionRef = useRef<HTMLButtonElement>(null)
   const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
 
@@ -222,15 +222,19 @@ function MobileStopPopupHarness() {
         shuttleRoutesAvailable
         selectedRouteId="A1"
         renderShuttleRoutes={(_, options) => (
-          <ShuttleRouteControl
-            network={network}
-            networkIndex={index}
-            selectedRouteId="A1"
-            mobileViewport
-            onRouteSelect={() => undefined}
-            firstRouteCardRef={options.firstRouteCardRef}
-            onFocusStop={options.onFocusStop}
-          />
+          <>
+            <button
+              ref={options.firstRouteCardRef}
+              type="button"
+              data-contextual-focus-id="shuttle-route-A1"
+              aria-pressed="true"
+            >
+              Route A1
+            </button>
+            <button type="button" onClick={() => options.onFocusStop('STOP-A')}>
+              Stop A, stop STOP-A
+            </button>
+          </>
         )}
         onQueryChange={() => undefined}
         onVenueSelect={() => undefined}
@@ -620,7 +624,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(document.activeElement).toBe(result)
 
     await user.keyboard('{Enter}')
-    const detailHeading = await screen.findByRole('heading', { name: 'COM1-0210' })
+    const detailHeading = await screen.findByRole('heading', { name: /COM1-0210/ })
     await waitFor(() => expect(document.activeElement).toBe(detailHeading))
     expect(screen.getByText('Venue details opened for COM1-0210.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
@@ -633,6 +637,18 @@ describe('ContextualPanel accessibility workflows', () => {
     const restoredSearch = await screen.findByRole('searchbox', { name: 'Find a venue' })
     await waitFor(() => expect((restoredSearch as HTMLInputElement).value).toBe('COM1'))
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /COM1-0210/ })))
+  })
+
+  it('passes the selected venue code to Navigate', async () => {
+    const user = userEvent.setup()
+    const onNavigateToVenue = vi.fn()
+    render(<PanelHarness onNavigateToVenue={onNavigateToVenue} />)
+
+    await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1-0210')
+    await user.click(screen.getByRole('button', { name: /COM1-0210/ }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
+
+    expect(onNavigateToVenue).toHaveBeenCalledWith('COM1-0210')
   })
 
   it('keeps desktop route selection and its Back, Escape, and Close focus behavior', async () => {

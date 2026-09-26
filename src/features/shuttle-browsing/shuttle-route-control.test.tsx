@@ -198,7 +198,7 @@ describe('ShuttleRouteControl', () => {
       'UTOWNUTOWN', 'UHCUHC', 'UHALL-OPPUHALL-OPP', 'S17S17',
       'KR-MRT-OPPKR-MRT-OPP', 'PGPRPGPR', 'TCOMSTCOMS', 'COM3COM3',
     ])
-    expect(screen.getByText('16 STOPS')).toBeTruthy()
+    expect(screen.getByText('16 stops')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /COM 3, stop COM3/ })).toHaveLength(2)
   })
 

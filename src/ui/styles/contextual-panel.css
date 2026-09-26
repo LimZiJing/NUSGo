@@ -166,6 +166,171 @@
   margin: 0;
   color: #1f2937;
   font: 600 20px/1.2 system-ui, sans-serif;
+  text-align: left;
+}
+
+.venue-detail-code {
+  color: #000;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.venue-detail-location {
+  color: #1f2937;
+}
+
+.venue-detail-coordinates {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.venue-detail-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.contextual-panel-detail .venue-detail-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: flex-start;
+  gap: 8px;
+  width: auto;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1f2937;
+  background: #fff;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contextual-panel-detail .venue-detail-navigate {
+  border-color: #1d4ed8;
+  color: #fff;
+  background: #1d4ed8;
+}
+
+.contextual-panel-detail .venue-detail-navigate:disabled {
+  border-color: #cbd5e1;
+  color: #64748b;
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.contextual-panel-detail .venue-detail-action svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.contextual-panel-detail .venue-detail-nusmods img {
+  display: block;
+  width: 72px;
+  height: auto;
+}
+
+.venue-nearby-stops {
+  display: grid;
+  gap: 6px;
+}
+
+.venue-nearby-stops h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #1f2937;
+  font: 600 14px/1.3 system-ui, sans-serif;
+}
+
+.venue-nearby-stops h4 svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.venue-nearby-empty {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.venue-nearby-stop-list {
+  display: grid;
+  gap: 5px;
+}
+
+.contextual-panel-detail .nearby-stop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: left;
+  background: #fff;
+}
+
+.nearby-stop-identity {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+}
+
+.nearby-stop-identity strong {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nearby-stop-identity small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.nearby-stop-services {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.venue-detail-service-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  box-sizing: border-box;
+  padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nearby-stop-arrow {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #64748b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .contextual-panel-detail strong {

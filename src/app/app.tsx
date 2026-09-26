@@ -370,6 +370,7 @@ function App() {
           <ContextualPanel
             state={state.contextualPanel}
             venues={state.venues}
+            transitIndex={state.transitIndex}
             shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
             renderShuttleRoutes={(selectRef, options) => (
               <ShuttleRouteControl
@@ -400,6 +401,14 @@ function App() {
             status={panelStatus}
             onQueryChange={commands.setContextualPanelQuery}
             onVenueSelect={commands.selectVenue}
+            onNavigateToVenue={(venueCode) => {
+              commands.selectDestinationEndpoint({ kind: 'venue', id: venueCode })
+              if (isMobileViewport) {
+                prepareSheetTransition(true)
+                setMapControlsOpen(false)
+                dispatchMobileNavigation({ type: 'open-plan' })
+              }
+            }}
             onOpenVenueSearch={() => {
               if (isMobileViewport) {
                 prepareSheetTransition(true)

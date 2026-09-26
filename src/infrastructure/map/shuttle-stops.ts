@@ -285,9 +285,9 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
     const routeSelected = selectedStopIds !== null
     const isVisible = journeyActive || isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
     const isDimmed = journeyActive
-      ? !isSelected
+      ? !isSelected && !isFocused
       : isBusStopDimmed(routeSelected, isSelected, isFocused)
-    const isDisabled = journeyActive && !isSelected
+    const isDisabled = journeyActive && !isSelected && !isFocused
     updateBusStopMarkerElement(
       marker,
       isSelected,
@@ -381,6 +381,8 @@ export function createShuttleStopMarkers(
       if (disposed) return false
       const detail = markerDetails.find(({ marker }) => marker.getElement().dataset.stopId === stopId)
       if (!detail) return false
+      state.focusedStopIds.add(stopId)
+      updateBusStopMarkerPresentation(state)
       if (!detail.popup.isOpen()) detail.marker.togglePopup()
       return true
     },
@@ -392,6 +394,7 @@ export function createShuttleStopMarkers(
     },
     setJourneyStops(stopRoutes) {
       if (disposed) return
+      if (stopRoutes !== null) state.focusedStopIds.clear()
       state.journeyStopRoutes = stopRoutes === null
         ? null
         : new globalThis.Map(Array.from(

@@ -78,9 +78,12 @@ describe('ContextualPanel', () => {
     const markup = renderPanel(state)
 
     expect(markup).toContain('id="contextual-venue-detail-heading"')
-    expect(markup).toContain('>COM1-0210</h3>')
+    expect(markup).toContain('Computing 1, Level 2 <span class="venue-detail-code">(COM1-0210)</span>')
     expect(markup).toContain('Computing 1, Level 2')
-    expect(markup).toContain('<strong>Floor:</strong> 2')
+    expect(markup).toContain('Floor 2 · Computing 1')
+    expect(markup).toContain('1.300000, 103.770000')
+    expect(markup).toContain('Navigate')
+    expect(markup).toContain('View in NUSMods')
     expect(markup).toContain('Find venue</button>')
     expect(markup).not.toContain('Browse shuttle routes')
     expect(markup).not.toContain('>Back</button>')
@@ -114,7 +117,9 @@ describe('ContextualPanel', () => {
 
     expect(markup).toContain('aria-label="Back to venue search"')
     expect(markup).toContain('aria-label="Close map context"')
-    expect(markup).toContain('Browse shuttle routes')
+    expect(markup).toContain('Navigate')
+    expect(markup).toContain('View in NUSMods')
+    expect(markup).not.toContain('Browse shuttle routes')
   })
 
   it('keeps shuttle mode available when venue data fails', () => {

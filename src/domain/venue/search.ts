@@ -30,7 +30,6 @@ export function searchVenues(
   if (!normalizedQuery) return []
 
   return Object.entries(venues)
-    .filter(([, venue]) => venue.location)
     .filter(([code, venue]) => {
       const normalizedCode = normalize(code)
       const normalizedRoomName = normalize(venue.roomName)

@@ -47,6 +47,7 @@ vi.mock('maplibre-gl', () => {
     }
 
     togglePopup() {
+      if (this.element.style.opacity === String(BUS_STOP_INACTIVE_OPACITY)) return this
       if (this.popup?.isOpen()) this.popup.remove()
       else this.popup?.show()
       return this
@@ -352,7 +353,7 @@ describe('bus-stop presentation', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps journey stops prominent and disables other stop markers and popups until cleared', () => {
+  it('keeps journey stops prominent and enables other markers only while their popup is focused', () => {
     vi.stubGlobal('document', {
       createElement: (tagName: string) => new FakeElement(tagName),
     })
@@ -411,6 +412,13 @@ describe('bus-stop presentation', () => {
     expect(elements[1].classes).toContain('bus-stop-marker-dimmed')
     expect(elements[1].style.opacity).toBe(String(BUS_STOP_INACTIVE_OPACITY))
     expect(inactivePopup.isOpen()).toBe(false)
+
+    expect(adapter.openStopPopup('STOP-B')).toBe(true)
+    expect(inactivePopup.isOpen()).toBe(true)
+    expect(elements[1].disabled).toBe(false)
+    expect(elements[1].attributes.get('aria-disabled')).toBe('false')
+    expect(elements[1].classes).not.toContain('bus-stop-marker-dimmed')
+
     expect(paintProperties).toContainEqual({
       id: BUS_STOP_INACTIVE_LABEL_LAYER_ID,
       name: 'text-color',

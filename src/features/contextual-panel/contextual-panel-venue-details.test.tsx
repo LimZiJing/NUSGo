@@ -93,27 +93,30 @@ function renderVenueDetails({
 }
 
 describe('ContextualPanel venue details', () => {
-  it('shows venue identity, coordinates, actions, and nearby stops in order', () => {
+  it('shows code-first venue identity, building, actions, and nearby stops in order', () => {
     const markup = renderVenueDetails()
 
     expect(markup).toContain('<h3 id="contextual-venue-detail-heading"')
     expect(markup).toMatch(/<h2 id="contextual-panel-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
-    expect(markup).toContain('Seminar Room 3 <span class="venue-detail-code">(COM1-0212)</span>')
+    expect(markup).toContain('>COM1-0212</h3>')
+    expect(markup).toContain('<p class="venue-detail-name">Seminar Room 3</p>')
+    expect(markup).not.toContain('(COM1-0212)')
     expect(markup).toContain('venue-detail-building-icon')
     expect(markup).toContain('<span>Floor 2 · Computing 1</span></p>')
-    expect(markup).toContain('venue-detail-pin-icon')
-    expect(markup).toContain('<span>1.300000, 103.770000</span></p>')
+    expect(markup).not.toContain('venue-detail-coordinates')
+    expect(markup).not.toContain('venue-detail-pin-icon')
+    expect(markup).not.toContain('1.300000, 103.770000')
     expect(markup.indexOf('contextual-venue-detail-heading'))
+      .toBeLessThan(markup.indexOf('venue-detail-name'))
+    expect(markup.indexOf('venue-detail-name'))
       .toBeLessThan(markup.indexOf('venue-detail-location'))
     expect(markup.indexOf('venue-detail-location'))
-      .toBeLessThan(markup.indexOf('venue-detail-coordinates'))
-    expect(markup.indexOf('venue-detail-coordinates'))
       .toBeLessThan(markup.indexOf('venue-detail-actions'))
     expect(markup.indexOf('venue-detail-actions'))
       .toBeLessThan(markup.indexOf('Nearby bus stops'))
   })
 
-  it('omits coordinates and nearby stops for a venue without coordinates', () => {
+  it('omits nearby stops and disables navigation for a venue without coordinates', () => {
     const unlocatedVenue: VenueLocation = { roomName: 'Tutorial Room' }
     const markup = renderVenueDetails({
       code: 'AS7-0214',

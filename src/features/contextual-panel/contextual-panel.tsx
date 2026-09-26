@@ -13,7 +13,6 @@ import {
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import {
-  formatVenueCoordinates,
   formatVenueFloorAndBuilding,
   getVenueBuildingName,
   hasVenueCoordinates,
@@ -516,7 +515,6 @@ export function ContextualPanel({
   const selectedVenue = state.selectedVenue
   const selectedVenueLocation = selectedVenue?.venue.location
   const venueHasCoordinates = selectedVenue ? hasVenueCoordinates(selectedVenue.venue) : false
-  const venueCoordinates = selectedVenue ? formatVenueCoordinates(selectedVenue.venue) : null
   const venueFloorAndBuilding = selectedVenue
     ? formatVenueFloorAndBuilding(
       selectedVenue.venue.floor,
@@ -694,30 +692,19 @@ export function ContextualPanel({
           className="contextual-panel-content contextual-panel-detail"
           data-mobile-sheet-content
         >
-          <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
-            {state.selectedVenue.venue.roomName}{' '}
-            <span className="venue-detail-code">({state.selectedVenue.code})</span>
-          </h3>
-          {(venueFloorAndBuilding || venueCoordinates) && (
-            <div className="venue-detail-metadata">
-              {venueFloorAndBuilding && (
-                <p className="venue-detail-location">
-                  <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
-                    <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
-                  </svg>
-                  <span>{venueFloorAndBuilding}</span>
-                </p>
-              )}
-              {venueCoordinates && (
-                <p className="venue-detail-coordinates">
-                  <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-pin-icon" viewBox="0 0 24 24">
-                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
-                  <span>{venueCoordinates}</span>
-                </p>
-              )}
-            </div>
+          <div className="venue-detail-identity">
+            <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+              {state.selectedVenue.code}
+            </h3>
+            <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
+          </div>
+          {venueFloorAndBuilding && (
+            <p className="venue-detail-location">
+              <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
+                <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
+              </svg>
+              <span>{venueFloorAndBuilding}</span>
+            </p>
           )}
           <div className="venue-detail-actions">
             <button

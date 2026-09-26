@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatVenueCoordinates,
   formatVenueFloorAndBuilding,
   getVenueBuildingName,
 } from './details'
@@ -27,16 +26,5 @@ describe('venue details', () => {
 
   it('omits the floor and building line when both are unavailable', () => {
     expect(formatVenueFloorAndBuilding(undefined, undefined)).toBeNull()
-  })
-
-  it('formats latitude then longitude to six decimal places', () => {
-    expect(formatVenueCoordinates({
-      roomName: 'Seminar Room 3',
-      location: { x: 103.77400841456318, y: 1.2947910941174683 },
-    })).toBe('1.294791, 103.774008')
-  })
-
-  it('omits coordinates when they are unavailable', () => {
-    expect(formatVenueCoordinates({ roomName: 'Unmapped room' })).toBeNull()
   })
 })

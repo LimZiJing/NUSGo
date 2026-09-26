@@ -279,6 +279,9 @@
   }
 
   .contextual-panel .mobile-ghost-back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     min-height: 0;
     padding: 3px;
     border: 0;
@@ -294,9 +297,15 @@
     background: transparent;
   }
 
-  .mobile-ghost-back-button span {
-    margin-right: 5px;
-    font-size: 17px;
+  .mobile-ghost-back-button svg {
+    flex: 0 0 17px;
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
   }
 
   .contextual-panel-content {

@@ -78,10 +78,11 @@ describe('ContextualPanel', () => {
     const markup = renderPanel(state)
 
     expect(markup).toContain('id="contextual-venue-detail-heading"')
-    expect(markup).toContain('Computing 1, Level 2 <span class="venue-detail-code">(COM1-0210)</span>')
-    expect(markup).toContain('Computing 1, Level 2')
+    expect(markup).toContain('>COM1-0210</h3>')
+    expect(markup).toContain('<p class="venue-detail-name">Computing 1, Level 2</p>')
     expect(markup).toContain('Floor 2 · Computing 1')
-    expect(markup).toContain('1.300000, 103.770000')
+    expect(markup).not.toContain('venue-detail-coordinates')
+    expect(markup).not.toContain('1.300000, 103.770000')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')
     expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
@@ -102,7 +103,13 @@ describe('ContextualPanel', () => {
       history: [{ mode: 'shuttle' as const, query: '', selectedVenue: null }],
     }
 
-    expect(renderPanel(state)).toContain('Shuttle routes</button>')
+    const markup = renderPanel(state)
+
+    expect(markup).toContain('Shuttle routes</button>')
+    expect(markup).toContain('class="mobile-ghost-back-button"')
+    expect(markup).toContain('<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">')
+    expect(markup).toContain('M19 12H5m7-7-7 7 7 7')
+    expect(markup).not.toContain('←')
   })
 
   it('keeps desktop venue detail navigation actions', () => {

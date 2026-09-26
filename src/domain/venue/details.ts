@@ -32,12 +32,6 @@ export function formatVenueFloorAndBuilding(
   return details.length > 0 ? details.join(' · ') : null
 }
 
-export function formatVenueCoordinates(venue: VenueLocation): string | null {
-  const location = venue.location
-  if (!location || !Number.isFinite(location.x) || !Number.isFinite(location.y)) return null
-  return `${location.y.toFixed(6)}, ${location.x.toFixed(6)}`
-}
-
 export function hasVenueCoordinates(venue: VenueLocation): boolean {
   return venue.location !== undefined &&
     Number.isFinite(venue.location.x) &&

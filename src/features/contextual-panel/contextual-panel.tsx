@@ -505,7 +505,6 @@ export function ContextualPanel({
           id="contextual-panel-heading"
           ref={panelHeadingRef}
           tabIndex={-1}
-          className={mobileViewport && state.mode === 'shuttle' ? 'visually-hidden' : undefined}
         >
           {getPanelHeading(state, selectedRouteId)}
         </h2>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react'
 import { validateTripRequest } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
@@ -9,6 +9,7 @@ import type {
   TripRequest,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 
@@ -76,7 +77,10 @@ export function TripEndpointControls({
 }: TripEndpointControlsProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
   const isExpanded = expanded ?? uncontrolledExpanded
-  const tripToggleRef = useRef<HTMLButtonElement>(null)
+  const tripHandleRef = useRef<HTMLButtonElement>(null)
+  const setTripHandleRef = useCallback((button: HTMLButtonElement | null): void => {
+    tripHandleRef.current = button
+  }, [])
   const previousExpandedRef = useRef(isExpanded)
   const previousMobileViewportRef = useRef(mobileViewport)
   const [searchQueries, setSearchQueries] = useState({
@@ -116,7 +120,7 @@ export function TripEndpointControls({
     previousExpandedRef.current = isExpanded
     if (!wasExpanded || isExpanded || !mobileViewport) return
     const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
-    if (body?.contains(document.activeElement)) tripToggleRef.current?.focus()
+    if (body?.contains(document.activeElement)) tripHandleRef.current?.focus()
   }, [isExpanded, mobileViewport])
 
   useEffect(() => {
@@ -125,7 +129,7 @@ export function TripEndpointControls({
     if (wasMobileViewport === mobileViewport) return
 
     const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
-    if (!mobileViewport && document.activeElement === tripToggleRef.current) {
+    if (!mobileViewport && document.activeElement === tripHandleRef.current) {
       const firstFormControl = body?.querySelector<HTMLElement>('input, select, textarea')
       const firstFocusable = firstFormControl ?? body?.querySelector<HTMLElement>('button')
       firstFocusable?.focus()
@@ -135,7 +139,7 @@ export function TripEndpointControls({
       mobileViewport &&
       !isExpanded &&
       body?.contains(document.activeElement)
-    ) tripToggleRef.current?.focus()
+    ) tripHandleRef.current?.focus()
   }, [isExpanded, mobileViewport])
 
   useEffect(() => {
@@ -162,7 +166,17 @@ export function TripEndpointControls({
       ref={containerRef}
       aria-label="Trip endpoints"
       data-expanded={isExpanded}
+      data-mobile-sheet
     >
+      <div className="mobile-sheet-handle-row">
+        <MobileSheetHandle
+          expanded={isExpanded}
+          label={`Plan trip panel: ${tripSummary.accessible}`}
+          controlsId={TRIP_CONTROLS_CONTENT_ID}
+          onButtonRef={setTripHandleRef}
+          onExpandedChange={setExpanded}
+        />
+      </div>
       <div className="trip-controls-heading">
         <div className="trip-controls-title">
           <h2>Plan trip</h2>
@@ -170,17 +184,6 @@ export function TripEndpointControls({
             {tripSummary.visible}
           </span>
         </div>
-        <button
-          type="button"
-          className="trip-controls-toggle"
-          ref={tripToggleRef}
-          aria-controls={TRIP_CONTROLS_CONTENT_ID}
-          aria-expanded={isExpanded}
-          aria-label={tripSummary.accessible}
-          onClick={() => setExpanded(!isExpanded)}
-        >
-          {isExpanded ? 'Hide trip plan' : 'Plan trip'}
-        </button>
         <button
           type="button"
           className="trip-controls-swap"
@@ -195,6 +198,7 @@ export function TripEndpointControls({
         id={TRIP_CONTROLS_CONTENT_ID}
         className="trip-controls-body"
         data-expanded={isExpanded}
+        data-mobile-sheet-content
       >
         <TripEndpointControl
           role="origin"

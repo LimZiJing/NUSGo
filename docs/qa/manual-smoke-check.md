@@ -48,7 +48,8 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
 - [ ] Explore and Stops start compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
-- [ ] Explicit controls expand and collapse the active sheet; uncovered map areas remain interactive and sheet surfaces block taps beneath them.
+- [ ] The centered 44 × 44px handle toggles the active sheet by tap, Enter, or Space; dragging snaps to the nearer existing state, and a cancelled drag restores its starting state without a second toggle.
+- [ ] Dragging starts only on the handle; sheet content scrolls independently, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
@@ -61,6 +62,8 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 
 ## Issue #117 targeted verification — 2026-09-25
 
+This recorded pass predates the shared grab handle and documents the previous mobile controls.
+
 Codex In-App Browser (Chromium-based), local Vite app, mobile/touch emulation:
 
 - At 390 × 844, the shared map and persistent Explore / Stops / Plan tabs rendered. Explore and Stops started compact, Plan started expanded, and switching away from an expanded Stops sheet restored it when returning.
@@ -70,6 +73,15 @@ Codex In-App Browser (Chromium-based), local Vite app, mobile/touch emulation:
 - At widths 768px and 769px, the mobile tab bar changed from visible to hidden at the breakpoint. At 568 × 320 landscape, the Plan panel remained above the tab bar, its body scrolled independently to expose the origin input, and the document had no overflow.
 - At 390 × 500, the tab bar stayed at the viewport bottom and the Plan origin search input remained visible above it. This viewport shrink approximated keyboard space; no real software keyboard or physical safe-area device was available.
 - The broader issue #89 map/responsive checklist was not repeated.
+
+## Mobile sheet grab-handle targeted verification — 2026-09-26
+
+Local Chromium, Vite app from the feature branch:
+
+- At 390 × 844, Explore and Stops started compact and Plan started expanded. Each handle measured 44 × 44px, each sheet toggled, and switching tabs restored the independent Explore, Stops, and Plan states.
+- Explore expanded by touch and snapped between compact and expanded when dragged up and down. Stops and Plan handles also toggled by touch in dedicated browser passes. Plan kept Swap visible; its body scrolled independently (290px viewport, 444px content) without being clipped by the sheet, and an uncovered map point remained hit-testable.
+- At 768px, mobile tabs and handles remained visible. At 769px, mobile tabs and handles were hidden and the desktop contextual panel returned to static positioning.
+- The component tests cover Enter and Space activation, cancelled drag restoration, and ignoring pointer gestures that start in sheet content.
 
 ## Keyboard and accessibility
 

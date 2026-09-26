@@ -133,8 +133,8 @@
   color: #1f2937;
 }
 
-.contextual-panel button:hover,
-.contextual-panel button:focus-visible {
+.contextual-panel button:not(.mobile-sheet-handle):hover,
+.contextual-panel button:not(.mobile-sheet-handle):focus-visible {
   border-color: #64748b;
   background: #f1f5f9;
 }

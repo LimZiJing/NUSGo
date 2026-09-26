@@ -228,7 +228,7 @@ describe('ContextualPanel accessibility workflows', () => {
     screen.getByRole('button', { name: 'Browse shuttle routes' }).focus()
     await user.keyboard('{Escape}')
 
-    const restore = screen.getByRole('button', { name: 'Show contextual panel' })
+    const restore = screen.getByRole('button', { name: 'Expand Explore panel' })
     expect(restore.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(restore)
   })
@@ -259,7 +259,7 @@ describe('ContextualPanel accessibility workflows', () => {
     await user.keyboard('{Escape}')
 
     expect(onDismissMapPopup).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'Show contextual panel' }).getAttribute('aria-expanded'))
+    expect(screen.getByRole('button', { name: 'Expand Explore panel' }).getAttribute('aria-expanded'))
       .toBe('false')
   })
 
@@ -343,18 +343,18 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(panel.getAttribute('data-minimized')).toBe('true')
     expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
 
-    const toggle = screen.getByRole('button', { name: 'Show contextual panel' })
+    const toggle = screen.getByRole('button', { name: 'Expand Explore panel' })
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     await user.click(toggle)
 
     const search = await screen.findByRole('searchbox', { name: 'Find a venue' })
     await waitFor(() => expect(document.activeElement).toBe(search))
     expect((search as HTMLInputElement).value).toBe('COM1')
-    const hideToggle = screen.getByRole('button', { name: 'Hide contextual panel' })
+    const hideToggle = screen.getByRole('button', { name: 'Collapse Explore panel' })
     expect(hideToggle.getAttribute('aria-expanded')).toBe('true')
     await user.click(hideToggle)
 
-    const showToggle = screen.getByRole('button', { name: 'Show contextual panel' })
+    const showToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
     await waitFor(() => expect(document.activeElement).toBe(showToggle))
     expect(showToggle.getAttribute('aria-expanded')).toBe('false')
     expect(panel.getAttribute('data-minimized')).toBe('true')
@@ -400,7 +400,7 @@ describe('ContextualPanel accessibility workflows', () => {
     )
 
     await waitFor(() => expect(document.activeElement).toBe(endpointInput))
-    expect(screen.queryByRole('button', { name: 'Show contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Expand Explore panel' })).toBeNull()
   })
 
   it('preserves visible contextual, map, and other control focus when entering mobile', async () => {

@@ -749,7 +749,7 @@ describe('navigation session', () => {
     }
   })
 
-  it('canonicalizes venue selection by loaded code and rejects mismatched or unmapped results', async () => {
+  it('canonicalizes venue selection by loaded code and permits matching venues without coordinates', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
@@ -791,7 +791,16 @@ describe('navigation session', () => {
       venue: { roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
     })
     expect(unmappedSession.getState().contextualPanel.selectedVenue).toBeNull()
-    expect(unmappedDependencies.map.selectVenue).not.toHaveBeenCalled()
+
+    unmappedSession.selectVenue({
+      code: 'UNMAPPED',
+      venue: unmappedData.venues.UNMAPPED,
+    })
+    expect(unmappedSession.getState().contextualPanel.selectedVenue).toEqual({
+      code: 'UNMAPPED',
+      venue: unmappedData.venues.UNMAPPED,
+    })
+    expect(unmappedDependencies.map.selectVenue).toHaveBeenCalledWith(unmappedData.venues.UNMAPPED)
   })
 
   it('selects the venue before notifying a subscriber that disposes the session', async () => {
@@ -854,6 +863,27 @@ describe('navigation session', () => {
     session.close()
     expect(session.getState().contextualPanel.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
+  })
+
+  it('opens a nearby stop while preserving the venue-details return path', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.openVenueSearch()
+    session.selectVenue(venueResult)
+    const history = session.getState().contextualPanel.history
+
+    session.focusStop('STOP-A')
+
+    expect(dependencies.map.focusStop).toHaveBeenCalledWith('STOP-A')
+    expect(session.getState().contextualPanel).toMatchObject({
+      mode: 'venue-detail',
+      selectedVenue: venueResult,
+      history,
+    })
+    session.back()
+    expect(session.getState().contextualPanel.mode).toBe('venue-search')
   })
 
   it('clears the selected route when closing the shuttle panel', async () => {
@@ -1041,6 +1071,26 @@ describe('navigation session', () => {
     session.clearTrip()
     expect(session.getState()).toMatchObject({
       tripRequest: { origin: null, destination: null },
+    })
+    expect(dependencies.map.setTripRequest).toHaveBeenLastCalledWith(
+      session.getState().tripRequest,
+      dependencies.venues.venues,
+      dependencies.transit.index,
+    )
+  })
+
+  it('replaces the destination with a venue while preserving the origin', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'stop', id: 'STOP-A' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+    session.setTripEndpoint('destination', { kind: 'venue', id: 'COM1' })
+
+    expect(session.getState().tripRequest).toEqual({
+      origin: { kind: 'stop', id: 'STOP-A' },
+      destination: { kind: 'venue', id: 'COM1' },
     })
     expect(dependencies.map.setTripRequest).toHaveBeenLastCalledWith(
       session.getState().tripRequest,

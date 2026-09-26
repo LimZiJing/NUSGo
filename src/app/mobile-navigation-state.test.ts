@@ -68,4 +68,24 @@ describe('mobile tab navigation', () => {
       },
     })
   })
+
+  it('opens Plan expanded when navigating to a venue', () => {
+    const state = {
+      activeTab: 'explore' as const,
+      sheets: {
+        explore: { expanded: true },
+        stops: { expanded: true },
+        plan: { expanded: false },
+      },
+    }
+
+    expect(mobileNavigationReducer(state, { type: 'open-plan' })).toEqual({
+      activeTab: 'plan',
+      sheets: {
+        explore: { expanded: true },
+        stops: { expanded: true },
+        plan: { expanded: true },
+      },
+    })
+  })
 })

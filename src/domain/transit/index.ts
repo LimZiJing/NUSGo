@@ -187,6 +187,8 @@ export { TransitValidationError, validateTransitNetwork, validateTransitVerifica
 export { validateTransitRouteGeometry } from './geometry'
 export { validateTransitMapData } from './map-data'
 export { deriveTransitRouteOverlapMap } from './overlap'
+export { findNearbyShuttleStops } from './nearby-stops'
+export type { NearbyShuttleStop } from './nearby-stops'
 export {
   generateShuttleTimingData,
   SHUTTLE_TIMING_DATA_VERSION,

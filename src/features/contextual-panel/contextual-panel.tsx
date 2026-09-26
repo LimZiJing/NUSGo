@@ -12,9 +12,16 @@ import {
 } from 'react'
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import {
+  formatVenueFloorAndBuilding,
+  getVenueBuildingName,
+  hasVenueCoordinates,
+} from '../../domain/venue/details'
+import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { SearchField } from '../../ui/search-field'
+import { getRouteContrastTextColor } from '../../ui/route-color'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -49,6 +56,7 @@ function getMobileVenueDetailReturnLabel(state: ContextualPanelState): string {
 interface ContextualPanelProps {
   state: ContextualPanelState
   venues: VenueLocationMap | null
+  transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
   renderShuttleRoutes: (
     selectRef: RefObject<HTMLSelectElement | null>,
@@ -65,6 +73,7 @@ interface ContextualPanelProps {
   selectedRouteId?: string | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
+  onNavigateToVenue?: (venueCode: string) => void
   onOpenVenueSearch: () => void
   onOpenShuttle: () => void
   onLeaveMobileRoutes?: () => void
@@ -125,6 +134,7 @@ function getVisiblePanelStatus(
 export function ContextualPanel({
   state,
   venues,
+  transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
   minimized = false,
@@ -138,6 +148,7 @@ export function ContextualPanel({
   selectedRouteId = null,
   onQueryChange,
   onVenueSelect,
+  onNavigateToVenue,
   onOpenVenueSearch,
   onOpenShuttle,
   onLeaveMobileRoutes,
@@ -501,6 +512,18 @@ export function ContextualPanel({
       return { results: [], failed: true }
     }
   }, [state.query, venues])
+  const selectedVenue = state.selectedVenue
+  const selectedVenueLocation = selectedVenue?.venue.location
+  const venueHasCoordinates = selectedVenue ? hasVenueCoordinates(selectedVenue.venue) : false
+  const venueFloorAndBuilding = selectedVenue
+    ? formatVenueFloorAndBuilding(
+      selectedVenue.venue.floor,
+      getVenueBuildingName(selectedVenue.code),
+    )
+    : null
+  const nearbyStops = venueHasCoordinates && selectedVenueLocation && transitIndex
+    ? findNearbyShuttleStops(selectedVenueLocation, transitIndex)
+    : []
   const panelAnnouncement = getPanelAnnouncement(state, selectedRouteId, mobileViewport)
   const panelStatus = getVisiblePanelStatus(state.mode, status)
   const mobileVenueSearch = mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search')
@@ -555,11 +578,16 @@ export function ContextualPanel({
         {mobileViewport && state.mode === 'venue-detail' && !minimized && (
           <GhostBackButton label={getMobileVenueDetailReturnLabel(state)} onClick={handleBack} />
         )}
+        {!mobileViewport && state.mode === 'venue-detail' && (
+          <button type="button" onClick={handleBack} aria-label="Back to venue search">
+            Back
+          </button>
+        )}
         <h2
           id="contextual-panel-heading"
           ref={panelHeadingRef}
           tabIndex={-1}
-          className={mobileExploreSegments ? 'visually-hidden' : undefined}
+          className={mobileExploreSegments || state.mode === 'venue-detail' ? 'visually-hidden' : undefined}
         >
           {getPanelHeading(state, selectedRouteId, mobileViewport)}
         </h2>
@@ -664,26 +692,94 @@ export function ContextualPanel({
           className="contextual-panel-content contextual-panel-detail"
           data-mobile-sheet-content
         >
-          {!mobileViewport && (
-            <button type="button" onClick={handleBack} aria-label="Back to venue search">
-              Back
-            </button>
+          <div className="venue-detail-identity">
+            <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+              {state.selectedVenue.code}
+            </h3>
+            <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
+          </div>
+          {venueFloorAndBuilding && (
+            <p className="venue-detail-location">
+              <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
+                <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
+              </svg>
+              <span>{venueFloorAndBuilding}</span>
+            </p>
           )}
-          <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
-            {state.selectedVenue.code}
-          </h3>
-          <p><strong>Room:</strong> {state.selectedVenue.venue.roomName}</p>
-          {state.selectedVenue.venue.floor !== undefined && state.selectedVenue.venue.floor !== null && (
-            <p><strong>Floor:</strong> {state.selectedVenue.venue.floor}</p>
-          )}
-          {!mobileViewport && (
+          <div className="venue-detail-actions">
             <button
-              data-contextual-focus-id="venue-detail-shuttle-opener"
+              className="venue-detail-action venue-detail-navigate"
               type="button"
-              onClick={handleOpenShuttle}
+              disabled={!venueHasCoordinates}
+              onClick={() => {
+                if (selectedVenue) onNavigateToVenue?.(selectedVenue.code)
+              }}
             >
-              Browse shuttle routes
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                <path d="m4 20 7-17 3 8 8 3-18 6Z" />
+              </svg>
+              <span>Navigate</span>
             </button>
+            <a
+              className="venue-detail-action venue-detail-nusmods"
+              href={`https://nusmods.com/venues/${encodeURIComponent(state.selectedVenue.code)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>View in</span>
+              <img src="/nusmods-logo.svg" alt="NUSMods" />
+            </a>
+          </div>
+          {venueHasCoordinates && (
+            <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
+              <h4 id="venue-nearby-stops-heading">
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                  <path d="M6 3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1l1.5 2h-2.4L14 19h-4l-1.1 2H6.5L8 19H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v6h12V6H6Zm1 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
+                </svg>
+                Nearby bus stops within 500 m
+              </h4>
+              {transitIndex === null ? (
+                <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
+              ) : nearbyStops.length === 0 ? (
+                <p className="venue-nearby-empty" role="status">No NUS shuttle stops within 500 m.</p>
+              ) : (
+                <div className="venue-nearby-stop-list">
+                  {nearbyStops.map(({ stop, services }) => (
+                    <button
+                      key={stop.id}
+                      className="nearby-stop-row"
+                      type="button"
+                      data-stop-id={stop.id}
+                      aria-label={`Nearby stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+                      onClick={() => handleFocusStop(stop.id)}
+                    >
+                      <span className="nearby-stop-identity">
+                        <strong>{stop.longName}</strong>
+                        <small>{stop.id}</small>
+                      </span>
+                      <span className="nearby-stop-services" aria-hidden="true">
+                        {services.map((route) => (
+                          <span
+                            key={route.id}
+                            className="venue-detail-service-badge"
+                            data-service-id={route.id}
+                            style={{
+                              backgroundColor: route.color,
+                              color: getRouteContrastTextColor(route.color),
+                            }}
+                          >
+                            {route.id}
+                          </span>
+                        ))}
+                      </span>
+                      <svg aria-hidden="true" focusable="false" className="nearby-stop-arrow" viewBox="0 0 24 24">
+                        <path d="m9 5 7 7-7 7" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
         </div>
       )}

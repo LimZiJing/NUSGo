@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
+import { getRouteChipTextColor } from '../../ui/route-color'
 
 interface ShuttleRouteControlProps {
   network: TransitNetwork | null
@@ -29,15 +30,6 @@ function getStopLabel(
   fallbackId: string,
 ): string {
   return stop ? stop.longName + ' (' + stop.id + ')' : fallbackId
-}
-
-function getChipTextColor(hexColor: string): string {
-  const channels = [1, 3, 5].map((offset) => {
-    const channel = Number.parseInt(hexColor.slice(offset, offset + 2), 16) / 255
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
-  })
-  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
-  return (1.05 / (luminance + 0.05)) >= 4.5 ? '#fff' : '#0f172a'
 }
 
 export function ShuttleRouteControl({
@@ -95,7 +87,7 @@ export function ShuttleRouteControl({
                 type="button"
                 data-route-id={route.id}
                 data-contextual-focus-id={`shuttle-route-${route.id}`}
-                style={{ '--route-color': route.color, '--route-text-color': getChipTextColor(route.color) } as CSSProperties}
+                style={{ '--route-color': route.color, '--route-text-color': getRouteChipTextColor(route.color) } as CSSProperties}
                 aria-label={`Route ${route.id}`}
                 aria-pressed={selectedRouteId === route.id}
                 onClick={() => onRouteSelect(route.id)}

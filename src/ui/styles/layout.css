@@ -13,6 +13,11 @@ body {
   margin: 0;
 }
 
+button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):hover,
+a.venue-detail-action:not([aria-disabled='true']):hover {
+  filter: brightness(0.85);
+}
+
 h1,
 h2 {
   font-family: var(--heading);

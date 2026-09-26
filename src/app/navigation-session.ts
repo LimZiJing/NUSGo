@@ -511,10 +511,7 @@ export function createNavigationSession(
 
     focusStop(stopId) {
       enqueueTransition(() => {
-        const route = state.selectedRouteId
-          ? transitIndex?.routeById.get(state.selectedRouteId)
-          : undefined
-        if (disposed || !mobileRoutesActive || !route?.stopIds.includes(stopId)) return
+        if (disposed || !transitIndex?.stopById.has(stopId)) return
         dependencies.map.focusStop(stopId)
       })
     },

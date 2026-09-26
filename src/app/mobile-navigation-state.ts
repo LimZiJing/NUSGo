@@ -11,6 +11,7 @@ export const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 768px)'
 
 export type MobileNavigationAction =
   | { readonly type: 'select-tab'; readonly tab: MobileTab }
+  | { readonly type: 'open-plan' }
   | { readonly type: 'set-sheet-expanded'; readonly tab: MobileTab; readonly expanded: boolean }
   | { readonly type: 'close-active-tab' }
 
@@ -58,6 +59,16 @@ export function mobileNavigationReducer(
       return state.activeTab === action.tab
         ? state
         : { ...state, activeTab: action.tab }
+    case 'open-plan':
+      if (state.activeTab === 'plan' && state.sheets.plan.expanded) return state
+      return {
+        ...state,
+        activeTab: 'plan',
+        sheets: {
+          ...state.sheets,
+          plan: { expanded: true },
+        },
+      }
     case 'set-sheet-expanded':
       if (state.sheets[action.tab].expanded === action.expanded) return state
       return {

@@ -233,9 +233,12 @@
   cursor: pointer;
 }
 
-.trip-endpoint-result:hover,
 .trip-endpoint-result:focus-visible {
   background: #f8fafc;
+}
+
+.trip-endpoint-result:hover {
+  border-color: #64748b;
 }
 
 .trip-endpoint-result span {

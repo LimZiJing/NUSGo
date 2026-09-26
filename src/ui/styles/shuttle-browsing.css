@@ -147,11 +147,6 @@
     scroll-snap-align: start;
   }
 
-  .contextual-panel .route-chip:not([aria-pressed='true']):hover {
-    border-color: #cbd5e1;
-    background: #e8eef5;
-  }
-
   .contextual-panel .route-chip[aria-pressed='true'] {
     border-color: var(--route-color);
     color: var(--route-text-color);
@@ -217,10 +212,6 @@
     font: 14px/1.2 system-ui, sans-serif;
     text-align: left;
     cursor: pointer;
-  }
-
-  .route-timeline-stop:hover {
-    background: #f8fafc;
   }
 
   .route-timeline-node {

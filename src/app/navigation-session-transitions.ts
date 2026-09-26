@@ -3,7 +3,6 @@ import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 import {
   createVenueSearchResultSnapshot,
-  hasMappedLocation,
   venuesMatch,
 } from './navigation-session-validation'
 
@@ -76,7 +75,7 @@ export function createNavigationSessionPanelTransitions(
         if (host.isDisposed()) return
         if (typeof result?.code !== 'string') return
         const venue = host.getVenues()?.[result.code]
-        if (!hasMappedLocation(venue) || !result.venue || !venuesMatch(result.venue, venue)) return
+        if (!venue || !result.venue || !venuesMatch(result.venue, venue)) return
         host.selectVenue(venue)
         updatePanel({
           type: 'select-venue',

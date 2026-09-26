@@ -830,6 +830,7 @@ describe('MapSession', () => {
     expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
       center: [103.8, 1.4],
       zoom: 17,
+      offset: [0, -54],
       essential: true,
     }))
     session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
@@ -897,12 +898,53 @@ describe('MapSession', () => {
     expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
       center: [103.2, 1.2],
       zoom: 17,
-      padding: { top: 96, right: 12, bottom: 208, left: 12 },
+      offset: [0, -56],
     }))
     session.zoomIn()
     session.zoomOut()
     expect(map.zoomIn).toHaveBeenCalledWith({ duration: 200 })
     expect(map.zoomOut).toHaveBeenCalledWith({ duration: 200 })
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('fits a route after focusing a venue beneath mobile sheets', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
+    }
+    const transitData = createTransitData()
+    let retainedBottomPadding = 0
+    let availableRouteHeight: number | null = null
+
+    map.flyTo.mockImplementation((options: { padding?: { bottom: number } }) => {
+      retainedBottomPadding = options.padding?.bottom ?? retainedBottomPadding
+    })
+    map.fitBounds.mockImplementation((
+      _bounds: unknown,
+      options: { padding: { top: number; bottom: number } },
+    ) => {
+      availableRouteHeight = 844 - retainedBottomPadding -
+        options.padding.top - options.padding.bottom
+    })
+
+    await session.ready
+    session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
+    session.selectVenue({ roomName: 'COM2-0108', location: { x: 103.774, y: 1.293 } })
+    session.setViewportInsets({ top: 0, right: 12, bottom: 373, left: 12 })
+    session.setRouteSelection(createRouteSelection(transitData))
+    session.setViewportInsets({ top: 0, right: 12, bottom: 498, left: 12 })
+
+    expect(map.flyTo).toHaveBeenCalledOnce()
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    expect(availableRouteHeight).toBeGreaterThan(0)
 
     session.dispose()
     vi.unstubAllGlobals()

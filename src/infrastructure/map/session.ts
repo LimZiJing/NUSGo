@@ -72,7 +72,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue') pendingCameraFit = null
   }
 
-  const getFitPadding = (): MapViewportInsets => viewportInsets
+  // MapLibre retains flyTo padding, so use a temporary offset for sheet-aware point focus.
+  const getFitOffset = (): [number, number] => [
+    (viewportInsets.left - viewportInsets.right) / 2,
+    (viewportInsets.top - viewportInsets.bottom) / 2,
+  ]
 
   const fitVenue = (venue: VenueLocation): void => {
     const location = venue.location
@@ -81,7 +85,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       center: [location.x, location.y],
       zoom: 17,
       duration: 500,
-      padding: getFitPadding(),
+      offset: getFitOffset(),
       essential: true,
     })
   }
@@ -93,7 +97,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         center: [coordinates[0][0], coordinates[0][1]],
         zoom: 17,
         duration: 500,
-        padding: getFitPadding(),
+        offset: getFitOffset(),
         essential: true,
       })
       return
@@ -106,7 +110,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     ], {
       duration: 500,
       maxZoom: 17,
-      padding: getFitPadding(),
+      padding: viewportInsets,
     })
   }
 
@@ -317,7 +321,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           center: [target.center[0], target.center[1]],
           zoom: target.zoom,
           duration: 500,
-          padding: getFitPadding(),
+          offset: getFitOffset(),
           essential: true,
         })
         return

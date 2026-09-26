@@ -139,6 +139,7 @@ function ShuttleRouteNavigationHarness() {
   return (
     <ContextualPanel
       state={state}
+      mobileViewport={false}
       venues={venues}
       shuttleRoutesAvailable
       selectedRouteId={selectedRouteId}
@@ -305,13 +306,15 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
-  it('opens at the Explore NUS root with both entry actions visible', () => {
+  it('opens mobile Explore on Find venue with a labelled segmented selector', () => {
     render(<PanelHarness initialState={createInitialContextualPanelState()} />)
 
-    expect(screen.getByRole('region', { name: 'Explore NUS' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Find a venue' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Browse shuttle routes' })).toBeTruthy()
-    expect(screen.queryByRole('searchbox', { name: 'Find a venue' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Explore view' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
   })
 
   it('returns from route details to the selected route card and restores focus', async () => {
@@ -367,7 +370,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<RootSheetEscapeHarness />)
 
-    screen.getByRole('button', { name: 'Browse shuttle routes' }).focus()
+    screen.getByRole('button', { name: 'Find venue' }).focus()
     await user.keyboard('{Escape}')
 
     const restore = screen.getByRole('button', { name: 'Expand Explore panel' })
@@ -654,19 +657,23 @@ describe('ContextualPanel accessibility workflows', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
   })
 
-  it('returns from mobile Routes with the Explore control and restores opener focus', async () => {
+  it('switches mobile Explore segments and restores focus to the selected segment', async () => {
     const user = userEvent.setup()
     render(<PanelHarness />)
 
-    await user.click(screen.getByRole('button', { name: 'Explore' }))
-    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
-    expect(screen.getByRole('button', { name: 'Explore' })).toBeTruthy()
+    await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1')
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
+    expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Explore' }))
-    const opener = await screen.findByRole('button', { name: 'Browse shuttle routes' })
-    await waitFor(() => expect(document.activeElement).toBe(opener))
+    await user.click(screen.getByRole('button', { name: 'Find venue' }))
+    const venueSegment = screen.getByRole('button', { name: 'Find venue' })
+    expect(venueSegment.getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => expect(document.activeElement).toBe(venueSegment))
+    expect((screen.getByRole('searchbox', { name: 'Find a venue' }) as HTMLInputElement).value)
+      .toBe('COM1')
   })
 
   it('restores the tapped mobile stop row after Escape closes its popup', async () => {
@@ -682,20 +689,14 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByRole('button', { name: 'Route A1' }).getAttribute('aria-pressed')).toBe('true')
   })
 
-  it('restores the neutral entry control and never leaves focus on removed search content', async () => {
+  it('keeps focus on the active segment after switching away from venue search', async () => {
     const user = userEvent.setup()
     render(<PanelHarness />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })
 
-    await user.keyboard('{Escape}')
-    const heading = await screen.findByRole('heading', { name: 'Explore NUS' })
-    await waitFor(() => expect(document.activeElement).toBe(heading))
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     expect(search.isConnected).toBe(false)
-
-    const findVenue = screen.getByRole('button', { name: 'Find a venue' })
-    await user.click(findVenue)
-    await user.click(screen.getByRole('button', { name: 'Explore' }))
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Find a venue' })))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Shuttle routes' })))
   })
 
   it('uses a deterministic Back fallback while routes load and focuses the select when they arrive', async () => {

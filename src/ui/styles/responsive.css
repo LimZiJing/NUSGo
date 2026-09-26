@@ -167,20 +167,16 @@
   }
 
   .contextual-panel-shuttle .contextual-panel-header,
-  .contextual-panel-venue-search .contextual-panel-header {
-    position: relative;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 4px;
+  .contextual-panel-mobile-venue-search .contextual-panel-header {
+    display: block;
   }
 
   .contextual-panel-shuttle,
-  .contextual-panel-venue-search {
+  .contextual-panel-mobile-venue-search {
     padding-top: 8px;
   }
 
-  .contextual-panel-venue-search:not(.contextual-panel-minimized) {
+  .contextual-panel-mobile-venue-search:not(.contextual-panel-minimized) {
     height: min(
       50dvh,
       calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
@@ -188,8 +184,44 @@
     grid-template-rows: max-content minmax(0, 1fr);
   }
 
-  .contextual-panel-venue-search .contextual-panel-content {
+  .contextual-panel-mobile-venue-search .contextual-panel-content {
     grid-template-rows: max-content minmax(0, 1fr);
+  }
+
+  .mobile-explore-segments {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    padding: 3px;
+    border-radius: 12px;
+    background: #e8eef5;
+  }
+
+  .contextual-panel .mobile-explore-segments button {
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 9px;
+    color: #475569;
+    background: transparent;
+    font: 600 14px/1.2 system-ui, sans-serif;
+  }
+
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true'] {
+    color: #0f172a;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 16%);
+  }
+
+  .contextual-panel .mobile-explore-segments button:hover {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:hover,
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:focus-visible {
+    border-color: transparent;
+    background: #fff;
   }
 
   .contextual-panel-search-prompt {
@@ -208,12 +240,6 @@
     stroke: currentColor;
     stroke-width: 1.75;
     stroke-linecap: round;
-  }
-
-  .contextual-panel-venue-search .contextual-panel-hide-button {
-    position: absolute;
-    top: 0;
-    right: 0;
   }
 
   .contextual-panel .mobile-ghost-back-button {

@@ -29,7 +29,9 @@ interface ContextualPanelProps {
   renderShuttleRoutes: (selectRef: RefObject<HTMLSelectElement | null>) => ReactNode
   minimized?: boolean
   mobileViewport?: boolean
+  active?: boolean
   onRestore?: () => void
+  onMinimize?: () => void
   containerRef?: Ref<HTMLElement>
   status?: PanelStatus | null
   onQueryChange: (query: string) => void
@@ -39,6 +41,7 @@ interface ContextualPanelProps {
   onBack: () => void
   onClose: () => void
   onEscape: () => void
+  onDismissMapPopup?: () => boolean
 }
 
 function getPanelHeading(state: ContextualPanelState): string {
@@ -76,7 +79,9 @@ export function ContextualPanel({
   renderShuttleRoutes,
   minimized = false,
   mobileViewport = true,
+  active = true,
   onRestore,
+  onMinimize,
   containerRef,
   status,
   onQueryChange,
@@ -86,8 +91,10 @@ export function ContextualPanel({
   onBack,
   onClose,
   onEscape,
+  onDismissMapPopup,
 }: ContextualPanelProps) {
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
+  const restorePanelButtonRef = useRef<HTMLButtonElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
   const routeSelectRef = useRef<HTMLSelectElement>(null)
@@ -97,10 +104,12 @@ export function ContextualPanel({
   const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
   const previousMinimizedRef = useRef(minimized)
   const previousMobileViewportRef = useRef(mobileViewport)
+  const previousActiveRef = useRef(active)
   const panelFocusRef = useRef(false)
   const shuttleRouteFocusPendingRef = useRef(false)
   const shuttleFocusMovedRef = useRef(false)
   const programmaticFocusRef = useRef(false)
+  const pendingMinimizeFocusRef = useRef(false)
 
   const focusElement = (element: HTMLElement | null): void => {
     if (!element) return
@@ -131,23 +140,55 @@ export function ContextualPanel({
   const routesAvailable = shuttleRoutesAvailable
 
   useEffect(() => {
+    if (!active) return
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      if (onDismissMapPopup?.()) {
+        event.preventDefault()
+        return
+      }
+      if (minimized) return
       event.preventDefault()
+      if (mobileViewport && state.mode === 'neutral' && onMinimize) {
+        pendingMinimizeFocusRef.current = true
+        onMinimize()
+        return
+      }
       pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
       onEscape()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onEscape])
+  }, [active, minimized, mobileViewport, onDismissMapPopup, onEscape, onMinimize, state.mode])
 
   useIsomorphicLayoutEffect(() => {
+    const wasActive = previousActiveRef.current
+    previousActiveRef.current = active
+    if (!active) {
+      previousMinimizedRef.current = minimized
+      previousMobileViewportRef.current = mobileViewport
+      previousModeRef.current = state.mode
+      return
+    }
+    if (!wasActive) {
+      previousMinimizedRef.current = minimized
+      previousMobileViewportRef.current = mobileViewport
+      previousModeRef.current = state.mode
+      return
+    }
+
     const wasMinimized = previousMinimizedRef.current
     previousMinimizedRef.current = minimized
     const wasMobileViewport = previousMobileViewportRef.current
     previousMobileViewportRef.current = mobileViewport
-    if (minimized) return
+    if (minimized) {
+      if (!wasMinimized && pendingMinimizeFocusRef.current) {
+        pendingMinimizeFocusRef.current = false
+        focusElement(restorePanelButtonRef.current)
+      }
+      return
+    }
 
     if (wasMobileViewport !== mobileViewport && !wasMinimized) {
       previousModeRef.current = state.mode
@@ -231,7 +272,7 @@ export function ContextualPanel({
     focusHistoryRef.current = []
     focusElement(panelHeadingRef.current)
     previousModeRef.current = state.mode
-  }, [minimized, mobileViewport, routesAvailable, state.mode, state.selectedVenue?.code])
+  }, [active, minimized, mobileViewport, routesAvailable, state.mode, state.selectedVenue?.code])
 
   const rememberCurrentControl = (
     event: MouseEvent<HTMLElement>,
@@ -273,6 +314,11 @@ export function ContextualPanel({
     onClose()
   }
 
+  const handleMinimize = (): void => {
+    pendingMinimizeFocusRef.current = true
+    onMinimize?.()
+  }
+
   const searchState = useMemo(() => {
     if (!venues) return { results: [], failed: false }
 
@@ -302,18 +348,40 @@ export function ContextualPanel({
           {getPanelHeading(state)}
         </h2>
         {minimized ? (
-          <button type="button" onClick={onRestore} aria-label="Show contextual panel">
+          <button
+            type="button"
+            ref={restorePanelButtonRef}
+            onClick={onRestore}
+            aria-label="Show contextual panel"
+            aria-controls="contextual-panel-content"
+            aria-expanded="false"
+          >
             Show panel
           </button>
-        ) : state.mode !== 'neutral' ? (
-          <button type="button" onClick={handleClose} aria-label="Close map context">
-            Close
-          </button>
-        ) : null}
+        ) : (
+          <>
+            {mobileViewport && (
+              <button
+                type="button"
+                aria-controls="contextual-panel-content"
+                aria-expanded="true"
+                aria-label="Hide contextual panel"
+                onClick={handleMinimize}
+              >
+                Hide
+              </button>
+            )}
+            {state.mode !== 'neutral' && (
+              <button type="button" onClick={handleClose} aria-label="Close map context">
+                Close
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {state.mode === 'neutral' && (
-        <div className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content">
           <p>Search for a venue or browse the shuttle network.</p>
           <div className="contextual-panel-actions">
             <button
@@ -335,7 +403,7 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'venue-search' && (
-        <div className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content">
           <label htmlFor="contextual-venue-search-input">Find a venue</label>
           <div className="contextual-panel-search-row">
             <input
@@ -394,7 +462,7 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'venue-detail' && state.selectedVenue && (
-        <div className="contextual-panel-content contextual-panel-detail">
+        <div id="contextual-panel-content" className="contextual-panel-content contextual-panel-detail">
           <button type="button" onClick={handleBack} aria-label="Back to venue search">
             Back
           </button>
@@ -416,7 +484,7 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'shuttle' && (
-        <div className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content">
           <button
             ref={shuttleBackRef}
             type="button"

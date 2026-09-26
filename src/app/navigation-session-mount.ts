@@ -79,9 +79,11 @@ export interface NavigationSessionCommands {
   readonly openShuttle: () => void
   readonly back: () => void
   readonly close: () => void
+  readonly closeToRoot: () => void
   readonly escape: () => void
   readonly selectRoute: (routeId: string | null) => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
   readonly zoomOut: () => void
   readonly resetView: () => void
@@ -103,9 +105,11 @@ function createNavigationSessionCommands(
     openShuttle: () => session?.openShuttle(),
     back: () => session?.back(),
     close: () => session?.close(),
+    closeToRoot: () => session?.closeToRoot(),
     escape: () => session?.escape(),
     selectRoute: (routeId) => session?.selectRoute(routeId),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
     resetView: () => session?.resetView(),

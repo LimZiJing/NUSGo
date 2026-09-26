@@ -289,6 +289,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    dismissPopup() {
+      if (disposed) return false
+      const closeButton = map.getContainer().querySelector<HTMLButtonElement>(
+        '.maplibregl-popup-close-button',
+      )
+      if (!closeButton) return false
+      closeButton.click()
+      return true
+    },
+
     zoomIn() {
       if (disposed) return
       map.zoomIn({ duration: 200 })

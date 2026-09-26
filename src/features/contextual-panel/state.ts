@@ -27,6 +27,7 @@ export type ContextualPanelAction =
   | { type: 'back' }
   | { type: 'escape' }
   | { type: 'close' }
+  | { type: 'close-to-root' }
   | { type: 'map-click' }
 
 export function createInitialContextualPanelState(): ContextualPanelState {
@@ -108,6 +109,12 @@ export function contextualPanelReducer(
       return goBack(state)
     case 'close':
       return closePanel(state)
+    case 'close-to-root':
+      return {
+        ...state,
+        mode: 'neutral',
+        history: [],
+      }
     case 'map-click':
       return state.mode === 'venue-detail' ? closePanel(state) : state
   }

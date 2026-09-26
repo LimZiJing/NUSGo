@@ -12,6 +12,7 @@ import type { VenueLocation } from '../../domain/venue/types'
 const fakeMapState = vi.hoisted(() => ({
   maps: [] as unknown[],
   popups: [] as unknown[],
+  popupCloseButton: null as { click: () => void } | null,
 }))
 
 vi.mock('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url', () => ({
@@ -66,7 +67,12 @@ vi.mock('maplibre-gl', () => {
     readonly setLayoutProperty = vi.fn((id: string, name: string, value: unknown) => {
       this.layoutProperties.set(`${id}:${name}`, value)
     })
-    readonly getContainer = vi.fn(() => ({ clientWidth: 1200 }))
+    readonly getContainer = vi.fn(() => ({
+      clientWidth: 1200,
+      querySelector: (selector: string) => selector === '.maplibregl-popup-close-button'
+        ? fakeMapState.popupCloseButton
+        : null,
+    }))
     readonly fitBounds = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly flyTo = vi.fn()
@@ -424,7 +430,27 @@ describe('MapSession', () => {
   beforeEach(() => {
     fakeMapState.maps.length = 0
     fakeMapState.popups.length = 0
+    fakeMapState.popupCloseButton = null
     vi.unstubAllGlobals()
+  })
+
+  it('dismisses the active MapLibre popup through its map container', () => {
+    const closePopup = vi.fn()
+    fakeMapState.popupCloseButton = { click: closePopup }
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+
+    expect(session.dismissPopup()).toBe(true)
+    expect(closePopup).toHaveBeenCalledOnce()
+
+    fakeMapState.popupCloseButton = null
+    expect(session.dismissPopup()).toBe(false)
+
+    session.dispose()
+    expect(session.dismissPopup()).toBe(false)
   })
 
   it('preserves a valid route presentation across transit reloads without refitting', async () => {

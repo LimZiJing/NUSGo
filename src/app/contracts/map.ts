@@ -58,6 +58,8 @@ export interface MapSession {
    * inset reports update padding without refitting the user's camera.
    */
   setViewportInsets(insets: MapViewportInsets): void
+  /** Closes the active MapLibre popup, returning whether one was open. */
+  dismissPopup(): boolean
   zoomIn(): void
   zoomOut(): void
   resetView(target: MapResetTarget): void

@@ -18,6 +18,7 @@ function createMapDouble(): MapSession {
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
     setViewportInsets: vi.fn(),
+    dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     resetView: vi.fn(),
@@ -48,7 +49,9 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     back: vi.fn(),
     escape: vi.fn(),
     close: vi.fn(),
+    closeToRoot: vi.fn(),
     handleMapClick: vi.fn(),
+    dismissMapPopup: vi.fn(() => false),
     reportMapError: vi.fn(),
     reportStartupFailure: vi.fn(),
     dispose: vi.fn(),
@@ -160,6 +163,8 @@ describe('navigation session application seam', () => {
     expect(secondCommands.selectOriginEndpoint).toBe(firstCommands.selectOriginEndpoint)
     firstCommands.selectOriginEndpoint({ kind: 'venue', id: 'COM1' })
     expect(session.setTripEndpoint).toHaveBeenCalledWith('origin', { kind: 'venue', id: 'COM1' })
+    expect(firstCommands.dismissMapPopup()).toBe(false)
+    expect(session.dismissMapPopup).toHaveBeenCalledOnce()
 
     const replacement = createSessionDouble()
     expect(adapter(replacement)).not.toBe(firstCommands)

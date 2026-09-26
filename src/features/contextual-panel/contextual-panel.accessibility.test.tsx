@@ -5,7 +5,6 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContextualPanel } from './contextual-panel'
-import { ShuttleRouteControl } from '../shuttle-browsing/shuttle-route-control'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -208,8 +207,6 @@ function RootSheetEscapeHarness() {
 }
 
 function MobileStopPopupHarness() {
-  const network = createValidTransitNetwork()
-  const index = createTransitIndex(network)
   const popupActionRef = useRef<HTMLButtonElement>(null)
   const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
 
@@ -222,15 +219,23 @@ function MobileStopPopupHarness() {
         shuttleRoutesAvailable
         selectedRouteId="A1"
         renderShuttleRoutes={(_, options) => (
-          <ShuttleRouteControl
-            network={network}
-            networkIndex={index}
-            selectedRouteId="A1"
-            mobileViewport
-            onRouteSelect={() => undefined}
-            firstRouteCardRef={options.firstRouteCardRef}
-            onFocusStop={options.onFocusStop}
-          />
+          <>
+            <button
+              ref={options.firstRouteCardRef}
+              type="button"
+              aria-label="Route A1"
+              aria-pressed="true"
+            >
+              A1
+            </button>
+            <button
+              type="button"
+              aria-label="Stop A, stop STOP-A. Focus on map"
+              onClick={() => options.onFocusStop?.('STOP-A')}
+            >
+              Stop A
+            </button>
+          </>
         )}
         onQueryChange={() => undefined}
         onVenueSelect={() => undefined}

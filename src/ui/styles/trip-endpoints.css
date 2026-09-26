@@ -46,8 +46,6 @@
 }
 
 .trip-controls-heading button,
-.trip-endpoint-clear,
-.trip-endpoint-search-clear,
 .trip-clear-both {
   padding: 5px 8px;
   border: 1px solid #cbd5e1;
@@ -63,73 +61,162 @@
   opacity: 0.55;
 }
 
-.trip-endpoint-control {
+.trip-controls-swap {
   display: grid;
-  gap: 6px;
-  padding: 10px;
+  width: 40px;
+  height: 40px;
+  padding: 0 !important;
+  place-items: center;
+}
+
+.trip-controls-swap svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.trip-endpoint-picker {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
   border: 1px solid #e2e8f0;
-  border-radius: 5px;
-  background: rgb(248 250 252 / 70%);
-}
-
-.trip-endpoint-heading label {
-  font-weight: 600;
-}
-
-.trip-endpoint-search-row {
-  display: flex;
-  gap: 6px;
-}
-
-.trip-endpoint-search-row input {
-  min-width: 0;
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  color: #1f2937;
+  border-radius: 12px;
   background: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 10%);
+}
+
+.trip-endpoint-picker::before {
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 25px;
+  border-left: 2px dotted #cbd5e1;
+  content: '';
+}
+
+.trip-endpoint-control {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.trip-endpoint-marker {
+  width: 14px;
+  height: 14px;
+  margin: 15px 7px 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 40%);
+  box-sizing: border-box;
+}
+
+.trip-endpoint-control-origin .trip-endpoint-marker {
+  background: #15803d;
+}
+
+.trip-endpoint-control-destination .trip-endpoint-marker {
+  background: #dc2626;
+}
+
+.trip-endpoint-field {
+  min-width: 0;
+}
+
+.trip-endpoint-input-row {
+  position: relative;
+}
+
+.trip-endpoint-control .search-field-icon {
+  display: none;
+}
+
+.trip-endpoint-control .search-field input {
+  min-height: 44px;
+  padding: 10px 42px 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #1f2937;
+  background: #f8fafc;
   font: inherit;
 }
 
-.trip-endpoint-selection,
+.trip-endpoint-control .search-field input:focus {
+  border-color: #64748b;
+  outline: 2px solid rgb(100 116 139 / 25%);
+  outline-offset: 1px;
+}
+
+.trip-endpoint-control .search-field input::placeholder {
+  color: #64748b;
+}
+
+.trip-endpoint-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #475569;
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.trip-endpoint-clear:hover,
+.trip-endpoint-clear:focus-visible {
+  color: #1f2937;
+  background: #e2e8f0;
+}
+
+.trip-endpoint-clear svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
 .trip-endpoint-search-status,
 .trip-validation {
   margin: 0;
-}
-
-.trip-endpoint-selection {
-  color: #475569;
-}
-
-.trip-endpoint-selection strong,
-.trip-endpoint-id {
-  color: #1f2937;
-}
-
-.trip-endpoint-id {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-}
-
-.trip-endpoint-search-status,
-.trip-validation {
-  color: #475569;
-  font-size: 13px;
 }
 
 .trip-endpoint-results {
   display: grid;
   gap: 4px;
   max-height: 180px;
+  margin-top: 4px;
+  padding: 4px;
   overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 12%);
 }
 
 .trip-endpoint-result {
   display: grid;
   gap: 2px;
   padding: 8px;
-  border: 1px solid #e2e8f0;
+  border: 0;
   border-radius: 4px;
   text-align: left;
   color: #1f2937;
@@ -140,7 +227,6 @@
 
 .trip-endpoint-result:hover,
 .trip-endpoint-result:focus-visible {
-  border-color: #64748b;
   background: #f8fafc;
 }
 
@@ -151,11 +237,21 @@
 
 .trip-endpoint-empty {
   margin: 4px 0;
+  padding: 4px;
   color: #475569;
 }
 
 .trip-clear-both {
-  justify-self: start;
+  justify-self: end;
+  border-color: transparent;
+  color: #475569;
+  background: transparent;
+}
+
+.trip-clear-both:not(:disabled):hover,
+.trip-clear-both:not(:disabled):focus-visible {
+  border-color: #cbd5e1;
+  background: #f8fafc;
 }
 
 .trip-validation {

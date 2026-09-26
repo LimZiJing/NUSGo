@@ -421,7 +421,9 @@ function resolveJourneyEdge(
   elapsedSeconds: number,
   getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
 ): ResolvedJourneyEdge | null {
-  if (edge.kind === 'walking') return edge
+  if (edge.kind === 'walking') {
+    return { ...edge, reachesRouteTerminal: false }
+  }
 
   const waitingSeconds = getShuttleWaitingSeconds(edge.record, {
     routeId: edge.routeId,

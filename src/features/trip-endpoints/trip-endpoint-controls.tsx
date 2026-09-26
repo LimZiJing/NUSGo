@@ -238,9 +238,11 @@ export function TripEndpointControls({
         >
           Clear all
         </button>
-        <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
-          {tripValidation ?? 'Origin and destination are set.'}
-        </p>
+        {tripValidation && (
+          <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
+            {tripValidation}
+          </p>
+        )}
         <TripJourneyResult
           state={journey}
           venues={venues}

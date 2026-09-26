@@ -255,7 +255,26 @@
 }
 
 .trip-validation {
-  padding-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 8px 0;
+  color: #b45309;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.trip-validation::before {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: '!';
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .trip-journey-status {

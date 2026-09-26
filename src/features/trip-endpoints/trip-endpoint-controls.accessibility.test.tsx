@@ -88,6 +88,35 @@ describe('TripEndpointControls interactions', () => {
     expect(document.activeElement).toBe(toggle)
   })
 
+  it('only shows endpoint validation when the request needs attention', () => {
+    const networkIndex = createTransitIndex(createValidTransitNetwork())
+    const controls = {
+      venues,
+      networkIndex,
+      onExpandedChange: () => undefined,
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+    }
+
+    const { rerender } = render(
+      <TripEndpointControls
+        {...controls}
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+      />,
+    )
+
+    expect(screen.queryByText('Origin and destination are set.')).toBeNull()
+    rerender(<TripEndpointControls {...controls} tripRequest={{ origin: null, destination: null }} />)
+    expect(screen.getByText('Origin is required.')).toBeTruthy()
+  })
+
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {
     const user = userEvent.setup()
     render(<TripEndpointHarness />)

@@ -97,9 +97,12 @@ describe('ContextualPanel venue details', () => {
     const markup = renderVenueDetails()
 
     expect(markup).toContain('<h3 id="contextual-venue-detail-heading"')
+    expect(markup).toMatch(/<h2 id="contextual-panel-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
     expect(markup).toContain('Seminar Room 3 <span class="venue-detail-code">(COM1-0212)</span>')
-    expect(markup).toContain('<p class="venue-detail-location">Floor 2 · Computing 1</p>')
-    expect(markup).toContain('<p class="venue-detail-coordinates">1.300000, 103.770000</p>')
+    expect(markup).toContain('venue-detail-building-icon')
+    expect(markup).toContain('<span>Floor 2 · Computing 1</span></p>')
+    expect(markup).toContain('venue-detail-pin-icon')
+    expect(markup).toContain('<span>1.300000, 103.770000</span></p>')
     expect(markup.indexOf('contextual-venue-detail-heading'))
       .toBeLessThan(markup.indexOf('venue-detail-location'))
     expect(markup.indexOf('venue-detail-location'))
@@ -118,7 +121,7 @@ describe('ContextualPanel venue details', () => {
       venues: { 'AS7-0214': unlocatedVenue },
     })
 
-    expect(markup).toContain('<p class="venue-detail-location">The Shaw Foundation Building</p>')
+    expect(markup).toContain('<span>The Shaw Foundation Building</span></p>')
     expect(markup).not.toContain('venue-detail-coordinates')
     expect(markup).not.toContain('Nearby bus stops')
     expect(markup).toContain('disabled=""')
@@ -145,8 +148,8 @@ describe('ContextualPanel venue details', () => {
     expect(markup).toContain('href="https://nusmods.com/venues/COM1-0212"')
     expect(markup).toContain('target="_blank"')
     expect(markup).toContain('rel="noreferrer"')
-    expect(markup).toContain('<img src="/nusmods-logo.svg" alt=""')
-    expect(markup).toContain('View in NUSMods')
+    expect(markup).toContain('<span>View in</span>')
+    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
   })
 
   it('renders nearby buttons with internal route badges and excludes public services', () => {
@@ -171,8 +174,9 @@ describe('ContextualPanel venue details', () => {
     const markup = renderVenueDetails({ mobileViewport: false })
 
     expect(markup).toContain('class="venue-detail-actions"')
-    expect(markup).toContain('>Navigate<')
-    expect(markup).toContain('View in NUSMods')
+    expect(markup).toContain('<span>Navigate</span>')
+    expect(markup).toContain('<span>View in</span>')
+    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
     expect(markup).toContain('Nearby bus stops')
     expect(markup).not.toContain('Browse shuttle routes')
   })

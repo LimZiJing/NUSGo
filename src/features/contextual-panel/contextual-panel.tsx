@@ -589,7 +589,7 @@ export function ContextualPanel({
           id="contextual-panel-heading"
           ref={panelHeadingRef}
           tabIndex={-1}
-          className={mobileExploreSegments ? 'visually-hidden' : undefined}
+          className={mobileExploreSegments || state.mode === 'venue-detail' ? 'visually-hidden' : undefined}
         >
           {getPanelHeading(state, selectedRouteId, mobileViewport)}
         </h2>
@@ -698,11 +698,26 @@ export function ContextualPanel({
             {state.selectedVenue.venue.roomName}{' '}
             <span className="venue-detail-code">({state.selectedVenue.code})</span>
           </h3>
-          {venueFloorAndBuilding && (
-            <p className="venue-detail-location">{venueFloorAndBuilding}</p>
-          )}
-          {venueCoordinates && (
-            <p className="venue-detail-coordinates">{venueCoordinates}</p>
+          {(venueFloorAndBuilding || venueCoordinates) && (
+            <div className="venue-detail-metadata">
+              {venueFloorAndBuilding && (
+                <p className="venue-detail-location">
+                  <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
+                    <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
+                  </svg>
+                  <span>{venueFloorAndBuilding}</span>
+                </p>
+              )}
+              {venueCoordinates && (
+                <p className="venue-detail-coordinates">
+                  <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-pin-icon" viewBox="0 0 24 24">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                  <span>{venueCoordinates}</span>
+                </p>
+              )}
+            </div>
           )}
           <div className="venue-detail-actions">
             <button
@@ -713,10 +728,10 @@ export function ContextualPanel({
                 if (selectedVenue) onNavigateToVenue?.(selectedVenue.code)
               }}
             >
-              <span>Navigate</span>
               <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                <path d="M4 12h15m-6-6 6 6-6 6" />
+                <path d="m4 20 7-17 3 8 8 3-18 6Z" />
               </svg>
+              <span>Navigate</span>
             </button>
             <a
               className="venue-detail-action venue-detail-nusmods"
@@ -724,8 +739,8 @@ export function ContextualPanel({
               target="_blank"
               rel="noreferrer"
             >
-              <img src="/nusmods-logo.svg" alt="" />
-              <span>View in NUSMods</span>
+              <span>View in</span>
+              <img src="/nusmods-logo.svg" alt="NUSMods" />
             </a>
           </div>
           {venueHasCoordinates && (

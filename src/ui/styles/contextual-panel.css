@@ -103,10 +103,6 @@
   stroke-linecap: round;
 }
 
-.contextual-panel-search-clear:hover {
-  background: #e2e8f0;
-}
-
 .contextual-panel-actions {
   justify-content: flex-start;
   flex-wrap: wrap;
@@ -175,6 +171,19 @@
   font-weight: 400;
 }
 
+.venue-detail-metadata {
+  display: grid;
+  gap: 2px;
+}
+
+.venue-detail-location,
+.venue-detail-coordinates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+
 .venue-detail-location {
   color: #1f2937;
 }
@@ -184,9 +193,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.venue-detail-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
 .venue-detail-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px;
 }
@@ -337,8 +357,11 @@
   color: #1f2937;
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):hover,
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):focus-visible {
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):hover,
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):focus-visible {
   border-color: #64748b;
+}
+
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):focus-visible {
   background: #f1f5f9;
 }

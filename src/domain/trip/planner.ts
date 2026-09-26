@@ -108,6 +108,7 @@ interface ProjectedPoint {
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
+const MAX_PATH_LABELS_PER_STATE = 8
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -372,6 +373,36 @@ function journeyPathStateKey(path: JourneyPath): string {
   return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}`
 }
 
+function retainPathLabels(
+  labelsByState: Map<string, JourneyPath[]>,
+  path: JourneyPath,
+): boolean {
+  const stateKey = journeyPathStateKey(path)
+  const labels = labelsByState.get(stateKey) ?? []
+  if (labels.some((label) => label.sequenceKey === path.sequenceKey)) return false
+
+  labels.push(path)
+  labels.sort(comparePaths)
+  if (labels.length > MAX_PATH_LABELS_PER_STATE) {
+    const earlyLabels = labels.slice(0, Math.floor(MAX_PATH_LABELS_PER_STATE / 2))
+    const lateLabels = labels.slice(-Math.ceil(MAX_PATH_LABELS_PER_STATE / 2))
+    labelsByState.set(stateKey, [...earlyLabels, ...lateLabels])
+  } else {
+    labelsByState.set(stateKey, labels)
+  }
+
+  return labelsByState.get(stateKey)?.some((label) => label.sequenceKey === path.sequenceKey) ?? false
+}
+
+function hasPathLabel(
+  labelsByState: ReadonlyMap<string, readonly JourneyPath[]>,
+  path: JourneyPath,
+): boolean {
+  return labelsByState.get(journeyPathStateKey(path))?.some(
+    (label) => label.sequenceKey === path.sequenceKey,
+  ) ?? false
+}
+
 function isUpstreamBoarding(
   origin: TripEndpoint,
   edge: ShuttleJourneyEdge,
@@ -534,14 +565,21 @@ function findBestPath(
     sequenceKey: '',
   }
   const queue: JourneyPath[] = [initialPath]
-  const bestByState = new Map([[journeyPathStateKey(initialPath), initialPath]])
+  const labelsByState = new Map<string, JourneyPath[]>()
+  retainPathLabels(labelsByState, initialPath)
+  let bestDestinationPath: JourneyPath | null = null
 
   while (queue.length > 0) {
     queue.sort(comparePaths)
     const path = queue.shift()!
-    const bestForState = bestByState.get(journeyPathStateKey(path))
-    if (!bestForState || comparePaths(path, bestForState) !== 0) continue
-    if (path.nodeKey === destinationKey) return path
+    if (!hasPathLabel(labelsByState, path)) continue
+    if (bestDestinationPath && path.durationSeconds > bestDestinationPath.durationSeconds) continue
+    if (path.nodeKey === destinationKey) {
+      if (!bestDestinationPath || comparePaths(path, bestDestinationPath) < 0) {
+        bestDestinationPath = path
+      }
+      continue
+    }
 
     for (const edge of graph.get(path.nodeKey) ?? []) {
       if (
@@ -558,16 +596,13 @@ function findBestPath(
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
       if (!resolvedEdge) continue
       const nextPath = extendPath(path, resolvedEdge)
-      const nextStateKey = journeyPathStateKey(nextPath)
-      const currentBest = bestByState.get(nextStateKey)
-      if (!currentBest || comparePaths(nextPath, currentBest) < 0) {
-        bestByState.set(nextStateKey, nextPath)
+      if (retainPathLabels(labelsByState, nextPath)) {
         queue.push(nextPath)
       }
     }
   }
 
-  return null
+  return bestDestinationPath
 }
 
 export function planJourney(input: PlanJourneyInput): Journey | null {

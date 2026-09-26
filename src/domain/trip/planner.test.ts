@@ -16,6 +16,7 @@ const destination: TripEndpoint = { kind: 'venue', id: 'DESTINATION' }
 const stopA: TripEndpoint = { kind: 'stop', id: 'STOP-A' }
 const stopB: TripEndpoint = { kind: 'stop', id: 'STOP-B' }
 const stopC: TripEndpoint = { kind: 'stop', id: 'STOP-C' }
+const stopE: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
 
 function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConnection['geometry'] {
   const coordinateByEndpoint = new Map([
@@ -24,6 +25,7 @@ function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConne
     [`stop:STOP-B`, [103.001, 1] as const],
     [`stop:STOP-C`, [103.002, 1] as const],
     [`stop:STOP-D`, [103.003, 1] as const],
+    [`stop:STOP-E`, [103.004, 1] as const],
     [`venue:DESTINATION`, [103.002, 1] as const],
   ])
   return {
@@ -262,6 +264,53 @@ function createTerminalReboardingInput(): PlanJourneyInput {
   }
 }
 
+function createTimeDependentInput(): PlanJourneyInput {
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [
+      { id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-C', 'STOP-D'] },
+      { id: 'B1', name: 'B1', color: '#234567', stopIds: ['STOP-D', 'STOP-E'] },
+    ],
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+      { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
+      { id: 'STOP-D', longName: 'Stop D', shortName: 'D', latitude: 1, longitude: 103.003, services: ['A1', 'B1'] },
+      { id: 'STOP-E', longName: 'Stop E', shortName: 'E', latitude: 1, longitude: 103.004, services: ['B1'] },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.002, 1], [103.003, 1]] } },
+      { type: 'Feature', properties: { routeId: 'B1', name: 'B1', color: '#234567' }, geometry: { type: 'LineString', coordinates: [[103.003, 1], [103.004, 1]] } },
+    ],
+  })
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.005, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(origin, stopA, 1),
+      walking(origin, stopC, 100),
+      walking(stopE, destination, 1),
+      walking(origin, destination, 1_000),
+    ],
+    getShuttleWaitingSeconds: (record, context) => (
+      record.routeId === 'B1' && context.elapsedSeconds < 100 ? 100 : 0
+    ),
+  }
+}
+
 describe('planJourney', () => {
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
     const journey = planJourney(createInput([
@@ -360,6 +409,18 @@ describe('planJourney', () => {
     }))).toEqual([
       { boardingStopId: 'STOP-B', alightingStopId: 'STOP-A', waitingSeconds: 5 },
       { boardingStopId: 'STOP-A', alightingStopId: 'STOP-C', waitingSeconds: 5 },
+    ])
+  })
+
+  it('keeps a later arrival when it catches the next bus sooner', () => {
+    const journey = planJourney(createTimeDependentInput())
+
+    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => ({
+      routeId: leg.routeId,
+      boardingStopId: leg.boardingStopId,
+    }))).toEqual([
+      { routeId: 'A1', boardingStopId: 'STOP-C' },
+      { routeId: 'B1', boardingStopId: 'STOP-D' },
     ])
   })
 

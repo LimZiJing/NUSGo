@@ -47,7 +47,7 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
-- [ ] Explore and Stops start compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
+- [ ] Explore NUS starts expanded; Stops starts compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
 - [ ] The centered 44 × 44px handle toggles the active sheet by tap, Enter, or Space; dragging snaps to the nearer existing state, and a cancelled drag restores its starting state without a second toggle. Dragging beyond either stop shows resisted travel up to 32px and a 220ms return; releasing after moving back inside the allowed range uses the normal snap, and reduced-motion settings skip the rebound.
 - [ ] Dragging starts only on the handle; sheet content scrolls independently, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.

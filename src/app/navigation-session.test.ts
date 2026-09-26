@@ -158,7 +158,7 @@ describe('navigation session', () => {
       selectedRouteColor: null,
       rememberedMobileRouteId: null,
       contextualPanel: {
-        mode: 'venue-search',
+        mode: 'neutral',
         query: '',
         selectedVenue: null,
         history: [],
@@ -819,6 +819,7 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
+    session.openVenueSearch()
     session.setContextualPanelQuery('COM1')
     session.selectVenue(venueResult)
     expect(session.getState().contextualPanel).toMatchObject({
@@ -948,6 +949,7 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
+    session.openVenueSearch()
     session.selectVenue(venueResult)
     session.escape()
     expect(session.getState().contextualPanel.mode).toBe('venue-search')

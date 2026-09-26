@@ -67,7 +67,9 @@ function renderShuttleRoutes(
 }
 
 function PanelHarness({
-  initialState = createInitialContextualPanelState(),
+  initialState = contextualPanelReducer(createInitialContextualPanelState(), {
+    type: 'open-venue-search',
+  }),
   network: networkOverride,
   networkIndex: networkIndexOverride,
   mobileViewport = true,
@@ -267,6 +269,7 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
 function MinimizedPanelHarness() {
   const [state, setState] = useState({
     ...createInitialContextualPanelState(),
+    mode: 'venue-search' as const,
     query: 'COM1',
   })
   const [minimized, setMinimized] = useState(true)
@@ -302,6 +305,15 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('opens at the Explore NUS root with both entry actions visible', () => {
+    render(<PanelHarness initialState={createInitialContextualPanelState()} />)
+
+    expect(screen.getByRole('region', { name: 'Explore NUS' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Browse shuttle routes' })).toBeTruthy()
+    expect(screen.queryByRole('searchbox', { name: 'Find a venue' })).toBeNull()
+  })
+
   it('returns from route details to the selected route card and restores focus', async () => {
     const user = userEvent.setup()
     render(<ShuttleRouteNavigationHarness />)
@@ -493,7 +505,7 @@ describe('ContextualPanel accessibility workflows', () => {
   it('preserves an endpoint input when a minimized mobile sheet becomes desktop content', async () => {
     const network = createValidTransitNetwork()
     const networkIndex = createTransitIndex(network)
-    const state = createInitialContextualPanelState()
+    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const }
     const panelProps = {
       state,
       venues,

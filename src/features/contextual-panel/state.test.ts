@@ -14,10 +14,16 @@ const selectedVenue: VenueSearchResult = {
   },
 }
 
+function createVenueSearchState() {
+  return contextualPanelReducer(createInitialContextualPanelState(), {
+    type: 'open-venue-search',
+  })
+}
+
 describe('contextualPanelReducer', () => {
-  it('starts in venue search mode', () => {
+  it('starts at the Explore root', () => {
     expect(createInitialContextualPanelState()).toMatchObject({
-      mode: 'venue-search',
+      mode: 'neutral',
       query: '',
       selectedVenue: null,
     })
@@ -25,7 +31,7 @@ describe('contextualPanelReducer', () => {
 
   it('keeps the venue query when opening a venue detail view and going back', () => {
     const searchState = contextualPanelReducer(
-      { ...createInitialContextualPanelState(), query: 'COM1' },
+      { ...createVenueSearchState(), query: 'COM1' },
       { type: 'select-venue', result: selectedVenue },
     )
 
@@ -43,7 +49,7 @@ describe('contextualPanelReducer', () => {
 
   it('returns to the previous context when entering shuttle mode', () => {
     const detailState = contextualPanelReducer(
-      createInitialContextualPanelState(),
+      createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
     const shuttleState = contextualPanelReducer(detailState, { type: 'open-shuttle' })
@@ -77,7 +83,7 @@ describe('contextualPanelReducer', () => {
 
   it('escapes through history before closing to the neutral state', () => {
     const detailState = contextualPanelReducer(
-      createInitialContextualPanelState(),
+      createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
     const searchState = contextualPanelReducer(detailState, { type: 'escape' })
@@ -93,7 +99,7 @@ describe('contextualPanelReducer', () => {
 
   it('returns directly to the neutral state when closed', () => {
     const detailState = contextualPanelReducer(
-      { ...createInitialContextualPanelState(), query: 'COM1' },
+      { ...createVenueSearchState(), query: 'COM1' },
       { type: 'select-venue', result: selectedVenue },
     )
 
@@ -107,7 +113,7 @@ describe('contextualPanelReducer', () => {
 
   it('closes venue detail on an empty map click', () => {
     const detailState = contextualPanelReducer(
-      createInitialContextualPanelState(),
+      createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
 

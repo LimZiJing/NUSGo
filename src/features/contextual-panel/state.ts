@@ -34,7 +34,7 @@ export type ContextualPanelAction =
 
 export function createInitialContextualPanelState(): ContextualPanelState {
   return {
-    mode: 'venue-search',
+    mode: 'neutral',
     query: '',
     selectedVenue: null,
     history: [],

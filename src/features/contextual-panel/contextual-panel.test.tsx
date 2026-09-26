@@ -34,8 +34,17 @@ function renderPanel(
 }
 
 describe('ContextualPanel', () => {
-  it('starts with a venue search view without a route shortcut', () => {
+  it('starts at Explore NUS with venue and route entry actions', () => {
     const markup = renderPanel()
+
+    expect(markup).toContain('>Explore NUS</h2>')
+    expect(markup).toContain('Find a venue')
+    expect(markup).toContain('Browse shuttle routes')
+    expect(markup).not.toContain('id="contextual-venue-search-input"')
+  })
+
+  it('shows venue search without a route shortcut', () => {
+    const markup = renderPanel({ ...createInitialContextualPanelState(), mode: 'venue-search' })
 
     expect(markup).toContain('id="contextual-venue-search-input"')
     expect(markup).toContain('>Find a venue</h2>')
@@ -81,7 +90,7 @@ describe('ContextualPanel', () => {
 
   it('keeps the panel available when venue search throws', () => {
     const malformedVenues = { broken: null } as unknown as typeof venues
-    const state = { ...createInitialContextualPanelState(), query: 'broken' }
+    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const, query: 'broken' }
 
     expect(() => renderPanel(state, malformedVenues)).not.toThrow()
     expect(renderPanel(state, malformedVenues)).toContain(

@@ -18,7 +18,7 @@ export function createInitialMobileNavigationState(): MobileNavigationState {
   return {
     activeTab: 'explore',
     sheets: {
-      explore: { expanded: false },
+      explore: { expanded: true },
       stops: { expanded: false },
       plan: { expanded: true },
     },

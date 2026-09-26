@@ -219,6 +219,49 @@ function createUpstreamBoardingInput(): PlanJourneyInput {
   }
 }
 
+function createTerminalReboardingInput(): PlanJourneyInput {
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-A'] }],
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1.001, longitude: 103, services: ['A1'] },
+      { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1.002, longitude: 103, services: ['A1'] },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      geometry: { type: 'LineString', coordinates: [[103, 1], [103, 1.001], [103, 1.002], [103, 1]] },
+    }],
+  })
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.002, latitude: 1.003 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(origin, stopB, 10),
+      walking(stopC, destination, 10),
+      walking(origin, destination, 1_000),
+    ],
+    getShuttleWaitingSeconds: (record) => (
+      record.fromStopId === 'STOP-B' && record.toStopId === 'STOP-C' ? null : 5
+    ),
+  }
+}
+
 describe('planJourney', () => {
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
     const journey = planJourney(createInput([
@@ -299,6 +342,25 @@ describe('planJourney', () => {
       boardingStopId: 'STOP-B',
       alightingStopId: 'STOP-C',
     })
+  })
+
+  it('reboards the same route after reaching its declared terminal', () => {
+    const journey = planJourney(createTerminalReboardingInput())
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual([
+      'walking',
+      'shuttle',
+      'shuttle',
+      'walking',
+    ])
+    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => ({
+      boardingStopId: leg.boardingStopId,
+      alightingStopId: leg.alightingStopId,
+      waitingSeconds: leg.waitingSeconds,
+    }))).toEqual([
+      { boardingStopId: 'STOP-B', alightingStopId: 'STOP-A', waitingSeconds: 5 },
+      { boardingStopId: 'STOP-A', alightingStopId: 'STOP-C', waitingSeconds: 5 },
+    ])
   })
 
   it('passes the elapsed journey time to each shuttle wait calculation', () => {

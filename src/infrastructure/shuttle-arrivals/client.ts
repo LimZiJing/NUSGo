@@ -9,6 +9,13 @@ export interface ShuttleArrivalStopRequest {
   readonly stopName: string
 }
 
+export class ShuttleArrivalFetchError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'ShuttleArrivalFetchError'
+  }
+}
+
 export interface ShuttleArrivalClient {
   getArrivals(
     stops: readonly ShuttleArrivalStopRequest[],
@@ -178,7 +185,9 @@ export function createShuttleArrivalClient(
           })
           .catch((error: unknown) => {
             if (error instanceof Error && error.name === 'AbortError') throw error
-            return null
+            throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched', {
+              cause: error,
+            })
           })
           .finally(() => {
             inFlight.delete(key)
@@ -199,7 +208,7 @@ export function createShuttleArrivalClient(
       const observedAt = validEntries
         .map((entry) => entry.observedAt)
         .sort()[0]
-      if (!observedAt) throw new Error('No shuttle arrival data is available')
+      if (!observedAt) throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched')
       const expiresAt = validEntries
         .map((entry) => entry.expiresAt)
         .sort()[0]

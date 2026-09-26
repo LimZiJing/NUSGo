@@ -176,8 +176,10 @@ function collectReachableStops(
 ): Set<string> {
   const reachable = new Set(startStopIds)
   const queue = [...startStopIds]
-  while (queue.length > 0) {
-    const stopId = queue.shift()!
+  let queueIndex = 0
+  while (queueIndex < queue.length) {
+    const stopId = queue[queueIndex]
+    queueIndex += 1
     for (const nextStopId of edges.get(stopId) ?? []) {
       if (reachable.has(nextStopId)) continue
       reachable.add(nextStopId)

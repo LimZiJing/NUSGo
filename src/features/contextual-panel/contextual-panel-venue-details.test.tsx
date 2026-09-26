@@ -96,6 +96,7 @@ describe('ContextualPanel venue details', () => {
   it('shows code-first venue identity, building, actions, and nearby stops in order', () => {
     const markup = renderVenueDetails()
 
+    expect(markup).toContain('Nearby bus stops within 500 m')
     expect(markup).toContain('<h3 id="contextual-venue-detail-heading"')
     expect(markup).toMatch(/<h2 id="contextual-panel-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
     expect(markup).toContain('>COM1-0212</h3>')

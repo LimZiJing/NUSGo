@@ -736,7 +736,7 @@ export function ContextualPanel({
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
                   <path d="M6 3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1l1.5 2h-2.4L14 19h-4l-1.1 2H6.5L8 19H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v6h12V6H6Zm1 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
                 </svg>
-                Nearby bus stops
+                Nearby bus stops within 500 m
               </h4>
               {transitIndex === null ? (
                 <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>

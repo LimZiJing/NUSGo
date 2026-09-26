@@ -178,8 +178,9 @@
     padding: 12px 16px;
     border-bottom: 1px solid #e2e8f0;
     color: #475569;
-    font: 700 12px/1.2 system-ui, sans-serif;
-    letter-spacing: 0.08em;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
   }
 
   .route-timeline {

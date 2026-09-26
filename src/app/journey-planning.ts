@@ -135,7 +135,8 @@ function isCandidatePair(
   const fromCanWalkToTransit = from.key === originKey || from.endpoint.kind === 'stop'
   const toCanWalkFromTransit = to.key === destinationKey || to.endpoint.kind === 'stop'
   const touchesTripEndpoint = from.key === originKey || to.key === destinationKey
-  return fromCanWalkToTransit && toCanWalkFromTransit && touchesTripEndpoint
+  const isStopToStopTransfer = from.endpoint.kind === 'stop' && to.endpoint.kind === 'stop'
+  return fromCanWalkToTransit && toCanWalkFromTransit && (touchesTripEndpoint || isStopToStopTransfer)
 }
 
 function selectWalkingCandidates(

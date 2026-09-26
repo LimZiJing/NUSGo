@@ -114,6 +114,8 @@
 
 .contextual-panel-results {
   display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 4px;
   max-height: 300px;
   overflow-y: auto;

@@ -133,7 +133,7 @@
     display: none;
   }
 
-  .route-chip {
+  .contextual-panel .route-chip {
     flex: 0 0 auto;
     min-width: 48px;
     min-height: 44px;
@@ -147,7 +147,11 @@
     scroll-snap-align: start;
   }
 
-  .route-chip[aria-pressed='true'] {
+  .contextual-panel .route-chip:hover {
+    border-color: #cbd5e1;
+  }
+
+  .contextual-panel .route-chip[aria-pressed='true'] {
     border-color: var(--route-color);
     color: var(--route-text-color);
     background: var(--route-color);
@@ -179,6 +183,7 @@
 
   .route-timeline {
     position: relative;
+    isolation: isolate;
     margin: 0;
     padding: 4px 0;
     list-style: none;
@@ -186,6 +191,7 @@
 
   .route-timeline::before {
     position: absolute;
+    z-index: 1;
     top: 28px;
     bottom: 28px;
     left: 25px;
@@ -216,13 +222,16 @@
   }
 
   .route-timeline-node {
-    z-index: 1;
-    width: 13px;
-    height: 13px;
-    flex: 0 0 13px;
-    border: 3px solid var(--route-color);
-    border-radius: 3px;
+    position: relative;
+    z-index: 2;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    box-sizing: border-box;
+    border: 2px solid var(--route-color);
+    border-radius: 50%;
     background: #fff;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 30%);
   }
 
   .route-timeline-text {

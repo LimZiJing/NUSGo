@@ -34,10 +34,6 @@
   white-space: nowrap;
 }
 
-.trip-controls-toggle {
-  display: none;
-}
-
 .trip-controls-body {
   display: grid;
   gap: 10px;

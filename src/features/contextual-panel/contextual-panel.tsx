@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -11,6 +12,7 @@ import {
 } from 'react'
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import type { ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -95,6 +97,9 @@ export function ContextualPanel({
 }: ContextualPanelProps) {
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const restorePanelButtonRef = useRef<HTMLButtonElement>(null)
+  const setRestorePanelButtonRef = useCallback((button: HTMLButtonElement | null): void => {
+    restorePanelButtonRef.current = button
+  }, [])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
   const routeSelectRef = useRef<HTMLSelectElement>(null)
@@ -340,48 +345,36 @@ export function ContextualPanel({
       ref={containerRef}
       aria-labelledby="contextual-panel-heading"
       data-minimized={minimized}
+      data-mobile-sheet
+      data-expanded={!minimized}
       onFocusCapture={handlePanelFocusCapture}
       onBlurCapture={handlePanelBlurCapture}
     >
+      <div className="mobile-sheet-handle-row">
+        <MobileSheetHandle
+          expanded={!minimized}
+          label="Explore panel"
+          controlsId="contextual-panel-content"
+          onButtonRef={setRestorePanelButtonRef}
+          onExpandedChange={(expanded) => {
+            if (expanded) onRestore?.()
+            else handleMinimize()
+          }}
+        />
+      </div>
       <div className="contextual-panel-header">
         <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
           {getPanelHeading(state)}
         </h2>
-        {minimized ? (
-          <button
-            type="button"
-            ref={restorePanelButtonRef}
-            onClick={onRestore}
-            aria-label="Show contextual panel"
-            aria-controls="contextual-panel-content"
-            aria-expanded="false"
-          >
-            Show panel
+        {state.mode !== 'neutral' && (
+          <button type="button" onClick={handleClose} aria-label="Close map context">
+            Close
           </button>
-        ) : (
-          <>
-            {mobileViewport && (
-              <button
-                type="button"
-                aria-controls="contextual-panel-content"
-                aria-expanded="true"
-                aria-label="Hide contextual panel"
-                onClick={handleMinimize}
-              >
-                Hide
-              </button>
-            )}
-            {state.mode !== 'neutral' && (
-              <button type="button" onClick={handleClose} aria-label="Close map context">
-                Close
-              </button>
-            )}
-          </>
         )}
       </div>
 
       {state.mode === 'neutral' && (
-        <div id="contextual-panel-content" className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
           <p>Search for a venue or browse the shuttle network.</p>
           <div className="contextual-panel-actions">
             <button
@@ -403,7 +396,7 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'venue-search' && (
-        <div id="contextual-panel-content" className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
           <label htmlFor="contextual-venue-search-input">Find a venue</label>
           <div className="contextual-panel-search-row">
             <input
@@ -462,7 +455,11 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'venue-detail' && state.selectedVenue && (
-        <div id="contextual-panel-content" className="contextual-panel-content contextual-panel-detail">
+        <div
+          id="contextual-panel-content"
+          className="contextual-panel-content contextual-panel-detail"
+          data-mobile-sheet-content
+        >
           <button type="button" onClick={handleBack} aria-label="Back to venue search">
             Back
           </button>
@@ -484,7 +481,7 @@ export function ContextualPanel({
       )}
 
       {state.mode === 'shuttle' && (
-        <div id="contextual-panel-content" className="contextual-panel-content">
+        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
           <button
             ref={shuttleBackRef}
             type="button"

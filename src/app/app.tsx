@@ -225,7 +225,7 @@ function App() {
     if (!focusTripControlAfterOverlayRef.current) return
     focusTripControlAfterOverlayRef.current = false
     const focusTarget = tripControlsRef.current?.querySelector<HTMLElement>(
-      '.trip-controls-body input:not([disabled]), .trip-controls-body select:not([disabled]), .trip-controls-body textarea:not([disabled]), .trip-controls-toggle',
+      '.trip-controls-body input:not([disabled]), .trip-controls-body select:not([disabled]), .trip-controls-body textarea:not([disabled]), .mobile-sheet-handle',
     )
     focusTarget?.focus()
   }, [isMobileViewport, mobileNavigation.sheets.plan.expanded])

@@ -368,6 +368,19 @@ function journeyPathStateKey(path: JourneyPath): string {
   return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}`
 }
 
+function isUpstreamBoarding(
+  origin: TripEndpoint,
+  edge: ShuttleJourneyEdge,
+  transitIndex: TransitIndex,
+): boolean {
+  if (origin.kind !== 'stop') return false
+  const route = transitIndex.routeById.get(edge.routeId)
+  if (!route) return false
+  const originIndex = route.stopIds.indexOf(origin.id)
+  const boardingIndex = route.stopIds.indexOf(edge.fromStopId)
+  return originIndex >= 0 && boardingIndex >= 0 && boardingIndex < originIndex
+}
+
 function resolveJourneyEdge(
   edge: JourneyEdge,
   elapsedSeconds: number,
@@ -498,6 +511,7 @@ function findBestPath(
   graph: Map<string, JourneyEdge[]>,
   origin: TripEndpoint,
   destination: TripEndpoint,
+  transitIndex: TransitIndex,
   getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
 ): JourneyPath | null {
   const originKey = endpointKey(origin)
@@ -523,6 +537,11 @@ function findBestPath(
     if (path.nodeKey === destinationKey) return path
 
     for (const edge of graph.get(path.nodeKey) ?? []) {
+      if (
+        edge.kind === 'shuttle' &&
+        path.shuttleBoardings === 0 &&
+        isUpstreamBoarding(origin, edge, transitIndex)
+      ) continue
       // A continuous ride cannot become another boarding on the same route.
       if (edge.kind === 'shuttle' && path.lastShuttleRouteId === edge.routeId) continue
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
@@ -546,6 +565,7 @@ export function planJourney(input: PlanJourneyInput): Journey | null {
     graph,
     input.origin.endpoint,
     input.destination.endpoint,
+    input.transitIndex,
     input.getShuttleWaitingSeconds,
   )
   if (!path || path.legs.length === 0) return null

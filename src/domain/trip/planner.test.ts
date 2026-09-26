@@ -15,6 +15,7 @@ const origin: TripEndpoint = { kind: 'venue', id: 'ORIGIN' }
 const destination: TripEndpoint = { kind: 'venue', id: 'DESTINATION' }
 const stopA: TripEndpoint = { kind: 'stop', id: 'STOP-A' }
 const stopB: TripEndpoint = { kind: 'stop', id: 'STOP-B' }
+const stopC: TripEndpoint = { kind: 'stop', id: 'STOP-C' }
 
 function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConnection['geometry'] {
   const coordinateByEndpoint = new Map([
@@ -176,6 +177,48 @@ function createSameRouteInput(): PlanJourneyInput {
   }
 }
 
+function createUpstreamBoardingInput(): PlanJourneyInput {
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-C'] }],
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
+      { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1], [103.002, 1]] },
+    }],
+  })
+  const originStop: TripEndpoint = { kind: 'stop', id: 'STOP-B' }
+  return {
+    origin: { endpoint: originStop, coordinate: { longitude: 103.001, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.003, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(originStop, stopA, 10),
+      walking(stopC, destination, 10),
+      walking(originStop, destination, 1_000),
+    ],
+    getShuttleWaitingSeconds: (record) => record.fromStopId === 'STOP-A' ? 0 : 100,
+  }
+}
+
 describe('planJourney', () => {
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
     const journey = planJourney(createInput([
@@ -244,6 +287,17 @@ describe('planJourney', () => {
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-C',
       waitingSeconds: 0,
+    })
+  })
+
+  it('does not walk upstream to board the same route when the origin is already a stop', () => {
+    const journey = planJourney(createUpstreamBoardingInput())
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['shuttle', 'walking'])
+    expect(journey?.legs[0]).toMatchObject({
+      routeId: 'A1',
+      boardingStopId: 'STOP-B',
+      alightingStopId: 'STOP-C',
     })
   })
 

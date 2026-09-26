@@ -91,6 +91,15 @@ Local headless Chrome, Vite app from the feature branch:
 - Tab switching preserved each sheet's state, the map canvas loaded and responded to a click, and the mobile tab bar stayed visible at 768px. At 769px, mobile tabs and handles were hidden.
 - Automated tests cover both 32px caps, normal snapping after returning inside the range, cancelled drags, and reduced-motion behavior. `npm test` passed (49 files, 315 tests); `npm run lint` passed. `npm run build --ignore-scripts` passed TypeScript and Vite production builds. Standard `npm run build` is blocked in its prebuild timing-data script by Node 22.22.1 reporting `ERR_NO_TYPESCRIPT` for `--experimental-strip-types`.
 
+## Issue #118 targeted verification — 2026-09-26
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local Vite development server, 390 × 844:
+
+- Explore venue search for `COM2` returned `COM2-0108 Tutorial Room 9`; selecting it opened details with the room name and floor.
+- Shuttle route cards showed the eight canonical routes and their colors. D2 details showed all 16 ordered stop calls; scrolling to the end exposed the terminal return to `COM3` after `TCOMS`.
+- Back restored focus to the selected D2 card. Close returned to Explore, and reopening route browsing kept D2 selected. Show all routes cleared the selection.
+- This covers the #118 Explore changes only; the broader issue #89 map/responsive checklist was not repeated.
+
 ## Keyboard and accessibility
 
 - [ ] Focus is visible and follows a sensible order through the affected workflow.

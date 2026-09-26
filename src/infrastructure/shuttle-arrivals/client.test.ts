@@ -17,6 +17,8 @@ function responseFor(stopId: string): Response {
   }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
 
+const nowMs = Date.parse('2026-09-23T13:48:30+08:00')
+
 describe('createShuttleArrivalClient', () => {
   it('requests uncached stops in one batch', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
@@ -27,7 +29,7 @@ describe('createShuttleArrivalClient', () => {
         'KR-MRT': { A1: { nextArrivalSeconds: 120, upcomingArrivalSeconds: [120], headwaySeconds: null } },
       },
     }), { status: 200 }))
-    const client = createShuttleArrivalClient({ fetcher })
+    const client = createShuttleArrivalClient({ fetcher, now: () => nowMs })
     const signal = new AbortController().signal
 
     const result = await client.getArrivals([
@@ -46,7 +48,7 @@ describe('createShuttleArrivalClient', () => {
 
   it('reuses cached stop data and shares an in-progress request', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))
-    const client = createShuttleArrivalClient({ fetcher })
+    const client = createShuttleArrivalClient({ fetcher, now: () => nowMs })
     const stop = { stopId: 'PGP', stopName: 'PGP' }
     const signal = new AbortController().signal
 
@@ -87,7 +89,7 @@ describe('createShuttleArrivalClient', () => {
       stops: { PGP: {} },
     }), { status: 200 }))
 
-    const result = await createShuttleArrivalClient({ fetcher }).getArrivals([
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals([
       { stopId: 'PGP', stopName: 'PGP' },
     ], new AbortController().signal)
 
@@ -109,7 +111,7 @@ describe('createShuttleArrivalClient', () => {
       },
     }), { status: 200 }))
 
-    const result = await createShuttleArrivalClient({ fetcher }).getArrivals([
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals([
       { stopId: 'PGP', stopName: 'PGP' },
     ], new AbortController().signal)
 
@@ -128,6 +130,54 @@ describe('createShuttleArrivalClient', () => {
     }), { status: 200 }))
 
     await expect(createShuttleArrivalClient({ fetcher }).getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+    ], new AbortController().signal)).rejects.toBeInstanceOf(ShuttleArrivalFetchError)
+  })
+
+  it('keeps each stop observation and provider expiry when combining cached stops', async () => {
+    let now = nowMs
+    const fetcher = vi.fn<typeof fetch>(async (input) => {
+      const requestedStops = JSON.parse(
+        new URL(String(input), 'http://localhost').searchParams.get('stops') ?? '[]',
+      ) as { stopId: string }[]
+      const stopId = requestedStops[0]?.stopId
+      const observedAt = stopId === 'PGP' ? '2026-09-23T13:48:26+08:00' : '2026-09-23T13:49:26+08:00'
+      const expiresAt = stopId === 'PGP' ? '2026-09-23T13:49:26+08:00' : '2026-09-23T13:50:26+08:00'
+      return new Response(JSON.stringify({
+        observedAt,
+        expiresAt,
+        stops: { [stopId]: {} },
+      }), { status: 200 })
+    })
+    const client = createShuttleArrivalClient({ fetcher, now: () => now, cacheTtlMs: 60_000 })
+
+    await client.getArrivals([{ stopId: 'PGP', stopName: 'PGP' }], new AbortController().signal)
+    now += 1_000
+    const result = await client.getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+      { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
+    ], new AbortController().signal)
+
+    expect(result.stopObservations).toEqual({
+      PGP: {
+        observedAt: '2026-09-23T13:48:26+08:00',
+        expiresAt: '2026-09-23T13:49:26+08:00',
+      },
+      'KR-MRT': {
+        observedAt: '2026-09-23T13:49:26+08:00',
+        expiresAt: '2026-09-23T13:50:26+08:00',
+      },
+    })
+  })
+
+  it('rejects a provider snapshot that is already expired', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:48:29+08:00',
+      stops: { PGP: {} },
+    }), { status: 200 }))
+
+    await expect(createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals([
       { stopId: 'PGP', stopName: 'PGP' },
     ], new AbortController().signal)).rejects.toBeInstanceOf(ShuttleArrivalFetchError)
   })

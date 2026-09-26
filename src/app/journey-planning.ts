@@ -438,16 +438,19 @@ export function createJourneyPlanningService(
       throw error
     }
 
-    const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)
     const nowMs = now()
+    const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals, nowMs)
     const liveJourney = planJourney({
       ...planInput,
       getShuttleWaitingSeconds: (record, context) => {
+        const waitingSeconds = liveWaiting(record, context)
+        if (waitingSeconds === null) return null
         const windows = serviceWindows?.[record.routeId]
-        if (!windows) return liveWaiting(record, context)
-        const service = evaluateShuttleService(windows, new Date(nowMs + context.elapsedSeconds * 1000))
+        if (!windows) return waitingSeconds
+        const boardingAtMs = nowMs + (context.elapsedSeconds + waitingSeconds) * 1000
+        const service = evaluateShuttleService(windows, new Date(boardingAtMs))
         if (service.status !== 'active') return null
-        return liveWaiting(record, context)
+        return waitingSeconds
       },
     })
     if (liveJourney) {

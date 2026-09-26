@@ -176,8 +176,10 @@ function collectReachableStops(
 ): Set<string> {
   const reachable = new Set(startStopIds)
   const queue = [...startStopIds]
-  while (queue.length > 0) {
-    const stopId = queue.shift()!
+  let queueIndex = 0
+  while (queueIndex < queue.length) {
+    const stopId = queue[queueIndex]
+    queueIndex += 1
     for (const nextStopId of edges.get(stopId) ?? []) {
       if (reachable.has(nextStopId)) continue
       reachable.add(nextStopId)
@@ -189,12 +191,19 @@ function collectReachableStops(
 
 function createTransitStopEdges(
   transit: LoadedTransitData,
-): { readonly forward: ReadonlyMap<string, ReadonlySet<string>>; readonly reverse: ReadonlyMap<string, ReadonlySet<string>> } {
+  walkingConnections: readonly WalkingJourneyConnection[],
+): {
+  readonly forward: ReadonlyMap<string, ReadonlySet<string>>
+  readonly reverse: ReadonlyMap<string, ReadonlySet<string>>
+  readonly shuttleForward: ReadonlyMap<string, ReadonlySet<string>>
+} {
   const forward = new Map<string, Set<string>>()
   const reverse = new Map<string, Set<string>>()
+  const shuttleForward = new Map<string, Set<string>>()
   for (const stop of transit.index.stops) {
     forward.set(stop.id, new Set())
     reverse.set(stop.id, new Set())
+    shuttleForward.set(stop.id, new Set())
   }
   for (const route of transit.index.routes) {
     for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
@@ -204,10 +213,16 @@ function createTransitStopEdges(
         if (fromStopId === toStopId) continue
         forward.get(fromStopId)?.add(toStopId)
         reverse.get(toStopId)?.add(fromStopId)
+        shuttleForward.get(fromStopId)?.add(toStopId)
       }
     }
   }
-  return { forward, reverse }
+  for (const connection of walkingConnections) {
+    if (connection.from.kind !== 'stop' || connection.to.kind !== 'stop') continue
+    forward.get(connection.from.id)?.add(connection.to.id)
+    reverse.get(connection.to.id)?.add(connection.from.id)
+  }
+  return { forward, reverse, shuttleForward }
 }
 
 function collectEligibleBoardingStops(
@@ -235,13 +250,16 @@ function collectEligibleBoardingStops(
   }
   if (originStopIds.size === 0 || destinationStopIds.size === 0) return []
 
-  const { forward, reverse } = createTransitStopEdges(transit)
+  const { forward, reverse, shuttleForward } = createTransitStopEdges(
+    transit,
+    walkingConnections,
+  )
   const reachableFromOrigin = collectReachableStops(originStopIds, forward)
   const canReachDestination = collectReachableStops(destinationStopIds, reverse)
   return transit.index.stops
     .filter((stop) => (
       reachableFromOrigin.has(stop.id) &&
-      [...(forward.get(stop.id) ?? [])].some((nextStopId) => canReachDestination.has(nextStopId))
+      [...(shuttleForward.get(stop.id) ?? [])].some((nextStopId) => canReachDestination.has(nextStopId))
     ))
     .map((stop) => ({ stopId: stop.id, stopName: stop.longName }))
 }

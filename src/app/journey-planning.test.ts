@@ -273,6 +273,40 @@ describe('createJourneyPlanningService', () => {
     expect(journey?.legs.some((leg) => leg.mode === 'shuttle' && leg.routeId === 'B1')).toBe(true)
   })
 
+  it('allows walking between shuttle stops during a transfer', async () => {
+    const transit = createAlternativeTransitData()
+    const routeEngine = createAlternativeRouteEngine()
+    routeEngine.matrixWalking.mockResolvedValue([
+      { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+      { fromIndex: 3, toIndex: 4, distanceMeters: 50, durationSeconds: 50 },
+      { fromIndex: 5, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      { fromIndex: 0, toIndex: 1, distanceMeters: 1_000, durationSeconds: 1_000 },
+    ])
+
+    const journey = await createJourneyPlanningService(routeEngine)({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.012, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual([
+      'walking',
+      'shuttle',
+      'walking',
+      'shuttle',
+      'walking',
+    ])
+    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => leg.routeId))
+      .toEqual(['A1', 'B1'])
+  })
+
   it('keeps the walking-only Journey when live timing removes every shuttle edge', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = createAlternativeRouteEngine()

@@ -83,6 +83,15 @@ Codex In-App Browser (Chromium-based), local Vite app, mobile/touch emulation:
 - [ ] Tile or style failures produce a user-safe status without hiding unrelated application controls.
 - [ ] Any external-resource limitation is recorded separately from application behavior.
 
+## Issue #109 targeted verification — 2026-09-26
+
+Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0.1:4174/`, and the local Valhalla service at `127.0.0.1:8002`:
+
+- Selecting route A1 left its 12 route stops at computed opacity `1` and dimmed all 21 unrelated marker circles to `0.2`.
+- Setting origin KV and destination PGP produced a K shuttle Journey from KV through PGPR, followed by a walk to PGP. Stops outside the shuttle segment computed to `0.2`; Journey stops remained at `1`.
+- Clearing the Journey restored all markers to opacity `1`. Selecting and clearing A1 also restored all markers to opacity `1`.
+- Browser Fetch interception supplied deterministic local arrival and service-window data. No live NUS API was contacted.
+
 ## Historical issue checklists
 
 The `issue-*-manual-smoke-check.md` files record evidence for earlier issues. They are historical records, not additional standing checklists. New work should link to this file and record only the targeted checks or release result that applies.

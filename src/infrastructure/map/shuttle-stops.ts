@@ -196,6 +196,7 @@ function updateBusStopMarkerElement(
   element.classList.toggle('bus-stop-marker-dimmed', isDimmed)
   element.classList.toggle('bus-stop-marker-disabled', isDisabled)
   element.classList.toggle('bus-stop-marker-hidden', !isVisible)
+  marker.setOpacity(isDimmed ? BUS_STOP_INACTIVE_OPACITY : 1)
   element.style.display = isVisible ? '' : 'none'
   element.style.pointerEvents = isDisabled ? 'none' : ''
   button.disabled = isDisabled

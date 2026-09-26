@@ -119,7 +119,7 @@ vi.mock('maplibre-gl', () => {
       return this
     }
 
-    setOpacity(opacity: number) {
+    setOpacity(opacity: string | number) {
       this.element.style.opacity = String(opacity)
       return this
     }

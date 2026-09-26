@@ -142,14 +142,245 @@
     border-radius: 12px 12px 0 0;
   }
 
+  [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row) {
+    animation: mobile-sheet-content-enter 180ms ease-out both;
+  }
+
+  @keyframes mobile-sheet-content-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row) {
+      animation: none;
+    }
+  }
+
   .contextual-panel {
     width: 100%;
     min-height: 0;
     align-content: start;
     grid-auto-rows: max-content;
+    gap: 14px;
+    padding: 16px max(16px, env(safe-area-inset-right))
+      16px
+      max(16px, env(safe-area-inset-left));
+    border: 1px solid #e2e8f0;
+    border-bottom: 0;
+    background: rgb(255 255 255 / 98%);
+    box-shadow: 0 -6px 22px rgb(15 23 42 / 14%);
+  }
+
+  .contextual-panel-header {
+    gap: 12px;
+  }
+
+  .contextual-panel-header h2 {
+    font-size: 20px;
+    letter-spacing: -0.2px;
+  }
+
+  .contextual-panel-shuttle .contextual-panel-header,
+  .contextual-panel-mobile-venue-search .contextual-panel-header {
+    display: block;
+  }
+
+  .contextual-panel-shuttle,
+  .contextual-panel-mobile-venue-search,
+  .contextual-panel-venue-detail {
+    padding-top: 8px;
+  }
+
+  .contextual-panel-venue-detail .contextual-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .contextual-panel-mobile-venue-search {
+    --mobile-venue-sheet-height: min(
+      50dvh,
+      calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
+    );
+    grid-template-rows: max-content max-content minmax(0, 1fr);
+  }
+
+  .contextual-panel-mobile-venue-search:not(.contextual-panel-minimized) {
+    height: var(--mobile-venue-sheet-height);
+  }
+
+  /* The handle measures with height:auto; keep its expanded stop at the visible sheet height. */
+  .contextual-panel-mobile-venue-search[data-mobile-sheet-measuring='expanded'] {
+    min-height: var(--mobile-venue-sheet-height);
+  }
+
+  .contextual-panel-mobile-venue-search .contextual-panel-content {
+    grid-template-rows: max-content minmax(0, 1fr);
+  }
+
+  .contextual-panel-mobile-venue-search .contextual-panel-search-body {
+    display: grid;
+    min-height: 0;
+  }
+
+  .mobile-explore-segments {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    padding: 3px;
+    border-radius: 12px;
+    background: #e8eef5;
+  }
+
+  .contextual-panel .mobile-explore-segments button {
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 9px;
+    color: #475569;
+    background: transparent;
+    font: 600 14px/1.2 system-ui, sans-serif;
+  }
+
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true'] {
+    color: #0f172a;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 16%);
+  }
+
+  .contextual-panel .mobile-explore-segments button:hover {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:hover,
+  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:focus-visible {
+    border-color: transparent;
+    background: #fff;
+  }
+
+  .contextual-panel-search-prompt {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 10px;
+    color: #64748b;
+    font: 600 16px/1.3 system-ui, sans-serif;
+  }
+
+  .contextual-panel-search-prompt svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+  }
+
+  .contextual-panel .mobile-ghost-back-button {
+    min-height: 0;
+    padding: 3px;
+    border: 0;
+    color: #334155;
+    background: transparent;
+    font: 600 14px/1.2 system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  .contextual-panel .mobile-ghost-back-button:hover,
+  .contextual-panel .mobile-ghost-back-button:focus-visible {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .mobile-ghost-back-button span {
+    margin-right: 5px;
+    font-size: 17px;
+  }
+
+  .contextual-panel-content {
+    gap: 12px;
+  }
+
+  .contextual-panel-content > p {
+    color: #475569;
+    line-height: 1.45;
+  }
+
+  .contextual-panel-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .contextual-panel-actions button {
+    min-height: 52px;
+    padding: 10px 12px;
+    border-color: #d8e1ec;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-weight: 600;
+  }
+
+  .contextual-panel-search-row {
+    gap: 8px;
+  }
+
+  .contextual-panel-search-row input {
+    min-height: 48px;
+    padding: 10px 54px 10px 12px;
+    border-color: #d8e1ec;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .contextual-panel .contextual-panel-search-clear {
+    right: 2px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .contextual-panel-results {
+    max-height: 28dvh;
+    gap: 8px;
+  }
+
+  .contextual-panel .contextual-panel-result {
+    min-height: 56px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .contextual-panel-detail h3 {
+    font-size: 24px;
+  }
+
+  .contextual-panel-header button,
+  .contextual-panel button {
+    border-radius: 10px;
+  }
+
+  .contextual-panel button:focus-visible,
+  .contextual-panel input:focus-visible,
+  .contextual-panel select:focus-visible {
+    outline: 3px solid rgb(37 99 235 / 55%);
+    outline-offset: 2px;
   }
 
   .contextual-panel-minimized .contextual-panel-content {
+    display: none;
+  }
+
+  .contextual-panel-mobile-venue-search.contextual-panel-minimized .contextual-panel-content,
+  .contextual-panel-shuttle.contextual-panel-minimized .contextual-panel-content {
+    display: grid;
+  }
+
+  .contextual-panel-minimized [data-mobile-sheet-content] {
     display: none;
   }
 
@@ -200,10 +431,19 @@
   [data-mobile-sheet-measuring='expanded'] .contextual-panel-content,
   [data-mobile-sheet-dragging] .contextual-panel-content,
   [data-mobile-sheet-settling='expanded'] .contextual-panel-content,
+  [data-mobile-sheet-measuring='expanded'] .contextual-panel-search-body,
+  [data-mobile-sheet-dragging] .contextual-panel-search-body,
+  [data-mobile-sheet-settling='expanded'] .contextual-panel-search-body,
   [data-mobile-sheet-measuring='expanded'] .trip-controls-body,
   [data-mobile-sheet-dragging] .trip-controls-body,
   [data-mobile-sheet-settling='expanded'] .trip-controls-body {
     display: grid !important;
+  }
+
+  [data-mobile-sheet-measuring='expanded'] .route-timeline-card,
+  [data-mobile-sheet-dragging] .route-timeline-card,
+  [data-mobile-sheet-settling='expanded'] .route-timeline-card {
+    display: block !important;
   }
 
   [data-mobile-sheet-measuring='expanded'].mobile-stops-sheet [data-mobile-sheet-content],

@@ -45,7 +45,9 @@ export interface MapSession {
     selection: MapRouteSelection,
     onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
   ): void
-  setRouteSelection(selection: MapRouteSelection): void
+  setRouteSelection(selection: MapRouteSelection, fit?: boolean): void
+  refitRoute(): void
+  focusStop(stopId: string): void
   setTripRequest(
     request: TripRequest,
     venues: VenueLocationMap,

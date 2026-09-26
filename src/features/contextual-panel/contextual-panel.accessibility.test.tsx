@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
-import { useState, type ReactNode, type RefObject } from 'react'
+import { useRef, useState, type ReactNode, type RefObject } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContextualPanel } from './contextual-panel'
+import { ShuttleRouteControl } from '../shuttle-browsing/shuttle-route-control'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -66,7 +67,9 @@ function renderShuttleRoutes(
 }
 
 function PanelHarness({
-  initialState = createInitialContextualPanelState(),
+  initialState = contextualPanelReducer(createInitialContextualPanelState(), {
+    type: 'open-venue-search',
+  }),
   network: networkOverride,
   networkIndex: networkIndexOverride,
   mobileViewport = true,
@@ -114,10 +117,60 @@ function PanelHarness({
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
       onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
+      onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
       onBack={() => dispatch({ type: 'back' })}
       onClose={() => dispatch({ type: 'close' })}
       onEscape={() => dispatch({ type: 'escape' })}
       onDismissMapPopup={onDismissMapPopup}
+    />
+  )
+}
+
+function ShuttleRouteNavigationHarness() {
+  const [state, setState] = useState<ContextualPanelState>({
+    ...createInitialContextualPanelState(),
+    mode: 'neutral',
+  })
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const dispatch = (action: ContextualPanelAction): void => {
+    setState((current) => contextualPanelReducer(current, action))
+  }
+
+  return (
+    <ContextualPanel
+      state={state}
+      mobileViewport={false}
+      venues={venues}
+      shuttleRoutesAvailable
+      selectedRouteId={selectedRouteId}
+      renderShuttleRoutes={(_, options) => options.mobileRouteDetail ? (
+        <p>Route details</p>
+      ) : (
+        <button
+          ref={options.firstRouteCardRef}
+          type="button"
+          data-contextual-focus-id="shuttle-route-A1"
+          aria-pressed={selectedRouteId === 'A1'}
+          onClick={() => {
+            setSelectedRouteId('A1')
+            options.onOpenRouteDetail()
+          }}
+        >
+          Route A1
+        </button>
+      )}
+      onQueryChange={() => undefined}
+      onVenueSelect={() => undefined}
+      onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
+      onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
+      onOpenShuttleRouteDetail={() => dispatch({ type: 'open-shuttle-route-detail' })}
+      onShowAllRoutes={() => {
+        setSelectedRouteId(null)
+        dispatch({ type: 'back' })
+      }}
+      onBack={() => dispatch({ type: 'back' })}
+      onClose={() => dispatch({ type: 'close-to-root' })}
+      onEscape={() => dispatch({ type: 'escape' })}
     />
   )
 }
@@ -154,6 +207,46 @@ function RootSheetEscapeHarness() {
   )
 }
 
+function MobileStopPopupHarness() {
+  const network = createValidTransitNetwork()
+  const index = createTransitIndex(network)
+  const popupActionRef = useRef<HTMLButtonElement>(null)
+  const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+
+  return (
+    <>
+      <button ref={popupActionRef} type="button">Popup action</button>
+      <ContextualPanel
+        state={state}
+        venues={venues}
+        shuttleRoutesAvailable
+        selectedRouteId="A1"
+        renderShuttleRoutes={(_, options) => (
+          <ShuttleRouteControl
+            network={network}
+            networkIndex={index}
+            selectedRouteId="A1"
+            mobileViewport
+            onRouteSelect={() => undefined}
+            firstRouteCardRef={options.firstRouteCardRef}
+            onFocusStop={options.onFocusStop}
+          />
+        )}
+        onQueryChange={() => undefined}
+        onVenueSelect={() => undefined}
+        onOpenVenueSearch={() => undefined}
+        onOpenShuttle={() => undefined}
+        onFocusStop={() => popupActionRef.current?.focus()}
+        onLeaveMobileRoutes={() => undefined}
+        onBack={() => undefined}
+        onClose={() => undefined}
+        onEscape={() => undefined}
+        onDismissMapPopup={() => true}
+      />
+    </>
+  )
+}
+
 function PanelWithOutsideControl({ children }: { children: ReactNode }) {
   return (
     <>
@@ -177,6 +270,7 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
 function MinimizedPanelHarness() {
   const [state, setState] = useState({
     ...createInitialContextualPanelState(),
+    mode: 'venue-search' as const,
     query: 'COM1',
   })
   const [minimized, setMinimized] = useState(true)
@@ -212,6 +306,57 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('opens mobile Explore on Find venue with a labelled segmented selector', () => {
+    render(<PanelHarness initialState={createInitialContextualPanelState()} />)
+
+    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Explore view' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
+  })
+
+  it('returns from route details to the selected route card and restores focus', async () => {
+    const user = userEvent.setup()
+    render(<ShuttleRouteNavigationHarness />)
+
+    const browseRoutes = screen.getByRole('button', { name: 'Browse shuttle routes' })
+    await user.click(browseRoutes)
+    const routeCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(routeCard))
+
+    await user.click(routeCard)
+    expect(await screen.findByRole('heading', { name: 'A1 Shuttle' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Back to shuttle routes' }))
+
+    const returnedRouteCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(returnedRouteCard))
+    expect(returnedRouteCard.getAttribute('aria-pressed')).toBe('true')
+
+    await user.click(returnedRouteCard)
+    await screen.findByRole('heading', { name: 'A1 Shuttle' })
+    await user.keyboard('{Escape}')
+    const escapedRouteCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(escapedRouteCard))
+  })
+
+  it('closes route details to Explore, restores the opener, and keeps map selection', async () => {
+    const user = userEvent.setup()
+    render(<ShuttleRouteNavigationHarness />)
+
+    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    await user.click(await screen.findByRole('button', { name: 'Route A1' }))
+    await screen.findByRole('heading', { name: 'A1 Shuttle' })
+    await user.click(screen.getByRole('button', { name: 'Close map context' }))
+
+    const browseRoutes = await screen.findByRole('button', { name: 'Browse shuttle routes' })
+    await waitFor(() => expect(document.activeElement).toBe(browseRoutes))
+    await user.click(browseRoutes)
+    expect((await screen.findByRole('button', { name: 'Route A1' })).getAttribute('aria-pressed'))
+      .toBe('true')
+  })
+
   it('does not handle Escape while its tab is inactive', async () => {
     const user = userEvent.setup()
     render(<PanelHarness active={false} />)
@@ -225,7 +370,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<RootSheetEscapeHarness />)
 
-    screen.getByRole('button', { name: 'Browse shuttle routes' }).focus()
+    screen.getByRole('button', { name: 'Find venue' }).focus()
     await user.keyboard('{Escape}')
 
     const restore = screen.getByRole('button', { name: 'Expand Explore panel' })
@@ -339,7 +484,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<MinimizedPanelHarness />)
 
-    const panel = screen.getByRole('region', { name: 'Explore NUS' })
+    const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('data-minimized')).toBe('true')
     expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
 
@@ -363,7 +508,7 @@ describe('ContextualPanel accessibility workflows', () => {
   it('preserves an endpoint input when a minimized mobile sheet becomes desktop content', async () => {
     const network = createValidTransitNetwork()
     const networkIndex = createTransitIndex(network)
-    const state = createInitialContextualPanelState()
+    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const }
     const panelProps = {
       state,
       venues,
@@ -454,11 +599,13 @@ describe('ContextualPanel accessibility workflows', () => {
 
     await waitFor(() => expect(document.activeElement).toBe(search))
 
-    const panel = screen.getByRole('region', { name: 'Explore NUS' })
+    const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('aria-labelledby')).toBe('contextual-panel-heading')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Browse shuttle routes' })).toBeTruthy()
+    expect(screen.getByText('Search for a venue')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Browse shuttle routes' })).toBeNull()
+    expect(screen.queryByText('Search by venue code or room name.')).toBeNull()
   })
 
   it('preserves query history, operates by keyboard, and focuses venue details', async () => {
@@ -476,16 +623,22 @@ describe('ContextualPanel accessibility workflows', () => {
     const detailHeading = await screen.findByRole('heading', { name: 'COM1-0210' })
     await waitFor(() => expect(document.activeElement).toBe(detailHeading))
     expect(screen.getByText('Venue details opened for COM1-0210.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Back to venue search' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Browse shuttle routes' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Back to venue search' }))
+    await user.click(screen.getByRole('button', { name: 'Find venue' }))
     const restoredSearch = await screen.findByRole('searchbox', { name: 'Find a venue' })
     await waitFor(() => expect((restoredSearch as HTMLInputElement).value).toBe('COM1'))
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /COM1-0210/ })))
   })
 
-  it('focuses route selection and restores the shuttle opener for Back, Escape, and Close', async () => {
+  it('keeps desktop route selection and its Back, Escape, and Close focus behavior', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness />)
+    render(<PanelHarness mobileViewport={false} />)
+    await user.click(screen.getByRole('button', { name: 'Close map context' }))
     const opener = screen.getByRole('button', { name: 'Browse shuttle routes' })
 
     await user.click(opener)
@@ -509,20 +662,46 @@ describe('ContextualPanel accessibility workflows', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
   })
 
-  it('restores the neutral entry control and never leaves focus on removed search content', async () => {
+  it('switches mobile Explore segments and restores focus to the selected segment', async () => {
+    const user = userEvent.setup()
+    render(<PanelHarness />)
+
+    await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1')
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
+    expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Find venue' }))
+    const venueSegment = screen.getByRole('button', { name: 'Find venue' })
+    expect(venueSegment.getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => expect(document.activeElement).toBe(venueSegment))
+    expect((screen.getByRole('searchbox', { name: 'Find a venue' }) as HTMLInputElement).value)
+      .toBe('COM1')
+  })
+
+  it('restores the tapped mobile stop row after Escape closes its popup', async () => {
+    const user = userEvent.setup()
+    render(<MobileStopPopupHarness />)
+
+    const stopRow = screen.getByRole('button', { name: /Stop A, stop STOP-A/ })
+    await user.click(stopRow)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Popup action' }))
+
+    await user.keyboard('{Escape}')
+    expect(document.activeElement).toBe(stopRow)
+    expect(screen.getByRole('button', { name: 'Route A1' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('keeps focus on the active segment after switching away from venue search', async () => {
     const user = userEvent.setup()
     render(<PanelHarness />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })
 
-    await user.keyboard('{Escape}')
-    const heading = await screen.findByRole('heading', { name: 'Explore NUS' })
-    await waitFor(() => expect(document.activeElement).toBe(heading))
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     expect(search.isConnected).toBe(false)
-
-    const findVenue = screen.getByRole('button', { name: 'Find a venue' })
-    await user.click(findVenue)
-    await user.click(screen.getByRole('button', { name: 'Close map context' }))
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Find a venue' })))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Shuttle routes' })))
   })
 
   it('uses a deterministic Back fallback while routes load and focuses the select when they arrive', async () => {
@@ -530,7 +709,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const validNetwork = createValidTransitNetwork()
     const validNetworkIndex = createTransitIndex(validNetwork)
     const { rerender } = render(
-      <PanelHarness initialState={state} network={null} networkIndex={null} />,
+      <PanelHarness initialState={state} network={null} networkIndex={null} mobileViewport={false} />,
     )
     const back = screen.getByRole('button', { name: 'Back to previous map context' })
     const routeSelect = screen.getByRole('combobox', { name: 'Shuttle route' })
@@ -544,6 +723,7 @@ describe('ContextualPanel accessibility workflows', () => {
         initialState={state}
         network={validNetwork}
         networkIndex={validNetworkIndex}
+        mobileViewport={false}
       />,
     )
 
@@ -557,7 +737,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const validNetworkIndex = createTransitIndex(validNetwork)
     const { rerender } = render(
       <PanelWithOutsideControl>
-        <PanelHarness initialState={state} network={null} networkIndex={null} />
+        <PanelHarness initialState={state} network={null} networkIndex={null} mobileViewport={false} />
       </PanelWithOutsideControl>,
     )
     await waitFor(() => expect(document.activeElement).toBe(
@@ -573,6 +753,7 @@ describe('ContextualPanel accessibility workflows', () => {
           initialState={state}
           network={validNetwork}
           networkIndex={validNetworkIndex}
+          mobileViewport={false}
         />
       </PanelWithOutsideControl>,
     )
@@ -585,7 +766,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const network = createValidTransitNetwork()
     network.routes = []
     const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
-    render(<PanelHarness initialState={state} network={network} networkIndex={null} />)
+    render(<PanelHarness initialState={state} network={network} networkIndex={null} mobileViewport={false} />)
 
     await waitFor(() => expect(document.activeElement).toBe(
       screen.getByRole('button', { name: 'Back to previous map context' }),

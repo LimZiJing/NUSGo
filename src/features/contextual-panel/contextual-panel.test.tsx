@@ -15,10 +15,12 @@ const venues: VenueLocationMap = {
 function renderPanel(
   state = createInitialContextualPanelState(),
   venueData: VenueLocationMap | null = venues,
+  mobileViewport = true,
 ) {
   return renderToStaticMarkup(
     <ContextualPanel
       state={state}
+      mobileViewport={mobileViewport}
       venues={venueData}
       shuttleRoutesAvailable
       renderShuttleRoutes={() => <span>Showing all 1 shuttle routes and all 2 shuttle stops.</span>}
@@ -34,12 +36,34 @@ function renderPanel(
 }
 
 describe('ContextualPanel', () => {
-  it('starts with venue search and a shuttle browsing action', () => {
+  it('starts on the mobile Find venue segment', () => {
     const markup = renderPanel()
 
+    expect(markup).toContain('Find venue</button>')
+    expect(markup).toContain('>Shuttle routes</button>')
     expect(markup).toContain('id="contextual-venue-search-input"')
+    expect(markup).not.toContain('Browse shuttle routes')
+  })
+
+  it('keeps the desktop Explore NUS root actions', () => {
+    const markup = renderPanel(createInitialContextualPanelState(), venues, false)
+
+    expect(markup).toContain('>Explore NUS</h2>')
+    expect(markup).toContain('Find a venue')
     expect(markup).toContain('Browse shuttle routes')
-    expect(markup).toContain('Search by venue code or room name.')
+    expect(markup).not.toContain('mobile-explore-segments')
+  })
+
+  it('shows venue search without a route shortcut', () => {
+    const markup = renderPanel({ ...createInitialContextualPanelState(), mode: 'venue-search' })
+
+    expect(markup).toContain('id="contextual-venue-search-input"')
+    expect(markup).toContain('>Find a venue</h2>')
+    expect(markup).toContain('aria-labelledby="contextual-panel-heading"')
+    expect(markup).toContain('Search for a venue')
+    expect(markup).not.toContain('Browse shuttle routes')
+    expect(markup).not.toContain('mobile-ghost-back-button')
+    expect(markup).not.toContain('Search by venue code or room name.')
   })
 
   it('shows venue details without rendering a map popup', () => {
@@ -57,7 +81,40 @@ describe('ContextualPanel', () => {
     expect(markup).toContain('>COM1-0210</h3>')
     expect(markup).toContain('Computing 1, Level 2')
     expect(markup).toContain('<strong>Floor:</strong> 2')
+    expect(markup).toContain('Find venue</button>')
+    expect(markup).not.toContain('Browse shuttle routes')
+    expect(markup).not.toContain('>Back</button>')
     expect(markup).not.toContain('maplibregl-popup')
+  })
+
+  it('labels the mobile detail return control from its previous context', () => {
+    const state = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+      history: [{ mode: 'shuttle' as const, query: '', selectedVenue: null }],
+    }
+
+    expect(renderPanel(state)).toContain('Shuttle routes</button>')
+  })
+
+  it('keeps desktop venue detail navigation actions', () => {
+    const state = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    const markup = renderPanel(state, venues, false)
+
+    expect(markup).toContain('aria-label="Back to venue search"')
+    expect(markup).toContain('aria-label="Close map context"')
+    expect(markup).toContain('Browse shuttle routes')
   })
 
   it('keeps shuttle mode available when venue data fails', () => {
@@ -78,7 +135,7 @@ describe('ContextualPanel', () => {
 
   it('keeps the panel available when venue search throws', () => {
     const malformedVenues = { broken: null } as unknown as typeof venues
-    const state = { ...createInitialContextualPanelState(), query: 'broken' }
+    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const, query: 'broken' }
 
     expect(() => renderPanel(state, malformedVenues)).not.toThrow()
     expect(renderPanel(state, malformedVenues)).toContain(

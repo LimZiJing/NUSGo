@@ -10,6 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 
@@ -21,6 +22,7 @@ interface TripEndpointControlsProps {
   mobileViewport?: boolean
   containerRef?: Ref<HTMLElement>
   onExpandedChange?: (expanded: boolean) => void
+  onBeforeSheetToggle?: () => void
   onSwap: () => void
   onSelectOriginEndpoint: (endpoint: TripEndpoint) => void
   onClearOriginEndpoint: () => void
@@ -67,6 +69,7 @@ export function TripEndpointControls({
   mobileViewport = true,
   containerRef,
   onExpandedChange,
+  onBeforeSheetToggle,
   onSwap,
   onSelectOriginEndpoint,
   onClearOriginEndpoint,
@@ -174,6 +177,7 @@ export function TripEndpointControls({
           label={`Plan trip panel: ${tripSummary.accessible}`}
           controlsId={TRIP_CONTROLS_CONTENT_ID}
           onButtonRef={setTripHandleRef}
+          onBeforeClick={onBeforeSheetToggle}
           onExpandedChange={setExpanded}
         />
       </div>
@@ -282,9 +286,8 @@ export function TripEndpointControl({
       </div>
 
       <div className="trip-endpoint-search-row">
-        <input
+        <SearchField
           id={inputId}
-          type="search"
           value={searchQuery}
           placeholder={`Search ${roleLabel.toLocaleLowerCase()} venue or stop`}
           onChange={(event) => onSearchQueryChange(event.target.value)}

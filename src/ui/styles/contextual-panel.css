@@ -44,6 +44,10 @@
   gap: 8px;
 }
 
+.contextual-panel-search-body {
+  display: contents;
+}
+
 .contextual-panel-content p {
   margin: 0;
 }
@@ -53,6 +57,7 @@
 }
 
 .contextual-panel-search-row {
+  position: relative;
   display: flex;
   gap: 6px;
 }
@@ -60,12 +65,46 @@
 .contextual-panel-search-row input {
   min-width: 0;
   flex: 1;
-  padding: 8px 10px;
+  padding: 8px 46px 8px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   color: #1f2937;
   background: #fff;
   font: inherit;
+}
+
+.contextual-panel-search-row input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.contextual-panel .contextual-panel-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 6px;
+  color: #64748b;
+  background: transparent;
+}
+
+.contextual-panel-search-clear svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.contextual-panel-search-clear:hover {
+  background: #e2e8f0;
 }
 
 .contextual-panel-actions {
@@ -133,8 +172,8 @@
   color: #1f2937;
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):hover,
-.contextual-panel button:not(.mobile-sheet-handle):focus-visible {
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):hover,
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):focus-visible {
   border-color: #64748b;
   background: #f1f5f9;
 }

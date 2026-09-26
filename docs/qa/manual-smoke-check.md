@@ -47,7 +47,7 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
-- [ ] Explore and Stops start compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
+- [ ] Explore starts expanded on Find venue with the Find venue / Shuttle routes selector; Stops starts compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
 - [ ] The centered 44 × 44px handle toggles the active sheet by tap, Enter, or Space; dragging snaps to the nearer existing state, and a cancelled drag restores its starting state without a second toggle. Dragging beyond either stop shows resisted travel up to 32px and a 220ms return; releasing after moving back inside the allowed range uses the normal snap, and reduced-motion settings skip the rebound.
 - [ ] Dragging starts only on the handle; sheet content scrolls independently, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
@@ -90,6 +90,25 @@ Local headless Chrome, Vite app from the feature branch:
 - At 390 × 844, Explore, Stops, and Plan each followed upward and downward handle drags about 30.6px beyond their allowed stops, then returned to the correct stop. All three sheets stayed above the tab bar.
 - Tab switching preserved each sheet's state, the map canvas loaded and responded to a click, and the mobile tab bar stayed visible at 768px. At 769px, mobile tabs and handles were hidden.
 - Automated tests cover both 32px caps, normal snapping after returning inside the range, cancelled drags, and reduced-motion behavior. `npm test` passed (49 files, 315 tests); `npm run lint` passed. `npm run build --ignore-scripts` passed TypeScript and Vite production builds. Standard `npm run build` is blocked in its prebuild timing-data script by Node 22.22.1 reporting `ERR_NO_TYPESCRIPT` for `--experimental-strip-types`.
+
+## Issue #118 targeted verification — 2026-09-26
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local Vite development server, 390 × 844:
+
+- Explore venue search for `COM2` returned `COM2-0108 Tutorial Room 9`; selecting it opened details with the room name and floor.
+- Shuttle route cards showed the eight canonical routes and their colors. D2 details showed all 16 ordered stop calls; scrolling to the end exposed the terminal return to `COM3` after `TCOMS`.
+- Back restored focus to the selected D2 card. Close returned to Explore, and reopening route browsing kept D2 selected. Show all routes cleared the selection.
+- This covers the #118 Explore changes only; the broader issue #89 map/responsive checklist was not repeated.
+
+## Mobile Explore Routes timeline targeted verification — 2026-09-26
+
+Codex browser, local Vite app, 390 × 844 mobile/touch emulation:
+
+- Venue search for `COM2-0108` returned Tutorial Room 9; selecting it opened the existing room and floor details.
+- Browse shuttle routes opened the single Routes sheet with A1 selected and focused. Eight chips appeared in canonical order; selecting R2 scrolled its chip into view. Selecting D2 showed 16 stop calls, and scrolling the sheet exposed the final `COM3` after `TCOMS`.
+- Tapping the final `COM3` row opened its existing popup. Its bottom edge was 41 px above the sheet after the stop camera adjustment. Escape closed the popup and restored focus to that row.
+- “← Explore” returned to the root, focused the Browse shuttle routes opener, and reopening restored D2. Switching to Plan and back also restored D2. At 1280 × 720, desktop still used the route selector.
+- The broader #89 checklist was not repeated.
 
 ## Keyboard and accessibility
 

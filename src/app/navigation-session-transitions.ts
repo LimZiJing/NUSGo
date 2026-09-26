@@ -99,6 +99,13 @@ export function createNavigationSessionPanelTransitions(
       })
     },
 
+    openShuttleRouteDetail(): void {
+      host.enqueue(() => {
+        if (host.isDisposed()) return
+        updatePanel({ type: 'open-shuttle-route-detail' })
+      })
+    },
+
     back(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return

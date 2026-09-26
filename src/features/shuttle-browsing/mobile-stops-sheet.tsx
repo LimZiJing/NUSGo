@@ -4,12 +4,14 @@ import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 interface MobileStopsSheetProps {
   readonly expanded: boolean
   readonly onExpandedChange: (expanded: boolean) => void
+  readonly onBeforeSheetToggle?: () => void
   readonly containerRef?: Ref<HTMLElement>
 }
 
 export function MobileStopsSheet({
   expanded,
   onExpandedChange,
+  onBeforeSheetToggle,
   containerRef,
 }: MobileStopsSheetProps) {
   return (
@@ -25,6 +27,7 @@ export function MobileStopsSheet({
           expanded={expanded}
           label="Stops panel"
           controlsId="mobile-stops-sheet-content"
+          onBeforeClick={onBeforeSheetToggle}
           onExpandedChange={onExpandedChange}
         />
       </div>

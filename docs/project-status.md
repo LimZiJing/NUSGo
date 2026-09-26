@@ -17,8 +17,9 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Map tile error reporting and MapLibre navigation controls.
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
+- Find venue and trip endpoint searches use the reusable `src/ui/search-field.tsx` control, which overlays a decorative search icon at the left of each input while retaining each workflow's own labels and clear actions.
 - Venue selection opens the venue-first contextual panel, flies to the venue, and shows a selected venue marker without a duplicate map popup.
-- The contextual panel supports venue search, venue details, and a shuttle-browsing mode with Back, Close, Escape, and map-click context handling.
+- The contextual panel supports venue search and details. Mobile shuttle browsing uses canonical route chips and a single ordered-stop timeline; stop rows focus the map and open existing stop popups. The Explore return control clears the active map route while retaining the chosen route for reopening.
 - Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.
 - Shuttle-stop popups can assign a stop directly as a trip origin or destination.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
@@ -34,8 +35,9 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
 - Build-generated shuttle timing estimates use the canonical route geometry, are validated against the route and stop model, and are loaded through `loadShuttleTimingData`. Live stop arrivals use a cached server-side NUS adapter when configured, while static ride estimates remain the fallback. When available, route service-hour windows are checked in Singapore local time so after-hours routes are not treated as zero-wait options.
-- The pure `planJourney` module composes validated walking connections with directed shuttle legs; its `zeroShuttleWaitingTime` policy is the explicit fallback when live waiting data is unavailable. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and the responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
-- Mobile widths up to 768px use persistent Explore, Stops, and Plan tabs over the shared map. Each tab retains its sheet state; Explore and Stops start compact and Plan starts expanded. A shared accessible 44 × 44px grab handle replaces the sheet expand/collapse buttons and supports tap, keyboard activation, and dragging between the existing states, with resisted overdrag up to 32px and a 220ms spring-like return that respects reduced-motion preferences. Safe-area and visual-viewport sizing, independent sheet scrolling, and non-modal focus behavior support the shared workflows. The next mobile screen restyling work remains tracked in issues #118–#120.
+- The pure `planJourney` module composes validated walking connections with directed shuttle legs; its `zeroShuttleWaitingTime` policy is the explicit fallback when live waiting data is unavailable. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and shuttle stops are highlighted only from each shuttle leg’s boarding stop through its alighting stop in the Route’s official color. Shared transfer stops show the colors of each Route used there, and marker labels name those Routes. The responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
+- Mobile widths up to 768px use persistent Explore, Stops, and Plan tabs over the shared map. Explore starts expanded with a segmented Find venue / Shuttle routes selector; Stops starts compact and Plan starts expanded. Each tab retains its sheet state. A shared accessible 44 × 44px grab handle supports tap, keyboard activation, and dragging between the existing states, with resisted overdrag up to 32px and a 220ms spring-like return that respects reduced-motion preferences. Compact Explore keeps the selector and active search field or route chips available; search focus expands the sheet to reveal results. Safe-area and visual-viewport sizing, independent sheet scrolling, and non-modal focus behavior support the shared workflows. Shuttle routes presents chips and an ordered-stop timeline in one sheet. Mobile venue details use a ghost return button whose label follows the previous view; the button remains reusable for future flows. Remaining mobile screen restyling is tracked in #119–#120.
+- Grab-bar taps and mobile tab or Explore view switches animate between their measured sheet heights; view switches also fade in the incoming content. Drag release keeps its existing settling behavior, and reduced-motion settings disable the added animation.
 
 ## Current limitations
 
@@ -55,7 +57,7 @@ Complete the remaining integration and release work before a broad UI redesign:
 3. Verify private live shuttle arrivals and the server-side deployment boundary (#23 and #102).
 4. Complete regression and release evidence for the live Journey flow (#103).
 
-The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
+The mobile Explore route-selection flow now uses route chips and an ordered-stop timeline. Continue remaining mobile screen work from #119–#120 after the functional transit foundation.
 
 ## Recent milestone commits
 

@@ -72,7 +72,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue') pendingCameraFit = null
   }
 
-  const getFitPadding = (): MapViewportInsets => viewportInsets
+  // MapLibre retains flyTo padding, so use a temporary offset for sheet-aware point focus.
+  const getFitOffset = (): [number, number] => [
+    (viewportInsets.left - viewportInsets.right) / 2,
+    (viewportInsets.top - viewportInsets.bottom) / 2,
+  ]
 
   const fitVenue = (venue: VenueLocation): void => {
     const location = venue.location
@@ -81,7 +85,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       center: [location.x, location.y],
       zoom: 17,
       duration: 500,
-      padding: getFitPadding(),
+      offset: getFitOffset(),
       essential: true,
     })
   }
@@ -93,7 +97,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         center: [coordinates[0][0], coordinates[0][1]],
         zoom: 17,
         duration: 500,
-        padding: getFitPadding(),
+        offset: getFitOffset(),
         essential: true,
       })
       return
@@ -106,7 +110,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     ], {
       duration: 500,
       maxZoom: 17,
-      padding: getFitPadding(),
+      padding: viewportInsets,
     })
   }
 
@@ -228,7 +232,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       installJourneyRouteLayers()
     },
 
-    setRouteSelection(selection: MapRouteSelection) {
+    setRouteSelection(selection: MapRouteSelection, fit = true) {
       if (disposed) return
 
       const previousRouteId = currentRouteSelection.route?.id ?? null
@@ -241,9 +245,36 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       const nextRouteId = currentRouteSelection.route?.id ?? null
       applyRouteSelection(currentRouteSelection)
 
-      if (nextRouteId !== previousRouteId && transitData && currentJourney === null) {
+      if (!fit) pendingCameraFit = null
+      if (fit && nextRouteId !== previousRouteId && transitData && currentJourney === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
+    },
+
+    refitRoute() {
+      if (disposed || !transitData || !currentRouteSelection.route) return
+      transitRouteLayers?.fitRoute(
+        transitData.index,
+        transitData.geometry,
+        currentRouteSelection.route.id,
+        viewportInsets,
+      )
+    },
+
+    focusStop(stopId: string) {
+      if (disposed) return
+      const stop = currentTransitIndex?.stopById.get(stopId)
+      if (!stop || !shuttleStopMarkers?.openStopPopup(stopId)) return
+      pendingCameraFit = null
+      const [offsetX, offsetY] = getFitOffset()
+      map.flyTo({
+        center: [stop.longitude, stop.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        // Leave space for the stop popup above the marker in the exposed map area.
+        offset: [offsetX, offsetY - 56],
+        essential: true,
+      })
     },
 
     setTripRequest(request: TripRequest, venues: VenueLocationMap, transitIndex: TransitIndex | null) {
@@ -317,7 +348,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           center: [target.center[0], target.center[1]],
           zoom: target.zoom,
           duration: 500,
-          padding: getFitPadding(),
+          offset: getFitOffset(),
           essential: true,
         })
         return

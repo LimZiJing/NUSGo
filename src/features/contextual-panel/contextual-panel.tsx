@@ -13,42 +13,82 @@ import {
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import type { ContextualPanelState } from './state'
+import { GhostBackButton } from '../../ui/ghost-back-button'
+import { SearchField } from '../../ui/search-field'
+import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
 interface FocusTarget {
-  readonly element: HTMLElement
+  readonly element: HTMLElement | null
   readonly key: string | null
   readonly fallbackKey: string | null
 }
 
+interface ShuttleRouteRenderOptions {
+  readonly mobileRouteDetail: boolean
+  readonly firstRouteCardRef: RefObject<HTMLButtonElement | null>
+  readonly onOpenRouteDetail: () => void
+  readonly onShowAllRoutes: () => void
+  readonly onFocusStop: (stopId: string) => void
+}
+
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+const MOBILE_EXPLORE_LABELS = { venue: 'Find venue', shuttle: 'Shuttle routes' } as const
+const MOBILE_RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
+  neutral: MOBILE_EXPLORE_LABELS.venue,
+  'venue-search': MOBILE_EXPLORE_LABELS.venue,
+  'venue-detail': 'Venue details',
+  shuttle: MOBILE_EXPLORE_LABELS.shuttle,
+  'shuttle-route-detail': MOBILE_EXPLORE_LABELS.shuttle,
+}
+
+function getMobileVenueDetailReturnLabel(state: ContextualPanelState): string {
+  return MOBILE_RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
+}
 
 interface ContextualPanelProps {
   state: ContextualPanelState
   venues: VenueLocationMap | null
   shuttleRoutesAvailable: boolean
-  renderShuttleRoutes: (selectRef: RefObject<HTMLSelectElement | null>) => ReactNode
+  renderShuttleRoutes: (
+    selectRef: RefObject<HTMLSelectElement | null>,
+    options: ShuttleRouteRenderOptions,
+  ) => ReactNode
   minimized?: boolean
   mobileViewport?: boolean
   active?: boolean
   onRestore?: () => void
   onMinimize?: () => void
+  onBeforeSheetToggle?: () => void
   containerRef?: Ref<HTMLElement>
   status?: PanelStatus | null
+  selectedRouteId?: string | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
   onOpenVenueSearch: () => void
   onOpenShuttle: () => void
+  onLeaveMobileRoutes?: () => void
+  onFocusStop?: (stopId: string) => void
+  onOpenShuttleRouteDetail?: () => void
+  onShowAllRoutes?: () => void
   onBack: () => void
   onClose: () => void
   onEscape: () => void
   onDismissMapPopup?: () => boolean
 }
 
-function getPanelHeading(state: ContextualPanelState): string {
+function getPanelHeading(
+  state: ContextualPanelState,
+  selectedRouteId: string | null,
+  mobileViewport: boolean,
+): string {
   if (state.mode === 'shuttle') return 'Shuttle routes'
+  if (state.mode === 'shuttle-route-detail') {
+    return selectedRouteId ? `${selectedRouteId} Shuttle` : 'Shuttle route details'
+  }
   if (state.mode === 'venue-detail') return 'Venue details'
+  if (state.mode === 'venue-search') return 'Find a venue'
+  if (mobileViewport) return 'Find a venue'
   return 'Explore NUS'
 }
 
@@ -57,12 +97,20 @@ function findFocusTarget(key: string): HTMLElement | undefined {
     .find((element) => element.dataset.contextualFocusId === key)
 }
 
-function getPanelAnnouncement(state: ContextualPanelState): string | null {
+function getPanelAnnouncement(
+  state: ContextualPanelState,
+  selectedRouteId: string | null,
+  mobileViewport: boolean,
+): string | null {
   if (state.mode === 'shuttle') return null
+  if (state.mode === 'shuttle-route-detail' && selectedRouteId) {
+    return `Route ${selectedRouteId} details opened.`
+  }
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
   }
   if (state.mode === 'venue-search') return 'Venue search opened.'
+  if (mobileViewport && state.mode === 'neutral') return 'Venue search opened.'
   return 'Map context closed.'
 }
 
@@ -84,12 +132,18 @@ export function ContextualPanel({
   active = true,
   onRestore,
   onMinimize,
+  onBeforeSheetToggle,
   containerRef,
   status,
+  selectedRouteId = null,
   onQueryChange,
   onVenueSelect,
   onOpenVenueSearch,
   onOpenShuttle,
+  onLeaveMobileRoutes,
+  onFocusStop,
+  onOpenShuttleRouteDetail,
+  onShowAllRoutes,
   onBack,
   onClose,
   onEscape,
@@ -103,7 +157,9 @@ export function ContextualPanel({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
   const routeSelectRef = useRef<HTMLSelectElement>(null)
+  const firstRouteCardRef = useRef<HTMLButtonElement>(null)
   const shuttleBackRef = useRef<HTMLButtonElement>(null)
+  const shuttleRouteDetailBackRef = useRef<HTMLButtonElement>(null)
   const focusHistoryRef = useRef<FocusTarget[]>([])
   const pendingFocusRef = useRef<FocusTarget | null>(null)
   const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
@@ -115,6 +171,7 @@ export function ContextualPanel({
   const shuttleFocusMovedRef = useRef(false)
   const programmaticFocusRef = useRef(false)
   const pendingMinimizeFocusRef = useRef(false)
+  const pendingStopRowFocusRef = useRef<HTMLElement | null>(null)
 
   const focusElement = (element: HTMLElement | null): void => {
     if (!element) return
@@ -135,6 +192,29 @@ export function ContextualPanel({
     }
   }
 
+  const rememberPanelBackFocus = useCallback((): void => {
+    if (state.mode === 'shuttle-route-detail' && selectedRouteId) {
+      pendingFocusRef.current = {
+        element: null,
+        key: null,
+        fallbackKey: `shuttle-route-${selectedRouteId}`,
+      }
+      return
+    }
+    pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
+  }, [selectedRouteId, state.mode])
+
+  const handleShowAllRoutes = (): void => {
+    if (selectedRouteId) {
+      pendingFocusRef.current = {
+        element: null,
+        key: null,
+        fallbackKey: `shuttle-route-${selectedRouteId}`,
+      }
+    }
+    onShowAllRoutes?.()
+  }
+
   const handlePanelBlurCapture = (event: FocusEvent<HTMLElement>): void => {
     const relatedTarget = event.relatedTarget
     if (relatedTarget && !event.currentTarget.contains(relatedTarget)) {
@@ -150,22 +230,45 @@ export function ContextualPanel({
       if (event.key !== 'Escape') return
       if (onDismissMapPopup?.()) {
         event.preventDefault()
+        focusElement(pendingStopRowFocusRef.current)
+        pendingStopRowFocusRef.current = null
         return
       }
       if (minimized) return
       event.preventDefault()
-      if (mobileViewport && state.mode === 'neutral' && onMinimize) {
+      if (mobileViewport && state.mode === 'shuttle') {
+        focusHistoryRef.current = []
+        pendingStopRowFocusRef.current = null
+        pendingFocusRef.current = {
+          element: null,
+          key: 'mobile-explore-venue-segment',
+          fallbackKey: null,
+        }
+        onLeaveMobileRoutes?.()
+        return
+      }
+      if (mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search') && onMinimize) {
         pendingMinimizeFocusRef.current = true
         onMinimize()
         return
       }
-      pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
+      rememberPanelBackFocus()
       onEscape()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [active, minimized, mobileViewport, onDismissMapPopup, onEscape, onMinimize, state.mode])
+  }, [
+    active,
+    minimized,
+    mobileViewport,
+    onDismissMapPopup,
+    onEscape,
+    onMinimize,
+    onLeaveMobileRoutes,
+    rememberPanelBackFocus,
+    state.mode,
+  ])
 
   useIsomorphicLayoutEffect(() => {
     const wasActive = previousActiveRef.current
@@ -202,7 +305,7 @@ export function ContextualPanel({
 
     const pendingFocus = pendingFocusRef.current
     pendingFocusRef.current = null
-    const focusTarget = pendingFocus?.element.isConnected
+    const focusTarget = pendingFocus?.element?.isConnected
       ? pendingFocus.element
       : pendingFocus?.key
         ? findFocusTarget(pendingFocus.key)
@@ -222,7 +325,7 @@ export function ContextualPanel({
         previousModeRef.current = state.mode
         return
       }
-      if (state.mode === 'venue-search') {
+      if (state.mode === 'venue-search' || (mobileViewport && state.mode === 'neutral')) {
         focusElement(searchInputRef.current)
       } else if (state.mode === 'venue-detail') {
         focusElement(detailHeadingRef.current)
@@ -247,6 +350,11 @@ export function ContextualPanel({
       previousModeRef.current = state.mode
       return
     }
+    if (state.mode === 'shuttle-route-detail') {
+      focusElement(panelHeadingRef.current)
+      previousModeRef.current = state.mode
+      return
+    }
     if (state.mode === 'shuttle') {
       const enteringShuttle = previousModeRef.current !== 'shuttle'
       const fallback = shuttleBackRef.current ?? panelHeadingRef.current
@@ -266,8 +374,20 @@ export function ContextualPanel({
           focusElement(routeSelectRef.current)
         }
         shuttleRouteFocusPendingRef.current = false
-      } else if (enteringShuttle) {
-        focusElement(fallback)
+      } else if (enteringShuttle || (
+        shuttleRouteFocusPendingRef.current &&
+        !shuttleFocusMovedRef.current &&
+        document.activeElement === fallback
+      )) {
+        const routeCard = selectedRouteId
+          ? findFocusTarget(`shuttle-route-${selectedRouteId}`)
+          : firstRouteCardRef.current
+        if (routeCard instanceof HTMLButtonElement && !routeCard.disabled) {
+          focusElement(routeCard)
+          shuttleRouteFocusPendingRef.current = false
+        } else if (enteringShuttle) {
+          focusElement(fallback)
+        }
       }
 
       previousModeRef.current = state.mode
@@ -275,9 +395,21 @@ export function ContextualPanel({
     }
 
     focusHistoryRef.current = []
-    focusElement(panelHeadingRef.current)
+    if (mobileViewport && state.mode === 'neutral') {
+      if (previousModeRef.current !== null) focusElement(searchInputRef.current)
+    } else {
+      focusElement(panelHeadingRef.current)
+    }
     previousModeRef.current = state.mode
-  }, [active, minimized, mobileViewport, routesAvailable, state.mode, state.selectedVenue?.code])
+  }, [
+    active,
+    minimized,
+    mobileViewport,
+    routesAvailable,
+    selectedRouteId,
+    state.mode,
+    state.selectedVenue?.code,
+  ])
 
   const rememberCurrentControl = (
     event: MouseEvent<HTMLElement>,
@@ -309,14 +441,47 @@ export function ContextualPanel({
   }
 
   const handleBack = (): void => {
-    pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
+    rememberPanelBackFocus()
     onBack()
+  }
+
+  const handleOpenRouteDetail = (): void => {
+    onOpenShuttleRouteDetail?.()
   }
 
   const handleClose = (): void => {
     pendingFocusRef.current = focusHistoryRef.current.at(-1) ?? null
     focusHistoryRef.current = []
     onClose()
+  }
+
+  const handleSelectMobileVenueSearch = (): void => {
+    if (state.mode !== 'shuttle') return
+    focusHistoryRef.current = []
+    pendingStopRowFocusRef.current = null
+    pendingFocusRef.current = {
+      element: null,
+      key: 'mobile-explore-venue-segment',
+      fallbackKey: null,
+    }
+    onLeaveMobileRoutes?.()
+  }
+
+  const handleSelectMobileShuttle = (): void => {
+    if (state.mode === 'shuttle') return
+    pendingFocusRef.current = {
+      element: null,
+      key: 'mobile-explore-shuttle-segment',
+      fallbackKey: null,
+    }
+    onOpenShuttle()
+  }
+
+  const handleFocusStop = (stopId: string): void => {
+    pendingStopRowFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    onFocusStop?.(stopId)
   }
 
   const handleMinimize = (): void => {
@@ -336,12 +501,15 @@ export function ContextualPanel({
       return { results: [], failed: true }
     }
   }, [state.query, venues])
-  const panelAnnouncement = getPanelAnnouncement(state)
+  const panelAnnouncement = getPanelAnnouncement(state, selectedRouteId, mobileViewport)
   const panelStatus = getVisiblePanelStatus(state.mode, status)
+  const mobileVenueSearch = mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search')
+  const mobileExploreSegments = mobileViewport &&
+    (mobileVenueSearch || state.mode === 'shuttle')
 
   return (
     <section
-      className={`contextual-panel contextual-panel-${state.mode}${minimized ? ' contextual-panel-minimized' : ''}`}
+      className={`contextual-panel contextual-panel-${state.mode}${mobileVenueSearch ? ' contextual-panel-mobile-venue-search' : ''}${minimized ? ' contextual-panel-minimized' : ''}`}
       ref={containerRef}
       aria-labelledby="contextual-panel-heading"
       data-minimized={minimized}
@@ -356,6 +524,7 @@ export function ContextualPanel({
           label="Explore panel"
           controlsId="contextual-panel-content"
           onButtonRef={setRestorePanelButtonRef}
+          onBeforeClick={onBeforeSheetToggle}
           onExpandedChange={(expanded) => {
             if (expanded) onRestore?.()
             else handleMinimize()
@@ -363,17 +532,45 @@ export function ContextualPanel({
         />
       </div>
       <div className="contextual-panel-header">
-        <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
-          {getPanelHeading(state)}
+        {mobileExploreSegments && (
+          <div className="mobile-explore-segments" role="group" aria-label="Explore view">
+            <button
+              type="button"
+              data-contextual-focus-id="mobile-explore-venue-segment"
+              aria-pressed={mobileVenueSearch}
+              onClick={handleSelectMobileVenueSearch}
+            >
+              {MOBILE_EXPLORE_LABELS.venue}
+            </button>
+            <button
+              type="button"
+              data-contextual-focus-id="mobile-explore-shuttle-segment"
+              aria-pressed={state.mode === 'shuttle'}
+              onClick={handleSelectMobileShuttle}
+            >
+              {MOBILE_EXPLORE_LABELS.shuttle}
+            </button>
+          </div>
+        )}
+        {mobileViewport && state.mode === 'venue-detail' && !minimized && (
+          <GhostBackButton label={getMobileVenueDetailReturnLabel(state)} onClick={handleBack} />
+        )}
+        <h2
+          id="contextual-panel-heading"
+          ref={panelHeadingRef}
+          tabIndex={-1}
+          className={mobileExploreSegments ? 'visually-hidden' : undefined}
+        >
+          {getPanelHeading(state, selectedRouteId, mobileViewport)}
         </h2>
-        {state.mode !== 'neutral' && (
+        {state.mode !== 'neutral' && !(mobileViewport && (state.mode === 'shuttle' || state.mode === 'venue-search' || state.mode === 'venue-detail')) && (
           <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>
         )}
       </div>
 
-      {state.mode === 'neutral' && (
+      {state.mode === 'neutral' && !mobileViewport && (
         <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
           <p>Search for a venue or browse the shuttle network.</p>
           <div className="contextual-panel-actions">
@@ -395,62 +592,69 @@ export function ContextualPanel({
         </div>
       )}
 
-      {state.mode === 'venue-search' && (
-        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
-          <label htmlFor="contextual-venue-search-input">Find a venue</label>
+      {(state.mode === 'venue-search' || (mobileViewport && state.mode === 'neutral')) && (
+        <div id="contextual-panel-content" className="contextual-panel-content">
           <div className="contextual-panel-search-row">
-            <input
+            <SearchField
               id="contextual-venue-search-input"
-              type="search"
+              aria-labelledby="contextual-panel-heading"
               placeholder="e.g. COM1-0210"
               value={state.query}
-              ref={searchInputRef}
+              inputRef={searchInputRef}
+              onFocus={() => { if (minimized) onRestore?.() }}
               onChange={(event) => onQueryChange(event.target.value)}
               autoComplete="off"
             />
             {state.query && (
               <button
                 type="button"
-                onClick={() => onQueryChange('')}
+                className="contextual-panel-search-clear"
+                onClick={() => {
+                  onQueryChange('')
+                  searchInputRef.current?.focus()
+                }}
                 aria-label="Clear venue search"
               >
-                Clear
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                  <path d="M6 6 18 18M18 6 6 18" />
+                </svg>
               </button>
             )}
           </div>
-          {venues === null || searchState.failed ? (
-            <p className="contextual-panel-status" role="status" aria-live="polite">
-              Venue search is unavailable right now. Shuttle browsing is still available.
-            </p>
-          ) : state.query.trim() ? (
-            <div className="contextual-panel-results" aria-label="Venue search results">
-              {searchState.results.length > 0 ? (
-                searchState.results.map((result) => (
-                  <button
-                    className="contextual-panel-result"
-                    data-contextual-focus-id={`venue-result-${result.code}`}
-                    type="button"
-                    key={result.code}
-                    onClick={(event) => handleVenueSelect(result, event)}
-                  >
-                    <strong>{result.code}</strong>
-                    <span>{result.venue.roomName}</span>
-                  </button>
-                ))
-              ) : (
-                <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
-              )}
-            </div>
-          ) : (
-            <p className="contextual-panel-status">Search by venue code or room name.</p>
-          )}
-          <button
-            data-contextual-focus-id="venue-search-shuttle-opener"
-            type="button"
-            onClick={handleOpenShuttle}
-          >
-            Browse shuttle routes
-          </button>
+          <div className="contextual-panel-search-body" data-mobile-sheet-content>
+            {venues === null || searchState.failed ? (
+              <p className="contextual-panel-status" role="status" aria-live="polite">
+                Venue search is unavailable right now. Shuttle browsing is still available.
+              </p>
+            ) : state.query.trim() ? (
+              <div className="contextual-panel-results" aria-label="Venue search results">
+                {searchState.results.length > 0 ? (
+                  searchState.results.map((result) => (
+                    <button
+                      className="contextual-panel-result"
+                      data-contextual-focus-id={`venue-result-${result.code}`}
+                      type="button"
+                      key={result.code}
+                      onClick={(event) => handleVenueSelect(result, event)}
+                    >
+                      <strong>{result.code}</strong>
+                      <span>{result.venue.roomName}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
+                )}
+              </div>
+            ) : mobileViewport ? (
+              <div className="contextual-panel-search-prompt">
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
+                  <circle cx="14" cy="14" r="8" />
+                  <path d="m20 20 7 7" />
+                </svg>
+                <p>Search for a venue</p>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -460,9 +664,11 @@ export function ContextualPanel({
           className="contextual-panel-content contextual-panel-detail"
           data-mobile-sheet-content
         >
-          <button type="button" onClick={handleBack} aria-label="Back to venue search">
-            Back
-          </button>
+          {!mobileViewport && (
+            <button type="button" onClick={handleBack} aria-label="Back to venue search">
+              Back
+            </button>
+          )}
           <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
             {state.selectedVenue.code}
           </h3>
@@ -470,32 +676,56 @@ export function ContextualPanel({
           {state.selectedVenue.venue.floor !== undefined && state.selectedVenue.venue.floor !== null && (
             <p><strong>Floor:</strong> {state.selectedVenue.venue.floor}</p>
           )}
-          <button
-            data-contextual-focus-id="venue-detail-shuttle-opener"
-            type="button"
-            onClick={handleOpenShuttle}
-          >
-            Browse shuttle routes
-          </button>
+          {!mobileViewport && (
+            <button
+              data-contextual-focus-id="venue-detail-shuttle-opener"
+              type="button"
+              onClick={handleOpenShuttle}
+            >
+              Browse shuttle routes
+            </button>
+          )}
         </div>
       )}
 
-      {state.mode === 'shuttle' && (
-        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
-          <button
-            ref={shuttleBackRef}
-            type="button"
-            onClick={handleBack}
-            aria-label="Back to previous map context"
-          >
-            Back
-          </button>
-          {renderShuttleRoutes(routeSelectRef)}
+      {(state.mode === 'shuttle' || state.mode === 'shuttle-route-detail') && (
+        <div
+          id="contextual-panel-content"
+          className="contextual-panel-content"
+          data-mobile-sheet-content={state.mode === 'shuttle-route-detail' ? '' : undefined}
+        >
+          {mobileViewport && state.mode === 'shuttle' ? null : state.mode === 'shuttle-route-detail' ? (
+            <button
+              ref={shuttleRouteDetailBackRef}
+              type="button"
+              onClick={handleBack}
+              aria-label="Back to shuttle routes"
+            >
+              Back to routes
+            </button>
+          ) : (
+            <button
+              ref={shuttleBackRef}
+              type="button"
+              onClick={handleBack}
+              aria-label="Back to previous map context"
+            >
+              Back
+            </button>
+          )}
+          {renderShuttleRoutes(routeSelectRef, {
+            mobileRouteDetail: state.mode === 'shuttle-route-detail',
+            firstRouteCardRef,
+            onOpenRouteDetail: handleOpenRouteDetail,
+            onShowAllRoutes: handleShowAllRoutes,
+            onFocusStop: handleFocusStop,
+          })}
         </div>
       )}
       {panelStatus && (
         <p
           className={`contextual-panel-status contextual-panel-status-${panelStatus.kind}`}
+          data-mobile-sheet-content={mobileViewport && panelStatus.kind === 'success' ? '' : undefined}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"

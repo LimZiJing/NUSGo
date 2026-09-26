@@ -114,7 +114,11 @@ describe('TripEndpointControls interactions', () => {
 
     expect(screen.queryByText('Origin and destination are set.')).toBeNull()
     rerender(<TripEndpointControls {...controls} tripRequest={{ origin: null, destination: null }} />)
-    expect(screen.getByText('Origin is required.')).toBeTruthy()
+    const validation = screen.getByText('Origin is required.')
+    expect(validation).toBeTruthy()
+    expect(within(validation.parentElement as HTMLElement)
+      .getByRole('button', { name: 'Clear all' }))
+      .toBeTruthy()
   })
 
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {

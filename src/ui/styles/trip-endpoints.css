@@ -199,6 +199,14 @@
   margin: 0;
 }
 
+.trip-controls-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
 .trip-endpoint-results {
   display: grid;
   gap: 4px;
@@ -242,7 +250,8 @@
 }
 
 .trip-clear-both {
-  justify-self: end;
+  flex: 0 0 auto;
+  margin-left: auto;
   border-color: transparent;
   color: #475569;
   background: transparent;
@@ -258,7 +267,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: -2px 8px 0;
+  min-width: 0;
   color: #b45309;
   font-size: 12px;
   line-height: 1.25;

@@ -230,19 +230,21 @@ export function TripEndpointControls({
             onClear={onClearDestinationEndpoint}
           />
         </div>
-        <button
-          type="button"
-          className="trip-clear-both"
-          onClick={clearTrip}
-          disabled={!tripRequest.origin && !tripRequest.destination}
-        >
-          Clear all
-        </button>
-        {tripValidation && (
-          <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
-            {tripValidation}
-          </p>
-        )}
+        <div className="trip-controls-footer">
+          {tripValidation && (
+            <p className="trip-validation" role="status" aria-live="polite" aria-atomic="true">
+              {tripValidation}
+            </p>
+          )}
+          <button
+            type="button"
+            className="trip-clear-both"
+            onClick={clearTrip}
+            disabled={!tripRequest.origin && !tripRequest.destination}
+          >
+            Clear all
+          </button>
+        </div>
         <TripJourneyResult
           state={journey}
           venues={venues}

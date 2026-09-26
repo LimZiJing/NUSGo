@@ -32,6 +32,11 @@ vi.mock('maplibre-gl', () => {
       return this
     }
 
+    setOpacity(opacity: string | number) {
+      this.element.style.opacity = String(opacity)
+      return this
+    }
+
     setPopup(popup: FakePopup) {
       this.popup = popup
       return this
@@ -181,6 +186,7 @@ class FakeElement {
   }
   style = {
     display: '',
+    opacity: '',
     pointerEvents: '',
     setProperty: vi.fn(),
   }
@@ -322,6 +328,8 @@ describe('bus-stop presentation', () => {
 
     expect(markers[0].classes).toContain('bus-stop-marker-selected')
     expect(markers[1].classes).toContain('bus-stop-marker-dimmed')
+    expect(markers[0].style.opacity).toBe('1')
+    expect(markers[1].style.opacity).toBe(String(BUS_STOP_INACTIVE_OPACITY))
     expect(markers[0].style.setProperty).toHaveBeenCalledWith(
       '--bus-stop-selected-color',
       '#e3cf0e',
@@ -333,6 +341,7 @@ describe('bus-stop presentation', () => {
       !marker.classes.has('bus-stop-marker-selected') &&
       !marker.classes.has('bus-stop-marker-dimmed')
     ))).toBe(true)
+    expect(markers.every((marker) => marker.style.opacity === '1')).toBe(true)
     adapter.dispose()
     vi.unstubAllGlobals()
   })
@@ -378,6 +387,7 @@ describe('bus-stop presentation', () => {
     expect(elements[0].disabled).toBe(false)
     expect(elements[0].classes).not.toContain('bus-stop-marker-dimmed')
     expect(elements[0].classes).toContain('bus-stop-marker-journey')
+    expect(elements[0].style.opacity).toBe('1')
     expect(elements[0].style.setProperty).toHaveBeenCalledWith(
       '--bus-stop-journey-color',
       'linear-gradient(#123456, #123456)',
@@ -393,6 +403,7 @@ describe('bus-stop presentation', () => {
     expect(elements[1].attributes.get('aria-disabled')).toBe('true')
     expect(elements[1].style.pointerEvents).toBe('none')
     expect(elements[1].classes).toContain('bus-stop-marker-dimmed')
+    expect(elements[1].style.opacity).toBe(String(BUS_STOP_INACTIVE_OPACITY))
     expect(inactivePopup.isOpen()).toBe(false)
     expect(paintProperties).toContainEqual({
       id: BUS_STOP_INACTIVE_LABEL_LAYER_ID,
@@ -412,6 +423,7 @@ describe('bus-stop presentation', () => {
     expect(elements[1].attributes.get('aria-disabled')).toBe('false')
     expect(elements[1].style.pointerEvents).toBe('')
     expect(elements[1].classes).not.toContain('bus-stop-marker-dimmed')
+    expect(elements[1].style.opacity).toBe('1')
     expect(elements[0].classes).not.toContain('bus-stop-marker-journey')
     expect(elements[0].style.setProperty).toHaveBeenLastCalledWith(
       '--bus-stop-journey-color',

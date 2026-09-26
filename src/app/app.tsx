@@ -329,15 +329,21 @@ function App() {
             state={state.contextualPanel}
             venues={state.venues}
             shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
-            renderShuttleRoutes={(selectRef) => (
+            renderShuttleRoutes={(selectRef, options) => (
               <ShuttleRouteControl
                 network={state.transitIndex?.network ?? null}
                 networkIndex={state.transitIndex}
                 selectedRouteId={state.selectedRouteId}
                 onRouteSelect={commands.selectRoute}
                 selectRef={selectRef}
+                mobileViewport={isMobileViewport}
+                mobileRouteDetail={options.mobileRouteDetail}
+                firstRouteCardRef={options.firstRouteCardRef}
+                onOpenRouteDetail={options.onOpenRouteDetail}
+                onShowAllRoutes={options.onShowAllRoutes}
               />
             )}
+            selectedRouteId={state.selectedRouteId}
             minimized={isMobileViewport && !mobileNavigation.sheets.explore.expanded}
             mobileViewport={isMobileViewport}
             active={!isMobileViewport || mobileNavigation.activeTab === 'explore'}
@@ -353,6 +359,11 @@ function App() {
             onVenueSelect={commands.selectVenue}
             onOpenVenueSearch={commands.openVenueSearch}
             onOpenShuttle={commands.openShuttle}
+            onOpenShuttleRouteDetail={commands.openShuttleRouteDetail}
+            onShowAllRoutes={() => {
+              commands.selectRoute(null)
+              commands.back()
+            }}
             onBack={commands.back}
             onClose={() => {
               if (isMobileViewport) commands.closeToRoot()

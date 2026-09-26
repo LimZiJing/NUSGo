@@ -55,6 +55,26 @@ describe('contextualPanelReducer', () => {
     })
   })
 
+  it('returns from a selected shuttle route to route choices before Explore', () => {
+    const exploreState = contextualPanelReducer(
+      createInitialContextualPanelState(),
+      { type: 'close' },
+    )
+    const routeListState = contextualPanelReducer(exploreState, { type: 'open-shuttle' })
+    const routeDetailState = contextualPanelReducer(routeListState, {
+      type: 'open-shuttle-route-detail',
+    })
+
+    expect(routeDetailState.mode).toBe('shuttle-route-detail')
+    expect(contextualPanelReducer(routeDetailState, { type: 'back' })).toMatchObject({
+      mode: 'shuttle',
+    })
+    expect(contextualPanelReducer(
+      contextualPanelReducer(routeDetailState, { type: 'back' }),
+      { type: 'back' },
+    )).toMatchObject({ mode: 'neutral' })
+  })
+
   it('escapes through history before closing to the neutral state', () => {
     const detailState = contextualPanelReducer(
       createInitialContextualPanelState(),

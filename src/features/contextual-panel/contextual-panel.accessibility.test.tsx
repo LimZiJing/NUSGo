@@ -122,6 +122,54 @@ function PanelHarness({
   )
 }
 
+function ShuttleRouteNavigationHarness() {
+  const [state, setState] = useState<ContextualPanelState>({
+    ...createInitialContextualPanelState(),
+    mode: 'neutral',
+  })
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const dispatch = (action: ContextualPanelAction): void => {
+    setState((current) => contextualPanelReducer(current, action))
+  }
+
+  return (
+    <ContextualPanel
+      state={state}
+      venues={venues}
+      shuttleRoutesAvailable
+      selectedRouteId={selectedRouteId}
+      renderShuttleRoutes={(_, options) => options.mobileRouteDetail ? (
+        <p>Route details</p>
+      ) : (
+        <button
+          ref={options.firstRouteCardRef}
+          type="button"
+          data-contextual-focus-id="shuttle-route-A1"
+          aria-pressed={selectedRouteId === 'A1'}
+          onClick={() => {
+            setSelectedRouteId('A1')
+            options.onOpenRouteDetail()
+          }}
+        >
+          Route A1
+        </button>
+      )}
+      onQueryChange={() => undefined}
+      onVenueSelect={() => undefined}
+      onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
+      onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
+      onOpenShuttleRouteDetail={() => dispatch({ type: 'open-shuttle-route-detail' })}
+      onShowAllRoutes={() => {
+        setSelectedRouteId(null)
+        dispatch({ type: 'back' })
+      }}
+      onBack={() => dispatch({ type: 'back' })}
+      onClose={() => dispatch({ type: 'close-to-root' })}
+      onEscape={() => dispatch({ type: 'escape' })}
+    />
+  )
+}
+
 function RootSheetEscapeHarness() {
   const [minimized, setMinimized] = useState(false)
   const state = { ...createInitialContextualPanelState(), mode: 'neutral' as const }
@@ -212,6 +260,46 @@ function MinimizedPanelHarness() {
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
+  it('returns from route details to the selected route card and restores focus', async () => {
+    const user = userEvent.setup()
+    render(<ShuttleRouteNavigationHarness />)
+
+    const browseRoutes = screen.getByRole('button', { name: 'Browse shuttle routes' })
+    await user.click(browseRoutes)
+    const routeCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(routeCard))
+
+    await user.click(routeCard)
+    expect(await screen.findByRole('heading', { name: 'A1 Shuttle' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Back to shuttle routes' }))
+
+    const returnedRouteCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(returnedRouteCard))
+    expect(returnedRouteCard.getAttribute('aria-pressed')).toBe('true')
+
+    await user.click(returnedRouteCard)
+    await screen.findByRole('heading', { name: 'A1 Shuttle' })
+    await user.keyboard('{Escape}')
+    const escapedRouteCard = await screen.findByRole('button', { name: 'Route A1' })
+    await waitFor(() => expect(document.activeElement).toBe(escapedRouteCard))
+  })
+
+  it('closes route details to Explore, restores the opener, and keeps map selection', async () => {
+    const user = userEvent.setup()
+    render(<ShuttleRouteNavigationHarness />)
+
+    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    await user.click(await screen.findByRole('button', { name: 'Route A1' }))
+    await screen.findByRole('heading', { name: 'A1 Shuttle' })
+    await user.click(screen.getByRole('button', { name: 'Close map context' }))
+
+    const browseRoutes = await screen.findByRole('button', { name: 'Browse shuttle routes' })
+    await waitFor(() => expect(document.activeElement).toBe(browseRoutes))
+    await user.click(browseRoutes)
+    expect((await screen.findByRole('button', { name: 'Route A1' })).getAttribute('aria-pressed'))
+      .toBe('true')
+  })
+
   it('does not handle Escape while its tab is inactive', async () => {
     const user = userEvent.setup()
     render(<PanelHarness active={false} />)

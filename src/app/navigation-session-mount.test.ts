@@ -46,6 +46,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     selectVenue: vi.fn(),
     openVenueSearch: vi.fn(),
     openShuttle: vi.fn(),
+    openShuttleRouteDetail: vi.fn(),
     back: vi.fn(),
     escape: vi.fn(),
     close: vi.fn(),

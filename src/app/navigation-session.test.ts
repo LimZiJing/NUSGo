@@ -854,6 +854,38 @@ describe('navigation session', () => {
     })
   })
 
+  it('backs from route details to route choices and preserves map selection on Close', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.closeToRoot()
+    session.openShuttle()
+    session.selectRoute('A1')
+    session.openShuttleRouteDetail()
+    expect(session.getState()).toMatchObject({
+      contextualPanel: { mode: 'shuttle-route-detail' },
+      selectedRouteId: 'A1',
+    })
+
+    session.back()
+    expect(session.getState()).toMatchObject({
+      contextualPanel: { mode: 'shuttle' },
+      selectedRouteId: 'A1',
+    })
+
+    session.openShuttleRouteDetail()
+    session.closeToRoot()
+    expect(session.getState()).toMatchObject({
+      contextualPanel: { mode: 'neutral', history: [] },
+      selectedRouteId: 'A1',
+    })
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: expect.objectContaining({ id: 'A1' }),
+      overlappingRouteIds: expect.any(Set),
+    })
+  })
+
   it('escapes through panel history while retaining venue marker context', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

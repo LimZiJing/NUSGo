@@ -77,6 +77,7 @@ export interface NavigationSessionCommands {
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
   readonly openVenueSearch: () => void
   readonly openShuttle: () => void
+  readonly openShuttleRouteDetail: () => void
   readonly back: () => void
   readonly close: () => void
   readonly closeToRoot: () => void
@@ -103,6 +104,7 @@ function createNavigationSessionCommands(
     selectVenue: (result) => session?.selectVenue(result),
     openVenueSearch: () => session?.openVenueSearch(),
     openShuttle: () => session?.openShuttle(),
+    openShuttleRouteDetail: () => session?.openShuttleRouteDetail(),
     back: () => session?.back(),
     close: () => session?.close(),
     closeToRoot: () => session?.closeToRoot(),

@@ -78,6 +78,7 @@ export interface NavigationSession {
   reportStartupFailure(): void
   openVenueSearch(): void
   openShuttle(): void
+  openShuttleRouteDetail(): void
   back(): void
   escape(): void
   close(): void

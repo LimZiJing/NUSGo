@@ -5,6 +5,7 @@ export type ContextualPanelMode =
   | 'venue-search'
   | 'venue-detail'
   | 'shuttle'
+  | 'shuttle-route-detail'
 
 export interface ContextualPanelState {
   readonly mode: ContextualPanelMode
@@ -24,6 +25,7 @@ export type ContextualPanelAction =
   | { type: 'select-venue'; result: VenueSearchResult }
   | { type: 'open-venue-search' }
   | { type: 'open-shuttle' }
+  | { type: 'open-shuttle-route-detail' }
   | { type: 'back' }
   | { type: 'escape' }
   | { type: 'close' }
@@ -100,6 +102,13 @@ export function contextualPanelReducer(
       if (state.mode === 'shuttle') return state
       return pushCurrentState(state, {
         mode: 'shuttle',
+        query: state.query,
+        selectedVenue: null,
+      })
+    case 'open-shuttle-route-detail':
+      if (state.mode !== 'shuttle') return state
+      return pushCurrentState(state, {
+        mode: 'shuttle-route-detail',
         query: state.query,
         selectedVenue: null,
       })

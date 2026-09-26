@@ -18,7 +18,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
 - Venue selection opens the venue-first contextual panel, flies to the venue, and shows a selected venue marker without a duplicate map popup.
-- The contextual panel supports venue search, venue details, and a shuttle-browsing mode with Back, Close, Escape, and map-click context handling.
+- The contextual panel supports venue search and details, plus mobile shuttle route cards and ordered route details with Back, Close, Escape, and map-click context handling. Route cards use the canonical IDs and colors, and stop lists preserve each route's ordered stop IDs.
 - Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.
 - Shuttle-stop popups can assign a stop directly as a trip origin or destination.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
@@ -34,8 +34,8 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Pure transit, venue, location, trip, and contextual-panel models are owned by `src/domain/`.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.
 - Build-generated shuttle timing estimates use the canonical route geometry, are validated against the route and stop model, and are loaded through `loadShuttleTimingData`. Live stop arrivals use a cached server-side NUS adapter when configured, while static ride estimates remain the fallback. When available, route service-hour windows are checked in Singapore local time so after-hours routes are not treated as zero-wait options.
-- The pure `planJourney` module composes validated walking connections with directed shuttle legs; its `zeroShuttleWaitingTime` policy is the explicit fallback when live waiting data is unavailable. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and the responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
-- Mobile widths up to 768px use persistent Explore, Stops, and Plan tabs over the shared map. Each tab retains its sheet state; Explore and Stops start compact and Plan starts expanded. A shared accessible 44 × 44px grab handle replaces the sheet expand/collapse buttons and supports tap, keyboard activation, and dragging between the existing states, with resisted overdrag up to 32px and a 220ms spring-like return that respects reduced-motion preferences. Safe-area and visual-viewport sizing, independent sheet scrolling, and non-modal focus behavior support the shared workflows. The next mobile screen restyling work remains tracked in issues #118–#120.
+- The pure `planJourney` module composes validated walking connections with directed shuttle legs; its `zeroShuttleWaitingTime` policy is the explicit fallback when live waiting data is unavailable. Navigation-session state now publishes the selected Journey, MapSession renders its walking and shuttle geometry with replacement and disposal cleanup, and shuttle stops are highlighted only from each shuttle leg’s boarding stop through its alighting stop in the Route’s official color. Shared transfer stops show the colors of each Route used there, and marker labels name those Routes. The responsive Plan trip panel shows Journey totals, ordered leg details, estimate notices, and failure states.
+- Mobile widths up to 768px use persistent Explore, Stops, and Plan tabs over the shared map. Each tab retains its sheet state; Explore and Stops start compact and Plan starts expanded. A shared accessible 44 × 44px grab handle supports tap, keyboard activation, and dragging between the existing states, with resisted overdrag up to 32px and a 220ms spring-like return that respects reduced-motion preferences. Safe-area and visual-viewport sizing, independent sheet scrolling, and non-modal focus behavior support the shared workflows. The mobile Explore route-card and route-detail restyle is implemented in #118; remaining mobile screen restyling is tracked in #119–#120.
 
 ## Current limitations
 
@@ -55,7 +55,7 @@ Complete the remaining integration and release work before a broad UI redesign:
 3. Verify private live shuttle arrivals and the server-side deployment boundary (#23 and #102).
 4. Complete regression and release evidence for the live Journey flow (#103).
 
-The current venue search is core functionality rather than general UI polish. Defer visual redesign until the route-selection flow is established.
+The mobile Explore route-selection flow now uses the route-card and ordered-detail presentation. Continue remaining mobile screen work from #119–#120 after the functional transit foundation.
 
 ## Recent milestone commits
 

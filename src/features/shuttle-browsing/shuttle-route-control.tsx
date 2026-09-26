@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { CSSProperties, RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 
@@ -8,6 +8,11 @@ interface ShuttleRouteControlProps {
   selectedRouteId: string | null
   onRouteSelect: (routeId: string | null) => void
   selectRef?: RefObject<HTMLSelectElement | null>
+  mobileViewport?: boolean
+  mobileRouteDetail?: boolean
+  onOpenRouteDetail?: () => void
+  onShowAllRoutes?: () => void
+  firstRouteCardRef?: RefObject<HTMLButtonElement | null>
 }
 
 function getRouteStops(
@@ -34,6 +39,11 @@ export function ShuttleRouteControl({
   selectedRouteId,
   onRouteSelect,
   selectRef,
+  mobileViewport = false,
+  mobileRouteDetail = false,
+  onOpenRouteDetail,
+  onShowAllRoutes,
+  firstRouteCardRef,
 }: ShuttleRouteControlProps) {
   const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
@@ -56,6 +66,95 @@ export function ShuttleRouteControl({
     : network
       ? 'Showing all ' + routes.length + ' shuttle routes and all ' + totalStopCount + ' shuttle stops.'
       : 'Loading shuttle routes…'
+
+  if (mobileViewport) {
+    const showAllRoutes = (): void => {
+      if (onShowAllRoutes) onShowAllRoutes()
+      else onRouteSelect(null)
+    }
+
+    return (
+      <section className="route-control route-control-mobile" aria-label="Shuttle route selection">
+        {mobileRouteDetail && selectedRoute ? (
+          <>
+            <div className="route-details-heading">
+              <p className="route-stop-count">
+                <span
+                  className="route-color-swatch"
+                  style={{ '--route-color': selectedRoute.color } as CSSProperties}
+                  aria-hidden="true"
+                />
+                {selectedRoute.stopIds.length} stop calls · in route order
+              </p>
+              <button type="button" onClick={showAllRoutes}>
+                Show all routes
+              </button>
+            </div>
+            <h3 className="route-stop-heading">Ordered stops</h3>
+            <ol className="route-stop-list" aria-label="Ordered stops">
+              {selectedRoute.stopIds.map((stopId, index) => (
+                <li key={`${stopId}-${index}`}>
+                  {getStopLabel(stopsById.get(stopId), stopId)}
+                </li>
+              ))}
+            </ol>
+            <p className="route-selection-status" role="status" aria-live="polite" aria-atomic="true">
+              Route {selectedRoute.id} selected. Showing {selectedRoute.stopIds.length} stops in route order.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="route-picker-heading">
+              <h3>Choose a shuttle route</h3>
+              <button
+                type="button"
+                disabled={!selectedRoute}
+                onClick={() => onRouteSelect(null)}
+              >
+                Show all routes
+              </button>
+            </div>
+            {routes.length > 0 && (
+              <ul className="route-card-list" aria-label="Shuttle routes">
+                {routes.map((route, index) => (
+                  <li key={route.id}>
+                    <button
+                      ref={index === 0 ? firstRouteCardRef : undefined}
+                      className="route-card"
+                      type="button"
+                      data-route-id={route.id}
+                      data-contextual-focus-id={`shuttle-route-${route.id}`}
+                      style={{ '--route-color': route.color } as CSSProperties}
+                      aria-label={`Route ${route.id}`}
+                      aria-pressed={selectedRouteId === route.id}
+                      onClick={() => {
+                        onRouteSelect(route.id)
+                        onOpenRouteDetail?.()
+                      }}
+                    >
+                      <span className="route-color-swatch" aria-hidden="true" />
+                      <span className="route-card-id">{route.id}</span>
+                      <span className="route-card-stop-count">
+                        {route.stopIds.length} stops
+                      </span>
+                      <span className="route-card-chevron" aria-hidden="true">›</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="route-selection-status" role="status" aria-live="polite" aria-atomic="true">
+              {!network
+                ? 'Loading shuttle routes…'
+                : routes.length > 0
+                  ? `Showing ${routes.length} shuttle routes and ${totalStopCount} shuttle stops.`
+                  : 'Shuttle route data is unavailable.'}
+            </p>
+          </>
+        )}
+      </section>
+    )
+  }
 
   return (
     <section className="route-control" aria-label="Shuttle route selection">

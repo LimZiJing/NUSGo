@@ -261,10 +261,17 @@
 
   .contextual-panel-search-row input {
     min-height: 48px;
-    padding: 10px 12px;
+    padding: 10px 54px 10px 12px;
     border-color: #d8e1ec;
     border-radius: 12px;
     background: #f8fafc;
+  }
+
+  .contextual-panel .contextual-panel-search-clear {
+    right: 2px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 
   .contextual-panel-results {

@@ -563,10 +563,16 @@ export function ContextualPanel({
             {state.query && (
               <button
                 type="button"
-                onClick={() => onQueryChange('')}
+                className="contextual-panel-search-clear"
+                onClick={() => {
+                  onQueryChange('')
+                  searchInputRef.current?.focus()
+                }}
                 aria-label="Clear venue search"
               >
-                Clear
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                  <path d="M6 6 18 18M18 6 6 18" />
+                </svg>
               </button>
             )}
           </div>

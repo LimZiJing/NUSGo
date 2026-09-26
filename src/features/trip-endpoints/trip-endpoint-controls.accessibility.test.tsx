@@ -350,10 +350,11 @@ describe('TripEndpointControls interactions', () => {
     await user.type(originSearch, 'COM1')
     await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210' }))
 
-    expect((originSearch as HTMLInputElement).value).toBe('Computing 1, Level 2')
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value)
+      .toBe('Computing 1, Level 2')
     await user.click(screen.getByRole('button', { name: 'Clear origin' }))
 
-    expect((originSearch as HTMLInputElement).value).toBe('')
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('button', { name: 'Clear origin' })).toBeNull()
   })
 })

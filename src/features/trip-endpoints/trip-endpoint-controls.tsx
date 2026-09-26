@@ -208,6 +208,7 @@ export function TripEndpointControls({
       >
         <div className="trip-endpoint-picker">
           <TripEndpointControl
+            key={`origin:${tripRequest.origin?.kind ?? 'none'}:${tripRequest.origin?.id ?? 'none'}`}
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
@@ -218,6 +219,7 @@ export function TripEndpointControls({
             onClear={onClearOriginEndpoint}
           />
           <TripEndpointControl
+            key={`destination:${tripRequest.destination?.kind ?? 'none'}:${tripRequest.destination?.id ?? 'none'}`}
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
@@ -278,10 +280,6 @@ export function TripEndpointControl({
       : endpoint
         ? `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
         : ''
-
-  useEffect(() => {
-    setEditing(endpoint === null)
-  }, [endpoint])
 
   const clearEndpoint = (): void => {
     onSearchQueryChange('')

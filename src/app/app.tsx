@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -12,6 +13,7 @@ import { MobileStopsSheet } from '../features/shuttle-browsing/mobile-stops-shee
 import { MapControls } from '../ui/map-controls'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
+import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
 import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
@@ -67,6 +69,8 @@ function App() {
   })
   const previousContextualStateRef = useRef<typeof state.contextualPanel | null>(null)
   const focusTripControlAfterOverlayRef = useRef(false)
+  const pendingSheetTransitionRef = useRef<{ startHeight: number; viewChange: boolean } | null>(null)
+  const sheetAnimationCleanupRef = useRef<(() => void) | null>(null)
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
@@ -126,6 +130,43 @@ function App() {
   const activeTab = mobileNavigation.activeTab
   const activeSheetExpanded = mobileNavigation.sheets[activeTab].expanded
   const dismissMapPopup = commands.dismissMapPopup
+
+  const getActiveMobileSheet = useCallback((): HTMLElement | null => {
+    if (mobileNavigation.activeTab === 'plan') return tripControlsRef.current
+    if (mobileNavigation.activeTab === 'stops') return stopsSheetRef.current
+    return contextualPanelRef.current
+  }, [mobileNavigation.activeTab])
+
+  const prepareSheetTransition = (viewChange = false): void => {
+    if (!isMobileViewport) return
+    sheetAnimationCleanupRef.current?.()
+    sheetAnimationCleanupRef.current = null
+    const startHeight = getActiveMobileSheet()?.getBoundingClientRect().height ?? 0
+    pendingSheetTransitionRef.current = startHeight > 0 ? { startHeight, viewChange } : null
+  }
+
+  useLayoutEffect(() => {
+    const pending = pendingSheetTransitionRef.current
+    if (!pending || !isMobileViewport) return
+    pendingSheetTransitionRef.current = null
+    const sheet = getActiveMobileSheet()
+    if (!sheet) return
+
+    const cleanup = animateMobileSheet(sheet, pending.startHeight, pending.viewChange)
+    sheetAnimationCleanupRef.current = cleanup
+    return () => {
+      cleanup()
+      if (sheetAnimationCleanupRef.current === cleanup) sheetAnimationCleanupRef.current = null
+    }
+  }, [
+    isMobileViewport,
+    getActiveMobileSheet,
+    mobileNavigation.activeTab,
+    mobileNavigation.sheets.explore.expanded,
+    mobileNavigation.sheets.plan.expanded,
+    mobileNavigation.sheets.stops.expanded,
+    state.contextualPanel.mode,
+  ])
 
   useEffect(() => {
     if (!isMobileViewport || activeTab === 'explore') return
@@ -319,6 +360,7 @@ function App() {
                 ? { type: 'set-sheet-expanded', tab: 'plan', expanded: true }
                 : { type: 'close-active-tab' })
             }}
+            onBeforeSheetToggle={() => prepareSheetTransition()}
           />
         </div>
         <div
@@ -353,13 +395,32 @@ function App() {
               expanded: true,
             })}
             onMinimize={() => dispatchMobileNavigation({ type: 'close-active-tab' })}
+            onBeforeSheetToggle={() => prepareSheetTransition()}
             containerRef={contextualPanelRef}
             status={panelStatus}
             onQueryChange={commands.setContextualPanelQuery}
             onVenueSelect={commands.selectVenue}
-            onOpenVenueSearch={commands.openVenueSearch}
-            onOpenShuttle={isMobileViewport ? commands.enterMobileRoutes : commands.openShuttle}
-            onLeaveMobileRoutes={commands.leaveMobileRoutes}
+            onOpenVenueSearch={() => {
+              if (isMobileViewport) {
+                prepareSheetTransition(true)
+                dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'explore', expanded: true })
+              }
+              commands.openVenueSearch()
+            }}
+            onOpenShuttle={() => {
+              if (isMobileViewport) {
+                prepareSheetTransition(true)
+                dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'explore', expanded: true })
+                commands.enterMobileRoutes()
+              } else commands.openShuttle()
+            }}
+            onLeaveMobileRoutes={() => {
+              if (isMobileViewport) {
+                prepareSheetTransition(true)
+                dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'explore', expanded: true })
+              }
+              commands.leaveMobileRoutes()
+            }}
             onFocusStop={commands.focusStop}
             onBack={commands.back}
             onClose={() => {
@@ -379,6 +440,7 @@ function App() {
             onExpandedChange={(expanded) => dispatchMobileNavigation(expanded
               ? { type: 'set-sheet-expanded', tab: 'stops', expanded: true }
               : { type: 'close-active-tab' })}
+            onBeforeSheetToggle={() => prepareSheetTransition()}
             containerRef={stopsSheetRef}
           />
         </div>
@@ -388,6 +450,7 @@ function App() {
         onSelectTab={(tab) => {
           setMapControlsOpen(false)
           if (isMobileViewport && tab !== mobileNavigation.activeTab) {
+            prepareSheetTransition(true)
             if (mobileNavigation.activeTab === 'explore' && state.contextualPanel.mode === 'shuttle') {
               commands.suspendMobileRoutes()
             } else if (tab === 'explore' && state.contextualPanel.mode === 'shuttle') {

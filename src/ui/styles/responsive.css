@@ -142,6 +142,21 @@
     border-radius: 12px 12px 0 0;
   }
 
+  [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row) {
+    animation: mobile-sheet-content-enter 180ms ease-out both;
+  }
+
+  @keyframes mobile-sheet-content-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row) {
+      animation: none;
+    }
+  }
+
   .contextual-panel {
     width: 100%;
     min-height: 0;

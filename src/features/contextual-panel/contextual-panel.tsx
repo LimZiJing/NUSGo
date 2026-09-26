@@ -59,6 +59,7 @@ interface ContextualPanelProps {
   active?: boolean
   onRestore?: () => void
   onMinimize?: () => void
+  onBeforeSheetToggle?: () => void
   containerRef?: Ref<HTMLElement>
   status?: PanelStatus | null
   selectedRouteId?: string | null
@@ -131,6 +132,7 @@ export function ContextualPanel({
   active = true,
   onRestore,
   onMinimize,
+  onBeforeSheetToggle,
   containerRef,
   status,
   selectedRouteId = null,
@@ -522,6 +524,7 @@ export function ContextualPanel({
           label="Explore panel"
           controlsId="contextual-panel-content"
           onButtonRef={setRestorePanelButtonRef}
+          onBeforeClick={onBeforeSheetToggle}
           onExpandedChange={(expanded) => {
             if (expanded) onRestore?.()
             else handleMinimize()

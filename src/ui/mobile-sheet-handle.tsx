@@ -5,6 +5,7 @@ interface MobileSheetHandleProps {
   readonly label: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
+  readonly onBeforeClick?: () => void
   readonly onExpandedChange: (expanded: boolean) => void
 }
 
@@ -133,6 +134,7 @@ export function MobileSheetHandle({
   label,
   controlsId,
   onButtonRef,
+  onBeforeClick,
   onExpandedChange,
 }: MobileSheetHandleProps) {
   const dragRef = useRef<DragSession | null>(null)
@@ -290,6 +292,7 @@ export function MobileSheetHandle({
     if (!nextExpanded && content?.contains(document.activeElement)) {
       event.currentTarget.focus()
     }
+    onBeforeClick?.()
     onExpandedChange(nextExpanded)
   }
 

@@ -22,6 +22,7 @@ interface TripEndpointControlsProps {
   mobileViewport?: boolean
   containerRef?: Ref<HTMLElement>
   onExpandedChange?: (expanded: boolean) => void
+  onBeforeSheetToggle?: () => void
   onSwap: () => void
   onSelectOriginEndpoint: (endpoint: TripEndpoint) => void
   onClearOriginEndpoint: () => void
@@ -68,6 +69,7 @@ export function TripEndpointControls({
   mobileViewport = true,
   containerRef,
   onExpandedChange,
+  onBeforeSheetToggle,
   onSwap,
   onSelectOriginEndpoint,
   onClearOriginEndpoint,
@@ -175,6 +177,7 @@ export function TripEndpointControls({
           label={`Plan trip panel: ${tripSummary.accessible}`}
           controlsId={TRIP_CONTROLS_CONTENT_ID}
           onButtonRef={setTripHandleRef}
+          onBeforeClick={onBeforeSheetToggle}
           onExpandedChange={setExpanded}
         />
       </div>

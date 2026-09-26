@@ -377,12 +377,7 @@ export function createJourneyPlanningService(
       liveArrivals = await shuttleArrivalClient.getArrivals([...boardingStops.values()], request.signal)
     } catch (error: unknown) {
       if (request.signal.aborted || isAbortError(error)) throw createAbortError()
-      console.warn('Live shuttle arrivals are unavailable; removing shuttle options.', error)
-      const unavailable = serviceWindows
-        ? getStaticServiceEvaluation(staticJourney, serviceWindows, now())
-        : null
-      if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-      return planWalkingOnly(planInput)
+      throw error
     }
 
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals)

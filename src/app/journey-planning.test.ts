@@ -302,6 +302,29 @@ describe('createJourneyPlanningService', () => {
     expect(journey?.totalDurationSeconds).toBe(1_000)
   })
 
+  it('throws when live arrival data cannot be fetched', async () => {
+    const transit = createAlternativeTransitData()
+    const routeEngine = createAlternativeRouteEngine()
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => {
+        throw new Error('Live shuttle API unavailable')
+      }),
+    }
+
+    await expect(createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.012, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })).rejects.toThrow('Live shuttle API unavailable')
+  })
+
   it('does not return a shuttle journey after the route service window ends', async () => {
     const transit = createTransitData()
     const routeEngine = {

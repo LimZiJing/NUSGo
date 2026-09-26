@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createShuttleArrivalClient } from './client'
+import { createShuttleArrivalClient, ShuttleArrivalFetchError } from './client'
 
 function responseFor(stopId: string): Response {
   return new Response(JSON.stringify({
@@ -61,7 +61,7 @@ describe('createShuttleArrivalClient', () => {
     expect(second.stops.PGP.D2.nextArrivalSeconds).toBe(264)
   })
 
-  it('does not use stale cached data when a refresh fails', async () => {
+  it('reports a fetch failure instead of treating it as no bus data', async () => {
     let now = 0
     const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))
     const client = createShuttleArrivalClient({
@@ -76,8 +76,22 @@ describe('createShuttleArrivalClient', () => {
     now = 11
     fetcher.mockRejectedValueOnce(new Error('API unavailable'))
 
-    await expect(client.getArrivals([stop], signal)).rejects.toThrow('No shuttle arrival data is available')
+    await expect(client.getArrivals([stop], signal)).rejects.toBeInstanceOf(ShuttleArrivalFetchError)
     expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns an empty valid snapshot when the provider has no bus arrivals', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: { PGP: {} },
+    }), { status: 200 }))
+
+    const result = await createShuttleArrivalClient({ fetcher }).getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+    ], new AbortController().signal)
+
+    expect(result.stops).toEqual({ PGP: {} })
   })
 
   it('normalizes arrival ordering and drops invalid headways', async () => {
@@ -115,6 +129,6 @@ describe('createShuttleArrivalClient', () => {
 
     await expect(createShuttleArrivalClient({ fetcher }).getArrivals([
       { stopId: 'PGP', stopName: 'PGP' },
-    ], new AbortController().signal)).rejects.toThrow('No shuttle arrival data is available')
+    ], new AbortController().signal)).rejects.toBeInstanceOf(ShuttleArrivalFetchError)
   })
 })

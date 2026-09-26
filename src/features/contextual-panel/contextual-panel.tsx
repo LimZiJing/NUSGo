@@ -13,6 +13,7 @@ import {
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { GhostBackButton } from '../../ui/ghost-back-button'
 import type { ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -441,6 +442,16 @@ export function ContextualPanel({
     onLeaveMobileRoutes?.()
   }
 
+  const handleLeaveMobileVenueSearch = (): void => {
+    focusHistoryRef.current = []
+    pendingFocusRef.current = {
+      element: null,
+      key: 'venue-search-opener',
+      fallbackKey: null,
+    }
+    onClose()
+  }
+
   const handleFocusStop = (stopId: string): void => {
     pendingStopRowFocusRef.current = document.activeElement instanceof HTMLElement
       ? document.activeElement
@@ -492,14 +503,12 @@ export function ContextualPanel({
         />
       </div>
       <div className="contextual-panel-header">
-        {mobileViewport && state.mode === 'shuttle' && !minimized && (
-          <button
-            type="button"
-            className="mobile-routes-explore-button"
-            onClick={handleLeaveMobileRoutes}
-          >
-            <span aria-hidden="true">←</span> Explore
-          </button>
+        {mobileViewport && !minimized && (
+          state.mode === 'shuttle'
+            ? <GhostBackButton label="Explore" onClick={handleLeaveMobileRoutes} />
+            : state.mode === 'venue-search'
+              ? <GhostBackButton label="Explore" onClick={handleLeaveMobileVenueSearch} />
+              : null
         )}
         <h2
           id="contextual-panel-heading"
@@ -508,7 +517,7 @@ export function ContextualPanel({
         >
           {getPanelHeading(state, selectedRouteId)}
         </h2>
-        {state.mode !== 'neutral' && !(mobileViewport && state.mode === 'shuttle') && (
+        {state.mode !== 'neutral' && !(mobileViewport && (state.mode === 'shuttle' || state.mode === 'venue-search')) && (
           <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>

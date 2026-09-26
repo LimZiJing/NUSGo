@@ -166,18 +166,27 @@
     letter-spacing: -0.2px;
   }
 
-  .contextual-panel-shuttle .contextual-panel-header {
+  .contextual-panel-shuttle .contextual-panel-header,
+  .contextual-panel-venue-search .contextual-panel-header {
+    position: relative;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     gap: 4px;
   }
 
-  .contextual-panel-shuttle {
+  .contextual-panel-shuttle,
+  .contextual-panel-venue-search {
     padding-top: 8px;
   }
 
-  .contextual-panel .mobile-routes-explore-button {
+  .contextual-panel-venue-search .contextual-panel-hide-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  .contextual-panel .mobile-ghost-back-button {
     min-height: 0;
     padding: 3px;
     border: 0;
@@ -187,7 +196,7 @@
     cursor: pointer;
   }
 
-  .mobile-routes-explore-button span {
+  .mobile-ghost-back-button span {
     margin-right: 5px;
     font-size: 17px;
   }

@@ -6,7 +6,10 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MobileSheetHandle } from './mobile-sheet-handle'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 function createRect(height: number): DOMRect {
   return {
@@ -135,16 +138,111 @@ describe('MobileSheetHandle', () => {
     expect(onExpandedChange).toHaveBeenCalledWith(false)
   })
 
+  it('allows resisted travel above the expanded height', () => {
+    const { button, panel } = renderHandle(true)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 236 })
+
+    const dragHeight = Number.parseFloat((panel as HTMLElement).style.height)
+    expect(dragHeight).toBeGreaterThan(300)
+    expect(dragHeight).toBeCloseTo(327.67, 1)
+    expect((panel as HTMLElement).style.maxHeight)
+      .toBe('calc(var(--mobile-sheet-max-height) + 32px)')
+  })
+
+  it('caps upper overdrag at 32 pixels', () => {
+    const { button, panel } = renderHandle(true)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: -400 })
+
+    const dragHeight = Number.parseFloat((panel as HTMLElement).style.height)
+    expect(dragHeight).toBeGreaterThan(300)
+    expect(dragHeight).toBeLessThanOrEqual(332)
+    expect(dragHeight).toBeCloseTo(332, 3)
+  })
+
+  it('allows resisted travel below the compact height with a 32-pixel cap', () => {
+    const { button, panel } = renderHandle(false)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 1400 })
+
+    const dragHeight = Number.parseFloat((panel as HTMLElement).style.height)
+    expect(dragHeight).toBeLessThan(100)
+    expect(dragHeight).toBeGreaterThanOrEqual(68)
+    expect(dragHeight).toBeCloseTo(68, 3)
+    expect((panel as HTMLElement).style.maxHeight).toBe('var(--mobile-sheet-max-height)')
+  })
+
+  it('springs an upper overdrag back to the expanded stop on release', () => {
+    const { button, onExpandedChange, panel } = renderHandle(true)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 236 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 236 })
+
+    expect((panel as HTMLElement).style.height).toBe('300px')
+    expect((panel as HTMLElement).style.transition)
+      .toBe('height 220ms cubic-bezier(0.2, 1.15, 0.3, 1)')
+    expect(panel.getAttribute('data-mobile-sheet-settling')).toBe('expanded')
+    expect(onExpandedChange).toHaveBeenCalledWith(true)
+  })
+
+  it('springs a lower overdrag back to the compact stop on release', () => {
+    const { button, onExpandedChange, panel } = renderHandle(false)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 400 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 400 })
+
+    expect((panel as HTMLElement).style.height).toBe('100px')
+    expect((panel as HTMLElement).style.transition)
+      .toBe('height 220ms cubic-bezier(0.2, 1.15, 0.3, 1)')
+    expect(panel.getAttribute('data-mobile-sheet-settling')).toBe('compact')
+    expect(onExpandedChange).toHaveBeenCalledWith(false)
+  })
+
+  it('uses the normal snap when an overdrag returns within range before release', () => {
+    const { button, panel } = renderHandle(true)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 236 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 310 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 310 })
+
+    expect((panel as HTMLElement).style.height).toBe('300px')
+    expect((panel as HTMLElement).style.transition).toBe('height 180ms ease-out')
+    expect((panel as HTMLElement).style.maxHeight).toBe('var(--mobile-sheet-max-height)')
+  })
+
+  it('skips the rebound when reduced motion is requested', () => {
+    const matchMedia = vi.fn().mockReturnValue({ matches: true })
+    vi.stubGlobal('matchMedia', matchMedia)
+    const { button, onExpandedChange, panel } = renderHandle(false)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 400 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 400 })
+
+    expect((panel as HTMLElement).style.height).toBe('100px')
+    expect((panel as HTMLElement).style.transition).toBe('height 0ms ease-out')
+    expect(onExpandedChange).toHaveBeenCalledWith(false)
+    expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)')
+  })
+
   it('restores the starting sheet state when the drag is cancelled', () => {
     const { button, onExpandedChange, panel } = renderHandle(false)
 
     firePointer(button, 'pointerdown', { pointerId: 1, button: 0, clientY: 300 })
-    firePointer(button, 'pointermove', { pointerId: 1, clientY: 180 })
-    firePointer(button, 'pointercancel', { pointerId: 1, clientY: 180 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 500 })
+    firePointer(button, 'pointercancel', { pointerId: 1, clientY: 500 })
 
     expect(onExpandedChange).not.toHaveBeenCalled()
     expect(panel.hasAttribute('data-mobile-sheet-dragging')).toBe(false)
     expect((panel as HTMLElement).style.height).toBe('')
+    expect((panel as HTMLElement).style.maxHeight).toBe('')
   })
 
   it('does not start dragging from the sheet content', () => {

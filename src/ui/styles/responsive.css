@@ -206,9 +206,9 @@
     display: grid !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'] .mobile-stops-sheet [data-mobile-sheet-content],
-  [data-mobile-sheet-dragging] .mobile-stops-sheet [data-mobile-sheet-content],
-  [data-mobile-sheet-settling='expanded'] .mobile-stops-sheet [data-mobile-sheet-content] {
+  [data-mobile-sheet-measuring='expanded'].mobile-stops-sheet [data-mobile-sheet-content],
+  [data-mobile-sheet-dragging].mobile-stops-sheet [data-mobile-sheet-content],
+  [data-mobile-sheet-settling='expanded'].mobile-stops-sheet [data-mobile-sheet-content] {
     display: block !important;
   }
 

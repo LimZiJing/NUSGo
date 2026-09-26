@@ -34,6 +34,9 @@ interface DragSession {
 
 const DRAG_THRESHOLD = 6
 const SETTLE_DURATION = 180
+const MAX_OVERDRAG = 32
+const OVERDRAG_SETTLE_DURATION = 220
+const OVERDRAG_SETTLE_EASING = 'cubic-bezier(0.2, 1.15, 0.3, 1)'
 
 function readInlineSheetStyles(sheet: HTMLElement): InlineSheetStyles {
   return {
@@ -89,15 +92,26 @@ function measureSheetHeight(sheet: HTMLElement, state: 'compact' | 'expanded'): 
   return height
 }
 
+function resistOverdrag(distance: number): number {
+  return MAX_OVERDRAG * (1 - Math.exp(-distance / MAX_OVERDRAG))
+}
+
 function updateDragHeight(session: DragSession, clientY: number): void {
   const distance = session.startY - clientY
   if (!session.moved && Math.abs(distance) < DRAG_THRESHOLD) return
 
   session.moved = true
-  const height = Math.min(
-    session.expandedHeight,
-    Math.max(session.compactHeight, session.startHeight + distance),
-  )
+  const requestedHeight = session.startHeight + distance
+  let height = requestedHeight
+  if (requestedHeight < session.compactHeight) {
+    height = session.compactHeight - resistOverdrag(session.compactHeight - requestedHeight)
+  } else if (requestedHeight > session.expandedHeight) {
+    height = session.expandedHeight + resistOverdrag(requestedHeight - session.expandedHeight)
+  }
+
+  session.sheet.style.maxHeight = requestedHeight > session.expandedHeight
+    ? `calc(var(--mobile-sheet-max-height) + ${MAX_OVERDRAG}px)`
+    : 'var(--mobile-sheet-max-height)'
   session.currentHeight = height
   session.sheet.style.height = `${height}px`
 }
@@ -234,10 +248,15 @@ export function MobileSheetHandle({
 
     const prefersReducedMotion = typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const duration = prefersReducedMotion ? 0 : SETTLE_DURATION
+    const overdragged = session.currentHeight < session.compactHeight ||
+      session.currentHeight > session.expandedHeight
+    const duration = prefersReducedMotion
+      ? 0
+      : overdragged ? OVERDRAG_SETTLE_DURATION : SETTLE_DURATION
+    const easing = overdragged && !prefersReducedMotion ? OVERDRAG_SETTLE_EASING : 'ease-out'
     const targetHeight = nextExpanded ? session.expandedHeight : session.compactHeight
     session.sheet.dataset.mobileSheetSettling = nextExpanded ? 'expanded' : 'compact'
-    session.sheet.style.transition = `height ${duration}ms ease-out`
+    session.sheet.style.transition = `height ${duration}ms ${easing}`
     void session.sheet.getBoundingClientRect().height
     session.sheet.style.height = `${targetHeight}px`
     onExpandedChange(nextExpanded)

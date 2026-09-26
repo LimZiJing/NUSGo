@@ -84,6 +84,10 @@ h3:focus {
   outline-offset: 2px;
 }
 
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

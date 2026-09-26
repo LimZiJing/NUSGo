@@ -50,6 +50,9 @@ interface WalkingCandidate {
   readonly connection: WalkingMatrixConnection
 }
 
+const MAX_ENDPOINT_WALK_SECONDS = 300
+const MAX_STOP_TRANSFER_WALK_SECONDS = 180
+
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
 }
@@ -128,6 +131,8 @@ function resolveLocations(
 function isCandidatePair(
   from: ResolvedLocation,
   to: ResolvedLocation,
+  connection: WalkingMatrixConnection,
+  transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
 ): boolean {
@@ -136,19 +141,31 @@ function isCandidatePair(
   const toCanWalkFromTransit = to.key === destinationKey || to.endpoint.kind === 'stop'
   const touchesTripEndpoint = from.key === originKey || to.key === destinationKey
   const isStopToStopTransfer = from.endpoint.kind === 'stop' && to.endpoint.kind === 'stop'
-  return fromCanWalkToTransit && toCanWalkFromTransit && (touchesTripEndpoint || isStopToStopTransfer)
+  if (!fromCanWalkToTransit || !toCanWalkFromTransit) return false
+  if (from.key === originKey && to.key === destinationKey) return true
+
+  const fromStop = transit.index.stopById.get(from.endpoint.id)
+  const toStop = transit.index.stopById.get(to.endpoint.id)
+  const isOppositePair = fromStop?.opposite === to.endpoint.id || toStop?.opposite === from.endpoint.id
+
+  if (touchesTripEndpoint && !isStopToStopTransfer) {
+    return connection.durationSeconds <= MAX_ENDPOINT_WALK_SECONDS
+  }
+  if (!isStopToStopTransfer) return true
+  return isOppositePair || connection.durationSeconds <= MAX_STOP_TRANSFER_WALK_SECONDS
 }
 
 function selectWalkingCandidates(
   connections: readonly WalkingMatrixConnection[],
   locations: readonly ResolvedLocation[],
+  transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
 ): WalkingCandidate[] {
   return connections.flatMap((connection) => {
     const from = locations[connection.fromIndex]
     const to = locations[connection.toIndex]
-    if (!from || !to || !isCandidatePair(from, to, originKey, destinationKey)) return []
+    if (!from || !to || !isCandidatePair(from, to, connection, transit, originKey, destinationKey)) return []
     return [{ from, to, connection }]
   })
 }
@@ -258,6 +275,19 @@ function planWalkingOnly(
   })
 }
 
+function createPlanningWalkingGeometry(
+  from: ResolvedLocation,
+  to: ResolvedLocation,
+): WalkingJourneyConnection['geometry'] {
+  return {
+    type: 'LineString',
+    coordinates: [
+      [from.coordinate.longitude, from.coordinate.latitude],
+      [to.coordinate.longitude, to.coordinate.latitude],
+    ],
+  }
+}
+
 function getStaticServiceEvaluation(
   journey: Journey,
   serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
@@ -277,35 +307,39 @@ function getStaticServiceEvaluation(
   return null
 }
 
-async function loadWalkingConnections(
-  routeEngine: WalkingRouteEngine,
+function createWalkingConnections(
   candidates: readonly WalkingCandidate[],
-  signal: AbortSignal,
-): Promise<readonly WalkingJourneyConnection[]> {
-  const results = await Promise.allSettled(candidates.map(async ({ from, to, connection }) => {
-    const route = await routeEngine.routeWalking(
-      { origin: from.coordinate, destination: to.coordinate },
-      signal,
-    )
-    return {
+): readonly WalkingJourneyConnection[] {
+  return candidates.map(({ from, to, connection }) => ({
       from: from.endpoint,
       to: to.endpoint,
       durationSeconds: connection.durationSeconds,
       distanceMeters: connection.distanceMeters,
-      geometry: route.geometry,
-    } satisfies WalkingJourneyConnection
+      geometry: createPlanningWalkingGeometry(from, to),
+    } satisfies WalkingJourneyConnection))
+}
+
+async function enrichWalkingGeometry(
+  routeEngine: WalkingRouteEngine,
+  journey: Journey,
+  locations: readonly ResolvedLocation[],
+  signal: AbortSignal,
+): Promise<Journey> {
+  const locationByKey = new Map(locations.map((location) => [location.key, location]))
+  const legs = await Promise.all(journey.legs.map(async (leg) => {
+    if (leg.mode === 'shuttle') return leg
+    const from = locationByKey.get(endpointKey(leg.from))
+    const to = locationByKey.get(endpointKey(leg.to))
+    if (!from || !to) throw new Error('Walking Journey leg has an unknown endpoint')
+    const route = await routeEngine.routeWalking(
+      { origin: from.coordinate, destination: to.coordinate },
+      signal,
+    )
+    return { ...leg, geometry: route.geometry }
   }))
 
   if (signal.aborted) throw createAbortError()
-
-  const rejected = results.find((result) => result.status === 'rejected')
-  const fulfilled = results
-    .filter((result): result is PromiseFulfilledResult<WalkingJourneyConnection> => result.status === 'fulfilled')
-    .map((result) => result.value)
-  if (fulfilled.length === 0 && rejected?.status === 'rejected' && !isAbortError(rejected.reason)) {
-    throw rejected.reason
-  }
-  return fulfilled
+  return { ...journey, legs }
 }
 
 export function createJourneyPlanningService(
@@ -328,14 +362,11 @@ export function createJourneyPlanningService(
     const candidates = selectWalkingCandidates(
       matrixConnections,
       locations.all,
+      request.transit,
       locations.origin.key,
       locations.destination.key,
     )
-    const walkingConnections = await loadWalkingConnections(
-      routeEngine,
-      candidates,
-      request.signal,
-    )
+    const walkingConnections = createWalkingConnections(candidates)
 
     const planInput = {
       origin: locations.origin,
@@ -347,7 +378,10 @@ export function createJourneyPlanningService(
       getShuttleWaitingSeconds: zeroShuttleWaitingTime,
     }
     const staticJourney = planJourney(planInput)
-    if (!staticJourney || !shuttleArrivalClient) return staticJourney
+    if (!staticJourney) return null
+    if (!shuttleArrivalClient) {
+      return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
+    }
 
     const boardingStops = collectEligibleBoardingStops(
       request.transit,
@@ -355,7 +389,9 @@ export function createJourneyPlanningService(
       locations.origin,
       locations.destination,
     )
-    if (boardingStops.length === 0) return staticJourney
+    if (boardingStops.length === 0) {
+      return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
+    }
 
     let serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null = null
     if (shuttleServiceHoursClient) {
@@ -366,7 +402,10 @@ export function createJourneyPlanningService(
       } catch (error: unknown) {
         if (request.signal.aborted || isAbortError(error)) throw createAbortError()
         console.warn('Shuttle service-hour data is unavailable; removing shuttle options.', error)
-        return planWalkingOnly(planInput)
+        const walkingOnlyJourney = planWalkingOnly(planInput)
+        return walkingOnlyJourney
+          ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+          : null
       }
       if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) {
         return planWalkingOnly(planInput)
@@ -393,12 +432,17 @@ export function createJourneyPlanningService(
         return liveWaiting(record, context)
       },
     })
-    if (liveJourney) return liveJourney
+    if (liveJourney) {
+      return enrichWalkingGeometry(routeEngine, liveJourney, locations.all, request.signal)
+    }
 
     const unavailable = serviceWindows
       ? getStaticServiceEvaluation(staticJourney, serviceWindows, nowMs)
       : null
     if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-    return planWalkingOnly(planInput)
+    const walkingOnlyJourney = planWalkingOnly(planInput)
+    return walkingOnlyJourney
+      ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+      : null
   }
 }

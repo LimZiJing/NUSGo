@@ -147,8 +147,9 @@
     scroll-snap-align: start;
   }
 
-  .contextual-panel .route-chip:hover {
+  .contextual-panel .route-chip:not([aria-pressed='true']):hover {
     border-color: #cbd5e1;
+    background: #e8eef5;
   }
 
   .contextual-panel .route-chip[aria-pressed='true'] {

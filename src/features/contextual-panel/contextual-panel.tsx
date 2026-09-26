@@ -14,6 +14,7 @@ import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { GhostBackButton } from '../../ui/ghost-back-button'
+import { SearchField } from '../../ui/search-field'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -591,13 +592,12 @@ export function ContextualPanel({
       {(state.mode === 'venue-search' || (mobileViewport && state.mode === 'neutral')) && (
         <div id="contextual-panel-content" className="contextual-panel-content">
           <div className="contextual-panel-search-row">
-            <input
+            <SearchField
               id="contextual-venue-search-input"
               aria-labelledby="contextual-panel-heading"
-              type="search"
               placeholder="e.g. COM1-0210"
               value={state.query}
-              ref={searchInputRef}
+              inputRef={searchInputRef}
               onFocus={() => { if (minimized) onRestore?.() }}
               onChange={(event) => onQueryChange(event.target.value)}
               autoComplete="off"

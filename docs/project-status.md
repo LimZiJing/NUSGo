@@ -17,6 +17,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Map tile error reporting and MapLibre navigation controls.
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.
+- Find venue and trip endpoint searches use the reusable `src/ui/search-field.tsx` control, which overlays a decorative search icon at the left of each input while retaining each workflow's own labels and clear actions.
 - Venue selection opens the venue-first contextual panel, flies to the venue, and shows a selected venue marker without a duplicate map popup.
 - The contextual panel supports venue search and details. Mobile shuttle browsing uses canonical route chips and a single ordered-stop timeline; stop rows focus the map and open existing stop popups. The Explore return control clears the active map route while retaining the chosen route for reopening.
 - Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.

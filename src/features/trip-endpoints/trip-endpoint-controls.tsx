@@ -10,6 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 
@@ -282,9 +283,8 @@ export function TripEndpointControl({
       </div>
 
       <div className="trip-endpoint-search-row">
-        <input
+        <SearchField
           id={inputId}
-          type="search"
           value={searchQuery}
           placeholder={`Search ${roleLabel.toLocaleLowerCase()} venue or stop`}
           onChange={(event) => onSearchQueryChange(event.target.value)}

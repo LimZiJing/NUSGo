@@ -39,7 +39,7 @@ describe('ContextualPanel', () => {
   it('starts on the mobile Find venue segment', () => {
     const markup = renderPanel()
 
-    expect(markup).toContain('>Find venue</button>')
+    expect(markup).toContain('Find venue</button>')
     expect(markup).toContain('>Shuttle routes</button>')
     expect(markup).toContain('id="contextual-venue-search-input"')
     expect(markup).not.toContain('Browse shuttle routes')
@@ -81,7 +81,40 @@ describe('ContextualPanel', () => {
     expect(markup).toContain('>COM1-0210</h3>')
     expect(markup).toContain('Computing 1, Level 2')
     expect(markup).toContain('<strong>Floor:</strong> 2')
+    expect(markup).toContain('Find venue</button>')
+    expect(markup).not.toContain('Browse shuttle routes')
+    expect(markup).not.toContain('>Back</button>')
     expect(markup).not.toContain('maplibregl-popup')
+  })
+
+  it('labels the mobile detail return control from its previous context', () => {
+    const state = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+      history: [{ mode: 'shuttle' as const, query: '', selectedVenue: null }],
+    }
+
+    expect(renderPanel(state)).toContain('Shuttle routes</button>')
+  })
+
+  it('keeps desktop venue detail navigation actions', () => {
+    const state = {
+      ...createInitialContextualPanelState(),
+      mode: 'venue-detail' as const,
+      selectedVenue: {
+        code: 'COM1-0210',
+        venue: venues['COM1-0210'],
+      },
+    }
+    const markup = renderPanel(state, venues, false)
+
+    expect(markup).toContain('aria-label="Back to venue search"')
+    expect(markup).toContain('aria-label="Close map context"')
+    expect(markup).toContain('Browse shuttle routes')
   })
 
   it('keeps shuttle mode available when venue data fails', () => {

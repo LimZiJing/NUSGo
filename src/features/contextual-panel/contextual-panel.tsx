@@ -13,7 +13,8 @@ import {
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import type { ContextualPanelState } from './state'
+import { GhostBackButton } from '../../ui/ghost-back-button'
+import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
 interface FocusTarget {
@@ -31,6 +32,18 @@ interface ShuttleRouteRenderOptions {
 }
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+const MOBILE_EXPLORE_LABELS = { venue: 'Find venue', shuttle: 'Shuttle routes' } as const
+const MOBILE_RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
+  neutral: MOBILE_EXPLORE_LABELS.venue,
+  'venue-search': MOBILE_EXPLORE_LABELS.venue,
+  'venue-detail': 'Venue details',
+  shuttle: MOBILE_EXPLORE_LABELS.shuttle,
+  'shuttle-route-detail': MOBILE_EXPLORE_LABELS.shuttle,
+}
+
+function getMobileVenueDetailReturnLabel(state: ContextualPanelState): string {
+  return MOBILE_RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
+}
 
 interface ContextualPanelProps {
   state: ContextualPanelState
@@ -515,7 +528,7 @@ export function ContextualPanel({
         />
       </div>
       <div className="contextual-panel-header">
-        {mobileExploreSegments && !minimized && (
+        {mobileExploreSegments && (
           <div className="mobile-explore-segments" role="group" aria-label="Explore view">
             <button
               type="button"
@@ -523,7 +536,7 @@ export function ContextualPanel({
               aria-pressed={mobileVenueSearch}
               onClick={handleSelectMobileVenueSearch}
             >
-              Find venue
+              {MOBILE_EXPLORE_LABELS.venue}
             </button>
             <button
               type="button"
@@ -531,19 +544,22 @@ export function ContextualPanel({
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectMobileShuttle}
             >
-              Shuttle routes
+              {MOBILE_EXPLORE_LABELS.shuttle}
             </button>
           </div>
+        )}
+        {mobileViewport && state.mode === 'venue-detail' && !minimized && (
+          <GhostBackButton label={getMobileVenueDetailReturnLabel(state)} onClick={handleBack} />
         )}
         <h2
           id="contextual-panel-heading"
           ref={panelHeadingRef}
           tabIndex={-1}
-          className={mobileExploreSegments && !minimized ? 'visually-hidden' : undefined}
+          className={mobileExploreSegments ? 'visually-hidden' : undefined}
         >
           {getPanelHeading(state, selectedRouteId, mobileViewport)}
         </h2>
-        {state.mode !== 'neutral' && !(mobileViewport && (state.mode === 'shuttle' || state.mode === 'venue-search')) && (
+        {state.mode !== 'neutral' && !(mobileViewport && (state.mode === 'shuttle' || state.mode === 'venue-search' || state.mode === 'venue-detail')) && (
           <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>
@@ -573,7 +589,7 @@ export function ContextualPanel({
       )}
 
       {(state.mode === 'venue-search' || (mobileViewport && state.mode === 'neutral')) && (
-        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
+        <div id="contextual-panel-content" className="contextual-panel-content">
           <div className="contextual-panel-search-row">
             <input
               id="contextual-venue-search-input"
@@ -582,6 +598,7 @@ export function ContextualPanel({
               placeholder="e.g. COM1-0210"
               value={state.query}
               ref={searchInputRef}
+              onFocus={() => { if (minimized) onRestore?.() }}
               onChange={(event) => onQueryChange(event.target.value)}
               autoComplete="off"
             />
@@ -601,38 +618,40 @@ export function ContextualPanel({
               </button>
             )}
           </div>
-          {venues === null || searchState.failed ? (
-            <p className="contextual-panel-status" role="status" aria-live="polite">
-              Venue search is unavailable right now. Shuttle browsing is still available.
-            </p>
-          ) : state.query.trim() ? (
-            <div className="contextual-panel-results" aria-label="Venue search results">
-              {searchState.results.length > 0 ? (
-                searchState.results.map((result) => (
-                  <button
-                    className="contextual-panel-result"
-                    data-contextual-focus-id={`venue-result-${result.code}`}
-                    type="button"
-                    key={result.code}
-                    onClick={(event) => handleVenueSelect(result, event)}
-                  >
-                    <strong>{result.code}</strong>
-                    <span>{result.venue.roomName}</span>
-                  </button>
-                ))
-              ) : (
-                <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
-              )}
-            </div>
-          ) : mobileViewport ? (
-            <div className="contextual-panel-search-prompt">
-              <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
-                <circle cx="14" cy="14" r="8" />
-                <path d="m20 20 7 7" />
-              </svg>
-              <p>Search for a venue</p>
-            </div>
-          ) : null}
+          <div className="contextual-panel-search-body" data-mobile-sheet-content>
+            {venues === null || searchState.failed ? (
+              <p className="contextual-panel-status" role="status" aria-live="polite">
+                Venue search is unavailable right now. Shuttle browsing is still available.
+              </p>
+            ) : state.query.trim() ? (
+              <div className="contextual-panel-results" aria-label="Venue search results">
+                {searchState.results.length > 0 ? (
+                  searchState.results.map((result) => (
+                    <button
+                      className="contextual-panel-result"
+                      data-contextual-focus-id={`venue-result-${result.code}`}
+                      type="button"
+                      key={result.code}
+                      onClick={(event) => handleVenueSelect(result, event)}
+                    >
+                      <strong>{result.code}</strong>
+                      <span>{result.venue.roomName}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
+                )}
+              </div>
+            ) : mobileViewport ? (
+              <div className="contextual-panel-search-prompt">
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
+                  <circle cx="14" cy="14" r="8" />
+                  <path d="m20 20 7 7" />
+                </svg>
+                <p>Search for a venue</p>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -642,9 +661,11 @@ export function ContextualPanel({
           className="contextual-panel-content contextual-panel-detail"
           data-mobile-sheet-content
         >
-          <button type="button" onClick={handleBack} aria-label="Back to venue search">
-            Back
-          </button>
+          {!mobileViewport && (
+            <button type="button" onClick={handleBack} aria-label="Back to venue search">
+              Back
+            </button>
+          )}
           <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
             {state.selectedVenue.code}
           </h3>
@@ -652,18 +673,24 @@ export function ContextualPanel({
           {state.selectedVenue.venue.floor !== undefined && state.selectedVenue.venue.floor !== null && (
             <p><strong>Floor:</strong> {state.selectedVenue.venue.floor}</p>
           )}
-          <button
-            data-contextual-focus-id="venue-detail-shuttle-opener"
-            type="button"
-            onClick={handleOpenShuttle}
-          >
-            Browse shuttle routes
-          </button>
+          {!mobileViewport && (
+            <button
+              data-contextual-focus-id="venue-detail-shuttle-opener"
+              type="button"
+              onClick={handleOpenShuttle}
+            >
+              Browse shuttle routes
+            </button>
+          )}
         </div>
       )}
 
       {(state.mode === 'shuttle' || state.mode === 'shuttle-route-detail') && (
-        <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
+        <div
+          id="contextual-panel-content"
+          className="contextual-panel-content"
+          data-mobile-sheet-content={state.mode === 'shuttle-route-detail' ? '' : undefined}
+        >
           {mobileViewport && state.mode === 'shuttle' ? null : state.mode === 'shuttle-route-detail' ? (
             <button
               ref={shuttleRouteDetailBackRef}
@@ -695,6 +722,7 @@ export function ContextualPanel({
       {panelStatus && (
         <p
           className={`contextual-panel-status contextual-panel-status-${panelStatus.kind}`}
+          data-mobile-sheet-content={mobileViewport && panelStatus.kind === 'success' ? '' : undefined}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"

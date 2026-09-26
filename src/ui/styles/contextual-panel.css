@@ -44,6 +44,10 @@
   gap: 8px;
 }
 
+.contextual-panel-search-body {
+  display: contents;
+}
+
 .contextual-panel-content p {
   margin: 0;
 }

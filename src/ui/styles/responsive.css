@@ -172,20 +172,41 @@
   }
 
   .contextual-panel-shuttle,
-  .contextual-panel-mobile-venue-search {
+  .contextual-panel-mobile-venue-search,
+  .contextual-panel-venue-detail {
     padding-top: 8px;
   }
 
-  .contextual-panel-mobile-venue-search:not(.contextual-panel-minimized) {
-    height: min(
+  .contextual-panel-venue-detail .contextual-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .contextual-panel-mobile-venue-search {
+    --mobile-venue-sheet-height: min(
       50dvh,
       calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
     );
-    grid-template-rows: max-content minmax(0, 1fr);
+    grid-template-rows: max-content max-content minmax(0, 1fr);
+  }
+
+  .contextual-panel-mobile-venue-search:not(.contextual-panel-minimized) {
+    height: var(--mobile-venue-sheet-height);
+  }
+
+  /* The handle measures with height:auto; keep its expanded stop at the visible sheet height. */
+  .contextual-panel-mobile-venue-search[data-mobile-sheet-measuring='expanded'] {
+    min-height: var(--mobile-venue-sheet-height);
   }
 
   .contextual-panel-mobile-venue-search .contextual-panel-content {
     grid-template-rows: max-content minmax(0, 1fr);
+  }
+
+  .contextual-panel-mobile-venue-search .contextual-panel-search-body {
+    display: grid;
+    min-height: 0;
   }
 
   .mobile-explore-segments {
@@ -250,6 +271,12 @@
     background: transparent;
     font: 600 14px/1.2 system-ui, sans-serif;
     cursor: pointer;
+  }
+
+  .contextual-panel .mobile-ghost-back-button:hover,
+  .contextual-panel .mobile-ghost-back-button:focus-visible {
+    border-color: transparent;
+    background: transparent;
   }
 
   .mobile-ghost-back-button span {
@@ -333,6 +360,15 @@
     display: none;
   }
 
+  .contextual-panel-mobile-venue-search.contextual-panel-minimized .contextual-panel-content,
+  .contextual-panel-shuttle.contextual-panel-minimized .contextual-panel-content {
+    display: grid;
+  }
+
+  .contextual-panel-minimized [data-mobile-sheet-content] {
+    display: none;
+  }
+
   .mobile-sheet-handle-row {
     display: flex;
     flex: 0 0 32px;
@@ -380,10 +416,19 @@
   [data-mobile-sheet-measuring='expanded'] .contextual-panel-content,
   [data-mobile-sheet-dragging] .contextual-panel-content,
   [data-mobile-sheet-settling='expanded'] .contextual-panel-content,
+  [data-mobile-sheet-measuring='expanded'] .contextual-panel-search-body,
+  [data-mobile-sheet-dragging] .contextual-panel-search-body,
+  [data-mobile-sheet-settling='expanded'] .contextual-panel-search-body,
   [data-mobile-sheet-measuring='expanded'] .trip-controls-body,
   [data-mobile-sheet-dragging] .trip-controls-body,
   [data-mobile-sheet-settling='expanded'] .trip-controls-body {
     display: grid !important;
+  }
+
+  [data-mobile-sheet-measuring='expanded'] .route-timeline-card,
+  [data-mobile-sheet-dragging] .route-timeline-card,
+  [data-mobile-sheet-settling='expanded'] .route-timeline-card {
+    display: block !important;
   }
 
   [data-mobile-sheet-measuring='expanded'].mobile-stops-sheet [data-mobile-sheet-content],

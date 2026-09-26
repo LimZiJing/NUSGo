@@ -70,6 +70,7 @@ interface ShuttleJourneyEdge extends JourneyEdgeBase {
   readonly rideSeconds: number
   readonly record: ShuttleTimingRecord
   readonly geometry: JourneyLineString
+  readonly reachesRouteTerminal: boolean
 }
 
 type JourneyEdge = WalkingJourneyEdge | ShuttleJourneyEdge
@@ -80,6 +81,7 @@ interface ResolvedJourneyEdge {
   readonly distanceMeters: number
   readonly walkingDistanceMeters: number
   readonly shuttleBoardings: number
+  readonly reachesRouteTerminal: boolean
   readonly leg: JourneyLeg
   readonly sequenceKey: string
 }
@@ -91,6 +93,7 @@ interface JourneyPath {
   readonly walkingDistanceMeters: number
   readonly shuttleBoardings: number
   readonly lastShuttleRouteId: string | null
+  readonly lastShuttleReachedTerminal: boolean
   readonly legs: readonly JourneyLeg[]
   readonly sequenceKey: string
 }
@@ -357,6 +360,7 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
     walkingDistanceMeters: path.walkingDistanceMeters + edge.walkingDistanceMeters,
     shuttleBoardings: path.shuttleBoardings + edge.shuttleBoardings,
     lastShuttleRouteId: edge.leg.mode === 'shuttle' ? edge.leg.routeId : null,
+    lastShuttleReachedTerminal: edge.leg.mode === 'shuttle' ? edge.reachesRouteTerminal : false,
     legs: [...path.legs, edge.leg],
     sequenceKey: path.sequenceKey
       ? `${path.sequenceKey}|${edge.sequenceKey}`
@@ -365,7 +369,7 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
 }
 
 function journeyPathStateKey(path: JourneyPath): string {
-  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}`
+  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}`
 }
 
 function isUpstreamBoarding(
@@ -405,6 +409,7 @@ function resolveJourneyEdge(
     distanceMeters: edge.distanceMeters,
     walkingDistanceMeters: edge.walkingDistanceMeters,
     shuttleBoardings: edge.shuttleBoardings,
+    reachesRouteTerminal: edge.kind === 'shuttle' && edge.reachesRouteTerminal,
     leg: createShuttleLeg(
       edge.routeId,
       edge.fromStopId,
@@ -496,6 +501,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
           record,
           geometry: sliced.geometry,
           sequenceKey: `shuttle:${route.id}:${fromStopId}>${toStopId}`,
+          reachesRouteTerminal: toIndex === route.stopIds.length - 1 && toStopId === route.stopIds[0],
         })
       }
     }
@@ -523,6 +529,7 @@ function findBestPath(
     walkingDistanceMeters: 0,
     shuttleBoardings: 0,
     lastShuttleRouteId: null,
+    lastShuttleReachedTerminal: false,
     legs: [],
     sequenceKey: '',
   }
@@ -543,7 +550,11 @@ function findBestPath(
         isUpstreamBoarding(origin, edge, transitIndex)
       ) continue
       // A continuous ride cannot become another boarding on the same route.
-      if (edge.kind === 'shuttle' && path.lastShuttleRouteId === edge.routeId) continue
+      if (
+        edge.kind === 'shuttle' &&
+        path.lastShuttleRouteId === edge.routeId &&
+        !path.lastShuttleReachedTerminal
+      ) continue
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
       if (!resolvedEdge) continue
       const nextPath = extendPath(path, resolvedEdge)

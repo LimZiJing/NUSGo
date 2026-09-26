@@ -100,29 +100,31 @@ export function ShuttleRouteControl({
         {selectedRoute ? (
           <div className="route-timeline-card" data-mobile-sheet-content style={{ '--route-color': selectedRoute.color } as CSSProperties}>
             <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
-            <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
-              {selectedRoute.stopIds.map((stopId, index) => {
-                const stop = stopsById.get(stopId)
-                return (
-                  <li key={`${stopId}-${index}`}>
-                    <button
-                      type="button"
-                      className="route-timeline-stop"
-                      data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
-                      onClick={() => onFocusStop?.(stopId)}
-                    >
-                      <span className="route-timeline-node" aria-hidden="true" />
-                      <span className="route-timeline-text">
-                        <strong>{stop?.shortName || stop?.longName || stopId}</strong>
-                        <small>{stopId}</small>
-                      </span>
-                      <span className="route-timeline-chevron" aria-hidden="true">›</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ol>
+            <div className="route-timeline-scroll">
+              <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
+                {selectedRoute.stopIds.map((stopId, index) => {
+                  const stop = stopsById.get(stopId)
+                  return (
+                    <li key={`${stopId}-${index}`}>
+                      <button
+                        type="button"
+                        className="route-timeline-stop"
+                        data-route-stop-id={stopId}
+                        aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                        onClick={() => onFocusStop?.(stopId)}
+                      >
+                        <span className="route-timeline-node" aria-hidden="true" />
+                        <span className="route-timeline-text">
+                          <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                          <small>{stopId}</small>
+                        </span>
+                        <span className="route-timeline-chevron" aria-hidden="true">›</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            </div>
           </div>
         ) : (
           <p className="route-selection-status" role="status" aria-live="polite">

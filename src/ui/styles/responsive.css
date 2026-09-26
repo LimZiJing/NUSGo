@@ -192,6 +192,92 @@
     padding-top: 8px;
   }
 
+  .contextual-panel-shuttle {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .contextual-panel-shuttle:not(.contextual-panel-minimized) {
+    height: var(--mobile-sheet-max-height);
+  }
+
+  .contextual-panel-shuttle .mobile-sheet-handle-row,
+  .contextual-panel-shuttle .contextual-panel-header,
+  .contextual-panel-shuttle .route-chip-list,
+  .contextual-panel-shuttle .route-timeline-count,
+  .contextual-panel-shuttle .route-selection-status {
+    flex: 0 0 auto;
+  }
+
+  .contextual-panel-shuttle .contextual-panel-content {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .contextual-panel-shuttle .route-control-mobile {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .contextual-panel-shuttle .route-timeline-card {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: #f8fafc;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-button,
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-button:vertical:decrement,
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-button:vertical:increment,
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-button:horizontal:decrement,
+  .contextual-panel-shuttle .route-timeline-scroll::-webkit-scrollbar-button:horizontal:increment {
+    display: none !important;
+    background: transparent;
+    border: 0;
+    width: 0;
+    height: 0;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .contextual-panel-shuttle .route-timeline-scroll {
+      scrollbar-color: #cbd5e1 #f8fafc;
+      scrollbar-width: thin;
+    }
+  }
+
   .contextual-panel-venue-detail .contextual-panel-header {
     flex-direction: column;
     align-items: flex-start;
@@ -390,6 +476,18 @@
     display: grid;
   }
 
+  .contextual-panel-shuttle.contextual-panel-minimized .contextual-panel-content,
+  [data-mobile-sheet-measuring='compact'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-settling='compact'].contextual-panel-shuttle .contextual-panel-content {
+    flex: 0 0 auto;
+  }
+
+  .contextual-panel-shuttle.contextual-panel-minimized .route-control-mobile,
+  [data-mobile-sheet-measuring='compact'].contextual-panel-shuttle .route-control-mobile,
+  [data-mobile-sheet-settling='compact'].contextual-panel-shuttle .route-control-mobile {
+    flex: 0 0 auto;
+  }
+
   .contextual-panel-minimized [data-mobile-sheet-content] {
     display: none;
   }
@@ -450,10 +548,26 @@
     display: grid !important;
   }
 
+  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle {
+    min-height: var(--mobile-sheet-max-height);
+  }
+
+  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-dragging].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-settling='expanded'].contextual-panel-shuttle .contextual-panel-content {
+    display: flex !important;
+  }
+
   [data-mobile-sheet-measuring='expanded'] .route-timeline-card,
   [data-mobile-sheet-dragging] .route-timeline-card,
   [data-mobile-sheet-settling='expanded'] .route-timeline-card {
     display: block !important;
+  }
+
+  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle .route-timeline-card,
+  [data-mobile-sheet-dragging].contextual-panel-shuttle .route-timeline-card,
+  [data-mobile-sheet-settling='expanded'].contextual-panel-shuttle .route-timeline-card {
+    display: flex !important;
   }
 
   [data-mobile-sheet-measuring='expanded'].mobile-stops-sheet [data-mobile-sheet-content],

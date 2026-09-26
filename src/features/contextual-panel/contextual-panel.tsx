@@ -27,6 +27,7 @@ interface ShuttleRouteRenderOptions {
   readonly firstRouteCardRef: RefObject<HTMLButtonElement | null>
   readonly onOpenRouteDetail: () => void
   readonly onShowAllRoutes: () => void
+  readonly onFocusStop: (stopId: string) => void
 }
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
@@ -51,6 +52,8 @@ interface ContextualPanelProps {
   onVenueSelect: (result: VenueSearchResult) => void
   onOpenVenueSearch: () => void
   onOpenShuttle: () => void
+  onLeaveMobileRoutes?: () => void
+  onFocusStop?: (stopId: string) => void
   onOpenShuttleRouteDetail?: () => void
   onShowAllRoutes?: () => void
   onBack: () => void
@@ -116,6 +119,8 @@ export function ContextualPanel({
   onVenueSelect,
   onOpenVenueSearch,
   onOpenShuttle,
+  onLeaveMobileRoutes,
+  onFocusStop,
   onOpenShuttleRouteDetail,
   onShowAllRoutes,
   onBack,
@@ -145,6 +150,7 @@ export function ContextualPanel({
   const shuttleFocusMovedRef = useRef(false)
   const programmaticFocusRef = useRef(false)
   const pendingMinimizeFocusRef = useRef(false)
+  const pendingStopRowFocusRef = useRef<HTMLElement | null>(null)
 
   const focusElement = (element: HTMLElement | null): void => {
     if (!element) return
@@ -203,10 +209,23 @@ export function ContextualPanel({
       if (event.key !== 'Escape') return
       if (onDismissMapPopup?.()) {
         event.preventDefault()
+        focusElement(pendingStopRowFocusRef.current)
+        pendingStopRowFocusRef.current = null
         return
       }
       if (minimized) return
       event.preventDefault()
+      if (mobileViewport && state.mode === 'shuttle') {
+        focusHistoryRef.current = []
+        pendingStopRowFocusRef.current = null
+        pendingFocusRef.current = {
+          element: null,
+          key: 'neutral-shuttle-opener',
+          fallbackKey: null,
+        }
+        onLeaveMobileRoutes?.()
+        return
+      }
       if (mobileViewport && state.mode === 'neutral' && onMinimize) {
         pendingMinimizeFocusRef.current = true
         onMinimize()
@@ -225,6 +244,7 @@ export function ContextualPanel({
     onDismissMapPopup,
     onEscape,
     onMinimize,
+    onLeaveMobileRoutes,
     rememberPanelBackFocus,
     state.mode,
   ])
@@ -333,9 +353,20 @@ export function ContextualPanel({
           focusElement(routeSelectRef.current)
         }
         shuttleRouteFocusPendingRef.current = false
-      } else if (enteringShuttle) {
-        const firstRouteCard = firstRouteCardRef.current
-        focusElement(firstRouteCard && !firstRouteCard.disabled ? firstRouteCard : fallback)
+      } else if (enteringShuttle || (
+        shuttleRouteFocusPendingRef.current &&
+        !shuttleFocusMovedRef.current &&
+        document.activeElement === fallback
+      )) {
+        const routeCard = selectedRouteId
+          ? findFocusTarget(`shuttle-route-${selectedRouteId}`)
+          : firstRouteCardRef.current
+        if (routeCard instanceof HTMLButtonElement && !routeCard.disabled) {
+          focusElement(routeCard)
+          shuttleRouteFocusPendingRef.current = false
+        } else if (enteringShuttle) {
+          focusElement(fallback)
+        }
       }
 
       previousModeRef.current = state.mode
@@ -399,6 +430,24 @@ export function ContextualPanel({
     onClose()
   }
 
+  const handleLeaveMobileRoutes = (): void => {
+    focusHistoryRef.current = []
+    pendingStopRowFocusRef.current = null
+    pendingFocusRef.current = {
+      element: null,
+      key: 'neutral-shuttle-opener',
+      fallbackKey: null,
+    }
+    onLeaveMobileRoutes?.()
+  }
+
+  const handleFocusStop = (stopId: string): void => {
+    pendingStopRowFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    onFocusStop?.(stopId)
+  }
+
   const handleMinimize = (): void => {
     pendingMinimizeFocusRef.current = true
     onMinimize?.()
@@ -443,10 +492,24 @@ export function ContextualPanel({
         />
       </div>
       <div className="contextual-panel-header">
-        <h2 id="contextual-panel-heading" ref={panelHeadingRef} tabIndex={-1}>
+        {mobileViewport && state.mode === 'shuttle' && !minimized && (
+          <button
+            type="button"
+            className="mobile-routes-explore-button"
+            onClick={handleLeaveMobileRoutes}
+          >
+            <span aria-hidden="true">←</span> Explore
+          </button>
+        )}
+        <h2
+          id="contextual-panel-heading"
+          ref={panelHeadingRef}
+          tabIndex={-1}
+          className={mobileViewport && state.mode === 'shuttle' ? 'visually-hidden' : undefined}
+        >
           {getPanelHeading(state, selectedRouteId)}
         </h2>
-        {state.mode !== 'neutral' && (
+        {state.mode !== 'neutral' && !(mobileViewport && state.mode === 'shuttle') && (
           <button type="button" onClick={handleClose} aria-label="Close map context">
             Close
           </button>
@@ -562,7 +625,7 @@ export function ContextualPanel({
 
       {(state.mode === 'shuttle' || state.mode === 'shuttle-route-detail') && (
         <div id="contextual-panel-content" className="contextual-panel-content" data-mobile-sheet-content>
-          {state.mode === 'shuttle-route-detail' ? (
+          {mobileViewport && state.mode === 'shuttle' ? null : state.mode === 'shuttle-route-detail' ? (
             <button
               ref={shuttleRouteDetailBackRef}
               type="button"
@@ -586,6 +649,7 @@ export function ContextualPanel({
             firstRouteCardRef,
             onOpenRouteDetail: handleOpenRouteDetail,
             onShowAllRoutes: handleShowAllRoutes,
+            onFocusStop: handleFocusStop,
           })}
         </div>
       )}

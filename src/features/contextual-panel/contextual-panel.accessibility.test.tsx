@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
-import { useState, type ReactNode, type RefObject } from 'react'
+import { useRef, useState, type ReactNode, type RefObject } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContextualPanel } from './contextual-panel'
+import { ShuttleRouteControl } from '../shuttle-browsing/shuttle-route-control'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -114,6 +115,7 @@ function PanelHarness({
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
       onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
+      onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
       onBack={() => dispatch({ type: 'back' })}
       onClose={() => dispatch({ type: 'close' })}
       onEscape={() => dispatch({ type: 'escape' })}
@@ -199,6 +201,46 @@ function RootSheetEscapeHarness() {
       onClose={() => undefined}
       onEscape={() => undefined}
     />
+  )
+}
+
+function MobileStopPopupHarness() {
+  const network = createValidTransitNetwork()
+  const index = createTransitIndex(network)
+  const popupActionRef = useRef<HTMLButtonElement>(null)
+  const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+
+  return (
+    <>
+      <button ref={popupActionRef} type="button">Popup action</button>
+      <ContextualPanel
+        state={state}
+        venues={venues}
+        shuttleRoutesAvailable
+        selectedRouteId="A1"
+        renderShuttleRoutes={(_, options) => (
+          <ShuttleRouteControl
+            network={network}
+            networkIndex={index}
+            selectedRouteId="A1"
+            mobileViewport
+            onRouteSelect={() => undefined}
+            firstRouteCardRef={options.firstRouteCardRef}
+            onFocusStop={options.onFocusStop}
+          />
+        )}
+        onQueryChange={() => undefined}
+        onVenueSelect={() => undefined}
+        onOpenVenueSearch={() => undefined}
+        onOpenShuttle={() => undefined}
+        onFocusStop={() => popupActionRef.current?.focus()}
+        onLeaveMobileRoutes={() => undefined}
+        onBack={() => undefined}
+        onClose={() => undefined}
+        onEscape={() => undefined}
+        onDismissMapPopup={() => true}
+      />
+    </>
   )
 }
 
@@ -571,9 +613,9 @@ describe('ContextualPanel accessibility workflows', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /COM1-0210/ })))
   })
 
-  it('focuses route selection and restores the shuttle opener for Back, Escape, and Close', async () => {
+  it('keeps desktop route selection and its Back, Escape, and Close focus behavior', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness />)
+    render(<PanelHarness mobileViewport={false} />)
     const opener = screen.getByRole('button', { name: 'Browse shuttle routes' })
 
     await user.click(opener)
@@ -597,6 +639,33 @@ describe('ContextualPanel accessibility workflows', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
   })
 
+  it('returns from mobile Routes with the Explore control and restores opener focus', async () => {
+    const user = userEvent.setup()
+    render(<PanelHarness />)
+
+    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    expect(screen.getByRole('button', { name: 'Explore' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    const opener = await screen.findByRole('button', { name: 'Browse shuttle routes' })
+    await waitFor(() => expect(document.activeElement).toBe(opener))
+  })
+
+  it('restores the tapped mobile stop row after Escape closes its popup', async () => {
+    const user = userEvent.setup()
+    render(<MobileStopPopupHarness />)
+
+    const stopRow = screen.getByRole('button', { name: /Stop A, stop STOP-A/ })
+    await user.click(stopRow)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Popup action' }))
+
+    await user.keyboard('{Escape}')
+    expect(document.activeElement).toBe(stopRow)
+    expect(screen.getByRole('button', { name: 'Route A1' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('restores the neutral entry control and never leaves focus on removed search content', async () => {
     const user = userEvent.setup()
     render(<PanelHarness />)
@@ -618,7 +687,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const validNetwork = createValidTransitNetwork()
     const validNetworkIndex = createTransitIndex(validNetwork)
     const { rerender } = render(
-      <PanelHarness initialState={state} network={null} networkIndex={null} />,
+      <PanelHarness initialState={state} network={null} networkIndex={null} mobileViewport={false} />,
     )
     const back = screen.getByRole('button', { name: 'Back to previous map context' })
     const routeSelect = screen.getByRole('combobox', { name: 'Shuttle route' })
@@ -632,6 +701,7 @@ describe('ContextualPanel accessibility workflows', () => {
         initialState={state}
         network={validNetwork}
         networkIndex={validNetworkIndex}
+        mobileViewport={false}
       />,
     )
 
@@ -645,7 +715,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const validNetworkIndex = createTransitIndex(validNetwork)
     const { rerender } = render(
       <PanelWithOutsideControl>
-        <PanelHarness initialState={state} network={null} networkIndex={null} />
+        <PanelHarness initialState={state} network={null} networkIndex={null} mobileViewport={false} />
       </PanelWithOutsideControl>,
     )
     await waitFor(() => expect(document.activeElement).toBe(
@@ -661,6 +731,7 @@ describe('ContextualPanel accessibility workflows', () => {
           initialState={state}
           network={validNetwork}
           networkIndex={validNetworkIndex}
+          mobileViewport={false}
         />
       </PanelWithOutsideControl>,
     )
@@ -673,7 +744,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const network = createValidTransitNetwork()
     network.routes = []
     const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
-    render(<PanelHarness initialState={state} network={network} networkIndex={null} />)
+    render(<PanelHarness initialState={state} network={network} networkIndex={null} mobileViewport={false} />)
 
     await waitFor(() => expect(document.activeElement).toBe(
       screen.getByRole('button', { name: 'Back to previous map context' }),

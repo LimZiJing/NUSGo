@@ -46,6 +46,7 @@ export interface NavigationSessionState {
   readonly transitIndex: TransitIndex | null
   readonly selectedRouteId: string | null
   readonly selectedRouteColor: string | null
+  readonly rememberedMobileRouteId: string | null
   readonly contextualPanel: ContextualPanelState
   readonly tripRequest: TripRequest
   readonly journey: JourneyState
@@ -69,6 +70,11 @@ export interface NavigationSession {
   subscribe(listener: NavigationSessionListener): () => void
   start(signal: AbortSignal): Promise<void>
   selectRoute(routeId: string | null): void
+  enterMobileRoutes(): void
+  suspendMobileRoutes(): void
+  leaveMobileRoutes(): void
+  selectMobileRoute(routeId: string): void
+  focusStop(stopId: string): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
@@ -99,6 +105,7 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
     transitIndex: null,
     selectedRouteId: null,
     selectedRouteColor: null,
+    rememberedMobileRouteId: null,
     contextualPanel: createInitialContextualPanelState(),
     tripRequest: createEmptyTripRequest(),
     journey: createInitialJourneyState(),
@@ -124,6 +131,7 @@ export function createNavigationSession(
   let transitData: LoadedTransitData | null = null
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
   let disposed = false
+  let mobileRoutesActive = false
   const startup = createNavigationSessionStartup()
   const listeners = new Set<NavigationSessionListener>()
   const transitionQueue = createNavigationSessionTransitionQueue(() => disposed)
@@ -353,8 +361,12 @@ export function createNavigationSession(
       transitIndex: data.index,
       selectedRouteId: reconciledSelection.route?.id ?? null,
       selectedRouteColor: reconciledSelection.route?.color ?? null,
+      rememberedMobileRouteId: state.rememberedMobileRouteId && data.index.routeById.has(state.rememberedMobileRouteId)
+        ? state.rememberedMobileRouteId
+        : null,
       resourceStatus,
     })
+    if (mobileRoutesActive) activateMobileRoute()
     requestJourneyPlanning()
   }
 
@@ -409,6 +421,32 @@ export function createNavigationSession(
     },
   })
 
+  const setActiveRoute = (routeId: string | null, remember: boolean, fit = true): void => {
+    const route = routeId && transitIndex ? transitIndex.routeById.get(routeId) : undefined
+    const nextRouteId = route?.id ?? null
+    const selection = {
+      route: route ?? null,
+      overlappingRouteIds: nextRouteId
+        ? routeOverlapMap.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
+        : EMPTY_ROUTE_OVERLAP,
+    }
+    if (fit) dependencies.map.setRouteSelection(selection)
+    else dependencies.map.setRouteSelection(selection, false)
+    updateState({
+      selectedRouteId: nextRouteId,
+      selectedRouteColor: route?.color ?? null,
+      ...(remember && nextRouteId ? { rememberedMobileRouteId: nextRouteId } : {}),
+    })
+  }
+
+  function activateMobileRoute(): void {
+    const routeId = state.rememberedMobileRouteId && transitIndex?.routeById.has(state.rememberedMobileRouteId)
+      ? state.rememberedMobileRouteId
+      : transitIndex?.routes[0]?.id ?? null
+    if (!routeId) return
+    setActiveRoute(routeId, true)
+  }
+
 
   return {
     getState() {
@@ -427,22 +465,57 @@ export function createNavigationSession(
     selectRoute(routeId) {
       enqueueTransition(() => {
         if (disposed) return
-        const selectedRoute = routeId && transitIndex
-          ? transitIndex.routeById.get(routeId)
-          : undefined
-        const nextRouteId = selectedRoute?.id ?? null
-        const overlappingRouteIds = nextRouteId
-          ? routeOverlapMap.get(nextRouteId) ?? EMPTY_ROUTE_OVERLAP
-          : EMPTY_ROUTE_OVERLAP
+        setActiveRoute(routeId, false)
+      })
+    },
 
-        dependencies.map.setRouteSelection({
-          route: selectedRoute ?? null,
-          overlappingRouteIds,
-        })
-        updateState({
-          selectedRouteId: nextRouteId,
-          selectedRouteColor: selectedRoute?.color ?? null,
-        })
+    enterMobileRoutes() {
+      enqueueTransition(() => {
+        if (disposed) return
+        mobileRoutesActive = true
+        panelTransitions.openShuttle()
+        activateMobileRoute()
+      })
+    },
+
+    suspendMobileRoutes() {
+      enqueueTransition(() => {
+        if (disposed || !mobileRoutesActive) return
+        mobileRoutesActive = false
+        dependencies.map.dismissPopup()
+        setActiveRoute(null, false, false)
+      })
+    },
+
+    leaveMobileRoutes() {
+      enqueueTransition(() => {
+        if (disposed) return
+        mobileRoutesActive = false
+        dependencies.map.dismissPopup()
+        setActiveRoute(null, false, false)
+        panelTransitions.closeToRoot()
+      })
+    },
+
+    selectMobileRoute(routeId) {
+      enqueueTransition(() => {
+        if (disposed || !mobileRoutesActive || !transitIndex?.routeById.has(routeId)) return
+        dependencies.map.dismissPopup()
+        if (state.selectedRouteId === routeId) {
+          dependencies.map.refitRoute()
+          return
+        }
+        setActiveRoute(routeId, true)
+      })
+    },
+
+    focusStop(stopId) {
+      enqueueTransition(() => {
+        const route = state.selectedRouteId
+          ? transitIndex?.routeById.get(state.selectedRouteId)
+          : undefined
+        if (disposed || !mobileRoutesActive || !route?.stopIds.includes(stopId)) return
+        dependencies.map.focusStop(stopId)
       })
     },
 

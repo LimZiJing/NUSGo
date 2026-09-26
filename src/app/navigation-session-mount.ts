@@ -83,6 +83,11 @@ export interface NavigationSessionCommands {
   readonly closeToRoot: () => void
   readonly escape: () => void
   readonly selectRoute: (routeId: string | null) => void
+  readonly enterMobileRoutes: () => void
+  readonly suspendMobileRoutes: () => void
+  readonly leaveMobileRoutes: () => void
+  readonly selectMobileRoute: (routeId: string) => void
+  readonly focusStop: (stopId: string) => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -110,6 +115,11 @@ function createNavigationSessionCommands(
     closeToRoot: () => session?.closeToRoot(),
     escape: () => session?.escape(),
     selectRoute: (routeId) => session?.selectRoute(routeId),
+    enterMobileRoutes: () => session?.enterMobileRoutes(),
+    suspendMobileRoutes: () => session?.suspendMobileRoutes(),
+    leaveMobileRoutes: () => session?.leaveMobileRoutes(),
+    selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
+    focusStop: (stopId) => session?.focusStop(stopId),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

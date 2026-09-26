@@ -334,13 +334,13 @@ function App() {
                 network={state.transitIndex?.network ?? null}
                 networkIndex={state.transitIndex}
                 selectedRouteId={state.selectedRouteId}
-                onRouteSelect={commands.selectRoute}
+                onRouteSelect={isMobileViewport
+                  ? (routeId) => { if (routeId) commands.selectMobileRoute(routeId) }
+                  : commands.selectRoute}
                 selectRef={selectRef}
                 mobileViewport={isMobileViewport}
-                mobileRouteDetail={options.mobileRouteDetail}
                 firstRouteCardRef={options.firstRouteCardRef}
-                onOpenRouteDetail={options.onOpenRouteDetail}
-                onShowAllRoutes={options.onShowAllRoutes}
+                onFocusStop={options.onFocusStop}
               />
             )}
             selectedRouteId={state.selectedRouteId}
@@ -358,12 +358,9 @@ function App() {
             onQueryChange={commands.setContextualPanelQuery}
             onVenueSelect={commands.selectVenue}
             onOpenVenueSearch={commands.openVenueSearch}
-            onOpenShuttle={commands.openShuttle}
-            onOpenShuttleRouteDetail={commands.openShuttleRouteDetail}
-            onShowAllRoutes={() => {
-              commands.selectRoute(null)
-              commands.back()
-            }}
+            onOpenShuttle={isMobileViewport ? commands.enterMobileRoutes : commands.openShuttle}
+            onLeaveMobileRoutes={commands.leaveMobileRoutes}
+            onFocusStop={commands.focusStop}
             onBack={commands.back}
             onClose={() => {
               if (isMobileViewport) commands.closeToRoot()
@@ -390,6 +387,13 @@ function App() {
         activeTab={mobileNavigation.activeTab}
         onSelectTab={(tab) => {
           setMapControlsOpen(false)
+          if (isMobileViewport && tab !== mobileNavigation.activeTab) {
+            if (mobileNavigation.activeTab === 'explore' && state.contextualPanel.mode === 'shuttle') {
+              commands.suspendMobileRoutes()
+            } else if (tab === 'explore' && state.contextualPanel.mode === 'shuttle') {
+              commands.enterMobileRoutes()
+            }
+          }
           dispatchMobileNavigation({ type: 'select-tab', tab })
         }}
         containerRef={mobileTabBarRef}

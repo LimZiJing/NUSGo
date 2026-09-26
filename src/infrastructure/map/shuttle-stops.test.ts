@@ -46,6 +46,12 @@ vi.mock('maplibre-gl', () => {
       return this.popup
     }
 
+    togglePopup() {
+      if (this.popup?.isOpen()) this.popup.remove()
+      else this.popup?.show()
+      return this
+    }
+
     remove() {
       return this
     }

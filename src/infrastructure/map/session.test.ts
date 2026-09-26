@@ -133,6 +133,12 @@ vi.mock('maplibre-gl', () => {
       return this.popup
     }
 
+    togglePopup() {
+      if (this.popup?.isOpen()) this.popup.remove()
+      else this.popup?.show()
+      return this
+    }
+
     addTo(map: FakeMap) {
       map.addedMarkers.push(this)
       return this
@@ -946,6 +952,55 @@ describe('MapSession', () => {
     expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(availableRouteHeight).toBeGreaterThan(0)
 
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('focuses a validated route stop above the sheet and opens its popup', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      flyTo: ReturnType<typeof vi.fn>
+    }
+    const transitData = createTransitData()
+
+    await session.ready
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    session.setViewportInsets({ top: 0, right: 12, bottom: 400, left: 12 })
+    session.focusStop('STOP-A')
+
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103, 1],
+      offset: [0, -256],
+    }))
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(true)
+    session.focusStop('unknown')
+    expect(map.flyTo).toHaveBeenCalledOnce()
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('clears a mobile route highlight without fitting all routes', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { fitBounds: ReturnType<typeof vi.fn> }
+    const transitData = createTransitData()
+
+    await session.ready
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    session.setRouteSelection({ route: null, overlappingRouteIds: new Set() }, false)
+    session.setViewportInsets({ top: 0, right: 0, bottom: 400, left: 0 })
+
+    expect(map.fitBounds).not.toHaveBeenCalled()
     session.dispose()
     vi.unstubAllGlobals()
   })

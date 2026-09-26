@@ -124,6 +124,7 @@ type BusStopMarker = {
 
 export interface ShuttleStopMarkers {
   readonly markers: readonly Marker[]
+  openStopPopup(stopId: string): boolean
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
   setJourneyStops(stopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null): void
   dispose(): void
@@ -376,6 +377,13 @@ export function createShuttleStopMarkers(
 
   return {
     markers,
+    openStopPopup(stopId) {
+      if (disposed) return false
+      const detail = markerDetails.find(({ marker }) => marker.getElement().dataset.stopId === stopId)
+      if (!detail) return false
+      if (!detail.popup.isOpen()) detail.marker.togglePopup()
+      return true
+    },
     setSelection(selectedStopIds, selectedRouteColor = null) {
       if (disposed) return
       state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)

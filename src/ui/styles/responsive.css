@@ -166,6 +166,26 @@
     letter-spacing: -0.2px;
   }
 
+  .contextual-panel-shuttle .contextual-panel-header {
+    justify-content: flex-start;
+  }
+
+  .contextual-panel .mobile-routes-explore-button {
+    min-height: 44px;
+    padding: 7px 10px;
+    border: 1px solid #d8e1ec;
+    border-radius: 10px;
+    color: #334155;
+    background: #f8fafc;
+    font: 600 14px/1.2 system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  .mobile-routes-explore-button span {
+    margin-right: 5px;
+    font-size: 17px;
+  }
+
   .contextual-panel-content {
     gap: 12px;
   }

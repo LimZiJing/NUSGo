@@ -1,4 +1,4 @@
-import type { CSSProperties, RefObject } from 'react'
+import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 
@@ -9,10 +9,8 @@ interface ShuttleRouteControlProps {
   onRouteSelect: (routeId: string | null) => void
   selectRef?: RefObject<HTMLSelectElement | null>
   mobileViewport?: boolean
-  mobileRouteDetail?: boolean
-  onOpenRouteDetail?: () => void
-  onShowAllRoutes?: () => void
   firstRouteCardRef?: RefObject<HTMLButtonElement | null>
+  onFocusStop?: (stopId: string) => void
 }
 
 function getRouteStops(
@@ -33,6 +31,15 @@ function getStopLabel(
   return stop ? stop.longName + ' (' + stop.id + ')' : fallbackId
 }
 
+function getChipTextColor(hexColor: string): string {
+  const channels = [1, 3, 5].map((offset) => {
+    const channel = Number.parseInt(hexColor.slice(offset, offset + 2), 16) / 255
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  })
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+  return (1.05 / (luminance + 0.05)) >= 4.5 ? '#fff' : '#0f172a'
+}
+
 export function ShuttleRouteControl({
   network,
   networkIndex,
@@ -40,11 +47,15 @@ export function ShuttleRouteControl({
   onRouteSelect,
   selectRef,
   mobileViewport = false,
-  mobileRouteDetail = false,
-  onOpenRouteDetail,
-  onShowAllRoutes,
   firstRouteCardRef,
+  onFocusStop,
 }: ShuttleRouteControlProps) {
+  const selectedChipRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (mobileViewport && selectedRouteId) {
+      selectedChipRef.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [mobileViewport, selectedRouteId])
   const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
     ? networkIndex.routeById.get(selectedRouteId)
@@ -68,90 +79,67 @@ export function ShuttleRouteControl({
       : 'Loading shuttle routes…'
 
   if (mobileViewport) {
-    const showAllRoutes = (): void => {
-      if (onShowAllRoutes) onShowAllRoutes()
-      else onRouteSelect(null)
-    }
-
     return (
       <section className="route-control route-control-mobile" aria-label="Shuttle route selection">
-        {mobileRouteDetail && selectedRoute ? (
-          <>
-            <div className="route-details-heading">
-              <p className="route-stop-count">
-                <span
-                  className="route-color-swatch"
-                  style={{ '--route-color': selectedRoute.color } as CSSProperties}
-                  aria-hidden="true"
-                />
-                {selectedRoute.stopIds.length} stop calls · in route order
-              </p>
-              <button type="button" onClick={showAllRoutes}>
-                Show all routes
-              </button>
-            </div>
-            <h3 className="route-stop-heading">Ordered stops</h3>
-            <ol className="route-stop-list" aria-label="Ordered stops">
-              {selectedRoute.stopIds.map((stopId, index) => (
-                <li key={`${stopId}-${index}`}>
-                  {getStopLabel(stopsById.get(stopId), stopId)}
-                </li>
-              ))}
-            </ol>
-            <p className="route-selection-status" role="status" aria-live="polite" aria-atomic="true">
-              Route {selectedRoute.id} selected. Showing {selectedRoute.stopIds.length} stops in route order.
-            </p>
-          </>
-        ) : (
-          <>
-            <div className="route-picker-heading">
-              <h3>Choose a shuttle route</h3>
+        <h3 className="visually-hidden">Choose a shuttle route</h3>
+        {routes.length > 0 && (
+          <div className="route-chip-list" role="group" aria-label="Shuttle routes">
+            {routes.map((route, index) => (
               <button
+                key={route.id}
+                ref={(element) => {
+                  if (index === 0 && firstRouteCardRef) firstRouteCardRef.current = element
+                  if (selectedRouteId === route.id) selectedChipRef.current = element
+                }}
+                className="route-chip"
                 type="button"
-                disabled={!selectedRoute}
-                onClick={() => onRouteSelect(null)}
+                data-route-id={route.id}
+                data-contextual-focus-id={`shuttle-route-${route.id}`}
+                style={{ '--route-color': route.color, '--route-text-color': getChipTextColor(route.color) } as CSSProperties}
+                aria-label={`Route ${route.id}`}
+                aria-pressed={selectedRouteId === route.id}
+                onClick={() => onRouteSelect(route.id)}
               >
-                Show all routes
+                {route.id}
               </button>
-            </div>
-            {routes.length > 0 && (
-              <ul className="route-card-list" aria-label="Shuttle routes">
-                {routes.map((route, index) => (
-                  <li key={route.id}>
+            ))}
+          </div>
+        )}
+        {selectedRoute ? (
+          <div className="route-timeline-card" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
+            <p className="route-timeline-count">{selectedRoute.stopIds.length} STOPS</p>
+            <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
+              {selectedRoute.stopIds.map((stopId, index) => {
+                const stop = stopsById.get(stopId)
+                return (
+                  <li key={`${stopId}-${index}`}>
                     <button
-                      ref={index === 0 ? firstRouteCardRef : undefined}
-                      className="route-card"
                       type="button"
-                      data-route-id={route.id}
-                      data-contextual-focus-id={`shuttle-route-${route.id}`}
-                      style={{ '--route-color': route.color } as CSSProperties}
-                      aria-label={`Route ${route.id}`}
-                      aria-pressed={selectedRouteId === route.id}
-                      onClick={() => {
-                        onRouteSelect(route.id)
-                        onOpenRouteDetail?.()
-                      }}
+                      className="route-timeline-stop"
+                      data-route-stop-id={stopId}
+                      aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                      onClick={() => onFocusStop?.(stopId)}
                     >
-                      <span className="route-color-swatch" aria-hidden="true" />
-                      <span className="route-card-id">{route.id}</span>
-                      <span className="route-card-stop-count">
-                        {route.stopIds.length} stops
+                      <span className="route-timeline-node" aria-hidden="true" />
+                      <span className="route-timeline-text">
+                        <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                        <small>{stopId}</small>
                       </span>
-                      <span className="route-card-chevron" aria-hidden="true">›</span>
+                      <span className="route-timeline-chevron" aria-hidden="true">›</span>
                     </button>
                   </li>
-                ))}
-              </ul>
-            )}
-            <p className="route-selection-status" role="status" aria-live="polite" aria-atomic="true">
-              {!network
-                ? 'Loading shuttle routes…'
-                : routes.length > 0
-                  ? `Showing ${routes.length} shuttle routes and ${totalStopCount} shuttle stops.`
-                  : 'Shuttle route data is unavailable.'}
-            </p>
-          </>
+                )
+              })}
+            </ol>
+          </div>
+        ) : (
+          <p className="route-selection-status" role="status" aria-live="polite">
+            {!network ? 'Loading shuttle routes…' : 'Shuttle route data is unavailable.'}
+          </p>
         )}
+        <p className="visually-hidden" role="status" aria-live="polite">
+          {selectedRoute ? `Route ${selectedRoute.id} selected. ${selectedRoute.stopIds.length} stops in route order.` : ''}
+        </p>
       </section>
     )
   }

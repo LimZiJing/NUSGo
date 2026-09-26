@@ -100,6 +100,16 @@ Codex In-App Browser (Chromium-based; exact version unavailable), local Vite dev
 - Back restored focus to the selected D2 card. Close returned to Explore, and reopening route browsing kept D2 selected. Show all routes cleared the selection.
 - This covers the #118 Explore changes only; the broader issue #89 map/responsive checklist was not repeated.
 
+## Mobile Explore Routes timeline targeted verification — 2026-09-26
+
+Codex browser, local Vite app, 390 × 844 mobile/touch emulation:
+
+- Venue search for `COM2-0108` returned Tutorial Room 9; selecting it opened the existing room and floor details.
+- Browse shuttle routes opened the single Routes sheet with A1 selected and focused. Eight chips appeared in canonical order; selecting R2 scrolled its chip into view. Selecting D2 showed 16 stop calls, and scrolling the sheet exposed the final `COM3` after `TCOMS`.
+- Tapping the final `COM3` row opened its existing popup. Its bottom edge was 41 px above the sheet after the stop camera adjustment. Escape closed the popup and restored focus to that row.
+- “← Explore” returned to the root, focused the Browse shuttle routes opener, and reopening restored D2. Switching to Plan and back also restored D2. At 1280 × 720, desktop still used the route selector.
+- The broader #89 checklist was not repeated.
+
 ## Keyboard and accessibility
 
 - [ ] Focus is visible and follows a sensible order through the affected workflow.

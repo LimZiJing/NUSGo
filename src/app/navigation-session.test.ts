@@ -32,6 +32,8 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     ready,
     loadTransitData: vi.fn(),
     setRouteSelection: vi.fn(),
+    refitRoute: vi.fn(),
+    focusStop: vi.fn(),
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
     setViewportInsets: vi.fn(),
@@ -154,6 +156,7 @@ describe('navigation session', () => {
       transitIndex: null,
       selectedRouteId: null,
       selectedRouteColor: null,
+      rememberedMobileRouteId: null,
       contextualPanel: {
         mode: 'venue-search',
         query: '',
@@ -510,6 +513,60 @@ describe('navigation session', () => {
       overlappingRouteIds: expect.any(Set),
     })
     expect(dependencies.map.setRouteSelection).toHaveBeenCalledTimes(3)
+  })
+
+  it('remembers a mobile route while clearing and restoring its map selection', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.enterMobileRoutes()
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: 'A1',
+      rememberedMobileRouteId: 'A1',
+      contextualPanel: { mode: 'shuttle' },
+    })
+
+    session.selectMobileRoute('A1')
+    expect(dependencies.map.refitRoute).toHaveBeenCalledOnce()
+    session.focusStop('STOP-A')
+    expect(dependencies.map.focusStop).toHaveBeenCalledWith('STOP-A')
+    session.focusStop('unknown')
+    expect(dependencies.map.focusStop).toHaveBeenCalledOnce()
+
+    session.suspendMobileRoutes()
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: null,
+      rememberedMobileRouteId: 'A1',
+      contextualPanel: { mode: 'shuttle' },
+    })
+    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
+      route: null,
+      overlappingRouteIds: expect.any(Set),
+    }, false)
+
+    session.enterMobileRoutes()
+    expect(session.getState().selectedRouteId).toBe('A1')
+    session.leaveMobileRoutes()
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: null,
+      rememberedMobileRouteId: 'A1',
+      contextualPanel: { mode: 'neutral' },
+    })
+  })
+
+  it('selects the first canonical route when mobile Routes opens before transit loads', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    session.enterMobileRoutes()
+    expect(session.getState().selectedRouteId).toBeNull()
+    await session.start(new AbortController().signal)
+
+    expect(session.getState()).toMatchObject({
+      selectedRouteId: 'A1',
+      rememberedMobileRouteId: 'A1',
+    })
   })
 
   it('keeps the final route selection aligned after a reentrant notification', async () => {

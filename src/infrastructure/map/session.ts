@@ -232,7 +232,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       installJourneyRouteLayers()
     },
 
-    setRouteSelection(selection: MapRouteSelection) {
+    setRouteSelection(selection: MapRouteSelection, fit = true) {
       if (disposed) return
 
       const previousRouteId = currentRouteSelection.route?.id ?? null
@@ -245,9 +245,36 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       const nextRouteId = currentRouteSelection.route?.id ?? null
       applyRouteSelection(currentRouteSelection)
 
-      if (nextRouteId !== previousRouteId && transitData && currentJourney === null) {
+      if (!fit) pendingCameraFit = null
+      if (fit && nextRouteId !== previousRouteId && transitData && currentJourney === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
+    },
+
+    refitRoute() {
+      if (disposed || !transitData || !currentRouteSelection.route) return
+      transitRouteLayers?.fitRoute(
+        transitData.index,
+        transitData.geometry,
+        currentRouteSelection.route.id,
+        viewportInsets,
+      )
+    },
+
+    focusStop(stopId: string) {
+      if (disposed) return
+      const stop = currentTransitIndex?.stopById.get(stopId)
+      if (!stop || !shuttleStopMarkers?.openStopPopup(stopId)) return
+      pendingCameraFit = null
+      const [offsetX, offsetY] = getFitOffset()
+      map.flyTo({
+        center: [stop.longitude, stop.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        // Leave space for the stop popup above the marker in the exposed map area.
+        offset: [offsetX, offsetY - 56],
+        essential: true,
+      })
     },
 
     setTripRequest(request: TripRequest, venues: VenueLocationMap, transitIndex: TransitIndex | null) {

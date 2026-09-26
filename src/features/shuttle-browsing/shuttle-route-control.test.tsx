@@ -12,7 +12,7 @@ afterEach(cleanup)
 
 function createEightRouteNetwork() {
   const network = createValidTransitNetwork()
-  const routeIds = ['A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P']
+  const routeIds = ['A1', 'A2', 'D1', 'D2', 'K', 'P', 'R1', 'R2']
   const colors = ['#fb0101', '#e3cf0e', '#c77de0', '#6e1d72', '#33599c', '#bebebe', '#ee8136', '#008000']
   network.routes = routeIds.map((id, index) => ({
     ...network.routes[0],
@@ -127,18 +127,19 @@ describe('ShuttleRouteControl', () => {
 
     const cards = screen.getAllByRole('button', { name: /^Route / })
     expect(cards.map((card) => card.getAttribute('data-route-id'))).toEqual([
-      'A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P',
+      'A1', 'A2', 'D1', 'D2', 'K', 'P', 'R1', 'R2',
     ])
     expect(cards[0].textContent).toContain('A1')
     expect((cards[0] as HTMLButtonElement).style.getPropertyValue('--route-color')).toBe('#fb0101')
     expect(cards[0].getAttribute('aria-pressed')).toBe('false')
+    expect((cards[1] as HTMLButtonElement).style.getPropertyValue('--route-text-color'))
+      .toBe('#0f172a')
   })
 
-  it('opens route details after selecting a route card', async () => {
+  it('selects a route chip without opening a separate detail screen', async () => {
     const user = userEvent.setup()
     const network = createEightRouteNetwork()
     const onRouteSelect = vi.fn()
-    const onOpenRouteDetail = vi.fn()
     render(
       <ShuttleRouteControl
         network={network}
@@ -146,33 +147,33 @@ describe('ShuttleRouteControl', () => {
         selectedRouteId={null}
         mobileViewport
         onRouteSelect={onRouteSelect}
-        onOpenRouteDetail={onOpenRouteDetail}
       />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Route D2' }))
 
     expect(onRouteSelect).toHaveBeenCalledWith('D2')
-    expect(onOpenRouteDetail).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('button', { name: 'Show all routes' })).toBeNull()
   })
 
-  it('clears map selection from the route list with Show all routes', async () => {
+  it('focuses a stop from a timeline row', async () => {
     const user = userEvent.setup()
     const network = createEightRouteNetwork()
-    const onRouteSelect = vi.fn()
+    const onFocusStop = vi.fn()
     render(
       <ShuttleRouteControl
         network={network}
         networkIndex={createTransitIndex(network)}
-        selectedRouteId="D2"
+        selectedRouteId="A1"
         mobileViewport
-        onRouteSelect={onRouteSelect}
+        onRouteSelect={() => undefined}
+        onFocusStop={onFocusStop}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Show all routes' }))
+    await user.click(screen.getByRole('button', { name: /Stop A, stop STOP-A/ }))
 
-    expect(onRouteSelect).toHaveBeenCalledWith(null)
+    expect(onFocusStop).toHaveBeenCalledWith('STOP-A')
   })
 
   it('renders every D2 stop in canonical order, including the terminal return', () => {
@@ -183,53 +184,37 @@ describe('ShuttleRouteControl', () => {
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
         mobileViewport
-        mobileRouteDetail
         onRouteSelect={() => undefined}
       />,
     )
 
     const stopLabels = Array.from(
-      screen.getByRole('list', { name: 'Ordered stops' }).children,
-      (stop) => stop.textContent,
+      screen.getByRole('list', { name: 'Route D2 ordered stops' }).children,
+      (stop) => stop.querySelector('.route-timeline-text')?.textContent,
     )
     expect(stopLabels).toEqual([
-      'COM 3 (COM3)',
-      'Opp TCOMS (TCOMS-OPP)',
-      "Prince George's Park (PGP)",
-      'Kent Ridge MRT (KR-MRT)',
-      'LT 27 (LT27)',
-      'University Hall (UHALL)',
-      'Opp University Health Centre (UHC-OPP)',
-      'Museum (MUSEUM)',
-      'University Town (UTOWN)',
-      'University Health Centre (UHC)',
-      'Opp University Hall (UHALL-OPP)',
-      'S 17 (S17)',
-      'Opp Kent Ridge MRT (KR-MRT-OPP)',
-      "Prince George's Park Foyer (PGPR)",
-      'TCOMS (TCOMS)',
-      'COM 3 (COM3)',
+      'COM3COM3', 'TCOMS-OPPTCOMS-OPP', 'PGPPGP', 'KR-MRTKR-MRT',
+      'LT27LT27', 'UHALLUHALL', 'UHC-OPPUHC-OPP', 'MUSEUMMUSEUM',
+      'UTOWNUTOWN', 'UHCUHC', 'UHALL-OPPUHALL-OPP', 'S17S17',
+      'KR-MRT-OPPKR-MRT-OPP', 'PGPRPGPR', 'TCOMSTCOMS', 'COM3COM3',
     ])
+    expect(screen.getByText('16 STOPS')).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: /COM 3, stop COM3/ })).toHaveLength(2)
   })
 
-  it('clears a selected route through the explicit Show all routes action', async () => {
-    const user = userEvent.setup()
+  it('keeps the selected route visible as a pressed chip', () => {
     const network = createEightRouteNetwork()
-    const onShowAllRoutes = vi.fn()
     render(
       <ShuttleRouteControl
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
         mobileViewport
-        mobileRouteDetail
         onRouteSelect={() => undefined}
-        onShowAllRoutes={onShowAllRoutes}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Show all routes' }))
-
-    expect(onShowAllRoutes).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Route D2' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('button', { name: 'Show all routes' })).toBeNull()
   })
 })

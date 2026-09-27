@@ -144,9 +144,9 @@
 
   .contextual-panel .route-chip[data-size='compact'],
   .mobile-stops-sheet .route-chip[data-size='compact'] {
-    min-width: 38px;
-    min-height: 30px;
-    padding: 4px 8px;
+    min-width: 34px;
+    min-height: 24px;
+    padding: 2px 6px;
     font-size: 12px;
   }
 

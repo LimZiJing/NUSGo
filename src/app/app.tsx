@@ -405,7 +405,7 @@ function App() {
     stop: getMobileStopSheetSelection(stop, transitIndex),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
-    expanded: mobileStopView.expandedStopIds.includes(stop.id),
+    expanded: !mobileStopView.collapsedStopIds.includes(stop.id),
   })) : []
   const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'

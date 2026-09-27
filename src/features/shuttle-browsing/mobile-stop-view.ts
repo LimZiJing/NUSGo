@@ -1,7 +1,7 @@
 export interface MobileStopViewState {
   readonly focusedStopId: string | null
   readonly list: 'nearby' | 'favourites'
-  readonly expandedStopIds: readonly string[]
+  readonly collapsedStopIds: readonly string[]
   readonly favoriteStopIds: readonly string[]
   readonly locationNoticeDismissed: boolean
 }
@@ -55,7 +55,7 @@ export function createInitialMobileStopViewState(favoriteStopIds: readonly strin
   return {
     focusedStopId: null,
     list: 'nearby',
-    expandedStopIds: [],
+    collapsedStopIds: [],
     favoriteStopIds,
     locationNoticeDismissed: false,
   }
@@ -77,9 +77,9 @@ export function mobileStopViewReducer(
     case 'toggle-expanded':
       return {
         ...state,
-        expandedStopIds: state.expandedStopIds.includes(action.stopId)
-          ? state.expandedStopIds.filter((id) => id !== action.stopId)
-          : [...state.expandedStopIds, action.stopId],
+        collapsedStopIds: state.collapsedStopIds.includes(action.stopId)
+          ? state.collapsedStopIds.filter((id) => id !== action.stopId)
+          : [...state.collapsedStopIds, action.stopId],
       }
     case 'toggle-favorite':
       return {
@@ -90,16 +90,16 @@ export function mobileStopViewReducer(
       }
     case 'reconcile-stops': {
       const favoriteStopIds = state.favoriteStopIds.filter((id) => action.stopIds.has(id))
-      const expandedStopIds = state.expandedStopIds.filter((id) => action.stopIds.has(id))
+      const collapsedStopIds = state.collapsedStopIds.filter((id) => action.stopIds.has(id))
       const focusedStopId = state.focusedStopId && action.stopIds.has(state.focusedStopId)
         ? state.focusedStopId
         : null
       if (
         favoriteStopIds.length === state.favoriteStopIds.length &&
-        expandedStopIds.length === state.expandedStopIds.length &&
+        collapsedStopIds.length === state.collapsedStopIds.length &&
         focusedStopId === state.focusedStopId
       ) return state
-      return { ...state, favoriteStopIds, expandedStopIds, focusedStopId }
+      return { ...state, favoriteStopIds, collapsedStopIds, focusedStopId }
     }
     case 'dismiss-location-notice':
       return state.locationNoticeDismissed ? state : { ...state, locationNoticeDismissed: true }

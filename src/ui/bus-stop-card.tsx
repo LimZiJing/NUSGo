@@ -50,8 +50,10 @@ export function BusStopCard({
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
             )}
           </span>
-          <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" />
-          <span aria-hidden="true" />
+          {expanded && (
+            <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" leadingDot />
+          )}
+          <span className="bus-stop-card-favorite-space" aria-hidden="true" />
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
             <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

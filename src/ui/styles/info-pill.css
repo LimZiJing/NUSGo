@@ -19,3 +19,12 @@
   color: #047857;
   background: #def8eb;
 }
+
+.info-pill[data-leading-dot='true']::before {
+  width: 5px;
+  height: 5px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}

@@ -630,23 +630,17 @@
     line-height: 1;
   }
 
-  .mobile-stops-sheet .mobile-stop-directions {
-    display: inline-flex;
-    width: fit-content;
-    min-height: 36px;
-    align-items: center;
-    justify-content: flex-start;
+  .mobile-stop-actions {
+    display: flex;
+    align-items: stretch;
     gap: 8px;
-    padding: 7px 10px;
-    border-color: #1d4ed8;
-    border-radius: 6px;
-    color: #fff;
-    background: #1d4ed8;
-    font: 600 14px/1.2 system-ui, sans-serif;
   }
 
-  .mobile-stop-directions span {
-    font-size: 13px;
+  .mobile-stop-actions .navigate-button {
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    align-self: stretch;
   }
 
   .mobile-stop-selection h3 {
@@ -706,40 +700,22 @@
   }
 
   .mobile-stops-sheet .mobile-stop-opposite {
-    display: grid;
-    grid-template-columns: 1fr auto auto 16px;
-    min-height: 56px;
+    display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 8px;
     border-color: #e2e8f0;
-    border-radius: 9px;
+    border-radius: 6px;
     background: #fff;
-    text-align: left;
-  }
-
-  .mobile-stop-opposite > span:first-child {
-    grid-column: 1 / -1;
-    color: #64748b;
     font: 600 12px/1.2 system-ui, sans-serif;
-    text-align: left;
   }
 
-  .mobile-stop-opposite strong {
-    min-width: 0;
-    color: #1f2937;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .mobile-stop-opposite-id {
-    color: #64748b;
-    font-size: 11px;
-  }
-
-  .mobile-stop-opposite > span:last-child {
+  .mobile-stop-opposite span {
     color: #334155;
-    font-size: 20px;
+    font-size: 18px;
+    line-height: 1;
   }
 
   .mobile-tab-bar {

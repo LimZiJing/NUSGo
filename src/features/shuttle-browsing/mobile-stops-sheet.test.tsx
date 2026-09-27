@@ -77,7 +77,7 @@ describe('MobileStopsSheet', () => {
     expect(screen.getByText('☆', { selector: '[aria-hidden="true"]' })).toBeTruthy()
 
     const content = screen.getByTestId('mobile-stop-detail')
-    const order = ['University Hall', 'Directions to this stop', 'Opposite stop']
+    const order = ['University Hall', 'Navigate', 'Opposite stop']
     const contentText = content.textContent ?? ''
     expect(order.map((label) => contentText.indexOf(label))).toEqual(
       [...order].map((label) => contentText.indexOf(label)).sort((a, b) => a - b),
@@ -107,7 +107,7 @@ describe('MobileStopsSheet', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back to stops' }))
     await user.click(screen.getByRole('button', { name: 'View D2 route details' }))
-    await user.click(screen.getByRole('button', { name: 'Directions to this stop' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate to this stop' }))
     await user.click(screen.getByRole('button', { name: /Opposite stop: University Hall \(Opposite\), SR8/ }))
 
     expect(onBackToStops).toHaveBeenCalledOnce()

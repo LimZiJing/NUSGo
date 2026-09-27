@@ -1,6 +1,7 @@
 import type { Ref } from 'react'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { NavigateButton } from '../../ui/navigate-button'
 import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
 import { getPublicServiceTimings, type MobileStopDeparture } from './mobile-stop-view'
 
@@ -93,14 +94,23 @@ export function MobileStopsSheet({
               </div>
               <span className="mobile-stop-favorite" aria-hidden="true">☆</span>
             </div>
-            <button
-              className="mobile-stop-directions"
-              type="button"
-              aria-label="Directions to this stop"
-              onClick={() => onNavigateToStop(selectedStop.id)}
-            >
-              <span aria-hidden="true">➤</span> Directions to this stop
-            </button>
+            <div className="mobile-stop-actions">
+              <NavigateButton
+                ariaLabel="Navigate to this stop"
+                onClick={() => onNavigateToStop(selectedStop.id)}
+              />
+              {oppositeStop ? (
+                <button
+                  className="mobile-stop-opposite"
+                  type="button"
+                  aria-label={`Opposite stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
+                  title={`${oppositeStop.longName} (${oppositeStop.id})`}
+                  onClick={() => onSelectOppositeStop(oppositeStop.id)}
+                >
+                  Opposite stop <span aria-hidden="true">›</span>
+                </button>
+              ) : null}
+            </div>
             <div className="mobile-stop-departures">
               {selectedStop.departures.length > 0 || selectedStop.publicServices.length > 0 ? (
                 <ul className="mobile-stop-departure-list" aria-label="Bus timings">
@@ -129,19 +139,6 @@ export function MobileStopsSheet({
                 <p>No bus timings available.</p>
               )}
             </div>
-            {oppositeStop ? (
-              <button
-                className="mobile-stop-opposite"
-                type="button"
-                aria-label={`Opposite stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
-                onClick={() => onSelectOppositeStop(oppositeStop.id)}
-              >
-                <span>Opposite stop</span>
-                <strong>{oppositeStop.longName}</strong>
-                <span className="mobile-stop-opposite-id">{oppositeStop.id}</span>
-                <span aria-hidden="true">›</span>
-              </button>
-            ) : null}
           </div>
         ) : (
           <p>Tap a shuttle stop on the map to view its details and route actions.</p>

@@ -223,29 +223,6 @@
   cursor: pointer;
 }
 
-.contextual-panel-detail .venue-detail-navigate {
-  border-color: #1d4ed8;
-  color: #fff;
-  background: #1d4ed8;
-}
-
-.contextual-panel-detail .venue-detail-navigate:disabled {
-  border-color: #cbd5e1;
-  color: #64748b;
-  background: #e2e8f0;
-  cursor: not-allowed;
-}
-
-.contextual-panel-detail .venue-detail-action svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
 .contextual-panel-detail .venue-detail-nusmods img {
   display: block;
   width: 72px;
@@ -350,11 +327,11 @@
   color: #1f2937;
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):hover,
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):focus-visible {
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):hover,
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
   border-color: #64748b;
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.venue-detail-navigate):focus-visible {
+.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
   background: #f1f5f9;
 }

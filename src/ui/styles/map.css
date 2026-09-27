@@ -83,35 +83,39 @@
   stroke: none;
 }
 
-.location-control-popover {
-  display: grid;
-  gap: 6px;
-  min-width: 230px;
-  padding: 10px;
-  border-radius: 6px;
-  background: rgb(255 255 255 / 95%);
-  box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
-}
-
-.location-control-popover button {
-  text-align: left;
-}
-
-.location-control-popover button:disabled {
+.location-control-chip-searching {
   cursor: wait;
-  opacity: 0.7;
+  animation: location-control-pulse 1.4s ease-in-out infinite;
 }
 
-.location-control-status,
-.location-control-accuracy {
-  color: #1f2937;
-  font: 14px/1.35 system-ui, sans-serif;
+.location-control-chip-searching .location-control-icon {
+  opacity: 0.45;
 }
 
-.location-control-update,
-.location-control-accuracy {
-  color: #475569;
-  font-size: 12px;
+.location-control-spinner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #4285f4;
+  border-radius: 50%;
+  animation: location-control-spin 900ms linear infinite;
+}
+
+@keyframes location-control-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes location-control-pulse {
+  0%, 100% { box-shadow: 0 1px 4px rgb(15 23 42 / 25%); }
+  50% { box-shadow: 0 0 0 4px rgb(66 133 244 / 16%), 0 1px 4px rgb(15 23 42 / 25%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .location-control-chip-searching,
+  .location-control-spinner {
+    animation: none;
+  }
 }
 
 .current-location-marker {

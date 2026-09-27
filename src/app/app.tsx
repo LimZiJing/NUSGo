@@ -318,6 +318,7 @@ function App() {
         />
         <LocationControl
           topOffset={mapInsets.top || 76}
+          searching={state.location.status === 'requesting'}
           onLocate={commands.locateUser}
         />
         <aside

@@ -50,7 +50,7 @@ Codex In-app Browser, local Vite development server:
 
 - The Location control rendered as a compact accessible “Show my location” target button on the map.
 - The live permission prompt and marker movement were not exercised because accepting a real browser location permission prompt was outside this smoke pass.
-- Automated tests cover the one-tap locate action, first-fix map focus, marker updates and disposal, and browser error handling.
+- Automated tests cover the one-tap locate action, quiet searching indicator, first-fix map focus, marker updates and disposal, and browser error handling.
 
 ## Mobile — 390 × 844
 

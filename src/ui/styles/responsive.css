@@ -55,8 +55,7 @@
     left: max(12px, env(safe-area-inset-left));
   }
 
-  .location-control-chip,
-  .location-control-popover button {
+  .location-control-chip {
     min-height: 44px;
   }
 

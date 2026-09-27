@@ -363,22 +363,12 @@ export function createShuttleStopMarkers(
     const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
     const popup = new Popup({ offset: 24 }).setDOMContent(popupContent.element)
     const unregisterPopup = popupCoordinator.register(popup)
-    let selectedOnKeyPress = false
     const handleMarkerClick = (event: MouseEvent): void => {
-      if (selectedOnKeyPress && event.detail === 0) {
-        selectedOnKeyPress = false
-        event.stopImmediatePropagation()
-        return
-      }
-      selectedOnKeyPress = false
       if (!onStopSelected?.(stop.id)) return
       event.stopImmediatePropagation()
     }
     const handleMarkerKeyPress = (event: KeyboardEvent): void => {
-      if (event.code !== 'Enter' && event.code !== 'Space') return
-      if (!onStopSelected?.(stop.id)) return
-      selectedOnKeyPress = true
-      event.preventDefault()
+      if (!state.pinVisible || (event.code !== 'Enter' && event.code !== 'Space')) return
       event.stopImmediatePropagation()
     }
     element.addEventListener('click', handleMarkerClick, true)

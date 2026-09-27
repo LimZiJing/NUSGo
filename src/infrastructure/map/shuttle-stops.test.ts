@@ -368,6 +368,7 @@ describe('bus-stop presentation', () => {
     expect(onStopSelected).toHaveBeenCalledTimes(2)
     expect(popup.isOpen()).toBe(false)
     element.pressKey('Enter')
+    element.click(0)
     element.pressKey('Space')
     element.click(0)
     expect(onStopSelected).toHaveBeenCalledTimes(4)

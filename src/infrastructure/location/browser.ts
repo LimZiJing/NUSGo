@@ -1,5 +1,6 @@
 import {
   INITIAL_LOCATION_TRACKING_STATE,
+  type DeviceLocationFix,
   type LocationTrackingState,
 } from '../../domain/location/types'
 import type { LocationTracker } from '../../app/contracts/location'
@@ -45,7 +46,7 @@ function createLocationFix(
   position: GeolocationPosition,
   now: number,
   maximumAccuracyMetres: number,
-): { readonly kind: 'valid'; readonly fix: LocationTrackingState['latestFix'] } | {
+): { readonly kind: 'valid'; readonly fix: DeviceLocationFix } | {
   readonly kind: 'invalid' | 'low-accuracy'
 } {
   const { longitude, latitude, accuracy } = position.coords

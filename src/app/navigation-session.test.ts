@@ -1865,7 +1865,8 @@ describe('navigation session', () => {
     }
 
     session.enableLocationTracking()
-    dependencies.locationTracker.emit(locationState)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit(locationState)
 
     expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
     expect(session.getState().location).toEqual(locationState)

@@ -234,10 +234,11 @@ class FakeElement {
     this.attributes.delete(name)
   }
 
-  private dispatch(eventName: string, code?: string) {
+  private dispatch(eventName: string, code?: string, detail?: number) {
     let stopped = false
     const event = {
       code,
+      detail,
       preventDefault: vi.fn(),
       stopImmediatePropagation: () => { stopped = true },
     } as unknown as Event
@@ -248,8 +249,8 @@ class FakeElement {
     }
   }
 
-  click() {
-    this.dispatch('click')
+  click(detail = 1) {
+    this.dispatch('click', undefined, detail)
   }
 
   pressKey(code: string) {
@@ -357,7 +358,7 @@ describe('bus-stop presentation', () => {
 
     expect(adapter.setStopsPin('STOP-A', true)).toBe(true)
     expect(element.classes.has('bus-stop-marker-selected')).toBe(true)
-    expect(element.classes.has('bus-stop-marker')).toBe(true)
+    expect(element.className).toBe('bus-stop-marker')
     expect(element.attributes.get('aria-label')).toBe('Central Library shuttle stop')
     adapter.setStopsPin('STOP-A', false)
     expect(element.classes.has('bus-stop-marker-selected')).toBe(false)
@@ -368,6 +369,7 @@ describe('bus-stop presentation', () => {
     expect(popup.isOpen()).toBe(false)
     element.pressKey('Enter')
     element.pressKey('Space')
+    element.click(0)
     expect(onStopSelected).toHaveBeenCalledTimes(4)
     expect(popup.isOpen()).toBe(false)
 

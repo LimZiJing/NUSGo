@@ -20,6 +20,7 @@ vi.mock('maplibre-gl', () => ({
     readonly renderedFeatures: unknown[] = []
     readonly addedControls: unknown[] = []
     readonly removedControls: unknown[] = []
+    readonly containerSize = { clientWidth: 390, clientHeight: 844 }
     readonly on = vi.fn((event: string, handler: (event: unknown) => void) => {
       const handlers = this.handlers.get(event) ?? new Set()
       handlers.add(handler)
@@ -41,6 +42,9 @@ vi.mock('maplibre-gl', () => ({
     })
     readonly getLayer = vi.fn((id: string) => this.layers.has(id) ? {} : undefined)
     readonly queryRenderedFeatures = vi.fn(() => this.renderedFeatures)
+    readonly getContainer = vi.fn(() => this.containerSize)
+    readonly getCenter = vi.fn(() => ({ lng: 103, lat: 1 }))
+    readonly unproject = vi.fn(([x, y]: [number, number]) => ({ lng: x, lat: y }))
     readonly remove = vi.fn()
 
     constructor() {
@@ -79,11 +83,14 @@ type FakeMap = {
   readonly renderedFeatures: unknown[]
   readonly addedControls: unknown[]
   readonly removedControls: unknown[]
+  readonly containerSize: { clientWidth: number; clientHeight: number }
   readonly on: ReturnType<typeof vi.fn>
   readonly off: ReturnType<typeof vi.fn>
   readonly addControl: ReturnType<typeof vi.fn>
   readonly removeControl: ReturnType<typeof vi.fn>
   readonly queryRenderedFeatures: ReturnType<typeof vi.fn>
+  readonly getContainer: ReturnType<typeof vi.fn>
+  readonly unproject: ReturnType<typeof vi.fn>
   readonly remove: ReturnType<typeof vi.fn>
   emit(event: string, payload: unknown): void
 }
@@ -93,6 +100,30 @@ beforeEach(() => {
 })
 
 describe('map lifecycle style readiness', () => {
+  it('reports the centre of the visible map after movement, inset, and size changes', () => {
+    const onMapCenterChange = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+      onMapCenterChange,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 422])
+    lifecycle.setViewportInsets({ top: 0, right: 12, bottom: 400, left: 12 })
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 222])
+    map.emit('moveend', undefined)
+    expect(onMapCenterChange).toHaveBeenCalledTimes(3)
+    map.containerSize.clientHeight = 700
+    map.emit('resize', undefined)
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 150])
+
+    lifecycle.dispose()
+    map.emit('moveend', undefined)
+    expect(onMapCenterChange).toHaveBeenCalledTimes(4)
+  })
+
   it('rejects immediately for an already-aborted signal without registering listeners', async () => {
     const map = {
       isStyleLoaded: vi.fn(() => false),

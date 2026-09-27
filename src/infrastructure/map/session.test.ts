@@ -1072,11 +1072,11 @@ describe('MapSession', () => {
       offset: [0, -200],
     }))
     expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
-    const marker = map.addedMarkers.find(({ getElement }) => getElement().dataset.stopId === 'STOP-A')
-    const pin = map.addedMarkers.find(({ getElement }) => (
-      getElement().attributes.get('aria-hidden') === 'true'
+    const marker = map.addedMarkers.find((candidate) => candidate.getElement().dataset.stopId === 'STOP-A')
+    const pin = map.addedMarkers.find((candidate) => (
+      candidate.getElement().attributes.get('aria-hidden') === 'true'
     ))
-    expect(marker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    expect(marker?.getElement().className).toBe('bus-stop-marker')
     expect(pin?.options).toEqual(expect.objectContaining({ color: '#64748b' }))
     expect(pin?.options.offset).toBeUndefined()
     expect(pin?.coordinate).toEqual([103, 1])
@@ -1086,16 +1086,16 @@ describe('MapSession', () => {
     expect(map.flyTo).toHaveBeenCalledTimes(2)
     session.setStopsPinVisible(false)
     expect(pin?.remove).toHaveBeenCalled()
-    expect(marker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    expect(marker?.getElement().className).toBe('bus-stop-marker')
     session.setStopsPinVisible(true)
     expect(map.addedMarkers.at(-1)).toBe(pin)
     expect(map.flyTo).toHaveBeenCalledTimes(2)
 
     session.loadTransitData(transitData, createRouteSelection(transitData))
-    const reloadedMarker = map.addedMarkers.findLast(({ getElement }) => (
-      getElement().dataset.stopId === 'STOP-A'
+    const reloadedMarker = map.addedMarkers.findLast((candidate) => (
+      candidate.getElement().dataset.stopId === 'STOP-A'
     ))
-    expect(reloadedMarker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    expect(reloadedMarker?.getElement().className).toBe('bus-stop-marker')
     expect(map.addedMarkers.at(-1)?.getElement().attributes.get('aria-hidden')).toBe('true')
 
     session.focusStopInStopsTab('unknown')

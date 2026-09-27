@@ -13,13 +13,9 @@ import {
   MobileStopsSheet,
   type MobileStopSheetSelection,
 } from '../features/shuttle-browsing/mobile-stops-sheet'
-import {
-  createInitialMobileStopViewState,
-  getMobileStopSheetSelection,
-  mobileStopViewReducer,
-} from '../features/shuttle-browsing/mobile-stop-view'
+import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
 import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
-import { readFavoriteStopIds, writeFavoriteStopIds } from '../features/shuttle-browsing/mobile-stop-favorites'
+import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
 import { MapControls } from '../ui/map-controls'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
@@ -75,11 +71,7 @@ function App() {
   const mobileNavigationRef = useRef(mobileNavigation)
   const isMobileViewportRef = useRef(isMobileViewport)
   const prepareSheetTransitionRef = useRef<(() => void) | null>(null)
-  const [mobileStopView, dispatchMobileStopView] = useReducer(
-    mobileStopViewReducer,
-    undefined,
-    () => createInitialMobileStopViewState(readFavoriteStopIds()),
-  )
+  const [mobileStopView, dispatchMobileStopView] = useMobileStopView(state.transitIndex)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
   const [stopFocusRequest, setStopFocusRequest] = useState<{
     readonly stopId: string | null
@@ -101,17 +93,6 @@ function App() {
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
 
-  useEffect(() => {
-    writeFavoriteStopIds(mobileStopView.favoriteStopIds)
-  }, [mobileStopView.favoriteStopIds])
-
-  useEffect(() => {
-    if (!state.transitIndex) return
-    dispatchMobileStopView({
-      type: 'reconcile-stops',
-      stopIds: new Set(state.transitIndex.stops.map(({ id }) => id)),
-    })
-  }, [state.transitIndex])
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
@@ -217,7 +198,7 @@ function App() {
       dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'stops', expanded: true })
     }
     return true
-  }, [])
+  }, [dispatchMobileStopView])
 
   useEffect(() => {
     if (!isMobileViewport || activeTab === 'explore') return
@@ -381,9 +362,9 @@ function App() {
   }, [handleStopSelected, journeyPlanner])
 
   useEffect(() => {
-    if (!isMobileViewport || activeTab !== 'stops' || mobileStopView.focusedStopId === null) return
+    if (!isMobileViewport || activeTab !== 'stops') return
     dismissMapPopup()
-  }, [activeTab, dismissMapPopup, isMobileViewport, mobileStopView.focusedStopId])
+  }, [activeTab, dismissMapPopup, isMobileViewport])
 
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'
   const selectedStop = mobileStopView.focusedStopId === null

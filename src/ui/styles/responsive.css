@@ -649,11 +649,6 @@
     font-size: 13px;
   }
 
-  .mobile-stop-context {
-    color: #475569;
-    font-size: 13px;
-  }
-
   .mobile-stop-selection h3 {
     margin: 0 0 8px;
     color: #1f2937;
@@ -682,6 +677,17 @@
 
   .mobile-stop-departure-row .route-chip {
     justify-self: start;
+  }
+
+  .mobile-stops-sheet .route-chip-public {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    color: #334155;
+    background: #fff;
+    box-shadow: none;
+    cursor: default;
   }
 
   .mobile-stop-departure-time {

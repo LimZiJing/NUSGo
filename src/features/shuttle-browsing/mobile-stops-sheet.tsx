@@ -1,8 +1,8 @@
 import type { Ref } from 'react'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import { RouteChip } from '../../ui/route-chip'
-import type { MobileStopDeparture } from './mobile-stop-view'
+import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
+import { getPublicServiceTimings, type MobileStopDeparture } from './mobile-stop-view'
 
 interface MobileStopSheetDeparture extends MobileStopDeparture {
   readonly routeName: string
@@ -27,6 +27,18 @@ interface MobileStopsSheetProps {
   readonly onNavigateToStop: (stopId: string) => void
   readonly onBeforeSheetToggle?: () => void
   readonly containerRef?: Ref<HTMLElement>
+}
+
+function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
+  return timings.map((timing, index) => (
+    <span
+      key={index}
+      className="mobile-stop-departure-time"
+      data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+    >
+      {timing}
+    </span>
+  ))
 }
 
 export function MobileStopsSheet({
@@ -89,15 +101,10 @@ export function MobileStopsSheet({
             >
               <span aria-hidden="true">➤</span> Directions to this stop
             </button>
-            {selectedStop.publicServices.length > 0 ? (
-              <p className="mobile-stop-context">
-                Public services: {selectedStop.publicServices.join(', ')}
-              </p>
-            ) : null}
             <section className="mobile-stop-departures">
               <h3>Upcoming departures</h3>
-              {selectedStop.departures.length > 0 ? (
-                <ul className="mobile-stop-departure-list" aria-label="Upcoming shuttle departures">
+              {selectedStop.departures.length > 0 || selectedStop.publicServices.length > 0 ? (
+                <ul className="mobile-stop-departure-list" aria-label="Upcoming bus departures">
                   {selectedStop.departures.map((departure) => (
                     <li key={departure.routeId} className="mobile-stop-departure-row">
                       <RouteChip
@@ -108,20 +115,18 @@ export function MobileStopsSheet({
                         active
                         onClick={() => onSelectRoute(departure.routeId)}
                       />
-                      {departure.timings.map((timing, index) => (
-                        <span
-                          key={index}
-                          className="mobile-stop-departure-time"
-                          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-                        >
-                          {timing}
-                        </span>
-                      ))}
+                      <DepartureTimes timings={departure.timings} />
+                    </li>
+                  ))}
+                  {selectedStop.publicServices.map((serviceNumber) => (
+                    <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
+                      <PublicServiceChip serviceNumber={serviceNumber} />
+                      <DepartureTimes timings={getPublicServiceTimings(serviceNumber)} />
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p>No upcoming shuttle departures.</p>
+                <p>No upcoming bus departures.</p>
               )}
             </section>
             {oppositeStop ? (

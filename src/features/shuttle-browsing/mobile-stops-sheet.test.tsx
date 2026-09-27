@@ -77,13 +77,13 @@ describe('MobileStopsSheet', () => {
     expect(screen.getByText('☆', { selector: '[aria-hidden="true"]' })).toBeTruthy()
 
     const content = screen.getByTestId('mobile-stop-detail')
-    const order = ['University Hall', 'Directions to this stop', 'Public services: 95', 'Upcoming departures', 'Opposite stop']
+    const order = ['University Hall', 'Directions to this stop', 'Upcoming departures', 'Opposite stop']
     const contentText = content.textContent ?? ''
     expect(order.map((label) => contentText.indexOf(label))).toEqual(
       [...order].map((label) => contentText.indexOf(label)).sort((a, b) => a - b),
     )
-    expect(within(screen.getByRole('list', { name: 'Upcoming shuttle departures' })).getAllByRole('listitem'))
-      .toHaveLength(2)
+    expect(within(screen.getByRole('list', { name: 'Upcoming bus departures' })).getAllByRole('listitem'))
+      .toHaveLength(3)
     expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('SPAN')
   })
 

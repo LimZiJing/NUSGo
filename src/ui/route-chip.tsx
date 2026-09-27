@@ -45,3 +45,12 @@ export function RouteChip({
     </button>
   )
 }
+
+export function PublicServiceChip({ serviceNumber }: { readonly serviceNumber: string }) {
+  return (
+    <span className="route-chip route-chip-public" title={`Public service ${serviceNumber}`}>
+      <span className="visually-hidden">Public service </span>
+      {serviceNumber}
+    </span>
+  )
+}

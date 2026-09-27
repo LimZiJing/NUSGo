@@ -5,12 +5,12 @@ import {
 } from './mobile-navigation-state'
 
 describe('mobile tab navigation', () => {
-  it('starts on the expanded Explore sheet with Stops compact and Plan expanded', () => {
+  it('starts on the expanded Stops sheet with every sheet expanded', () => {
     expect(createInitialMobileNavigationState()).toEqual({
-      activeTab: 'explore',
+      activeTab: 'stops',
       sheets: {
         explore: { expanded: true },
-        stops: { expanded: false },
+        stops: { expanded: true },
         plan: { expanded: true },
       },
     })
@@ -43,7 +43,7 @@ describe('mobile tab navigation', () => {
       activeTab: 'plan',
       sheets: {
         explore: { expanded: true },
-        stops: { expanded: false },
+        stops: { expanded: true },
         plan: { expanded: false },
       },
     })

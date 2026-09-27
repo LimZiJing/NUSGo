@@ -35,6 +35,7 @@ interface MobileStopsSheetProps {
   readonly onBeforeSheetToggle?: () => void
   readonly containerRef?: Ref<HTMLElement>
   readonly overviewStops?: readonly MobileStopOverviewSelection[]
+  readonly overviewLoading?: boolean
   readonly selectedList?: 'nearby' | 'favourites'
   readonly selectedStopFavorite?: boolean
   readonly locationNotice?: string | null
@@ -56,6 +57,7 @@ export function MobileStopsSheet({
   onBeforeSheetToggle,
   containerRef,
   overviewStops,
+  overviewLoading = false,
   selectedList = 'nearby',
   selectedStopFavorite = false,
   locationNotice = null,
@@ -173,7 +175,9 @@ export function MobileStopsSheet({
               </div>
             ) : (
               <p className="mobile-stops-empty">
-                {selectedList === 'favourites'
+                {overviewLoading
+                  ? 'Loading stops…'
+                  : selectedList === 'favourites'
                   ? 'No favourite stops yet. Star a stop to save it here.'
                   : 'No stops within 1.5 km of the map centre.'}
               </p>

@@ -17,10 +17,10 @@ export type MobileNavigationAction =
 
 export function createInitialMobileNavigationState(): MobileNavigationState {
   return {
-    activeTab: 'explore',
+    activeTab: 'stops',
     sheets: {
       explore: { expanded: true },
-      stops: { expanded: false },
+      stops: { expanded: true },
       plan: { expanded: true },
     },
   }

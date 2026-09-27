@@ -86,6 +86,7 @@ function App() {
     readonly sequence: number
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
+  const initialNearbyLocationRequestedRef = useRef(false)
   const [mapControlsOpen, setMapControlsOpen] = useState(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
@@ -168,6 +169,16 @@ function App() {
   const activeTab = mobileNavigation.activeTab
   const activeSheetExpanded = mobileNavigation.sheets[activeTab].expanded
   const dismissMapPopup = commands.dismissMapPopup
+
+  useEffect(() => {
+    if (
+      !session || !isMobileViewport || activeTab !== 'stops' ||
+      mobileStopView.list !== 'nearby' || state.location.status !== 'disabled' ||
+      initialNearbyLocationRequestedRef.current
+    ) return
+    initialNearbyLocationRequestedRef.current = true
+    session.enableLocationTracking()
+  }, [activeTab, isMobileViewport, mobileStopView.list, session, state.location.status])
 
   const getActiveMobileSheet = useCallback((): HTMLElement | null => {
     if (mobileNavigation.activeTab === 'plan') return tripControlsRef.current
@@ -562,6 +573,7 @@ function App() {
             expanded={mobileNavigation.sheets.stops.expanded}
             selectedStop={mobileStopSelection}
             overviewStops={overviewStops}
+            overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}
             selectedList={mobileStopView.list}
             selectedStopFavorite={selectedStop
               ? mobileStopView.favoriteStopIds.includes(selectedStop.id)

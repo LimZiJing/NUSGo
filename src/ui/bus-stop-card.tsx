@@ -9,7 +9,6 @@ export interface BusStopCardProps {
   readonly expanded: boolean
   readonly departures: readonly BusStopDeparture[]
   readonly publicServices: readonly PublicServiceTiming[]
-  readonly onOpen: (stopId: string) => void
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
@@ -28,7 +27,6 @@ export function BusStopCard({
   expanded,
   departures,
   publicServices,
-  onOpen,
   onToggleFavorite,
   onToggleExpanded,
   onSelectRoute,
@@ -37,24 +35,6 @@ export function BusStopCard({
   return (
     <article className="bus-stop-card">
       <div className="bus-stop-card-header">
-        <div className="bus-stop-card-identity">
-          <button className="bus-stop-card-name" type="button" onClick={() => onOpen(stopId)}>
-            {stopName}
-          </button>
-          {distanceMeters !== null && (
-            <span className="bus-stop-card-distance">{formatDistance(distanceMeters)}</span>
-          )}
-        </div>
-        <span className="bus-stop-card-live">LIVE</span>
-        <button
-          className="bus-stop-card-favorite"
-          type="button"
-          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName} ${favorite ? 'from' : 'to'} favourites`}
-          aria-pressed={favorite}
-          onClick={() => onToggleFavorite(stopId)}
-        >
-          <FavoriteStarIcon filled={favorite} />
-        </button>
         <button
           className="bus-stop-card-toggle"
           type="button"
@@ -63,9 +43,26 @@ export function BusStopCard({
           aria-controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
         >
+          <span className="bus-stop-card-identity">
+            <span className="bus-stop-card-name">{stopName}</span>
+            {distanceMeters !== null && (
+              <span className="bus-stop-card-distance">{formatDistance(distanceMeters)}</span>
+            )}
+          </span>
+          <span className="bus-stop-card-live">LIVE</span>
+          <span aria-hidden="true" />
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
             <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
+        </button>
+        <button
+          className="bus-stop-card-favorite"
+          type="button"
+          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName} ${favorite ? 'from' : 'to'} favourites`}
+          aria-pressed={favorite}
+          onClick={() => onToggleFavorite(stopId)}
+        >
+          <FavoriteStarIcon filled={favorite} />
         </button>
       </div>
       <div id={timingsId} hidden={!expanded}>

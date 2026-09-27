@@ -583,7 +583,6 @@ function App() {
               if (list === 'nearby' && state.location.status === 'disabled') commands.enableLocationTracking()
               dispatchMobileStopView({ type: 'select-list', list })
             }}
-            onOpenStop={(stopId) => { handleStopSelected(stopId) }}
             onToggleFavorite={(stopId) => dispatchMobileStopView({ type: 'toggle-favorite', stopId })}
             onToggleExpanded={(stopId) => dispatchMobileStopView({ type: 'toggle-expanded', stopId })}
             onDismissLocationNotice={() => dispatchMobileStopView({ type: 'dismiss-location-notice' })}

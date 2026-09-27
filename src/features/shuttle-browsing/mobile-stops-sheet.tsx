@@ -40,7 +40,6 @@ interface MobileStopsSheetProps {
   readonly selectedStopFavorite?: boolean
   readonly locationNotice?: string | null
   readonly onSelectList?: (list: 'nearby' | 'favourites') => void
-  readonly onOpenStop?: (stopId: string) => void
   readonly onToggleFavorite?: (stopId: string) => void
   readonly onToggleExpanded?: (stopId: string) => void
   readonly onDismissLocationNotice?: () => void
@@ -62,7 +61,6 @@ export function MobileStopsSheet({
   selectedStopFavorite = false,
   locationNotice = null,
   onSelectList,
-  onOpenStop,
   onToggleFavorite,
   onToggleExpanded,
   onDismissLocationNotice,
@@ -166,7 +164,6 @@ export function MobileStopsSheet({
                       serviceNumber,
                       timings: getPublicServiceTimings(serviceNumber),
                     }))}
-                    onOpen={(stopId) => onOpenStop?.(stopId)}
                     onToggleFavorite={(stopId) => onToggleFavorite?.(stopId)}
                     onToggleExpanded={(stopId) => onToggleExpanded?.(stopId)}
                     onSelectRoute={onSelectRoute}

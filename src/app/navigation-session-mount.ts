@@ -1,4 +1,5 @@
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
+import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
 import type { JourneyPlanningService } from './journey-planning'
@@ -15,6 +16,7 @@ export interface NavigationSessionMountDependencies {
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
   readonly journeyPlanner: JourneyPlanningService
+  readonly locationTracker: LocationTracker
   readonly onMapInteraction?: () => void
 }
 
@@ -39,6 +41,7 @@ export function createNavigationSessionMount(
     loadVenues: dependencies.loadVenues,
     loadTransit: dependencies.loadTransit,
     journeyPlanner: dependencies.journeyPlanner,
+    locationTracker: dependencies.locationTracker,
   })
 
   const controller = new AbortController()
@@ -88,6 +91,8 @@ export interface NavigationSessionCommands {
   readonly leaveMobileRoutes: () => void
   readonly selectMobileRoute: (routeId: string) => void
   readonly focusStop: (stopId: string) => void
+  readonly enableLocationTracking: () => void
+  readonly disableLocationTracking: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -120,6 +125,8 @@ function createNavigationSessionCommands(
     leaveMobileRoutes: () => session?.leaveMobileRoutes(),
     selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
     focusStop: (stopId) => session?.focusStop(stopId),
+    enableLocationTracking: () => session?.enableLocationTracking(),
+    disableLocationTracking: () => session?.disableLocationTracking(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

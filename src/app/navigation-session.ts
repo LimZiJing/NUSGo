@@ -22,7 +22,12 @@ import {
 import { reconcileRouteSelection } from './route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
+import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapViewportInsets } from './contracts/map'
+import {
+  INITIAL_LOCATION_TRACKING_STATE,
+  type LocationTrackingState,
+} from '../domain/location/types'
 import { NoJourneyAvailableError, type JourneyPlanningService } from './journey-planning'
 import { createInitialJourneyState, type JourneyState } from './journey-state'
 import { getResetTarget } from './map-camera'
@@ -50,6 +55,7 @@ export interface NavigationSessionState {
   readonly contextualPanel: ContextualPanelState
   readonly tripRequest: TripRequest
   readonly journey: JourneyState
+  readonly location: LocationTrackingState
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
   readonly startupFailure: NavigationSessionStartupFailure | null
@@ -61,6 +67,7 @@ export interface NavigationSessionDependencies {
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
   readonly journeyPlanner?: JourneyPlanningService
+  readonly locationTracker: LocationTracker
 }
 
 export type NavigationSessionListener = () => void
@@ -75,6 +82,8 @@ export interface NavigationSession {
   leaveMobileRoutes(): void
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
+  enableLocationTracking(): void
+  disableLocationTracking(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
@@ -99,7 +108,9 @@ export interface NavigationSession {
   dispose(): void
 }
 
-export function createInitialNavigationSessionState(): NavigationSessionState {
+export function createInitialNavigationSessionState(
+  location: LocationTrackingState = INITIAL_LOCATION_TRACKING_STATE,
+): NavigationSessionState {
   return freezeNavigationSessionSnapshot({
     venues: null,
     transitIndex: null,
@@ -109,6 +120,7 @@ export function createInitialNavigationSessionState(): NavigationSessionState {
     contextualPanel: createInitialContextualPanelState(),
     tripRequest: createEmptyTripRequest(),
     journey: createInitialJourneyState(),
+    location,
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
     startupFailure: null,
@@ -126,7 +138,7 @@ function getTransitFailureMessage(error: unknown): string {
 export function createNavigationSession(
   dependencies: NavigationSessionDependencies,
 ): NavigationSession {
-  let state = createInitialNavigationSessionState()
+  let state = createInitialNavigationSessionState(dependencies.locationTracker.getState())
   let transitIndex: TransitIndex | null = null
   let transitData: LoadedTransitData | null = null
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
@@ -191,6 +203,11 @@ export function createNavigationSession(
     }
     publish(nextState)
   }
+
+  const unsubscribeLocation = dependencies.locationTracker.subscribe(() => {
+    if (disposed) return
+    updateState({ location: dependencies.locationTracker.getState() })
+  })
 
   const cancelJourneyPlanning = (): void => {
     journeyPlanningRequestId += 1
@@ -516,6 +533,17 @@ export function createNavigationSession(
       })
     },
 
+    enableLocationTracking() {
+      if (disposed) return
+      // Keep this call synchronous so browsers can associate permission with the user's action.
+      dependencies.locationTracker.enable()
+    },
+
+    disableLocationTracking() {
+      if (disposed) return
+      dependencies.locationTracker.disable()
+    },
+
     setTripEndpoint(role, endpoint) {
       setTripEndpointCommand(role, endpoint)
     },
@@ -600,6 +628,8 @@ export function createNavigationSession(
       transitionQueue.clear()
       startup.dispose()
       cancelJourneyPlanning()
+      unsubscribeLocation()
+      dependencies.locationTracker.dispose()
       listeners.clear()
       dependencies.map.dispose()
     },

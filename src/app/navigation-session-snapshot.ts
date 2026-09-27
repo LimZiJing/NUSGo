@@ -4,6 +4,7 @@ import type { VenueSearchResult } from '../domain/venue/search'
 import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'
 import type { ResourceState, ResourceStatusState } from './resource-status'
 import type { JourneyState } from './journey-state'
+import type { LocationTrackingState } from '../domain/location/types'
 
 function freeze<T>(value: T): T {
   return Object.freeze(value) as T
@@ -72,6 +73,13 @@ function snapshotJourneyState(state: JourneyState): JourneyState {
   })
 }
 
+function snapshotLocationState(state: LocationTrackingState): LocationTrackingState {
+  return freeze({
+    status: state.status,
+    latestFix: state.latestFix === null ? null : freeze({ ...state.latestFix }),
+  })
+}
+
 function snapshotResourceState<T>(resource: ResourceState<T>): ResourceState<T> {
   if (resource.status === 'pending') return freeze({ status: 'pending' })
   if (resource.status === 'failed') return freeze({ status: 'failed', message: resource.message })
@@ -99,6 +107,7 @@ export function freezeNavigationSessionSnapshot(state: NavigationSessionState): 
     contextualPanel: snapshotContextualPanel(state.contextualPanel),
     tripRequest: snapshotTripRequest(state.tripRequest),
     journey: snapshotJourneyState(state.journey),
+    location: snapshotLocationState(state.location),
     resourceStatus: snapshotResourceStatus(state.resourceStatus),
     startupFailure: snapshotStartupFailure(state.startupFailure),
   })

@@ -38,6 +38,7 @@ import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
+import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
@@ -280,6 +281,7 @@ function App() {
       loadVenues: loadVenueData,
       loadTransit: loadTransitMapData,
       journeyPlanner,
+      locationTracker: createBrowserLocationTracker(),
       onMapInteraction: () => setMapControlsOpen(false),
     })
     setSession(mount.session)

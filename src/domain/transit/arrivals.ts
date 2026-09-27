@@ -14,4 +14,10 @@ export interface ShuttleArrivalSnapshot {
   readonly observedAt: string
   readonly expiresAt: string
   readonly stops: Readonly<Record<string, Readonly<Record<string, ShuttleRouteArrivalData>>>>
+  readonly stopObservations?: Readonly<Record<string, ShuttleArrivalObservation>>
+}
+
+export interface ShuttleArrivalObservation {
+  readonly observedAt: string
+  readonly expiresAt: string
 }

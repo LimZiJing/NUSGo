@@ -224,6 +224,137 @@ describe('createJourneyPlanningService', () => {
     expect(journey?.legs[1]).toMatchObject({ waitingSeconds: 20 })
   })
 
+  it('allows waiting before service starts when boarding occurs during service', async () => {
+    const transit = createTransitData()
+    const nowMs = Date.parse('2026-09-23T22:30:00.000Z')
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 10_000, durationSeconds: 10_000 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => ({
+        observedAt: new Date(nowMs).toISOString(),
+        expiresAt: new Date(nowMs + 3_600_000).toISOString(),
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 3_000,
+              upcomingArrivalSeconds: [3_000],
+              headwaySeconds: null,
+            },
+          },
+        },
+      })),
+    }
+    const shuttleServiceHoursClient = {
+      getServiceWindows: vi.fn(async () => ({
+        A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+      })),
+    }
+
+    const journey = await createJourneyPlanningService(
+      routeEngine,
+      shuttleArrivalClient,
+      shuttleServiceHoursClient,
+      () => nowMs,
+    )({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.legs.some((leg) => leg.mode === 'shuttle')).toBe(true)
+    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+      waitingSeconds: 2_900,
+    })
+  })
+
+  it('rejects boarding after service ends even when reaching the stop during service', async () => {
+    const transit = createTransitData()
+    const nowMs = Date.parse('2026-09-23T23:18:00.000Z')
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 10_000, durationSeconds: 10_000 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => ({
+        observedAt: new Date(nowMs).toISOString(),
+        expiresAt: new Date(nowMs + 3_600_000).toISOString(),
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 180,
+              upcomingArrivalSeconds: [180],
+              headwaySeconds: null,
+            },
+          },
+        },
+      })),
+    }
+    const shuttleServiceHoursClient = {
+      getServiceWindows: vi.fn(async () => ({
+        A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '07:20', dayType: 'Mon-Fri', dates: [] }],
+      })),
+    }
+
+    const journey = await createJourneyPlanningService(
+      routeEngine,
+      shuttleArrivalClient,
+      shuttleServiceHoursClient,
+      () => nowMs,
+    )({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.legs.some((leg) => leg.mode === 'shuttle')).toBe(false)
+    expect(journey?.legs).toHaveLength(1)
+    expect(journey?.legs[0].mode).toBe('walking')
+  })
+
   it('requests live arrivals only for nearby boarding stops', async () => {
     const transit = createTransitData()
     const routeEngine = {

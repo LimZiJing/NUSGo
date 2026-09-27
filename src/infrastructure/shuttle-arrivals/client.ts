@@ -1,4 +1,5 @@
 import type {
+  ShuttleArrivalObservation,
   ShuttleArrivalSnapshot,
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
@@ -26,6 +27,7 @@ export interface ShuttleArrivalClient {
 interface CachedStop {
   readonly observedAt: string
   readonly expiresAt: string
+  readonly cacheExpiresAt: string
   readonly routes: ShuttleArrivalSnapshot['stops'][string]
 }
 
@@ -119,9 +121,12 @@ function createCachedStop(
   now: () => number,
   cacheTtlMs: number,
 ): CachedStop {
+  const providerExpiryMs = Date.parse(snapshot.expiresAt)
+  const cacheExpiryMs = now() + cacheTtlMs
   return {
     observedAt: snapshot.observedAt,
-    expiresAt: new Date(now() + cacheTtlMs).toISOString(),
+    expiresAt: snapshot.expiresAt,
+    cacheExpiresAt: new Date(Math.min(providerExpiryMs, cacheExpiryMs)).toISOString(),
     routes: snapshot.stops[stop.stopId] ?? {},
   }
 }
@@ -146,7 +151,7 @@ export function createShuttleArrivalClient(
     for (const stop of stops) {
       const key = requestKey(stop)
       const cached = cache.get(key)
-      if (cached && Date.parse(cached.expiresAt) > now()) {
+      if (cached && Date.parse(cached.cacheExpiresAt) > now()) {
         requests.set(key, Promise.resolve(cached))
         continue
       }
@@ -166,7 +171,11 @@ export function createShuttleArrivalClient(
       )
         .then(async (response) => {
           if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
-          return parseSnapshot(await response.json() as unknown)
+          const snapshot = parseSnapshot(await response.json() as unknown)
+          if (Date.parse(snapshot.expiresAt) <= now()) {
+            throw new Error('Shuttle arrival response has expired')
+          }
+          return snapshot
         })
         .then((snapshot) => new Map(
           batch.map((stop) => [
@@ -217,7 +226,17 @@ export function createShuttleArrivalClient(
         const entry = entries[index]
         if (entry) result[stop.stopId] = entry.routes
       })
-      return { observedAt, expiresAt, stops: result }
+      const stopObservations: Record<string, ShuttleArrivalObservation> = {}
+      uniqueStops.forEach((stop, index) => {
+        const entry = entries[index]
+        if (entry) {
+          stopObservations[stop.stopId] = {
+            observedAt: entry.observedAt,
+            expiresAt: entry.expiresAt,
+          }
+        }
+      })
+      return { observedAt, expiresAt, stops: result, stopObservations }
     },
   }
 }

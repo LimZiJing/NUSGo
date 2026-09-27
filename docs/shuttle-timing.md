@@ -58,6 +58,8 @@ The normalized snapshot contains:
 
 - `observedAt`: when the provider data was observed;
 - `expiresAt`: when the server-side cache entry expires;
+- `stopObservations`: the observation and expiry timestamps for each requested
+  stop, preserved when cached stop responses are combined;
 - non-negative `nextArrivalSeconds`; and
 - a sorted, duplicate-free list of non-negative upcoming arrival seconds.
 
@@ -75,8 +77,8 @@ planner.
 
 ## Freshness and response age
 
-Freshness is measured from `observedAt`, not only from the time NavUS fetched
-the response.
+Freshness is measured from each stop's `observedAt`, not only from the time
+NavUS fetched the response.
 
 - A snapshot observed within 45 seconds is fresh and may be used for normal
   live ranking.

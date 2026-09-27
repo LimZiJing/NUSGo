@@ -29,8 +29,8 @@ export function getMobileStopsOverview(
       distanceMeters: fix ? getDistanceMeters(fix, stop) : null,
     }))
     .sort((first, second) => (
-      list === 'nearby' && fix
-        ? (first.distanceMeters ?? 0) - (second.distanceMeters ?? 0)
+      list === 'nearby' && center
+        ? getDistanceMeters(center, first.stop) - getDistanceMeters(center, second.stop)
         : first.stop.longName.localeCompare(second.stop.longName)
     ) || first.stop.id.localeCompare(second.stop.id))
 }

@@ -136,6 +136,7 @@ type ShuttleStopMarkerState = {
   selectedStopIds: ReadonlySet<string> | null
   selectedRouteColor: string | null
   journeyStopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null
+  selectedStopId: string | null
   focusedStopIds: Set<string>
   handleZoom: () => void
 }
@@ -236,8 +237,10 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
   const prominentStopIds = state.journeyStopRoutes === null
     ? state.selectedStopIds
     : new Set(state.journeyStopRoutes.keys())
-  const filters = getBusStopLabelFilters(prominentStopIds, state.focusedStopIds)
-  const activeMinZoom = prominentStopIds !== null || state.focusedStopIds.size > 0
+  const focusedStopIds = new Set(state.focusedStopIds)
+  if (state.selectedStopId !== null) focusedStopIds.add(state.selectedStopId)
+  const filters = getBusStopLabelFilters(prominentStopIds, focusedStopIds)
+  const activeMinZoom = prominentStopIds !== null || focusedStopIds.size > 0
     ? 0
     : BUS_STOP_MIN_ZOOM
   const inactiveOpacity = getBusStopLabelOpacity(prominentStopIds)
@@ -280,8 +283,10 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
   for (const marker of state.markers) {
     const element = marker.getElement()
     const stopId = element.dataset.stopId ?? ''
-    const isSelected = selectedIds.has(stopId)
-    const isFocused = state.focusedStopIds.has(stopId)
+    const isRouteSelected = selectedIds.has(stopId)
+    const isContextSelected = state.selectedStopId === stopId
+    const isSelected = isRouteSelected || isContextSelected
+    const isFocused = state.focusedStopIds.has(stopId) || isContextSelected
     const routeSelected = selectedStopIds !== null
     const isVisible = journeyActive || isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
     const isDimmed = journeyActive
@@ -294,7 +299,9 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
       isVisible,
       isDimmed,
       isDisabled,
-      journeyActive ? null : state.selectedRouteColor,
+      journeyActive || (isContextSelected && !isRouteSelected)
+        ? null
+        : state.selectedRouteColor,
       state.journeyStopRoutes?.get(stopId) ?? null,
     )
   }
@@ -306,6 +313,7 @@ export function createShuttleStopMarkers(
   map: Map,
   busStops: readonly TransitStop[],
   onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
+  onStopSelected?: (stopId: string) => boolean,
 ): ShuttleStopMarkers {
   const markers: Marker[] = []
   const markerDetails: BusStopMarker[] = []
@@ -316,6 +324,7 @@ export function createShuttleStopMarkers(
     selectedStopIds: null,
     selectedRouteColor: null,
     journeyStopRoutes: null,
+    selectedStopId: null,
     focusedStopIds: new Set<string>(),
     handleZoom: () => updateBusStopMarkerPresentation(state),
   }
@@ -347,7 +356,10 @@ export function createShuttleStopMarkers(
     const unregisterPopup = popupCoordinator.register(popup)
     const handleOpen = () => {
       state.focusedStopIds.add(stop.id)
+      const selectedInStopsSheet = onStopSelected?.(stop.id) ?? false
+      if (selectedInStopsSheet) state.selectedStopId = stop.id
       updateBusStopMarkerPresentation(state)
+      if (selectedInStopsSheet && popup.isOpen()) popup.remove()
     }
     const handleClose = () => {
       state.focusedStopIds.delete(stop.id)

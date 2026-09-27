@@ -586,6 +586,79 @@
     margin: 0;
   }
 
+  .mobile-stop-selection {
+    display: grid;
+    gap: 16px;
+  }
+
+  .mobile-stop-selection-name {
+    color: #173c35;
+    font-size: 16px;
+    font-weight: 650;
+  }
+
+  .mobile-stop-context {
+    color: #475569;
+    font-size: 13px;
+  }
+
+  .mobile-stop-selection h3 {
+    margin: 0 0 8px;
+    color: #71857d;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .mobile-stop-service-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mobile-stop-service {
+    display: inline-flex;
+    min-width: 40px;
+    min-height: 28px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    border-radius: 999px;
+    color: var(--route-text-color);
+    background: var(--route-color);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .mobile-stop-endpoint-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .mobile-stops-sheet .mobile-stop-endpoint-actions button {
+    min-width: 0;
+    border-color: #d8e6de;
+    border-radius: 11px;
+    color: #17654f;
+    background: #eef5f1;
+    font-weight: 700;
+  }
+
+  .mobile-stops-sheet .mobile-stop-endpoint-actions .mobile-stop-endpoint-primary {
+    border-color: #0b7258;
+    color: #fff;
+    background: #0b7258;
+  }
+
+  .mobile-stops-sheet .mobile-stop-endpoint-actions button:hover:enabled {
+    filter: brightness(0.85);
+  }
+
   .mobile-tab-bar {
     position: absolute;
     z-index: 14;

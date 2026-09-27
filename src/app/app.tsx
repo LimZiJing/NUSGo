@@ -9,7 +9,10 @@ import {
   type CSSProperties,
 } from 'react'
 import { ContextualPanel } from '../features/contextual-panel/contextual-panel'
-import { MobileStopsSheet } from '../features/shuttle-browsing/mobile-stops-sheet'
+import {
+  MobileStopsSheet,
+  type MobileStopSheetSelection,
+} from '../features/shuttle-browsing/mobile-stops-sheet'
 import { MapControls } from '../ui/map-controls'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
@@ -62,6 +65,10 @@ function App() {
     createInitialMobileNavigationState,
   )
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
+  const mobileNavigationRef = useRef(mobileNavigation)
+  const isMobileViewportRef = useRef(isMobileViewport)
+  const prepareSheetTransitionRef = useRef<(() => void) | null>(null)
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null)
   const [mapControlsOpen, setMapControlsOpen] = useState(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
@@ -139,13 +146,37 @@ function App() {
     return contextualPanelRef.current
   }, [mobileNavigation.activeTab])
 
-  const prepareSheetTransition = (viewChange = false): void => {
+  useLayoutEffect(() => {
+    mobileNavigationRef.current = mobileNavigation
+    isMobileViewportRef.current = isMobileViewport
+  }, [isMobileViewport, mobileNavigation])
+
+  const prepareSheetTransition = useCallback((viewChange = false): void => {
     if (!isMobileViewport) return
     sheetAnimationCleanupRef.current?.()
     sheetAnimationCleanupRef.current = null
     const startHeight = getActiveMobileSheet()?.getBoundingClientRect().height ?? 0
     pendingSheetTransitionRef.current = startHeight > 0 ? { startHeight, viewChange } : null
-  }
+  }, [getActiveMobileSheet, isMobileViewport])
+
+  useLayoutEffect(() => {
+    prepareSheetTransitionRef.current = () => prepareSheetTransition()
+  }, [prepareSheetTransition])
+
+  const handleStopSelected = useCallback((stopId: string): boolean => {
+    const currentNavigation = mobileNavigationRef.current
+    if (
+      !isMobileViewportRef.current ||
+      currentNavigation.activeTab !== 'stops'
+    ) return false
+
+    setSelectedStopId(stopId)
+    if (!currentNavigation.sheets.stops.expanded) {
+      prepareSheetTransitionRef.current?.()
+      dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'stops', expanded: true })
+    }
+    return true
+  }, [])
 
   useLayoutEffect(() => {
     const pending = pendingSheetTransitionRef.current
@@ -283,6 +314,7 @@ function App() {
       loadTransit: loadTransitMapData,
       journeyPlanner,
       locationTracker: createBrowserLocationTracker(),
+      onStopSelected: handleStopSelected,
       onMapInteraction: () => setMapControlsOpen(false),
     })
     setSession(mount.session)
@@ -290,9 +322,31 @@ function App() {
     return () => {
       mount.dispose()
     }
-  }, [journeyPlanner])
+  }, [handleStopSelected, journeyPlanner])
+
+  useEffect(() => {
+    if (!isMobileViewport || activeTab !== 'stops' || selectedStopId === null) return
+    dismissMapPopup()
+  }, [activeTab, dismissMapPopup, isMobileViewport, selectedStopId])
 
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'
+  const selectedStop = selectedStopId === null
+    ? undefined
+    : state.transitIndex?.stopById.get(selectedStopId)
+  const selectedStopRouteIds = selectedStop && state.transitIndex
+    ? state.transitIndex.routeIdsByStopId.get(selectedStop.id) ?? new Set<string>()
+    : new Set<string>()
+  const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && state.transitIndex
+    ? {
+      id: selectedStop.id,
+      longName: selectedStop.longName,
+      oppositeStopId: selectedStop.opposite ?? null,
+      publicServices: selectedStop.services.filter((service) => service.startsWith('PUB:')),
+      services: state.transitIndex.routes
+        .filter((route) => selectedStopRouteIds.has(route.id))
+        .map(({ id, name, color }) => ({ id, name, color })),
+    }
+    : null
 
   return (
     <main className="map-shell" ref={mapShellRef}>
@@ -454,9 +508,15 @@ function App() {
         >
           <MobileStopsSheet
             expanded={mobileNavigation.sheets.stops.expanded}
+            selectedStop={mobileStopSelection}
             onExpandedChange={(expanded) => dispatchMobileNavigation(expanded
               ? { type: 'set-sheet-expanded', tab: 'stops', expanded: true }
               : { type: 'close-active-tab' })}
+            onSetEndpoint={(role, stopId) => {
+              const endpoint = { kind: 'stop', id: stopId } as const
+              if (role === 'origin') commands.selectOriginEndpoint(endpoint)
+              else commands.selectDestinationEndpoint(endpoint)
+            }}
             onBeforeSheetToggle={() => prepareSheetTransition()}
             containerRef={stopsSheetRef}
           />

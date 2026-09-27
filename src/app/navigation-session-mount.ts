@@ -17,6 +17,7 @@ export interface NavigationSessionMountDependencies {
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
   readonly journeyPlanner: JourneyPlanningService
   readonly locationTracker: LocationTracker
+  readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
 }
 
@@ -34,6 +35,7 @@ export function createNavigationSessionMount(
     container,
     onMapError: (error) => session?.reportMapError(error),
     onEmptyMapClick: () => session?.handleMapClick(),
+    onStopSelected: dependencies.onStopSelected,
     onMapInteraction: dependencies.onMapInteraction,
   })
   session = dependencies.createNavigationSession({

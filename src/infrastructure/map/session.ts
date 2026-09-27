@@ -215,7 +215,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       transitData = data
       currentTransitIndex = data.index
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
-      shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
+      shuttleStopMarkers = createShuttleStopMarkers(
+        map,
+        data.index.stops,
+        onSetEndpoint,
+        options.onStopSelected,
+      )
       currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
       applyJourneyPresentation()

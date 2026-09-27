@@ -12,6 +12,8 @@ export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
   readonly onEmptyMapClick: () => void
+  /** Returns true when the mobile Stops sheet owns the stop context. */
+  readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
 }
 

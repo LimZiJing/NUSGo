@@ -66,11 +66,10 @@ describe('Browser location tracker', () => {
     })
   })
 
-  it('ignores invalid and low-accuracy readings without replacing the latest fix', () => {
+  it('keeps the latest valid fix and accepts low-accuracy readings', () => {
     const { provider, callbacks } = createProvider()
     const tracker = createBrowserLocationTracker(provider, {
       now: () => 2_000,
-      maximumAccuracyMetres: 50,
     })
     tracker.enable()
     callbacks[0].success(createPosition({ timestamp: 2_000 }))
@@ -79,9 +78,9 @@ describe('Browser location tracker', () => {
     expect(tracker.getState().status).toBe('invalid')
     expect(tracker.getState().latestFix?.timestamp).toBe(2_000)
 
-    callbacks[0].success(createPosition({ accuracy: 51, timestamp: 2_002 }))
-    expect(tracker.getState().status).toBe('low-accuracy')
-    expect(tracker.getState().latestFix?.timestamp).toBe(2_000)
+    callbacks[0].success(createPosition({ accuracy: 500, timestamp: 2_002 }))
+    expect(tracker.getState().status).toBe('tracking')
+    expect(tracker.getState().latestFix?.accuracy).toBe(500)
   })
 
   it('ignores malformed browser payloads without throwing', () => {

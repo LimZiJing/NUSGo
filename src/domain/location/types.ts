@@ -7,7 +7,6 @@ export type LocationTrackingStatus =
   | 'unavailable'
   | 'timeout'
   | 'invalid'
-  | 'low-accuracy'
 
 export interface DeviceLocationFix {
   readonly longitude: number

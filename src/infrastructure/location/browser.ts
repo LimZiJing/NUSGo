@@ -6,7 +6,6 @@ import {
 import type { LocationTracker } from '../../app/contracts/location'
 
 const DEFAULT_STALE_AFTER_MS = 2 * 60 * 1_000
-const DEFAULT_MAXIMUM_ACCURACY_METRES = 100
 const MAXIMUM_FUTURE_TIMESTAMP_MS = 5_000
 
 export interface BrowserGeolocation {
@@ -21,7 +20,6 @@ export interface BrowserGeolocation {
 export interface BrowserLocationTrackerOptions {
   readonly now?: () => number
   readonly staleAfterMs?: number
-  readonly maximumAccuracyMetres?: number
   readonly watchOptions?: PositionOptions
 }
 
@@ -49,10 +47,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function createLocationFix(
   position: unknown,
   now: number,
-  maximumAccuracyMetres: number,
-): { readonly kind: 'valid'; readonly fix: DeviceLocationFix } | {
-  readonly kind: 'invalid' | 'low-accuracy'
-} {
+): { readonly kind: 'valid'; readonly fix: DeviceLocationFix } | { readonly kind: 'invalid' } {
   if (!isRecord(position) || !isRecord(position.coords)) return { kind: 'invalid' }
   const longitude = position.coords.longitude
   const latitude = position.coords.latitude
@@ -73,8 +68,6 @@ function createLocationFix(
     return { kind: 'invalid' }
   }
 
-  if (accuracy > maximumAccuracyMetres) return { kind: 'low-accuracy' }
-
   return {
     kind: 'valid',
     fix: Object.freeze({ longitude, latitude, accuracy, timestamp }),
@@ -87,7 +80,6 @@ export function createBrowserLocationTracker(
 ): LocationTracker {
   const now = options.now ?? (() => Date.now())
   const staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS
-  const maximumAccuracyMetres = options.maximumAccuracyMetres ?? DEFAULT_MAXIMUM_ACCURACY_METRES
   const watchOptions: PositionOptions = {
     enableHighAccuracy: true,
     maximumAge: 30_000,
@@ -142,7 +134,7 @@ export function createBrowserLocationTracker(
 
   const handlePosition = (generation: number, position: unknown): void => {
     if (!isCurrentGeneration(generation)) return
-    const result = createLocationFix(position, now(), maximumAccuracyMetres)
+    const result = createLocationFix(position, now())
     if (result.kind !== 'valid') {
       clearStaleTimer()
       publish({ ...state, status: result.kind })

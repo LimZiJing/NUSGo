@@ -11,6 +11,7 @@ import {
 import { ContextualPanel } from '../features/contextual-panel/contextual-panel'
 import { MobileStopsSheet } from '../features/shuttle-browsing/mobile-stops-sheet'
 import { MapControls } from '../ui/map-controls'
+import { LocationControl } from '../ui/location-control'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
@@ -314,6 +315,11 @@ function App() {
           onZoomIn={commands.zoomIn}
           onZoomOut={commands.zoomOut}
           onReset={commands.resetView}
+        />
+        <LocationControl
+          topOffset={mapInsets.top || 76}
+          searching={state.location.status === 'requesting'}
+          onLocate={commands.locateUser}
         />
         <aside
           className="map-legend"

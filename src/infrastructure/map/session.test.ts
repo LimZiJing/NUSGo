@@ -8,6 +8,7 @@ import { createTransitIndex, generateShuttleTimingData } from '../../domain/tran
 import type { TransitRouteGeometry } from '../../domain/transit/types'
 import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocation } from '../../domain/venue/types'
+import type { DeviceLocationFix } from '../../domain/location/types'
 
 const fakeMapState = vi.hoisted(() => ({
   maps: [] as unknown[],
@@ -433,6 +434,59 @@ function createShuttleJourney(): Journey {
 }
 
 describe('MapSession', () => {
+  it('updates, hides, shows, and removes the current-location marker without moving the camera', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    await session.ready
+    const map = fakeMapState.maps.at(-1) as {
+      readonly addedMarkers: Array<{
+        readonly element: FakeElement
+        readonly coordinate: unknown
+        readonly remove: ReturnType<typeof vi.fn>
+      }>
+      readonly flyTo: ReturnType<typeof vi.fn>
+      readonly fitBounds: ReturnType<typeof vi.fn>
+    }
+    const firstFix: DeviceLocationFix = {
+      longitude: 103.7844,
+      latitude: 1.2933,
+      accuracy: 12,
+      timestamp: 1_000,
+    }
+    const secondFix: DeviceLocationFix = { ...firstFix, longitude: 103.785, timestamp: 2_000 }
+
+    session.setCurrentLocation(firstFix, true)
+    const marker = map.addedMarkers.at(-1)
+    expect(marker?.element.className).toBe('current-location-marker')
+    expect(marker?.element.attributes.get('aria-label')).toBe('Current location')
+    expect(marker?.coordinate).toEqual([firstFix.longitude, firstFix.latitude])
+
+    session.setCurrentLocation(secondFix, true)
+    expect(marker?.coordinate).toEqual([secondFix.longitude, secondFix.latitude])
+
+    session.setCurrentLocation(secondFix, false)
+    expect(marker?.remove).toHaveBeenCalledOnce()
+    session.setCurrentLocation(secondFix, true)
+    session.setCurrentLocation(null, true)
+    expect(marker?.remove).toHaveBeenCalledTimes(2)
+    session.setCurrentLocation(secondFix, true)
+    expect(map.flyTo).not.toHaveBeenCalled()
+    expect(map.fitBounds).not.toHaveBeenCalled()
+
+    session.focusCurrentLocation(secondFix)
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
+      center: [secondFix.longitude, secondFix.latitude],
+      zoom: 17,
+    }))
+
+    session.dispose()
+    expect(marker?.remove).toHaveBeenCalledTimes(3)
+  })
+
   beforeEach(() => {
     fakeMapState.maps.length = 0
     fakeMapState.popups.length = 0

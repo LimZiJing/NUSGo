@@ -37,6 +37,108 @@
   display: none;
 }
 
+.location-control {
+  position: absolute;
+  z-index: 13;
+  top: var(--location-control-top, 76px);
+  left: 12px;
+  display: grid;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.location-control-chip,
+.location-control-popover button {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1f2937;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  font: 14px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.location-control-chip {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+}
+
+.location-control-icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #475569;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.location-control-icon-center {
+  fill: #475569;
+  stroke: none;
+}
+
+.location-control-chip-searching {
+  cursor: wait;
+  animation: location-control-pulse 1.4s ease-in-out infinite;
+}
+
+.location-control-chip-searching .location-control-icon {
+  opacity: 0.45;
+}
+
+.location-control-spinner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #4285f4;
+  border-radius: 50%;
+  animation: location-control-spin 900ms linear infinite;
+}
+
+@keyframes location-control-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes location-control-pulse {
+  0%, 100% { box-shadow: 0 1px 4px rgb(15 23 42 / 25%); }
+  50% { box-shadow: 0 0 0 4px rgb(66 133 244 / 16%), 0 1px 4px rgb(15 23 42 / 25%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .location-control-chip-searching,
+  .location-control-spinner {
+    animation: none;
+  }
+}
+
+.current-location-marker {
+  position: relative;
+  isolation: isolate;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #4285f4;
+  box-shadow: 0 0 0 1px #4285f4, 0 1px 4px rgb(15 23 42 / 55%);
+  box-sizing: border-box;
+}
+
+.current-location-marker::before {
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(66 133 244 / 22%);
+  content: '';
+}
+
 .bus-stop-marker {
   width: 14px;
   height: 14px;

@@ -50,6 +50,16 @@
     pointer-events: auto;
   }
 
+  .location-control {
+    top: calc(var(--location-control-top, 76px) + 52px);
+    left: max(12px, env(safe-area-inset-left));
+  }
+
+  .location-control-chip,
+  .location-control-popover button {
+    min-height: 44px;
+  }
+
   .map-controls-chip,
   .map-controls-popover button {
     min-height: 44px;

@@ -74,7 +74,8 @@ describe('MobileStopsSheet', () => {
     expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'University Hall' })).toBeTruthy()
     expect(screen.getByText('SR7')).toBeTruthy()
-    expect(screen.getByText('☆', { selector: '[aria-hidden="true"]' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add University Hall to favourites' }).getAttribute('aria-pressed'))
+      .toBe('false')
 
     const content = screen.getByTestId('mobile-stop-detail')
     const order = ['University Hall', 'Navigate', 'Opposite stop']
@@ -84,7 +85,7 @@ describe('MobileStopsSheet', () => {
     )
     expect(within(screen.getByRole('list', { name: 'Bus timings' })).getAllByRole('listitem'))
       .toHaveLength(3)
-    expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('SPAN')
+    expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('BUTTON')
   })
 
   it('routes Back, opposite stop, route and destination actions through their callbacks', async () => {

@@ -2,13 +2,12 @@ import type { Ref } from 'react'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { NavigateButton } from '../../ui/navigate-button'
-import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
+import { BusStopCard } from '../../ui/bus-stop-card'
+import { BusStopTimings, type BusStopDeparture } from '../../ui/bus-stop-timings'
+import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
 import { getPublicServiceTimings, type MobileStopDeparture } from './mobile-stop-view'
 
-interface MobileStopSheetDeparture extends MobileStopDeparture {
-  readonly routeName: string
-  readonly routeColor: string
-}
+type MobileStopSheetDeparture = MobileStopDeparture & BusStopDeparture
 
 export interface MobileStopSheetSelection {
   readonly id: string
@@ -16,6 +15,13 @@ export interface MobileStopSheetSelection {
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly string[]
   readonly departures: readonly MobileStopSheetDeparture[]
+}
+
+export interface MobileStopOverviewSelection {
+  readonly stop: MobileStopSheetSelection
+  readonly distanceMeters: number | null
+  readonly favorite: boolean
+  readonly expanded: boolean
 }
 
 interface MobileStopsSheetProps {
@@ -28,18 +34,15 @@ interface MobileStopsSheetProps {
   readonly onNavigateToStop: (stopId: string) => void
   readonly onBeforeSheetToggle?: () => void
   readonly containerRef?: Ref<HTMLElement>
-}
-
-function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
-  return timings.map((timing, index) => (
-    <span
-      key={index}
-      className="mobile-stop-departure-time"
-      data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-    >
-      {timing}
-    </span>
-  ))
+  readonly overviewStops?: readonly MobileStopOverviewSelection[]
+  readonly selectedList?: 'nearby' | 'favourites'
+  readonly selectedStopFavorite?: boolean
+  readonly locationNotice?: string | null
+  readonly onSelectList?: (list: 'nearby' | 'favourites') => void
+  readonly onOpenStop?: (stopId: string) => void
+  readonly onToggleFavorite?: (stopId: string) => void
+  readonly onToggleExpanded?: (stopId: string) => void
+  readonly onDismissLocationNotice?: () => void
 }
 
 export function MobileStopsSheet({
@@ -52,13 +55,22 @@ export function MobileStopsSheet({
   onNavigateToStop,
   onBeforeSheetToggle,
   containerRef,
+  overviewStops,
+  selectedList = 'nearby',
+  selectedStopFavorite = false,
+  locationNotice = null,
+  onSelectList,
+  onOpenStop,
+  onToggleFavorite,
+  onToggleExpanded,
+  onDismissLocationNotice,
 }: MobileStopsSheetProps) {
   const oppositeStop = selectedStop?.oppositeStop ?? null
 
   return (
     <section
       className="mobile-stops-sheet"
-      aria-labelledby="mobile-stops-sheet-heading"
+      aria-label="Stops"
       data-mobile-sheet
       data-expanded={expanded}
       ref={containerRef}
@@ -72,11 +84,6 @@ export function MobileStopsSheet({
           onExpandedChange={onExpandedChange}
         />
       </div>
-      {!selectedStop && (
-        <header className="mobile-stops-sheet-header">
-          <h2 id="mobile-stops-sheet-heading">Stops</h2>
-        </header>
-      )}
       <div
         id="mobile-stops-sheet-content"
         data-mobile-sheet-content
@@ -92,7 +99,15 @@ export function MobileStopsSheet({
                 </h2>
                 <span className="mobile-stop-id">{selectedStop.id}</span>
               </div>
-              <span className="mobile-stop-favorite" aria-hidden="true">☆</span>
+              <button
+                className="mobile-stop-favorite"
+                type="button"
+                aria-label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName} ${selectedStopFavorite ? 'from' : 'to'} favourites`}
+                aria-pressed={selectedStopFavorite}
+                onClick={() => onToggleFavorite?.(selectedStop.id)}
+              >
+                <FavoriteStarIcon filled={selectedStopFavorite} />
+              </button>
             </div>
             <div className="mobile-stop-actions">
               <NavigateButton
@@ -112,33 +127,57 @@ export function MobileStopsSheet({
               ) : null}
             </div>
             <div className="mobile-stop-departures">
-              {selectedStop.departures.length > 0 || selectedStop.publicServices.length > 0 ? (
-                <ul className="mobile-stop-departure-list" aria-label="Bus timings">
-                  {selectedStop.departures.map((departure) => (
-                    <li key={departure.routeId} className="mobile-stop-departure-row">
-                      <RouteChip
-                        routeId={departure.routeId}
-                        routeColor={departure.routeColor}
-                        ariaLabel={`View ${departure.routeId} route details`}
-                        title={departure.routeName}
-                        active
-                        size="compact"
-                        onClick={() => onSelectRoute(departure.routeId)}
-                      />
-                      <DepartureTimes timings={departure.timings} />
-                    </li>
-                  ))}
-                  {selectedStop.publicServices.map((serviceNumber) => (
-                    <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
-                      <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
-                      <DepartureTimes timings={getPublicServiceTimings(serviceNumber)} />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No bus timings available.</p>
-              )}
+              <BusStopTimings
+                departures={selectedStop.departures}
+                publicServices={selectedStop.publicServices.map((serviceNumber) => ({
+                  serviceNumber,
+                  timings: getPublicServiceTimings(serviceNumber),
+                }))}
+                onSelectRoute={onSelectRoute}
+              />
             </div>
+          </div>
+        ) : overviewStops ? (
+          <div className="mobile-stops-overview">
+            <div className="mobile-stops-list-selector" role="group" aria-label="Stop list">
+              <button type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
+              <button type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
+            </div>
+            {locationNotice && selectedList === 'nearby' && (
+              <div className="mobile-stops-location-notice" role="status">
+                <span>{locationNotice}</span>
+                <button type="button" aria-label="Dismiss location notice" onClick={onDismissLocationNotice}>×</button>
+              </div>
+            )}
+            {overviewStops.length ? (
+              <div className="mobile-stops-card-list">
+                {overviewStops.map(({ stop, distanceMeters, favorite, expanded }) => (
+                  <BusStopCard
+                    key={stop.id}
+                    stopId={stop.id}
+                    stopName={stop.longName}
+                    distanceMeters={distanceMeters}
+                    favorite={favorite}
+                    expanded={expanded}
+                    departures={stop.departures}
+                    publicServices={stop.publicServices.map((serviceNumber) => ({
+                      serviceNumber,
+                      timings: getPublicServiceTimings(serviceNumber),
+                    }))}
+                    onOpen={(stopId) => onOpenStop?.(stopId)}
+                    onToggleFavorite={(stopId) => onToggleFavorite?.(stopId)}
+                    onToggleExpanded={(stopId) => onToggleExpanded?.(stopId)}
+                    onSelectRoute={onSelectRoute}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mobile-stops-empty">
+                {selectedList === 'favourites'
+                  ? 'No favourite stops yet. Star a stop to save it here.'
+                  : 'No stops within 1.5 km of the map centre.'}
+              </p>
+            )}
           </div>
         ) : (
           <p>Tap a shuttle stop on the map to view its details and route actions.</p>

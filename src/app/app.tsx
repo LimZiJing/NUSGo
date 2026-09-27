@@ -15,9 +15,11 @@ import {
 } from '../features/shuttle-browsing/mobile-stops-sheet'
 import {
   createInitialMobileStopViewState,
-  getMobileStopDepartures,
+  getMobileStopSheetSelection,
   mobileStopViewReducer,
 } from '../features/shuttle-browsing/mobile-stop-view'
+import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
+import { readFavoriteStopIds, writeFavoriteStopIds } from '../features/shuttle-browsing/mobile-stop-favorites'
 import { MapControls } from '../ui/map-controls'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
@@ -76,8 +78,9 @@ function App() {
   const [mobileStopView, dispatchMobileStopView] = useReducer(
     mobileStopViewReducer,
     undefined,
-    createInitialMobileStopViewState,
+    () => createInitialMobileStopViewState(readFavoriteStopIds()),
   )
+  const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
   const [stopFocusRequest, setStopFocusRequest] = useState<{
     readonly stopId: string | null
     readonly sequence: number
@@ -96,6 +99,18 @@ function App() {
   const sheetAnimationCleanupRef = useRef<(() => void) | null>(null)
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
+
+  useEffect(() => {
+    writeFavoriteStopIds(mobileStopView.favoriteStopIds)
+  }, [mobileStopView.favoriteStopIds])
+
+  useEffect(() => {
+    if (!state.transitIndex) return
+    dispatchMobileStopView({
+      type: 'reconcile-stops',
+      stopIds: new Set(state.transitIndex.stops.map(({ id }) => id)),
+    })
+  }, [state.transitIndex])
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
@@ -345,6 +360,7 @@ function App() {
       locationTracker: createBrowserLocationTracker(),
       onStopSelected: handleStopSelected,
       onMapInteraction: () => setMapControlsOpen(false),
+      onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
     })
     setSession(mount.session)
 
@@ -362,29 +378,26 @@ function App() {
   const selectedStop = mobileStopView.focusedStopId === null
     ? undefined
     : state.transitIndex?.stopById.get(mobileStopView.focusedStopId)
-  const selectedStopRouteIds = selectedStop && state.transitIndex
-    ? state.transitIndex.routeIdsByStopId.get(selectedStop.id) ?? new Set<string>()
-    : new Set<string>()
-  const oppositeStop = selectedStop?.opposite && state.transitIndex
-    ? state.transitIndex.stopById.get(selectedStop.opposite)
-    : undefined
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && state.transitIndex
-    ? {
-      id: selectedStop.id,
-      longName: selectedStop.longName,
-      oppositeStop: oppositeStop
-        ? { id: oppositeStop.id, longName: oppositeStop.longName }
-        : null,
-      publicServices: selectedStop.services
-        .filter((service) => service.startsWith('PUB:'))
-        .map((service) => service.slice('PUB:'.length)),
-      departures: getMobileStopDepartures(selectedStopRouteIds).flatMap((departure) => {
-        const route = state.transitIndex?.routeById.get(departure.routeId)
-        return route
-          ? [{ ...departure, routeName: route.name, routeColor: route.color }]
-          : []
-      }),
-    }
+    ? getMobileStopSheetSelection(selectedStop, state.transitIndex)
+    : null
+  const hasLocationError = ['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)
+  const locationFix = hasLocationError ? null : state.location.latestFix
+  const transitIndex = state.transitIndex
+  const overviewStops = transitIndex ? getMobileStopsOverview(
+    transitIndex,
+    mobileStopView.list,
+    mapCenter,
+    locationFix,
+    mobileStopView.favoriteStopIds,
+  ).map(({ stop, distanceMeters }) => ({
+    stop: getMobileStopSheetSelection(stop, transitIndex),
+    distanceMeters,
+    favorite: mobileStopView.favoriteStopIds.includes(stop.id),
+    expanded: mobileStopView.expandedStopIds.includes(stop.id),
+  })) : []
+  const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
+    ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
 
   return (
@@ -548,6 +561,20 @@ function App() {
           <MobileStopsSheet
             expanded={mobileNavigation.sheets.stops.expanded}
             selectedStop={mobileStopSelection}
+            overviewStops={overviewStops}
+            selectedList={mobileStopView.list}
+            selectedStopFavorite={selectedStop
+              ? mobileStopView.favoriteStopIds.includes(selectedStop.id)
+              : false}
+            locationNotice={locationNotice}
+            onSelectList={(list) => {
+              if (list === 'nearby' && state.location.status === 'disabled') commands.enableLocationTracking()
+              dispatchMobileStopView({ type: 'select-list', list })
+            }}
+            onOpenStop={(stopId) => { handleStopSelected(stopId) }}
+            onToggleFavorite={(stopId) => dispatchMobileStopView({ type: 'toggle-favorite', stopId })}
+            onToggleExpanded={(stopId) => dispatchMobileStopView({ type: 'toggle-expanded', stopId })}
+            onDismissLocationNotice={() => dispatchMobileStopView({ type: 'dismiss-location-notice' })}
             onExpandedChange={(expanded) => dispatchMobileNavigation(expanded
               ? { type: 'set-sheet-expanded', tab: 'stops', expanded: true }
               : { type: 'close-active-tab' })}
@@ -577,6 +604,9 @@ function App() {
         activeTab={mobileNavigation.activeTab}
         onSelectTab={(tab) => {
           setMapControlsOpen(false)
+          if (tab === 'stops' && mobileStopView.list === 'nearby' && state.location.status === 'disabled') {
+            commands.enableLocationTracking()
+          }
           if (isMobileViewport && tab !== mobileNavigation.activeTab) {
             prepareSheetTransition(true)
             if (mobileNavigation.activeTab === 'explore' && state.contextualPanel.mode === 'shuttle') {

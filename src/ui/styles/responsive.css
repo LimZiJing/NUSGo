@@ -589,6 +589,177 @@
     margin: 0;
   }
 
+  .mobile-stops-overview {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .mobile-stops-card-list {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .mobile-stops-list-selector {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+    border-radius: 10px;
+    background: #f1f3f8;
+  }
+
+  .mobile-stops-sheet .mobile-stops-list-selector button {
+    position: relative;
+    z-index: 0;
+    min-width: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .mobile-stops-sheet .mobile-stops-list-selector button[aria-pressed='true'] {
+    color: #fff;
+  }
+
+  .mobile-stops-sheet .mobile-stops-list-selector button[aria-pressed='true']::before {
+    position: absolute;
+    z-index: -1;
+    inset: 4px 0;
+    border-radius: 8px;
+    background: #09172e;
+    content: '';
+  }
+
+  .mobile-stops-location-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  .mobile-stops-sheet .mobile-stops-location-notice button {
+    flex: 0 0 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    background: #fff;
+  }
+
+  .mobile-stops-empty {
+    padding: 14px 4px;
+    color: #64748b;
+    text-align: left;
+  }
+
+  .bus-stop-card {
+    overflow: hidden;
+    border: 1px solid #e4e8ef;
+    border-radius: 10px;
+    background: #f7f8fb;
+  }
+
+  .bus-stop-card-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 40px 40px;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    padding-left: 8px;
+  }
+
+  .bus-stop-card-identity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .mobile-stops-sheet .bus-stop-card-header button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+  }
+
+  .mobile-stops-sheet .bus-stop-card-name {
+    flex: 0 1 auto;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bus-stop-card-distance {
+    padding: 3px 6px;
+    border-radius: 999px;
+    color: #475569;
+    background: #eef0f4;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .bus-stop-card-live {
+    margin-right: 3px;
+    padding: 3px 6px;
+    border: 1px solid #9ee8d0;
+    border-radius: 999px;
+    color: #047857;
+    background: #def8eb;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .mobile-stops-sheet .bus-stop-card-favorite,
+  .mobile-stops-sheet .bus-stop-card-toggle {
+    display: grid;
+    place-items: center;
+  }
+
+  .mobile-stops-sheet .bus-stop-card-favorite {
+    color: #eab308;
+  }
+
+  .mobile-stops-sheet .bus-stop-card-toggle {
+    color: #334155;
+  }
+
+  .bus-stop-card-favorite svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bus-stop-card-toggle svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 150ms ease;
+  }
+
+  .bus-stop-card-toggle[aria-expanded='true'] svg {
+    transform: rotate(180deg);
+  }
+
+  .bus-stop-card .mobile-stop-departure-list {
+    margin: 0 7px 6px;
+  }
+
+  .bus-stop-card .mobile-stop-departure-row:last-child {
+    border-bottom: 0;
+  }
+
   .mobile-stop-selection {
     display: grid;
     gap: 14px;
@@ -628,6 +799,22 @@
     color: #64748b;
     font-size: 23px;
     line-height: 1;
+  }
+
+  .mobile-stops-sheet .mobile-stop-favorite {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    color: #eab308;
+    background: transparent;
+  }
+
+  .mobile-stop-favorite svg {
+    width: 21px;
+    height: 21px;
   }
 
   .mobile-stop-actions {

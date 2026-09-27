@@ -11,7 +11,7 @@ export interface NearbyShuttleStop {
   readonly services: readonly TransitRoute[]
 }
 
-function getDistanceMeters(
+export function getDistanceMeters(
   first: { readonly longitude: number; readonly latitude: number },
   second: { readonly longitude: number; readonly latitude: number },
 ): number {

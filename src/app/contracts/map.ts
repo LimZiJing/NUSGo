@@ -15,6 +15,7 @@ export interface MapSessionOptions {
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
+  readonly onMapCenterChange?: (center: MapCoordinate) => void
 }
 
 export type MapCoordinate = readonly [number, number]

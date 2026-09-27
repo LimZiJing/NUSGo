@@ -19,6 +19,7 @@ export interface NavigationSessionMountDependencies {
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
+  readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
 
 export interface NavigationSessionMount {
@@ -37,6 +38,7 @@ export function createNavigationSessionMount(
     onEmptyMapClick: () => session?.handleMapClick(),
     onStopSelected: dependencies.onStopSelected,
     onMapInteraction: dependencies.onMapInteraction,
+    onMapCenterChange: dependencies.onMapCenterChange,
   })
   session = dependencies.createNavigationSession({
     map,

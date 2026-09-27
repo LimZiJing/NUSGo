@@ -72,6 +72,12 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     if (!disposed) options.onMapError(event.error)
   }
 
+  const reportMapCenter = (): void => {
+    if (disposed || !options.onMapCenterChange) return
+    const center = map.getCenter()
+    options.onMapCenterChange([center.lng, center.lat])
+  }
+
   const handleMapClick = (event: MapMouseEvent) => {
     if (disposed) return
     options.onMapInteraction?.()
@@ -102,6 +108,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   map.addControl(navigationControl, 'top-right')
   map.on('error', handleMapError)
   map.on('click', handleMapClick)
+  if (options.onMapCenterChange) {
+    map.on('moveend', reportMapCenter)
+    reportMapCenter()
+  }
 
   const ready = waitForMapStyleLoaded(map, controller.signal)
 
@@ -114,6 +124,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
+      if (options.onMapCenterChange) map.off('moveend', reportMapCenter)
       map.removeControl(navigationControl)
       map.remove()
     },

@@ -83,6 +83,8 @@ export interface NavigationSession {
   leaveMobileRoutes(): void
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
+  focusStopInStopsTab(stopId: string): void
+  setStopsPinVisible(visible: boolean): void
   enableLocationTracking(): void
   locateUser(): void
   disableLocationTracking(): void
@@ -545,6 +547,18 @@ export function createNavigationSession(
         if (disposed || !transitIndex?.stopById.has(stopId)) return
         dependencies.map.focusStop(stopId)
       })
+    },
+
+    focusStopInStopsTab(stopId) {
+      enqueueTransition(() => {
+        if (disposed || !transitIndex?.stopById.has(stopId)) return
+        dependencies.map.focusStopInStopsTab(stopId)
+      })
+    },
+
+    setStopsPinVisible(visible) {
+      if (disposed) return
+      dependencies.map.setStopsPinVisible(visible)
     },
 
     enableLocationTracking() {

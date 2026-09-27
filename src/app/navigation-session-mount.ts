@@ -93,6 +93,8 @@ export interface NavigationSessionCommands {
   readonly leaveMobileRoutes: () => void
   readonly selectMobileRoute: (routeId: string) => void
   readonly focusStop: (stopId: string) => void
+  readonly focusStopInStopsTab: (stopId: string) => void
+  readonly setStopsPinVisible: (visible: boolean) => void
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
   readonly disableLocationTracking: () => void
@@ -130,6 +132,8 @@ function createNavigationSessionCommands(
     leaveMobileRoutes: () => session?.leaveMobileRoutes(),
     selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
     focusStop: (stopId) => session?.focusStop(stopId),
+    focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
+    setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),
     disableLocationTracking: () => session?.disableLocationTracking(),

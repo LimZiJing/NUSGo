@@ -103,11 +103,13 @@ vi.mock('maplibre-gl', () => {
 
   class FakeMarker {
     readonly element: HTMLElement
+    readonly options: { element?: HTMLElement; color?: string; offset?: number[] }
     popup: FakePopup | null = null
     coordinate: unknown = null
     readonly remove = vi.fn()
 
-    constructor(options: { element?: HTMLElement }) {
+    constructor(options: { element?: HTMLElement; color?: string; offset?: number[] }) {
+      this.options = options
       this.element = options.element ?? document.createElement('div')
     }
 
@@ -1035,6 +1037,69 @@ describe('MapSession', () => {
     session.focusStop('unknown')
     expect(map.flyTo).toHaveBeenCalledOnce()
 
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('focuses a Stops pin in the exposed map without opening a popup', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      flyTo: ReturnType<typeof vi.fn>
+      addedMarkers: Array<{
+        getElement(): FakeElement
+        coordinate: unknown
+        options: { color?: string; offset?: number[] }
+        remove: ReturnType<typeof vi.fn>
+      }>
+    }
+    const transitData = createTransitData()
+
+    await session.ready
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    session.setStopsPinVisible(true)
+    session.setViewportInsets({ top: 0, right: 12, bottom: 400, left: 12 })
+    session.focusStopInStopsTab('STOP-A')
+
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103, 1],
+      zoom: 17,
+      duration: 500,
+      offset: [0, -200],
+    }))
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
+    const marker = map.addedMarkers.find(({ getElement }) => getElement().dataset.stopId === 'STOP-A')
+    const pin = map.addedMarkers.find(({ getElement }) => (
+      getElement().attributes.get('aria-hidden') === 'true'
+    ))
+    expect(marker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    expect(pin?.options).toEqual(expect.objectContaining({ color: '#64748b' }))
+    expect(pin?.options.offset).toBeUndefined()
+    expect(pin?.coordinate).toEqual([103, 1])
+    expect(pin?.getElement().style.pointerEvents).toBe('none')
+
+    session.focusStopInStopsTab('STOP-A')
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.setStopsPinVisible(false)
+    expect(pin?.remove).toHaveBeenCalled()
+    expect(marker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    session.setStopsPinVisible(true)
+    expect(map.addedMarkers.at(-1)).toBe(pin)
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    const reloadedMarker = map.addedMarkers.findLast(({ getElement }) => (
+      getElement().dataset.stopId === 'STOP-A'
+    ))
+    expect(reloadedMarker?.getElement().classes.has('bus-stop-marker')).toBe(true)
+    expect(map.addedMarkers.at(-1)?.getElement().attributes.get('aria-hidden')).toBe('true')
+
+    session.focusStopInStopsTab('unknown')
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
     session.dispose()
     vi.unstubAllGlobals()
   })

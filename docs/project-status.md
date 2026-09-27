@@ -23,6 +23,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - Enabled non-selected buttons and the NUSMods action darken by 15% on hover. Selected shuttle route chips and the current mobile tab keep their active appearance; unselected route chips darken on hover.
 - Trip endpoint controls let users choose stable venue or shuttle-stop origins and destinations, swap or clear them, and show distinct endpoint markers.
 - Shuttle-stop popups can assign a stop directly as a trip origin or destination.
+- In the mobile Stops tab, selecting a stop opens its detail sheet and focuses a neutral map pin above the sheet without a popup. The pin sits above the still-visible stop marker and uses the same zoom as venue selection. It remains selected after Back, is shown only in Stops, and returns without moving the camera after a tab switch; Explore retains its stop popups.
 - Shuttle-stop data loaded from the bundled `public/data/shuttle-network.json` model.
 - Shuttle stops rendered as neutral transit-ring markers with collision-aware short-name labels from zoom 14 onward; selected-route content remains full opacity, while inactive stops and labels fade to 20% from zoom 14 onward, and open-stop content remains visible below that threshold.
 - Venue markers use neutral map pins.

@@ -51,6 +51,8 @@ export interface MapSession {
   setRouteSelection(selection: MapRouteSelection, fit?: boolean): void
   refitRoute(): void
   focusStop(stopId: string): void
+  focusStopInStopsTab(stopId: string): void
+  setStopsPinVisible(visible: boolean): void
   setTripRequest(
     request: TripRequest,
     venues: VenueLocationMap,

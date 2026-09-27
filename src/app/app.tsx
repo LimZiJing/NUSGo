@@ -78,6 +78,11 @@ function App() {
     undefined,
     createInitialMobileStopViewState,
   )
+  const [stopFocusRequest, setStopFocusRequest] = useState<{
+    readonly stopId: string | null
+    readonly sequence: number
+  }>({ stopId: null, sequence: 0 })
+  const handledStopFocusRequestRef = useRef(0)
   const [mapControlsOpen, setMapControlsOpen] = useState(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
@@ -180,35 +185,13 @@ function App() {
     ) return false
 
     dispatchMobileStopView({ type: 'focus-stop', stopId })
+    setStopFocusRequest((current) => ({ stopId, sequence: current.sequence + 1 }))
     if (!currentNavigation.sheets.stops.expanded) {
       prepareSheetTransitionRef.current?.()
       dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'stops', expanded: true })
     }
     return true
   }, [])
-
-  useLayoutEffect(() => {
-    const pending = pendingSheetTransitionRef.current
-    if (!pending || !isMobileViewport) return
-    pendingSheetTransitionRef.current = null
-    const sheet = getActiveMobileSheet()
-    if (!sheet) return
-
-    const cleanup = animateMobileSheet(sheet, pending.startHeight, pending.viewChange)
-    sheetAnimationCleanupRef.current = cleanup
-    return () => {
-      cleanup()
-      if (sheetAnimationCleanupRef.current === cleanup) sheetAnimationCleanupRef.current = null
-    }
-  }, [
-    isMobileViewport,
-    getActiveMobileSheet,
-    mobileNavigation.activeTab,
-    mobileNavigation.sheets.explore.expanded,
-    mobileNavigation.sheets.plan.expanded,
-    mobileNavigation.sheets.stops.expanded,
-    state.contextualPanel.mode,
-  ])
 
   useEffect(() => {
     if (!isMobileViewport || activeTab === 'explore') return
@@ -251,6 +234,10 @@ function App() {
   }, [isMobileViewport, mobileNavigation.activeTab, state.contextualPanel])
 
   useLayoutEffect(() => {
+    commands.setStopsPinVisible(isMobileViewport && activeTab === 'stops')
+  }, [activeTab, commands, isMobileViewport])
+
+  useLayoutEffect(() => {
     const updateInsets = (): void => {
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth
       const viewportHeight = window.innerHeight
@@ -276,6 +263,15 @@ function App() {
           ? current
           : nextInsets
       ))
+      if (stopFocusRequest.sequence > handledStopFocusRequestRef.current) {
+        handledStopFocusRequestRef.current = stopFocusRequest.sequence
+        if (
+          stopFocusRequest.stopId &&
+          isMobileViewport &&
+          mobileNavigation.activeTab === 'stops' &&
+          mobileNavigation.sheets.stops.expanded
+        ) commands.focusStopInStopsTab(stopFocusRequest.stopId)
+      }
     }
 
     updateInsets()
@@ -302,6 +298,30 @@ function App() {
     state.contextualPanel.mode,
     state.contextualPanel.selectedVenue?.code,
     state.selectedRouteId,
+    stopFocusRequest,
+  ])
+
+  useLayoutEffect(() => {
+    const pending = pendingSheetTransitionRef.current
+    if (!pending || !isMobileViewport) return
+    pendingSheetTransitionRef.current = null
+    const sheet = getActiveMobileSheet()
+    if (!sheet) return
+
+    const cleanup = animateMobileSheet(sheet, pending.startHeight, pending.viewChange)
+    sheetAnimationCleanupRef.current = cleanup
+    return () => {
+      cleanup()
+      if (sheetAnimationCleanupRef.current === cleanup) sheetAnimationCleanupRef.current = null
+    }
+  }, [
+    isMobileViewport,
+    getActiveMobileSheet,
+    mobileNavigation.activeTab,
+    mobileNavigation.sheets.explore.expanded,
+    mobileNavigation.sheets.plan.expanded,
+    mobileNavigation.sheets.stops.expanded,
+    state.contextualPanel.mode,
   ])
 
   useLayoutEffect(() => {
@@ -533,8 +553,7 @@ function App() {
               : { type: 'close-active-tab' })}
             onBackToStops={() => dispatchMobileStopView({ type: 'back-to-stops' })}
             onSelectOppositeStop={(stopId) => {
-              dispatchMobileStopView({ type: 'focus-stop', stopId })
-              commands.focusStop(stopId)
+              handleStopSelected(stopId)
             }}
             onSelectRoute={(routeId) => {
               prepareSheetTransition(true)

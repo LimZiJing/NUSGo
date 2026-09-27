@@ -101,10 +101,9 @@ export function MobileStopsSheet({
             >
               <span aria-hidden="true">➤</span> Directions to this stop
             </button>
-            <section className="mobile-stop-departures">
-              <h3>Upcoming departures</h3>
+            <div className="mobile-stop-departures">
               {selectedStop.departures.length > 0 || selectedStop.publicServices.length > 0 ? (
-                <ul className="mobile-stop-departure-list" aria-label="Upcoming bus departures">
+                <ul className="mobile-stop-departure-list" aria-label="Bus timings">
                   {selectedStop.departures.map((departure) => (
                     <li key={departure.routeId} className="mobile-stop-departure-row">
                       <RouteChip
@@ -113,6 +112,7 @@ export function MobileStopsSheet({
                         ariaLabel={`View ${departure.routeId} route details`}
                         title={departure.routeName}
                         active
+                        size="compact"
                         onClick={() => onSelectRoute(departure.routeId)}
                       />
                       <DepartureTimes timings={departure.timings} />
@@ -120,15 +120,15 @@ export function MobileStopsSheet({
                   ))}
                   {selectedStop.publicServices.map((serviceNumber) => (
                     <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
-                      <PublicServiceChip serviceNumber={serviceNumber} />
+                      <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
                       <DepartureTimes timings={getPublicServiceTimings(serviceNumber)} />
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p>No upcoming bus departures.</p>
+                <p>No bus timings available.</p>
               )}
-            </section>
+            </div>
             {oppositeStop ? (
               <button
                 className="mobile-stop-opposite"

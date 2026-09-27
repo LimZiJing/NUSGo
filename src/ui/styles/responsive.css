@@ -667,11 +667,12 @@
 
   .mobile-stop-departure-row {
     display: grid;
-    grid-template-columns: minmax(52px, 1fr) repeat(3, 44px);
+    grid-template-columns: minmax(42px, 1fr) repeat(3, 38px);
     align-items: center;
-    gap: 8px;
-    min-height: 50px;
-    padding: 3px 4px;
+    gap: 6px;
+    min-height: 36px;
+    box-sizing: border-box;
+    padding: 2px 4px;
     border-bottom: 1px solid #e2e8f0;
   }
 
@@ -692,7 +693,7 @@
 
   .mobile-stop-departure-time {
     color: #334155;
-    font: 600 14px/1 system-ui, sans-serif;
+    font: 600 13px/1 system-ui, sans-serif;
     text-align: right;
   }
 

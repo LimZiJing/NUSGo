@@ -89,7 +89,7 @@ export function MobileStopsSheet({
                 <h2 id="mobile-stops-sheet-heading" className="mobile-stop-selection-name">
                   {selectedStop.longName}
                 </h2>
-                <span className="mobile-stop-id">Stop {selectedStop.id}</span>
+                <span className="mobile-stop-id">{selectedStop.id}</span>
               </div>
               <span className="mobile-stop-favorite" aria-hidden="true">☆</span>
             </div>

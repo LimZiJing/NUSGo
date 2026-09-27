@@ -73,7 +73,7 @@ describe('MobileStopsSheet', () => {
 
     expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'University Hall' })).toBeTruthy()
-    expect(screen.getByText('Stop SR7')).toBeTruthy()
+    expect(screen.getByText('SR7')).toBeTruthy()
     expect(screen.getByText('☆', { selector: '[aria-hidden="true"]' })).toBeTruthy()
 
     const content = screen.getByTestId('mobile-stop-detail')

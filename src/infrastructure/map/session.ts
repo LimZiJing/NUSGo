@@ -356,6 +356,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }
+      lifecycle.setViewportInsets(viewportInsets)
       const pendingFit = pendingCameraFit
       pendingCameraFit = null
       if (pendingFit?.kind === 'venue') {

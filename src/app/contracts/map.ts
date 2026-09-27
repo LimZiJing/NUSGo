@@ -15,6 +15,7 @@ export interface MapSessionOptions {
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
+  /** Centre of the map area left visible by the current overlays. */
   readonly onMapCenterChange?: (center: MapCoordinate) => void
 }
 

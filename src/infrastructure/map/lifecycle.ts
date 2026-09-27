@@ -5,7 +5,7 @@ import {
   type MapMouseEvent,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import type { MapSessionOptions } from '../../app/contracts/map'
+import type { MapSessionOptions, MapViewportInsets } from '../../app/contracts/map'
 import {
   TRANSIT_ROUTE_CASING_LAYER_ID,
   TRANSIT_ROUTE_DIRECTION_LAYER_ID,
@@ -26,6 +26,7 @@ const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 export interface MapLifecycle {
   readonly map: Map
   readonly ready: Promise<void>
+  setViewportInsets(insets: MapViewportInsets): void
   dispose(): void
 }
 
@@ -67,6 +68,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   })
   const navigationControl = new NavigationControl()
   let disposed = false
+  let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
@@ -74,7 +76,16 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
 
   const reportMapCenter = (): void => {
     if (disposed || !options.onMapCenterChange) return
-    const center = map.getCenter()
+    const { clientWidth, clientHeight } = map.getContainer()
+    // The bottom sheet obscures the canvas centre, so project the usable map area's centre.
+    const visibleCenterX = (clientWidth + viewportInsets.left - viewportInsets.right) / 2
+    const visibleCenterY = (clientHeight + viewportInsets.top - viewportInsets.bottom) / 2
+    const center = clientWidth > 0 && clientHeight > 0
+      ? map.unproject([
+        Math.max(0, Math.min(clientWidth, visibleCenterX)),
+        Math.max(0, Math.min(clientHeight, visibleCenterY)),
+      ])
+      : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
   }
 
@@ -110,6 +121,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   map.on('click', handleMapClick)
   if (options.onMapCenterChange) {
     map.on('moveend', reportMapCenter)
+    map.on('resize', reportMapCenter)
     reportMapCenter()
   }
 
@@ -118,13 +130,21 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   return {
     map,
     ready,
+    setViewportInsets(insets) {
+      if (disposed) return
+      viewportInsets = insets
+      reportMapCenter()
+    },
     dispose() {
       if (disposed) return
       disposed = true
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
-      if (options.onMapCenterChange) map.off('moveend', reportMapCenter)
+      if (options.onMapCenterChange) {
+        map.off('moveend', reportMapCenter)
+        map.off('resize', reportMapCenter)
+      }
       map.removeControl(navigationControl)
       map.remove()
     },

@@ -123,14 +123,8 @@
   .route-chip-list {
     display: flex;
     gap: 8px;
-    overflow-x: auto;
     padding: 2px 2px 8px;
-    scrollbar-width: none;
     scroll-snap-type: x proximity;
-  }
-
-  .route-chip-list::-webkit-scrollbar {
-    display: none;
   }
 
   .contextual-panel .route-chip {

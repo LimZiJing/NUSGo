@@ -87,6 +87,7 @@ export function MobileStopsSheet({
       <div
         id="mobile-stops-sheet-content"
         data-mobile-sheet-content
+        data-view={selectedStop ? 'selected' : 'overview'}
         hidden={!expanded}
       >
         {selectedStop ? (

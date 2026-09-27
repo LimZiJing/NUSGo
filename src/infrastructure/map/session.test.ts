@@ -473,10 +473,12 @@ describe('MapSession', () => {
     session.setCurrentLocation(secondFix, true)
     session.setCurrentLocation(null, true)
     expect(marker?.remove).toHaveBeenCalledTimes(2)
+    session.setCurrentLocation(secondFix, true)
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(map.fitBounds).not.toHaveBeenCalled()
 
     session.dispose()
+    expect(marker?.remove).toHaveBeenCalledTimes(3)
   })
 
   beforeEach(() => {

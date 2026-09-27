@@ -40,6 +40,13 @@ function isTrackingStatus(status: LocationTrackingState['status']): boolean {
   return status === 'tracking' || status === 'stale'
 }
 
+function formatLocationUpdateTime(timestamp: number): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(timestamp)
+}
+
 export function LocationControl({
   location,
   markerVisible,
@@ -82,7 +89,12 @@ export function LocationControl({
 
   const tracking = isTrackingStatus(location.status)
   const requesting = location.status === 'requesting'
+  const hasLocationError = !tracking && !requesting && location.status !== 'disabled'
   const accuracy = location.latestFix ? Math.round(location.latestFix.accuracy) : null
+  const retry = (): void => {
+    onDisable()
+    onEnable()
+  }
 
   return (
     <div
@@ -110,20 +122,29 @@ export function LocationControl({
           <p className="location-control-status" role="status">
             {getLocationStatusMessage(location)}
           </p>
-          {accuracy !== null && <p className="location-control-accuracy">Accuracy: ±{accuracy} m</p>}
+          {location.latestFix && (
+            <>
+              <p className="location-control-update">
+                Updated: {formatLocationUpdateTime(location.latestFix.timestamp)}
+              </p>
+              {accuracy !== null && <p className="location-control-accuracy">Accuracy: ±{accuracy} m</p>}
+            </>
+          )}
           {requesting && (
             <button type="button" disabled>Requesting location…</button>
           )}
           {!tracking && !requesting && (
-            <button type="button" onClick={onEnable}>
+            <button type="button" onClick={hasLocationError ? retry : onEnable}>
               {location.status === 'disabled' ? 'Use my location' : 'Try location again'}
             </button>
           )}
-          {tracking && (
+          {(tracking || hasLocationError) && (
             <>
-              <button type="button" onClick={markerVisible ? onHideMarker : onShowMarker}>
-                {markerVisible ? 'Hide location marker' : 'Show location marker'}
-              </button>
+              {tracking && (
+                <button type="button" onClick={markerVisible ? onHideMarker : onShowMarker}>
+                  {markerVisible ? 'Hide location marker' : 'Show location marker'}
+                </button>
+              )}
               <button type="button" onClick={onDisable}>Stop location tracking</button>
             </>
           )}

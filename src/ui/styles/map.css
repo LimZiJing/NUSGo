@@ -85,6 +85,7 @@
   font: 14px/1.35 system-ui, sans-serif;
 }
 
+.location-control-update,
 .location-control-accuracy {
   color: #475569;
   font-size: 12px;

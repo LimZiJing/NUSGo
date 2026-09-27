@@ -59,6 +59,7 @@ describe('LocationControl', () => {
     await user.click(screen.getByRole('button', { name: 'Location' }))
 
     expect(screen.getByRole('status').textContent).toBe('Location tracking is on')
+    expect(screen.getByText(/^Updated:/)).toBeTruthy()
     expect(screen.getByText('Accuracy: ±12 m')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Hide location marker' }))
     await user.click(screen.getByRole('button', { name: 'Stop location tracking' }))
@@ -69,7 +70,8 @@ describe('LocationControl', () => {
   it('shows a retry action for location errors', async () => {
     const user = userEvent.setup()
     const onEnable = vi.fn()
-    renderControl({ status: 'denied', latestFix: null }, true, { onEnable })
+    const onDisable = vi.fn()
+    renderControl({ status: 'denied', latestFix: null }, true, { onEnable, onDisable })
 
     await user.click(screen.getByRole('button', { name: 'Location' }))
 
@@ -78,6 +80,8 @@ describe('LocationControl', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Try location again' }))
     expect(onEnable).toHaveBeenCalledOnce()
+    expect(onDisable).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Stop location tracking' })).toBeTruthy()
   })
 
   it('offers to show a hidden marker while tracking continues', async () => {

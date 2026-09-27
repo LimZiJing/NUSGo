@@ -44,6 +44,15 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
 - [ ] Native MapLibre controls and attribution remain visible and usable.
 
+## Issue #96 targeted verification — 2026-09-27
+
+Codex In-app Browser, local Vite development server:
+
+- The Location control rendered on the map and opened an accessible group labelled “Location controls”.
+- With tracking disabled, the group showed “Location sharing is off” and “Use my location”.
+- The active permission prompt and live marker state were not exercised because accepting a real browser location permission prompt was outside this smoke pass.
+- Automated tests cover tracking state changes, marker updates and hiding, stale/error messages, retry/stop actions, and marker disposal.
+
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.

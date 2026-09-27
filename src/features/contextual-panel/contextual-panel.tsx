@@ -20,6 +20,7 @@ import {
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { GhostBackButton } from '../../ui/ghost-back-button'
+import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
@@ -655,7 +656,7 @@ export function ContextualPanel({
                 Venue search is unavailable right now. Shuttle browsing is still available.
               </p>
             ) : state.query.trim() ? (
-              <div className="contextual-panel-results" aria-label="Venue search results">
+              <ScrollArea className="contextual-panel-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
                   searchState.results.map((result) => (
                     <button
@@ -672,7 +673,7 @@ export function ContextualPanel({
                 ) : (
                   <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
                 )}
-              </div>
+              </ScrollArea>
             ) : mobileViewport ? (
               <div className="contextual-panel-search-prompt">
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">

@@ -1,0 +1,65 @@
+:root {
+  --ui-scrollbar-track: #f8fafc;
+  --ui-scrollbar-thumb: #cbd5e1;
+  --ui-scrollbar-thumb-hover: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-scrollbar-track: #24252b;
+    --ui-scrollbar-thumb: #64748b;
+    --ui-scrollbar-thumb-hover: #94a3b8;
+  }
+}
+
+.ui-scroll-area {
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.ui-scroll-area-vertical {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.ui-scroll-area-horizontal {
+  overflow-x: auto;
+}
+
+.ui-scroll-area-both {
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+* {
+  scrollbar-color: var(--ui-scrollbar-thumb) var(--ui-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--ui-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--ui-scrollbar-thumb);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0;
+  height: 0;
+  border: 0;
+  background: transparent;
+}

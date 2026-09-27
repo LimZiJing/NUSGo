@@ -276,15 +276,21 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
-  base: mode === 'production' ? '/NavUS/' : '/',
-  plugins: [react(), createShuttleArrivalsPlugin(loadEnv(mode, process.cwd(), ''))],
-  server: {
-    proxy: {
-      '/valhalla': {
-        target: 'http://127.0.0.1:8002',
-        rewrite: (path) => path.replace(/^\/valhalla/, ''),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const allowedHost = env.NAVUS_VITE_ALLOWED_HOST?.trim()
+
+  return {
+    base: mode === 'production' ? '/NavUS/' : '/',
+    plugins: [react(), createShuttleArrivalsPlugin(env)],
+    server: {
+      ...(allowedHost ? { allowedHosts: [allowedHost] } : {}),
+      proxy: {
+        '/valhalla': {
+          target: 'http://127.0.0.1:8002',
+          rewrite: (path) => path.replace(/^\/valhalla/, ''),
+        },
       },
     },
-  },
-}))
+  }
+})

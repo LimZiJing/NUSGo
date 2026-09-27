@@ -114,7 +114,6 @@
   align-content: start;
   gap: 4px;
   max-height: 300px;
-  overflow-y: auto;
 }
 
 .contextual-panel-result {

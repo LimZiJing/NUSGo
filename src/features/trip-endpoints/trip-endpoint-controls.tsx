@@ -10,6 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
@@ -350,7 +351,7 @@ export function TripEndpointControl({
         </p>
 
         {showResults && hasLocationData && (
-          <div className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
+          <ScrollArea className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
             {results.length > 0 ? (
               results.map((result) => (
                 <button
@@ -368,7 +369,7 @@ export function TripEndpointControl({
             ) : (
               <p className="trip-endpoint-empty">No matching venues or shuttle stops</p>
             )}
-          </div>
+          </ScrollArea>
         )}
       </div>
     </section>

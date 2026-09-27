@@ -13,7 +13,7 @@ body {
   margin: 0;
 }
 
-button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):hover,
+button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not(.route-timeline-stop):hover,
 a.venue-detail-action:not([aria-disabled='true']):hover {
   filter: brightness(0.85);
 }

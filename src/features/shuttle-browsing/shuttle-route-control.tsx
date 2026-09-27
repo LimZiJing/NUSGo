@@ -2,6 +2,7 @@ import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 import { getRouteChipTextColor } from '../../ui/route-color'
+import { ScrollArea } from '../../ui/scroll-area'
 
 interface ShuttleRouteControlProps {
   network: TransitNetwork | null
@@ -75,7 +76,7 @@ export function ShuttleRouteControl({
       <section className="route-control route-control-mobile" aria-label="Shuttle route selection">
         <h3 className="visually-hidden">Choose a shuttle route</h3>
         {routes.length > 0 && (
-          <div className="route-chip-list" role="group" aria-label="Shuttle routes">
+          <ScrollArea axis="horizontal" className="route-chip-list" role="group" aria-label="Shuttle routes">
             {routes.map((route, index) => (
               <button
                 key={route.id}
@@ -95,34 +96,36 @@ export function ShuttleRouteControl({
                 {route.id}
               </button>
             ))}
-          </div>
+          </ScrollArea>
         )}
         {selectedRoute ? (
           <div className="route-timeline-card" data-mobile-sheet-content style={{ '--route-color': selectedRoute.color } as CSSProperties}>
             <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
-            <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
-              {selectedRoute.stopIds.map((stopId, index) => {
-                const stop = stopsById.get(stopId)
-                return (
-                  <li key={`${stopId}-${index}`}>
-                    <button
-                      type="button"
-                      className="route-timeline-stop"
-                      data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
-                      onClick={() => onFocusStop?.(stopId)}
-                    >
-                      <span className="route-timeline-node" aria-hidden="true" />
-                      <span className="route-timeline-text">
-                        <strong>{stop?.shortName || stop?.longName || stopId}</strong>
-                        <small>{stopId}</small>
-                      </span>
-                      <span className="route-timeline-chevron" aria-hidden="true">›</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ol>
+            <ScrollArea className="route-timeline-scroll">
+              <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
+                {selectedRoute.stopIds.map((stopId, index) => {
+                  const stop = stopsById.get(stopId)
+                  return (
+                    <li key={`${stopId}-${index}`}>
+                      <button
+                        type="button"
+                        className="route-timeline-stop"
+                        data-route-stop-id={stopId}
+                        aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                        onClick={() => onFocusStop?.(stopId)}
+                      >
+                        <span className="route-timeline-node" aria-hidden="true" />
+                        <span className="route-timeline-text">
+                          <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                          <small>{stopId}</small>
+                        </span>
+                        <span className="route-timeline-chevron" aria-hidden="true">›</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            </ScrollArea>
           </div>
         ) : (
           <p className="route-selection-status" role="status" aria-live="polite">

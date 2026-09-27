@@ -29,8 +29,6 @@ function getLocationStatusMessage(location: LocationTrackingState): string {
       return 'Getting your location took too long. Try again.'
     case 'invalid':
       return 'Your browser returned an invalid location. Try again.'
-    case 'low-accuracy':
-      return 'Your location is not accurate enough yet. Try again.'
     case 'disabled':
       return 'Location sharing is off'
   }
@@ -110,7 +108,12 @@ export function LocationControl({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        Location
+        <svg className="location-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="6" />
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+          <circle className="location-control-icon-center" cx="12" cy="12" r="2" />
+        </svg>
+        <span className="visually-hidden">Location</span>
       </button>
       {open && (
         <div

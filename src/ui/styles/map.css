@@ -60,6 +60,29 @@
   cursor: pointer;
 }
 
+.location-control-chip {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+}
+
+.location-control-icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #475569;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.location-control-icon-center {
+  fill: #475569;
+  stroke: none;
+}
+
 .location-control-popover {
   display: grid;
   gap: 6px;
@@ -92,13 +115,24 @@
 }
 
 .current-location-marker {
+  position: relative;
+  isolation: isolate;
   width: 18px;
   height: 18px;
   border: 3px solid #fff;
   border-radius: 50%;
-  background: #2563eb;
-  box-shadow: 0 0 0 2px #2563eb, 0 1px 4px rgb(15 23 42 / 55%);
+  background: #4285f4;
+  box-shadow: 0 0 0 1px #4285f4, 0 1px 4px rgb(15 23 42 / 55%);
   box-sizing: border-box;
+}
+
+.current-location-marker::before {
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(66 133 244 / 22%);
+  content: '';
 }
 
 .bus-stop-marker {

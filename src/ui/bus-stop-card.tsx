@@ -1,5 +1,6 @@
 import { BusStopTimings, type BusStopDeparture, type PublicServiceTiming } from './bus-stop-timings'
 import { FavoriteStarIcon } from './favorite-star-icon'
+import { InfoPill } from './info-pill'
 
 export interface BusStopCardProps {
   readonly stopId: string
@@ -46,10 +47,10 @@ export function BusStopCard({
           <span className="bus-stop-card-identity">
             <span className="bus-stop-card-name">{stopName}</span>
             {distanceMeters !== null && (
-              <span className="bus-stop-card-distance">{formatDistance(distanceMeters)}</span>
+              <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
             )}
           </span>
-          <span className="bus-stop-card-live">LIVE</span>
+          <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" />
           <span aria-hidden="true" />
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
             <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

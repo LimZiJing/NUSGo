@@ -1,11 +1,23 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MobileStopsSheet } from './mobile-stops-sheet'
+import type { MobileStopSheetSelection } from './mobile-stops-sheet'
 
 afterEach(cleanup)
+
+const selectedStop: MobileStopSheetSelection = {
+  id: 'SR7',
+  longName: 'University Hall',
+  oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },
+  publicServices: ['95'],
+  departures: [
+    { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', timings: ['Arr', '8m', '17m'] },
+    { routeId: 'D2', routeName: 'D2', routeColor: '#6e1d72', timings: ['4m', '12m', '-'] },
+  ],
+}
 
 describe('MobileStopsSheet', () => {
   it('offers an accessible grab handle to expand the map-based Stops sheet', async () => {
@@ -16,7 +28,10 @@ describe('MobileStopsSheet', () => {
         expanded={false}
         selectedStop={null}
         onExpandedChange={onExpandedChange}
-        onSetEndpoint={vi.fn()}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
       />,
     )
 
@@ -31,7 +46,10 @@ describe('MobileStopsSheet', () => {
         expanded
         selectedStop={null}
         onExpandedChange={onExpandedChange}
-        onSetEndpoint={vi.fn()}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
       />,
     )
     expect(screen.getByRole('button', { name: 'Collapse Stops panel' }).getAttribute('aria-expanded'))
@@ -40,41 +58,61 @@ describe('MobileStopsSheet', () => {
       .toBeTruthy()
   })
 
-  it('shows the selected stop, route services and endpoint actions', async () => {
-    const user = userEvent.setup()
-    const onSetEndpoint = vi.fn()
-    const selectedStop = {
-      id: 'SR7',
-      longName: 'University Hall',
-      oppositeStopId: 'SR8',
-      publicServices: ['PUB:95'],
-      services: [
-        { id: 'D2', name: 'D2', color: '#6e1d72' },
-        { id: 'A1', name: 'A1', color: '#0b7258' },
-      ],
-    }
+  it('orders stop identity, destination action, routes, public services and departures', () => {
+    const { container } = render(
+      <MobileStopsSheet
+        expanded
+        selectedStop={selectedStop}
+        onExpandedChange={vi.fn()}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
+      />,
+    )
 
+    expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'University Hall' })).toBeTruthy()
+    expect(screen.getByText('Stop SR7')).toBeTruthy()
+    expect(screen.getByText('☆', { selector: '[aria-hidden="true"]' })).toBeTruthy()
+
+    const content = screen.getByTestId('mobile-stop-detail')
+    const order = ['University Hall', 'Directions to this stop', 'Public services: 95', 'Upcoming departures', 'Opposite stop']
+    const contentText = content.textContent ?? ''
+    expect(order.map((label) => contentText.indexOf(label))).toEqual(
+      [...order].map((label) => contentText.indexOf(label)).sort((a, b) => a - b),
+    )
+    expect(within(screen.getByRole('list', { name: 'Upcoming shuttle departures' })).getAllByRole('listitem'))
+      .toHaveLength(2)
+    expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('SPAN')
+  })
+
+  it('routes Back, opposite stop, route and destination actions through their callbacks', async () => {
+    const user = userEvent.setup()
+    const onBackToStops = vi.fn()
+    const onSelectOppositeStop = vi.fn()
+    const onSelectRoute = vi.fn()
+    const onNavigateToStop = vi.fn()
     render(
       <MobileStopsSheet
         expanded
         selectedStop={selectedStop}
         onExpandedChange={vi.fn()}
-        onSetEndpoint={onSetEndpoint}
+        onBackToStops={onBackToStops}
+        onSelectOppositeStop={onSelectOppositeStop}
+        onSelectRoute={onSelectRoute}
+        onNavigateToStop={onNavigateToStop}
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Stop · SR7' })).toBeTruthy()
-    expect(screen.getByText('University Hall')).toBeTruthy()
-    expect(screen.getByText('Opposite stop: SR8')).toBeTruthy()
-    expect(screen.getByText('Public services: PUB:95')).toBeTruthy()
-    expect(screen.getByRole('list', { name: 'Shuttle route services' })).toBeTruthy()
-    expect(screen.getByText('D2')).toBeTruthy()
-    expect(screen.getByText('A1')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await user.click(screen.getByRole('button', { name: 'View D2 route details' }))
+    await user.click(screen.getByRole('button', { name: 'Directions to this stop' }))
+    await user.click(screen.getByRole('button', { name: /Opposite stop: University Hall \(Opposite\), SR8/ }))
 
-    await user.click(screen.getByRole('button', { name: 'Set University Hall as origin' }))
-    await user.click(screen.getByRole('button', { name: 'Set University Hall as destination' }))
-
-    expect(onSetEndpoint).toHaveBeenNthCalledWith(1, 'origin', 'SR7')
-    expect(onSetEndpoint).toHaveBeenNthCalledWith(2, 'destination', 'SR7')
+    expect(onBackToStops).toHaveBeenCalledOnce()
+    expect(onSelectRoute).toHaveBeenCalledWith('D2')
+    expect(onNavigateToStop).toHaveBeenCalledWith('SR7')
+    expect(onSelectOppositeStop).toHaveBeenCalledWith('SR8')
   })
 })

@@ -333,7 +333,8 @@
     stroke-linecap: round;
   }
 
-  .contextual-panel .mobile-ghost-back-button {
+  .contextual-panel .mobile-ghost-back-button,
+  .mobile-stops-sheet .mobile-ghost-back-button {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -347,7 +348,9 @@
   }
 
   .contextual-panel .mobile-ghost-back-button:hover,
-  .contextual-panel .mobile-ghost-back-button:focus-visible {
+  .contextual-panel .mobile-ghost-back-button:focus-visible,
+  .mobile-stops-sheet .mobile-ghost-back-button:hover,
+  .mobile-stops-sheet .mobile-ghost-back-button:focus-visible {
     border-color: transparent;
     background: transparent;
   }
@@ -553,7 +556,7 @@
     color: #1f2937;
     background: rgb(255 255 255 / 96%);
     box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
-    font: 14px/1.4 system-ui, sans-serif;
+    font: 14px/1.2 system-ui, sans-serif;
     box-sizing: border-box;
     pointer-events: auto;
   }
@@ -588,13 +591,62 @@
 
   .mobile-stop-selection {
     display: grid;
-    gap: 16px;
+    gap: 14px;
+    text-align: left;
   }
 
   .mobile-stop-selection-name {
-    color: #173c35;
-    font-size: 16px;
-    font-weight: 650;
+    margin: 0;
+    color: #1f2937;
+    font: 600 24px/1.2 system-ui, sans-serif;
+    text-align: left;
+  }
+
+  .mobile-stops-sheet .mobile-ghost-back-button {
+    justify-self: start;
+  }
+
+  .mobile-stop-identity {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-stop-identity-copy {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .mobile-stop-id {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .mobile-stop-favorite {
+    color: #64748b;
+    font-size: 23px;
+    line-height: 1;
+  }
+
+  .mobile-stops-sheet .mobile-stop-directions {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 36px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    border-color: #1d4ed8;
+    border-radius: 6px;
+    color: #fff;
+    background: #1d4ed8;
+    font: 600 14px/1.2 system-ui, sans-serif;
+  }
+
+  .mobile-stop-directions span {
+    font-size: 13px;
   }
 
   .mobile-stop-context {
@@ -604,59 +656,83 @@
 
   .mobile-stop-selection h3 {
     margin: 0 0 8px;
-    color: #71857d;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    color: #1f2937;
+    font: 600 14px/1.2 system-ui, sans-serif;
+    text-align: left;
   }
 
-  .mobile-stop-service-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .mobile-stop-departure-list {
+    display: grid;
+    gap: 0;
     margin: 0;
     padding: 0;
+    border-top: 1px solid #e2e8f0;
     list-style: none;
   }
 
-  .mobile-stop-service {
-    display: inline-flex;
-    min-width: 40px;
-    min-height: 28px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 10px;
-    border-radius: 999px;
-    color: var(--route-text-color);
-    background: var(--route-color);
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .mobile-stop-endpoint-actions {
+  .mobile-stop-departure-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: minmax(52px, 1fr) repeat(3, 44px);
+    align-items: center;
+    gap: 8px;
+    min-height: 50px;
+    padding: 3px 4px;
+    border-bottom: 1px solid #e2e8f0;
   }
 
-  .mobile-stops-sheet .mobile-stop-endpoint-actions button {
+  .mobile-stop-departure-row .route-chip {
+    justify-self: start;
+  }
+
+  .mobile-stop-departure-time {
+    color: #334155;
+    font: 600 14px/1 system-ui, sans-serif;
+    text-align: right;
+  }
+
+  .mobile-stop-departure-time[data-timing-state='Arr'] {
+    color: #047857;
+  }
+
+  .mobile-stop-departure-time[data-timing-state='Left'] {
+    color: #64748b;
+  }
+
+  .mobile-stops-sheet .mobile-stop-opposite {
+    display: grid;
+    grid-template-columns: 1fr auto auto 16px;
+    min-height: 56px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-color: #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    text-align: left;
+  }
+
+  .mobile-stop-opposite > span:first-child {
+    grid-column: 1 / -1;
+    color: #64748b;
+    font: 600 12px/1.2 system-ui, sans-serif;
+    text-align: left;
+  }
+
+  .mobile-stop-opposite strong {
     min-width: 0;
-    border-color: #d8e6de;
-    border-radius: 11px;
-    color: #17654f;
-    background: #eef5f1;
-    font-weight: 700;
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 600;
   }
 
-  .mobile-stops-sheet .mobile-stop-endpoint-actions .mobile-stop-endpoint-primary {
-    border-color: #0b7258;
-    color: #fff;
-    background: #0b7258;
+  .mobile-stop-opposite-id {
+    color: #64748b;
+    font-size: 11px;
   }
 
-  .mobile-stops-sheet .mobile-stop-endpoint-actions button:hover:enabled {
-    filter: brightness(0.85);
+  .mobile-stop-opposite > span:last-child {
+    color: #334155;
+    font-size: 20px;
   }
 
   .mobile-tab-bar {

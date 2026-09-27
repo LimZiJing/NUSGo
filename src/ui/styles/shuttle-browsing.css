@@ -127,7 +127,8 @@
     scroll-snap-type: x proximity;
   }
 
-  .contextual-panel .route-chip {
+  .contextual-panel .route-chip,
+  .mobile-stops-sheet .route-chip {
     flex: 0 0 auto;
     min-width: 48px;
     min-height: 44px;
@@ -141,7 +142,8 @@
     scroll-snap-align: start;
   }
 
-  .contextual-panel .route-chip[aria-pressed='true'] {
+  .contextual-panel .route-chip[data-active='true'],
+  .mobile-stops-sheet .route-chip[data-active='true'] {
     border-color: var(--route-color);
     color: var(--route-text-color);
     background: var(--route-color);

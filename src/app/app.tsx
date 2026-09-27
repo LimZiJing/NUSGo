@@ -13,6 +13,11 @@ import {
   MobileStopsSheet,
   type MobileStopSheetSelection,
 } from '../features/shuttle-browsing/mobile-stops-sheet'
+import {
+  createInitialMobileStopViewState,
+  getMobileStopDepartures,
+  mobileStopViewReducer,
+} from '../features/shuttle-browsing/mobile-stop-view'
 import { MapControls } from '../ui/map-controls'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideMapControls } from '../ui/map-controls-focus'
@@ -68,7 +73,11 @@ function App() {
   const mobileNavigationRef = useRef(mobileNavigation)
   const isMobileViewportRef = useRef(isMobileViewport)
   const prepareSheetTransitionRef = useRef<(() => void) | null>(null)
-  const [selectedStopId, setSelectedStopId] = useState<string | null>(null)
+  const [mobileStopView, dispatchMobileStopView] = useReducer(
+    mobileStopViewReducer,
+    undefined,
+    createInitialMobileStopViewState,
+  )
   const [mapControlsOpen, setMapControlsOpen] = useState(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
@@ -170,7 +179,7 @@ function App() {
       currentNavigation.activeTab !== 'stops'
     ) return false
 
-    setSelectedStopId(stopId)
+    dispatchMobileStopView({ type: 'focus-stop', stopId })
     if (!currentNavigation.sheets.stops.expanded) {
       prepareSheetTransitionRef.current?.()
       dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'stops', expanded: true })
@@ -325,26 +334,36 @@ function App() {
   }, [handleStopSelected, journeyPlanner])
 
   useEffect(() => {
-    if (!isMobileViewport || activeTab !== 'stops' || selectedStopId === null) return
+    if (!isMobileViewport || activeTab !== 'stops' || mobileStopView.focusedStopId === null) return
     dismissMapPopup()
-  }, [activeTab, dismissMapPopup, isMobileViewport, selectedStopId])
+  }, [activeTab, dismissMapPopup, isMobileViewport, mobileStopView.focusedStopId])
 
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'
-  const selectedStop = selectedStopId === null
+  const selectedStop = mobileStopView.focusedStopId === null
     ? undefined
-    : state.transitIndex?.stopById.get(selectedStopId)
+    : state.transitIndex?.stopById.get(mobileStopView.focusedStopId)
   const selectedStopRouteIds = selectedStop && state.transitIndex
     ? state.transitIndex.routeIdsByStopId.get(selectedStop.id) ?? new Set<string>()
     : new Set<string>()
+  const oppositeStop = selectedStop?.opposite && state.transitIndex
+    ? state.transitIndex.stopById.get(selectedStop.opposite)
+    : undefined
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && state.transitIndex
     ? {
       id: selectedStop.id,
       longName: selectedStop.longName,
-      oppositeStopId: selectedStop.opposite ?? null,
-      publicServices: selectedStop.services.filter((service) => service.startsWith('PUB:')),
-      services: state.transitIndex.routes
-        .filter((route) => selectedStopRouteIds.has(route.id))
-        .map(({ id, name, color }) => ({ id, name, color })),
+      oppositeStop: oppositeStop
+        ? { id: oppositeStop.id, longName: oppositeStop.longName }
+        : null,
+      publicServices: selectedStop.services
+        .filter((service) => service.startsWith('PUB:'))
+        .map((service) => service.slice('PUB:'.length)),
+      departures: getMobileStopDepartures(selectedStopRouteIds).flatMap((departure) => {
+        const route = state.transitIndex?.routeById.get(departure.routeId)
+        return route
+          ? [{ ...departure, routeName: route.name, routeColor: route.color }]
+          : []
+      }),
     }
     : null
 
@@ -512,10 +531,23 @@ function App() {
             onExpandedChange={(expanded) => dispatchMobileNavigation(expanded
               ? { type: 'set-sheet-expanded', tab: 'stops', expanded: true }
               : { type: 'close-active-tab' })}
-            onSetEndpoint={(role, stopId) => {
-              const endpoint = { kind: 'stop', id: stopId } as const
-              if (role === 'origin') commands.selectOriginEndpoint(endpoint)
-              else commands.selectDestinationEndpoint(endpoint)
+            onBackToStops={() => dispatchMobileStopView({ type: 'back-to-stops' })}
+            onSelectOppositeStop={(stopId) => {
+              dispatchMobileStopView({ type: 'focus-stop', stopId })
+              commands.focusStop(stopId)
+            }}
+            onSelectRoute={(routeId) => {
+              prepareSheetTransition(true)
+              commands.enterMobileRoutes()
+              commands.selectMobileRoute(routeId)
+              dispatchMobileNavigation({ type: 'set-sheet-expanded', tab: 'explore', expanded: true })
+              dispatchMobileNavigation({ type: 'select-tab', tab: 'explore' })
+            }}
+            onNavigateToStop={(stopId) => {
+              commands.selectDestinationEndpoint({ kind: 'stop', id: stopId })
+              prepareSheetTransition(true)
+              setMapControlsOpen(false)
+              dispatchMobileNavigation({ type: 'open-plan' })
             }}
             onBeforeSheetToggle={() => prepareSheetTransition()}
             containerRef={stopsSheetRef}

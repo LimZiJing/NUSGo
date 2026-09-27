@@ -1,25 +1,30 @@
-import type { CSSProperties, Ref } from 'react'
-import type { TripEndpointRole } from '../../domain/trip/types'
-import { getRouteContrastTextColor } from '../../ui/route-color'
+import type { Ref } from 'react'
+import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import { RouteChip } from '../../ui/route-chip'
+import type { MobileStopDeparture } from './mobile-stop-view'
+
+interface MobileStopSheetDeparture extends MobileStopDeparture {
+  readonly routeName: string
+  readonly routeColor: string
+}
 
 export interface MobileStopSheetSelection {
   readonly id: string
   readonly longName: string
-  readonly oppositeStopId: string | null
+  readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly string[]
-  readonly services: readonly {
-    readonly id: string
-    readonly name: string
-    readonly color: string
-  }[]
+  readonly departures: readonly MobileStopSheetDeparture[]
 }
 
 interface MobileStopsSheetProps {
   readonly expanded: boolean
   readonly selectedStop: MobileStopSheetSelection | null
   readonly onExpandedChange: (expanded: boolean) => void
-  readonly onSetEndpoint: (role: TripEndpointRole, stopId: string) => void
+  readonly onBackToStops: () => void
+  readonly onSelectOppositeStop: (stopId: string) => void
+  readonly onSelectRoute: (routeId: string) => void
+  readonly onNavigateToStop: (stopId: string) => void
   readonly onBeforeSheetToggle?: () => void
   readonly containerRef?: Ref<HTMLElement>
 }
@@ -28,10 +33,15 @@ export function MobileStopsSheet({
   expanded,
   selectedStop,
   onExpandedChange,
-  onSetEndpoint,
+  onBackToStops,
+  onSelectOppositeStop,
+  onSelectRoute,
+  onNavigateToStop,
   onBeforeSheetToggle,
   containerRef,
 }: MobileStopsSheetProps) {
+  const oppositeStop = selectedStop?.oppositeStop ?? null
+
   return (
     <section
       className="mobile-stops-sheet"
@@ -49,67 +59,84 @@ export function MobileStopsSheet({
           onExpandedChange={onExpandedChange}
         />
       </div>
-      <header className="mobile-stops-sheet-header">
-        <h2 id="mobile-stops-sheet-heading">
-          {selectedStop ? `Stop · ${selectedStop.id}` : 'Stops'}
-        </h2>
-      </header>
+      {!selectedStop && (
+        <header className="mobile-stops-sheet-header">
+          <h2 id="mobile-stops-sheet-heading">Stops</h2>
+        </header>
+      )}
       <div
         id="mobile-stops-sheet-content"
         data-mobile-sheet-content
         hidden={!expanded}
       >
         {selectedStop ? (
-          <div className="mobile-stop-selection">
-            <p className="mobile-stop-selection-name">{selectedStop.longName}</p>
-            {selectedStop.oppositeStopId ? (
-              <p className="mobile-stop-context">Opposite stop: {selectedStop.oppositeStopId}</p>
-            ) : null}
-            {selectedStop.services.length > 0 ? (
-              <section>
-                <h3>Shuttle services</h3>
-                <ul className="mobile-stop-service-list" aria-label="Shuttle route services">
-                  {selectedStop.services.map((service) => (
-                    <li key={service.id}>
-                      <span
-                        className="mobile-stop-service"
-                        title={service.name}
-                        style={{
-                          '--route-color': service.color,
-                          '--route-text-color': getRouteContrastTextColor(service.color),
-                        } as CSSProperties}
-                      >
-                        {service.id}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : (
-              <p>No internal shuttle routes serve this stop.</p>
-            )}
+          <div className="mobile-stop-selection" data-testid="mobile-stop-detail">
+            <GhostBackButton label="Back to stops" onClick={onBackToStops} />
+            <div className="mobile-stop-identity">
+              <div className="mobile-stop-identity-copy">
+                <h2 id="mobile-stops-sheet-heading" className="mobile-stop-selection-name">
+                  {selectedStop.longName}
+                </h2>
+                <span className="mobile-stop-id">Stop {selectedStop.id}</span>
+              </div>
+              <span className="mobile-stop-favorite" aria-hidden="true">☆</span>
+            </div>
+            <button
+              className="mobile-stop-directions"
+              type="button"
+              aria-label="Directions to this stop"
+              onClick={() => onNavigateToStop(selectedStop.id)}
+            >
+              <span aria-hidden="true">➤</span> Directions to this stop
+            </button>
             {selectedStop.publicServices.length > 0 ? (
               <p className="mobile-stop-context">
                 Public services: {selectedStop.publicServices.join(', ')}
               </p>
             ) : null}
-            <div className="mobile-stop-endpoint-actions">
+            <section className="mobile-stop-departures">
+              <h3>Upcoming departures</h3>
+              {selectedStop.departures.length > 0 ? (
+                <ul className="mobile-stop-departure-list" aria-label="Upcoming shuttle departures">
+                  {selectedStop.departures.map((departure) => (
+                    <li key={departure.routeId} className="mobile-stop-departure-row">
+                      <RouteChip
+                        routeId={departure.routeId}
+                        routeColor={departure.routeColor}
+                        ariaLabel={`View ${departure.routeId} route details`}
+                        title={departure.routeName}
+                        active
+                        onClick={() => onSelectRoute(departure.routeId)}
+                      />
+                      {departure.timings.map((timing, index) => (
+                        <span
+                          key={index}
+                          className="mobile-stop-departure-time"
+                          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+                        >
+                          {timing}
+                        </span>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No upcoming shuttle departures.</p>
+              )}
+            </section>
+            {oppositeStop ? (
               <button
-                className="mobile-stop-endpoint-primary"
+                className="mobile-stop-opposite"
                 type="button"
-                aria-label={`Set ${selectedStop.longName} as origin`}
-                onClick={() => onSetEndpoint('origin', selectedStop.id)}
+                aria-label={`Opposite stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
+                onClick={() => onSelectOppositeStop(oppositeStop.id)}
               >
-                Set origin
+                <span>Opposite stop</span>
+                <strong>{oppositeStop.longName}</strong>
+                <span className="mobile-stop-opposite-id">{oppositeStop.id}</span>
+                <span aria-hidden="true">›</span>
               </button>
-              <button
-                type="button"
-                aria-label={`Set ${selectedStop.longName} as destination`}
-                onClick={() => onSetEndpoint('destination', selectedStop.id)}
-              >
-                Set destination
-              </button>
-            </div>
+            ) : null}
           </div>
         ) : (
           <p>Tap a shuttle stop on the map to view its details and route actions.</p>

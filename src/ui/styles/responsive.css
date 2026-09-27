@@ -745,6 +745,30 @@
     transform: rotate(180deg);
   }
 
+  .bus-stop-card-timings {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 180ms ease, opacity 150ms ease;
+  }
+
+  .bus-stop-card-timings[data-expanded='true'] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .bus-stop-card-timings-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bus-stop-card-timings,
+    .bus-stop-card-toggle svg {
+      transition: none;
+    }
+  }
+
   .bus-stop-card .mobile-stop-departure-list {
     margin: 0 7px 6px;
   }

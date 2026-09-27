@@ -68,12 +68,20 @@ export function BusStopCard({
           <FavoriteStarIcon filled={favorite} />
         </button>
       </div>
-      <div id={timingsId} hidden={!expanded}>
-        <BusStopTimings
-          departures={departures}
-          publicServices={publicServices}
-          onSelectRoute={onSelectRoute}
-        />
+      <div
+        id={timingsId}
+        className="bus-stop-card-timings"
+        data-expanded={expanded}
+        aria-hidden={!expanded}
+        inert={!expanded}
+      >
+        <div className="bus-stop-card-timings-inner">
+          <BusStopTimings
+            departures={departures}
+            publicServices={publicServices}
+            onSelectRoute={onSelectRoute}
+          />
+        </div>
       </div>
     </article>
   )

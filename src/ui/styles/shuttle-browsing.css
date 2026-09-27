@@ -158,6 +158,11 @@
     box-shadow: 0 2px 7px rgb(15 23 42 / 18%);
   }
 
+  .contextual-panel .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
+  .mobile-stops-sheet .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
+    color: #fff;
+  }
+
   .route-chip:focus-visible,
   .route-timeline-stop:focus-visible,
   .mobile-ghost-back-button:focus-visible {

@@ -569,6 +569,7 @@
 
   .mobile-stops-sheet {
     display: grid;
+    align-content: start;
     gap: 10px;
     border: 1px solid #e2e8f0;
     border-bottom: 0;
@@ -578,6 +579,15 @@
     font: 14px/1.2 system-ui, sans-serif;
     box-sizing: border-box;
     pointer-events: auto;
+  }
+
+  .mobile-stops-sheet[data-expanded='true'] {
+    height: var(--mobile-sheet-max-height);
+  }
+
+  /* The handle measures with height:auto; retain the full expanded height. */
+  .mobile-stops-sheet[data-mobile-sheet-measuring='expanded'] {
+    min-height: var(--mobile-sheet-max-height);
   }
 
   .mobile-stops-sheet-header {

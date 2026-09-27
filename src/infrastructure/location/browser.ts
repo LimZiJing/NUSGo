@@ -11,8 +11,8 @@ const MAXIMUM_FUTURE_TIMESTAMP_MS = 5_000
 
 export interface BrowserGeolocation {
   watchPosition(
-    success: (position: GeolocationPosition) => void,
-    error: (error: GeolocationPositionError) => void,
+    success: (position: unknown) => void,
+    error: (error: unknown) => void,
     options?: PositionOptions,
   ): number
   clearWatch(watchId: number): void
@@ -42,16 +42,27 @@ function isValidCoordinate(longitude: number, latitude: number): boolean {
     latitude <= 90
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 function createLocationFix(
-  position: GeolocationPosition,
+  position: unknown,
   now: number,
   maximumAccuracyMetres: number,
 ): { readonly kind: 'valid'; readonly fix: DeviceLocationFix } | {
   readonly kind: 'invalid' | 'low-accuracy'
 } {
-  const { longitude, latitude, accuracy } = position.coords
+  if (!isRecord(position) || !isRecord(position.coords)) return { kind: 'invalid' }
+  const longitude = position.coords.longitude
+  const latitude = position.coords.latitude
+  const accuracy = position.coords.accuracy
   const timestamp = position.timestamp
   if (
+    typeof longitude !== 'number' ||
+    typeof latitude !== 'number' ||
+    typeof accuracy !== 'number' ||
+    typeof timestamp !== 'number' ||
     !isValidCoordinate(longitude, latitude) ||
     !Number.isFinite(accuracy) ||
     accuracy < 0 ||
@@ -109,6 +120,10 @@ export function createBrowserLocationTracker(
     watchId = null
   }
 
+  const isCurrentGeneration = (generation: number): boolean => (
+    !disposed && generation === watchGeneration
+  )
+
   const scheduleStaleState = (timestamp: number): void => {
     clearStaleTimer()
     const age = Math.max(0, now() - timestamp)
@@ -125,9 +140,11 @@ export function createBrowserLocationTracker(
     }, remaining)
   }
 
-  const handlePosition = (position: GeolocationPosition): void => {
+  const handlePosition = (generation: number, position: unknown): void => {
+    if (!isCurrentGeneration(generation)) return
     const result = createLocationFix(position, now(), maximumAccuracyMetres)
     if (result.kind !== 'valid') {
+      clearStaleTimer()
       publish({ ...state, status: result.kind })
       return
     }
@@ -137,18 +154,21 @@ export function createBrowserLocationTracker(
       status: isStale ? 'stale' : 'tracking',
       latestFix: result.fix,
     })
+    if (!isCurrentGeneration(generation)) return
     if (!isStale) scheduleStaleState(result.fix.timestamp)
   }
 
-  const handleError = (error: GeolocationPositionError): void => {
-    const status = error.code === 1
+  const handleError = (generation: number, error: unknown): void => {
+    if (!isCurrentGeneration(generation)) return
+    const code = isRecord(error) && typeof error.code === 'number' ? error.code : null
+    const status = code === 1
       ? 'denied'
-      : error.code === 2
-        ? 'unavailable'
-        : 'timeout'
+      : code === 3
+        ? 'timeout'
+        : 'unavailable'
+    clearStaleTimer()
     if (status === 'denied') {
       stopWatching()
-      clearStaleTimer()
     }
     publish({ ...state, status })
   }
@@ -175,14 +195,19 @@ export function createBrowserLocationTracker(
 
       const generation = ++watchGeneration
       try {
-        const nextWatchId = provider.watchPosition(handlePosition, handleError, watchOptions)
+        const nextWatchId = provider.watchPosition(
+          (position) => handlePosition(generation, position),
+          (error) => handleError(generation, error),
+          watchOptions,
+        )
         if (generation !== watchGeneration) {
           provider.clearWatch(nextWatchId)
           return
         }
         watchId = nextWatchId
-      } catch {
-        publish({ ...state, status: 'unavailable' })
+      } catch (error) {
+        console.error('Location tracking failed:', error)
+        if (generation === watchGeneration) publish({ ...state, status: 'unavailable' })
       }
     },
 

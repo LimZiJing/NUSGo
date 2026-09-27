@@ -41,6 +41,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     focusStop: vi.fn(),
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
+    setCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -194,6 +195,7 @@ describe('navigation session', () => {
       tripRequest: { origin: null, destination: null },
       journey: { status: 'idle', journey: null, error: null },
       location: { status: 'disabled', latestFix: null },
+      locationMarkerVisible: true,
       resourceStatus: {
         venue: { status: 'pending' },
         transit: { status: 'pending' },
@@ -1870,10 +1872,20 @@ describe('navigation session', () => {
 
     expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
     expect(session.getState().location).toEqual(locationState)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenCalledWith(locationState.latestFix, true)
     expect(session.getState().tripRequest).toBe(initialTripRequest)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.setViewportInsets).not.toHaveBeenCalled()
     expect(dependencies.map.setTripRequest).not.toHaveBeenCalled()
+
+    session.hideLocationMarker()
+    expect(session.getState().locationMarkerVisible).toBe(false)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, false)
+    expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
+
+    session.showLocationMarker()
+    expect(session.getState().locationMarkerVisible).toBe(true)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true)
   })
 
   it('disables and disposes the location tracker through session commands', () => {

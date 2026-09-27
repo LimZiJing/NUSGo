@@ -93,6 +93,8 @@ export interface NavigationSessionCommands {
   readonly focusStop: (stopId: string) => void
   readonly enableLocationTracking: () => void
   readonly disableLocationTracking: () => void
+  readonly hideLocationMarker: () => void
+  readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -127,6 +129,8 @@ function createNavigationSessionCommands(
     focusStop: (stopId) => session?.focusStop(stopId),
     enableLocationTracking: () => session?.enableLocationTracking(),
     disableLocationTracking: () => session?.disableLocationTracking(),
+    hideLocationMarker: () => session?.hideLocationMarker(),
+    showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

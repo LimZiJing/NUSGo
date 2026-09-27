@@ -21,6 +21,7 @@ function createMapDouble(): MapSession {
     focusStop: vi.fn(),
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
+    setCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -58,6 +59,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     focusStop: vi.fn(),
     enableLocationTracking: vi.fn(),
     disableLocationTracking: vi.fn(),
+    hideLocationMarker: vi.fn(),
+    showLocationMarker: vi.fn(),
     back: vi.fn(),
     escape: vi.fn(),
     close: vi.fn(),
@@ -188,8 +191,12 @@ describe('navigation session application seam', () => {
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
     firstCommands.enableLocationTracking()
     firstCommands.disableLocationTracking()
+    firstCommands.hideLocationMarker()
+    firstCommands.showLocationMarker()
     expect(session.enableLocationTracking).toHaveBeenCalledOnce()
     expect(session.disableLocationTracking).toHaveBeenCalledOnce()
+    expect(session.hideLocationMarker).toHaveBeenCalledOnce()
+    expect(session.showLocationMarker).toHaveBeenCalledOnce()
 
     const replacement = createSessionDouble()
     expect(adapter(replacement)).not.toBe(firstCommands)

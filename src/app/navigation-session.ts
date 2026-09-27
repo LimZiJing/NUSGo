@@ -56,6 +56,7 @@ export interface NavigationSessionState {
   readonly tripRequest: TripRequest
   readonly journey: JourneyState
   readonly location: LocationTrackingState
+  readonly locationMarkerVisible: boolean
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
   readonly startupFailure: NavigationSessionStartupFailure | null
@@ -84,6 +85,8 @@ export interface NavigationSession {
   focusStop(stopId: string): void
   enableLocationTracking(): void
   disableLocationTracking(): void
+  hideLocationMarker(): void
+  showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
@@ -121,6 +124,7 @@ export function createInitialNavigationSessionState(
     tripRequest: createEmptyTripRequest(),
     journey: createInitialJourneyState(),
     location,
+    locationMarkerVisible: true,
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
     startupFailure: null,
@@ -206,8 +210,12 @@ export function createNavigationSession(
 
   const unsubscribeLocation = dependencies.locationTracker.subscribe(() => {
     if (disposed) return
-    updateState({ location: dependencies.locationTracker.getState() })
+    const location = dependencies.locationTracker.getState()
+    dependencies.map.setCurrentLocation(location.latestFix, state.locationMarkerVisible)
+    updateState({ location })
   })
+
+  dependencies.map.setCurrentLocation(state.location.latestFix, state.locationMarkerVisible)
 
   const cancelJourneyPlanning = (): void => {
     journeyPlanningRequestId += 1
@@ -535,6 +543,10 @@ export function createNavigationSession(
 
     enableLocationTracking() {
       if (disposed) return
+      if (!state.locationMarkerVisible) {
+        dependencies.map.setCurrentLocation(state.location.latestFix, true)
+        updateState({ locationMarkerVisible: true })
+      }
       // Keep this call synchronous so browsers can associate permission with the user's action.
       dependencies.locationTracker.enable()
     },
@@ -542,6 +554,18 @@ export function createNavigationSession(
     disableLocationTracking() {
       if (disposed) return
       dependencies.locationTracker.disable()
+    },
+
+    hideLocationMarker() {
+      if (disposed) return
+      dependencies.map.setCurrentLocation(state.location.latestFix, false)
+      updateState({ locationMarkerVisible: false })
+    },
+
+    showLocationMarker() {
+      if (disposed) return
+      dependencies.map.setCurrentLocation(state.location.latestFix, true)
+      updateState({ locationMarkerVisible: true })
     },
 
     setTripEndpoint(role, endpoint) {

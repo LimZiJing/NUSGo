@@ -8,6 +8,7 @@ import type {
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Journey } from '../../domain/trip/journey'
+import type { DeviceLocationFix } from '../../domain/location/types'
 import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
 import type { VenueLocation } from '../../domain/venue/types'
 import { applyBasemapPresentation } from './basemap'
@@ -21,6 +22,7 @@ import {
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
+import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
@@ -40,6 +42,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
+  const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
   let currentJourney: Journey | null = null
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
@@ -303,6 +306,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean) {
+      if (disposed) return
+      currentLocationMarker.setLocation(fix, visible)
+    },
+
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }
@@ -391,6 +399,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearTransitData()
       currentJourney = null
       clearJourneyRouteLayers()
+      currentLocationMarker.dispose()
       lifecycle.dispose()
     },
   }

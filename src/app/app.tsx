@@ -317,13 +317,8 @@ function App() {
           onReset={commands.resetView}
         />
         <LocationControl
-          location={state.location}
-          markerVisible={state.locationMarkerVisible}
           topOffset={mapInsets.top || 76}
-          onEnable={commands.enableLocationTracking}
-          onDisable={commands.disableLocationTracking}
-          onHideMarker={commands.hideLocationMarker}
-          onShowMarker={commands.showLocationMarker}
+          onLocate={commands.locateUser}
         />
         <aside
           className="map-legend"

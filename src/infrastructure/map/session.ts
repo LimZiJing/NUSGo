@@ -311,6 +311,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentLocationMarker.setLocation(fix, visible)
     },
 
+    focusCurrentLocation(fix: DeviceLocationFix) {
+      if (disposed) return
+      pendingCameraFit = null
+      map.flyTo({
+        center: [fix.longitude, fix.latitude],
+        zoom: 17,
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
+    },
+
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }

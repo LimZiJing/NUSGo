@@ -477,6 +477,12 @@ describe('MapSession', () => {
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(map.fitBounds).not.toHaveBeenCalled()
 
+    session.focusCurrentLocation(secondFix)
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
+      center: [secondFix.longitude, secondFix.latitude],
+      zoom: 17,
+    }))
+
     session.dispose()
     expect(marker?.remove).toHaveBeenCalledTimes(3)
   })

@@ -42,6 +42,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
     setCurrentLocation: vi.fn(),
+    focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -1897,5 +1898,36 @@ describe('navigation session', () => {
 
     expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
     expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
+  })
+
+  it('zooms to the first location fix after locate is pressed and recenters on later presses', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    const firstFix: LocationTrackingState = {
+      status: 'tracking',
+      latestFix: {
+        longitude: 103.7844,
+        latitude: 1.2933,
+        accuracy: 500,
+        timestamp: 1_000,
+      },
+    }
+    const secondFix: LocationTrackingState = {
+      ...firstFix,
+      latestFix: { ...firstFix.latestFix!, longitude: 103.785, timestamp: 2_000 },
+    }
+
+    session.locateUser()
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    locationTracker.emit(firstFix)
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledWith(firstFix.latestFix)
+
+    locationTracker.emit(secondFix)
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledOnce()
+
+    session.locateUser()
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenLastCalledWith(secondFix.latestFix)
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledTimes(2)
   })
 })

@@ -48,10 +48,9 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 
 Codex In-app Browser, local Vite development server:
 
-- The Location control rendered on the map and opened an accessible group labelled “Location controls”.
-- With tracking disabled, the group showed “Location sharing is off” and “Use my location”.
-- The active permission prompt and live marker state were not exercised because accepting a real browser location permission prompt was outside this smoke pass.
-- Automated tests cover tracking state changes, marker updates and hiding, stale/error messages, retry/stop actions, and marker disposal.
+- The Location control rendered as a compact accessible “Show my location” target button on the map.
+- The live permission prompt and marker movement were not exercised because accepting a real browser location permission prompt was outside this smoke pass.
+- Automated tests cover the one-tap locate action, first-fix map focus, marker updates and disposal, and browser error handling.
 
 ## Mobile — 390 × 844
 

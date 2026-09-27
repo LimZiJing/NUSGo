@@ -56,6 +56,7 @@ export interface MapSession {
   ): void
   setJourney(journey: Journey | null): void
   setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean): void
+  focusCurrentLocation(fix: DeviceLocationFix): void
   /**
    * Post-render synchronization point for measured map overlays. Implementations
    * consume at most the latest pending route/venue automatic fit here; later

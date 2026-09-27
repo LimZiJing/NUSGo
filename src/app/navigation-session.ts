@@ -84,6 +84,7 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   enableLocationTracking(): void
+  locateUser(): void
   disableLocationTracking(): void
   hideLocationMarker(): void
   showLocationMarker(): void
@@ -148,6 +149,7 @@ export function createNavigationSession(
   let routeOverlapMap: ReadonlyMap<string, ReadonlySet<string>> = new globalThis.Map()
   let disposed = false
   let mobileRoutesActive = false
+  let locationFocusRequested = false
   const startup = createNavigationSessionStartup()
   const listeners = new Set<NavigationSessionListener>()
   const transitionQueue = createNavigationSessionTransitionQueue(() => disposed)
@@ -212,6 +214,10 @@ export function createNavigationSession(
     if (disposed) return
     const location = dependencies.locationTracker.getState()
     dependencies.map.setCurrentLocation(location.latestFix, state.locationMarkerVisible)
+    if (locationFocusRequested && location.latestFix) {
+      locationFocusRequested = false
+      dependencies.map.focusCurrentLocation(location.latestFix)
+    }
     updateState({ location })
   })
 
@@ -547,6 +553,34 @@ export function createNavigationSession(
         dependencies.map.setCurrentLocation(state.location.latestFix, true)
         updateState({ locationMarkerVisible: true })
       }
+      // Keep this call synchronous so browsers can associate permission with the user's action.
+      dependencies.locationTracker.enable()
+    },
+
+    locateUser() {
+      if (disposed) return
+      const currentLocation = state.location
+      const hasLocationError = currentLocation.status === 'denied' ||
+        currentLocation.status === 'unavailable' ||
+        currentLocation.status === 'timeout' ||
+        currentLocation.status === 'invalid'
+
+      if (hasLocationError) {
+        dependencies.locationTracker.disable()
+      }
+
+      if (!state.locationMarkerVisible) {
+        dependencies.map.setCurrentLocation(currentLocation.latestFix, true)
+        updateState({ locationMarkerVisible: true })
+      }
+
+      if (currentLocation.latestFix && !hasLocationError) {
+        locationFocusRequested = false
+        dependencies.map.focusCurrentLocation(currentLocation.latestFix)
+      } else {
+        locationFocusRequested = true
+      }
+
       // Keep this call synchronous so browsers can associate permission with the user's action.
       dependencies.locationTracker.enable()
     },

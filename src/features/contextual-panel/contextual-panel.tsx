@@ -722,7 +722,7 @@ export function ContextualPanel({
               rel="noreferrer"
             >
               <span>View in</span>
-              <img src="/nusmods-logo.svg" alt="NUSMods" />
+              <img src={`${import.meta.env.BASE_URL}nusmods-logo.svg`} alt="NUSMods" />
             </a>
           </div>
           {venueHasCoordinates && (

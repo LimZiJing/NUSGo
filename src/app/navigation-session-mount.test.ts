@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LoadedTransitData } from './contracts/data'
+import type { LocationTracker } from './contracts/location'
+import { INITIAL_LOCATION_TRACKING_STATE } from '../domain/location/types'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import {
   createInitialNavigationSessionState,
@@ -54,6 +56,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     leaveMobileRoutes: vi.fn(),
     selectMobileRoute: vi.fn(),
     focusStop: vi.fn(),
+    enableLocationTracking: vi.fn(),
+    disableLocationTracking: vi.fn(),
     back: vi.fn(),
     escape: vi.fn(),
     close: vi.fn(),
@@ -72,6 +76,13 @@ function createMountDependencies(
   session: NavigationSession,
 ) {
   let mapOptions: MapSessionOptions | null = null
+  const locationTracker: LocationTracker = {
+    getState: () => INITIAL_LOCATION_TRACKING_STATE,
+    subscribe: vi.fn(() => () => undefined),
+    enable: vi.fn(),
+    disable: vi.fn(),
+    dispose: vi.fn(),
+  }
   return {
     createMapSession: vi.fn((options: MapSessionOptions) => {
       mapOptions = options
@@ -81,6 +92,7 @@ function createMountDependencies(
     loadVenues: vi.fn(async () => ({ venues: {}, venueCount: 0 })),
     loadTransit: vi.fn(async () => new Promise<LoadedTransitData>(() => undefined)),
     journeyPlanner: vi.fn(async () => null),
+    locationTracker,
     getMapOptions: () => mapOptions,
   }
 }
@@ -108,6 +120,7 @@ describe('navigation session application seam', () => {
       loadVenues: dependencies.loadVenues,
       loadTransit: dependencies.loadTransit,
       journeyPlanner: dependencies.journeyPlanner,
+      locationTracker: dependencies.locationTracker,
     })
     expect(session.start).toHaveBeenCalledOnce()
 
@@ -173,6 +186,10 @@ describe('navigation session application seam', () => {
     expect(session.setTripEndpoint).toHaveBeenCalledWith('origin', { kind: 'venue', id: 'COM1' })
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
+    firstCommands.enableLocationTracking()
+    firstCommands.disableLocationTracking()
+    expect(session.enableLocationTracking).toHaveBeenCalledOnce()
+    expect(session.disableLocationTracking).toHaveBeenCalledOnce()
 
     const replacement = createSessionDouble()
     expect(adapter(replacement)).not.toBe(firstCommands)

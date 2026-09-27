@@ -6,6 +6,11 @@ import type { Journey } from '../domain/trip/journey'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '../domain/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
+import type { LocationTracker } from './contracts/location'
+import {
+  INITIAL_LOCATION_TRACKING_STATE,
+  type LocationTrackingState,
+} from '../domain/location/types'
 import {
   createInitialNavigationSessionState,
   createNavigationSession,
@@ -47,6 +52,27 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
   }
 }
 
+function createLocationTrackerDouble(): LocationTracker & {
+  emit(state: LocationTrackingState): void
+} {
+  let state = INITIAL_LOCATION_TRACKING_STATE
+  const listeners = new Set<() => void>()
+  return {
+    getState: () => state,
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    enable: vi.fn(),
+    disable: vi.fn(),
+    dispose: vi.fn(),
+    emit(nextState) {
+      state = nextState
+      for (const listener of listeners) listener()
+    },
+  }
+}
+
 function createDependencies(
   overrides: Partial<NavigationSessionDependencies> = {},
 ) {
@@ -67,9 +93,11 @@ function createDependencies(
     venueCount: 1,
   }
   const map = createMapDouble()
+  const locationTracker = createLocationTrackerDouble()
 
   return {
     map,
+    locationTracker,
     venues,
     transit,
     loadVenues: vi.fn(async () => venues),
@@ -165,6 +193,7 @@ describe('navigation session', () => {
       },
       tripRequest: { origin: null, destination: null },
       journey: { status: 'idle', journey: null, error: null },
+      location: { status: 'disabled', latestFix: null },
       resourceStatus: {
         venue: { status: 'pending' },
         transit: { status: 'pending' },
@@ -1819,5 +1848,42 @@ describe('navigation session', () => {
     } finally {
       consoleError.mockRestore()
     }
+  })
+
+  it('publishes location updates without moving the map or changing trip endpoints', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const initialTripRequest = session.getState().tripRequest
+    const locationState: LocationTrackingState = {
+      status: 'tracking',
+      latestFix: {
+        longitude: 103.7844,
+        latitude: 1.2933,
+        accuracy: 12,
+        timestamp: 1_000,
+      },
+    }
+
+    session.enableLocationTracking()
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit(locationState)
+
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    expect(session.getState().location).toEqual(locationState)
+    expect(session.getState().tripRequest).toBe(initialTripRequest)
+    expect(dependencies.map.resetView).not.toHaveBeenCalled()
+    expect(dependencies.map.setViewportInsets).not.toHaveBeenCalled()
+    expect(dependencies.map.setTripRequest).not.toHaveBeenCalled()
+  })
+
+  it('disables and disposes the location tracker through session commands', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    session.disableLocationTracking()
+    session.dispose()
+
+    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
+    expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
   })
 })

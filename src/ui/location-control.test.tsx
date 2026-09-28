@@ -30,4 +30,10 @@ describe('LocationControl', () => {
     expect(screen.getByRole('status').textContent).toBe('Finding your location')
     expect(button.querySelector('.location-control-spinner')).toBeTruthy()
   })
+
+  it('is absent while the mobile Plan sheet is expanded', () => {
+    render(<LocationControl visible={false} topOffset={76} searching={false} onLocate={vi.fn()} />)
+
+    expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()
+  })
 })

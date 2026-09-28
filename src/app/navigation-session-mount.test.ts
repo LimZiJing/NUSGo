@@ -45,7 +45,6 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setViewportInsets: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
-    recenterMap: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     clearTripEndpoint: vi.fn(),
@@ -205,13 +204,11 @@ describe('navigation session application seam', () => {
     firstCommands.disableLocationTracking()
     firstCommands.hideLocationMarker()
     firstCommands.showLocationMarker()
-    firstCommands.recenterMap()
     expect(session.enableLocationTracking).toHaveBeenCalledOnce()
     expect(session.locateUser).toHaveBeenCalledOnce()
     expect(session.disableLocationTracking).toHaveBeenCalledOnce()
     expect(session.hideLocationMarker).toHaveBeenCalledOnce()
     expect(session.showLocationMarker).toHaveBeenCalledOnce()
-    expect(session.recenterMap).toHaveBeenCalledOnce()
 
     const replacement = createSessionDouble()
     expect(adapter(replacement)).not.toBe(firstCommands)

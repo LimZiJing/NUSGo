@@ -40,57 +40,21 @@
     display: none;
   }
 
-  .map-recenter-control {
+  .location-control {
     position: absolute;
     z-index: 13;
     top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px));
     left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
-    display: block;
     pointer-events: auto;
-  }
-
-  .location-control {
-    top: calc(var(--location-control-top, 76px) + 52px);
-    left: max(12px, env(safe-area-inset-left));
   }
 
   .location-control-chip {
     min-height: 44px;
   }
 
-  .map-recenter-button {
-    display: grid;
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    padding: 0;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    color: #1f2937;
-    background: rgb(255 255 255 / 95%);
-    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
-    cursor: pointer;
-    place-items: center;
-  }
-
-  .map-recenter-button:focus-visible {
+  .location-control-chip:focus-visible {
     outline: 3px solid #2563eb;
     outline-offset: 2px;
-  }
-
-  .map-recenter-icon {
-    width: 24px;
-    height: 24px;
-    fill: none;
-    stroke: #475569;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-  }
-
-  .map-recenter-icon-center {
-    fill: #475569;
-    stroke: none;
   }
 
   .trip-controls {

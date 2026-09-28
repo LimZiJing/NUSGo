@@ -28,9 +28,10 @@ import {
   INITIAL_LOCATION_TRACKING_STATE,
   type LocationTrackingState,
 } from '../domain/location/types'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import { NoJourneyAvailableError, type JourneyPlanningService } from './journey-planning'
 import { createInitialJourneyState, type JourneyState } from './journey-state'
-import { getMobileRecenterTarget, getResetTarget } from './map-camera'
+import { getLocationControlTarget, getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
 import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
 import { freezeNavigationSessionSnapshot } from './navigation-session-snapshot'
@@ -109,7 +110,6 @@ export interface NavigationSession {
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
-  recenterMap(): void
   resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
@@ -589,10 +589,18 @@ export function createNavigationSession(
         updateState({ locationMarkerVisible: true })
       }
 
-      if (currentLocation.latestFix && !hasLocationError) {
+      const hasActiveLocationFix = currentLocation.status === 'tracking' &&
+        currentLocation.latestFix !== null &&
+        isValidLocationCoordinates(
+          currentLocation.latestFix.longitude,
+          currentLocation.latestFix.latitude,
+        )
+
+      if (hasActiveLocationFix) {
         locationFocusRequested = false
-        dependencies.map.focusCurrentLocation(currentLocation.latestFix)
+        dependencies.map.focusCurrentLocation(currentLocation.latestFix!)
       } else {
+        dependencies.map.resetView(getLocationControlTarget(currentLocation))
         locationFocusRequested = true
       }
 
@@ -663,13 +671,6 @@ export function createNavigationSession(
     zoomOut() {
       if (disposed) return
       dependencies.map.zoomOut()
-    },
-
-    recenterMap() {
-      enqueueTransition(() => {
-        if (disposed) return
-        dependencies.map.resetView(getMobileRecenterTarget(state.location))
-      })
     },
 
     resetView() {

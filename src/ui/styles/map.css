@@ -33,10 +33,6 @@
   background: #64748b;
 }
 
-.map-recenter-control {
-  display: none;
-}
-
 .location-control {
   position: absolute;
   z-index: 13;

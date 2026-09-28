@@ -75,6 +75,8 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport with CDP
 
 ![Mobile map recentered on the active device fix](issue-141-active-location-recenter.png)
 
+The issue #140 and #141 screenshots document the pre-consolidation layout with separate location and recenter controls.
+
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
@@ -84,7 +86,7 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport with CDP
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
-- [ ] The Recenter map button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation center the active tracking fix or Kent Ridge MRT fallback in the exposed map area at zoom 15; location updates alone do not move the camera.
+- [ ] The single mobile location button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
 
 ## Responsive boundary — 768 / 769px
 

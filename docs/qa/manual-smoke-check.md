@@ -64,6 +64,17 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport:
 
 ![Mobile map with the Recenter map button at the top-left safe area](issue-140-mobile-recenter.png)
 
+## Issue #141 targeted verification — 2026-09-28
+
+Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport with CDP geolocation simulation:
+
+- With geolocation denied, Recenter placed the Kent Ridge MRT stop at the exposed map center (195, 173px) using the measured 498px bottom inset.
+- After granting a device fix, the first location was shown. A later simulated fix moved the marker to (2059, 2083px) while the camera stayed put; activating Recenter then placed that marker at the exposed center (195, 173px).
+- The location marker remained visible in this browser flow; the focused session test separately verifies recentering while marker visibility is false.
+- The browser pass generated the shuttle timing payload in memory because the host Node.js prebuild fails with `ERR_NO_TYPESCRIPT`. OpenFreeMap sprite and glyph 404 warnings remained visible, but the map rendered and the recenter behavior passed.
+
+![Mobile map recentered on the active device fix](issue-141-active-location-recenter.png)
+
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
@@ -73,7 +84,7 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport:
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
-- [ ] The Recenter map button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation center Kent Ridge MRT in the exposed map area at zoom 15.
+- [ ] The Recenter map button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation center the active tracking fix or Kent Ridge MRT fallback in the exposed map area at zoom 15; location updates alone do not move the camera.
 
 ## Responsive boundary — 768 / 769px
 

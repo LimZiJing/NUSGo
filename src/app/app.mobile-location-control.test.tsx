@@ -17,34 +17,30 @@ vi.mock('./navigation-session-mount', () => ({
 
 afterEach(cleanup)
 
+function mockMobileViewport(): void {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  })
+}
+
 describe('mobile location control integration', () => {
-  it('renders one target action at the recenter control position', () => {
-    Object.defineProperty(window, 'matchMedia', {
-      configurable: true,
-      value: vi.fn().mockReturnValue({
-        matches: true,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
-    })
+  it('renders one mobile location action without a separate recenter action', () => {
+    mockMobileViewport()
 
     render(<App />)
 
     expect(screen.getAllByRole('button', { name: 'Show my location' })).toHaveLength(1)
     expect(screen.queryByRole('button', { name: 'Recenter map' })).toBeNull()
-    expect(document.querySelectorAll('.map-recenter-control')).toHaveLength(0)
   })
 
   it('hides the combined control while Plan is expanded', async () => {
     const user = userEvent.setup()
-    Object.defineProperty(window, 'matchMedia', {
-      configurable: true,
-      value: vi.fn().mockReturnValue({
-        matches: true,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
-    })
+    mockMobileViewport()
 
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Plan' }))

@@ -1953,6 +1953,27 @@ describe('navigation session', () => {
     expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
   })
 
+  it('restarts a stale location watch before requesting a fresh fix', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit({
+      status: 'stale',
+      latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 },
+    })
+
+    session.locateUser()
+
+    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    expect(dependencies.map.resetView).toHaveBeenCalledWith({
+      kind: 'campus',
+      center: [103.784413, 1.29482],
+      zoom: 15,
+    })
+    session.dispose()
+  })
+
   it.each([
     ['stale', { status: 'stale', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
     ['requesting', { status: 'requesting', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],

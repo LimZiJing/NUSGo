@@ -5,17 +5,22 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './app'
 
+const { locateUser } = vi.hoisted(() => ({ locateUser: vi.fn() }))
+
 vi.mock('./navigation-session-mount', () => ({
   createNavigationSessionMount: () => ({
     session: null,
     dispose: () => undefined,
   }),
-  createNavigationSessionCommandAdapter: () => () => new Proxy({}, {
-    get: () => () => undefined,
+  createNavigationSessionCommandAdapter: () => () => new Proxy({ locateUser }, {
+    get: (target, property) => target[property as keyof typeof target] ?? (() => undefined),
   }),
 }))
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  locateUser.mockClear()
+})
 
 function mockMobileViewport(): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -46,5 +51,15 @@ describe('mobile location control integration', () => {
     await user.click(screen.getByRole('button', { name: 'Plan' }))
 
     expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()
+  })
+
+  it('routes activation to the location command', async () => {
+    const user = userEvent.setup()
+    mockMobileViewport()
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Show my location' }))
+
+    expect(locateUser).toHaveBeenCalledOnce()
   })
 })

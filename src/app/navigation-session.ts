@@ -579,8 +579,9 @@ export function createNavigationSession(
         currentLocation.status === 'unavailable' ||
         currentLocation.status === 'timeout' ||
         currentLocation.status === 'invalid'
+      const shouldRestartTracking = hasLocationError || currentLocation.status === 'stale'
 
-      if (hasLocationError) {
+      if (shouldRestartTracking) {
         dependencies.locationTracker.disable()
       }
 

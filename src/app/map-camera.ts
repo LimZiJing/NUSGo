@@ -12,6 +12,12 @@ import type {
 export const MOBILE_MAP_BREAKPOINT = 768
 export const MAP_OVERLAY_MARGIN = 12
 export const CAMPUS_RESET_CENTER: readonly [number, number] = [103.7844, 1.2933]
+// Keep a pre-load fallback that matches canonical KR-MRT in public/data/shuttle-network.json.
+export const KENT_RIDGE_MRT_CENTER: readonly [number, number] = [103.784413, 1.29482]
+
+export function getMobileRecenterTarget(): MapResetTarget {
+  return { kind: 'campus', center: KENT_RIDGE_MRT_CENTER, zoom: 15 }
+}
 
 export interface MapOverlayMeasurements {
   readonly viewportWidth: number

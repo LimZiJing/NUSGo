@@ -1,4 +1,4 @@
-export function isFocusInsideMapControls(
+export function isFocusInsideMapRecenterControl(
   root: HTMLElement | null,
   activeElement: Element | null = document.activeElement,
 ): activeElement is HTMLElement {

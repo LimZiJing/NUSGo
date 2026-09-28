@@ -18,7 +18,6 @@ export interface NavigationSessionMountDependencies {
   readonly journeyPlanner: JourneyPlanningService
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
-  readonly onMapInteraction?: () => void
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
 
@@ -37,7 +36,6 @@ export function createNavigationSessionMount(
     onMapError: (error) => session?.reportMapError(error),
     onEmptyMapClick: () => session?.handleMapClick(),
     onStopSelected: dependencies.onStopSelected,
-    onMapInteraction: dependencies.onMapInteraction,
     onMapCenterChange: dependencies.onMapCenterChange,
   })
   session = dependencies.createNavigationSession({
@@ -106,6 +104,7 @@ export interface NavigationSessionCommands {
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
   readonly zoomOut: () => void
+  readonly recenterMap: () => void
   readonly resetView: () => void
 }
 
@@ -145,6 +144,7 @@ function createNavigationSessionCommands(
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
+    recenterMap: () => session?.recenterMap(),
     resetView: () => session?.resetView(),
   }
 }

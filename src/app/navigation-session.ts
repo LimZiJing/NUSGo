@@ -30,7 +30,7 @@ import {
 } from '../domain/location/types'
 import { NoJourneyAvailableError, type JourneyPlanningService } from './journey-planning'
 import { createInitialJourneyState, type JourneyState } from './journey-state'
-import { getResetTarget } from './map-camera'
+import { getMobileRecenterTarget, getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
 import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
 import { freezeNavigationSessionSnapshot } from './navigation-session-snapshot'
@@ -109,6 +109,7 @@ export interface NavigationSession {
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
+  recenterMap(): void
   resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
@@ -662,6 +663,13 @@ export function createNavigationSession(
     zoomOut() {
       if (disposed) return
       dependencies.map.zoomOut()
+    },
+
+    recenterMap() {
+      enqueueTransition(() => {
+        if (disposed) return
+        dependencies.map.resetView(getMobileRecenterTarget())
+      })
     },
 
     resetView() {

@@ -96,6 +96,7 @@ interface JourneyPath {
   readonly lastShuttleReachedTerminal: boolean
   readonly legs: readonly JourneyLeg[]
   readonly sequenceKey: string
+  readonly visitedStateKeys: ReadonlySet<string>
 }
 
 interface ProjectedPoint {
@@ -108,7 +109,6 @@ interface ProjectedPoint {
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
-const MAX_PATH_LABELS_PER_STATE = 8
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -353,8 +353,14 @@ function comparePaths(first: JourneyPath, second: JourneyPath): number {
   return compareText(first.sequenceKey, second.sequenceKey)
 }
 
+function journeyPathStateKey(
+  path: Pick<JourneyPath, 'nodeKey' | 'lastShuttleRouteId' | 'lastShuttleReachedTerminal' | 'shuttleBoardings'>,
+): string {
+  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}\u0000${path.shuttleBoardings > 0 ? 'boarded' : 'unboarded'}`
+}
+
 function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
-  return {
+  const nextPath = {
     nodeKey: endpointKey(edge.to),
     durationSeconds: path.durationSeconds + edge.durationSeconds,
     distanceMeters: path.distanceMeters + edge.distanceMeters,
@@ -367,10 +373,19 @@ function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
       ? `${path.sequenceKey}|${edge.sequenceKey}`
       : edge.sequenceKey,
   }
+  return {
+    ...nextPath,
+    visitedStateKeys: new Set([
+      ...path.visitedStateKeys,
+      journeyPathStateKey(nextPath),
+    ]),
+  }
 }
 
-function journeyPathStateKey(path: JourneyPath): string {
-  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}`
+function dominatesPath(first: JourneyPath, second: JourneyPath): boolean {
+  // Different arrival times can produce different live shuttle choices. Only
+  // compare labels when the future timing context is exactly the same.
+  return first.durationSeconds === second.durationSeconds && comparePaths(first, second) < 0
 }
 
 function retainPathLabels(
@@ -381,15 +396,12 @@ function retainPathLabels(
   const labels = labelsByState.get(stateKey) ?? []
   if (labels.some((label) => label.sequenceKey === path.sequenceKey)) return false
 
-  labels.push(path)
-  labels.sort(comparePaths)
-  if (labels.length > MAX_PATH_LABELS_PER_STATE) {
-    const earlyLabels = labels.slice(0, Math.floor(MAX_PATH_LABELS_PER_STATE / 2))
-    const lateLabels = labels.slice(-Math.ceil(MAX_PATH_LABELS_PER_STATE / 2))
-    labelsByState.set(stateKey, [...earlyLabels, ...lateLabels])
-  } else {
-    labelsByState.set(stateKey, labels)
-  }
+  if (labels.some((label) => dominatesPath(label, path))) return false
+
+  const retainedLabels = labels.filter((label) => !dominatesPath(path, label))
+  retainedLabels.push(path)
+  retainedLabels.sort(comparePaths)
+  labelsByState.set(stateKey, retainedLabels)
 
   return labelsByState.get(stateKey)?.some((label) => label.sequenceKey === path.sequenceKey) ?? false
 }
@@ -555,7 +567,7 @@ function findBestPath(
 ): JourneyPath | null {
   const originKey = endpointKey(origin)
   const destinationKey = endpointKey(destination)
-  const initialPath: JourneyPath = {
+  const initialPathState = {
     nodeKey: originKey,
     durationSeconds: 0,
     distanceMeters: 0,
@@ -565,6 +577,10 @@ function findBestPath(
     lastShuttleReachedTerminal: false,
     legs: [],
     sequenceKey: '',
+  }
+  const initialPath: JourneyPath = {
+    ...initialPathState,
+    visitedStateKeys: new Set([journeyPathStateKey(initialPathState)]),
   }
   const queue: JourneyPath[] = [initialPath]
   const labelsByState = new Map<string, JourneyPath[]>()
@@ -598,6 +614,7 @@ function findBestPath(
       const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
       if (!resolvedEdge) continue
       const nextPath = extendPath(path, resolvedEdge)
+      if (path.visitedStateKeys.has(journeyPathStateKey(nextPath))) continue
       if (retainPathLabels(labelsByState, nextPath)) {
         queue.push(nextPath)
       }

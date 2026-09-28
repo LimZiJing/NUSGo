@@ -668,7 +668,7 @@ export function createNavigationSession(
     recenterMap() {
       enqueueTransition(() => {
         if (disposed) return
-        dependencies.map.resetView(getMobileRecenterTarget())
+        dependencies.map.resetView(getMobileRecenterTarget(state.location))
       })
     },
 

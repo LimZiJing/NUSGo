@@ -1,5 +1,7 @@
 import type { ContextualPanelMode } from '../features/contextual-panel/state'
 import type { TransitIndex } from '../domain/transit'
+import type { LocationTrackingState } from '../domain/location/types'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocationMap } from '../domain/venue/types'
@@ -15,8 +17,20 @@ export const CAMPUS_RESET_CENTER: readonly [number, number] = [103.7844, 1.2933]
 // Keep a pre-load fallback that matches canonical KR-MRT in public/data/shuttle-network.json.
 export const KENT_RIDGE_MRT_CENTER: readonly [number, number] = [103.784413, 1.29482]
 
-export function getMobileRecenterTarget(): MapResetTarget {
-  return { kind: 'campus', center: KENT_RIDGE_MRT_CENTER, zoom: 15 }
+function getTrackingFixCoordinate(location: LocationTrackingState): MapCoordinate | null {
+  if (location.status !== 'tracking' || !location.latestFix) return null
+  const { longitude, latitude } = location.latestFix
+  if (!isValidLocationCoordinates(longitude, latitude)) return null
+
+  return [longitude, latitude]
+}
+
+export function getMobileRecenterTarget(location: LocationTrackingState): MapResetTarget {
+  return {
+    kind: 'campus',
+    center: getTrackingFixCoordinate(location) ?? KENT_RIDGE_MRT_CENTER,
+    zoom: 15,
+  }
 }
 
 export interface MapOverlayMeasurements {

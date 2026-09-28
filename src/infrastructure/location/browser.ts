@@ -3,6 +3,7 @@ import {
   type DeviceLocationFix,
   type LocationTrackingState,
 } from '../../domain/location/types'
+import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import type { LocationTracker } from '../../app/contracts/location'
 
 const DEFAULT_STALE_AFTER_MS = 2 * 60 * 1_000
@@ -31,15 +32,6 @@ function getBrowserGeolocation(): BrowserGeolocation | undefined {
   return typeof navigator === 'undefined' ? undefined : navigator.geolocation
 }
 
-function isValidCoordinate(longitude: number, latitude: number): boolean {
-  return Number.isFinite(longitude) &&
-    Number.isFinite(latitude) &&
-    longitude >= -180 &&
-    longitude <= 180 &&
-    latitude >= -90 &&
-    latitude <= 90
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -58,7 +50,7 @@ function createLocationFix(
     typeof latitude !== 'number' ||
     typeof accuracy !== 'number' ||
     typeof timestamp !== 'number' ||
-    !isValidCoordinate(longitude, latitude) ||
+    !isValidLocationCoordinates(longitude, latitude) ||
     !Number.isFinite(accuracy) ||
     accuracy < 0 ||
     !Number.isFinite(timestamp) ||

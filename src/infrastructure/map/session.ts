@@ -48,6 +48,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
   let currentTransitIndex: TransitIndex | null = null
+  let stopsPinStopId: string | null = null
+  let stopsPinVisible = false
   let viewportInsets: MapViewportInsets = EMPTY_VIEWPORT_INSETS
   let pendingCameraFit: {
     readonly kind: 'venue'
@@ -80,6 +82,20 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     (viewportInsets.left - viewportInsets.right) / 2,
     (viewportInsets.top - viewportInsets.bottom) / 2,
   ]
+
+  const flyToStop = (stopId: string, zoom: number, popupOffset: number): void => {
+    const stop = currentTransitIndex?.stopById.get(stopId)
+    if (!stop) return
+    pendingCameraFit = null
+    const [offsetX, offsetY] = getFitOffset()
+    map.flyTo({
+      center: [stop.longitude, stop.latitude],
+      zoom,
+      duration: 500,
+      offset: [offsetX, offsetY - popupOffset],
+      essential: true,
+    })
+  }
 
   const fitVenue = (venue: VenueLocation): void => {
     const location = venue.location
@@ -214,8 +230,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearTransitData()
       transitData = data
       currentTransitIndex = data.index
+      if (stopsPinStopId && !data.index.stopById.has(stopsPinStopId)) stopsPinStopId = null
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
-      shuttleStopMarkers = createShuttleStopMarkers(map, data.index.stops, onSetEndpoint)
+      shuttleStopMarkers = createShuttleStopMarkers(
+        map,
+        data.index.stops,
+        onSetEndpoint,
+        options.onStopSelected,
+      )
+      if (!shuttleStopMarkers.setStopsPin(stopsPinStopId, stopsPinVisible)) {
+        stopsPinStopId = null
+        shuttleStopMarkers.setStopsPin(null, stopsPinVisible)
+      }
       currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
       applyJourneyPresentation()
@@ -268,16 +294,20 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
       const stop = currentTransitIndex?.stopById.get(stopId)
       if (!stop || !shuttleStopMarkers?.openStopPopup(stopId)) return
-      pendingCameraFit = null
-      const [offsetX, offsetY] = getFitOffset()
-      map.flyTo({
-        center: [stop.longitude, stop.latitude],
-        zoom: Math.max(map.getZoom(), 16),
-        duration: 500,
-        // Leave space for the stop popup above the marker in the exposed map area.
-        offset: [offsetX, offsetY - 56],
-        essential: true,
-      })
+      flyToStop(stopId, Math.max(map.getZoom(), 16), 56)
+    },
+
+    focusStopInStopsTab(stopId: string) {
+      if (disposed || !currentTransitIndex?.stopById.has(stopId)) return
+      if (!shuttleStopMarkers?.setStopsPin(stopId, stopsPinVisible)) return
+      stopsPinStopId = stopId
+      flyToStop(stopId, 17, 0)
+    },
+
+    setStopsPinVisible(visible: boolean) {
+      if (disposed) return
+      stopsPinVisible = visible
+      shuttleStopMarkers?.setStopsPin(stopsPinStopId, visible)
     },
 
     setTripRequest(request: TripRequest, venues: VenueLocationMap, transitIndex: TransitIndex | null) {
@@ -326,6 +356,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }
+      lifecycle.setViewportInsets(viewportInsets)
       const pendingFit = pendingCameraFit
       pendingCameraFit = null
       if (pendingFit?.kind === 'venue') {

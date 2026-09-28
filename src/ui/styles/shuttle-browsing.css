@@ -127,7 +127,8 @@
     scroll-snap-type: x proximity;
   }
 
-  .contextual-panel .route-chip {
+  .contextual-panel .route-chip,
+  .mobile-stops-sheet .route-chip {
     flex: 0 0 auto;
     min-width: 48px;
     min-height: 44px;
@@ -141,11 +142,25 @@
     scroll-snap-align: start;
   }
 
-  .contextual-panel .route-chip[aria-pressed='true'] {
+  .contextual-panel .route-chip[data-size='compact'],
+  .mobile-stops-sheet .route-chip[data-size='compact'] {
+    min-width: 34px;
+    min-height: 24px;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+
+  .contextual-panel .route-chip[data-active='true'],
+  .mobile-stops-sheet .route-chip[data-active='true'] {
     border-color: var(--route-color);
     color: var(--route-text-color);
     background: var(--route-color);
     box-shadow: 0 2px 7px rgb(15 23 42 / 18%);
+  }
+
+  .contextual-panel .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
+  .mobile-stops-sheet .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
+    color: #fff;
   }
 
   .route-chip:focus-visible,

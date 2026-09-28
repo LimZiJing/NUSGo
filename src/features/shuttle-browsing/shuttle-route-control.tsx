@@ -1,7 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
-import { getRouteChipTextColor } from '../../ui/route-color'
+import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
 
 interface ShuttleRouteControlProps {
@@ -78,23 +78,20 @@ export function ShuttleRouteControl({
         {routes.length > 0 && (
           <ScrollArea axis="horizontal" className="route-chip-list" role="group" aria-label="Shuttle routes">
             {routes.map((route, index) => (
-              <button
+              <RouteChip
                 key={route.id}
-                ref={(element) => {
+                buttonRef={(element) => {
                   if (index === 0 && firstRouteCardRef) firstRouteCardRef.current = element
                   if (selectedRouteId === route.id) selectedChipRef.current = element
                 }}
-                className="route-chip"
-                type="button"
-                data-route-id={route.id}
-                data-contextual-focus-id={`shuttle-route-${route.id}`}
-                style={{ '--route-color': route.color, '--route-text-color': getRouteChipTextColor(route.color) } as CSSProperties}
-                aria-label={`Route ${route.id}`}
-                aria-pressed={selectedRouteId === route.id}
+                routeId={route.id}
+                routeColor={route.color}
+                focusId={`shuttle-route-${route.id}`}
+                ariaLabel={`Route ${route.id}`}
+                active={selectedRouteId === route.id}
+                pressed={selectedRouteId === route.id}
                 onClick={() => onRouteSelect(route.id)}
-              >
-                {route.id}
-              </button>
+              />
             ))}
           </ScrollArea>
         )}

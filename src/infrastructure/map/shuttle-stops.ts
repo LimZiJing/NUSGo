@@ -118,6 +118,8 @@ type BusStopMarker = {
   popup: Popup
   popupContent: PopupContent
   unregisterPopup: () => void
+  handleMarkerClick: (event: MouseEvent) => void
+  handleMarkerKeyPress: (event: KeyboardEvent) => void
   handleOpen: () => void
   handleClose: () => void
 }
@@ -125,6 +127,7 @@ type BusStopMarker = {
 export interface ShuttleStopMarkers {
   readonly markers: readonly Marker[]
   openStopPopup(stopId: string): boolean
+  setStopsPin(stopId: string | null, visible: boolean): boolean
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
   setJourneyStops(stopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null): void
   dispose(): void
@@ -136,6 +139,8 @@ type ShuttleStopMarkerState = {
   selectedStopIds: ReadonlySet<string> | null
   selectedRouteColor: string | null
   journeyStopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null
+  selectedStopId: string | null
+  pinVisible: boolean
   focusedStopIds: Set<string>
   handleZoom: () => void
 }
@@ -236,8 +241,10 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
   const prominentStopIds = state.journeyStopRoutes === null
     ? state.selectedStopIds
     : new Set(state.journeyStopRoutes.keys())
-  const filters = getBusStopLabelFilters(prominentStopIds, state.focusedStopIds)
-  const activeMinZoom = prominentStopIds !== null || state.focusedStopIds.size > 0
+  const focusedStopIds = new Set(state.focusedStopIds)
+  if (state.selectedStopId !== null) focusedStopIds.add(state.selectedStopId)
+  const filters = getBusStopLabelFilters(prominentStopIds, focusedStopIds)
+  const activeMinZoom = prominentStopIds !== null || focusedStopIds.size > 0
     ? 0
     : BUS_STOP_MIN_ZOOM
   const inactiveOpacity = getBusStopLabelOpacity(prominentStopIds)
@@ -280,8 +287,10 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
   for (const marker of state.markers) {
     const element = marker.getElement()
     const stopId = element.dataset.stopId ?? ''
-    const isSelected = selectedIds.has(stopId)
-    const isFocused = state.focusedStopIds.has(stopId)
+    const isRouteSelected = selectedIds.has(stopId)
+    const isContextSelected = state.pinVisible && state.selectedStopId === stopId
+    const isSelected = isRouteSelected || isContextSelected
+    const isFocused = state.focusedStopIds.has(stopId) || isContextSelected
     const routeSelected = selectedStopIds !== null
     const isVisible = journeyActive || isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
     const isDimmed = journeyActive
@@ -294,7 +303,9 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
       isVisible,
       isDimmed,
       isDisabled,
-      journeyActive ? null : state.selectedRouteColor,
+      journeyActive || (isContextSelected && !isRouteSelected)
+        ? null
+        : state.selectedRouteColor,
       state.journeyStopRoutes?.get(stopId) ?? null,
     )
   }
@@ -306,16 +317,23 @@ export function createShuttleStopMarkers(
   map: Map,
   busStops: readonly TransitStop[],
   onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
+  onStopSelected?: (stopId: string) => boolean,
 ): ShuttleStopMarkers {
   const markers: Marker[] = []
   const markerDetails: BusStopMarker[] = []
   const popupCoordinator = createPopupCoordinator()
+  // MapLibre's default -14 px offset places the pin tip on the stop coordinate.
+  const stopsPinMarker = new Marker({ color: '#64748b' })
+  stopsPinMarker.getElement().style.pointerEvents = 'none'
+  stopsPinMarker.getElement().setAttribute('aria-hidden', 'true')
   const state: ShuttleStopMarkerState = {
     map,
     markers,
     selectedStopIds: null,
     selectedRouteColor: null,
     journeyStopRoutes: null,
+    selectedStopId: null,
+    pinVisible: false,
     focusedStopIds: new Set<string>(),
     handleZoom: () => updateBusStopMarkerPresentation(state),
   }
@@ -345,6 +363,16 @@ export function createShuttleStopMarkers(
     const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
     const popup = new Popup({ offset: 24 }).setDOMContent(popupContent.element)
     const unregisterPopup = popupCoordinator.register(popup)
+    const handleMarkerClick = (event: MouseEvent): void => {
+      if (!onStopSelected?.(stop.id)) return
+      event.stopImmediatePropagation()
+    }
+    const handleMarkerKeyPress = (event: KeyboardEvent): void => {
+      if (!state.pinVisible || (event.code !== 'Enter' && event.code !== 'Space')) return
+      event.stopImmediatePropagation()
+    }
+    element.addEventListener('click', handleMarkerClick, true)
+    element.addEventListener('keypress', handleMarkerKeyPress, true)
     const handleOpen = () => {
       state.focusedStopIds.add(stop.id)
       updateBusStopMarkerPresentation(state)
@@ -365,6 +393,8 @@ export function createShuttleStopMarkers(
       popup,
       popupContent,
       unregisterPopup,
+      handleMarkerClick,
+      handleMarkerKeyPress,
       handleOpen,
       handleClose,
     })
@@ -384,6 +414,22 @@ export function createShuttleStopMarkers(
       state.focusedStopIds.add(stopId)
       updateBusStopMarkerPresentation(state)
       if (!detail.popup.isOpen()) detail.marker.togglePopup()
+      return true
+    },
+    setStopsPin(stopId, visible) {
+      if (disposed) return false
+      const stop = stopId === null ? null : busStops.find(({ id }) => id === stopId)
+      if (stopId !== null && (!stop || !markerDetails.some(({ marker }) => (
+        marker.getElement().dataset.stopId === stopId
+      )))) return false
+      state.selectedStopId = stopId
+      state.pinVisible = visible
+      if (visible && stop) {
+        stopsPinMarker.setLngLat([stop.longitude, stop.latitude]).addTo(map)
+      } else {
+        stopsPinMarker.remove()
+      }
+      updateBusStopMarkerPresentation(state)
       return true
     },
     setSelection(selectedStopIds, selectedRouteColor = null) {
@@ -407,7 +453,10 @@ export function createShuttleStopMarkers(
       if (disposed) return
       disposed = true
       map.off('zoom', state.handleZoom)
+      stopsPinMarker.remove()
       for (const detail of markerDetails) {
+        detail.marker.getElement().removeEventListener('click', detail.handleMarkerClick, true)
+        detail.marker.getElement().removeEventListener('keypress', detail.handleMarkerKeyPress, true)
         detail.unregisterPopup()
         detail.popup.off('open', detail.handleOpen)
         detail.popup.off('close', detail.handleClose)

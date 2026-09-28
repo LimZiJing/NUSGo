@@ -19,6 +19,8 @@ function createMapDouble(): MapSession {
     setRouteSelection: vi.fn(),
     refitRoute: vi.fn(),
     focusStop: vi.fn(),
+    focusStopInStopsTab: vi.fn(),
+    setStopsPinVisible: vi.fn(),
     setTripRequest: vi.fn(),
     setJourney: vi.fn(),
     setCurrentLocation: vi.fn(),
@@ -58,6 +60,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     leaveMobileRoutes: vi.fn(),
     selectMobileRoute: vi.fn(),
     focusStop: vi.fn(),
+    focusStopInStopsTab: vi.fn(),
+    setStopsPinVisible: vi.fn(),
     enableLocationTracking: vi.fn(),
     locateUser: vi.fn(),
     disableLocationTracking: vi.fn(),
@@ -191,6 +195,10 @@ describe('navigation session application seam', () => {
     expect(session.setTripEndpoint).toHaveBeenCalledWith('origin', { kind: 'venue', id: 'COM1' })
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
+    firstCommands.focusStopInStopsTab('STOP-A')
+    firstCommands.setStopsPinVisible(true)
+    expect(session.focusStopInStopsTab).toHaveBeenCalledWith('STOP-A')
+    expect(session.setStopsPinVisible).toHaveBeenCalledWith(true)
     firstCommands.enableLocationTracking()
     firstCommands.locateUser()
     firstCommands.disableLocationTracking()

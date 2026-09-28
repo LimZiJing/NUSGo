@@ -12,7 +12,11 @@ export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
   readonly onEmptyMapClick: () => void
+  /** Returns true when the mobile Stops sheet owns the stop context. */
+  readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapInteraction?: () => void
+  /** Centre of the map area left visible by the current overlays. */
+  readonly onMapCenterChange?: (center: MapCoordinate) => void
 }
 
 export type MapCoordinate = readonly [number, number]
@@ -49,6 +53,8 @@ export interface MapSession {
   setRouteSelection(selection: MapRouteSelection, fit?: boolean): void
   refitRoute(): void
   focusStop(stopId: string): void
+  focusStopInStopsTab(stopId: string): void
+  setStopsPinVisible(visible: boolean): void
   setTripRequest(
     request: TripRequest,
     venues: VenueLocationMap,

@@ -39,6 +39,10 @@ vi.mock('maplibre-gl', () => {
 
     setPopup(popup: FakePopup) {
       this.popup = popup
+      this.element.addEventListener('click', () => this.togglePopup())
+      this.element.addEventListener('keypress', (event) => {
+        if (event.code === 'Enter' || event.code === 'Space') this.togglePopup()
+      })
       return this
     }
 
@@ -182,7 +186,7 @@ describe('createPopupCoordinator', () => {
 class FakeElement {
   children: FakeElement[] = []
   attributes = new Map<string, string>()
-  listeners = new Map<string, () => void>()
+  listeners = new Map<string, Array<{ handler: (event: Event) => void; capture: boolean }>>()
   className = ''
   classes = new Set<string>()
   classList = {
@@ -212,12 +216,14 @@ class FakeElement {
     this.children.push(...children)
   }
 
-  addEventListener(event: string, listener: () => void) {
-    this.listeners.set(event, listener)
+  addEventListener(event: string, listener: (event: Event) => void, capture = false) {
+    const listeners = this.listeners.get(event) ?? []
+    listeners.push({ handler: listener, capture })
+    this.listeners.set(event, listeners)
   }
 
-  removeEventListener(event: string, listener: () => void) {
-    if (this.listeners.get(event) === listener) this.listeners.delete(event)
+  removeEventListener(event: string, listener: (event: Event) => void) {
+    this.listeners.set(event, (this.listeners.get(event) ?? []).filter(({ handler }) => handler !== listener))
   }
 
   setAttribute(name: string, value: string) {
@@ -228,8 +234,27 @@ class FakeElement {
     this.attributes.delete(name)
   }
 
-  click() {
-    this.listeners.get('click')?.()
+  private dispatch(eventName: string, code?: string, detail?: number) {
+    let stopped = false
+    const event = {
+      code,
+      detail,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: () => { stopped = true },
+    } as unknown as Event
+    const listeners = this.listeners.get(eventName) ?? []
+    for (const { handler } of [...listeners].sort((a, b) => Number(b.capture) - Number(a.capture))) {
+      handler(event)
+      if (stopped) break
+    }
+  }
+
+  click(detail = 1) {
+    this.dispatch('click', undefined, detail)
+  }
+
+  pressKey(code: string) {
+    this.dispatch('keypress', code)
   }
 }
 
@@ -306,6 +331,78 @@ describe('bus-stop presentation', () => {
       services: ['A1'],
     },
   ]
+
+  it('opens the Stops selection without a popup and restores its pin after tab changes', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const map = {
+      getSource: vi.fn(() => ({})),
+      getLayer: vi.fn(() => ({})),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => 15),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const onStopSelected = vi.fn(() => true)
+    const adapter = createShuttleStopMarkers(map, [stops[0]], undefined, onStopSelected)
+    const marker = adapter.markers[0]
+    const element = marker.getElement() as unknown as FakeElement
+    const popup = marker.getPopup() as unknown as { isOpen(): boolean }
+
+    element.click()
+    expect(onStopSelected).toHaveBeenCalledWith('STOP-A')
+    expect(popup.isOpen()).toBe(false)
+
+    expect(adapter.setStopsPin('STOP-A', true)).toBe(true)
+    expect(element.classes.has('bus-stop-marker-selected')).toBe(true)
+    expect(element.className).toBe('bus-stop-marker')
+    expect(element.attributes.get('aria-label')).toBe('Central Library shuttle stop')
+    adapter.setStopsPin('STOP-A', false)
+    expect(element.classes.has('bus-stop-marker-selected')).toBe(false)
+    adapter.setStopsPin('STOP-A', true)
+    expect(element.classes.has('bus-stop-marker-selected')).toBe(true)
+    element.click()
+    expect(onStopSelected).toHaveBeenCalledTimes(2)
+    expect(popup.isOpen()).toBe(false)
+    element.pressKey('Enter')
+    element.click(0)
+    element.pressKey('Space')
+    element.click(0)
+    expect(onStopSelected).toHaveBeenCalledTimes(4)
+    expect(popup.isOpen()).toBe(false)
+
+    adapter.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the Explore popup when Stops does not own a marker tap', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const map = {
+      getSource: vi.fn(() => ({})),
+      getLayer: vi.fn(() => ({})),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => 15),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const adapter = createShuttleStopMarkers(map, [stops[0]], undefined, () => false)
+    const marker = adapter.markers[0]
+
+    ;(marker.getElement() as unknown as FakeElement).click()
+    expect((marker.getPopup() as unknown as { isOpen(): boolean }).isOpen()).toBe(true)
+    ;(marker.getElement() as unknown as FakeElement).pressKey('Enter')
+    expect((marker.getPopup() as unknown as { isOpen(): boolean }).isOpen()).toBe(false)
+
+    adapter.dispose()
+    vi.unstubAllGlobals()
+  })
 
   it('applies and clears route selection through the public marker adapter', () => {
     vi.stubGlobal('document', {

@@ -20,6 +20,7 @@ import {
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { GhostBackButton } from '../../ui/ghost-back-button'
+import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
@@ -708,19 +709,12 @@ export function ContextualPanel({
             </p>
           )}
           <div className="venue-detail-actions">
-            <button
-              className="venue-detail-action venue-detail-navigate"
-              type="button"
+            <NavigateButton
               disabled={!venueHasCoordinates}
               onClick={() => {
                 if (selectedVenue) onNavigateToVenue?.(selectedVenue.code)
               }}
-            >
-              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                <path d="m4 20 7-17 3 8 8 3-18 6Z" />
-              </svg>
-              <span>Navigate</span>
-            </button>
+            />
             <a
               className="venue-detail-action venue-detail-nusmods"
               href={`https://nusmods.com/venues/${encodeURIComponent(state.selectedVenue.code)}`}
@@ -728,7 +722,7 @@ export function ContextualPanel({
               rel="noreferrer"
             >
               <span>View in</span>
-              <img src="/nusmods-logo.svg" alt="NUSMods" />
+              <img src={`${import.meta.env.BASE_URL}nusmods-logo.svg`} alt="NUSMods" />
             </a>
           </div>
           {venueHasCoordinates && (

@@ -1,0 +1,30 @@
+.info-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.info-pill[data-color-scheme='neutral'] {
+  color: #475569;
+  background: #eef0f4;
+}
+
+.info-pill[data-color-scheme='success'] {
+  border: 1px solid #9ee8d0;
+  color: #047857;
+  background: #def8eb;
+}
+
+.info-pill[data-leading-dot='true']::before {
+  width: 5px;
+  height: 5px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}

@@ -16,9 +16,9 @@ import {
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
 import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
-import { MapControls } from '../ui/map-controls'
 import { LocationControl } from '../ui/location-control'
-import { isFocusInsideMapControls } from '../ui/map-controls-focus'
+import { MapRecenterControl } from '../ui/map-recenter-control'
+import { isFocusInsideMapRecenterControl } from '../ui/map-recenter-control-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
@@ -50,7 +50,7 @@ import { createBrowserLocationTracker } from '../infrastructure/location/browser
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
   const mapContainer = useRef<HTMLDivElement>(null)
-  const mapControlsRef = useRef<HTMLDivElement>(null)
+  const mapRecenterControlRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLElement>(null)
   const contextualPanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
@@ -79,7 +79,6 @@ function App() {
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
   const initialNearbyLocationRequestedRef = useRef(false)
-  const [mapControlsOpen, setMapControlsOpen] = useState(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
     right: 0,
@@ -108,10 +107,9 @@ function App() {
       const isMobile = getIsMobileViewport()
       setIsMobileViewport(isMobile)
       if (!isMobile) {
-        if (isFocusInsideMapControls(mapControlsRef.current)) {
+        if (isFocusInsideMapRecenterControl(mapRecenterControlRef.current)) {
           focusTripControlAfterOverlayRef.current = true
         }
-        setMapControlsOpen(false)
       }
     }
     updateViewport()
@@ -351,7 +349,6 @@ function App() {
       journeyPlanner,
       locationTracker: createBrowserLocationTracker(),
       onStopSelected: handleStopSelected,
-      onMapInteraction: () => setMapControlsOpen(false),
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
     })
     setSession(mount.session)
@@ -400,19 +397,14 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        <MapControls
+        <MapRecenterControl
           visible={isMobileViewport && !(
             mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.expanded
           )}
-          topOffset={mapInsets.top || 76}
           onRootChange={(root) => {
-            mapControlsRef.current = root
+            mapRecenterControlRef.current = root
           }}
-          open={mapControlsOpen}
-          onOpenChange={setMapControlsOpen}
-          onZoomIn={commands.zoomIn}
-          onZoomOut={commands.zoomOut}
-          onReset={commands.resetView}
+          onRecenter={commands.recenterMap}
         />
         <LocationControl
           topOffset={mapInsets.top || 76}
@@ -458,10 +450,9 @@ function App() {
             mobileViewport={isMobileViewport}
             onExpandedChange={(expanded) => {
               if (!isMobileViewport) return
-              if (expanded && isFocusInsideMapControls(mapControlsRef.current)) {
+              if (expanded && isFocusInsideMapRecenterControl(mapRecenterControlRef.current)) {
                 focusTripControlAfterOverlayRef.current = true
               }
-              setMapControlsOpen(false)
               dispatchMobileNavigation(expanded
                 ? { type: 'set-sheet-expanded', tab: 'plan', expanded: true }
                 : { type: 'close-active-tab' })
@@ -511,7 +502,6 @@ function App() {
               commands.selectDestinationEndpoint({ kind: 'venue', id: venueCode })
               if (isMobileViewport) {
                 prepareSheetTransition(true)
-                setMapControlsOpen(false)
                 dispatchMobileNavigation({ type: 'open-plan' })
               }
             }}
@@ -584,7 +574,6 @@ function App() {
             onNavigateToStop={(stopId) => {
               commands.selectDestinationEndpoint({ kind: 'stop', id: stopId })
               prepareSheetTransition(true)
-              setMapControlsOpen(false)
               dispatchMobileNavigation({ type: 'open-plan' })
             }}
             onBeforeSheetToggle={() => prepareSheetTransition()}
@@ -595,7 +584,6 @@ function App() {
       <MobileTabBar
         activeTab={mobileNavigation.activeTab}
         onSelectTab={(tab) => {
-          setMapControlsOpen(false)
           if (tab === 'stops' && mobileStopView.list === 'nearby' && state.location.status === 'disabled') {
             commands.enableLocationTracking()
           }

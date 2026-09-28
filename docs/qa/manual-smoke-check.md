@@ -52,6 +52,18 @@ Codex In-app Browser, local Vite development server:
 - The live permission prompt and marker movement were not exercised because accepting a real browser location permission prompt was outside this smoke pass.
 - Automated tests cover the one-tap locate action, quiet searching indicator, first-fix map focus, marker updates and disposal, and browser error handling.
 
+## Issue #140 targeted verification — 2026-09-28
+
+Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport:
+
+- The accessible Recenter map button measured 44 × 44px at (12, 12), with z-index 13 above the mobile sheets.
+- Pointer and Enter activation moved the Kent Ridge MRT stop marker to the measured exposed-map centre (y=173px with a 498px bottom inset).
+- The button disappeared when Plan was expanded and returned after switching to Stops.
+- At 1280 × 720, the recenter button was absent and the native MapLibre navigation controls remained visible.
+- The browser pass supplied a runtime-generated shuttle timing payload in memory because `npm run build` is blocked by this environment's Node `ERR_NO_TYPESCRIPT` prebuild failure. OpenFreeMap glyph 404 warnings were visible; they did not prevent the map and controls from rendering.
+
+![Mobile map with the Recenter map button at the top-left safe area](issue-140-mobile-recenter.png)
+
 ## Mobile — 390 × 844
 
 - [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
@@ -61,7 +73,7 @@ Codex In-app Browser, local Vite development server:
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
-- [ ] Map controls remain usable in the exposed map area and do not cover active sheet controls.
+- [ ] The Recenter map button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation center Kent Ridge MRT in the exposed map area at zoom 15.
 
 ## Responsive boundary — 768 / 769px
 

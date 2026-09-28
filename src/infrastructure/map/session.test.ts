@@ -940,10 +940,11 @@ describe('MapSession', () => {
 
     session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
     expect(map.fitBounds).toHaveBeenCalledOnce()
-    session.resetView({ kind: 'campus', center: [103.7844, 1.2933], zoom: 15 })
+    session.resetView({ kind: 'campus', center: [103.784413, 1.29482], zoom: 15 })
     expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
-      center: [103.7844, 1.2933],
+      center: [103.784413, 1.29482],
       zoom: 15,
+      offset: [0, -54],
     }))
     session.setViewportInsets({ top: 96, right: 12, bottom: 208, left: 12 })
     expect(map.fitBounds).toHaveBeenCalledOnce()

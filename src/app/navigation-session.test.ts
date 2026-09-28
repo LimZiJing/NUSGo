@@ -182,6 +182,31 @@ const venueResult: VenueSearchResult = {
 }
 
 describe('navigation session', () => {
+  it('recenters on Kent Ridge independently of the selected map context', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.selectVenue(venueResult)
+    session.selectRoute('A1')
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.recenterMap()
+
+    expect(dependencies.map.resetView).toHaveBeenLastCalledWith({
+      kind: 'campus',
+      center: [103.784413, 1.29482],
+      zoom: 15,
+    })
+    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
+    expect(session.getState().selectedRouteId).toBe('A1')
+    expect(session.getState().tripRequest).toEqual({
+      origin: { kind: 'venue', id: 'COM1' },
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+    session.dispose()
+  })
+
   it('starts with stable application defaults', () => {
     expect(createInitialNavigationSessionState()).toEqual({
       venues: null,

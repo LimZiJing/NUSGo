@@ -40,13 +40,12 @@
     display: none;
   }
 
-  .map-controls {
+  .map-recenter-control {
     position: absolute;
     z-index: 13;
-    top: var(--map-controls-top, 76px);
-    left: max(12px, env(safe-area-inset-left));
-    display: grid;
-    gap: 6px;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px));
+    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+    display: block;
     pointer-events: auto;
   }
 
@@ -59,31 +58,39 @@
     min-height: 44px;
   }
 
-  .map-controls-chip,
-  .map-controls-popover button {
+  .map-recenter-button {
+    display: grid;
+    width: 44px;
+    height: 44px;
     min-height: 44px;
-    padding: 8px 10px;
+    padding: 0;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
     color: #1f2937;
     background: rgb(255 255 255 / 95%);
     box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
-    font: 14px/1.2 system-ui, sans-serif;
     cursor: pointer;
+    place-items: center;
   }
 
-  .map-controls-popover {
-    display: grid;
-    gap: 4px;
-    padding: 6px;
-    border-radius: 6px;
-    background: rgb(255 255 255 / 95%);
-    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+  .map-recenter-button:focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
   }
 
-  .map-controls-popover button {
-    min-width: 108px;
-    text-align: left;
+  .map-recenter-icon {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: #475569;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .map-recenter-icon-center {
+    fill: #475569;
+    stroke: none;
   }
 
   .trip-controls {

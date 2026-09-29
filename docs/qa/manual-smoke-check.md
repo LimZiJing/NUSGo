@@ -111,7 +111,8 @@ Codex Chrome DevTools, local Vite app, mobile/touch emulation:
 
 - At 390 × 844, the pill measured 358 × 56px at x=16px and y=772px. Its three buttons measured 114 × 44px, with 20px icons, 12px labels, and a 16px bottom gap.
 - A full-width 72px solid-white band began at the pill’s top edge and continued to the viewport bottom. It used `pointer-events: none`; the active sheet ended at the band’s top edge in expanded and compact states in Explore, Stops, and Plan.
-- At 390 × 500, expanded and compact states were checked in all three tabs. Stops and Plan scroll areas reached their last controls above the pill. In compact Stops, the 44px handle measured y=372–416px while the pill began at y=428px.
+- At 390 × 500, expanded and compact states were checked in all three tabs. Stops and Plan scroll areas reached their last controls above the pill.
+- Before the later handle-row revert, the compact Stops handle measured y=372–416px while the pill began at y=428px. The handle geometry was not remeasured after that revert.
 - Stable map insets matched the active sheet height plus the 72px navigation reservation and existing 12px margin. The map remained visible above the active sheet and did not show through the bottom band.
 - Keyboard Tab moved focus from Explore to Stops and displayed the 3px focus outline with a 2px offset. Enter activated the focused tab. Collapsing each sheet, switching away, and returning retained each tab’s compact state.
 - At 769px, the mobile bar and band were hidden, the desktop contextual panel remained visible, and the map bottom inset was 0px.

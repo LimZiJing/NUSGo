@@ -1,5 +1,5 @@
 import type { WalkingConnection } from '../../app/contracts/routing'
-import { fetchJson } from '../data/json'
+import { fetchJson } from '../data/json.ts'
 
 export const WALKING_STOP_GRAPH_VERSION = 1
 

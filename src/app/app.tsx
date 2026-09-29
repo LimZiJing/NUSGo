@@ -40,6 +40,7 @@ import { applyMapOverlayMeasurements } from './map-insets-controller'
 import { loadTransitMapData, loadVenueData } from '../infrastructure/data/loaders'
 import { createMapSession } from '../infrastructure/map/session'
 import { createValhallaRouteEngine } from '../infrastructure/routing/valhalla'
+import { createWalkingConnectionProvider } from '../infrastructure/routing/walking-connections'
 import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
@@ -93,13 +94,19 @@ function App() {
 
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
+  const routeEngine = useMemo(() => createValhallaRouteEngine({
+    baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
+  }), [])
+  const walkingConnectionProvider = useMemo(() => createWalkingConnectionProvider({
+    routeEngine,
+  }), [routeEngine])
   const journeyPlanner = useMemo(() => createJourneyPlanningService(
-    createValhallaRouteEngine({
-      baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
-    }),
+    routeEngine,
     shuttleArrivalClient,
     shuttleServiceHoursClient,
-  ), [shuttleArrivalClient, shuttleServiceHoursClient])
+    Date.now,
+    walkingConnectionProvider,
+  ), [routeEngine, shuttleArrivalClient, shuttleServiceHoursClient, walkingConnectionProvider])
 
   useEffect(() => {
     const updateViewport = (): void => {

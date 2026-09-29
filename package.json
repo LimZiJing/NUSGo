@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "valhalla:up": "node scripts/start-valhalla.mjs",
+    "walking:graph:generate": "node --experimental-strip-types scripts/generate-walking-stop-graph.mjs",
     "valhalla:down": "docker compose -f docker-compose.valhalla.yml down",
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type MouseEvent, type PointerEvent } from 'react'
+import { interruptMobileSheetAnimation } from './animate-mobile-sheet'
 import {
   isOpenMobileSheetDetent,
   type MobileSheetDetent,
@@ -245,7 +246,8 @@ export function MobileSheetHandle({
     const sheet = event.currentTarget.closest<HTMLElement>('[data-mobile-sheet]')
     if (!sheet) return
 
-    const startHeight = sheet.getBoundingClientRect().height
+    const animationPosition = interruptMobileSheetAnimation(sheet)
+    const startHeight = animationPosition?.height ?? sheet.getBoundingClientRect().height
     const partialHeight = measureSheetHeight(sheet, 'partial')
     const fullHeight = measureSheetHeight(sheet, 'full')
     const collapsedHeight = measureSheetHeight(sheet, 'collapsed')
@@ -268,7 +270,7 @@ export function MobileSheetHandle({
       stops,
       styles: readInlineSheetStyles(sheet),
       currentHeight: startHeight,
-      currentBottom: getBottomInset(detent),
+      currentBottom: animationPosition?.bottom ?? getBottomInset(detent),
       requestedHeight: startHeight,
       moved: false,
     }

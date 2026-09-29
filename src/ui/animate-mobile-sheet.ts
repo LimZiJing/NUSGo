@@ -1,4 +1,10 @@
 const SHEET_TRANSITION_DURATION = 220
+const activeAnimations = new WeakMap<HTMLElement, () => void>()
+
+export interface MobileSheetAnimationPosition {
+  readonly height: number
+  readonly bottom?: number
+}
 
 interface InlineSheetStyles {
   readonly height: string
@@ -26,6 +32,7 @@ export function animateMobileSheet(
   animateContent: boolean,
   startBottom?: number,
 ): () => void {
+  activeAnimations.get(sheet)?.()
   if (typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => undefined
 
@@ -42,9 +49,10 @@ export function animateMobileSheet(
   let timeout = 0
   let finished = false
 
-  const finish = (): void => {
+  function finish(): void {
     if (finished) return
     finished = true
+    if (activeAnimations.get(sheet) === finish) activeAnimations.delete(sheet)
     window.cancelAnimationFrame(frame)
     window.clearTimeout(timeout)
     sheet.removeEventListener('transitionend', handleTransitionEnd)
@@ -82,5 +90,17 @@ export function animateMobileSheet(
     sheet.style.bottom = targetBottom
   })
   timeout = window.setTimeout(finish, SHEET_TRANSITION_DURATION + 80)
+  activeAnimations.set(sheet, finish)
   return finish
+}
+
+export function interruptMobileSheetAnimation(sheet: HTMLElement): MobileSheetAnimationPosition | null {
+  const finish = activeAnimations.get(sheet)
+  if (!finish) return null
+
+  const height = sheet.getBoundingClientRect().height
+  const bottom = Number.parseFloat(window.getComputedStyle(sheet).bottom)
+  finish()
+
+  return Number.isFinite(bottom) ? { height, bottom } : { height }
 }

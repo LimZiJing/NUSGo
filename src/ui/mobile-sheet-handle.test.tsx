@@ -4,12 +4,15 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { animateMobileSheet } from './animate-mobile-sheet'
 import { MobileSheetHandle } from './mobile-sheet-handle'
 import type { MobileSheetDetent } from './mobile-sheet-detent'
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 function createRect(height: number): DOMRect {
@@ -167,6 +170,56 @@ describe('MobileSheetHandle', () => {
 
     expect(onDetentChange).toHaveBeenCalledTimes(1)
     expect(onDetentChange).toHaveBeenCalledWith('full')
+  })
+
+  it('starts a drag from an active transition and restores the selected detent after settling', () => {
+    vi.useFakeTimers()
+    let panelForDetent: HTMLElement | null = null
+    const onDetentChange = vi.fn((nextDetent: MobileSheetDetent) => {
+      if (panelForDetent) panelForDetent.dataset.detent = nextDetent
+    })
+    let frameCallback: FrameRequestCallback | undefined
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frameCallback = callback
+      return 1
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
+
+    const rendered = renderHandle('full', onDetentChange)
+    const { button, panel } = rendered
+    panelForDetent = panel
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({ bottom: '64px' } as CSSStyleDeclaration)
+    let transitioning = false
+    vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => {
+      const measuring = panel.getAttribute('data-mobile-sheet-measuring')
+      if (measuring === 'collapsed') return createRect(0)
+      if (measuring === 'partial') return createRect(200)
+      if (measuring === 'full') return createRect(600)
+      if (transitioning && panel.hasAttribute('data-mobile-sheet-animating')) return createRect(360)
+      const inlineHeight = Number.parseFloat(panel.style.height)
+      if (panel.style.height) return createRect(inlineHeight)
+      return createRect(panel.dataset.detent === 'full' ? 600 : 200)
+    })
+
+    animateMobileSheet(panel, 200, false, 64)
+    expect(frameCallback).toBeDefined()
+    frameCallback?.(0)
+    transitioning = true
+
+    firePointer(button, 'pointerdown', { pointerId: 3, clientY: 300 })
+    expect(Number.parseFloat(panel.style.height)).toBe(360)
+    expect(panel.hasAttribute('data-mobile-sheet-animating')).toBe(false)
+
+    firePointer(button, 'pointermove', { pointerId: 3, clientY: 500 })
+    firePointer(button, 'pointerup', { pointerId: 3, clientY: 500 })
+    expect(onDetentChange).toHaveBeenCalledWith('partial')
+    expect(panel.style.height).toBe('200px')
+
+    vi.advanceTimersByTime(300)
+
+    expect(panel.dataset.detent).toBe('partial')
+    expect(panel.style.height).toBe('')
+    expect(panel.hasAttribute('data-mobile-sheet-settling')).toBe(false)
   })
 
   it('snaps a downward drag from partial to collapsed', () => {

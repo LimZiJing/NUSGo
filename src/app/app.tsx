@@ -584,7 +584,7 @@ function App() {
             commands.enableLocationTracking()
           }
           if (isMobileViewport && tab !== mobileNavigation.activeTab) {
-            prepareSheetTransition(true)
+            prepareSheetTransition()
             if (mobileNavigation.activeTab === 'explore' && state.contextualPanel.mode === 'shuttle') {
               commands.suspendMobileRoutes()
             } else if (tab === 'explore' && state.contextualPanel.mode === 'shuttle') {

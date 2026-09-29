@@ -24,7 +24,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -67,6 +67,7 @@ interface ContextualPanelProps {
   ) => ReactNode
   minimized?: boolean
   sheetDetent?: MobileSheetDetent
+  lastNonCollapsedDetent?: OpenMobileSheetDetent
   mobileViewport?: boolean
   active?: boolean
   onRestore?: () => void
@@ -146,6 +147,7 @@ export function ContextualPanel({
   renderShuttleRoutes,
   minimized = false,
   sheetDetent = minimized ? 'collapsed' : 'partial',
+  lastNonCollapsedDetent = 'partial',
   mobileViewport = true,
   active = true,
   onRestore,
@@ -570,6 +572,7 @@ export function ContextualPanel({
         <div className="mobile-sheet-handle-row">
           <MobileSheetHandle
             detent={sheetDetent}
+            restoreDetent={lastNonCollapsedDetent}
             label="Explore panel"
             controlsId="contextual-panel-content"
             onButtonRef={setRestorePanelButtonRef}

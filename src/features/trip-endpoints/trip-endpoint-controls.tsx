@@ -10,7 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
@@ -22,6 +22,7 @@ interface TripEndpointControlsProps {
   networkIndex: TransitIndex | null
   expanded?: boolean
   detent?: MobileSheetDetent
+  lastNonCollapsedDetent?: OpenMobileSheetDetent
   mobileViewport?: boolean
   containerRef?: Ref<HTMLElement>
   onExpandedChange?: (expanded: boolean) => void
@@ -77,6 +78,7 @@ export function TripEndpointControls({
   networkIndex,
   expanded,
   detent: passedDetent,
+  lastNonCollapsedDetent = 'partial',
   mobileViewport = true,
   containerRef,
   onExpandedChange,
@@ -194,6 +196,7 @@ export function TripEndpointControls({
       <div className="mobile-sheet-handle-row">
         <MobileSheetHandle
           detent={detent}
+          restoreDetent={lastNonCollapsedDetent}
           label={`Plan trip panel: ${tripSummary.accessible}`}
           controlsId={TRIP_CONTROLS_CONTENT_ID}
           onButtonRef={setTripHandleRef}

@@ -1,7 +1,7 @@
 import type { Ref } from 'react'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
 import { BusStopTimings, type BusStopDeparture } from '../../ui/bus-stop-timings'
@@ -28,6 +28,7 @@ export interface MobileStopOverviewSelection {
 interface MobileStopsSheetProps {
   readonly expanded?: boolean
   readonly detent?: MobileSheetDetent
+  readonly lastNonCollapsedDetent?: OpenMobileSheetDetent
   readonly selectedStop: MobileStopSheetSelection | null
   readonly onExpandedChange?: (expanded: boolean) => void
   readonly onDetentChange?: (detent: MobileSheetDetent) => void
@@ -51,6 +52,7 @@ interface MobileStopsSheetProps {
 export function MobileStopsSheet({
   expanded,
   detent: passedDetent,
+  lastNonCollapsedDetent = 'partial',
   selectedStop,
   onExpandedChange,
   onDetentChange,
@@ -86,6 +88,7 @@ export function MobileStopsSheet({
       <div className="mobile-sheet-handle-row">
         <MobileSheetHandle
           detent={detent}
+          restoreDetent={lastNonCollapsedDetent}
           label="Stops panel"
           controlsId="mobile-stops-sheet-content"
           onBeforeClick={onBeforeSheetToggle}

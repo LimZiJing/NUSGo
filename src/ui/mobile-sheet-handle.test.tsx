@@ -47,7 +47,16 @@ function firePointer(
   element.dispatchEvent(event)
 }
 
-function renderHandle(detent: MobileSheetDetent, onDetentChange = vi.fn()) {
+function renderHandle(
+  detent: MobileSheetDetent,
+  onDetentChange = vi.fn(),
+  restoreDetent: 'partial' | 'full' = 'partial',
+  heights: { readonly collapsed: number; readonly partial: number; readonly full: number } = {
+    collapsed: 44,
+    partial: 200,
+    full: 600,
+  },
+) {
   render(
     <>
       <section aria-label="Stops panel" data-mobile-sheet data-detent={detent}>
@@ -57,6 +66,7 @@ function renderHandle(detent: MobileSheetDetent, onDetentChange = vi.fn()) {
         <div className="mobile-sheet-handle-row">
           <MobileSheetHandle
             detent={detent}
+            restoreDetent={restoreDetent}
             label="Stops panel"
             controlsId="stops-content"
             onDetentChange={onDetentChange}
@@ -70,13 +80,13 @@ function renderHandle(detent: MobileSheetDetent, onDetentChange = vi.fn()) {
   const panel = screen.getByRole('region', { name: 'Stops panel' })
   vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => {
     const measuredState = panel.getAttribute('data-mobile-sheet-measuring')
-    if (measuredState === 'collapsed') return createRect(0)
-    if (measuredState === 'partial') return createRect(200)
-    if (measuredState === 'full') return createRect(600)
+    if (measuredState === 'collapsed') return createRect(heights.collapsed)
+    if (measuredState === 'partial') return createRect(heights.partial)
+    if (measuredState === 'full') return createRect(heights.full)
 
     const inlineHeight = Number.parseFloat((panel as HTMLElement).style.height)
     if (inlineHeight >= 0 && (panel as HTMLElement).style.height) return createRect(inlineHeight)
-    return createRect(detent === 'full' ? 600 : detent === 'partial' ? 200 : 0)
+    return createRect(detent === 'full' ? heights.full : detent === 'partial' ? heights.partial : heights.collapsed)
   })
   const tabBar = screen.getByRole('navigation', { name: 'Main navigation' })
   vi.spyOn(tabBar, 'getBoundingClientRect').mockReturnValue(createRect(64))
@@ -138,6 +148,7 @@ describe('MobileSheetHandle', () => {
           <div className="mobile-sheet-handle-row">
             <MobileSheetHandle
               detent={detent}
+              restoreDetent="full"
               label="Stops panel"
               controlsId="stops-content"
               onDetentChange={(nextDetent) => {
@@ -154,8 +165,47 @@ describe('MobileSheetHandle', () => {
     const button = screen.getByRole('button', { name: 'Expand Stops panel' })
     await user.click(button)
     await user.click(button)
+    await user.click(button)
 
-    expect(onDetentChange.mock.calls).toEqual([['full'], ['collapsed']])
+    expect(onDetentChange.mock.calls).toEqual([['full'], ['collapsed'], ['full']])
+  })
+
+  it('reopens a collapsed pull tab at the remembered non-collapsed detent', async () => {
+    const { button, onDetentChange } = renderHandle('collapsed', vi.fn(), 'full')
+
+    await userEvent.setup().click(button)
+
+    expect(onDetentChange).toHaveBeenCalledWith('full')
+  })
+
+  it('can drag upward from the collapsed pull tab to the partial detent', () => {
+    const { button, onDetentChange, panel } = renderHandle('collapsed')
+
+    firePointer(button, 'pointerdown', { pointerId: 4, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 4, clientY: 40 })
+    expect(panel.style.height).toBe('304px')
+    firePointer(button, 'pointerup', { pointerId: 4, clientY: 40 })
+
+    expect(onDetentChange).toHaveBeenCalledWith('partial')
+    expect(panel.style.height).toBe('200px')
+  })
+
+  it('restores hidden content and sizing constraints when a collapsed drag is cancelled', () => {
+    const { button, panel } = renderHandle('collapsed')
+    const content = panel.querySelector<HTMLElement>('[data-mobile-sheet-content]')
+
+    firePointer(button, 'pointerdown', { pointerId: 5, clientY: 300 })
+    expect(content?.hasAttribute('hidden')).toBe(false)
+
+    firePointer(button, 'pointermove', { pointerId: 5, clientY: 200 })
+    firePointer(button, 'pointercancel', { pointerId: 5, clientY: 200 })
+
+    expect(panel.dataset.detent).toBe('collapsed')
+    expect(content?.hasAttribute('hidden')).toBe(true)
+    expect(panel.style.height).toBe('')
+    expect(panel.style.minHeight).toBe('')
+    expect(panel.style.maxHeight).toBe('')
+    expect(panel.hasAttribute('data-mobile-sheet-dragging')).toBe(false)
   })
 
   it('snaps an upward drag from partial to full and suppresses the following click', () => {
@@ -192,7 +242,7 @@ describe('MobileSheetHandle', () => {
     let transitioning = false
     vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => {
       const measuring = panel.getAttribute('data-mobile-sheet-measuring')
-      if (measuring === 'collapsed') return createRect(0)
+      if (measuring === 'collapsed') return createRect(44)
       if (measuring === 'partial') return createRect(200)
       if (measuring === 'full') return createRect(600)
       if (transitioning && panel.hasAttribute('data-mobile-sheet-animating')) return createRect(360)
@@ -210,8 +260,8 @@ describe('MobileSheetHandle', () => {
     expect(Number.parseFloat(panel.style.height)).toBe(360)
     expect(panel.hasAttribute('data-mobile-sheet-animating')).toBe(false)
 
-    firePointer(button, 'pointermove', { pointerId: 3, clientY: 500 })
-    firePointer(button, 'pointerup', { pointerId: 3, clientY: 500 })
+    firePointer(button, 'pointermove', { pointerId: 3, clientY: 360 })
+    firePointer(button, 'pointerup', { pointerId: 3, clientY: 360 })
     expect(onDetentChange).toHaveBeenCalledWith('partial')
     expect(panel.style.height).toBe('200px')
 
@@ -232,21 +282,17 @@ describe('MobileSheetHandle', () => {
     expect(onDetentChange).toHaveBeenCalledWith('collapsed')
   })
 
-  it('allows resisted travel above full and caps upper overdrag at 32 pixels', () => {
-    const { button, panel } = renderHandle('full')
+  it('tracks the finger directly between detents without resistance', () => {
+    const { button, panel } = renderHandle('partial')
 
     firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
-    firePointer(button, 'pointermove', { pointerId: 1, clientY: -400 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 200 })
 
-    const dragHeight = Number.parseFloat((panel as HTMLElement).style.height)
-    expect(dragHeight).toBeGreaterThan(600)
-    expect(dragHeight).toBeLessThanOrEqual(632)
-    expect(dragHeight).toBeCloseTo(632, 3)
-    expect((panel as HTMLElement).style.maxHeight)
-      .toBe('calc(var(--mobile-viewport-height) + 32px)')
+    expect(Number.parseFloat(panel.style.height)).toBe(300)
+    expect(panel.style.maxHeight).toBe('var(--mobile-viewport-height)')
   })
 
-  it('springs upper overdrag back to full with the bounce easing', () => {
+  it('clamps at full and settles with the bounce easing', () => {
     const { button, onDetentChange, panel } = renderHandle('full')
 
     firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
@@ -260,30 +306,62 @@ describe('MobileSheetHandle', () => {
     expect(onDetentChange).toHaveBeenCalledWith('full')
   })
 
-  it('springs lower overdrag back to collapsed without a negative sheet height', () => {
+  it('clamps at the visible collapsed tab and settles there', () => {
     const { button, onDetentChange, panel } = renderHandle('partial')
 
     firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
     firePointer(button, 'pointermove', { pointerId: 1, clientY: 700 })
     firePointer(button, 'pointerup', { pointerId: 1, clientY: 700 })
 
-    expect((panel as HTMLElement).style.height).toBe('0px')
+    expect((panel as HTMLElement).style.height).toBe('44px')
     expect((panel as HTMLElement).style.transition)
       .toBe('height 220ms cubic-bezier(0.2, 1.15, 0.3, 1), bottom 220ms cubic-bezier(0.2, 1.15, 0.3, 1)')
     expect(panel.getAttribute('data-mobile-sheet-settling')).toBe('collapsed')
     expect(onDetentChange).toHaveBeenCalledWith('collapsed')
   })
 
-  it('uses a normal snap when an overdrag returns within range before release', () => {
-    const { button, panel } = renderHandle('full')
+  it.each([
+    { visibleHeight: 299, detent: 'collapsed' },
+    { visibleHeight: 300, detent: 'partial' },
+    { visibleHeight: 600, detent: 'partial' },
+    { visibleHeight: 601, detent: 'full' },
+  ] as const)('uses viewport thresholds at $visibleHeight px', ({ visibleHeight, detent }) => {
+    vi.stubGlobal('innerHeight', 1000)
+    const heights = { collapsed: 44, partial: 400, full: 900 }
+    const { button, onDetentChange, panel } = renderHandle('partial', vi.fn(), 'partial', heights)
+    const releaseY = 700 - visibleHeight
 
     firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
-    firePointer(button, 'pointermove', { pointerId: 1, clientY: 236 })
-    firePointer(button, 'pointermove', { pointerId: 1, clientY: 310 })
-    firePointer(button, 'pointerup', { pointerId: 1, clientY: 310 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: releaseY })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: releaseY })
 
-    expect((panel as HTMLElement).style.height).toBe('600px')
-    expect((panel as HTMLElement).style.transition).toBe('height 180ms ease-out, bottom 180ms ease-out')
+    expect(onDetentChange).toHaveBeenCalledWith(detent)
+    expect(panel.style.height).toBe(`${heights[detent]}px`)
+  })
+
+  it('uses the visual viewport height when it differs from the layout viewport', () => {
+    vi.stubGlobal('innerHeight', 1000)
+    vi.stubGlobal('visualViewport', { height: 500 })
+    const heights = { collapsed: 44, partial: 400, full: 900 }
+    const { button, onDetentChange, panel } = renderHandle('partial', vi.fn(), 'partial', heights)
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointermove', { pointerId: 1, clientY: 450 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 450 })
+
+    expect(onDetentChange).toHaveBeenCalledWith('partial')
+    expect(panel.style.height).toBe('400px')
+  })
+
+  it('preserves the partial detent when release has no meaningful movement', () => {
+    vi.stubGlobal('innerHeight', 1000)
+    const { button, onDetentChange, panel } = renderHandle('partial')
+
+    firePointer(button, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(button, 'pointerup', { pointerId: 1, clientY: 300 })
+
+    expect(onDetentChange).not.toHaveBeenCalled()
+    expect(panel.style.height).toBe('')
   })
 
   it('skips the rebound when reduced motion is requested', () => {
@@ -295,7 +373,7 @@ describe('MobileSheetHandle', () => {
     firePointer(button, 'pointermove', { pointerId: 1, clientY: 700 })
     firePointer(button, 'pointerup', { pointerId: 1, clientY: 700 })
 
-    expect((panel as HTMLElement).style.height).toBe('0px')
+    expect((panel as HTMLElement).style.height).toBe('44px')
     expect((panel as HTMLElement).style.transition).toBe('height 0ms ease-out, bottom 0ms ease-out')
     expect(onDetentChange).toHaveBeenCalledWith('collapsed')
     expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)')

@@ -502,6 +502,7 @@ function App() {
             journey={state.journey}
             containerRef={tripControlsRef}
             detent={isMobileViewport ? mobileNavigation.sheets.plan.detent : undefined}
+            lastNonCollapsedDetent={mobileNavigation.sheets.plan.lastNonCollapsedDetent}
             mobileViewport={isMobileViewport}
             onDetentChange={(detent) => {
               if (!isMobileViewport) return
@@ -542,6 +543,7 @@ function App() {
             selectedRouteId={state.selectedRouteId}
             minimized={isMobileViewport && mobileNavigation.sheets.explore.detent === 'collapsed'}
             sheetDetent={isMobileViewport ? mobileNavigation.sheets.explore.detent : undefined}
+            lastNonCollapsedDetent={mobileNavigation.sheets.explore.lastNonCollapsedDetent}
             mobileViewport={isMobileViewport}
             active={!isMobileViewport || mobileNavigation.activeTab === 'explore'}
             onRestore={() => dispatchMobileNavigation({
@@ -616,6 +618,7 @@ function App() {
         >
           <MobileStopsSheet
             detent={mobileNavigation.sheets.stops.detent}
+            lastNonCollapsedDetent={mobileNavigation.sheets.stops.lastNonCollapsedDetent}
             selectedStop={mobileStopSelection}
             overviewStops={overviewStops}
             overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}

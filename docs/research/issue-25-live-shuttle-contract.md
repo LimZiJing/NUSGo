@@ -70,7 +70,9 @@ The browser-side boundary validation is in
 
 ## Freshness and failures
 
-- The server cache is fresh for 45 seconds.
+- The current server cache is fresh for 45 seconds. The recommended NavUS
+  application policy is a 30-second cache and freshness window; this remains a
+  target until the implementation is updated.
 - Expired upstream data is not returned as normal live data.
 - A failed refresh removes only the affected stop from the normalized result.
 - If every requested stop fails, the server returns HTTP 503.
@@ -78,9 +80,10 @@ The browser-side boundary validation is in
 - Individual malformed service-hour rows are ignored; valid rows remain usable.
 
 This prevents stale or malformed data from silently becoming a live Journey
-waiting estimate. The 45-second and 120-second policy limits remain documented
-in [shuttle-timing.md](../shuttle-timing.md); the 120-second limit is reserved
-for diagnostics or retry handling and is not used to rank a normal Journey.
+waiting estimate. The recommended 30-second and 120-second policy limits are
+documented in [shuttle-timing.md](../shuttle-timing.md); the 120-second limit
+is reserved for diagnostics or retry handling and is not used to rank a normal
+Journey.
 
 ## Safe configuration
 

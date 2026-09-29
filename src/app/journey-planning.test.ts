@@ -142,6 +142,72 @@ describe('createJourneyPlanningService', () => {
     expect(routeEngine.routeWalking).toHaveBeenCalledTimes(2)
   })
 
+  it('uses the walking connection provider instead of the full matrix', async () => {
+    const transit = createTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => {
+        throw new Error('The full walking matrix should not be requested')
+      }),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: 100,
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const walkingConnectionProvider = {
+      getWalkingConnections: vi.fn(async () => [
+        {
+          fromKey: 'venue:ORIGIN',
+          toKey: 'stop:STOP-A',
+          distanceMeters: 100,
+          durationSeconds: 100,
+        },
+        {
+          fromKey: 'stop:STOP-B',
+          toKey: 'venue:DESTINATION',
+          distanceMeters: 100,
+          durationSeconds: 100,
+        },
+        {
+          fromKey: 'venue:ORIGIN',
+          toKey: 'venue:DESTINATION',
+          distanceMeters: 10_000,
+          durationSeconds: 10_000,
+        },
+      ]),
+    }
+    const service = createJourneyPlanningService(
+      routeEngine,
+      undefined,
+      undefined,
+      Date.now,
+      walkingConnectionProvider,
+    )
+
+    const journey = await service({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(walkingConnectionProvider.getWalkingConnections).toHaveBeenCalledOnce()
+    expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
+  })
+
   it('does not hide aborted walking requests as no-route results', async () => {
     const transit = createTransitData()
     const controller = new AbortController()

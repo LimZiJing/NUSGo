@@ -1148,6 +1148,10 @@
     max-height: none;
   }
 
+  .trip-controls[data-detent='full'] {
+    align-content: start;
+  }
+
   .trip-controls[data-detent='full'] .trip-controls-body,
   .trip-controls[data-mobile-sheet-measuring='full'] .trip-controls-body {
     flex: 1 1 auto;

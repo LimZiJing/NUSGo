@@ -13,6 +13,14 @@ export interface ShuttleServiceEvaluation {
   readonly nextStartLabel: string | null
 }
 
+export interface ShuttleServiceStart {
+  readonly minutesUntil: number
+  readonly label: string
+}
+
+export const SHUTTLE_SERVICE_START_GRACE_MINUTES = 30
+export const SHUTTLE_SERVICE_HOURS_REFRESH_INTERVAL_MS = 5 * 60 * 1_000
+
 interface LocalDateTime {
   readonly year: number
   readonly month: number
@@ -107,10 +115,10 @@ function nextDate(date: LocalDateTime, offset: number): LocalDateTime {
   }
 }
 
-function nextStartLabel(
+function nextStartDetails(
   windows: readonly ShuttleServiceWindow[],
   date: LocalDateTime,
-): string | null {
+): ShuttleServiceStart | null {
   for (let offset = 0; offset <= 7; offset += 1) {
     const candidateDate = nextDate(date, offset)
     const candidateWindows = windowsForDate(windows, candidateDate)
@@ -129,9 +137,19 @@ function nextStartLabel(
             : candidateDate.weekday === 4 ? 'Thursday'
               : candidateDate.weekday === 5 ? 'Friday'
                 : candidateDate.weekday === 6 ? 'Saturday' : 'Sunday'
-    return `${dayLabel} at ${formatTime(start)}`
+    return {
+      minutesUntil: offset * 24 * 60 + start - date.minutes,
+      label: `${dayLabel} at ${formatTime(start)}`,
+    }
   }
   return null
+}
+
+export function getNextShuttleServiceStart(
+  windows: readonly ShuttleServiceWindow[],
+  now = new Date(),
+): ShuttleServiceStart | null {
+  return nextStartDetails(windows, localDateTime(now))
 }
 
 export function evaluateShuttleService(
@@ -149,12 +167,12 @@ export function evaluateShuttleService(
     return { status: 'active', nextStartLabel: null }
   }
 
-  const nextStart = nextStartLabel(windows, date)
+  const nextStart = nextStartDetails(windows, date)
   if (ranges.some(({ first }) => date.minutes < first)) {
-    return { status: 'before-start', nextStartLabel: nextStart }
+    return { status: 'before-start', nextStartLabel: nextStart?.label ?? null }
   }
-  if (ranges.length > 0) return { status: 'after-end', nextStartLabel: nextStart }
-  return { status: 'unavailable', nextStartLabel: nextStart }
+  if (ranges.length > 0) return { status: 'after-end', nextStartLabel: nextStart?.label ?? null }
+  return { status: 'unavailable', nextStartLabel: nextStart?.label ?? null }
 }
 
 export function describeShuttleServiceUnavailable(

@@ -16,6 +16,7 @@ import {
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
 import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
+import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-stop-arrivals'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
@@ -46,6 +47,7 @@ import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
+import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
 
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
@@ -93,7 +95,19 @@ function App() {
   const commands = commandAdapter(session)
 
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
+  const loadMobileStopArrivals = useCallback(
+    (stops: readonly { readonly stopId: string; readonly stopName: string }[], signal: AbortSignal) => (
+      shuttleArrivalClient.getArrivals(stops, signal)
+    ),
+    [shuttleArrivalClient],
+  )
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
+  const loadMobileStopServiceWindows = useCallback(
+    (routeIds: readonly string[], signal: AbortSignal) => (
+      shuttleServiceHoursClient.getServiceWindows(routeIds, signal)
+    ),
+    [shuttleServiceHoursClient],
+  )
   const routeEngine = useMemo(() => createValhallaRouteEngine({
     baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
   }), [])
@@ -374,23 +388,73 @@ function App() {
   }, [activeTab, dismissMapPopup, isMobileViewport])
 
   const selectedRouteColor = state.selectedRouteColor ?? '#334155'
+  const transitIndex = state.transitIndex
   const selectedStop = mobileStopView.focusedStopId === null
     ? undefined
-    : state.transitIndex?.stopById.get(mobileStopView.focusedStopId)
-  const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && state.transitIndex
-    ? getMobileStopSheetSelection(selectedStop, state.transitIndex, mobileStopView.favoriteStopIds)
-    : null
+    : transitIndex?.stopById.get(mobileStopView.focusedStopId)
   const hasLocationError = ['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)
   const locationFix = hasLocationError ? null : state.location.latestFix
-  const transitIndex = state.transitIndex
-  const overviewStops = transitIndex ? getMobileStopsOverview(
+  const overviewStopEntries = useMemo(() => transitIndex ? getMobileStopsOverview(
     transitIndex,
     mobileStopView.list,
     mapCenter,
     locationFix,
     mobileStopView.favoriteStopIds,
-  ).map(({ stop, distanceMeters }) => ({
-    stop: getMobileStopSheetSelection(stop, transitIndex, mobileStopView.favoriteStopIds),
+  ) : [], [
+    locationFix,
+    mapCenter,
+    mobileStopView.favoriteStopIds,
+    mobileStopView.list,
+    transitIndex,
+  ])
+  const arrivalStopRequests = useMemo(() => {
+    const requests = new Map<string, { readonly stopId: string; readonly stopName: string }>()
+    for (const { stop } of overviewStopEntries) {
+      requests.set(stop.id, { stopId: stop.id, stopName: stop.longName })
+    }
+    if (selectedStop) {
+      requests.set(selectedStop.id, { stopId: selectedStop.id, stopName: selectedStop.longName })
+    }
+    return [...requests.values()]
+  }, [overviewStopEntries, selectedStop])
+  const stopArrivals = useMobileStopArrivals(
+    loadMobileStopArrivals,
+    isMobileViewport && activeTab === 'stops',
+    arrivalStopRequests,
+  )
+  const serviceRouteIds = useMemo(() => {
+    const routeIds = new Set<string>()
+    for (const { stopId } of arrivalStopRequests) {
+      for (const routeId of transitIndex?.routeIdsByStopId.get(stopId) ?? []) routeIds.add(routeId)
+    }
+    return [...routeIds].sort()
+  }, [arrivalStopRequests, transitIndex])
+  const stopServiceWindows = useMobileStopServiceWindows(
+    loadMobileStopServiceWindows,
+    isMobileViewport && activeTab === 'stops',
+    serviceRouteIds,
+  )
+  const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && transitIndex
+    ? getMobileStopSheetSelection(
+      selectedStop,
+      transitIndex,
+      mobileStopView.favoriteStopIds,
+      stopArrivals.snapshot,
+      stopArrivals.nowMs,
+      stopServiceWindows.windows,
+      stopArrivals.status === 'refreshing',
+    )
+    : null
+  const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
+    stop: getMobileStopSheetSelection(
+      stop,
+      transitIndex,
+      mobileStopView.favoriteStopIds,
+      stopArrivals.snapshot,
+      stopArrivals.nowMs,
+      stopServiceWindows.windows,
+      stopArrivals.status === 'refreshing',
+    ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
     expanded: !mobileStopView.collapsedStopIds.includes(stop.id),
@@ -398,6 +462,11 @@ function App() {
   const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
+  const liveArrivalMessage = stopArrivals.status === 'loading'
+    ? 'Updating…'
+    : stopArrivals.status === 'error'
+      ? 'No live data'
+      : null
 
   return (
     <main className="map-shell" ref={mapShellRef}>
@@ -552,6 +621,7 @@ function App() {
             selectedStop={mobileStopSelection}
             overviewStops={overviewStops}
             overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}
+            liveArrivalMessage={liveArrivalMessage}
             selectedList={mobileStopView.list}
             selectedStopFavorite={selectedStop
               ? mobileStopView.favoriteStopIds.includes(selectedStop.id)

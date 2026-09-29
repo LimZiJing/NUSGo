@@ -4,24 +4,17 @@ import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from '../../domain/transit/arrivals'
-
-export interface ShuttleArrivalStopRequest {
-  readonly stopId: string
-  readonly stopName: string
-}
+import { SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS } from '../../domain/transit/arrivals'
+import type {
+  ShuttleArrivalClient,
+  ShuttleArrivalStopRequest,
+} from '../../app/contracts/shuttle-arrivals'
 
 export class ShuttleArrivalFetchError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options)
     this.name = 'ShuttleArrivalFetchError'
   }
-}
-
-export interface ShuttleArrivalClient {
-  getArrivals(
-    stops: readonly ShuttleArrivalStopRequest[],
-    signal: AbortSignal,
-  ): Promise<ShuttleArrivalSnapshot>
 }
 
 interface CachedStop {
@@ -38,7 +31,7 @@ interface ShuttleArrivalClientOptions {
   readonly fetcher?: typeof fetch
 }
 
-const DEFAULT_CACHE_TTL_MS = 45_000
+const DEFAULT_CACHE_TTL_MS = SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS
 const MAX_STOPS_PER_REQUEST = 16
 
 function isRecord(value: unknown): value is Record<string, unknown> {

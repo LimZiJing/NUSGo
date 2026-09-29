@@ -38,4 +38,24 @@ describe('BusStopTimings', () => {
     expect(destinations[0]?.getAttribute('data-opposite')).toBeNull()
     expect(destinations[1]?.getAttribute('data-opposite')).toBe('true')
   })
+
+  it('uses the same status row for scheduled routes and public services', () => {
+    render(
+      <BusStopTimings
+        departures={[]}
+        scheduledDepartures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          message: 'Starts 7:04 AM',
+        }]}
+        publicServices={[{ serviceNumber: '95', timings: null }]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Starts 7:04 AM')).toBeTruthy()
+    expect(screen.getByText('No live timing')).toBeTruthy()
+    expect(document.querySelectorAll('.mobile-stop-departure-status')).toHaveLength(2)
+  })
 })

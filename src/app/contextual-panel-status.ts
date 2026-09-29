@@ -5,7 +5,7 @@ export function deriveContextualPanelStatus(
   resourceStatus: ResourceStatusState,
   mapError: string | null,
   startupFailure: { readonly message: string } | null,
-): PanelStatus {
+): PanelStatus | null {
   const failures = [
     startupFailure?.message ?? null,
     mapError,
@@ -24,8 +24,5 @@ export function deriveContextualPanelStatus(
     return { kind: 'loading', message: 'Loading map data…' }
   }
 
-  return {
-    kind: 'success',
-    message: `${resourceStatus.venue.value} venues · ${resourceStatus.transit.value.stopCount} shuttle stops · ${resourceStatus.transit.value.routeCount} shuttle routes loaded`,
-  }
+  return null
 }

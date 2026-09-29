@@ -126,10 +126,9 @@ function getPanelAnnouncement(
 }
 
 function getVisiblePanelStatus(
-  mode: ContextualPanelState['mode'],
   status: PanelStatus | null | undefined,
 ): PanelStatus | null {
-  if (!status || (mode === 'venue-detail' && status.kind === 'success')) return null
+  if (!status || status.kind === 'success') return null
   return status
 }
 
@@ -527,7 +526,7 @@ export function ContextualPanel({
     ? findNearbyShuttleStops(selectedVenueLocation, transitIndex)
     : []
   const panelAnnouncement = getPanelAnnouncement(state, selectedRouteId, mobileViewport)
-  const panelStatus = getVisiblePanelStatus(state.mode, status)
+  const panelStatus = getVisiblePanelStatus(status)
   const mobileVenueSearch = mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search')
   const mobileExploreSegments = mobileViewport &&
     (mobileVenueSearch || state.mode === 'shuttle')

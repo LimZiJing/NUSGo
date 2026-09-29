@@ -4,7 +4,7 @@
 
 Before exploring or changing the repository, read the relevant repository guidance:
 
-1. `CONTEXT.md` for the domain glossary and canonical terminology.
+1. `CONTEXT.md` for the domain and product glossary and canonical terminology.
 2. `docs/project-status.md` when the product, stack, current implementation, limitations, or roadmap matters.
 3. `docs/agents/domain.md` for the single-context layout and ADR guidance; read relevant ADRs under `docs/adr/` when that directory exists.
 4. `docs/agents/architecture.md` for target module ownership and dependency direction.
@@ -13,7 +13,7 @@ Before exploring or changing the repository, read the relevant repository guidan
 7. `docs/agents/workflow.md` for the standard Codex task lifecycle and efficiency guardrails.
 8. `docs/agents/task-template.md` for the reusable task kickoff prompt.
 
-Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain language, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
+Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain and product vocabulary, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
 
 Use `docs/agents/workflow.md` for the collaboration lifecycle and `docs/agents/task-template.md` for task kickoff structure; keep their guidance linked rather than duplicated here.
 

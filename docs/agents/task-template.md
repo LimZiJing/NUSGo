@@ -34,7 +34,8 @@ Workflow:
 3. Implement the smallest coherent change.
 4. Use targeted checks while iterating.
 5. Run the applicable final verification suite once the change is complete.
-6. Report the result, checks, limitations, and follow-up work.
+6. Follow the issue-completion `CONTEXT.md` review in `docs/agents/workflow.md`.
+7. Report the result, checks, limitations, and follow-up work.
 
 Delegation:
 - Use no agents unless parallel work is genuinely useful.

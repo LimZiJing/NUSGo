@@ -53,6 +53,8 @@ Do not delegate trivial discovery or isolated checks. When parallel work is usef
 
 ## 7. Handoff and close
 
+At the end of every issue, review `CONTEXT.md` against the completed work. Update it in the same pull request when stable domain or product vocabulary changed. If no update is needed, state `CONTEXT.md reviewed; no update needed` in the handoff or pull request. Keep changing implementation status in `docs/project-status.md`.
+
 Finish with a concise record of:
 
 - what changed and what stayed out of scope;

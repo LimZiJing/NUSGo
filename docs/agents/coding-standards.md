@@ -1,6 +1,6 @@
 # NavUS Coding Standards
 
-This is the canonical guide to engineering practices for NavUS. AGENTS.md contains the startup rules and links here. CONTEXT.md owns domain terminology; this document owns implementation and collaboration practices.
+This is the canonical guide to engineering practices for NavUS. AGENTS.md contains the startup rules and links here. CONTEXT.md owns domain and product terminology; this document owns implementation and collaboration practices.
 
 Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-based guidance. A justified exception is acceptable when the reason is recorded in the code, issue, or pull request.
 

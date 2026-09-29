@@ -5,7 +5,7 @@ import {
 } from './mobile-navigation-state'
 
 describe('mobile tab navigation', () => {
-  it('starts every tab at the 40% detent', () => {
+  it('starts every tab at the 60% partial detent', () => {
     expect(createInitialMobileNavigationState()).toEqual({
       activeTab: 'stops',
       sheets: {
@@ -98,7 +98,7 @@ describe('mobile tab navigation', () => {
     }).sheets.plan.detent).toBe('collapsed')
   })
 
-  it('returns to the 40% detent whenever a search result is selected', () => {
+  it('returns to the 60% partial detent whenever a search result is selected', () => {
     const searching = mobileNavigationReducer(createInitialMobileNavigationState(), {
       type: 'start-search',
       tab: 'plan',

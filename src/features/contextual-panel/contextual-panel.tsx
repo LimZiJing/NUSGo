@@ -587,7 +587,12 @@ export function ContextualPanel({
       )}
       <div className="contextual-panel-header">
         {mobileExploreSegments && (
-          <div className="mobile-explore-segments" role="group" aria-label="Explore view">
+          <div
+            className="mobile-explore-segments"
+            role="group"
+            aria-label="Explore view"
+            data-mobile-sheet-content
+          >
             <button
               type="button"
               data-contextual-focus-id="mobile-explore-venue-segment"

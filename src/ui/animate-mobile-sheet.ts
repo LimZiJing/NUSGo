@@ -9,6 +9,8 @@ export interface MobileSheetAnimationPosition {
 interface InlineSheetStyles {
   readonly height: string
   readonly heightPriority: string
+  readonly top: string
+  readonly topPriority: string
   readonly maxHeight: string
   readonly overflow: string
   readonly transition: string
@@ -19,6 +21,8 @@ function readInlineStyles(sheet: HTMLElement): InlineSheetStyles {
   return {
     height: sheet.style.getPropertyValue('height'),
     heightPriority: sheet.style.getPropertyPriority('height'),
+    top: sheet.style.getPropertyValue('top'),
+    topPriority: sheet.style.getPropertyPriority('top'),
     maxHeight: sheet.style.maxHeight,
     overflow: sheet.style.overflow,
     transition: sheet.style.transition,
@@ -63,6 +67,11 @@ export function animateMobileSheet(
     } else {
       sheet.style.removeProperty('height')
     }
+    if (previous.top) {
+      sheet.style.setProperty('top', previous.top, previous.topPriority)
+    } else {
+      sheet.style.removeProperty('top')
+    }
     sheet.style.maxHeight = previous.maxHeight
     sheet.style.overflow = previous.overflow
     sheet.style.transition = previous.transition
@@ -80,6 +89,7 @@ export function animateMobileSheet(
     : 'var(--mobile-viewport-height)'
   sheet.style.overflow = 'hidden'
   sheet.style.transition = 'none'
+  sheet.style.setProperty('top', 'auto', 'important')
   if (startBottom !== undefined) sheet.style.bottom = `${startBottom}px`
   void sheet.getBoundingClientRect().height
 

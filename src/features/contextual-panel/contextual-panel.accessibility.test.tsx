@@ -319,7 +319,9 @@ describe('ContextualPanel accessibility workflows', () => {
     render(<PanelHarness initialState={createInitialContextualPanelState()} />)
 
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
-    expect(screen.getByRole('group', { name: 'Explore view' })).toBeTruthy()
+    const exploreView = screen.getByRole('group', { name: 'Explore view' })
+    expect(exploreView).toBeTruthy()
+    expect(exploreView.hasAttribute('data-mobile-sheet-content')).toBe(true)
     expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
@@ -506,7 +508,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect((search as HTMLInputElement).value).toBe('COM1')
     const partialToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
     expect(partialToggle.getAttribute('aria-expanded')).toBe('true')
-    expect(partialToggle.getAttribute('aria-description')).toBe('Opens the full-screen sheet.')
+    expect(partialToggle.getAttribute('aria-description')).toBe('Opens the full-height sheet.')
     await user.click(partialToggle)
 
     const fullToggle = screen.getByRole('button', { name: 'Collapse Explore panel' })

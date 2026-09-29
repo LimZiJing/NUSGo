@@ -80,7 +80,7 @@ describe('TripEndpointControls interactions', () => {
     await user.click(toggle)
 
     expect(toggle.getAttribute('aria-expanded')).toBe('true')
-    expect(toggle.getAttribute('aria-description')).toBe('Opens the full-screen sheet.')
+    expect(toggle.getAttribute('aria-description')).toBe('Opens the full-height sheet.')
     expect(document.activeElement).toBe(toggle)
     await user.tab()
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Origin' }))

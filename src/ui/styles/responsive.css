@@ -21,7 +21,7 @@
       var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
     );
     --mobile-sheet-collapsed-height: 44px;
-    --mobile-sheet-max-height: max(0px, calc(40% - var(--mobile-tab-bar-height)));
+    --mobile-sheet-max-height: max(0px, calc(60% - var(--mobile-tab-bar-height)));
     --mobile-sheet-min-height: min(200px, var(--mobile-sheet-max-height));
   }
 
@@ -987,7 +987,7 @@
 
   .mobile-tab-bar {
     position: absolute;
-    z-index: 14;
+    z-index: 16;
     right: max(16px, env(safe-area-inset-right));
     bottom: max(16px, env(safe-area-inset-bottom));
     left: max(16px, env(safe-area-inset-left));
@@ -1092,6 +1092,23 @@
     gap: 0 !important;
   }
 
+  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].contextual-panel {
+    padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)) !important;
+    border-right: 1px solid #e2e8f0 !important;
+    border-left: 1px solid #e2e8f0 !important;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].mobile-stops-sheet {
+    padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)) !important;
+    border-right: 1px solid #e2e8f0 !important;
+    border-left: 1px solid #e2e8f0 !important;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].trip-controls {
+    padding-right: 10px !important;
+    padding-left: 10px !important;
+  }
+
   [data-mobile-sheet][data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
     display: none !important;
   }
@@ -1099,18 +1116,17 @@
   [data-mobile-sheet][data-detent='collapsed'] > .mobile-sheet-handle-row,
   [data-mobile-sheet-measuring='collapsed'] .mobile-sheet-handle-row {
     display: flex !important;
-    flex: 0 0 var(--mobile-sheet-collapsed-height) !important;
+    flex: 0 0 5px !important;
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: var(--mobile-sheet-collapsed-height);
-    min-height: var(--mobile-sheet-collapsed-height);
+    height: 5px;
+    min-height: 5px;
     box-sizing: border-box;
-    border: 1px solid #e2e8f0;
-    border-bottom: 0;
-    border-radius: 12px 12px 0 0;
-    background: rgb(255 255 255 / 98%);
-    box-shadow: 0 -6px 18px rgb(15 23 42 / 14%);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle {
@@ -1119,6 +1135,24 @@
     min-height: 0;
     box-sizing: border-box;
     border-radius: 12px 12px 0 0;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle[data-mobile-sheet-restore-detent='partial'] {
+    transform: translateY(8px);
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'].contextual-panel .mobile-sheet-handle[data-mobile-sheet-restore-detent='partial'],
+  [data-mobile-sheet][data-detent='collapsed'].mobile-stops-sheet .mobile-sheet-handle[data-mobile-sheet-restore-detent='partial'] {
+    transform: translateY(9px);
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'].trip-controls .mobile-sheet-handle[data-mobile-sheet-restore-detent='full'] {
+    transform: translateY(max(8px, env(safe-area-inset-top, 0px)));
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'].contextual-panel .mobile-sheet-handle[data-mobile-sheet-restore-detent='full'],
+  [data-mobile-sheet][data-detent='collapsed'].mobile-stops-sheet .mobile-sheet-handle[data-mobile-sheet-restore-detent='full'] {
+    transform: translateY(calc(max(8px, env(safe-area-inset-top, 0px)) + 1px));
   }
 
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
@@ -1140,7 +1174,7 @@
     z-index: 15;
     top: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--mobile-tab-bar-height);
     left: 0;
     width: auto;
     height: auto !important;
@@ -1190,10 +1224,6 @@
     min-height: 0;
     max-height: none;
     overflow-y: auto;
-  }
-
-  .mobile-tab-bar[data-covered='true'] {
-    visibility: hidden;
   }
 
   .mobile-tab-bar button {

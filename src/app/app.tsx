@@ -291,9 +291,15 @@ function App() {
           : contextualPanelRef.current?.getBoundingClientRect().height ?? 0
       const tabBarRect = mobileTabBarRef.current?.getBoundingClientRect()
       const mapShellBottom = mapShellRef.current?.getBoundingClientRect().bottom ?? viewportHeight
-      const tabBarInset = activeSheetDetent !== 'full' && tabBarRect && tabBarRect.height > 0
-        ? Math.max(0, mapShellBottom - tabBarRect.top)
+      const mapShell = mapShellRef.current
+      const cssTabBarInset = mapShell
+        ? Number.parseFloat(getComputedStyle(mapShell, '::after').height)
         : 0
+      const tabBarInset = getMobileTabBarInset(
+        mapShellBottom,
+        tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
+        cssTabBarInset,
+      )
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
@@ -670,7 +676,6 @@ function App() {
       </div>
       <MobileTabBar
         activeTab={mobileNavigation.activeTab}
-        covered={isMobileViewport && activeSheetDetent === 'full'}
         onSelectTab={(tab) => {
           if (tab === 'stops' && mobileStopView.list === 'nearby' && state.location.status === 'disabled') {
             commands.enableLocationTracking()

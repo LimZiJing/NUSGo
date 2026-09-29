@@ -5,7 +5,7 @@ export interface MobileSheetHeights {
   readonly partialMinHeight: number
 }
 
-const PARTIAL_VIEWPORT_RATIO = 0.4
+const PARTIAL_VIEWPORT_RATIO = 0.6
 const PARTIAL_SHEET_FLOOR = 200
 
 interface MobileTabBarBounds {

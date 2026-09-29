@@ -457,7 +457,7 @@ function App() {
         />
         <LocationControl
           visible={!isMobileViewport || !(
-            mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent === 'full'
+            mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent !== 'collapsed'
           )}
           onRootChange={(root) => {
             locationControlRef.current = root

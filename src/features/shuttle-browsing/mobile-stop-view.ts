@@ -36,11 +36,18 @@ export interface MobileStopDeparture {
   readonly timings: readonly [string, string, string]
 }
 
+export interface MobileStopScheduledDeparture {
+  readonly routeId: string
+  readonly routeName: string
+  readonly routeColor: string
+  readonly message: string
+}
+
 type MobileStopServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
 
-interface MobileStopServiceAvailability {
-  readonly allowsLiveArrivals: boolean
-  readonly message: string
+interface MobileStopRouteAvailability {
+  readonly liveRouteIds: ReadonlySet<string>
+  readonly scheduledDepartures: readonly MobileStopScheduledDeparture[]
 }
 
 export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
@@ -113,6 +120,7 @@ function getLiveStopDepartures(
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
   allowStale: boolean,
+  liveRouteIds: ReadonlySet<string>,
 ): readonly MobileStopDeparture[] {
   if (!snapshot || (!allowStale && getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS)) return []
 
@@ -120,6 +128,7 @@ function getLiveStopDepartures(
   const stopArrivals = snapshot.stops[stop.id] ?? {}
   const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
   return Array.from(servedRouteIds).flatMap((routeId) => {
+    if (!liveRouteIds.has(routeId)) return []
     const route = index.routeById.get(routeId)
     const arrival = stopArrivals[routeId]
     if (!route || !arrival) return []
@@ -146,63 +155,65 @@ function getLiveArrivalMessage(
   stopId: string,
   nowMs: number,
   departures: readonly MobileStopDeparture[],
-  routeIds: readonly string[],
-  serviceWindows: MobileStopServiceWindows | null,
+  scheduledDepartures: readonly MobileStopScheduledDeparture[],
   isRefreshing: boolean,
 ): string | null {
-  const serviceAvailability = getServiceAvailability(routeIds, serviceWindows, nowMs)
-  if (isRefreshing && serviceAvailability?.allowsLiveArrivals !== false) return null
+  if (isRefreshing || scheduledDepartures.length > 0) return null
   if (!snapshot) return null
-  if (serviceAvailability?.allowsLiveArrivals === false) return serviceAvailability.message
   if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return 'Stale live data'
   if (departures.length > 0) return null
-  return serviceAvailability?.message ?? 'No live arrivals'
+  return 'No live arrivals'
 }
 
 function compactStartLabel(label: string): string {
   return label.replace(/^today at /, '').replace(/^tomorrow at /, 'tomorrow ')
 }
 
-function getServiceAvailability(
-  routeIds: readonly string[],
+function getRouteAvailability(
+  stop: TransitStop,
+  index: TransitIndex,
   serviceWindows: MobileStopServiceWindows | null,
   nowMs: number,
-): MobileStopServiceAvailability | null {
-  if (!serviceWindows) return null
-
-  const routeWindows = routeIds
-    .map((routeId) => serviceWindows[routeId])
-    .filter((windows): windows is readonly ShuttleServiceWindow[] => windows !== undefined)
-  if (routeWindows.length === 0) return { allowsLiveArrivals: true, message: 'No live data' }
-
-  const evaluations = routeWindows.map((windows) => ({
-    evaluation: evaluateShuttleService(windows, new Date(nowMs)),
-    nextStart: getNextShuttleServiceStart(windows, new Date(nowMs)),
-  }))
-  if (evaluations.some(({ evaluation }) => evaluation.status === 'active')) {
-    return { allowsLiveArrivals: true, message: 'No live arrivals' }
+): MobileStopRouteAvailability {
+  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
+  if (!serviceWindows) {
+    return { liveRouteIds: new Set(routeIds), scheduledDepartures: [] }
   }
 
-  const nextStart = evaluations
-    .map(({ evaluation, nextStart }) => ({ evaluation, nextStart }))
-    .filter(({ nextStart }) => nextStart !== null)
-    .sort((first, second) => first.nextStart!.minutesUntil - second.nextStart!.minutesUntil)[0]
-  if (!nextStart?.nextStart) return { allowsLiveArrivals: true, message: 'No live data' }
-
-  if (nextStart.evaluation.status === 'before-start') {
-    if (nextStart.nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES) {
-      return {
-        allowsLiveArrivals: false,
-        message: `First bus in ${Math.max(1, Math.ceil(nextStart.nextStart.minutesUntil))}m`,
-      }
+  const liveRouteIds = new Set<string>()
+  const scheduledDepartures: MobileStopScheduledDeparture[] = []
+  for (const routeId of routeIds) {
+    const route = index.routeById.get(routeId)
+    const windows = serviceWindows[routeId]
+    if (!route || !windows?.length) {
+      liveRouteIds.add(routeId)
+      continue
     }
-    return { allowsLiveArrivals: false, message: `Starts ${compactStartLabel(nextStart.nextStart.label)}` }
+
+    const evaluation = evaluateShuttleService(windows, new Date(nowMs))
+    if (evaluation.status === 'active' || evaluation.status === 'unavailable') {
+      liveRouteIds.add(routeId)
+      continue
+    }
+
+    const nextStart = getNextShuttleServiceStart(windows, new Date(nowMs))
+    if (!nextStart) {
+      liveRouteIds.add(routeId)
+      continue
+    }
+    const message = evaluation.status === 'before-start' &&
+      nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES
+      ? `First bus in ${Math.max(1, Math.ceil(nextStart.minutesUntil))}m`
+      : `Starts ${compactStartLabel(nextStart.label)}`
+    scheduledDepartures.push({
+      routeId,
+      routeName: route.name,
+      routeColor: route.color,
+      message,
+    })
   }
 
-  return {
-    allowsLiveArrivals: false,
-    message: `Ended · next ${compactStartLabel(nextStart.nextStart.label)}`,
-  }
+  return { liveRouteIds, scheduledDepartures }
 }
 
 export function getMobileStopSheetSelection(
@@ -216,11 +227,15 @@ export function getMobileStopSheetSelection(
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const favorites = new Set(favoriteStopIds)
-  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
-  const serviceAvailability = getServiceAvailability(routeIds, serviceWindows, nowMs)
-  const departures = serviceAvailability?.allowsLiveArrivals === false
-    ? []
-    : getLiveStopDepartures(stop, index, arrivalSnapshot, nowMs, isRefreshing).map((departure) => ({
+  const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)
+  const departures = getLiveStopDepartures(
+    stop,
+    index,
+    arrivalSnapshot,
+    nowMs,
+    isRefreshing,
+    routeAvailability.liveRouteIds,
+  ).map((departure) => ({
     ...departure,
     reachableFavoriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
       .map(({ id, shortName }) => ({
@@ -237,14 +252,14 @@ export function getMobileStopSheetSelection(
       .filter((service) => service.startsWith('PUB:'))
       .map((service) => service.slice('PUB:'.length)),
     departures,
-    live: departures.length > 0 && !isRefreshing && serviceAvailability?.allowsLiveArrivals !== false,
+    scheduledDepartures: routeAvailability.scheduledDepartures,
+    live: departures.length > 0 && !isRefreshing,
     liveArrivalMessage: getLiveArrivalMessage(
       arrivalSnapshot,
       stop.id,
       nowMs,
       departures,
-      routeIds,
-      serviceWindows,
+      routeAvailability.scheduledDepartures,
       isRefreshing,
     ),
   }

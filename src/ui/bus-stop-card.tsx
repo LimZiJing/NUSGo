@@ -1,4 +1,9 @@
-import { BusStopTimings, type BusStopDeparture, type PublicServiceTiming } from './bus-stop-timings'
+import {
+  BusStopTimings,
+  type BusStopDeparture,
+  type BusStopScheduledDeparture,
+  type PublicServiceTiming,
+} from './bus-stop-timings'
 import { FavoriteStarIcon } from './favorite-star-icon'
 import { InfoPill } from './info-pill'
 
@@ -11,6 +16,7 @@ export interface BusStopCardProps {
   readonly live?: boolean
   readonly liveArrivalMessage?: string | null
   readonly departures: readonly BusStopDeparture[]
+  readonly scheduledDepartures?: readonly BusStopScheduledDeparture[]
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
@@ -31,6 +37,7 @@ export function BusStopCard({
   live = false,
   liveArrivalMessage = null,
   departures,
+  scheduledDepartures = [],
   publicServices,
   onToggleFavorite,
   onToggleExpanded,
@@ -82,6 +89,7 @@ export function BusStopCard({
         <div className="bus-stop-card-timings-inner">
           <BusStopTimings
             departures={departures}
+            scheduledDepartures={scheduledDepartures}
             liveArrivalMessage={liveArrivalMessage}
             publicServices={publicServices}
             onSelectRoute={onSelectRoute}

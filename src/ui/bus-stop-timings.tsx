@@ -20,6 +20,13 @@ export interface PublicServiceTiming {
   readonly timings: readonly [string, string, string] | null
 }
 
+export interface BusStopScheduledDeparture {
+  readonly routeId: string
+  readonly routeName: string
+  readonly routeColor: string
+  readonly message: string
+}
+
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
   return (
     <span className="mobile-stop-departure-times">
@@ -38,16 +45,18 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
 
 export function BusStopTimings({
   departures,
+  scheduledDepartures = [],
   liveArrivalMessage = null,
   publicServices,
   onSelectRoute,
 }: {
   readonly departures: readonly BusStopDeparture[]
+  readonly scheduledDepartures?: readonly BusStopScheduledDeparture[]
   readonly liveArrivalMessage?: string | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
 }) {
-  if (departures.length === 0 && publicServices.length === 0) {
+  if (departures.length === 0 && scheduledDepartures.length === 0 && publicServices.length === 0) {
     return <p>{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
 
@@ -91,11 +100,25 @@ export function BusStopTimings({
             <DepartureTimes timings={departure.timings} />
           </li>
         ))}
+        {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (
+          <li key={`scheduled-${routeId}`} className="mobile-stop-departure-row">
+            <RouteChip
+              routeId={routeId}
+              routeColor={routeColor}
+              ariaLabel={`View ${routeId} route details`}
+              title={routeName}
+              active
+              size="compact"
+              onClick={() => onSelectRoute(routeId)}
+            />
+            <span className="mobile-stop-departure-status">{message}</span>
+          </li>
+        ))}
         {publicServices.map(({ serviceNumber, timings }) => (
           <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
-              <span className="mobile-stop-public-timing-unavailable">
+              <span className="mobile-stop-departure-status">
                 No live timing
               </span>
             )}

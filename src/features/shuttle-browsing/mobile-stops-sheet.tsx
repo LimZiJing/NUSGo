@@ -3,7 +3,7 @@ import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
-import { BusStopTimings, type BusStopDeparture } from '../../ui/bus-stop-timings'
+import { BusStopTimings, type BusStopDeparture, type BusStopScheduledDeparture } from '../../ui/bus-stop-timings'
 import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
 import { type MobileStopDeparture } from './mobile-stop-view'
 
@@ -15,6 +15,7 @@ export interface MobileStopSheetSelection {
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly string[]
   readonly departures: readonly MobileStopSheetDeparture[]
+  readonly scheduledDepartures: readonly BusStopScheduledDeparture[]
   readonly live: boolean
   readonly liveArrivalMessage: string | null
 }
@@ -139,6 +140,7 @@ export function MobileStopsSheet({
             <div className="mobile-stop-departures">
               <BusStopTimings
                 departures={selectedStop.departures}
+                scheduledDepartures={selectedStop.scheduledDepartures}
                 liveArrivalMessage={selectedStop.liveArrivalMessage}
                 publicServices={selectedStop.publicServices.map((serviceNumber) => ({
                   serviceNumber,
@@ -178,6 +180,7 @@ export function MobileStopsSheet({
                     live={stop.live}
                     liveArrivalMessage={stop.liveArrivalMessage}
                     departures={stop.departures}
+                    scheduledDepartures={stop.scheduledDepartures}
                     publicServices={stop.publicServices.map((serviceNumber) => ({
                       serviceNumber,
                       timings: null,

@@ -899,10 +899,11 @@
     gap: 6px;
   }
 
-  .mobile-stop-public-timing-unavailable {
+  .mobile-stop-departure-status {
     grid-column: 2 / -1;
     color: #64748b;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.25;
   }
 
   .mobile-stop-reachable-favorites {

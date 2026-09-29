@@ -101,7 +101,13 @@ describe('mobile stop view state', () => {
 
     expect(selection.departures).toEqual([])
     expect(selection.live).toBe(false)
-    expect(selection.liveArrivalMessage).toBe('First bus in 6m')
+    expect(selection.scheduledDepartures).toEqual([{
+      routeId: 'A1',
+      routeName: 'A1',
+      routeColor: '#123456',
+      message: 'First bus in 6m',
+    }])
+    expect(selection.liveArrivalMessage).toBeNull()
   })
 
   it('does not treat a long pre-service arrival as live timing', () => {
@@ -134,7 +140,10 @@ describe('mobile stop view state', () => {
 
     expect(selection.departures).toEqual([])
     expect(selection.live).toBe(false)
-    expect(selection.liveArrivalMessage).toBe('Starts 6:00 AM')
+    expect(selection.scheduledDepartures.map(({ routeId, message }) => ({ routeId, message }))).toEqual([
+      { routeId: 'A1', message: 'Starts 6:00 AM' },
+    ])
+    expect(selection.liveArrivalMessage).toBeNull()
   })
 
   it('keeps old rows during a refresh without marking them live or stale', () => {
@@ -191,7 +200,10 @@ describe('mobile stop view state', () => {
       serviceWindows,
     )
 
-    expect(selection.liveArrivalMessage).toBe('Starts 1:00 AM')
+    expect(selection.scheduledDepartures.map(({ routeId, message }) => ({ routeId, message }))).toEqual([
+      { routeId: 'A1', message: 'Starts 1:00 AM' },
+    ])
+    expect(selection.liveArrivalMessage).toBeNull()
   })
 
   it('adds downstream favourite stop nicknames to matching route departures', () => {

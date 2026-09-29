@@ -18,6 +18,8 @@ Before discovery or editing, confirm:
 - available package manager, runtime, browser, or other task-specific tools;
 - whether pushing, issue updates, or pull-request creation is authorized.
 
+Keep the shared checkout on local `main`. Unless the user explicitly requests otherwise, create a fresh managed worktree from local `main` for each ticket and use a dedicated descriptive branch in that worktree. Do not implement tickets in the shared checkout or reuse another ticket's worktree.
+
 If an environment command fails, diagnose the path, permission, runtime, or process-lifecycle cause before retrying it. Start long-lived development servers with a known port and an explicit cleanup path.
 
 ## 3. Inspect within an output budget
@@ -60,6 +62,8 @@ Finish with a concise record of:
 - browser or manual verification performed and limitations;
 - issue, branch, commit, and pull-request references;
 - follow-up work that should become a separate task.
+
+After the associated pull request is accepted and merged, archive or remove the ticket's worktree and run `git worktree prune` to clear stale metadata. Leave worktrees for active tasks and open pull requests in place.
 
 Once the outcome is complete, stop the task. Do not keep unrelated follow-ups in the same conversation.
 

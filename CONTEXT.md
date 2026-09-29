@@ -1,6 +1,6 @@
 # NavUS Domain Glossary
 
-This document defines the domain language used by NavUS. It contains terminology and relationships, not implementation instructions.
+This document defines the domain and product vocabulary used by NavUS. It contains terminology and relationships, not implementation instructions.
 
 ## Campus navigation
 
@@ -9,6 +9,9 @@ This document defines the domain language used by NavUS. It contains terminology
 - **Journey**: A complete, continuous ordered sequence of journey legs from an origin to a destination.
 - **Journey leg**: One part of a journey using one travel mode, such as walking or an internal shuttle.
 - **Recommended journey**: The best valid journey under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable.
+- **Trip endpoint**: A resolved journey origin or destination, identified by a stable venue or shuttle-stop reference and its coordinates.
+- **Walking connection**: A directed, validated walking path between two trip endpoints or shuttle stops, with travel distance and duration. A connection used as a journey leg also has route geometry.
+- **Transfer**: A change from one shuttle boarding to another within a journey. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 
 ## Shuttle transit
 
@@ -20,6 +23,8 @@ This document defines the domain language used by NavUS. It contains terminology
 - **Public service token**: An opaque identifier for a public or external service. It is not an internal NavUS route and must not be treated as one.
 - **Opposite stop**: The paired stop representing the reverse side or direction of a stop location. Opposite-stop relationships are reciprocal.
 - **Route geometry**: The geographic line that represents the physical path of a route between its ordered stops.
+- **Ride estimate**: The estimated time spent travelling on a shuttle between boarding and alighting, excluding waiting.
+- **Waiting estimate**: The estimated time from reaching a boarding stop until the expected shuttle arrival. A shuttle leg includes both its waiting and ride estimates.
 
 ## Map presentation
 
@@ -28,3 +33,15 @@ This document defines the domain language used by NavUS. It contains terminology
 - **Selected route**: The one internal route currently receiving focused map and information-panel treatment.
 - **All-routes state**: The map state in which no route is selected and the complete validated network is available for inspection.
 
+## Product navigation
+
+- **Bottom sheet**: A movable mobile panel over the shared map that presents a workflow while leaving the map available.
+- **Explore**: The product area for finding venues and browsing shuttle routes.
+- **Stops**: The product area for browsing nearby or favourite shuttle stops and viewing a selected stop's details.
+- **Plan**: The product area for choosing trip endpoints and viewing a recommended journey or its planning status.
+- **Find venue**: The Explore workflow for searching venues and opening venue details.
+- **Shuttle routes**: The Explore workflow for browsing internal routes and their ordered stops.
+- **Nearby**: The Stops list of shuttle stops near the visible map centre, ordered by distance from that centre.
+- **Favourites**: The Stops list of shuttle stops saved by the person in their browser.
+- **Venue details**: The view of a selected venue's identity and confirmed location information, with actions such as navigation.
+- **Stop details**: The view of a selected shuttle stop's identity, services, and available arrival information.

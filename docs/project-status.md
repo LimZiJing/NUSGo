@@ -1,6 +1,6 @@
 # NavUS Project Status
 
-This document records the shared implementation status and near-term engineering direction. Stable domain language belongs in the root `CONTEXT.md`; agent behavior belongs in `AGENTS.md`.
+This document records the shared implementation status and near-term engineering direction. Stable domain and product vocabulary belongs in the root `CONTEXT.md`; agent behavior belongs in `AGENTS.md`.
 
 ## Stack
 

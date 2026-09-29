@@ -1072,7 +1072,11 @@
     max-height: 30dvh;
   }
 
-  [data-mobile-sheet][data-detent='collapsed']:not([data-mobile-sheet-settling='collapsed']) {
+  [data-mobile-sheet][data-detent='collapsed']:not([data-mobile-sheet-settling='collapsed']):not([data-mobile-sheet-animating='true']) {
+    display: none !important;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-animating='true'] > * {
     display: none !important;
   }
 

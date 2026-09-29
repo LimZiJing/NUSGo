@@ -2,6 +2,7 @@ const SHEET_TRANSITION_DURATION = 220
 
 interface InlineSheetStyles {
   readonly height: string
+  readonly heightPriority: string
   readonly maxHeight: string
   readonly overflow: string
   readonly transition: string
@@ -10,7 +11,8 @@ interface InlineSheetStyles {
 
 function readInlineStyles(sheet: HTMLElement): InlineSheetStyles {
   return {
-    height: sheet.style.height,
+    height: sheet.style.getPropertyValue('height'),
+    heightPriority: sheet.style.getPropertyPriority('height'),
     maxHeight: sheet.style.maxHeight,
     overflow: sheet.style.overflow,
     transition: sheet.style.transition,
@@ -27,11 +29,15 @@ export function animateMobileSheet(
   if (typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => undefined
 
+  const previous = readInlineStyles(sheet)
+  sheet.dataset.mobileSheetAnimating = 'true'
   const targetHeight = sheet.getBoundingClientRect().height
   const targetBottom = window.getComputedStyle(sheet).bottom
-  if (startHeight <= 0 || targetHeight <= 0) return () => undefined
+  if (startHeight <= 0 && targetHeight <= 0) {
+    delete sheet.dataset.mobileSheetAnimating
+    return () => undefined
+  }
 
-  const previous = readInlineStyles(sheet)
   let frame = 0
   let timeout = 0
   let finished = false
@@ -44,7 +50,11 @@ export function animateMobileSheet(
     sheet.removeEventListener('transitionend', handleTransitionEnd)
     delete sheet.dataset.mobileSheetAnimating
     delete sheet.dataset.mobileSheetViewTransition
-    sheet.style.height = previous.height
+    if (previous.height) {
+      sheet.style.setProperty('height', previous.height, previous.heightPriority)
+    } else {
+      sheet.style.removeProperty('height')
+    }
     sheet.style.maxHeight = previous.maxHeight
     sheet.style.overflow = previous.overflow
     sheet.style.transition = previous.transition
@@ -55,9 +65,8 @@ export function animateMobileSheet(
     if (event.target === sheet && event.propertyName === 'height') finish()
   }
 
-  sheet.dataset.mobileSheetAnimating = 'true'
   if (animateContent) sheet.dataset.mobileSheetViewTransition = 'true'
-  sheet.style.height = `${startHeight}px`
+  sheet.style.setProperty('height', `${startHeight}px`, 'important')
   sheet.style.maxHeight = sheet.dataset.detent === 'partial'
     ? 'var(--mobile-sheet-max-height)'
     : 'var(--mobile-viewport-height)'
@@ -69,7 +78,7 @@ export function animateMobileSheet(
   sheet.addEventListener('transitionend', handleTransitionEnd)
   frame = window.requestAnimationFrame(() => {
     sheet.style.transition = `height ${SHEET_TRANSITION_DURATION}ms ease-out, bottom ${SHEET_TRANSITION_DURATION}ms ease-out`
-    sheet.style.height = `${targetHeight}px`
+    sheet.style.setProperty('height', `${targetHeight}px`, 'important')
     sheet.style.bottom = targetBottom
   })
   timeout = window.setTimeout(finish, SHEET_TRANSITION_DURATION + 80)

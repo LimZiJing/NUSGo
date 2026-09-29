@@ -200,7 +200,7 @@ function App() {
     const sheet = getActiveMobileSheet()
     const startHeight = sheet?.getBoundingClientRect().height ?? 0
     const startBottom = sheet ? Number.parseFloat(window.getComputedStyle(sheet).bottom) : 0
-    pendingSheetTransitionRef.current = startHeight > 0
+    pendingSheetTransitionRef.current = sheet
       ? { startHeight, startBottom: Number.isFinite(startBottom) ? startBottom : 0, viewChange }
       : null
   }, [getActiveMobileSheet, isMobileViewport])

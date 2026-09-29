@@ -62,7 +62,7 @@ For a complete trip request, the planner receives:
 - walking connections between the two endpoints and the shuttle-stop candidates; and
 - validated shuttle timing estimates.
 
-The walking adapter may use Valhalla's matrix service to obtain directed walking costs for the origin, destination, and all currently canonical shuttle stops. The selected walking legs are then enriched with individual route geometries. A matrix result is never treated as map geometry.
+The walking adapter precomputes directed walking costs between the canonical shuttle stops and stores only distance and duration. For each trip request it uses two smaller Valhalla matrix queries in parallel: origin to the destination and stop candidates, and stop candidates to the destination. The selected walking legs are then enriched with individual route geometries. A matrix result is never treated as map geometry.
 
 The pure planner builds a directed graph:
 
@@ -109,7 +109,7 @@ Issue #71 will implement a framework-free walking boundary in infrastructure. It
 
 The adapter must validate coordinates, HTTP status, numeric ranges, geometry type, coordinate order, and response completeness. It must translate provider failures into explicit routing failures and preserve abort behaviour. It must not expose Valhalla request/response types to React, MapLibre, or the pure planner.
 
-The boundary should support a matrix request for ranking and a route request for selected-leg geometry. If geometry enrichment fails for the chosen path, that path is incomplete and must be discarded or the next complete ranked candidate must be tried; the map must never draw a straight-line approximation while presenting it as a routed Journey.
+The boundary should support the precomputed stop graph, the two endpoint matrix requests used for ranking, and a route request for selected-leg geometry. If geometry enrichment fails for the chosen path, that path is incomplete and must be discarded or the next complete ranked candidate must be tried; the map must never draw a straight-line approximation while presenting it as a routed Journey.
 
 ## Missing data and failure states
 
@@ -160,6 +160,7 @@ Costs and limitations:
 ## References
 
 - [Issue #70](https://github.com/LimZiJing/NavUS/issues/70)
+- [Issue #175](https://github.com/LimZiJing/NavUS/issues/175)
 - [Issue #104](https://github.com/LimZiJing/NavUS/issues/104)
 - [Valhalla API](https://valhalla.github.io/valhalla/api/)
 - [Valhalla route API schema](https://github.com/valhalla/valhalla/blob/master/docs/docs/api/openapi.yaml)

@@ -1,0 +1,6379 @@
+{
+  "version": 1,
+  "networkVersion": 1,
+  "routingProfile": "pedestrian",
+  "routingDataVersion": "local-valhalla",
+  "stopIds": [
+    "OTH",
+    "BG-MRT",
+    "KR-MRT",
+    "LT27",
+    "UHALL",
+    "UHC-OPP",
+    "UTOWN",
+    "RAFFLES",
+    "KV",
+    "MUSEUM",
+    "YIH",
+    "CLB",
+    "LT13",
+    "AS5",
+    "BIZ2",
+    "PGP",
+    "CG",
+    "IT",
+    "YIH-OPP",
+    "SDE3-OPP",
+    "JP-SCH-16151",
+    "UHC",
+    "UHALL-OPP",
+    "S17",
+    "KR-MRT-OPP",
+    "PGPR",
+    "COM3",
+    "HSSML-OPP",
+    "NUSS-OPP",
+    "LT13-OPP",
+    "KRB",
+    "TCOMS",
+    "TCOMS-OPP"
+  ],
+  "connections": [
+    {
+      "fromStopId": "OTH",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 677,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 6183,
+      "durationSeconds": 4393
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "LT27",
+      "distanceMeters": 6684,
+      "durationSeconds": 4752
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "UHALL",
+      "distanceMeters": 6929,
+      "durationSeconds": 4924
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 7361,
+      "durationSeconds": 5232
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "UTOWN",
+      "distanceMeters": 6670,
+      "durationSeconds": 4767
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 7163,
+      "durationSeconds": 5120
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "KV",
+      "distanceMeters": 7682,
+      "durationSeconds": 5458
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 7031,
+      "durationSeconds": 5024
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "YIH",
+      "distanceMeters": 7277,
+      "durationSeconds": 5204
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "CLB",
+      "distanceMeters": 7554,
+      "durationSeconds": 5397
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "LT13",
+      "distanceMeters": 8030,
+      "durationSeconds": 5704
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "AS5",
+      "distanceMeters": 7876,
+      "durationSeconds": 5595
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "BIZ2",
+      "distanceMeters": 7360,
+      "durationSeconds": 5229
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "PGP",
+      "distanceMeters": 6655,
+      "durationSeconds": 4731
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "CG",
+      "distanceMeters": 821,
+      "durationSeconds": 582
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "IT",
+      "distanceMeters": 7540,
+      "durationSeconds": 5384
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 7246,
+      "durationSeconds": 5178
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 7916,
+      "durationSeconds": 5620
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 7598,
+      "durationSeconds": 5399
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "UHC",
+      "distanceMeters": 7297,
+      "durationSeconds": 5187
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 7132,
+      "durationSeconds": 5069
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "S17",
+      "distanceMeters": 6718,
+      "durationSeconds": 4775
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 6159,
+      "durationSeconds": 4375
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "PGPR",
+      "distanceMeters": 6535,
+      "durationSeconds": 4642
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "COM3",
+      "distanceMeters": 7358,
+      "durationSeconds": 5226
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 7403,
+      "durationSeconds": 5259
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 7741,
+      "durationSeconds": 5499
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 7844,
+      "durationSeconds": 5623
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "KRB",
+      "distanceMeters": 7966,
+      "durationSeconds": 5708
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "TCOMS",
+      "distanceMeters": 7116,
+      "durationSeconds": 5056
+    },
+    {
+      "fromStopId": "OTH",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 7139,
+      "durationSeconds": 5069
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "OTH",
+      "distanceMeters": 677,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 5903,
+      "durationSeconds": 4200
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "LT27",
+      "distanceMeters": 6404,
+      "durationSeconds": 4559
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "UHALL",
+      "distanceMeters": 6649,
+      "durationSeconds": 4731
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 7081,
+      "durationSeconds": 5039
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "UTOWN",
+      "distanceMeters": 6390,
+      "durationSeconds": 4574
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 6886,
+      "durationSeconds": 4931
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "KV",
+      "distanceMeters": 7400,
+      "durationSeconds": 5262
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 6751,
+      "durationSeconds": 4831
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "YIH",
+      "distanceMeters": 6994,
+      "durationSeconds": 5007
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "CLB",
+      "distanceMeters": 7274,
+      "durationSeconds": 5204
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "LT13",
+      "distanceMeters": 7750,
+      "durationSeconds": 5511
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "AS5",
+      "distanceMeters": 7596,
+      "durationSeconds": 5402
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "BIZ2",
+      "distanceMeters": 7080,
+      "durationSeconds": 5036
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "PGP",
+      "distanceMeters": 6375,
+      "durationSeconds": 4538
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "CG",
+      "distanceMeters": 308,
+      "durationSeconds": 218
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "IT",
+      "distanceMeters": 7260,
+      "durationSeconds": 5191
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 6966,
+      "durationSeconds": 4985
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 7636,
+      "durationSeconds": 5427
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 7316,
+      "durationSeconds": 5203
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "UHC",
+      "distanceMeters": 7017,
+      "durationSeconds": 4994
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 6852,
+      "durationSeconds": 4876
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "S17",
+      "distanceMeters": 6438,
+      "durationSeconds": 4582
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 5879,
+      "durationSeconds": 4182
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "PGPR",
+      "distanceMeters": 6255,
+      "durationSeconds": 4449
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "COM3",
+      "distanceMeters": 7078,
+      "durationSeconds": 5033
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 7123,
+      "durationSeconds": 5066
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 7461,
+      "durationSeconds": 5306
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 7565,
+      "durationSeconds": 5413
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "KRB",
+      "distanceMeters": 7686,
+      "durationSeconds": 5515
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "TCOMS",
+      "distanceMeters": 6836,
+      "durationSeconds": 4863
+    },
+    {
+      "fromStopId": "BG-MRT",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 6859,
+      "durationSeconds": 4877
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "OTH",
+      "distanceMeters": 6183,
+      "durationSeconds": 4393
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 5911,
+      "durationSeconds": 4200
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "LT27",
+      "distanceMeters": 644,
+      "durationSeconds": 458
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "UHALL",
+      "distanceMeters": 882,
+      "durationSeconds": 629
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1314,
+      "durationSeconds": 936
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1974,
+      "durationSeconds": 1410
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1785,
+      "durationSeconds": 1272
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "KV",
+      "distanceMeters": 2225,
+      "durationSeconds": 1595
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1680,
+      "durationSeconds": 1197
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "YIH",
+      "distanceMeters": 1470,
+      "durationSeconds": 1048
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "CLB",
+      "distanceMeters": 1817,
+      "durationSeconds": 1296
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "LT13",
+      "distanceMeters": 2253,
+      "durationSeconds": 1603
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "AS5",
+      "distanceMeters": 2099,
+      "durationSeconds": 1494
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1583,
+      "durationSeconds": 1128
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "PGP",
+      "distanceMeters": 878,
+      "durationSeconds": 630
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "CG",
+      "distanceMeters": 6046,
+      "durationSeconds": 4296
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "IT",
+      "distanceMeters": 1835,
+      "durationSeconds": 1310
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1530,
+      "durationSeconds": 1090
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 2344,
+      "durationSeconds": 1680
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 2141,
+      "durationSeconds": 1536
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "UHC",
+      "distanceMeters": 1250,
+      "durationSeconds": 892
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1085,
+      "durationSeconds": 773
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "S17",
+      "distanceMeters": 671,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 204,
+      "durationSeconds": 146
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "PGPR",
+      "distanceMeters": 758,
+      "durationSeconds": 541
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "COM3",
+      "distanceMeters": 1581,
+      "durationSeconds": 1125
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1626,
+      "durationSeconds": 1158
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1964,
+      "durationSeconds": 1398
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 2111,
+      "durationSeconds": 1507
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "KRB",
+      "distanceMeters": 2237,
+      "durationSeconds": 1596
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1339,
+      "durationSeconds": 955
+    },
+    {
+      "fromStopId": "KR-MRT",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1362,
+      "durationSeconds": 969
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "OTH",
+      "distanceMeters": 6684,
+      "durationSeconds": 4752
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6412,
+      "durationSeconds": 4559
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 644,
+      "durationSeconds": 458
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "UHALL",
+      "distanceMeters": 241,
+      "durationSeconds": 170
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 673,
+      "durationSeconds": 477
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1333,
+      "durationSeconds": 951
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1124,
+      "durationSeconds": 799
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "KV",
+      "distanceMeters": 1584,
+      "durationSeconds": 1136
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1039,
+      "durationSeconds": 739
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "YIH",
+      "distanceMeters": 826,
+      "durationSeconds": 587
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "CLB",
+      "distanceMeters": 1176,
+      "durationSeconds": 837
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "LT13",
+      "distanceMeters": 1559,
+      "durationSeconds": 1112
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "AS5",
+      "distanceMeters": 1714,
+      "durationSeconds": 1222
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1088,
+      "durationSeconds": 800
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "PGP",
+      "distanceMeters": 1388,
+      "durationSeconds": 995
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "CG",
+      "distanceMeters": 6547,
+      "durationSeconds": 4655
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "IT",
+      "distanceMeters": 1186,
+      "durationSeconds": 842
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 889,
+      "durationSeconds": 632
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1703,
+      "durationSeconds": 1222
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1500,
+      "durationSeconds": 1077
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "UHC",
+      "distanceMeters": 609,
+      "durationSeconds": 433
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 444,
+      "durationSeconds": 315
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "S17",
+      "distanceMeters": 95,
+      "durationSeconds": 68
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 532,
+      "durationSeconds": 378
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "PGPR",
+      "distanceMeters": 1268,
+      "durationSeconds": 905
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "COM3",
+      "distanceMeters": 1094,
+      "durationSeconds": 806
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1143,
+      "durationSeconds": 839
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1467,
+      "durationSeconds": 1070
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1470,
+      "durationSeconds": 1048
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "KRB",
+      "distanceMeters": 1592,
+      "durationSeconds": 1133
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1298,
+      "durationSeconds": 948
+    },
+    {
+      "fromStopId": "LT27",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1008,
+      "durationSeconds": 743
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "OTH",
+      "distanceMeters": 6929,
+      "durationSeconds": 4924
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6657,
+      "durationSeconds": 4731
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 882,
+      "durationSeconds": 629
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "LT27",
+      "distanceMeters": 241,
+      "durationSeconds": 170
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 432,
+      "durationSeconds": 307
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1092,
+      "durationSeconds": 780
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 883,
+      "durationSeconds": 628
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "KV",
+      "distanceMeters": 1343,
+      "durationSeconds": 966
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 798,
+      "durationSeconds": 568
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "YIH",
+      "distanceMeters": 585,
+      "durationSeconds": 417
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "CLB",
+      "distanceMeters": 935,
+      "durationSeconds": 667
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "LT13",
+      "distanceMeters": 1318,
+      "durationSeconds": 941
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "AS5",
+      "distanceMeters": 1473,
+      "durationSeconds": 1051
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "BIZ2",
+      "distanceMeters": 847,
+      "durationSeconds": 630
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "PGP",
+      "distanceMeters": 1263,
+      "durationSeconds": 922
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "CG",
+      "distanceMeters": 6792,
+      "durationSeconds": 4827
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "IT",
+      "distanceMeters": 945,
+      "durationSeconds": 672
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 648,
+      "durationSeconds": 461
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1462,
+      "durationSeconds": 1051
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1259,
+      "durationSeconds": 907
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "UHC",
+      "distanceMeters": 368,
+      "durationSeconds": 262
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 203,
+      "durationSeconds": 144
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "S17",
+      "distanceMeters": 219,
+      "durationSeconds": 155
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 770,
+      "durationSeconds": 549
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "PGPR",
+      "distanceMeters": 1509,
+      "durationSeconds": 1076
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "COM3",
+      "distanceMeters": 853,
+      "durationSeconds": 635
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 902,
+      "durationSeconds": 668
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1226,
+      "durationSeconds": 899
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1229,
+      "durationSeconds": 877
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "KRB",
+      "distanceMeters": 1351,
+      "durationSeconds": 962
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1057,
+      "durationSeconds": 778
+    },
+    {
+      "fromStopId": "UHALL",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 767,
+      "durationSeconds": 572
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7361,
+      "durationSeconds": 5232
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7089,
+      "durationSeconds": 5038
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1314,
+      "durationSeconds": 936
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 673,
+      "durationSeconds": 477
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 432,
+      "durationSeconds": 307
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 685,
+      "durationSeconds": 489
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 470,
+      "durationSeconds": 332
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 930,
+      "durationSeconds": 670
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 385,
+      "durationSeconds": 272
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 156,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 506,
+      "durationSeconds": 362
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 890,
+      "durationSeconds": 638
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 1044,
+      "durationSeconds": 746
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1124,
+      "durationSeconds": 799
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1725,
+      "durationSeconds": 1222
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7224,
+      "durationSeconds": 5134
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 524,
+      "durationSeconds": 375
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 235,
+      "durationSeconds": 165
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1037,
+      "durationSeconds": 749
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 846,
+      "durationSeconds": 611
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 71,
+      "durationSeconds": 51
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 337,
+      "durationSeconds": 239
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 651,
+      "durationSeconds": 462
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1202,
+      "durationSeconds": 856
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1857,
+      "durationSeconds": 1317
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 1006,
+      "durationSeconds": 715
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1189,
+      "durationSeconds": 845
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1267,
+      "durationSeconds": 904
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 801,
+      "durationSeconds": 574
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 923,
+      "durationSeconds": 659
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1344,
+      "durationSeconds": 954
+    },
+    {
+      "fromStopId": "UHC-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1238,
+      "durationSeconds": 879
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "OTH",
+      "distanceMeters": 6670,
+      "durationSeconds": 4766
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6398,
+      "durationSeconds": 4573
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1974,
+      "durationSeconds": 1409
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "LT27",
+      "distanceMeters": 1333,
+      "durationSeconds": 950
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "UHALL",
+      "distanceMeters": 1092,
+      "durationSeconds": 779
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 685,
+      "durationSeconds": 488
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 572,
+      "durationSeconds": 407
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "KV",
+      "distanceMeters": 1032,
+      "durationSeconds": 743
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 440,
+      "durationSeconds": 311
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "YIH",
+      "distanceMeters": 683,
+      "durationSeconds": 488
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "CLB",
+      "distanceMeters": 963,
+      "durationSeconds": 684
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "LT13",
+      "distanceMeters": 1343,
+      "durationSeconds": 958
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "AS5",
+      "distanceMeters": 1497,
+      "durationSeconds": 1066
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1579,
+      "durationSeconds": 1121
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "PGP",
+      "distanceMeters": 2180,
+      "durationSeconds": 1544
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "CG",
+      "distanceMeters": 6533,
+      "durationSeconds": 4668
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "IT",
+      "distanceMeters": 949,
+      "durationSeconds": 671
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 652,
+      "durationSeconds": 462
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1266,
+      "durationSeconds": 904
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 948,
+      "durationSeconds": 684
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "UHC",
+      "distanceMeters": 723,
+      "durationSeconds": 517
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 997,
+      "durationSeconds": 710
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "S17",
+      "distanceMeters": 1311,
+      "durationSeconds": 935
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1862,
+      "durationSeconds": 1329
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "PGPR",
+      "distanceMeters": 2312,
+      "durationSeconds": 1639
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "COM3",
+      "distanceMeters": 1461,
+      "durationSeconds": 1037
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1644,
+      "durationSeconds": 1167
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1720,
+      "durationSeconds": 1223
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1254,
+      "durationSeconds": 894
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "KRB",
+      "distanceMeters": 1376,
+      "durationSeconds": 979
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1799,
+      "durationSeconds": 1276
+    },
+    {
+      "fromStopId": "UTOWN",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1693,
+      "durationSeconds": 1201
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "OTH",
+      "distanceMeters": 7170,
+      "durationSeconds": 5128
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6891,
+      "durationSeconds": 4926
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1765,
+      "durationSeconds": 1258
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "LT27",
+      "distanceMeters": 1124,
+      "durationSeconds": 799
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "UHALL",
+      "distanceMeters": 883,
+      "durationSeconds": 628
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 470,
+      "durationSeconds": 332
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "UTOWN",
+      "distanceMeters": 572,
+      "durationSeconds": 407
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "KV",
+      "distanceMeters": 463,
+      "durationSeconds": 340
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 132,
+      "durationSeconds": 96
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "YIH",
+      "distanceMeters": 413,
+      "durationSeconds": 293
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "CLB",
+      "distanceMeters": 732,
+      "durationSeconds": 519
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "LT13",
+      "distanceMeters": 1094,
+      "durationSeconds": 781
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "AS5",
+      "distanceMeters": 1248,
+      "durationSeconds": 889
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1346,
+      "durationSeconds": 954
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "PGP",
+      "distanceMeters": 1947,
+      "durationSeconds": 1377
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "CG",
+      "distanceMeters": 7026,
+      "durationSeconds": 5022
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "IT",
+      "distanceMeters": 700,
+      "durationSeconds": 495
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 403,
+      "durationSeconds": 285
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 697,
+      "durationSeconds": 501
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 379,
+      "durationSeconds": 281
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "UHC",
+      "distanceMeters": 516,
+      "durationSeconds": 367
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 788,
+      "durationSeconds": 559
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "S17",
+      "distanceMeters": 1102,
+      "durationSeconds": 784
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1653,
+      "durationSeconds": 1178
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "PGPR",
+      "distanceMeters": 2079,
+      "durationSeconds": 1472
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "COM3",
+      "distanceMeters": 1228,
+      "durationSeconds": 869
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1411,
+      "durationSeconds": 999
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1471,
+      "durationSeconds": 1047
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1005,
+      "durationSeconds": 717
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "KRB",
+      "distanceMeters": 1127,
+      "durationSeconds": 802
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1566,
+      "durationSeconds": 1109
+    },
+    {
+      "fromStopId": "RAFFLES",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1460,
+      "durationSeconds": 1034
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "OTH",
+      "distanceMeters": 7682,
+      "durationSeconds": 5456
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7410,
+      "durationSeconds": 5260
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2225,
+      "durationSeconds": 1595
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "LT27",
+      "distanceMeters": 1584,
+      "durationSeconds": 1136
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "UHALL",
+      "distanceMeters": 1343,
+      "durationSeconds": 966
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 930,
+      "durationSeconds": 670
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1035,
+      "durationSeconds": 748
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 463,
+      "durationSeconds": 340
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 595,
+      "durationSeconds": 436
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "YIH",
+      "distanceMeters": 873,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "CLB",
+      "distanceMeters": 956,
+      "durationSeconds": 679
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "LT13",
+      "distanceMeters": 1079,
+      "durationSeconds": 771
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "AS5",
+      "distanceMeters": 1233,
+      "durationSeconds": 880
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1533,
+      "durationSeconds": 1089
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "PGP",
+      "distanceMeters": 2134,
+      "durationSeconds": 1513
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "CG",
+      "distanceMeters": 7545,
+      "durationSeconds": 5356
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "IT",
+      "distanceMeters": 868,
+      "durationSeconds": 614
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 863,
+      "durationSeconds": 623
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 550,
+      "durationSeconds": 391
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 218,
+      "durationSeconds": 154
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "UHC",
+      "distanceMeters": 976,
+      "durationSeconds": 705
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1248,
+      "durationSeconds": 896
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "S17",
+      "distanceMeters": 1562,
+      "durationSeconds": 1121
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2113,
+      "durationSeconds": 1515
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "PGPR",
+      "distanceMeters": 2266,
+      "durationSeconds": 1608
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "COM3",
+      "distanceMeters": 1415,
+      "durationSeconds": 1005
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1598,
+      "durationSeconds": 1135
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1456,
+      "durationSeconds": 1037
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 990,
+      "durationSeconds": 707
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "KRB",
+      "distanceMeters": 1114,
+      "durationSeconds": 803
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1753,
+      "durationSeconds": 1245
+    },
+    {
+      "fromStopId": "KV",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1647,
+      "durationSeconds": 1169
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "OTH",
+      "distanceMeters": 7018,
+      "durationSeconds": 5013
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6759,
+      "durationSeconds": 4829
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1680,
+      "durationSeconds": 1197
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "LT27",
+      "distanceMeters": 1039,
+      "durationSeconds": 739
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "UHALL",
+      "distanceMeters": 798,
+      "durationSeconds": 568
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 409,
+      "durationSeconds": 292
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "UTOWN",
+      "distanceMeters": 440,
+      "durationSeconds": 311
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 132,
+      "durationSeconds": 96
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "KV",
+      "distanceMeters": 592,
+      "durationSeconds": 431
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "YIH",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "CLB",
+      "distanceMeters": 661,
+      "durationSeconds": 469
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "LT13",
+      "distanceMeters": 1023,
+      "durationSeconds": 731
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "AS5",
+      "distanceMeters": 1177,
+      "durationSeconds": 839
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1275,
+      "durationSeconds": 904
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "PGP",
+      "distanceMeters": 1876,
+      "durationSeconds": 1327
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "CG",
+      "distanceMeters": 6894,
+      "durationSeconds": 4925
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "IT",
+      "distanceMeters": 629,
+      "durationSeconds": 445
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 332,
+      "durationSeconds": 235
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 829,
+      "durationSeconds": 597
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 508,
+      "durationSeconds": 372
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "UHC",
+      "distanceMeters": 447,
+      "durationSeconds": 321
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 703,
+      "durationSeconds": 499
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "S17",
+      "distanceMeters": 1017,
+      "durationSeconds": 723
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1568,
+      "durationSeconds": 1117
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "PGPR",
+      "distanceMeters": 2008,
+      "durationSeconds": 1422
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "COM3",
+      "distanceMeters": 1157,
+      "durationSeconds": 819
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1340,
+      "durationSeconds": 949
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1400,
+      "durationSeconds": 997
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 934,
+      "durationSeconds": 667
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "KRB",
+      "distanceMeters": 1056,
+      "durationSeconds": 752
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1495,
+      "durationSeconds": 1059
+    },
+    {
+      "fromStopId": "MUSEUM",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1389,
+      "durationSeconds": 983
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "OTH",
+      "distanceMeters": 7275,
+      "durationSeconds": 5206
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7002,
+      "durationSeconds": 5009
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1467,
+      "durationSeconds": 1048
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "LT27",
+      "distanceMeters": 826,
+      "durationSeconds": 589
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "UHALL",
+      "distanceMeters": 585,
+      "durationSeconds": 419
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 156,
+      "durationSeconds": 114
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "UTOWN",
+      "distanceMeters": 644,
+      "durationSeconds": 458
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 413,
+      "durationSeconds": 293
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "KV",
+      "distanceMeters": 873,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "CLB",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "LT13",
+      "distanceMeters": 727,
+      "durationSeconds": 520
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "AS5",
+      "distanceMeters": 881,
+      "durationSeconds": 628
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "BIZ2",
+      "distanceMeters": 961,
+      "durationSeconds": 681
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "PGP",
+      "distanceMeters": 1562,
+      "durationSeconds": 1104
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "CG",
+      "distanceMeters": 7137,
+      "durationSeconds": 5105
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "IT",
+      "distanceMeters": 361,
+      "durationSeconds": 257
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 873,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 742,
+      "durationSeconds": 524
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "UHC",
+      "distanceMeters": 218,
+      "durationSeconds": 160
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 493,
+      "durationSeconds": 354
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "S17",
+      "distanceMeters": 804,
+      "durationSeconds": 574
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1355,
+      "durationSeconds": 968
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "PGPR",
+      "distanceMeters": 1694,
+      "durationSeconds": 1199
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "COM3",
+      "distanceMeters": 843,
+      "durationSeconds": 596
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1026,
+      "durationSeconds": 726
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1104,
+      "durationSeconds": 786
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 638,
+      "durationSeconds": 456
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "KRB",
+      "distanceMeters": 760,
+      "durationSeconds": 541
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1181,
+      "durationSeconds": 836
+    },
+    {
+      "fromStopId": "YIH",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1075,
+      "durationSeconds": 761
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "OTH",
+      "distanceMeters": 7557,
+      "durationSeconds": 5401
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7285,
+      "durationSeconds": 5208
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1817,
+      "durationSeconds": 1296
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "LT27",
+      "distanceMeters": 1176,
+      "durationSeconds": 837
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "UHALL",
+      "distanceMeters": 935,
+      "durationSeconds": 667
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 506,
+      "durationSeconds": 362
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "UTOWN",
+      "distanceMeters": 963,
+      "durationSeconds": 684
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 732,
+      "durationSeconds": 519
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "KV",
+      "distanceMeters": 956,
+      "durationSeconds": 679
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 661,
+      "durationSeconds": 469
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "YIH",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "LT13",
+      "distanceMeters": 384,
+      "durationSeconds": 276
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "AS5",
+      "distanceMeters": 538,
+      "durationSeconds": 384
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "BIZ2",
+      "distanceMeters": 618,
+      "durationSeconds": 437
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "PGP",
+      "distanceMeters": 1219,
+      "durationSeconds": 860
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "CG",
+      "distanceMeters": 7420,
+      "durationSeconds": 5303
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "IT",
+      "distanceMeters": 88,
+      "durationSeconds": 65
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 536,
+      "durationSeconds": 391
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 738,
+      "durationSeconds": 524
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "UHC",
+      "distanceMeters": 568,
+      "durationSeconds": 408
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 843,
+      "durationSeconds": 602
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "S17",
+      "distanceMeters": 1154,
+      "durationSeconds": 822
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1705,
+      "durationSeconds": 1216
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "PGPR",
+      "distanceMeters": 1351,
+      "durationSeconds": 955
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "COM3",
+      "distanceMeters": 500,
+      "durationSeconds": 352
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 683,
+      "durationSeconds": 482
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 761,
+      "durationSeconds": 542
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 295,
+      "durationSeconds": 212
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "KRB",
+      "distanceMeters": 417,
+      "durationSeconds": 297
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "TCOMS",
+      "distanceMeters": 838,
+      "durationSeconds": 592
+    },
+    {
+      "fromStopId": "CLB",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 732,
+      "durationSeconds": 517
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "OTH",
+      "distanceMeters": 8036,
+      "durationSeconds": 5706
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7758,
+      "durationSeconds": 5511
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2200,
+      "durationSeconds": 1571
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "LT27",
+      "distanceMeters": 1559,
+      "durationSeconds": 1112
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "UHALL",
+      "distanceMeters": 1318,
+      "durationSeconds": 941
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 890,
+      "durationSeconds": 638
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1343,
+      "durationSeconds": 958
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1094,
+      "durationSeconds": 781
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "KV",
+      "distanceMeters": 1091,
+      "durationSeconds": 787
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1023,
+      "durationSeconds": 731
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "YIH",
+      "distanceMeters": 727,
+      "durationSeconds": 520
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "CLB",
+      "distanceMeters": 384,
+      "durationSeconds": 276
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "AS5",
+      "distanceMeters": 154,
+      "durationSeconds": 108
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "BIZ2",
+      "distanceMeters": 670,
+      "durationSeconds": 474
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "PGP",
+      "distanceMeters": 1384,
+      "durationSeconds": 981
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "CG",
+      "distanceMeters": 7893,
+      "durationSeconds": 5607
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "IT",
+      "distanceMeters": 450,
+      "durationSeconds": 324
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 705,
+      "durationSeconds": 505
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 541,
+      "durationSeconds": 395
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 883,
+      "durationSeconds": 639
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "UHC",
+      "distanceMeters": 952,
+      "durationSeconds": 684
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1227,
+      "durationSeconds": 878
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "S17",
+      "distanceMeters": 1537,
+      "durationSeconds": 1097
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2088,
+      "durationSeconds": 1491
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "PGPR",
+      "distanceMeters": 1510,
+      "durationSeconds": 1070
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "COM3",
+      "distanceMeters": 828,
+      "durationSeconds": 587
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 704,
+      "durationSeconds": 498
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 377,
+      "durationSeconds": 265
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 89,
+      "durationSeconds": 63
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "KRB",
+      "distanceMeters": 165,
+      "durationSeconds": 117
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "TCOMS",
+      "distanceMeters": 914,
+      "durationSeconds": 647
+    },
+    {
+      "fromStopId": "LT13",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 890,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "OTH",
+      "distanceMeters": 7876,
+      "durationSeconds": 5596
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7604,
+      "durationSeconds": 5403
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2099,
+      "durationSeconds": 1494
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "LT27",
+      "distanceMeters": 1713,
+      "durationSeconds": 1220
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "UHALL",
+      "distanceMeters": 1472,
+      "durationSeconds": 1050
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1044,
+      "durationSeconds": 746
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1497,
+      "durationSeconds": 1066
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1248,
+      "durationSeconds": 889
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "KV",
+      "distanceMeters": 1245,
+      "durationSeconds": 895
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1177,
+      "durationSeconds": 839
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "YIH",
+      "distanceMeters": 881,
+      "durationSeconds": 628
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "CLB",
+      "distanceMeters": 538,
+      "durationSeconds": 384
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "LT13",
+      "distanceMeters": 154,
+      "durationSeconds": 108
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "BIZ2",
+      "distanceMeters": 516,
+      "durationSeconds": 366
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "PGP",
+      "distanceMeters": 1230,
+      "durationSeconds": 873
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "CG",
+      "distanceMeters": 7739,
+      "durationSeconds": 5499
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "IT",
+      "distanceMeters": 604,
+      "durationSeconds": 433
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 859,
+      "durationSeconds": 614
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 695,
+      "durationSeconds": 503
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1037,
+      "durationSeconds": 747
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "UHC",
+      "distanceMeters": 1106,
+      "durationSeconds": 792
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1381,
+      "durationSeconds": 986
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "S17",
+      "distanceMeters": 1691,
+      "durationSeconds": 1205
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1932,
+      "durationSeconds": 1371
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "PGPR",
+      "distanceMeters": 1356,
+      "durationSeconds": 962
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "COM3",
+      "distanceMeters": 674,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 550,
+      "durationSeconds": 390
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 223,
+      "durationSeconds": 157
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 243,
+      "durationSeconds": 172
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "KRB",
+      "distanceMeters": 319,
+      "durationSeconds": 225
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "TCOMS",
+      "distanceMeters": 760,
+      "durationSeconds": 539
+    },
+    {
+      "fromStopId": "AS5",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 736,
+      "durationSeconds": 523
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "OTH",
+      "distanceMeters": 7360,
+      "durationSeconds": 5230
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7088,
+      "durationSeconds": 5037
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1583,
+      "durationSeconds": 1128
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "LT27",
+      "distanceMeters": 1088,
+      "durationSeconds": 800
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "UHALL",
+      "distanceMeters": 847,
+      "durationSeconds": 630
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1124,
+      "durationSeconds": 799
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1579,
+      "durationSeconds": 1121
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1346,
+      "durationSeconds": 954
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "KV",
+      "distanceMeters": 1533,
+      "durationSeconds": 1089
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1275,
+      "durationSeconds": 904
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "YIH",
+      "distanceMeters": 961,
+      "durationSeconds": 681
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "CLB",
+      "distanceMeters": 618,
+      "durationSeconds": 437
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "LT13",
+      "distanceMeters": 670,
+      "durationSeconds": 474
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "AS5",
+      "distanceMeters": 516,
+      "durationSeconds": 366
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "PGP",
+      "distanceMeters": 714,
+      "durationSeconds": 507
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "CG",
+      "distanceMeters": 7223,
+      "durationSeconds": 5132
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "IT",
+      "distanceMeters": 706,
+      "durationSeconds": 502
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 957,
+      "durationSeconds": 678
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1104,
+      "durationSeconds": 794
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1315,
+      "durationSeconds": 935
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "UHC",
+      "distanceMeters": 1186,
+      "durationSeconds": 845
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 953,
+      "durationSeconds": 705
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "S17",
+      "distanceMeters": 1066,
+      "durationSeconds": 785
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1587,
+      "durationSeconds": 1129
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "PGPR",
+      "distanceMeters": 840,
+      "durationSeconds": 595
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "COM3",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 89,
+      "durationSeconds": 63
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 381,
+      "durationSeconds": 269
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 759,
+      "durationSeconds": 538
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "KRB",
+      "distanceMeters": 835,
+      "durationSeconds": 592
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "TCOMS",
+      "distanceMeters": 244,
+      "durationSeconds": 173
+    },
+    {
+      "fromStopId": "BIZ2",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 222,
+      "durationSeconds": 157
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "OTH",
+      "distanceMeters": 6655,
+      "durationSeconds": 4732
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6383,
+      "durationSeconds": 4539
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 878,
+      "durationSeconds": 630
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "LT27",
+      "distanceMeters": 1464,
+      "durationSeconds": 1044
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "UHALL",
+      "distanceMeters": 1263,
+      "durationSeconds": 922
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1725,
+      "durationSeconds": 1222
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 2180,
+      "durationSeconds": 1544
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1947,
+      "durationSeconds": 1377
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "KV",
+      "distanceMeters": 2134,
+      "durationSeconds": 1513
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1876,
+      "durationSeconds": 1327
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "YIH",
+      "distanceMeters": 1562,
+      "durationSeconds": 1104
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "CLB",
+      "distanceMeters": 1219,
+      "durationSeconds": 860
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "LT13",
+      "distanceMeters": 1384,
+      "durationSeconds": 981
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "AS5",
+      "distanceMeters": 1230,
+      "durationSeconds": 873
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 714,
+      "durationSeconds": 507
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "CG",
+      "distanceMeters": 6518,
+      "durationSeconds": 4635
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "IT",
+      "distanceMeters": 1307,
+      "durationSeconds": 925
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1558,
+      "durationSeconds": 1101
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1705,
+      "durationSeconds": 1217
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1916,
+      "durationSeconds": 1358
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "UHC",
+      "distanceMeters": 1534,
+      "durationSeconds": 1116
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1369,
+      "durationSeconds": 998
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "S17",
+      "distanceMeters": 1491,
+      "durationSeconds": 1065
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 882,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "PGPR",
+      "distanceMeters": 150,
+      "durationSeconds": 106
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "COM3",
+      "distanceMeters": 715,
+      "durationSeconds": 505
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 757,
+      "durationSeconds": 537
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1095,
+      "durationSeconds": 776
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1473,
+      "durationSeconds": 1045
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "KRB",
+      "distanceMeters": 1549,
+      "durationSeconds": 1099
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 470,
+      "durationSeconds": 333
+    },
+    {
+      "fromStopId": "PGP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 496,
+      "durationSeconds": 349
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "OTH",
+      "distanceMeters": 821,
+      "durationSeconds": 582
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 308,
+      "durationSeconds": 218
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 6047,
+      "durationSeconds": 4300
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "LT27",
+      "distanceMeters": 6548,
+      "durationSeconds": 4659
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "UHALL",
+      "distanceMeters": 6793,
+      "durationSeconds": 4832
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 7225,
+      "durationSeconds": 5139
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "UTOWN",
+      "distanceMeters": 6534,
+      "durationSeconds": 4674
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 7034,
+      "durationSeconds": 5029
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "KV",
+      "distanceMeters": 7546,
+      "durationSeconds": 5365
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 6895,
+      "durationSeconds": 4931
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "YIH",
+      "distanceMeters": 7141,
+      "durationSeconds": 5112
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "CLB",
+      "distanceMeters": 7418,
+      "durationSeconds": 5304
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "LT13",
+      "distanceMeters": 7894,
+      "durationSeconds": 5611
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "AS5",
+      "distanceMeters": 7740,
+      "durationSeconds": 5503
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "BIZ2",
+      "distanceMeters": 7224,
+      "durationSeconds": 5136
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "PGP",
+      "distanceMeters": 6566,
+      "durationSeconds": 4669
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "IT",
+      "distanceMeters": 7404,
+      "durationSeconds": 5291
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 7110,
+      "durationSeconds": 5086
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 7780,
+      "durationSeconds": 5527
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 7462,
+      "durationSeconds": 5306
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "UHC",
+      "distanceMeters": 7161,
+      "durationSeconds": 5094
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 6996,
+      "durationSeconds": 4976
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "S17",
+      "distanceMeters": 6582,
+      "durationSeconds": 4682
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 6023,
+      "durationSeconds": 4282
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "PGPR",
+      "distanceMeters": 6399,
+      "durationSeconds": 4549
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "COM3",
+      "distanceMeters": 7222,
+      "durationSeconds": 5133
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 7267,
+      "durationSeconds": 5166
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 7605,
+      "durationSeconds": 5406
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 7709,
+      "durationSeconds": 5514
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "KRB",
+      "distanceMeters": 7830,
+      "durationSeconds": 5615
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "TCOMS",
+      "distanceMeters": 6980,
+      "durationSeconds": 4963
+    },
+    {
+      "fromStopId": "CG",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 7003,
+      "durationSeconds": 4977
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "OTH",
+      "distanceMeters": 7561,
+      "durationSeconds": 5398
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7271,
+      "durationSeconds": 5195
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1827,
+      "durationSeconds": 1301
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "LT27",
+      "distanceMeters": 1186,
+      "durationSeconds": 842
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "UHALL",
+      "distanceMeters": 945,
+      "durationSeconds": 672
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 524,
+      "durationSeconds": 375
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "UTOWN",
+      "distanceMeters": 949,
+      "durationSeconds": 671
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 700,
+      "durationSeconds": 495
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "KV",
+      "distanceMeters": 868,
+      "durationSeconds": 614
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 629,
+      "durationSeconds": 445
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "YIH",
+      "distanceMeters": 361,
+      "durationSeconds": 257
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "CLB",
+      "distanceMeters": 88,
+      "durationSeconds": 65
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "LT13",
+      "distanceMeters": 450,
+      "durationSeconds": 324
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "AS5",
+      "distanceMeters": 604,
+      "durationSeconds": 433
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "BIZ2",
+      "distanceMeters": 706,
+      "durationSeconds": 502
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "PGP",
+      "distanceMeters": 1307,
+      "durationSeconds": 925
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "CG",
+      "distanceMeters": 7406,
+      "durationSeconds": 5291
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 311,
+      "durationSeconds": 219
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 576,
+      "durationSeconds": 420
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 650,
+      "durationSeconds": 459
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "UHC",
+      "distanceMeters": 586,
+      "durationSeconds": 421
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 861,
+      "durationSeconds": 615
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "S17",
+      "distanceMeters": 1164,
+      "durationSeconds": 827
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1715,
+      "durationSeconds": 1221
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "PGPR",
+      "distanceMeters": 1439,
+      "durationSeconds": 1020
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "COM3",
+      "distanceMeters": 588,
+      "durationSeconds": 417
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 771,
+      "durationSeconds": 548
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 827,
+      "durationSeconds": 590
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 361,
+      "durationSeconds": 260
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "KRB",
+      "distanceMeters": 483,
+      "durationSeconds": 345
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "TCOMS",
+      "distanceMeters": 926,
+      "durationSeconds": 657
+    },
+    {
+      "fromStopId": "IT",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 820,
+      "durationSeconds": 582
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7244,
+      "durationSeconds": 5177
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6971,
+      "durationSeconds": 4980
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1530,
+      "durationSeconds": 1090
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 889,
+      "durationSeconds": 632
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 648,
+      "durationSeconds": 461
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 235,
+      "durationSeconds": 165
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 652,
+      "durationSeconds": 462
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 403,
+      "durationSeconds": 285
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 863,
+      "durationSeconds": 623
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 332,
+      "durationSeconds": 235
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 343,
+      "durationSeconds": 244
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 705,
+      "durationSeconds": 505
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 859,
+      "durationSeconds": 614
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 957,
+      "durationSeconds": 678
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1558,
+      "durationSeconds": 1101
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7106,
+      "durationSeconds": 5076
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 311,
+      "durationSeconds": 219
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 831,
+      "durationSeconds": 601
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 705,
+      "durationSeconds": 498
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 281,
+      "durationSeconds": 200
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 553,
+      "durationSeconds": 392
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 867,
+      "durationSeconds": 617
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1418,
+      "durationSeconds": 1010
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1690,
+      "durationSeconds": 1196
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 839,
+      "durationSeconds": 594
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1022,
+      "durationSeconds": 724
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1082,
+      "durationSeconds": 771
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 616,
+      "durationSeconds": 441
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 738,
+      "durationSeconds": 526
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1177,
+      "durationSeconds": 833
+    },
+    {
+      "fromStopId": "YIH-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1071,
+      "durationSeconds": 758
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7916,
+      "durationSeconds": 5619
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7644,
+      "durationSeconds": 5426
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2344,
+      "durationSeconds": 1680
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 1703,
+      "durationSeconds": 1222
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 1462,
+      "durationSeconds": 1051
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1037,
+      "durationSeconds": 749
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1266,
+      "durationSeconds": 905
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 697,
+      "durationSeconds": 501
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 550,
+      "durationSeconds": 391
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 829,
+      "durationSeconds": 597
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 873,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 536,
+      "durationSeconds": 391
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 541,
+      "durationSeconds": 395
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 695,
+      "durationSeconds": 503
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1104,
+      "durationSeconds": 794
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1705,
+      "durationSeconds": 1217
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7779,
+      "durationSeconds": 5522
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 576,
+      "durationSeconds": 420
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 831,
+      "durationSeconds": 601
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 342,
+      "durationSeconds": 243
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 1099,
+      "durationSeconds": 795
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1367,
+      "durationSeconds": 982
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 1681,
+      "durationSeconds": 1206
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2232,
+      "durationSeconds": 1600
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1837,
+      "durationSeconds": 1312
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 986,
+      "durationSeconds": 710
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1169,
+      "durationSeconds": 840
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 918,
+      "durationSeconds": 661
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 452,
+      "durationSeconds": 331
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 564,
+      "durationSeconds": 411
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1324,
+      "durationSeconds": 949
+    },
+    {
+      "fromStopId": "SDE3-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1218,
+      "durationSeconds": 874
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "OTH",
+      "distanceMeters": 7598,
+      "durationSeconds": 5397
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7326,
+      "durationSeconds": 5201
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2141,
+      "durationSeconds": 1536
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "LT27",
+      "distanceMeters": 1500,
+      "durationSeconds": 1077
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "UHALL",
+      "distanceMeters": 1259,
+      "durationSeconds": 907
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 846,
+      "durationSeconds": 611
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "UTOWN",
+      "distanceMeters": 951,
+      "durationSeconds": 689
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 379,
+      "durationSeconds": 281
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "KV",
+      "distanceMeters": 218,
+      "durationSeconds": 154
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 511,
+      "durationSeconds": 377
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "YIH",
+      "distanceMeters": 742,
+      "durationSeconds": 524
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "CLB",
+      "distanceMeters": 738,
+      "durationSeconds": 524
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "LT13",
+      "distanceMeters": 883,
+      "durationSeconds": 639
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "AS5",
+      "distanceMeters": 1037,
+      "durationSeconds": 747
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1315,
+      "durationSeconds": 935
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "PGP",
+      "distanceMeters": 1916,
+      "durationSeconds": 1358
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "CG",
+      "distanceMeters": 7461,
+      "durationSeconds": 5297
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "IT",
+      "distanceMeters": 650,
+      "durationSeconds": 459
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 717,
+      "durationSeconds": 506
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 342,
+      "durationSeconds": 243
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "UHC",
+      "distanceMeters": 892,
+      "durationSeconds": 646
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1164,
+      "durationSeconds": 837
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "S17",
+      "distanceMeters": 1478,
+      "durationSeconds": 1062
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2029,
+      "durationSeconds": 1456
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "PGPR",
+      "distanceMeters": 2048,
+      "durationSeconds": 1453
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "COM3",
+      "distanceMeters": 1197,
+      "durationSeconds": 850
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1380,
+      "durationSeconds": 980
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1260,
+      "durationSeconds": 905
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 794,
+      "durationSeconds": 575
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "KRB",
+      "distanceMeters": 906,
+      "durationSeconds": 655
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1535,
+      "durationSeconds": 1090
+    },
+    {
+      "fromStopId": "JP-SCH-16151",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1429,
+      "durationSeconds": 1014
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "OTH",
+      "distanceMeters": 7303,
+      "durationSeconds": 5193
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7025,
+      "durationSeconds": 4994
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1250,
+      "durationSeconds": 892
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "LT27",
+      "distanceMeters": 609,
+      "durationSeconds": 433
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "UHALL",
+      "distanceMeters": 368,
+      "durationSeconds": 262
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 71,
+      "durationSeconds": 51
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "UTOWN",
+      "distanceMeters": 723,
+      "durationSeconds": 518
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 516,
+      "durationSeconds": 367
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "KV",
+      "distanceMeters": 976,
+      "durationSeconds": 705
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 447,
+      "durationSeconds": 322
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "YIH",
+      "distanceMeters": 218,
+      "durationSeconds": 158
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "CLB",
+      "distanceMeters": 568,
+      "durationSeconds": 408
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "LT13",
+      "distanceMeters": 952,
+      "durationSeconds": 684
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "AS5",
+      "distanceMeters": 1106,
+      "durationSeconds": 792
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1186,
+      "durationSeconds": 845
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "PGP",
+      "distanceMeters": 1534,
+      "durationSeconds": 1116
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "CG",
+      "distanceMeters": 7160,
+      "durationSeconds": 5090
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "IT",
+      "distanceMeters": 586,
+      "durationSeconds": 421
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 281,
+      "durationSeconds": 200
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1099,
+      "durationSeconds": 795
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 892,
+      "durationSeconds": 646
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 273,
+      "durationSeconds": 193
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "S17",
+      "distanceMeters": 587,
+      "durationSeconds": 418
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1138,
+      "durationSeconds": 811
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "PGPR",
+      "distanceMeters": 1705,
+      "durationSeconds": 1240
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "COM3",
+      "distanceMeters": 1068,
+      "durationSeconds": 761
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1251,
+      "durationSeconds": 891
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1329,
+      "durationSeconds": 950
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 863,
+      "durationSeconds": 620
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "KRB",
+      "distanceMeters": 985,
+      "durationSeconds": 705
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1406,
+      "durationSeconds": 1000
+    },
+    {
+      "fromStopId": "UHC",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1038,
+      "durationSeconds": 766
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7132,
+      "durationSeconds": 5069
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6847,
+      "durationSeconds": 4865
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1085,
+      "durationSeconds": 773
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 444,
+      "durationSeconds": 315
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 203,
+      "durationSeconds": 144
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 337,
+      "durationSeconds": 239
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 997,
+      "durationSeconds": 711
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 788,
+      "durationSeconds": 559
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 1248,
+      "durationSeconds": 896
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 703,
+      "durationSeconds": 499
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 493,
+      "durationSeconds": 352
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 843,
+      "durationSeconds": 602
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 1227,
+      "durationSeconds": 878
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 1381,
+      "durationSeconds": 986
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 954,
+      "durationSeconds": 707
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1370,
+      "durationSeconds": 1000
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 6995,
+      "durationSeconds": 4971
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 861,
+      "durationSeconds": 615
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 553,
+      "durationSeconds": 392
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1367,
+      "durationSeconds": 982
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1164,
+      "durationSeconds": 837
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 273,
+      "durationSeconds": 193
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 422,
+      "durationSeconds": 299
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 973,
+      "durationSeconds": 693
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1541,
+      "durationSeconds": 1124
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 960,
+      "durationSeconds": 712
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1009,
+      "durationSeconds": 746
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1333,
+      "durationSeconds": 976
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1138,
+      "durationSeconds": 814
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 1260,
+      "durationSeconds": 899
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1164,
+      "durationSeconds": 855
+    },
+    {
+      "fromStopId": "UHALL-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 874,
+      "durationSeconds": 650
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "OTH",
+      "distanceMeters": 6718,
+      "durationSeconds": 4775
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6446,
+      "durationSeconds": 4581
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 671,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "LT27",
+      "distanceMeters": 95,
+      "durationSeconds": 68
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "UHALL",
+      "distanceMeters": 219,
+      "durationSeconds": 155
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 651,
+      "durationSeconds": 462
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1311,
+      "durationSeconds": 936
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1102,
+      "durationSeconds": 784
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "KV",
+      "distanceMeters": 1562,
+      "durationSeconds": 1121
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1017,
+      "durationSeconds": 723
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "YIH",
+      "distanceMeters": 804,
+      "durationSeconds": 572
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "CLB",
+      "distanceMeters": 1154,
+      "durationSeconds": 822
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "LT13",
+      "distanceMeters": 1537,
+      "durationSeconds": 1097
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "AS5",
+      "distanceMeters": 1691,
+      "durationSeconds": 1205
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1066,
+      "durationSeconds": 785
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "PGP",
+      "distanceMeters": 1427,
+      "durationSeconds": 1027
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "CG",
+      "distanceMeters": 6581,
+      "durationSeconds": 4677
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "IT",
+      "distanceMeters": 1164,
+      "durationSeconds": 827
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 867,
+      "durationSeconds": 617
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1681,
+      "durationSeconds": 1206
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1478,
+      "durationSeconds": 1062
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "UHC",
+      "distanceMeters": 587,
+      "durationSeconds": 418
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 422,
+      "durationSeconds": 299
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 559,
+      "durationSeconds": 399
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "PGPR",
+      "distanceMeters": 1307,
+      "durationSeconds": 937
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "COM3",
+      "distanceMeters": 1072,
+      "durationSeconds": 790
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1121,
+      "durationSeconds": 824
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1445,
+      "durationSeconds": 1054
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1448,
+      "durationSeconds": 1033
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "KRB",
+      "distanceMeters": 1570,
+      "durationSeconds": 1118
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1276,
+      "durationSeconds": 933
+    },
+    {
+      "fromStopId": "S17",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 986,
+      "durationSeconds": 728
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 6159,
+      "durationSeconds": 4375
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 5887,
+      "durationSeconds": 4182
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 204,
+      "durationSeconds": 146
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 532,
+      "durationSeconds": 378
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 770,
+      "durationSeconds": 549
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1202,
+      "durationSeconds": 856
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1862,
+      "durationSeconds": 1330
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1673,
+      "durationSeconds": 1192
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 2113,
+      "durationSeconds": 1515
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1568,
+      "durationSeconds": 1117
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 1358,
+      "durationSeconds": 968
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 1705,
+      "durationSeconds": 1216
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 2257,
+      "durationSeconds": 1604
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 2103,
+      "durationSeconds": 1495
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 1587,
+      "durationSeconds": 1129
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 882,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 6022,
+      "durationSeconds": 4278
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 1723,
+      "durationSeconds": 1230
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1418,
+      "durationSeconds": 1010
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 2232,
+      "durationSeconds": 1600
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 2029,
+      "durationSeconds": 1456
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 1138,
+      "durationSeconds": 811
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 973,
+      "durationSeconds": 693
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 559,
+      "durationSeconds": 399
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 762,
+      "durationSeconds": 542
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 1585,
+      "durationSeconds": 1125
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 1630,
+      "durationSeconds": 1159
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1968,
+      "durationSeconds": 1399
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1999,
+      "durationSeconds": 1427
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 2125,
+      "durationSeconds": 1516
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1343,
+      "durationSeconds": 956
+    },
+    {
+      "fromStopId": "KR-MRT-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1366,
+      "durationSeconds": 969
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "OTH",
+      "distanceMeters": 6535,
+      "durationSeconds": 4643
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6263,
+      "durationSeconds": 4449
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 758,
+      "durationSeconds": 541
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "LT27",
+      "distanceMeters": 1268,
+      "durationSeconds": 905
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "UHALL",
+      "distanceMeters": 1509,
+      "durationSeconds": 1076
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1857,
+      "durationSeconds": 1317
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "UTOWN",
+      "distanceMeters": 2312,
+      "durationSeconds": 1639
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 2079,
+      "durationSeconds": 1472
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "KV",
+      "distanceMeters": 2266,
+      "durationSeconds": 1608
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 2008,
+      "durationSeconds": 1422
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "YIH",
+      "distanceMeters": 1694,
+      "durationSeconds": 1199
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "CLB",
+      "distanceMeters": 1351,
+      "durationSeconds": 955
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "LT13",
+      "distanceMeters": 1510,
+      "durationSeconds": 1070
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "AS5",
+      "distanceMeters": 1356,
+      "durationSeconds": 962
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "BIZ2",
+      "distanceMeters": 840,
+      "durationSeconds": 595
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "PGP",
+      "distanceMeters": 150,
+      "durationSeconds": 106
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "CG",
+      "distanceMeters": 6398,
+      "durationSeconds": 4545
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "IT",
+      "distanceMeters": 1439,
+      "durationSeconds": 1020
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1690,
+      "durationSeconds": 1196
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1837,
+      "durationSeconds": 1312
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 2048,
+      "durationSeconds": 1453
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "UHC",
+      "distanceMeters": 1705,
+      "durationSeconds": 1240
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1540,
+      "durationSeconds": 1122
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "S17",
+      "distanceMeters": 1306,
+      "durationSeconds": 933
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 762,
+      "durationSeconds": 542
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "COM3",
+      "distanceMeters": 847,
+      "durationSeconds": 600
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 883,
+      "durationSeconds": 625
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 1221,
+      "durationSeconds": 865
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1599,
+      "durationSeconds": 1134
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "KRB",
+      "distanceMeters": 1675,
+      "durationSeconds": 1188
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "TCOMS",
+      "distanceMeters": 596,
+      "durationSeconds": 422
+    },
+    {
+      "fromStopId": "PGPR",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 628,
+      "durationSeconds": 444
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "OTH",
+      "distanceMeters": 7360,
+      "durationSeconds": 5226
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7086,
+      "durationSeconds": 5033
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1581,
+      "durationSeconds": 1125
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "LT27",
+      "distanceMeters": 1094,
+      "durationSeconds": 806
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "UHALL",
+      "distanceMeters": 853,
+      "durationSeconds": 635
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1006,
+      "durationSeconds": 715
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1461,
+      "durationSeconds": 1037
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1228,
+      "durationSeconds": 869
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "KV",
+      "distanceMeters": 1415,
+      "durationSeconds": 1005
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1157,
+      "durationSeconds": 819
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "YIH",
+      "distanceMeters": 843,
+      "durationSeconds": 596
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "CLB",
+      "distanceMeters": 500,
+      "durationSeconds": 352
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "LT13",
+      "distanceMeters": 828,
+      "durationSeconds": 587
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "AS5",
+      "distanceMeters": 674,
+      "durationSeconds": 479
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "BIZ2",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "PGP",
+      "distanceMeters": 715,
+      "durationSeconds": 505
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "CG",
+      "distanceMeters": 7221,
+      "durationSeconds": 5129
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "IT",
+      "distanceMeters": 588,
+      "durationSeconds": 417
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 839,
+      "durationSeconds": 594
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 986,
+      "durationSeconds": 710
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1197,
+      "durationSeconds": 850
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "UHC",
+      "distanceMeters": 1068,
+      "durationSeconds": 761
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 959,
+      "durationSeconds": 711
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "S17",
+      "distanceMeters": 1072,
+      "durationSeconds": 790
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1585,
+      "durationSeconds": 1125
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "PGPR",
+      "distanceMeters": 847,
+      "durationSeconds": 600
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 223,
+      "durationSeconds": 158
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 539,
+      "durationSeconds": 382
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 745,
+      "durationSeconds": 528
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "KRB",
+      "distanceMeters": 867,
+      "durationSeconds": 613
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "TCOMS",
+      "distanceMeters": 378,
+      "durationSeconds": 267
+    },
+    {
+      "fromStopId": "COM3",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 228,
+      "durationSeconds": 162
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7403,
+      "durationSeconds": 5260
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7131,
+      "durationSeconds": 5067
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1626,
+      "durationSeconds": 1158
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 1143,
+      "durationSeconds": 839
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 902,
+      "durationSeconds": 668
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1189,
+      "durationSeconds": 845
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1644,
+      "durationSeconds": 1167
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1411,
+      "durationSeconds": 999
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 1598,
+      "durationSeconds": 1135
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1340,
+      "durationSeconds": 949
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 1026,
+      "durationSeconds": 726
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 683,
+      "durationSeconds": 482
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 704,
+      "durationSeconds": 498
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 550,
+      "durationSeconds": 390
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 89,
+      "durationSeconds": 63
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 757,
+      "durationSeconds": 537
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7266,
+      "durationSeconds": 5163
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 771,
+      "durationSeconds": 548
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1022,
+      "durationSeconds": 724
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1169,
+      "durationSeconds": 840
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1380,
+      "durationSeconds": 980
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 1251,
+      "durationSeconds": 891
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1008,
+      "durationSeconds": 744
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 1121,
+      "durationSeconds": 824
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1630,
+      "durationSeconds": 1159
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 883,
+      "durationSeconds": 625
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 223,
+      "durationSeconds": 158
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 415,
+      "durationSeconds": 294
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 793,
+      "durationSeconds": 562
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 869,
+      "durationSeconds": 616
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 287,
+      "durationSeconds": 203
+    },
+    {
+      "fromStopId": "HSSML-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 277,
+      "durationSeconds": 195
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7747,
+      "durationSeconds": 5511
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7469,
+      "durationSeconds": 5306
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1964,
+      "durationSeconds": 1398
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 1467,
+      "durationSeconds": 1070
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 1226,
+      "durationSeconds": 899
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1267,
+      "durationSeconds": 904
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1720,
+      "durationSeconds": 1223
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1471,
+      "durationSeconds": 1047
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 1468,
+      "durationSeconds": 1053
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1400,
+      "durationSeconds": 997
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 1104,
+      "durationSeconds": 786
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 761,
+      "durationSeconds": 542
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 377,
+      "durationSeconds": 265
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 223,
+      "durationSeconds": 157
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 381,
+      "durationSeconds": 269
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1095,
+      "durationSeconds": 776
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7604,
+      "durationSeconds": 5402
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 827,
+      "durationSeconds": 590
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1082,
+      "durationSeconds": 771
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 918,
+      "durationSeconds": 661
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1260,
+      "durationSeconds": 905
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 1329,
+      "durationSeconds": 950
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1332,
+      "durationSeconds": 975
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 1445,
+      "durationSeconds": 1054
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1968,
+      "durationSeconds": 1399
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1221,
+      "durationSeconds": 865
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 539,
+      "durationSeconds": 382
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 415,
+      "durationSeconds": 294
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 466,
+      "durationSeconds": 329
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 542,
+      "durationSeconds": 383
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 625,
+      "durationSeconds": 442
+    },
+    {
+      "fromStopId": "NUSS-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 601,
+      "durationSeconds": 426
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7846,
+      "durationSeconds": 5609
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7573,
+      "durationSeconds": 5412
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2112,
+      "durationSeconds": 1508
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 1470,
+      "durationSeconds": 1048
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 1229,
+      "durationSeconds": 877
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 801,
+      "durationSeconds": 574
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1254,
+      "durationSeconds": 894
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1005,
+      "durationSeconds": 717
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 1002,
+      "durationSeconds": 723
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 934,
+      "durationSeconds": 667
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 638,
+      "durationSeconds": 456
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 295,
+      "durationSeconds": 212
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 89,
+      "durationSeconds": 63
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 243,
+      "durationSeconds": 172
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 759,
+      "durationSeconds": 538
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 1473,
+      "durationSeconds": 1045
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7708,
+      "durationSeconds": 5508
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 361,
+      "durationSeconds": 260
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 616,
+      "durationSeconds": 441
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 452,
+      "durationSeconds": 331
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 794,
+      "durationSeconds": 575
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 863,
+      "durationSeconds": 620
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1138,
+      "durationSeconds": 814
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 1448,
+      "durationSeconds": 1033
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2000,
+      "durationSeconds": 1428
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 1599,
+      "durationSeconds": 1134
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 745,
+      "durationSeconds": 528
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 793,
+      "durationSeconds": 562
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 466,
+      "durationSeconds": 329
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1003,
+      "durationSeconds": 711
+    },
+    {
+      "fromStopId": "LT13-OPP",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 977,
+      "durationSeconds": 693
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "OTH",
+      "distanceMeters": 7970,
+      "durationSeconds": 5695
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 7695,
+      "durationSeconds": 5497
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 2233,
+      "durationSeconds": 1592
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "LT27",
+      "distanceMeters": 1592,
+      "durationSeconds": 1133
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "UHALL",
+      "distanceMeters": 1351,
+      "durationSeconds": 962
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 923,
+      "durationSeconds": 659
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1376,
+      "durationSeconds": 979
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1127,
+      "durationSeconds": 802
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "KV",
+      "distanceMeters": 1114,
+      "durationSeconds": 803
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1056,
+      "durationSeconds": 752
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "YIH",
+      "distanceMeters": 760,
+      "durationSeconds": 541
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "CLB",
+      "distanceMeters": 417,
+      "durationSeconds": 297
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "LT13",
+      "distanceMeters": 165,
+      "durationSeconds": 117
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "AS5",
+      "distanceMeters": 319,
+      "durationSeconds": 225
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "BIZ2",
+      "distanceMeters": 835,
+      "durationSeconds": 592
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "PGP",
+      "distanceMeters": 1549,
+      "durationSeconds": 1099
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "CG",
+      "distanceMeters": 7830,
+      "durationSeconds": 5593
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "IT",
+      "distanceMeters": 483,
+      "durationSeconds": 345
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 738,
+      "durationSeconds": 526
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 564,
+      "durationSeconds": 411
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 906,
+      "durationSeconds": 655
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "UHC",
+      "distanceMeters": 985,
+      "durationSeconds": 705
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1260,
+      "durationSeconds": 899
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "S17",
+      "distanceMeters": 1570,
+      "durationSeconds": 1118
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 2121,
+      "durationSeconds": 1512
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "PGPR",
+      "distanceMeters": 1675,
+      "durationSeconds": 1188
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "COM3",
+      "distanceMeters": 867,
+      "durationSeconds": 613
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 869,
+      "durationSeconds": 616
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 542,
+      "durationSeconds": 383
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 158,
+      "durationSeconds": 112
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "TCOMS",
+      "distanceMeters": 1079,
+      "durationSeconds": 765
+    },
+    {
+      "fromStopId": "KRB",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 1055,
+      "durationSeconds": 749
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "OTH",
+      "distanceMeters": 7116,
+      "durationSeconds": 5057
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6833,
+      "durationSeconds": 4853
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1339,
+      "durationSeconds": 955
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "LT27",
+      "distanceMeters": 1298,
+      "durationSeconds": 948
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "UHALL",
+      "distanceMeters": 1057,
+      "durationSeconds": 778
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1344,
+      "durationSeconds": 954
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1799,
+      "durationSeconds": 1276
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1566,
+      "durationSeconds": 1109
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "KV",
+      "distanceMeters": 1753,
+      "durationSeconds": 1245
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1495,
+      "durationSeconds": 1059
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "YIH",
+      "distanceMeters": 1181,
+      "durationSeconds": 836
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "CLB",
+      "distanceMeters": 838,
+      "durationSeconds": 592
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "LT13",
+      "distanceMeters": 914,
+      "durationSeconds": 647
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "AS5",
+      "distanceMeters": 760,
+      "durationSeconds": 539
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "BIZ2",
+      "distanceMeters": 244,
+      "durationSeconds": 173
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "PGP",
+      "distanceMeters": 470,
+      "durationSeconds": 333
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "CG",
+      "distanceMeters": 6979,
+      "durationSeconds": 4959
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "IT",
+      "distanceMeters": 926,
+      "durationSeconds": 657
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1177,
+      "durationSeconds": 833
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1324,
+      "durationSeconds": 949
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1535,
+      "durationSeconds": 1090
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "UHC",
+      "distanceMeters": 1406,
+      "durationSeconds": 1000
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 1163,
+      "durationSeconds": 853
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "S17",
+      "distanceMeters": 1276,
+      "durationSeconds": 933
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1343,
+      "durationSeconds": 956
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "PGPR",
+      "distanceMeters": 596,
+      "durationSeconds": 422
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "COM3",
+      "distanceMeters": 378,
+      "durationSeconds": 267
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 287,
+      "durationSeconds": 203
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 625,
+      "durationSeconds": 442
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 1003,
+      "durationSeconds": 711
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "KRB",
+      "distanceMeters": 1079,
+      "durationSeconds": 765
+    },
+    {
+      "fromStopId": "TCOMS",
+      "toStopId": "TCOMS-OPP",
+      "distanceMeters": 432,
+      "durationSeconds": 305
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "OTH",
+      "distanceMeters": 7139,
+      "durationSeconds": 5070
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "BG-MRT",
+      "distanceMeters": 6869,
+      "durationSeconds": 4877
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "KR-MRT",
+      "distanceMeters": 1362,
+      "durationSeconds": 969
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "LT27",
+      "distanceMeters": 1008,
+      "durationSeconds": 743
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "UHALL",
+      "distanceMeters": 767,
+      "durationSeconds": 572
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "UHC-OPP",
+      "distanceMeters": 1238,
+      "durationSeconds": 879
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "UTOWN",
+      "distanceMeters": 1693,
+      "durationSeconds": 1201
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "RAFFLES",
+      "distanceMeters": 1460,
+      "durationSeconds": 1034
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "KV",
+      "distanceMeters": 1647,
+      "durationSeconds": 1169
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "MUSEUM",
+      "distanceMeters": 1389,
+      "durationSeconds": 983
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "YIH",
+      "distanceMeters": 1075,
+      "durationSeconds": 761
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "CLB",
+      "distanceMeters": 732,
+      "durationSeconds": 517
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "LT13",
+      "distanceMeters": 890,
+      "durationSeconds": 631
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "AS5",
+      "distanceMeters": 736,
+      "durationSeconds": 523
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "BIZ2",
+      "distanceMeters": 222,
+      "durationSeconds": 157
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "PGP",
+      "distanceMeters": 496,
+      "durationSeconds": 349
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "CG",
+      "distanceMeters": 7002,
+      "durationSeconds": 4973
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "IT",
+      "distanceMeters": 820,
+      "durationSeconds": 582
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "YIH-OPP",
+      "distanceMeters": 1071,
+      "durationSeconds": 758
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "SDE3-OPP",
+      "distanceMeters": 1218,
+      "durationSeconds": 874
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "JP-SCH-16151",
+      "distanceMeters": 1429,
+      "durationSeconds": 1014
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "UHC",
+      "distanceMeters": 1038,
+      "durationSeconds": 766
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "UHALL-OPP",
+      "distanceMeters": 873,
+      "durationSeconds": 648
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "S17",
+      "distanceMeters": 986,
+      "durationSeconds": 728
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "KR-MRT-OPP",
+      "distanceMeters": 1366,
+      "durationSeconds": 969
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "PGPR",
+      "distanceMeters": 628,
+      "durationSeconds": 444
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "COM3",
+      "distanceMeters": 228,
+      "durationSeconds": 162
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "HSSML-OPP",
+      "distanceMeters": 277,
+      "durationSeconds": 195
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "NUSS-OPP",
+      "distanceMeters": 601,
+      "durationSeconds": 426
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "LT13-OPP",
+      "distanceMeters": 977,
+      "durationSeconds": 693
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "KRB",
+      "distanceMeters": 1055,
+      "durationSeconds": 749
+    },
+    {
+      "fromStopId": "TCOMS-OPP",
+      "toStopId": "TCOMS",
+      "distanceMeters": 432,
+      "durationSeconds": 305
+    }
+  ]
+}

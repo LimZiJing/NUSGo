@@ -29,6 +29,32 @@ export interface WalkingMatrixConnection {
   readonly durationSeconds: number
 }
 
+export interface WalkingConnectionLocation {
+  readonly key: string
+  readonly coordinate: RoutingCoordinate
+  readonly stopId?: string
+}
+
+export interface WalkingConnectionRequest {
+  readonly origin: WalkingConnectionLocation
+  readonly destination: WalkingConnectionLocation
+  readonly stops: readonly WalkingConnectionLocation[]
+}
+
+export interface WalkingConnection {
+  readonly fromKey: string
+  readonly toKey: string
+  readonly distanceMeters: number
+  readonly durationSeconds: number
+}
+
+export interface WalkingConnectionProvider {
+  getWalkingConnections(
+    request: WalkingConnectionRequest,
+    signal: AbortSignal,
+  ): Promise<readonly WalkingConnection[]>
+}
+
 export interface WalkingRouteEngine {
   routeWalking(
     request: WalkingRouteRequest,

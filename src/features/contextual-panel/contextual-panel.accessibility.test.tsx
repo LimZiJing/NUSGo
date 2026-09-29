@@ -416,21 +416,21 @@ describe('ContextualPanel accessibility workflows', () => {
       .toBe('false')
   })
 
-  it('shows successful resource counts in Explore and Shuttle modes but not venue detail', async () => {
+  it('does not show successful resource counts in Explore or Shuttle modes', async () => {
     const status: PanelStatus = {
       kind: 'success',
       message: '42 venues · 33 shuttle stops · 8 shuttle routes loaded',
     }
     const { rerender } = render(<PanelHarness status={status} />)
 
-    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+    expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
 
     const shuttleState = {
       ...createInitialContextualPanelState(),
       mode: 'shuttle' as const,
     }
     rerender(<PanelHarness initialState={shuttleState} status={status} />)
-    expect(screen.getByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeTruthy()
+    expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
 
     const detailState = {
       ...createInitialContextualPanelState(),

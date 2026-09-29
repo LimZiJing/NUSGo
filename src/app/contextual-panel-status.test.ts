@@ -10,14 +10,11 @@ describe('deriveContextualPanelStatus', () => {
     })
   })
 
-  it('reports loaded resource counts as success', () => {
+  it('does not report loaded resource counts', () => {
     expect(deriveContextualPanelStatus({
       venue: { status: 'loaded', value: 42 },
       transit: { status: 'loaded', value: { stopCount: 33, routeCount: 8 } },
-    }, null, null)).toEqual({
-      kind: 'success',
-      message: '42 venues · 33 shuttle stops · 8 shuttle routes loaded',
-    })
+    }, null, null)).toBeNull()
   })
 
   it('combines application failures for the feature', () => {

@@ -1,3 +1,7 @@
+import { getReachableFavoriteStops, type TransitIndex } from '../../domain/transit'
+import type { TransitStop } from '../../domain/transit/types'
+import type { MobileStopSheetSelection } from './mobile-stops-sheet'
+
 export interface MobileStopViewState {
   readonly focusedStopId: string | null
   readonly list: 'nearby' | 'favourites'
@@ -119,9 +123,11 @@ export function getPublicServiceTimings(serviceNumber: string): readonly [string
 export function getMobileStopSheetSelection(
   stop: TransitStop,
   index: TransitIndex,
+  favoriteStopIds: readonly string[] = [],
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
+  const favorites = new Set(favoriteStopIds)
   return {
     id: stop.id,
     longName: stop.longName,
@@ -132,11 +138,14 @@ export function getMobileStopSheetSelection(
     departures: getMobileStopDepartures(servedRouteIds).flatMap((departure) => {
       const route = index.routeById.get(departure.routeId)
       return route
-        ? [{ ...departure, routeName: route.name, routeColor: route.color }]
+        ? [{
+          ...departure,
+          routeName: route.name,
+          routeColor: route.color,
+          reachableFavoriteStops: getReachableFavoriteStops(index, route.id, stop.id, favorites)
+            .map(({ id, shortName }) => ({ id, name: shortName })),
+        }]
         : []
     }),
   }
 }
-import type { TransitIndex } from '../../domain/transit'
-import type { TransitStop } from '../../domain/transit/types'
-import type { MobileStopSheetSelection } from './mobile-stops-sheet'

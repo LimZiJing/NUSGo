@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   createInitialMobileStopViewState,
+  getMobileStopSheetSelection,
   getMobileStopDepartures,
   mobileStopViewReducer,
 } from './mobile-stop-view'
+import { createTransitIndex } from '../../domain/transit'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
 describe('mobile stop view state', () => {
   it('keeps a focused stop until Back to stops is explicitly selected', () => {
@@ -22,6 +25,31 @@ describe('mobile stop view state', () => {
     expect(departures.map(({ routeId }) => routeId)).toEqual(['A1', 'D2'])
     expect(departures[0]?.timings).toEqual(['Arr', '8m', '17m'])
     expect(departures[1]?.timings).toEqual(['4m', '12m', '-'])
+  })
+
+  it('adds downstream favourite stop nicknames to matching route departures', () => {
+    const network = createValidTransitNetwork()
+    network.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-A']
+    network.stops.push({
+      id: 'STOP-C',
+      longName: 'Stop C',
+      shortName: 'C',
+      latitude: 1.2,
+      longitude: 103.2,
+      services: ['A1'],
+      opposite: null,
+    })
+    const index = createTransitIndex(network)
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      ['STOP-C'],
+    )
+
+    expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
+      { id: 'STOP-C', name: 'C' },
+    ])
   })
 
   it('keeps list, expansion, and favourites state until canonical stops are reconciled', () => {

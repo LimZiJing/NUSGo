@@ -1,10 +1,16 @@
 import { PublicServiceChip, RouteChip } from './route-chip'
 
+export interface BusStopFavoriteDestination {
+  readonly id: string
+  readonly name: string
+}
+
 export interface BusStopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
+  readonly reachableFavoriteStops?: readonly BusStopFavoriteDestination[]
 }
 
 export interface PublicServiceTiming {
@@ -13,15 +19,19 @@ export interface PublicServiceTiming {
 }
 
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
-  return timings.map((timing, index) => (
-    <span
-      key={index}
-      className="mobile-stop-departure-time"
-      data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-    >
-      {timing}
+  return (
+    <span className="mobile-stop-departure-times">
+      {timings.map((timing, index) => (
+        <span
+          key={index}
+          className="mobile-stop-departure-time"
+          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+        >
+          {timing}
+        </span>
+      ))}
     </span>
-  ))
+  )
 }
 
 export function BusStopTimings({
@@ -50,6 +60,17 @@ export function BusStopTimings({
             size="compact"
             onClick={() => onSelectRoute(departure.routeId)}
           />
+          {departure.reachableFavoriteStops?.length ? (
+            <span
+              className="mobile-stop-reachable-favorites"
+              aria-label={`Reachable favourite stops: ${departure.reachableFavoriteStops.map(({ name }) => name).join(', ')}`}
+            >
+              <span className="mobile-stop-reachable-favorites-icon" aria-hidden="true">★</span>
+              {departure.reachableFavoriteStops.map(({ id, name }) => (
+                <span key={id} className="mobile-stop-reachable-favorite">{name}</span>
+              ))}
+            </span>
+          ) : null}
           <DepartureTimes timings={departure.timings} />
         </li>
       ))}

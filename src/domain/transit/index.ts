@@ -189,6 +189,7 @@ export { validateTransitMapData } from './map-data'
 export { deriveTransitRouteOverlapMap } from './overlap'
 export { findNearbyShuttleStops, getDistanceMeters } from './nearby-stops'
 export type { NearbyShuttleStop } from './nearby-stops'
+export { getReachableFavoriteStops } from './reachable-stops'
 export {
   generateShuttleTimingData,
   SHUTTLE_TIMING_DATA_VERSION,

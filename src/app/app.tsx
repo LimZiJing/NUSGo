@@ -371,7 +371,7 @@ function App() {
     ? undefined
     : state.transitIndex?.stopById.get(mobileStopView.focusedStopId)
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && state.transitIndex
-    ? getMobileStopSheetSelection(selectedStop, state.transitIndex)
+    ? getMobileStopSheetSelection(selectedStop, state.transitIndex, mobileStopView.favoriteStopIds)
     : null
   const hasLocationError = ['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)
   const locationFix = hasLocationError ? null : state.location.latestFix
@@ -383,7 +383,7 @@ function App() {
     locationFix,
     mobileStopView.favoriteStopIds,
   ).map(({ stop, distanceMeters }) => ({
-    stop: getMobileStopSheetSelection(stop, transitIndex),
+    stop: getMobileStopSheetSelection(stop, transitIndex, mobileStopView.favoriteStopIds),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
     expanded: !mobileStopView.collapsedStopIds.includes(stop.id),

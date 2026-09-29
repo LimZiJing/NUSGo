@@ -32,7 +32,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 
 ## GitHub issue workflow
 
-Issues and specs live in GitHub Issues, and pull requests are not a request surface for this repository. Use the `gh` CLI for issue operations and follow `docs/agents/issue-tracker.md` for the exact commands and conventions.
+Issues and specs live in GitHub Issues, and pull requests are not a request surface for this repository. In Codex, use the authenticated GitHub integration for GitHub API and pull-request actions. Use `gh` CLI only when the session is authenticated and a local CLI operation is appropriate. Follow `docs/agents/issue-tracker.md` for the exact commands and conventions.
 
 Use the configured triage vocabulary in `docs/agents/triage-labels.md` when triaging issues.
 

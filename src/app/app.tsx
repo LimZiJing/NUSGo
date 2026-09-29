@@ -20,7 +20,7 @@ import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
-import { getMobileSheetHeights } from '../ui/mobile-sheet-layout'
+import { getMobileSheetHeights, getMobileTabBarInset } from '../ui/mobile-sheet-layout'
 import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
 import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
@@ -134,16 +134,23 @@ function App() {
     const updateVisualViewport = (): void => {
       const viewport = window.visualViewport
       const viewportHeight = viewport?.height ?? window.innerHeight
-      const tabBarHeight = mobileTabBarRef.current?.getBoundingClientRect().height ?? 0
-      const sheetHeights = getMobileSheetHeights(viewportHeight, tabBarHeight)
+      const tabBarRect = mobileTabBarRef.current?.getBoundingClientRect()
+      const shellBottom = shell.getBoundingClientRect().bottom
+      const cssTabBarInset = Number.parseFloat(getComputedStyle(shell, '::after').height)
+      const tabBarInset = getMobileTabBarInset(
+        shellBottom,
+        tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
+        cssTabBarInset,
+      )
+      const sheetHeights = getMobileSheetHeights(viewportHeight, tabBarInset)
       shell.style.setProperty(
         '--mobile-viewport-height',
         `${sheetHeights.viewportHeight}px`,
       )
       shell.style.setProperty('--mobile-sheet-max-height', `${sheetHeights.partialMaxHeight}px`)
       shell.style.setProperty('--mobile-sheet-min-height', `${sheetHeights.partialMinHeight}px`)
-      if (tabBarHeight > 0) {
-        shell.style.setProperty('--mobile-tab-bar-height', `${tabBarHeight}px`)
+      if (tabBarInset > 0) {
+        shell.style.setProperty('--mobile-tab-bar-height', `${tabBarInset}px`)
       }
       shell.style.setProperty(
         '--mobile-viewport-offset-top',

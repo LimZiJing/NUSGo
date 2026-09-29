@@ -8,14 +8,36 @@ export interface MobileSheetHeights {
 const PARTIAL_VIEWPORT_RATIO = 0.4
 const PARTIAL_SHEET_FLOOR = 200
 
+interface MobileTabBarBounds {
+  readonly top: number
+  readonly height: number
+}
+
+export function getMobileTabBarInset(
+  shellBottom: number,
+  tabBarBounds: MobileTabBarBounds | null,
+  fallbackInset: number,
+): number {
+  const fallback = Number.isFinite(fallbackInset) ? Math.max(0, fallbackInset) : 0
+  if (
+    !tabBarBounds ||
+    !Number.isFinite(shellBottom) ||
+    !Number.isFinite(tabBarBounds.top) ||
+    !Number.isFinite(tabBarBounds.height) ||
+    tabBarBounds.height <= 0
+  ) return fallback
+
+  return Math.max(0, shellBottom - tabBarBounds.top)
+}
+
 export function getMobileSheetHeights(
   viewportHeight: number,
-  tabBarHeight: number,
+  tabBarInset: number,
 ): MobileSheetHeights {
   const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
-  const visibleTabBarHeight = Number.isFinite(tabBarHeight) ? Math.max(0, tabBarHeight) : 0
+  const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
   const combinedHeightCap = visibleHeight * PARTIAL_VIEWPORT_RATIO
-  const partialMaxHeight = Math.max(0, combinedHeightCap - visibleTabBarHeight)
+  const partialMaxHeight = Math.max(0, combinedHeightCap - visibleTabBarInset)
 
   return {
     viewportHeight: visibleHeight,

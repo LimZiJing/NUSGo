@@ -1,6 +1,7 @@
 import type {
+  WalkingConnection,
+  WalkingConnectionProvider,
   RoutingCoordinate,
-  WalkingMatrixConnection,
   WalkingRouteEngine,
 } from './contracts/routing'
 import type { LoadedTransitData } from './contracts/data'
@@ -47,7 +48,7 @@ interface ResolvedLocation extends JourneyEndpointLocation {
 interface WalkingCandidate {
   readonly from: ResolvedLocation
   readonly to: ResolvedLocation
-  readonly connection: WalkingMatrixConnection
+  readonly connection: WalkingConnection
 }
 
 const MAX_ENDPOINT_WALK_SECONDS = 300
@@ -131,7 +132,7 @@ function resolveLocations(
 function isCandidatePair(
   from: ResolvedLocation,
   to: ResolvedLocation,
-  connection: WalkingMatrixConnection,
+  connection: WalkingConnection,
   transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
@@ -156,15 +157,16 @@ function isCandidatePair(
 }
 
 function selectWalkingCandidates(
-  connections: readonly WalkingMatrixConnection[],
+  connections: readonly WalkingConnection[],
   locations: readonly ResolvedLocation[],
   transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
 ): WalkingCandidate[] {
+  const locationByKey = new Map(locations.map((location) => [location.key, location]))
   return connections.flatMap((connection) => {
-    const from = locations[connection.fromIndex]
-    const to = locations[connection.toIndex]
+    const from = locationByKey.get(connection.fromKey)
+    const to = locationByKey.get(connection.toKey)
     if (!from || !to || !isCandidatePair(from, to, connection, transit, originKey, destinationKey)) return []
     return [{ from, to, connection }]
   })
@@ -337,6 +339,28 @@ function createWalkingConnections(
     } satisfies WalkingJourneyConnection))
 }
 
+async function getFullMatrixWalkingConnections(
+  routeEngine: WalkingRouteEngine,
+  locations: readonly ResolvedLocation[],
+  signal: AbortSignal,
+): Promise<readonly WalkingConnection[]> {
+  const matrixConnections = await routeEngine.matrixWalking({
+    sources: locations.map((location) => location.coordinate),
+    targets: locations.map((location) => location.coordinate),
+  }, signal)
+  return matrixConnections.flatMap((connection) => {
+    const from = locations[connection.fromIndex]
+    const to = locations[connection.toIndex]
+    if (!from || !to) return []
+    return [{
+      fromKey: from.key,
+      toKey: to.key,
+      distanceMeters: connection.distanceMeters,
+      durationSeconds: connection.durationSeconds,
+    }]
+  })
+}
+
 async function enrichWalkingGeometry(
   routeEngine: WalkingRouteEngine,
   journey: Journey,
@@ -365,16 +389,38 @@ export function createJourneyPlanningService(
   shuttleArrivalClient?: ShuttleArrivalClient,
   shuttleServiceHoursClient?: ShuttleServiceHoursClient,
   now: () => number = Date.now,
+  walkingConnectionProvider?: WalkingConnectionProvider,
 ): JourneyPlanningService {
   return async (request) => {
     const locations = resolveLocations(request)
     if (!locations) return null
 
-    const coordinates = locations.all.map((location) => location.coordinate)
-    const matrixConnections = await routeEngine.matrixWalking({
-      sources: coordinates,
-      targets: coordinates,
-    }, request.signal)
+    const stopLocations = locations.all
+      .filter((location): location is ResolvedLocation & { endpoint: { kind: 'stop'; id: string } } => (
+        location.endpoint.kind === 'stop'
+      ))
+      .map((location) => ({
+        key: location.key,
+        coordinate: location.coordinate,
+        stopId: location.endpoint.id,
+      }))
+    const walkingConnectionRequest = {
+      origin: {
+        key: locations.origin.key,
+        coordinate: locations.origin.coordinate,
+      },
+      destination: {
+        key: locations.destination.key,
+        coordinate: locations.destination.coordinate,
+      },
+      stops: stopLocations,
+    }
+    const matrixConnections = walkingConnectionProvider
+      ? await walkingConnectionProvider.getWalkingConnections(
+        walkingConnectionRequest,
+        request.signal,
+      )
+      : await getFullMatrixWalkingConnections(routeEngine, locations.all, request.signal)
     if (request.signal.aborted) throw createAbortError()
 
     const candidates = selectWalkingCandidates(

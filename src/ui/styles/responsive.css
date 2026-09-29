@@ -26,6 +26,18 @@
     );
   }
 
+  .map-shell::after {
+    position: absolute;
+    z-index: 13;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: var(--mobile-tab-bar-height);
+    background: #fff;
+    content: '';
+    pointer-events: none;
+  }
+
   .map-overlay-right {
     display: contents;
     pointer-events: none;
@@ -552,8 +564,9 @@
   }
 
   .mobile-stops-sheet .mobile-sheet-handle-row {
-    flex-basis: 5px;
-    min-height: 0;
+    flex-basis: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 
   .mobile-stops-sheet [data-mobile-sheet-content] {

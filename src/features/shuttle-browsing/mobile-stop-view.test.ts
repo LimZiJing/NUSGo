@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   createInitialMobileStopViewState,
   getMobileStopSheetSelection,
-  getMobileStopDepartures,
   mobileStopViewReducer,
 } from './mobile-stop-view'
 import { createTransitIndex } from '../../domain/transit'
+import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
 describe('mobile stop view state', () => {
@@ -19,12 +19,63 @@ describe('mobile stop view state', () => {
     expect(mobileStopViewReducer(focused, { type: 'back-to-stops' }).focusedStopId).toBeNull()
   })
 
-  it('filters fixed timings to the routes that serve the focused stop', () => {
-    const departures = getMobileStopDepartures(new Set(['D2', 'A1']))
+  it('maps a fresh arrival snapshot to canonical route departures and adjusts for snapshot age', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 30,
+            upcomingArrivalSeconds: [30, 330, 930],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    }
 
-    expect(departures.map(({ routeId }) => routeId)).toEqual(['A1', 'D2'])
-    expect(departures[0]?.timings).toEqual(['Arr', '8m', '17m'])
-    expect(departures[1]?.timings).toEqual(['4m', '12m', '-'])
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      snapshot,
+      Date.parse('2026-09-30T00:00:20.000Z'),
+    )
+
+    expect(selection.departures.map(({ routeId }) => routeId)).toEqual(['A1'])
+    expect(selection.departures[0]?.timings).toEqual(['Arr', '6m', '16m'])
+    expect(selection.live).toBe(true)
+    expect(selection.liveArrivalMessage).toBeNull()
+  })
+
+  it('does not present stale arrivals as live or replace them with placeholder timings', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      snapshot,
+      Date.parse('2026-09-30T00:00:31.000Z'),
+    )
+
+    expect(selection.departures).toEqual([])
+    expect(selection.live).toBe(false)
+    expect(selection.liveArrivalMessage).toBe('Live shuttle arrivals are stale.')
   })
 
   it('adds downstream favourite stop nicknames to matching route departures', () => {
@@ -45,6 +96,20 @@ describe('mobile stop view state', () => {
       index.stopById.get('STOP-A')!,
       index,
       ['STOP-C'],
+      {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 300,
+              upcomingArrivalSeconds: [300],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      Date.parse('2026-09-30T00:00:00.000Z'),
     )
 
     expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
@@ -70,6 +135,20 @@ describe('mobile stop view state', () => {
       index.stopById.get('STOP-A')!,
       index,
       ['STOP-B', 'STOP-C'],
+      {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 300,
+              upcomingArrivalSeconds: [300],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      Date.parse('2026-09-30T00:00:00.000Z'),
     )
 
     expect(selection.departures[0]?.reachableFavoriteStops).toEqual([

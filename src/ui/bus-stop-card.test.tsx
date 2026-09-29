@@ -13,6 +13,8 @@ const cardProps = {
   distanceMeters: 320,
   favorite: false,
   expanded: true,
+  live: true,
+  liveArrivalMessage: null,
   departures: [
     { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', timings: ['Arr', '8m', '17m'] as const },
   ],
@@ -69,5 +71,20 @@ describe('BusStopCard', () => {
     expect(screen.queryByText('LIVE')).toBeNull()
     expect(screen.queryByText('320m')).toBeNull()
     expect(screen.queryByRole('button', { name: 'View A1 route details' })).toBeNull()
+  })
+
+  it('hides the LIVE pill when live arrivals are unavailable', () => {
+    render(<BusStopCard
+      {...cardProps}
+      expanded
+      live={false}
+      liveArrivalMessage="No live internal shuttle arrivals."
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    expect(screen.queryByText('LIVE')).toBeNull()
+    expect(screen.getByText('No live internal shuttle arrivals.')).toBeTruthy()
   })
 })

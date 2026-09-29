@@ -47,6 +47,7 @@ import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
+import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
 
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
@@ -101,6 +102,12 @@ function App() {
     [shuttleArrivalClient],
   )
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
+  const loadMobileStopServiceWindows = useCallback(
+    (routeIds: readonly string[], signal: AbortSignal) => (
+      shuttleServiceHoursClient.getServiceWindows(routeIds, signal)
+    ),
+    [shuttleServiceHoursClient],
+  )
   const routeEngine = useMemo(() => createValhallaRouteEngine({
     baseUrl: getValhallaBaseUrl(import.meta.env.VITE_VALHALLA_BASE_URL, import.meta.env.DEV),
   }), [])
@@ -415,6 +422,18 @@ function App() {
     isMobileViewport && activeTab === 'stops',
     arrivalStopRequests,
   )
+  const serviceRouteIds = useMemo(() => {
+    const routeIds = new Set<string>()
+    for (const { stopId } of arrivalStopRequests) {
+      for (const routeId of transitIndex?.routeIdsByStopId.get(stopId) ?? []) routeIds.add(routeId)
+    }
+    return [...routeIds].sort()
+  }, [arrivalStopRequests, transitIndex])
+  const stopServiceWindows = useMobileStopServiceWindows(
+    loadMobileStopServiceWindows,
+    isMobileViewport && activeTab === 'stops',
+    serviceRouteIds,
+  )
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && transitIndex
     ? getMobileStopSheetSelection(
       selectedStop,
@@ -422,6 +441,7 @@ function App() {
       mobileStopView.favoriteStopIds,
       stopArrivals.snapshot,
       stopArrivals.nowMs,
+      stopServiceWindows.windows,
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
@@ -431,6 +451,7 @@ function App() {
       mobileStopView.favoriteStopIds,
       stopArrivals.snapshot,
       stopArrivals.nowMs,
+      stopServiceWindows.windows,
     ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
@@ -440,9 +461,9 @@ function App() {
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
   const liveArrivalMessage = stopArrivals.status === 'loading'
-    ? 'Loading live shuttle arrivals…'
+    ? 'Updating…'
     : stopArrivals.status === 'error'
-      ? 'Live shuttle arrivals are unavailable. Try again later.'
+      ? 'No live data'
       : null
 
   return (

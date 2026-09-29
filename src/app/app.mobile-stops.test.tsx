@@ -16,6 +16,9 @@ const appHarness = vi.hoisted(() => {
     arrivalsClient: {
       getArrivals: vi.fn(),
     },
+    serviceHoursClient: {
+      getServiceWindows: vi.fn(),
+    },
   }
 })
 
@@ -30,6 +33,10 @@ vi.mock('./use-navigation-session', () => ({
 
 vi.mock('../infrastructure/shuttle-arrivals/client', () => ({
   createShuttleArrivalClient: () => appHarness.arrivalsClient,
+}))
+
+vi.mock('../infrastructure/shuttle-service-hours/client', () => ({
+  createShuttleServiceHoursClient: () => appHarness.serviceHoursClient,
 }))
 
 const FAVORITE_STOPS_KEY = 'navus:favorite-stops:v1'
@@ -60,6 +67,7 @@ beforeEach(() => {
       },
     },
   })
+  appHarness.serviceHoursClient.getServiceWindows.mockResolvedValue({})
   localStorage.setItem(FAVORITE_STOPS_KEY, JSON.stringify(['STOP-A']))
   appHarness.state = {
     ...createInitialNavigationSessionState(),
@@ -71,6 +79,7 @@ afterEach(() => {
   cleanup()
   localStorage.clear()
   appHarness.arrivalsClient.getArrivals.mockReset()
+  appHarness.serviceHoursClient.getServiceWindows.mockReset()
 })
 
 describe('mobile Stops tab state', () => {

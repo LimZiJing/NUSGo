@@ -87,7 +87,7 @@ describe('MobileStopsSheet', () => {
     )
     expect(within(screen.getByRole('list', { name: 'Bus timings' })).getAllByRole('listitem'))
       .toHaveLength(3)
-    expect(screen.getByText('No live timing available')).toBeTruthy()
+    expect(screen.getByText('No live timing')).toBeTruthy()
     expect(screen.queryByText('26m')).toBeNull()
     expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('BUTTON')
   })

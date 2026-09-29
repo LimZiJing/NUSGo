@@ -6,6 +6,7 @@ import {
 } from './mobile-stop-view'
 import { createTransitIndex } from '../../domain/transit'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import type { ShuttleServiceWindow } from '../../domain/transit/service-hours'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
 describe('mobile stop view state', () => {
@@ -75,7 +76,55 @@ describe('mobile stop view state', () => {
 
     expect(selection.departures).toEqual([])
     expect(selection.live).toBe(false)
-    expect(selection.liveArrivalMessage).toBe('Live shuttle arrivals are stale.')
+    expect(selection.liveArrivalMessage).toBe('Stale live data')
+  })
+
+  it('shows a scheduled first-bus estimate within the 30-minute grace period', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const emptySnapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-29T16:00:00.000Z',
+      expiresAt: '2026-09-29T16:01:00.000Z',
+      stops: { 'STOP-A': {} },
+    }
+    const serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> = {
+      A1: [{ routeId: 'A1', firstTime: '00:06', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      emptySnapshot,
+      Date.parse('2026-09-29T16:00:00.000Z'),
+      serviceWindows,
+    )
+
+    expect(selection.departures).toEqual([])
+    expect(selection.live).toBe(false)
+    expect(selection.liveArrivalMessage).toBe('First bus in 6m')
+  })
+
+  it('uses compact service text when the next start is outside the grace period', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const emptySnapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-29T16:00:00.000Z',
+      expiresAt: '2026-09-29T16:01:00.000Z',
+      stops: { 'STOP-A': {} },
+    }
+    const serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> = {
+      A1: [{ routeId: 'A1', firstTime: '01:00', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      emptySnapshot,
+      Date.parse('2026-09-29T16:00:00.000Z'),
+      serviceWindows,
+    )
+
+    expect(selection.liveArrivalMessage).toBe('Starts 1:00 AM')
   })
 
   it('adds downstream favourite stop nicknames to matching route departures', () => {

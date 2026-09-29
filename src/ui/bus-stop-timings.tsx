@@ -96,7 +96,7 @@ export function BusStopTimings({
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
               <span className="mobile-stop-public-timing-unavailable">
-                No live timing available
+                No live timing
               </span>
             )}
           </li>

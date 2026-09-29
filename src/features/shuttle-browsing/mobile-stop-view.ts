@@ -3,6 +3,12 @@ import {
   SHUTTLE_ARRIVAL_FRESHNESS_MS,
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
+import {
+  evaluateShuttleService,
+  getNextShuttleServiceStart,
+  SHUTTLE_SERVICE_START_GRACE_MINUTES,
+  type ShuttleServiceWindow,
+} from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
 import type { MobileStopSheetSelection } from './mobile-stops-sheet'
 
@@ -29,6 +35,8 @@ export interface MobileStopDeparture {
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
 }
+
+type MobileStopServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
 
 export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
   return {
@@ -132,12 +140,52 @@ function getLiveArrivalMessage(
   stopId: string,
   nowMs: number,
   departures: readonly MobileStopDeparture[],
+  routeIds: readonly string[],
+  serviceWindows: MobileStopServiceWindows | null,
 ): string | null {
   if (!snapshot) return null
-  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) {
-    return 'Live shuttle arrivals are stale.'
+  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return 'Stale live data'
+  if (departures.length > 0) return null
+  return getServiceAvailabilityMessage(routeIds, serviceWindows, nowMs) ?? 'No live arrivals'
+}
+
+function compactStartLabel(label: string): string {
+  return label.replace(/^today at /, '').replace(/^tomorrow at /, 'tomorrow ')
+}
+
+function getServiceAvailabilityMessage(
+  routeIds: readonly string[],
+  serviceWindows: MobileStopServiceWindows | null,
+  nowMs: number,
+): string | null {
+  if (!serviceWindows) return null
+
+  const routeWindows = routeIds
+    .map((routeId) => serviceWindows[routeId])
+    .filter((windows): windows is readonly ShuttleServiceWindow[] => windows !== undefined)
+  if (routeWindows.length === 0) return 'No live data'
+
+  const evaluations = routeWindows.map((windows) => ({
+    windows,
+    evaluation: evaluateShuttleService(windows, new Date(nowMs)),
+    nextStart: getNextShuttleServiceStart(windows, new Date(nowMs)),
+  }))
+  if (evaluations.some(({ evaluation }) => evaluation.status === 'active')) return 'No live arrivals'
+
+  const nextStart = evaluations
+    .map(({ evaluation, nextStart }) => ({ evaluation, nextStart }))
+    .filter(({ nextStart }) => nextStart !== null)
+    .sort((first, second) => first.nextStart!.minutesUntil - second.nextStart!.minutesUntil)[0]
+  if (!nextStart?.nextStart) return 'No live data'
+
+  if (nextStart.evaluation.status === 'before-start') {
+    if (nextStart.nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES) {
+      return `First bus in ${Math.max(1, Math.ceil(nextStart.nextStart.minutesUntil))}m`
+    }
+    return `Starts ${compactStartLabel(nextStart.nextStart.label)}`
   }
-  return departures.length === 0 ? 'No live internal shuttle arrivals.' : null
+
+  return `Ended · next ${compactStartLabel(nextStart.nextStart.label)}`
 }
 
 export function getMobileStopSheetSelection(
@@ -146,6 +194,7 @@ export function getMobileStopSheetSelection(
   favoriteStopIds: readonly string[] = [],
   arrivalSnapshot: ShuttleArrivalSnapshot | null = null,
   nowMs: number,
+  serviceWindows: MobileStopServiceWindows | null = null,
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const favorites = new Set(favoriteStopIds)
@@ -158,6 +207,7 @@ export function getMobileStopSheetSelection(
         isOpposite: stop.opposite === id,
       })),
   }))
+  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
   return {
     id: stop.id,
     longName: stop.longName,
@@ -167,6 +217,6 @@ export function getMobileStopSheetSelection(
       .map((service) => service.slice('PUB:'.length)),
     departures,
     live: departures.length > 0,
-    liveArrivalMessage: getLiveArrivalMessage(arrivalSnapshot, stop.id, nowMs, departures),
+    liveArrivalMessage: getLiveArrivalMessage(arrivalSnapshot, stop.id, nowMs, departures, routeIds, serviceWindows),
   }
 }

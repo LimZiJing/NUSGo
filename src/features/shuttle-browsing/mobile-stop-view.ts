@@ -30,25 +30,6 @@ export interface MobileStopDeparture {
   readonly timings: readonly [string, string, string]
 }
 
-const PUBLIC_SERVICE_TIMINGS: Readonly<Record<string, readonly [string, string, string]>> = {
-  '10': ['5m', '14m', '23m'],
-  '33': ['Arr', '12m', '24m'],
-  '48': ['7m', '19m', '-'],
-  '67': ['4m', '16m', '29m'],
-  '95': ['8m', '17m', '26m'],
-  '96': ['3m', '12m', '-'],
-  '151': ['Left', '11m', '22m'],
-  '153': ['6m', '18m', '-'],
-  '154': ['9m', '21m', '-'],
-  '156': ['Arr', '13m', '25m'],
-  '170': ['5m', '16m', '-'],
-  '183': ['7m', '15m', '28m'],
-  '186': ['4m', '14m', '24m'],
-  '188': ['10m', '22m', '-'],
-  '200': ['6m', '17m', '-'],
-  '201': ['9m', '20m', '-'],
-}
-
 export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
   return {
     focusedStopId: null,
@@ -157,10 +138,6 @@ function getLiveArrivalMessage(
     return 'Live shuttle arrivals are stale.'
   }
   return departures.length === 0 ? 'No live internal shuttle arrivals.' : null
-}
-
-export function getPublicServiceTimings(serviceNumber: string): readonly [string, string, string] {
-  return PUBLIC_SERVICE_TIMINGS[serviceNumber] ?? ['7m', '15m', '-']
 }
 
 export function getMobileStopSheetSelection(

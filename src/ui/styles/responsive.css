@@ -899,6 +899,12 @@
     gap: 6px;
   }
 
+  .mobile-stop-public-timing-unavailable {
+    grid-column: 2 / -1;
+    color: #64748b;
+    font-size: 12px;
+  }
+
   .mobile-stop-reachable-favorites {
     display: flex;
     align-items: center;

@@ -17,7 +17,7 @@ export interface BusStopDeparture {
 
 export interface PublicServiceTiming {
   readonly serviceNumber: string
-  readonly timings: readonly [string, string, string]
+  readonly timings: readonly [string, string, string] | null
 }
 
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
@@ -94,7 +94,11 @@ export function BusStopTimings({
         {publicServices.map(({ serviceNumber, timings }) => (
           <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
-            <DepartureTimes timings={timings} />
+            {timings ? <DepartureTimes timings={timings} /> : (
+              <span className="mobile-stop-public-timing-unavailable">
+                No live timing available
+              </span>
+            )}
           </li>
         ))}
       </ul>

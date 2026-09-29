@@ -5,7 +5,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
 import { BusStopTimings, type BusStopDeparture } from '../../ui/bus-stop-timings'
 import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
-import { getPublicServiceTimings, type MobileStopDeparture } from './mobile-stop-view'
+import { type MobileStopDeparture } from './mobile-stop-view'
 
 type MobileStopSheetDeparture = MobileStopDeparture & BusStopDeparture
 
@@ -142,7 +142,7 @@ export function MobileStopsSheet({
                 liveArrivalMessage={selectedStop.liveArrivalMessage}
                 publicServices={selectedStop.publicServices.map((serviceNumber) => ({
                   serviceNumber,
-                  timings: getPublicServiceTimings(serviceNumber),
+                  timings: null,
                 }))}
                 onSelectRoute={onSelectRoute}
               />
@@ -180,7 +180,7 @@ export function MobileStopsSheet({
                     departures={stop.departures}
                     publicServices={stop.publicServices.map((serviceNumber) => ({
                       serviceNumber,
-                      timings: getPublicServiceTimings(serviceNumber),
+                      timings: null,
                     }))}
                     onToggleFavorite={(stopId) => onToggleFavorite?.(stopId)}
                     onToggleExpanded={(stopId) => onToggleExpanded?.(stopId)}

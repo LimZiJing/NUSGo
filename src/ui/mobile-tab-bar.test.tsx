@@ -60,4 +60,20 @@ describe('MobileTabBar', () => {
     expect(onSelectTab).toHaveBeenCalledWith('stops')
     expect(stops).toBe(document.activeElement)
   })
+
+  it('keeps tab buttons keyboard focusable and activates them with Enter', async () => {
+    const user = userEvent.setup()
+    const onSelectTab = vi.fn()
+    render(<MobileTabBar activeTab="explore" onSelectTab={onSelectTab} />)
+
+    const explore = screen.getByRole('button', { name: 'Explore' })
+    const stops = screen.getByRole('button', { name: 'Stops' })
+    await user.tab()
+    expect(explore).toBe(document.activeElement)
+    await user.tab()
+    expect(stops).toBe(document.activeElement)
+    await user.keyboard('{Enter}')
+
+    expect(onSelectTab).toHaveBeenCalledWith('stops')
+  })
 })

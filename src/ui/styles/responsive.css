@@ -564,9 +564,8 @@
   }
 
   .mobile-stops-sheet .mobile-sheet-handle-row {
-    flex-basis: 44px;
-    height: 44px;
-    min-height: 44px;
+    flex-basis: 5px;
+    min-height: 0;
   }
 
   .mobile-stops-sheet [data-mobile-sheet-content] {

@@ -20,7 +20,7 @@ import {
 import type { Journey, JourneyEndpointLocation } from '../domain/trip/journey'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
-import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from '../infrastructure/shuttle-arrivals/client'
+import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from './contracts/shuttle-arrivals'
 import type { ShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 
 export interface JourneyPlanningRequest {

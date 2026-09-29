@@ -16,7 +16,7 @@
     height: var(--mobile-viewport-height, 100dvh);
     min-height: var(--mobile-viewport-height, 100svh);
     overflow: hidden;
-    --mobile-tab-bar-pill-height: 112px;
+    --mobile-tab-bar-pill-height: 56px;
     --mobile-tab-bar-height: calc(
       var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
     );
@@ -921,14 +921,14 @@
   .mobile-tab-bar {
     position: absolute;
     z-index: 14;
-    right: max(12px, env(safe-area-inset-right));
+    right: max(16px, env(safe-area-inset-right));
     bottom: max(16px, env(safe-area-inset-bottom));
-    left: max(12px, env(safe-area-inset-left));
+    left: max(16px, env(safe-area-inset-left));
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
     height: var(--mobile-tab-bar-pill-height);
-    padding: 8px;
+    padding: 6px 8px;
     border-radius: 999px;
     background: #fff;
     box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
@@ -940,14 +940,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     min-width: 0;
     min-height: 44px;
     border: 0;
     border-radius: 999px;
     color: #4b5563;
     background: transparent;
-    font: 500 14px/1.2 system-ui, sans-serif;
+    font: 500 12px/1.2 system-ui, sans-serif;
     cursor: pointer;
   }
 
@@ -958,15 +958,15 @@
 
   .mobile-tab-icon {
     display: flex;
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     align-items: center;
     justify-content: center;
   }
 
   .mobile-tab-icon svg {
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     overflow: visible;
     fill: none;
     stroke: currentColor;

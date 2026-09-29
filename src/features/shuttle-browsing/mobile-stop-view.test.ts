@@ -104,6 +104,73 @@ describe('mobile stop view state', () => {
     expect(selection.liveArrivalMessage).toBe('First bus in 6m')
   })
 
+  it('does not treat a long pre-service arrival as live timing', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-29T16:00:00.000Z',
+      expiresAt: '2026-09-29T16:01:00.000Z',
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 19_680,
+            upcomingArrivalSeconds: [19_680, 20_100, 20_520],
+            headwaySeconds: { min: 420, median: 420, max: 420 },
+          },
+        },
+      },
+    }
+    const serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> = {
+      A1: [{ routeId: 'A1', firstTime: '06:00', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      snapshot,
+      Date.parse('2026-09-29T16:00:00.000Z'),
+      serviceWindows,
+    )
+
+    expect(selection.departures).toEqual([])
+    expect(selection.live).toBe(false)
+    expect(selection.liveArrivalMessage).toBe('Starts 6:00 AM')
+  })
+
+  it('keeps old rows during a refresh without marking them live or stale', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: null,
+          },
+        },
+      },
+    }
+    const serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> = {
+      A1: [{ routeId: 'A1', firstTime: '00:00', lastTime: '23:59', dayType: 'Mon-Fri', dates: [] }],
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      snapshot,
+      Date.parse('2026-09-30T00:00:31.000Z'),
+      serviceWindows,
+      true,
+    )
+
+    expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
+    expect(selection.live).toBe(false)
+    expect(selection.liveArrivalMessage).toBeNull()
+  })
+
   it('uses compact service text when the next start is outside the grace period', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const emptySnapshot: ShuttleArrivalSnapshot = {

@@ -38,6 +38,11 @@ export interface MobileStopDeparture {
 
 type MobileStopServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
 
+interface MobileStopServiceAvailability {
+  readonly allowsLiveArrivals: boolean
+  readonly message: string
+}
+
 export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
   return {
     focusedStopId: null,
@@ -107,8 +112,9 @@ function getLiveStopDepartures(
   index: TransitIndex,
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
+  allowStale: boolean,
 ): readonly MobileStopDeparture[] {
-  if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return []
+  if (!snapshot || (!allowStale && getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS)) return []
 
   const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
   const stopArrivals = snapshot.stops[stop.id] ?? {}
@@ -142,50 +148,61 @@ function getLiveArrivalMessage(
   departures: readonly MobileStopDeparture[],
   routeIds: readonly string[],
   serviceWindows: MobileStopServiceWindows | null,
+  isRefreshing: boolean,
 ): string | null {
+  const serviceAvailability = getServiceAvailability(routeIds, serviceWindows, nowMs)
+  if (isRefreshing && serviceAvailability?.allowsLiveArrivals !== false) return null
   if (!snapshot) return null
+  if (serviceAvailability?.allowsLiveArrivals === false) return serviceAvailability.message
   if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return 'Stale live data'
   if (departures.length > 0) return null
-  return getServiceAvailabilityMessage(routeIds, serviceWindows, nowMs) ?? 'No live arrivals'
+  return serviceAvailability?.message ?? 'No live arrivals'
 }
 
 function compactStartLabel(label: string): string {
   return label.replace(/^today at /, '').replace(/^tomorrow at /, 'tomorrow ')
 }
 
-function getServiceAvailabilityMessage(
+function getServiceAvailability(
   routeIds: readonly string[],
   serviceWindows: MobileStopServiceWindows | null,
   nowMs: number,
-): string | null {
+): MobileStopServiceAvailability | null {
   if (!serviceWindows) return null
 
   const routeWindows = routeIds
     .map((routeId) => serviceWindows[routeId])
     .filter((windows): windows is readonly ShuttleServiceWindow[] => windows !== undefined)
-  if (routeWindows.length === 0) return 'No live data'
+  if (routeWindows.length === 0) return { allowsLiveArrivals: true, message: 'No live data' }
 
   const evaluations = routeWindows.map((windows) => ({
-    windows,
     evaluation: evaluateShuttleService(windows, new Date(nowMs)),
     nextStart: getNextShuttleServiceStart(windows, new Date(nowMs)),
   }))
-  if (evaluations.some(({ evaluation }) => evaluation.status === 'active')) return 'No live arrivals'
+  if (evaluations.some(({ evaluation }) => evaluation.status === 'active')) {
+    return { allowsLiveArrivals: true, message: 'No live arrivals' }
+  }
 
   const nextStart = evaluations
     .map(({ evaluation, nextStart }) => ({ evaluation, nextStart }))
     .filter(({ nextStart }) => nextStart !== null)
     .sort((first, second) => first.nextStart!.minutesUntil - second.nextStart!.minutesUntil)[0]
-  if (!nextStart?.nextStart) return 'No live data'
+  if (!nextStart?.nextStart) return { allowsLiveArrivals: true, message: 'No live data' }
 
   if (nextStart.evaluation.status === 'before-start') {
     if (nextStart.nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES) {
-      return `First bus in ${Math.max(1, Math.ceil(nextStart.nextStart.minutesUntil))}m`
+      return {
+        allowsLiveArrivals: false,
+        message: `First bus in ${Math.max(1, Math.ceil(nextStart.nextStart.minutesUntil))}m`,
+      }
     }
-    return `Starts ${compactStartLabel(nextStart.nextStart.label)}`
+    return { allowsLiveArrivals: false, message: `Starts ${compactStartLabel(nextStart.nextStart.label)}` }
   }
 
-  return `Ended · next ${compactStartLabel(nextStart.nextStart.label)}`
+  return {
+    allowsLiveArrivals: false,
+    message: `Ended · next ${compactStartLabel(nextStart.nextStart.label)}`,
+  }
 }
 
 export function getMobileStopSheetSelection(
@@ -195,10 +212,15 @@ export function getMobileStopSheetSelection(
   arrivalSnapshot: ShuttleArrivalSnapshot | null = null,
   nowMs: number,
   serviceWindows: MobileStopServiceWindows | null = null,
+  isRefreshing = false,
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const favorites = new Set(favoriteStopIds)
-  const departures = getLiveStopDepartures(stop, index, arrivalSnapshot, nowMs).map((departure) => ({
+  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
+  const serviceAvailability = getServiceAvailability(routeIds, serviceWindows, nowMs)
+  const departures = serviceAvailability?.allowsLiveArrivals === false
+    ? []
+    : getLiveStopDepartures(stop, index, arrivalSnapshot, nowMs, isRefreshing).map((departure) => ({
     ...departure,
     reachableFavoriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
       .map(({ id, shortName }) => ({
@@ -207,7 +229,6 @@ export function getMobileStopSheetSelection(
         isOpposite: stop.opposite === id,
       })),
   }))
-  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
   return {
     id: stop.id,
     longName: stop.longName,
@@ -216,7 +237,15 @@ export function getMobileStopSheetSelection(
       .filter((service) => service.startsWith('PUB:'))
       .map((service) => service.slice('PUB:'.length)),
     departures,
-    live: departures.length > 0,
-    liveArrivalMessage: getLiveArrivalMessage(arrivalSnapshot, stop.id, nowMs, departures, routeIds, serviceWindows),
+    live: departures.length > 0 && !isRefreshing && serviceAvailability?.allowsLiveArrivals !== false,
+    liveArrivalMessage: getLiveArrivalMessage(
+      arrivalSnapshot,
+      stop.id,
+      nowMs,
+      departures,
+      routeIds,
+      serviceWindows,
+      isRefreshing,
+    ),
   }
 }

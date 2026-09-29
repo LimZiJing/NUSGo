@@ -442,6 +442,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
+      stopArrivals.status === 'refreshing',
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
@@ -452,6 +453,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
+      stopArrivals.status === 'refreshing',
     ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),

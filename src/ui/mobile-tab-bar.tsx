@@ -3,6 +3,7 @@ import { MOBILE_TABS, type MobileTab } from './mobile-tab'
 
 interface MobileTabBarProps {
   readonly activeTab: MobileTab
+  readonly covered?: boolean
   readonly onSelectTab: (tab: MobileTab) => void
   readonly containerRef?: Ref<HTMLElement>
 }
@@ -51,11 +52,19 @@ function MobileTabIcon({ tab }: { readonly tab: MobileTab }) {
 
 export function MobileTabBar({
   activeTab,
+  covered = false,
   onSelectTab,
   containerRef,
 }: MobileTabBarProps) {
   return (
-    <nav className="mobile-tab-bar" aria-label="Map views" ref={containerRef}>
+    <nav
+      className="mobile-tab-bar"
+      aria-label="Map views"
+      aria-hidden={covered || undefined}
+      inert={covered}
+      data-covered={covered || undefined}
+      ref={containerRef}
+    >
       {MOBILE_TABS.map(({ id, label, panelId }) => (
         <button
           type="button"

@@ -20,10 +20,8 @@
     --mobile-tab-bar-height: calc(
       var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
     );
-    --mobile-sheet-max-height: min(
-      50dvh,
-      calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
-    );
+    --mobile-sheet-max-height: max(0px, calc(40% - var(--mobile-tab-bar-height)));
+    --mobile-sheet-min-height: min(200px, var(--mobile-sheet-max-height));
   }
 
   .map-shell::after {
@@ -104,7 +102,7 @@
 
   .trip-controls-body {
     min-height: 0;
-    max-height: min(calc(50dvh - 132px), calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 204px));
+    max-height: max(0px, calc(var(--mobile-sheet-max-height) - 132px));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
@@ -234,20 +232,7 @@
   }
 
   .contextual-panel-mobile-venue-search {
-    --mobile-venue-sheet-height: min(
-      50dvh,
-      calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
-    );
     grid-template-rows: max-content max-content minmax(0, 1fr);
-  }
-
-  .contextual-panel-mobile-venue-search:not(.contextual-panel-minimized) {
-    height: var(--mobile-venue-sheet-height);
-  }
-
-  /* The handle measures with height:auto; keep its expanded stop at the visible sheet height. */
-  .contextual-panel-mobile-venue-search[data-mobile-sheet-measuring='expanded'] {
-    min-height: var(--mobile-venue-sheet-height);
   }
 
   .contextual-panel-mobile-venue-search .contextual-panel-content {
@@ -448,14 +433,14 @@
   }
 
   .contextual-panel-shuttle.contextual-panel-minimized .contextual-panel-content,
-  [data-mobile-sheet-measuring='compact'].contextual-panel-shuttle .contextual-panel-content,
-  [data-mobile-sheet-settling='compact'].contextual-panel-shuttle .contextual-panel-content {
+  [data-mobile-sheet-measuring='collapsed'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-settling='collapsed'].contextual-panel-shuttle .contextual-panel-content {
     flex: 0 0 auto;
   }
 
   .contextual-panel-shuttle.contextual-panel-minimized .route-control-mobile,
-  [data-mobile-sheet-measuring='compact'].contextual-panel-shuttle .route-control-mobile,
-  [data-mobile-sheet-settling='compact'].contextual-panel-shuttle .route-control-mobile {
+  [data-mobile-sheet-measuring='collapsed'].contextual-panel-shuttle .route-control-mobile,
+  [data-mobile-sheet-settling='collapsed'].contextual-panel-shuttle .route-control-mobile {
     flex: 0 0 auto;
   }
 
@@ -502,48 +487,63 @@
     background: #94a3b8;
   }
 
-  [data-mobile-sheet-measuring='compact'] [data-mobile-sheet-content],
-  [data-mobile-sheet-settling='compact'] [data-mobile-sheet-content] {
+  [data-mobile-sheet-measuring='collapsed'] [data-mobile-sheet-content],
+  [data-mobile-sheet-settling='collapsed'] [data-mobile-sheet-content] {
     display: none !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'] .contextual-panel-content,
+  [data-mobile-sheet-measuring='partial'] .contextual-panel-content,
+  [data-mobile-sheet-measuring='full'] .contextual-panel-content,
   [data-mobile-sheet-dragging] .contextual-panel-content,
-  [data-mobile-sheet-settling='expanded'] .contextual-panel-content,
-  [data-mobile-sheet-measuring='expanded'] .contextual-panel-search-body,
+  [data-mobile-sheet-settling='partial'] .contextual-panel-content,
+  [data-mobile-sheet-settling='full'] .contextual-panel-content,
+  [data-mobile-sheet-measuring='partial'] .contextual-panel-search-body,
+  [data-mobile-sheet-measuring='full'] .contextual-panel-search-body,
   [data-mobile-sheet-dragging] .contextual-panel-search-body,
-  [data-mobile-sheet-settling='expanded'] .contextual-panel-search-body,
-  [data-mobile-sheet-measuring='expanded'] .trip-controls-body,
+  [data-mobile-sheet-settling='partial'] .contextual-panel-search-body,
+  [data-mobile-sheet-settling='full'] .contextual-panel-search-body,
+  [data-mobile-sheet-measuring='partial'] .trip-controls-body,
+  [data-mobile-sheet-measuring='full'] .trip-controls-body,
   [data-mobile-sheet-dragging] .trip-controls-body,
-  [data-mobile-sheet-settling='expanded'] .trip-controls-body {
+  [data-mobile-sheet-settling='partial'] .trip-controls-body,
+  [data-mobile-sheet-settling='full'] .trip-controls-body {
     display: grid !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle {
+  [data-mobile-sheet-measuring='partial'].contextual-panel-shuttle,
+  [data-mobile-sheet-measuring='full'].contextual-panel-shuttle {
     min-height: var(--mobile-sheet-max-height);
   }
 
-  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-measuring='partial'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-measuring='full'].contextual-panel-shuttle .contextual-panel-content,
   [data-mobile-sheet-dragging].contextual-panel-shuttle .contextual-panel-content,
-  [data-mobile-sheet-settling='expanded'].contextual-panel-shuttle .contextual-panel-content {
+  [data-mobile-sheet-settling='partial'].contextual-panel-shuttle .contextual-panel-content,
+  [data-mobile-sheet-settling='full'].contextual-panel-shuttle .contextual-panel-content {
     display: flex !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'] .route-timeline-card,
+  [data-mobile-sheet-measuring='partial'] .route-timeline-card,
+  [data-mobile-sheet-measuring='full'] .route-timeline-card,
   [data-mobile-sheet-dragging] .route-timeline-card,
-  [data-mobile-sheet-settling='expanded'] .route-timeline-card {
+  [data-mobile-sheet-settling='partial'] .route-timeline-card,
+  [data-mobile-sheet-settling='full'] .route-timeline-card {
     display: block !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'].contextual-panel-shuttle .route-timeline-card,
+  [data-mobile-sheet-measuring='partial'].contextual-panel-shuttle .route-timeline-card,
+  [data-mobile-sheet-measuring='full'].contextual-panel-shuttle .route-timeline-card,
   [data-mobile-sheet-dragging].contextual-panel-shuttle .route-timeline-card,
-  [data-mobile-sheet-settling='expanded'].contextual-panel-shuttle .route-timeline-card {
+  [data-mobile-sheet-settling='partial'].contextual-panel-shuttle .route-timeline-card,
+  [data-mobile-sheet-settling='full'].contextual-panel-shuttle .route-timeline-card {
     display: flex !important;
   }
 
-  [data-mobile-sheet-measuring='expanded'].mobile-stops-sheet [data-mobile-sheet-content],
+  [data-mobile-sheet-measuring='partial'].mobile-stops-sheet [data-mobile-sheet-content],
+  [data-mobile-sheet-measuring='full'].mobile-stops-sheet [data-mobile-sheet-content],
   [data-mobile-sheet-dragging].mobile-stops-sheet [data-mobile-sheet-content],
-  [data-mobile-sheet-settling='expanded'].mobile-stops-sheet [data-mobile-sheet-content] {
+  [data-mobile-sheet-settling='partial'].mobile-stops-sheet [data-mobile-sheet-content],
+  [data-mobile-sheet-settling='full'].mobile-stops-sheet [data-mobile-sheet-content] {
     display: block !important;
   }
 
@@ -582,8 +582,9 @@
     height: var(--mobile-sheet-max-height);
   }
 
-  /* The handle measures with height:auto; retain the full expanded height. */
-  .mobile-stops-sheet[data-mobile-sheet-measuring='expanded'] {
+  /* Keep the Stops panel at its partial detent while the content list is short. */
+  .mobile-stops-sheet[data-mobile-sheet-measuring='partial'],
+  .mobile-stops-sheet[data-mobile-sheet-measuring='full'] {
     min-height: var(--mobile-sheet-max-height);
   }
 
@@ -1069,6 +1070,94 @@
 
   .contextual-panel-results {
     max-height: 30dvh;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed']:not([data-mobile-sheet-settling='collapsed']) {
+    display: none !important;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'] {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    gap: 0 !important;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
+    display: block !important;
+    max-height: var(--mobile-viewport-height) !important;
+  }
+
+  [data-mobile-sheet][data-detent='partial'] {
+    top: auto;
+    bottom: var(--mobile-tab-bar-height);
+    height: auto !important;
+    min-height: var(--mobile-sheet-min-height);
+    max-height: var(--mobile-sheet-max-height);
+    overflow: hidden;
+  }
+
+  [data-mobile-sheet][data-detent='full'],
+  [data-mobile-sheet][data-mobile-sheet-measuring='full'] {
+    z-index: 15;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none;
+    overflow: hidden;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+  }
+
+  [data-mobile-sheet-measuring='collapsed'] {
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  [data-mobile-sheet-measuring='collapsed'] .mobile-sheet-handle-row {
+    display: none !important;
+  }
+
+  [data-mobile-sheet-measuring='partial'] {
+    top: auto;
+    bottom: var(--mobile-tab-bar-height);
+    height: auto !important;
+    min-height: var(--mobile-sheet-min-height) !important;
+    max-height: var(--mobile-sheet-max-height);
+  }
+
+  .mobile-stops-sheet[data-detent='partial']:not([data-mobile-sheet-measuring='full']) {
+    height: var(--mobile-sheet-max-height) !important;
+  }
+
+  .contextual-panel-mobile-venue-search[data-detent='full'] .contextual-panel-results,
+  .contextual-panel-mobile-venue-search[data-mobile-sheet-measuring='full'] .contextual-panel-results {
+    max-height: none;
+  }
+
+  .trip-controls[data-detent='full'] .trip-controls-body,
+  .trip-controls[data-mobile-sheet-measuring='full'] .trip-controls-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  .mobile-tab-bar[data-covered='true'] {
+    visibility: hidden;
+  }
+
+  .mobile-tab-bar button {
+    min-height: 36px;
   }
 
   .map .maplibregl-ctrl-top-right,

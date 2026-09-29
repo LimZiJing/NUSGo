@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, type MouseEvent, type PointerEvent } from 'react'
+import {
+  isOpenMobileSheetDetent,
+  type MobileSheetDetent,
+} from './mobile-sheet-detent'
 
 interface MobileSheetHandleProps {
-  readonly expanded: boolean
+  readonly detent?: MobileSheetDetent
+  readonly expanded?: boolean
   readonly label: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
   readonly onBeforeClick?: () => void
-  readonly onExpandedChange: (expanded: boolean) => void
+  readonly onDetentChange?: (detent: MobileSheetDetent) => void
+  readonly onExpandedChange?: (expanded: boolean) => void
 }
 
 interface InlineSheetStyles {
@@ -18,6 +24,14 @@ interface InlineSheetStyles {
   readonly overflowPriority: string
   readonly transition: string
   readonly transitionPriority: string
+  readonly bottom: string
+  readonly bottomPriority: string
+}
+
+interface DragStop {
+  readonly detent: MobileSheetDetent
+  readonly height: number
+  readonly bottom: number
 }
 
 interface DragSession {
@@ -26,10 +40,11 @@ interface DragSession {
   readonly pointerId: number
   readonly startY: number
   readonly startHeight: number
-  readonly compactHeight: number
-  readonly expandedHeight: number
+  readonly stops: readonly DragStop[]
   readonly styles: InlineSheetStyles
   currentHeight: number
+  currentBottom: number
+  requestedHeight: number
   moved: boolean
 }
 
@@ -49,6 +64,8 @@ function readInlineSheetStyles(sheet: HTMLElement): InlineSheetStyles {
     overflowPriority: sheet.style.getPropertyPriority('overflow'),
     transition: sheet.style.getPropertyValue('transition'),
     transitionPriority: sheet.style.getPropertyPriority('transition'),
+    bottom: sheet.style.getPropertyValue('bottom'),
+    bottomPriority: sheet.style.getPropertyPriority('bottom'),
   }
 }
 
@@ -58,6 +75,7 @@ function restoreInlineSheetStyles(sheet: HTMLElement, styles: InlineSheetStyles)
     ['max-height', styles.maxHeight, styles.maxHeightPriority],
     ['overflow', styles.overflow, styles.overflowPriority],
     ['transition', styles.transition, styles.transitionPriority],
+    ['bottom', styles.bottom, styles.bottomPriority],
   ] as const
 
   for (const [property, value, priority] of entries) {
@@ -73,12 +91,12 @@ function restoreSheet(sheet: HTMLElement, styles: InlineSheetStyles): void {
   restoreInlineSheetStyles(sheet, styles)
 }
 
-function measureSheetHeight(sheet: HTMLElement, state: 'compact' | 'expanded'): number {
+function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): number {
   const styles = readInlineSheetStyles(sheet)
   const previousMeasurement = sheet.getAttribute('data-mobile-sheet-measuring')
-  sheet.dataset.mobileSheetMeasuring = state
+  sheet.dataset.mobileSheetMeasuring = detent
   sheet.style.height = 'auto'
-  sheet.style.maxHeight = 'var(--mobile-sheet-max-height)'
+  sheet.style.maxHeight = detent === 'full' ? 'none' : 'var(--mobile-sheet-max-height)'
   sheet.style.overflow = 'hidden'
   sheet.style.transition = 'none'
 
@@ -97,24 +115,53 @@ function resistOverdrag(distance: number): number {
   return MAX_OVERDRAG * (1 - Math.exp(-distance / MAX_OVERDRAG))
 }
 
+function interpolateBottom(stops: readonly DragStop[], height: number): number {
+  for (let index = 1; index < stops.length; index += 1) {
+    const lower = stops[index - 1]
+    const upper = stops[index]
+    if (height > upper.height) continue
+    if (upper.height === lower.height) return upper.bottom
+    const progress = (height - lower.height) / (upper.height - lower.height)
+    return lower.bottom + (upper.bottom - lower.bottom) * progress
+  }
+  return stops.at(-1)?.bottom ?? 0
+}
+
+function nearestStop(stops: readonly DragStop[], height: number): DragStop {
+  return stops.reduce((nearest, stop) => (
+    Math.abs(stop.height - height) < Math.abs(nearest.height - height) ? stop : nearest
+  ))
+}
+
+function getBottomInset(detent: MobileSheetDetent): number {
+  if (detent === 'full') return 0
+  const tabBar = document.querySelector<HTMLElement>('.mobile-tab-bar')
+  return tabBar?.getBoundingClientRect().height ?? 0
+}
+
 function updateDragHeight(session: DragSession, clientY: number): void {
   const distance = session.startY - clientY
   if (!session.moved && Math.abs(distance) < DRAG_THRESHOLD) return
 
   session.moved = true
   const requestedHeight = session.startHeight + distance
-  let height = requestedHeight
-  if (requestedHeight < session.compactHeight) {
-    height = session.compactHeight - resistOverdrag(session.compactHeight - requestedHeight)
-  } else if (requestedHeight > session.expandedHeight) {
-    height = session.expandedHeight + resistOverdrag(requestedHeight - session.expandedHeight)
-  }
+  const minHeight = session.stops[0].height
+  const maxHeight = session.stops.at(-1)?.height ?? minHeight
+  const height = requestedHeight < minHeight
+    ? minHeight - resistOverdrag(minHeight - requestedHeight)
+    : requestedHeight > maxHeight
+      ? maxHeight + resistOverdrag(requestedHeight - maxHeight)
+      : requestedHeight
+  const visibleHeight = Math.max(0, height)
 
-  session.sheet.style.maxHeight = requestedHeight > session.expandedHeight
-    ? `calc(var(--mobile-sheet-max-height) + ${MAX_OVERDRAG}px)`
-    : 'var(--mobile-sheet-max-height)'
+  session.sheet.style.maxHeight = requestedHeight > maxHeight
+    ? `calc(var(--mobile-viewport-height) + ${MAX_OVERDRAG}px)`
+    : 'var(--mobile-viewport-height)'
   session.currentHeight = height
-  session.sheet.style.height = `${height}px`
+  session.currentBottom = interpolateBottom(session.stops, visibleHeight)
+  session.requestedHeight = requestedHeight
+  session.sheet.style.height = `${visibleHeight}px`
+  session.sheet.style.bottom = `${session.currentBottom}px`
 }
 
 function releasePointer(button: HTMLButtonElement, pointerId: number): void {
@@ -129,19 +176,32 @@ function releasePointer(button: HTMLButtonElement, pointerId: number): void {
   }
 }
 
+function getInitialDetent(detent: MobileSheetDetent | undefined, expanded: boolean | undefined): MobileSheetDetent {
+  if (detent) return detent
+  return expanded === false ? 'collapsed' : 'partial'
+}
+
 export function MobileSheetHandle({
+  detent: passedDetent,
   expanded,
   label,
   controlsId,
   onButtonRef,
   onBeforeClick,
+  onDetentChange,
   onExpandedChange,
 }: MobileSheetHandleProps) {
+  const detent = getInitialDetent(passedDetent, expanded)
   const dragRef = useRef<DragSession | null>(null)
   const settlingRef = useRef<DragSession | null>(null)
   const settleTimerRef = useRef<number | null>(null)
   const clickSuppressionTimerRef = useRef<number | null>(null)
   const suppressClickRef = useRef(false)
+
+  const changeDetent = useCallback((nextDetent: MobileSheetDetent): void => {
+    if (onDetentChange) onDetentChange(nextDetent)
+    else onExpandedChange?.(isOpenMobileSheetDetent(nextDetent))
+  }, [onDetentChange, onExpandedChange])
 
   const assignButtonRef = useCallback((button: HTMLButtonElement | null): void => {
     onButtonRef?.(button)
@@ -182,9 +242,17 @@ export function MobileSheetHandle({
     if (!sheet) return
 
     const startHeight = sheet.getBoundingClientRect().height
-    const compactHeight = measureSheetHeight(sheet, 'compact')
-    const expandedHeight = measureSheetHeight(sheet, 'expanded')
-    if (startHeight <= 0 || compactHeight <= 0 || expandedHeight <= compactHeight) return
+    const partialHeight = measureSheetHeight(sheet, 'partial')
+    const fullHeight = measureSheetHeight(sheet, 'full')
+    const collapsedHeight = measureSheetHeight(sheet, 'collapsed')
+    if (startHeight <= 0 || fullHeight <= collapsedHeight) return
+
+    const partialBottom = getBottomInset('partial')
+    const stops: readonly DragStop[] = [
+      { detent: 'collapsed', height: collapsedHeight, bottom: partialBottom },
+      { detent: 'partial', height: partialHeight, bottom: partialBottom },
+      { detent: 'full', height: fullHeight, bottom: 0 },
+    ]
 
     event.currentTarget.focus()
     const session: DragSession = {
@@ -193,19 +261,21 @@ export function MobileSheetHandle({
       pointerId: event.pointerId,
       startY: event.clientY,
       startHeight,
-      compactHeight,
-      expandedHeight,
+      stops,
       styles: readInlineSheetStyles(sheet),
       currentHeight: startHeight,
+      currentBottom: getBottomInset(detent),
+      requestedHeight: startHeight,
       moved: false,
     }
 
     dragRef.current = session
     sheet.dataset.mobileSheetDragging = 'true'
     sheet.style.height = `${startHeight}px`
-    sheet.style.maxHeight = 'var(--mobile-sheet-max-height)'
+    sheet.style.maxHeight = 'var(--mobile-viewport-height)'
     sheet.style.overflow = 'hidden'
     sheet.style.transition = 'none'
+    sheet.style.bottom = `${session.currentBottom}px`
 
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
@@ -242,26 +312,25 @@ export function MobileSheetHandle({
       clickSuppressionTimerRef.current = null
     }, 0)
 
-    const nextExpanded = session.currentHeight >=
-      (session.compactHeight + session.expandedHeight) / 2
-    if (!nextExpanded && session.sheet.contains(document.activeElement)) {
+    const target = nearestStop(session.stops, session.currentHeight)
+    if (target.detent === 'collapsed' && session.sheet.contains(document.activeElement)) {
       session.button.focus()
     }
 
     const prefersReducedMotion = typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const overdragged = session.currentHeight < session.compactHeight ||
-      session.currentHeight > session.expandedHeight
+    const overdragged = session.requestedHeight < session.stops[0].height ||
+      session.requestedHeight > (session.stops.at(-1)?.height ?? session.startHeight)
     const duration = prefersReducedMotion
       ? 0
       : overdragged ? OVERDRAG_SETTLE_DURATION : SETTLE_DURATION
     const easing = overdragged && !prefersReducedMotion ? OVERDRAG_SETTLE_EASING : 'ease-out'
-    const targetHeight = nextExpanded ? session.expandedHeight : session.compactHeight
-    session.sheet.dataset.mobileSheetSettling = nextExpanded ? 'expanded' : 'compact'
-    session.sheet.style.transition = `height ${duration}ms ${easing}`
+    session.sheet.dataset.mobileSheetSettling = target.detent
+    session.sheet.style.transition = `height ${duration}ms ${easing}, bottom ${duration}ms ${easing}`
     void session.sheet.getBoundingClientRect().height
-    session.sheet.style.height = `${targetHeight}px`
-    onExpandedChange(nextExpanded)
+    session.sheet.style.height = `${target.height}px`
+    session.sheet.style.bottom = `${target.bottom}px`
+    changeDetent(target.detent)
 
     settlingRef.current = session
     settleTimerRef.current = window.setTimeout(() => {
@@ -287,14 +356,18 @@ export function MobileSheetHandle({
     }
 
     clearSettling()
-    const nextExpanded = !expanded
+    const nextDetent: MobileSheetDetent = detent === 'partial'
+      ? 'full'
+      : detent === 'full' ? 'collapsed' : 'partial'
     const content = document.getElementById(controlsId)
-    if (!nextExpanded && content?.contains(document.activeElement)) {
+    if (nextDetent === 'collapsed' && content?.contains(document.activeElement)) {
       event.currentTarget.focus()
     }
     onBeforeClick?.()
-    onExpandedChange(nextExpanded)
+    changeDetent(nextDetent)
   }
+
+  const handleAction = detent === 'full' ? 'Collapse' : 'Expand'
 
   return (
     <button
@@ -302,8 +375,9 @@ export function MobileSheetHandle({
       className="mobile-sheet-handle"
       ref={assignButtonRef}
       aria-controls={controlsId}
-      aria-expanded={expanded}
-      aria-label={`${expanded ? 'Collapse' : 'Expand'} ${label}`}
+      aria-expanded={isOpenMobileSheetDetent(detent)}
+      aria-label={`${handleAction} ${label}`}
+      aria-description={detent === 'partial' ? 'Opens the full-screen sheet.' : undefined}
       data-mobile-sheet-handle
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

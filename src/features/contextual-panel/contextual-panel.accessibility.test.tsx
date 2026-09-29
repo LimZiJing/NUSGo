@@ -17,6 +17,7 @@ import type { TransitNetwork } from '../../domain/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import type { PanelStatus } from './status'
+import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -281,7 +282,7 @@ function MinimizedPanelHarness() {
     mode: 'venue-search' as const,
     query: 'COM1',
   })
-  const [minimized, setMinimized] = useState(true)
+  const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
   const network = createValidTransitNetwork()
   const networkIndex = createTransitIndex(network)
 
@@ -297,9 +298,9 @@ function MinimizedPanelHarness() {
         null,
         () => undefined,
       )}
-      minimized={minimized}
-      onMinimize={() => setMinimized(true)}
-      onRestore={() => setMinimized(false)}
+      minimized={detent === 'collapsed'}
+      sheetDetent={detent}
+      onDetentChange={setDetent}
       onQueryChange={(query) => setState((current) => ({ ...current, query }))}
       onVenueSelect={() => undefined}
       onOpenVenueSearch={() => undefined}
@@ -503,9 +504,14 @@ describe('ContextualPanel accessibility workflows', () => {
     const search = await screen.findByRole('searchbox', { name: 'Find a venue' })
     await waitFor(() => expect(document.activeElement).toBe(search))
     expect((search as HTMLInputElement).value).toBe('COM1')
-    const hideToggle = screen.getByRole('button', { name: 'Collapse Explore panel' })
-    expect(hideToggle.getAttribute('aria-expanded')).toBe('true')
-    await user.click(hideToggle)
+    const partialToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
+    expect(partialToggle.getAttribute('aria-expanded')).toBe('true')
+    expect(partialToggle.getAttribute('aria-description')).toBe('Opens the full-screen sheet.')
+    await user.click(partialToggle)
+
+    const fullToggle = screen.getByRole('button', { name: 'Collapse Explore panel' })
+    expect(fullToggle.getAttribute('aria-expanded')).toBe('true')
+    await user.click(fullToggle)
 
     const showToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
     await waitFor(() => expect(document.activeElement).toBe(showToggle))

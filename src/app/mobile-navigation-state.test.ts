@@ -5,87 +5,114 @@ import {
 } from './mobile-navigation-state'
 
 describe('mobile tab navigation', () => {
-  it('starts on the expanded Stops sheet with every sheet expanded', () => {
+  it('starts every tab at the 40% detent', () => {
     expect(createInitialMobileNavigationState()).toEqual({
       activeTab: 'stops',
       sheets: {
-        explore: { expanded: true },
-        stops: { expanded: true },
-        plan: { expanded: true },
+        explore: { detent: 'partial', lastNonCollapsedDetent: 'partial', search: null },
+        stops: { detent: 'partial', lastNonCollapsedDetent: 'partial', search: null },
+        plan: { detent: 'partial', lastNonCollapsedDetent: 'partial', search: null },
       },
     })
   })
 
-  it('restores each tab’s previous sheet state when the user returns to it', () => {
-    const planExpanded = mobileNavigationReducer(createInitialMobileNavigationState(), {
-      type: 'select-tab',
-      tab: 'plan',
+  it('remembers each tab’s detent while the user switches tabs', () => {
+    const fullExplore = mobileNavigationReducer(createInitialMobileNavigationState(), {
+      type: 'set-sheet-detent',
+      tab: 'explore',
+      detent: 'full',
+      source: 'manual',
     })
-    const planCollapsed = mobileNavigationReducer(planExpanded, {
-      type: 'set-sheet-expanded',
-      tab: 'plan',
-      expanded: false,
-    })
-    const exploreSelected = mobileNavigationReducer(planCollapsed, {
+    const onExplore = mobileNavigationReducer(fullExplore, {
       type: 'select-tab',
       tab: 'explore',
     })
-    const exploreExpanded = mobileNavigationReducer(exploreSelected, {
-      type: 'set-sheet-expanded',
-      tab: 'explore',
-      expanded: true,
-    })
-
-    expect(mobileNavigationReducer(exploreExpanded, {
+    const onStops = mobileNavigationReducer(onExplore, {
       type: 'select-tab',
+      tab: 'stops',
+    })
+    const collapsedStops = mobileNavigationReducer(onStops, {
+      type: 'set-sheet-detent',
+      tab: 'stops',
+      detent: 'collapsed',
+      source: 'manual',
+    })
+    const backToExplore = mobileNavigationReducer(collapsedStops, {
+      type: 'select-tab',
+      tab: 'explore',
+    })
+
+    expect(backToExplore.activeTab).toBe('explore')
+    expect(backToExplore.sheets.explore.detent).toBe('full')
+    expect(backToExplore.sheets.stops.detent).toBe('collapsed')
+  })
+
+  it('reopens a collapsed active tab at its last non-collapsed detent', () => {
+    const partialStops = mobileNavigationReducer(createInitialMobileNavigationState(), {
+      type: 'set-sheet-detent',
+      tab: 'stops',
+      detent: 'full',
+      source: 'manual',
+    })
+    const collapsedStops = mobileNavigationReducer(partialStops, {
+      type: 'set-sheet-detent',
+      tab: 'stops',
+      detent: 'collapsed',
+      source: 'manual',
+    })
+
+    expect(mobileNavigationReducer(collapsedStops, {
+      type: 'select-tab',
+      tab: 'stops',
+    }).sheets.stops.detent).toBe('full')
+  })
+
+  it('opens search full-screen and restores the prior detent when dismissed', () => {
+    const searching = mobileNavigationReducer(createInitialMobileNavigationState(), {
+      type: 'start-search',
+      tab: 'explore',
+    })
+
+    expect(searching.sheets.explore.detent).toBe('full')
+    expect(mobileNavigationReducer(searching, {
+      type: 'dismiss-search',
+      tab: 'explore',
+    }).sheets.explore.detent).toBe('partial')
+  })
+
+  it('keeps a manual detent choice made during search when search is dismissed', () => {
+    const searching = mobileNavigationReducer(createInitialMobileNavigationState(), {
+      type: 'start-search',
       tab: 'plan',
-    })).toEqual({
-      activeTab: 'plan',
-      sheets: {
-        explore: { expanded: true },
-        stops: { expanded: true },
-        plan: { expanded: false },
-      },
     })
+    const collapsed = mobileNavigationReducer(searching, {
+      type: 'set-sheet-detent',
+      tab: 'plan',
+      detent: 'collapsed',
+      source: 'manual',
+    })
+
+    expect(mobileNavigationReducer(collapsed, {
+      type: 'dismiss-search',
+      tab: 'plan',
+    }).sheets.plan.detent).toBe('collapsed')
   })
 
-  it('closes only the active tab sheet and preserves other tab state', () => {
-    const state = {
-      activeTab: 'stops' as const,
-      sheets: {
-        explore: { expanded: true },
-        stops: { expanded: true },
-        plan: { expanded: false },
-      },
-    }
-
-    expect(mobileNavigationReducer(state, { type: 'close-active-tab' })).toEqual({
-      activeTab: 'stops',
-      sheets: {
-        explore: { expanded: true },
-        stops: { expanded: false },
-        plan: { expanded: false },
-      },
+  it('returns to the 40% detent whenever a search result is selected', () => {
+    const searching = mobileNavigationReducer(createInitialMobileNavigationState(), {
+      type: 'start-search',
+      tab: 'plan',
     })
-  })
-
-  it('opens Plan expanded when navigating to a venue', () => {
-    const state = {
-      activeTab: 'explore' as const,
-      sheets: {
-        explore: { expanded: true },
-        stops: { expanded: true },
-        plan: { expanded: false },
-      },
-    }
-
-    expect(mobileNavigationReducer(state, { type: 'open-plan' })).toEqual({
-      activeTab: 'plan',
-      sheets: {
-        explore: { expanded: true },
-        stops: { expanded: true },
-        plan: { expanded: true },
-      },
+    const manuallyCollapsed = mobileNavigationReducer(searching, {
+      type: 'set-sheet-detent',
+      tab: 'plan',
+      detent: 'collapsed',
+      source: 'manual',
     })
+
+    expect(mobileNavigationReducer(manuallyCollapsed, {
+      type: 'select-search-result',
+      tab: 'plan',
+    }).sheets.plan.detent).toBe('partial')
   })
 })

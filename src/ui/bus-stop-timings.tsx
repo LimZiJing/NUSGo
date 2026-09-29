@@ -1,8 +1,10 @@
 import { PublicServiceChip, RouteChip } from './route-chip'
+import { FavoriteStarIcon } from './favorite-star-icon'
 
 export interface BusStopFavoriteDestination {
   readonly id: string
   readonly name: string
+  readonly isOpposite: boolean
 }
 
 export interface BusStopDeparture {
@@ -65,9 +67,16 @@ export function BusStopTimings({
               className="mobile-stop-reachable-favorites"
               aria-label={`Reachable favourite stops: ${departure.reachableFavoriteStops.map(({ name }) => name).join(', ')}`}
             >
-              <span className="mobile-stop-reachable-favorites-icon" aria-hidden="true">★</span>
-              {departure.reachableFavoriteStops.map(({ id, name }) => (
-                <span key={id} className="mobile-stop-reachable-favorite">{name}</span>
+              <span className="mobile-stop-reachable-favorites-arrow" aria-hidden="true">→</span>
+              {departure.reachableFavoriteStops.map(({ id, name, isOpposite }) => (
+                <span
+                  key={id}
+                  className="mobile-stop-reachable-favorite"
+                  data-opposite={isOpposite ? 'true' : undefined}
+                >
+                  <FavoriteStarIcon filled />
+                  <span>{name}</span>
+                </span>
               ))}
             </span>
           ) : null}

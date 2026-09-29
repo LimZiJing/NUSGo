@@ -16,8 +16,8 @@ describe('BusStopTimings', () => {
           routeColor: '#123456',
           timings: ['9m', '11m', '13m'],
           reachableFavoriteStops: [
-            { id: 'STOP-LIBRARY', name: 'Library' },
-            { id: 'STOP-HALL', name: 'Hall' },
+            { id: 'STOP-LIBRARY', name: 'Library', isOpposite: false },
+            { id: 'STOP-HALL', name: 'Hall', isOpposite: true },
           ],
         }]}
         publicServices={[]}
@@ -26,10 +26,16 @@ describe('BusStopTimings', () => {
     )
 
     expect(screen.getByLabelText('Reachable favourite stops: Library, Hall')).toBeTruthy()
+    expect(screen.getByText('→')).toBeTruthy()
     expect(screen.getByText('Library')).toBeTruthy()
     expect(screen.getByText('Hall')).toBeTruthy()
     expect(screen.getByText('9m')).toBeTruthy()
     expect(screen.getByText('11m')).toBeTruthy()
     expect(screen.getByText('13m')).toBeTruthy()
+
+    const destinations = document.querySelectorAll('.mobile-stop-reachable-favorite')
+    expect(destinations).toHaveLength(2)
+    expect(destinations[0]?.getAttribute('data-opposite')).toBeNull()
+    expect(destinations[1]?.getAttribute('data-opposite')).toBe('true')
   })
 })

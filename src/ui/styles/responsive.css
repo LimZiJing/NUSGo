@@ -886,14 +886,18 @@
     overflow: hidden;
   }
 
-  .mobile-stop-reachable-favorites-icon {
+  .mobile-stop-reachable-favorites-arrow {
     flex: 0 0 auto;
-    color: #ca8a04;
-    font-size: 14px;
+    color: #64748b;
+    font-size: 16px;
     line-height: 1;
   }
 
   .mobile-stop-reachable-favorite {
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 3px;
     min-width: 0;
     max-width: 7rem;
     padding: 2px 6px;
@@ -906,6 +910,18 @@
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .mobile-stop-reachable-favorite[data-opposite='true'] {
+    border-color: #93c5fd;
+    color: #1d4ed8;
+    background: #dbeafe;
+  }
+
+  .mobile-stop-reachable-favorite svg {
+    flex: 0 0 auto;
+    width: 11px;
+    height: 11px;
   }
 
   .mobile-stops-sheet .route-chip-public {

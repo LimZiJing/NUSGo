@@ -14,7 +14,7 @@ export type MobileStopArrivalLoader = (
   signal: AbortSignal,
 ) => Promise<ShuttleArrivalSnapshot>
 
-export type MobileStopArrivalsStatus = 'idle' | 'loading' | 'ready' | 'error'
+export type MobileStopArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
 
 export interface MobileStopArrivalsState {
   readonly status: MobileStopArrivalsStatus
@@ -23,6 +23,7 @@ export interface MobileStopArrivalsState {
 }
 
 interface ArrivalRequestState {
+  readonly stopKey: string | null
   readonly status: MobileStopArrivalsStatus
   readonly snapshot: ShuttleArrivalSnapshot | null
 }
@@ -37,6 +38,7 @@ export function useMobileStopArrivals(
   stops: readonly MobileStopArrivalStopRequest[],
 ): MobileStopArrivalsState {
   const [state, setState] = useState<ArrivalRequestState>(() => ({
+    stopKey: null,
     status: 'idle',
     snapshot: null,
   }))
@@ -54,15 +56,23 @@ export function useMobileStopArrivals(
     const load = async (): Promise<void> => {
       controller?.abort()
       controller = new AbortController()
-      setState({ status: 'loading', snapshot: null })
+      setState((previous) => ({
+        stopKey,
+        status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
+        snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+      }))
 
       try {
         const snapshot = await loadArrivals(stops, controller.signal)
         if (disposed) return
-        setState({ status: 'ready', snapshot })
+        setState({ stopKey, status: 'ready', snapshot })
       } catch (error: unknown) {
         if (disposed || isAbortError(error)) return
-        setState({ status: 'error', snapshot: null })
+        setState((previous) => ({
+          stopKey,
+          status: 'error',
+          snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+        }))
       }
 
       if (!disposed) {
@@ -86,7 +96,7 @@ export function useMobileStopArrivals(
 
   const visibleState: ArrivalRequestState = hasActiveStops
     ? state
-    : { status: 'idle', snapshot: null }
+    : { stopKey: null, status: 'idle', snapshot: null }
 
-  return { ...visibleState, nowMs }
+  return { status: visibleState.status, snapshot: visibleState.snapshot, nowMs }
 }

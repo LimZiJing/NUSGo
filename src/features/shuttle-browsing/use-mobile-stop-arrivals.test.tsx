@@ -32,7 +32,12 @@ function Probe({
   readonly active: boolean
 }) {
   const state = useMobileStopArrivals(client, active, stops)
-  return <output data-testid="status">{state.status}</output>
+  return (
+    <>
+      <output data-testid="status">{state.status}</output>
+      <output data-testid="snapshot">{state.snapshot?.observedAt ?? 'none'}</output>
+    </>
+  )
 }
 
 describe('useMobileStopArrivals', () => {
@@ -50,6 +55,31 @@ describe('useMobileStopArrivals', () => {
     })
 
     expect(client).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the previous snapshot visible while a refresh is in flight', async () => {
+    vi.useFakeTimers()
+    let resolveRefresh: (value: ShuttleArrivalSnapshot) => void = () => undefined
+    const client: MobileStopArrivalLoader = vi.fn()
+      .mockResolvedValueOnce(snapshot)
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveRefresh = resolve
+      }))
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+
+    expect(screen.getByTestId('status').textContent).toBe('refreshing')
+    expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
+
+    resolveRefresh(snapshot)
+    await act(async () => undefined)
+    expect(screen.getByTestId('status').textContent).toBe('ready')
   })
 
   it('does not request while inactive and aborts an active request during cleanup', async () => {

@@ -22,7 +22,8 @@ Task-specific user instructions take precedence over this guidance. If two repos
 ## Mandatory repository rules
 
 - Inspect repository status before editing and preserve unrelated user changes.
-- Keep main stable. Use one direct, descriptive branch per coherent feature or larger refactor; do not use a codex/ prefix.
+- Keep the shared checkout on local `main`. Unless the user explicitly requests otherwise, create a fresh managed worktree from local `main` for each ticket and implement it on one direct, descriptive branch there; do not use a `codex/` prefix or reuse a worktree from another ticket.
+- After a ticket's pull request is accepted and merged, archive or remove its worktree, then run `git worktree prune` to clear stale metadata. Do not clean up worktrees for active tasks or open pull requests.
 - Use Conventional Commits. Do not create WIP, fixup, temporary, or checkpoint commits, and do not amend or rewrite a commit after reporting it.
 - Do not commit node_modules, dist, generated caches, temporary files, secrets, .env files, credentials, or machine-specific output.
 - Do not add a dependency unless the current requirement needs it and existing capabilities are insufficient.

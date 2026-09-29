@@ -143,7 +143,11 @@ export function getMobileStopSheetSelection(
           routeName: route.name,
           routeColor: route.color,
           reachableFavoriteStops: getReachableFavoriteStops(index, route.id, stop.id, favorites)
-            .map(({ id, shortName }) => ({ id, name: shortName })),
+            .map(({ id, shortName }) => ({
+              id,
+              name: shortName,
+              isOpposite: stop.opposite === id,
+            })),
         }]
         : []
     }),

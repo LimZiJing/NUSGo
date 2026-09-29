@@ -48,7 +48,33 @@ describe('mobile stop view state', () => {
     )
 
     expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
-      { id: 'STOP-C', name: 'C' },
+      { id: 'STOP-C', name: 'C', isOpposite: false },
+    ])
+  })
+
+  it('marks a reachable favourite as opposite when the route reaches the selected stop opposite', () => {
+    const network = createValidTransitNetwork()
+    network.routes[0].stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-A']
+    network.stops.push({
+      id: 'STOP-C',
+      longName: 'Stop C',
+      shortName: 'C',
+      latitude: 1.2,
+      longitude: 103.2,
+      services: ['A1'],
+      opposite: null,
+    })
+    const index = createTransitIndex(network)
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      ['STOP-B', 'STOP-C'],
+    )
+
+    expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
+      { id: 'STOP-B', name: 'B', isOpposite: true },
+      { id: 'STOP-C', name: 'C', isOpposite: false },
     ])
   })
 

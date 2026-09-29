@@ -250,12 +250,16 @@ function App() {
         : mobileNavigation.activeTab === 'stops'
           ? stopsSheetRef.current?.getBoundingClientRect().height ?? 0
           : contextualPanelRef.current?.getBoundingClientRect().height ?? 0
-      const tabBarHeight = mobileTabBarRef.current?.getBoundingClientRect().height ?? 0
+      const tabBarRect = mobileTabBarRef.current?.getBoundingClientRect()
+      const mapShellBottom = mapShellRef.current?.getBoundingClientRect().bottom ?? viewportHeight
+      const tabBarInset = tabBarRect && tabBarRect.height > 0
+        ? Math.max(0, mapShellBottom - tabBarRect.top)
+        : 0
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
         tripCardHeight: 0,
-        contextualSheetHeight: activeSheetHeight + tabBarHeight,
+        contextualSheetHeight: activeSheetHeight + tabBarInset,
         tripCardVisible: false,
         contextualSheetVisible: isMobileViewport,
       })

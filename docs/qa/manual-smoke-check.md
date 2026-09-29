@@ -93,6 +93,31 @@ The issue #140 and #141 screenshots document the pre-consolidation layout with s
 - [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
+## Issue #151 initial verification — 2026-09-28
+
+These measurements describe the initial implementation before the follow-up refinement.
+
+Codex Chrome DevTools, local Vite app, mobile/touch emulation:
+
+- At 390 × 844, the centered white pill matched the supplied reference. It measured 366 × 112px with 12px side insets and a 16px bottom gap; the three controls had equal 116px × 96px targets, visible labels, and a restrained active-state color change.
+- The Map views navigation exposed Explore, Stops, and Plan. Tab switching restored the collapsed Explore sheet and expanded Stops/Plan sheets. The Kent Ridge MRT marker stayed at (189, 344) across the switches.
+- Pressing Tab moved focus to Plan and showed the 3px visible focus outline while Stops remained the selected view.
+- At 390 × 500, used as a software-keyboard viewport approximation, the pill stayed 16px above the viewport bottom and the Plan origin field remained visible above it. The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised; a physical safe-area device and real software keyboard were unavailable.
+- At 769px, the mobile bar was hidden and the desktop contextual panel remained visible.
+
+## Issue #151 navigation refinement — 2026-09-29
+
+Codex Chrome DevTools, local Vite app, mobile/touch emulation:
+
+- At 390 × 844, the pill measured 358 × 56px at x=16px and y=772px. Its three buttons measured 114 × 44px, with 20px icons, 12px labels, and a 16px bottom gap.
+- A full-width 72px solid-white band began at the pill’s top edge and continued to the viewport bottom. It used `pointer-events: none`; the active sheet ended at the band’s top edge in expanded and compact states in Explore, Stops, and Plan.
+- At 390 × 500, expanded and compact states were checked in all three tabs. Stops and Plan scroll areas reached their last controls above the pill.
+- Before the later handle-row revert, the compact Stops handle measured y=372–416px while the pill began at y=428px. The handle geometry was not remeasured after that revert.
+- Stable map insets matched the active sheet height plus the 72px navigation reservation and existing 12px margin. The map remained visible above the active sheet and did not show through the bottom band.
+- Keyboard Tab moved focus from Explore to Stops and displayed the 3px focus outline with a 2px offset. Enter activated the focused tab. Collapsing each sheet, switching away, and returning retained each tab’s compact state.
+- At 769px, the mobile bar and band were hidden, the desktop contextual panel remained visible, and the map bottom inset was 0px.
+- The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised. The 390 × 500 viewport approximated reduced space but did not open a real software keyboard; a physical safe-area device was unavailable.
+
 ## Issue #117 targeted verification — 2026-09-25
 
 This recorded pass predates the shared grab handle and documents the previous mobile controls.

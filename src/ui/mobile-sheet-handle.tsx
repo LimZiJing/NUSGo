@@ -39,6 +39,11 @@ interface DragStop {
   readonly bottom: number
 }
 
+interface HiddenSheetContent {
+  readonly element: HTMLElement
+  readonly value: string
+}
+
 interface DragSession {
   readonly button: HTMLButtonElement
   readonly sheet: HTMLElement
@@ -47,7 +52,7 @@ interface DragSession {
   readonly startHeight: number
   readonly stops: readonly DragStop[]
   readonly styles: InlineSheetStyles
-  readonly hiddenContent: readonly { readonly element: HTMLElement; readonly value: string }[]
+  readonly hiddenContent: readonly HiddenSheetContent[]
   currentHeight: number
   currentBottom: number
   moved: boolean
@@ -101,16 +106,15 @@ function setInlineSheetHeight(sheet: HTMLElement, height: number): void {
   sheet.style.setProperty('height', `${height}px`, 'important')
 }
 
-function setContentHidden(sheet: HTMLElement, hidden: boolean): void {
-  for (const content of sheet.querySelectorAll<HTMLElement>('[data-mobile-sheet-content]')) {
-    if (hidden) content.setAttribute('hidden', '')
-    else content.removeAttribute('hidden')
-  }
+function readHiddenSheetContent(sheet: HTMLElement): HiddenSheetContent[] {
+  return Array.from(sheet.children)
+    .filter((element): element is HTMLElement => (
+      element instanceof HTMLElement && element.matches('[data-mobile-sheet-content][hidden]')
+    ))
+    .map((element) => ({ element, value: element.getAttribute('hidden') ?? '' }))
 }
 
-function restoreHiddenContent(
-  hiddenContent: DragSession['hiddenContent'],
-): void {
+function restoreHiddenContent(hiddenContent: readonly HiddenSheetContent[]): void {
   for (const { element, value } of hiddenContent) element.setAttribute('hidden', value)
 }
 
@@ -123,8 +127,7 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   const previousTripExpanded = sheet.classList.contains('trip-controls-expanded')
   const previousTripCollapsed = sheet.classList.contains('trip-controls-collapsed')
   const previousContextualMinimized = sheet.classList.contains('contextual-panel-minimized')
-  const hiddenContent = Array.from(sheet.querySelectorAll<HTMLElement>('[data-mobile-sheet-content][hidden]'))
-    .map((element) => ({ element, hiddenValue: element.getAttribute('hidden') ?? '' }))
+  const hiddenContent = readHiddenSheetContent(sheet)
 
   sheet.dataset.mobileSheetMeasuring = detent
   sheet.dataset.detent = detent
@@ -152,7 +155,7 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   sheet.classList.toggle('trip-controls-expanded', previousTripExpanded)
   sheet.classList.toggle('trip-controls-collapsed', previousTripCollapsed)
   sheet.classList.toggle('contextual-panel-minimized', previousContextualMinimized)
-  for (const { element, hiddenValue } of hiddenContent) element.setAttribute('hidden', hiddenValue)
+  restoreHiddenContent(hiddenContent)
   if (previousMeasurement === null) {
     sheet.removeAttribute('data-mobile-sheet-measuring')
   } else {
@@ -307,8 +310,7 @@ export function MobileSheetHandle({
       startHeight,
       stops,
       styles: readInlineSheetStyles(sheet),
-      hiddenContent: Array.from(sheet.querySelectorAll<HTMLElement>('[data-mobile-sheet-content][hidden]'))
-        .map((element) => ({ element, value: element.getAttribute('hidden') ?? '' })),
+      hiddenContent: readHiddenSheetContent(sheet),
       currentHeight: startHeight,
       currentBottom: animationPosition?.bottom ?? getBottomInset(detent),
       moved: false,
@@ -361,7 +363,7 @@ export function MobileSheetHandle({
     }, 0)
 
     const target = stopForVisibleHeight(session.stops, session.currentHeight)
-    setContentHidden(session.sheet, target.detent === 'collapsed')
+    if (target.detent === 'collapsed') restoreHiddenContent(session.hiddenContent)
     if (target.detent === 'collapsed' && session.sheet.contains(document.activeElement)) {
       session.button.focus()
     }

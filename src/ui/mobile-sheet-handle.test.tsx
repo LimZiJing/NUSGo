@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -206,6 +206,62 @@ describe('MobileSheetHandle', () => {
     expect(panel.style.minHeight).toBe('')
     expect(panel.style.maxHeight).toBe('')
     expect(panel.hasAttribute('data-mobile-sheet-dragging')).toBe(false)
+  })
+
+  it.each(['Explore', 'Plan'])('keeps %s content visible after drag-collapse and tap-reopen', async (label) => {
+    function Harness() {
+      const [detent, setDetent] = useState<MobileSheetDetent>('partial')
+      return (
+        <section aria-label={`${label} panel`} data-mobile-sheet data-detent={detent}>
+          <div id={`${label}-content`} data-mobile-sheet-content>
+            {label} content
+            <div data-mobile-sheet-content hidden data-testid="independently-hidden-content">
+              Hidden nested content
+            </div>
+          </div>
+          <div className="mobile-sheet-handle-row">
+            <MobileSheetHandle
+              detent={detent}
+              label={`${label} panel`}
+              controlsId={`${label}-content`}
+              onDetentChange={setDetent}
+            />
+          </div>
+        </section>
+      )
+    }
+
+    render(<Harness />)
+    const panel = screen.getByRole('region', { name: `${label} panel` })
+    const content = panel.querySelector<HTMLElement>('[data-mobile-sheet-content]')
+    const independentlyHidden = screen.getByTestId('independently-hidden-content')
+    const button = screen.getByRole('button', { name: `Expand ${label} panel` })
+    vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => {
+      const measuring = panel.getAttribute('data-mobile-sheet-measuring')
+      if (measuring === 'collapsed') return createRect(44)
+      if (measuring === 'partial') return createRect(200)
+      if (measuring === 'full') return createRect(600)
+      const inlineHeight = Number.parseFloat(panel.style.height)
+      if (panel.style.height) return createRect(inlineHeight)
+      return createRect(panel.dataset.detent === 'collapsed' ? 44 : 200)
+    })
+
+    act(() => {
+      firePointer(button, 'pointerdown', { pointerId: 6, clientY: 100 })
+      expect(independentlyHidden.hasAttribute('hidden')).toBe(true)
+      firePointer(button, 'pointermove', { pointerId: 6, clientY: 400 })
+      firePointer(button, 'pointerup', { pointerId: 6, clientY: 400 })
+    })
+    expect(panel.dataset.detent).toBe('collapsed')
+    expect(content?.hasAttribute('hidden')).toBe(false)
+    expect(independentlyHidden.hasAttribute('hidden')).toBe(true)
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1))
+    act(() => button.click())
+
+    expect(panel.dataset.detent).toBe('partial')
+    expect(content?.hasAttribute('hidden')).toBe(false)
+    expect(independentlyHidden.hasAttribute('hidden')).toBe(true)
   })
 
   it('snaps an upward drag from partial to full and suppresses the following click', () => {

@@ -25,7 +25,7 @@ function getTrackingFixCoordinate(location: LocationTrackingState): MapCoordinat
   return [longitude, latitude]
 }
 
-export function getMobileRecenterTarget(location: LocationTrackingState): MapResetTarget {
+export function getLocationControlTarget(location: LocationTrackingState): MapResetTarget {
   return {
     kind: 'campus',
     center: getTrackingFixCoordinate(location) ?? KENT_RIDGE_MRT_CENTER,

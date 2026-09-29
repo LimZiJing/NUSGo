@@ -17,8 +17,7 @@ import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile
 import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
 import { LocationControl } from '../ui/location-control'
-import { MapRecenterControl } from '../ui/map-recenter-control'
-import { isFocusInsideMapRecenterControl } from '../ui/map-recenter-control-focus'
+import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MobileTabBar } from '../ui/mobile-tab-bar'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
@@ -50,7 +49,7 @@ import { createBrowserLocationTracker } from '../infrastructure/location/browser
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
   const mapContainer = useRef<HTMLDivElement>(null)
-  const mapRecenterControlRef = useRef<HTMLDivElement>(null)
+  const locationControlRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLElement>(null)
   const contextualPanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
@@ -107,7 +106,7 @@ function App() {
       const isMobile = getIsMobileViewport()
       setIsMobileViewport(isMobile)
       if (!isMobile) {
-        if (isFocusInsideMapRecenterControl(mapRecenterControlRef.current)) {
+        if (isFocusInsideLocationControl(locationControlRef.current)) {
           focusTripControlAfterOverlayRef.current = true
         }
       }
@@ -397,16 +396,13 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        <MapRecenterControl
-          visible={isMobileViewport && !(
+        <LocationControl
+          visible={!isMobileViewport || !(
             mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.expanded
           )}
           onRootChange={(root) => {
-            mapRecenterControlRef.current = root
+            locationControlRef.current = root
           }}
-          onRecenter={commands.recenterMap}
-        />
-        <LocationControl
           topOffset={mapInsets.top || 76}
           searching={state.location.status === 'requesting'}
           onLocate={commands.locateUser}
@@ -450,7 +446,7 @@ function App() {
             mobileViewport={isMobileViewport}
             onExpandedChange={(expanded) => {
               if (!isMobileViewport) return
-              if (expanded && isFocusInsideMapRecenterControl(mapRecenterControlRef.current)) {
+              if (expanded && isFocusInsideLocationControl(locationControlRef.current)) {
                 focusTripControlAfterOverlayRef.current = true
               }
               dispatchMobileNavigation(expanded

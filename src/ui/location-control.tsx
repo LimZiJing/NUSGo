@@ -1,15 +1,26 @@
 import type { CSSProperties } from 'react'
 
 export interface LocationControlProps {
+  readonly visible?: boolean
+  readonly onRootChange?: (root: HTMLDivElement | null) => void
   readonly topOffset: number
   readonly searching: boolean
   readonly onLocate: () => void
 }
 
-export function LocationControl({ topOffset, searching, onLocate }: LocationControlProps) {
+export function LocationControl({
+  visible = true,
+  onRootChange,
+  topOffset,
+  searching,
+  onLocate,
+}: LocationControlProps) {
+  if (!visible) return null
+
   return (
     <div
       className="location-control"
+      ref={onRootChange}
       style={{ '--location-control-top': `${Math.max(0, topOffset)}px` } as CSSProperties}
     >
       <button

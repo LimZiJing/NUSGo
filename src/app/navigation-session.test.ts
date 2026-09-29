@@ -182,117 +182,6 @@ const venueResult: VenueSearchResult = {
 }
 
 describe('navigation session', () => {
-  it('recenters on Kent Ridge independently of the selected map context', async () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
-
-    session.selectVenue(venueResult)
-    session.selectRoute('A1')
-    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
-    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
-    session.recenterMap()
-
-    expect(dependencies.map.resetView).toHaveBeenLastCalledWith({
-      kind: 'campus',
-      center: [103.784413, 1.29482],
-      zoom: 15,
-    })
-    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
-    expect(session.getState().selectedRouteId).toBe('A1')
-    expect(session.getState().tripRequest).toEqual({
-      origin: { kind: 'venue', id: 'COM1' },
-      destination: { kind: 'stop', id: 'STOP-A' },
-    })
-    session.dispose()
-  })
-
-  it('recenters on the latest tracking fix even when its marker is hidden', () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
-    const locationState: LocationTrackingState = {
-      status: 'tracking',
-      latestFix: {
-        longitude: 103.781234,
-        latitude: 1.296543,
-        accuracy: 18,
-        timestamp: 1_000,
-      },
-    }
-
-    session.enableLocationTracking()
-    locationTracker.emit(locationState)
-    session.hideLocationMarker()
-    session.recenterMap()
-
-    expect(dependencies.map.resetView).toHaveBeenCalledWith({
-      kind: 'campus',
-      center: [103.781234, 1.296543],
-      zoom: 15,
-    })
-    expect(session.getState().locationMarkerVisible).toBe(false)
-    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
-    session.dispose()
-  })
-
-  it.each([
-    ['stale', { status: 'stale', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['requesting', { status: 'requesting', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['disabled', { status: 'disabled', latestFix: null }],
-    ['denied', { status: 'denied', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['unavailable', { status: 'unavailable', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['timeout', { status: 'timeout', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['invalid', { status: 'invalid', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-    ['tracking without a fix', { status: 'tracking', latestFix: null }],
-    ['tracking with invalid coordinates', { status: 'tracking', latestFix: { longitude: Number.NaN, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
-  ] as const)('falls back to Kent Ridge when location is %s', (_description, locationState) => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
-    locationTracker.emit(locationState)
-
-    session.recenterMap()
-
-    expect(dependencies.map.resetView).toHaveBeenCalledWith({
-      kind: 'campus',
-      center: [103.784413, 1.29482],
-      zoom: 15,
-    })
-    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
-    session.dispose()
-  })
-
-  it('moves to a tracking fix only after an explicit recenter action', () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
-    const firstFix: LocationTrackingState = {
-      status: 'tracking',
-      latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 },
-    }
-    const nextFix: LocationTrackingState = {
-      ...firstFix,
-      latestFix: { longitude: 103.782, latitude: 1.297, accuracy: 10, timestamp: 2_000 },
-    }
-
-    locationTracker.emit(firstFix)
-    expect(dependencies.map.resetView).not.toHaveBeenCalled()
-
-    session.recenterMap()
-    expect(dependencies.map.resetView).toHaveBeenCalledOnce()
-    expect(dependencies.map.resetView).toHaveBeenLastCalledWith({
-      kind: 'campus',
-      center: [103.781, 1.296],
-      zoom: 15,
-    })
-    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
-
-    locationTracker.emit(nextFix)
-    expect(dependencies.map.resetView).toHaveBeenCalledOnce()
-    session.dispose()
-  })
-
   it('starts with stable application defaults', () => {
     expect(createInitialNavigationSessionState()).toEqual({
       venues: null,
@@ -2019,7 +1908,7 @@ describe('navigation session', () => {
     expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
   })
 
-  it('zooms to the first location fix after locate is pressed and recenters on later presses', () => {
+  it('zooms to the first location fix after locate is pressed and focuses the latest fix on later presses', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
@@ -2048,5 +1937,66 @@ describe('navigation session', () => {
     session.locateUser()
     expect(dependencies.map.focusCurrentLocation).toHaveBeenLastCalledWith(secondFix.latestFix)
     expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledTimes(2)
+  })
+
+  it('uses the Kent Ridge fallback before requesting a location fix', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    session.locateUser()
+
+    expect(dependencies.map.resetView).toHaveBeenCalledWith({
+      kind: 'campus',
+      center: [103.784413, 1.29482],
+      zoom: 15,
+    })
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+  })
+
+  it('restarts a stale location watch before requesting a fresh fix', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit({
+      status: 'stale',
+      latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 },
+    })
+
+    session.locateUser()
+
+    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    expect(dependencies.map.resetView).toHaveBeenCalledWith({
+      kind: 'campus',
+      center: [103.784413, 1.29482],
+      zoom: 15,
+    })
+    session.dispose()
+  })
+
+  it.each([
+    ['stale', { status: 'stale', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['requesting', { status: 'requesting', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['denied', { status: 'denied', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['unavailable', { status: 'unavailable', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['timeout', { status: 'timeout', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['invalid', { status: 'invalid', latestFix: { longitude: 103.781, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+    ['tracking without a fix', { status: 'tracking', latestFix: null }],
+    ['tracking with invalid coordinates', { status: 'tracking', latestFix: { longitude: Number.NaN, latitude: 1.296, accuracy: 10, timestamp: 1_000 } }],
+  ] as const)('uses the Kent Ridge fallback when location is %s', (_description, locationState) => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit(locationState)
+
+    session.locateUser()
+
+    expect(dependencies.map.resetView).toHaveBeenCalledWith({
+      kind: 'campus',
+      center: [103.784413, 1.29482],
+      zoom: 15,
+    })
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    session.dispose()
   })
 })

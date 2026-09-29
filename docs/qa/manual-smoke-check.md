@@ -93,6 +93,16 @@ The issue #140 and #141 screenshots document the pre-consolidation layout with s
 - [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
+## Issue #151 targeted verification — 2026-09-28
+
+Codex Chrome DevTools, local Vite app, mobile/touch emulation:
+
+- At 390 × 844, the centered white pill matched the supplied reference. It measured 366 × 112px with 12px side insets and a 16px bottom gap; the three controls had equal 116px × 96px targets, visible labels, and a restrained active-state color change.
+- The Map views navigation exposed Explore, Stops, and Plan. Tab switching restored the collapsed Explore sheet and expanded Stops/Plan sheets. The Kent Ridge MRT marker stayed at (189, 344) across the switches.
+- Pressing Tab moved focus to Plan and showed the 3px visible focus outline while Stops remained the selected view.
+- At 390 × 500, used as a software-keyboard viewport approximation, the pill stayed 16px above the viewport bottom and the Plan origin field remained visible above it. The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised; a physical safe-area device and real software keyboard were unavailable.
+- At 769px, the mobile bar was hidden and the desktop contextual panel remained visible.
+
 ## Issue #117 targeted verification — 2026-09-25
 
 This recorded pass predates the shared grab handle and documents the previous mobile controls.

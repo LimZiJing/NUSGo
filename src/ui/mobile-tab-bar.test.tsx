@@ -8,6 +8,40 @@ import { MobileTabBar } from './mobile-tab-bar'
 afterEach(cleanup)
 
 describe('MobileTabBar', () => {
+  it('exposes exactly one current map view for assistive technology', () => {
+    const tabs = [
+      { id: 'explore', label: 'Explore' },
+      { id: 'stops', label: 'Stops' },
+      { id: 'plan', label: 'Plan' },
+    ] as const
+    const view = render(<MobileTabBar activeTab="explore" onSelectTab={vi.fn()} />)
+
+    for (const activeTab of tabs) {
+      view.rerender(<MobileTabBar activeTab={activeTab.id} onSelectTab={vi.fn()} />)
+
+      for (const tab of tabs) {
+        const current = screen.getByRole('button', { name: tab.label })
+        expect(current.getAttribute('aria-current')).toBe(
+          tab.id === activeTab.id ? 'page' : null,
+        )
+      }
+    }
+  })
+
+  it('keeps each map view label accessible and hides its decorative icon', () => {
+    const { container } = render(<MobileTabBar activeTab="stops" onSelectTab={vi.fn()} />)
+
+    for (const label of ['Explore', 'Stops', 'Plan']) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy()
+    }
+
+    const icons = container.querySelectorAll('svg[aria-hidden="true"]')
+    expect(icons).toHaveLength(3)
+    for (const icon of icons) {
+      expect(icon.getAttribute('focusable')).toBe('false')
+    }
+  })
+
   it('exposes the active map view and lets the user select another tab', async () => {
     const user = userEvent.setup()
     const onSelectTab = vi.fn()

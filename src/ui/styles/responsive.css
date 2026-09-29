@@ -16,7 +16,10 @@
     height: var(--mobile-viewport-height, 100dvh);
     min-height: var(--mobile-viewport-height, 100svh);
     overflow: hidden;
-    --mobile-tab-bar-height: calc(56px + max(8px, env(safe-area-inset-bottom)));
+    --mobile-tab-bar-pill-height: 112px;
+    --mobile-tab-bar-height: calc(
+      var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
+    );
     --mobile-sheet-max-height: min(
       50dvh,
       calc(var(--mobile-viewport-height, 100dvh) - var(--mobile-tab-bar-height) - 24px)
@@ -918,36 +921,62 @@
   .mobile-tab-bar {
     position: absolute;
     z-index: 14;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    height: var(--mobile-tab-bar-height);
-    padding: 4px max(12px, env(safe-area-inset-right))
-      max(8px, env(safe-area-inset-bottom))
-      max(12px, env(safe-area-inset-left));
-    border-top: 1px solid #dbe1e8;
-    background: rgb(255 255 255 / 97%);
-    box-shadow: 0 -2px 8px rgb(15 23 42 / 12%);
+    gap: 0;
+    height: var(--mobile-tab-bar-pill-height);
+    padding: 8px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
     box-sizing: border-box;
   }
 
   .mobile-tab-bar button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     min-width: 0;
     min-height: 44px;
     border: 0;
-    border-radius: 8px;
-    color: #475569;
+    border-radius: 999px;
+    color: #4b5563;
     background: transparent;
-    font: 600 14px/1.2 system-ui, sans-serif;
+    font: 500 14px/1.2 system-ui, sans-serif;
     cursor: pointer;
   }
 
   .mobile-tab-bar button[aria-current='page'] {
     color: #0f172a;
-    background: #e8eef5;
+    font-weight: 600;
+  }
+
+  .mobile-tab-icon {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-tab-icon svg {
+    width: 28px;
+    height: 28px;
+    overflow: visible;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mobile-tab-label {
+    white-space: nowrap;
   }
 
   .mobile-tab-bar button:focus-visible,

@@ -93,9 +93,7 @@ refresh interval and the server's upstream refresh interval stay aligned. The
 120-second limit is a maximum stale-data boundary, not permission to claim that
 a stale arrival is live.
 
-The current browser and Vite adapters still use a 45-second cache. The 30-second
-window is a documented target policy and becomes active when the corresponding
-implementation change is made.
+The browser and Vite adapters use the 30-second cache and freshness policy.
 
 ## Waiting calculation
 

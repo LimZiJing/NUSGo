@@ -70,9 +70,8 @@ The browser-side boundary validation is in
 
 ## Freshness and failures
 
-- The current server cache is fresh for 45 seconds. The recommended NavUS
-  application policy is a 30-second cache and freshness window; this remains a
-  target until the implementation is updated.
+- The server cache uses the 30-second application cache and freshness window.
+  The provider contract and response validation remain unchanged.
 - Expired upstream data is not returned as normal live data.
 - A failed refresh removes only the affected stop from the normalized result.
 - If every requested stop fails, the server returns HTTP 503.

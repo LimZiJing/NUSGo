@@ -156,11 +156,13 @@ describe('MobileSheetHandle', () => {
   })
 
   it('snaps an upward drag from partial to full and suppresses the following click', () => {
-    const { button, onDetentChange } = renderHandle('partial')
+    const { button, onDetentChange, panel } = renderHandle('partial')
 
     firePointer(button, 'pointerdown', { pointerId: 1, button: 0, clientY: 300 })
     firePointer(button, 'pointermove', { pointerId: 1, clientY: 0 })
+    expect((panel as HTMLElement).style.getPropertyPriority('height')).toBe('important')
     firePointer(button, 'pointerup', { pointerId: 1, clientY: 0 })
+    expect((panel as HTMLElement).style.getPropertyPriority('height')).toBe('important')
     button.click()
 
     expect(onDetentChange).toHaveBeenCalledTimes(1)

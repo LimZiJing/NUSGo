@@ -91,6 +91,10 @@ function restoreSheet(sheet: HTMLElement, styles: InlineSheetStyles): void {
   restoreInlineSheetStyles(sheet, styles)
 }
 
+function setInlineSheetHeight(sheet: HTMLElement, height: number): void {
+  sheet.style.setProperty('height', `${height}px`, 'important')
+}
+
 function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): number {
   const styles = readInlineSheetStyles(sheet)
   const previousMeasurement = sheet.getAttribute('data-mobile-sheet-measuring')
@@ -160,7 +164,7 @@ function updateDragHeight(session: DragSession, clientY: number): void {
   session.currentHeight = height
   session.currentBottom = interpolateBottom(session.stops, visibleHeight)
   session.requestedHeight = requestedHeight
-  session.sheet.style.height = `${visibleHeight}px`
+  setInlineSheetHeight(session.sheet, visibleHeight)
   session.sheet.style.bottom = `${session.currentBottom}px`
 }
 
@@ -271,7 +275,7 @@ export function MobileSheetHandle({
 
     dragRef.current = session
     sheet.dataset.mobileSheetDragging = 'true'
-    sheet.style.height = `${startHeight}px`
+    setInlineSheetHeight(sheet, startHeight)
     sheet.style.maxHeight = 'var(--mobile-viewport-height)'
     sheet.style.overflow = 'hidden'
     sheet.style.transition = 'none'
@@ -328,7 +332,7 @@ export function MobileSheetHandle({
     session.sheet.dataset.mobileSheetSettling = target.detent
     session.sheet.style.transition = `height ${duration}ms ${easing}, bottom ${duration}ms ${easing}`
     void session.sheet.getBoundingClientRect().height
-    session.sheet.style.height = `${target.height}px`
+    setInlineSheetHeight(session.sheet, target.height)
     session.sheet.style.bottom = `${target.bottom}px`
     changeDetent(target.detent)
 

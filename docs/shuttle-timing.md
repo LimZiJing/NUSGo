@@ -80,16 +80,22 @@ planner.
 Freshness is measured from each stop's `observedAt`, not only from the time
 NavUS fetched the response.
 
-- A snapshot observed within 45 seconds is fresh and may be used for normal
+- The recommended live-arrival policy is a 30-second freshness window. A
+  snapshot observed within 30 seconds is fresh and may be used for normal
   live ranking.
-- A snapshot older than 45 seconds is stale for normal ranking. It may be kept
+- A snapshot older than 30 seconds is stale for normal ranking. It may be kept
   for diagnostics or retry handling, but it must not silently become a normal
   live estimate.
 - A snapshot older than 120 seconds is expired and unavailable.
 
-The server may cache responses for up to 45 seconds. The 120-second limit is a
-maximum stale-data boundary, not permission to claim that a stale arrival is
-live.
+The recommended server cache duration is also 30 seconds, so the browser
+refresh interval and the server's upstream refresh interval stay aligned. The
+120-second limit is a maximum stale-data boundary, not permission to claim that
+a stale arrival is live.
+
+The current browser and Vite adapters still use a 45-second cache. The 30-second
+window is a documented target policy and becomes active when the corresponding
+implementation change is made.
 
 ## Waiting calculation
 

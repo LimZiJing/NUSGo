@@ -1163,7 +1163,7 @@
   [data-mobile-sheet][data-detent='partial'] {
     top: auto;
     bottom: var(--mobile-tab-bar-height);
-    height: auto !important;
+    height: var(--mobile-sheet-max-height) !important;
     min-height: var(--mobile-sheet-min-height);
     max-height: var(--mobile-sheet-max-height);
     overflow: hidden;
@@ -1200,7 +1200,7 @@
   [data-mobile-sheet-measuring='partial'] {
     top: auto;
     bottom: var(--mobile-tab-bar-height);
-    height: auto !important;
+    height: var(--mobile-sheet-max-height) !important;
     min-height: var(--mobile-sheet-min-height) !important;
     max-height: var(--mobile-sheet-max-height);
   }
@@ -1214,6 +1214,8 @@
     max-height: none;
   }
 
+  .trip-controls[data-detent='partial'],
+  .trip-controls[data-mobile-sheet-measuring='partial'],
   .trip-controls[data-detent='full'] {
     align-content: start;
   }

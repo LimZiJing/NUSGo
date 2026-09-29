@@ -8,6 +8,8 @@ export interface BusStopCardProps {
   readonly distanceMeters: number | null
   readonly favorite: boolean
   readonly expanded: boolean
+  readonly live?: boolean
+  readonly liveArrivalMessage?: string | null
   readonly departures: readonly BusStopDeparture[]
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onToggleFavorite: (stopId: string) => void
@@ -26,6 +28,8 @@ export function BusStopCard({
   distanceMeters,
   favorite,
   expanded,
+  live = false,
+  liveArrivalMessage = null,
   departures,
   publicServices,
   onToggleFavorite,
@@ -50,7 +54,7 @@ export function BusStopCard({
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
             )}
           </span>
-          {expanded && (
+          {expanded && live && (
             <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" leadingDot />
           )}
           <span className="bus-stop-card-favorite-space" aria-hidden="true" />
@@ -78,6 +82,7 @@ export function BusStopCard({
         <div className="bus-stop-card-timings-inner">
           <BusStopTimings
             departures={departures}
+            liveArrivalMessage={liveArrivalMessage}
             publicServices={publicServices}
             onSelectRoute={onSelectRoute}
           />

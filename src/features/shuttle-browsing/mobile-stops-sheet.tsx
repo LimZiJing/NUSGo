@@ -15,6 +15,8 @@ export interface MobileStopSheetSelection {
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly string[]
   readonly departures: readonly MobileStopSheetDeparture[]
+  readonly live: boolean
+  readonly liveArrivalMessage: string | null
 }
 
 export interface MobileStopOverviewSelection {
@@ -39,6 +41,7 @@ interface MobileStopsSheetProps {
   readonly selectedList?: 'nearby' | 'favourites'
   readonly selectedStopFavorite?: boolean
   readonly locationNotice?: string | null
+  readonly liveArrivalMessage?: string | null
   readonly onSelectList?: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite?: (stopId: string) => void
   readonly onToggleExpanded?: (stopId: string) => void
@@ -60,6 +63,7 @@ export function MobileStopsSheet({
   selectedList = 'nearby',
   selectedStopFavorite = false,
   locationNotice = null,
+  liveArrivalMessage = null,
   onSelectList,
   onToggleFavorite,
   onToggleExpanded,
@@ -127,9 +131,15 @@ export function MobileStopsSheet({
                 </button>
               ) : null}
             </div>
+            {liveArrivalMessage && (
+              <p className="mobile-stop-live-arrival-message" role="status">
+                {liveArrivalMessage}
+              </p>
+            )}
             <div className="mobile-stop-departures">
               <BusStopTimings
                 departures={selectedStop.departures}
+                liveArrivalMessage={selectedStop.liveArrivalMessage}
                 publicServices={selectedStop.publicServices.map((serviceNumber) => ({
                   serviceNumber,
                   timings: getPublicServiceTimings(serviceNumber),
@@ -144,6 +154,11 @@ export function MobileStopsSheet({
               <button type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
               <button type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
             </div>
+            {liveArrivalMessage && (
+              <p className="mobile-stop-live-arrival-message" role="status">
+                {liveArrivalMessage}
+              </p>
+            )}
             {locationNotice && selectedList === 'nearby' && (
               <div className="mobile-stops-location-notice" role="status">
                 <span>{locationNotice}</span>
@@ -160,6 +175,8 @@ export function MobileStopsSheet({
                     distanceMeters={distanceMeters}
                     favorite={favorite}
                     expanded={expanded}
+                    live={stop.live}
+                    liveArrivalMessage={stop.liveArrivalMessage}
                     departures={stop.departures}
                     publicServices={stop.publicServices.map((serviceNumber) => ({
                       serviceNumber,

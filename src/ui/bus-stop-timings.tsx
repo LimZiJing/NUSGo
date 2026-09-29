@@ -38,57 +38,66 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
 
 export function BusStopTimings({
   departures,
+  liveArrivalMessage = null,
   publicServices,
   onSelectRoute,
 }: {
   readonly departures: readonly BusStopDeparture[]
+  readonly liveArrivalMessage?: string | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
 }) {
   if (departures.length === 0 && publicServices.length === 0) {
-    return <p>No bus timings available.</p>
+    return <p>{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
 
   return (
-    <ul className="mobile-stop-departure-list" aria-label="Bus timings">
-      {departures.map((departure) => (
-        <li key={departure.routeId} className="mobile-stop-departure-row">
-          <RouteChip
-            routeId={departure.routeId}
-            routeColor={departure.routeColor}
-            ariaLabel={`View ${departure.routeId} route details`}
-            title={departure.routeName}
-            active
-            size="compact"
-            onClick={() => onSelectRoute(departure.routeId)}
-          />
-          {departure.reachableFavoriteStops?.length ? (
-            <span
-              className="mobile-stop-reachable-favorites"
-              aria-label={`Reachable favourite stops: ${departure.reachableFavoriteStops.map(({ name }) => name).join(', ')}`}
-            >
-              <span className="mobile-stop-reachable-favorites-arrow" aria-hidden="true">→</span>
-              {departure.reachableFavoriteStops.map(({ id, name, isOpposite }) => (
-                <span
-                  key={id}
-                  className="mobile-stop-reachable-favorite"
-                  data-opposite={isOpposite ? 'true' : undefined}
-                >
-                  <FavoriteStarIcon filled />
-                  <span>{name}</span>
-                </span>
-              ))}
-            </span>
-          ) : null}
-          <DepartureTimes timings={departure.timings} />
-        </li>
-      ))}
-      {publicServices.map(({ serviceNumber, timings }) => (
-        <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
-          <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
-          <DepartureTimes timings={timings} />
-        </li>
-      ))}
-    </ul>
+    <>
+      {liveArrivalMessage && (
+        <p className="mobile-stop-live-arrival-message" role="status">
+          {liveArrivalMessage}
+        </p>
+      )}
+      <ul className="mobile-stop-departure-list" aria-label="Bus timings">
+        {departures.map((departure) => (
+          <li key={departure.routeId} className="mobile-stop-departure-row">
+            <RouteChip
+              routeId={departure.routeId}
+              routeColor={departure.routeColor}
+              ariaLabel={`View ${departure.routeId} route details`}
+              title={departure.routeName}
+              active
+              size="compact"
+              onClick={() => onSelectRoute(departure.routeId)}
+            />
+            {departure.reachableFavoriteStops?.length ? (
+              <span
+                className="mobile-stop-reachable-favorites"
+                aria-label={`Reachable favourite stops: ${departure.reachableFavoriteStops.map(({ name }) => name).join(', ')}`}
+              >
+                <span className="mobile-stop-reachable-favorites-arrow" aria-hidden="true">→</span>
+                {departure.reachableFavoriteStops.map(({ id, name, isOpposite }) => (
+                  <span
+                    key={id}
+                    className="mobile-stop-reachable-favorite"
+                    data-opposite={isOpposite ? 'true' : undefined}
+                  >
+                    <FavoriteStarIcon filled />
+                    <span>{name}</span>
+                  </span>
+                ))}
+              </span>
+            ) : null}
+            <DepartureTimes timings={departure.timings} />
+          </li>
+        ))}
+        {publicServices.map(({ serviceNumber, timings }) => (
+          <li key={`public-${serviceNumber}`} className="mobile-stop-departure-row">
+            <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
+            <DepartureTimes timings={timings} />
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }

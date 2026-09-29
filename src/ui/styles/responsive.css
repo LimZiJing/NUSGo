@@ -653,6 +653,12 @@
     font-size: 12px;
   }
 
+  .mobile-stop-live-arrival-message {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+  }
+
   .mobile-stops-sheet .mobile-stops-location-notice button {
     flex: 0 0 44px;
     min-width: 44px;

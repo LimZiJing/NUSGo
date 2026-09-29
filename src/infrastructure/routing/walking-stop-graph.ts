@@ -77,6 +77,12 @@ export function validateWalkingStopGraph(input: unknown): WalkingStopGraph {
       durationSeconds: requireMetric(value.durationSeconds, `connections[${index}].durationSeconds`),
     })
   })
+  const expectedConnectionCount = stopIds.length * (stopIds.length - 1)
+  if (connections.length !== expectedConnectionCount) {
+    throw new Error(
+      `Walking stop graph must contain ${expectedConnectionCount} directed connections`,
+    )
+  }
 
   return Object.freeze({
     version: WALKING_STOP_GRAPH_VERSION,

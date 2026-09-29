@@ -61,6 +61,12 @@ function addStaticConnections(
       ? [[location.stopId, location] as const]
       : []),
   )
+  if (
+    graph.stopIds.length !== locationByStopId.size ||
+    graph.stopIds.some((stopId) => !locationByStopId.has(stopId))
+  ) {
+    throw new Error('Walking stop graph does not match the loaded transit stops')
+  }
   for (const connection of graph.connections) {
     const fromStopId = connection.fromKey.slice('stop:'.length)
     const toStopId = connection.toKey.slice('stop:'.length)

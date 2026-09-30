@@ -28,6 +28,8 @@ export interface ShuttleJourneyLeg extends JourneyLegBase {
 
 export type JourneyLeg = WalkingJourneyLeg | ShuttleJourneyLeg
 
+export type JourneyPlanningQuality = 'exact' | 'bounded'
+
 export interface Journey {
   readonly origin: TripEndpoint
   readonly destination: TripEndpoint
@@ -35,6 +37,7 @@ export interface Journey {
   readonly totalDurationSeconds: number
   readonly totalDistanceMeters: number
   readonly estimateStatus: 'estimated'
+  readonly planningQuality: JourneyPlanningQuality
 }
 
 export interface JourneyEndpointLocation {

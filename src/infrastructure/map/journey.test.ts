@@ -84,6 +84,7 @@ function createJourney(routeId: string): Journey {
     totalDurationSeconds: 180,
     totalDistanceMeters: 980,
     estimateStatus: 'estimated',
+    planningQuality: 'exact',
   }
 }
 
@@ -175,6 +176,7 @@ describe('journey route layer adapter', () => {
       totalDurationSeconds: 300,
       totalDistanceMeters: 1900,
       estimateStatus: 'estimated',
+      planningQuality: 'exact',
     }
 
     layers.setJourney(journey)

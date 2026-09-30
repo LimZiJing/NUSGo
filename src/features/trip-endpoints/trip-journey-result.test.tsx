@@ -39,6 +39,7 @@ const journey: Journey = {
   totalDurationSeconds: 390,
   totalDistanceMeters: 2320,
   estimateStatus: 'estimated',
+  planningQuality: 'exact',
 }
 
 const venues = {

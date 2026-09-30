@@ -135,6 +135,7 @@ describe('TripEndpointControls Journey result', () => {
       totalDurationSeconds: 60,
       totalDistanceMeters: 100,
       estimateStatus: 'estimated',
+      planningQuality: 'exact',
     }
 
     const markup = renderToStaticMarkup(

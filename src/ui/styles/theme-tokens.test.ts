@@ -42,7 +42,7 @@ describe('semantic theme tokens', () => {
   it('loads both themes from the shared style entrypoint', () => {
     const indexStyles = readStyleFile('index.css')
 
-    expect(indexStyles).toContain("@import './themes/light.css';")
-    expect(indexStyles).toContain("@import './themes/dark.css';")
+    expect(indexStyles).toContain('@import \'./themes/light.css\';')
+    expect(indexStyles).toContain('@import \'./themes/dark.css\';')
   })
 })

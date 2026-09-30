@@ -511,11 +511,13 @@ function App() {
   const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
-  const liveArrivalMessage = stopArrivals.status === 'loading'
-    ? 'Updating…'
-    : stopArrivals.status === 'error'
-      ? 'No live data'
-      : null
+  const liveArrivalMessage = stopArrivals.snapshot
+    ? null
+    : stopArrivals.status === 'loading'
+      ? 'Updating…'
+      : stopArrivals.status === 'error'
+        ? 'No live data'
+        : null
 
   const beginMobileSearch = (tab: 'explore' | 'plan'): void => {
     if (!isMobileViewport) return

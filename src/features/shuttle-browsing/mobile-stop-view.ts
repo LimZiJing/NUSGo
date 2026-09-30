@@ -110,10 +110,9 @@ function formatArrivalSeconds(seconds: number): string {
   return seconds <= 60 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
 }
 
-function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, nowMs: number): number {
-  // Display all stops from one snapshot using the same clock so a refresh swaps
-  // the visible timing generation together instead of creating staggered rows.
-  return Math.max(0, nowMs - Date.parse(snapshot.observedAt))
+function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, stopId: string, nowMs: number): number {
+  const observedAt = snapshot.stopObservations?.[stopId]?.observedAt ?? snapshot.observedAt
+  return Math.max(0, nowMs - Date.parse(observedAt))
 }
 
 function getLiveStopDepartures(
@@ -123,9 +122,9 @@ function getLiveStopDepartures(
   nowMs: number,
   liveRouteIds: ReadonlySet<string>,
 ): readonly MobileStopDeparture[] {
-  if (!snapshot || getArrivalAgeMs(snapshot, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
+  if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
-  const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, nowMs) / 1_000)
+  const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
   const stopArrivals = snapshot.stops[stop.id] ?? {}
   const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
   return Array.from(servedRouteIds).flatMap((routeId) => {
@@ -153,6 +152,7 @@ function getLiveStopDepartures(
 
 function getLiveArrivalMessage(
   snapshot: ShuttleArrivalSnapshot | null,
+  stopId: string,
   nowMs: number,
   departures: readonly MobileStopDeparture[],
   scheduledDepartures: readonly MobileStopScheduledDeparture[],
@@ -160,7 +160,7 @@ function getLiveArrivalMessage(
 ): string | null {
   if (isRefreshing || scheduledDepartures.length > 0) return null
   if (!snapshot) return null
-  if (getArrivalAgeMs(snapshot, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return 'No live data'
+  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return 'No live data'
   if (departures.length > 0) return null
   return 'No live arrivals'
 }
@@ -253,9 +253,10 @@ export function getMobileStopSheetSelection(
     departures,
     scheduledDepartures: routeAvailability.scheduledDepartures,
     live: departures.length > 0 && !isRefreshing && arrivalSnapshot !== null &&
-      getArrivalAgeMs(arrivalSnapshot, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS,
+      getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS,
     liveArrivalMessage: getLiveArrivalMessage(
       arrivalSnapshot,
+      stop.id,
       nowMs,
       departures,
       routeAvailability.scheduledDepartures,

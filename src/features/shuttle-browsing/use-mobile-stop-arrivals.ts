@@ -32,6 +32,20 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
 }
 
+function isOlderSnapshot(
+  candidate: ShuttleArrivalSnapshot,
+  current: ShuttleArrivalSnapshot,
+): boolean {
+  if (candidate.snapshotVersion && current.snapshotVersion) {
+    return candidate.snapshotVersion < current.snapshotVersion
+  }
+  const candidateTime = Date.parse(candidate.refreshedAt ?? candidate.observedAt)
+  const currentTime = Date.parse(current.refreshedAt ?? current.observedAt)
+  return candidateTime < currentTime
+}
+
+const STOP_SET_DEBOUNCE_MS = 150
+
 export function useMobileStopArrivals(
   loadArrivals: MobileStopArrivalLoader,
   active: boolean,
@@ -50,6 +64,7 @@ export function useMobileStopArrivals(
   const hasActiveStops = active && stops.length > 0
   // Location updates can recreate this array without changing the request.
   const latestStopsRef = useRef(stops)
+  const previousStopKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     latestStopsRef.current = stops
@@ -60,6 +75,7 @@ export function useMobileStopArrivals(
 
     let disposed = false
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
+    let stopSetTimer: ReturnType<typeof setTimeout> | null = null
     let controller: AbortController | null = null
 
     const load = async (): Promise<void> => {
@@ -67,20 +83,26 @@ export function useMobileStopArrivals(
       controller = new AbortController()
       setState((previous) => ({
         stopKey,
-        status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
-        snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+        status: previous.snapshot ? 'refreshing' : 'loading',
+        snapshot: previous.snapshot,
       }))
 
       try {
         const snapshot = await loadArrivals(latestStopsRef.current, controller.signal)
         if (disposed) return
-        setState({ stopKey, status: 'ready', snapshot })
+        setState((previous) => ({
+          stopKey,
+          status: 'ready',
+          snapshot: previous.snapshot && isOlderSnapshot(snapshot, previous.snapshot)
+            ? previous.snapshot
+            : snapshot,
+        }))
       } catch (error: unknown) {
         if (disposed || isAbortError(error)) return
         setState((previous) => ({
           stopKey,
           status: 'error',
-          snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+          snapshot: previous.snapshot,
         }))
       }
 
@@ -89,10 +111,17 @@ export function useMobileStopArrivals(
       }
     }
 
-    void load()
+    const shouldDebounce = previousStopKeyRef.current !== null && previousStopKeyRef.current !== stopKey
+    previousStopKeyRef.current = stopKey
+    if (shouldDebounce) {
+      stopSetTimer = setTimeout(() => { void load() }, STOP_SET_DEBOUNCE_MS)
+    } else {
+      void load()
+    }
     return () => {
       disposed = true
       controller?.abort()
+      if (stopSetTimer) clearTimeout(stopSetTimer)
       if (refreshTimer) clearTimeout(refreshTimer)
     }
   }, [hasActiveStops, loadArrivals, stopKey])

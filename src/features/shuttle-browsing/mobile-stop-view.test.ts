@@ -50,7 +50,7 @@ describe('mobile stop view state', () => {
     expect(selection.liveArrivalMessage).toBeNull()
   })
 
-  it('uses one observation clock for all stops in a displayed snapshot', () => {
+  it('uses each stop observation clock for its displayed arrivals', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {
       observedAt: '2026-09-30T00:00:00.000Z',
@@ -88,7 +88,7 @@ describe('mobile stop view state', () => {
     const stopB = getMobileStopSheetSelection(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
 
     expect(stopA.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
-    expect(stopB.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
+    expect(stopB.departures[0]?.timings).toEqual(['2m', '3m', '-'])
   })
 
   it('keeps slightly stale arrivals during the refresh grace period', () => {

@@ -63,6 +63,23 @@ describe('createShuttleArrivalClient', () => {
     expect(second.stops.PGP.D2.nextArrivalSeconds).toBe(264)
   })
 
+  it('expires the default browser cache after 30 seconds', async () => {
+    let now = nowMs
+    const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))
+    const client = createShuttleArrivalClient({ fetcher, now: () => now })
+    const stop = { stopId: 'PGP', stopName: 'PGP' }
+    const signal = new AbortController().signal
+
+    await client.getArrivals([stop], signal)
+    now += 29_999
+    await client.getArrivals([stop], signal)
+    expect(fetcher).toHaveBeenCalledOnce()
+
+    now += 1
+    await client.getArrivals([stop], signal)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
   it('reports a fetch failure instead of treating it as no bus data', async () => {
     let now = 0
     const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))

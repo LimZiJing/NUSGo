@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   describeShuttleServiceUnavailable,
   evaluateShuttleService,
+  getNextShuttleServiceStart,
   type ShuttleServiceWindow,
 } from './service-hours'
 
@@ -22,6 +23,14 @@ describe('evaluateShuttleService', () => {
 
     expect(result.status).toBe('before-start')
     expect(result.nextStartLabel).toBe('today at 7:15 AM')
+  })
+
+  it('returns the exact minutes until the next service start', () => {
+    const result = getNextShuttleServiceStart([
+      { routeId: 'D2', firstTime: '06:00', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] },
+    ], new Date('2026-09-29T21:54:00.000Z'))
+
+    expect(result).toEqual({ minutesUntil: 6, label: 'today at 6:00 AM' })
   })
 
   it('reports tomorrow after the last bus', () => {

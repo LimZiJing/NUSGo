@@ -21,3 +21,6 @@ export interface ShuttleArrivalObservation {
   readonly observedAt: string
   readonly expiresAt: string
 }
+
+export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000
+export const SHUTTLE_ARRIVAL_FRESHNESS_MS = 30_000

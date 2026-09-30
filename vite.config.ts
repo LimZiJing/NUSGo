@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
-import type { ShuttleRouteArrivalData } from './src/domain/transit/arrivals.js'
+import {
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+  type ShuttleRouteArrivalData,
+} from './src/domain/transit/arrivals.js'
 import { parseShuttleServiceResponse } from './src/infrastructure/shuttle-arrivals/response.js'
 import type { ShuttleServiceWindow } from './src/domain/transit/service-hours.js'
 import { parseRouteServiceWindows } from './src/infrastructure/shuttle-service-hours/response.js'
@@ -29,7 +32,7 @@ interface CachedServiceWindows {
   readonly windows: readonly ShuttleServiceWindow[]
 }
 
-const SHUTTLE_CACHE_TTL_MS = 45_000
+const SHUTTLE_CACHE_TTL_MS = SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS
 const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
 const DEFAULT_ACCESS_TOKEN_URL = 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
 

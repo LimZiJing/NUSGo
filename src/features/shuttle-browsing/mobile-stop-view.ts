@@ -1,4 +1,14 @@
 import { getReachableFavoriteStops, type TransitIndex } from '../../domain/transit'
+import {
+  SHUTTLE_ARRIVAL_FRESHNESS_MS,
+  type ShuttleArrivalSnapshot,
+} from '../../domain/transit/arrivals'
+import {
+  evaluateShuttleService,
+  getNextShuttleServiceStart,
+  SHUTTLE_SERVICE_START_GRACE_MINUTES,
+  type ShuttleServiceWindow,
+} from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
 import type { MobileStopSheetSelection } from './mobile-stops-sheet'
 
@@ -21,38 +31,23 @@ export type MobileStopViewAction =
 
 export interface MobileStopDeparture {
   readonly routeId: string
+  readonly routeName: string
+  readonly routeColor: string
   readonly timings: readonly [string, string, string]
 }
 
-// Fixed stop-sheet values until arrival timings are supplied by the backend.
-const MOBILE_STOP_DEPARTURES: readonly MobileStopDeparture[] = [
-  { routeId: 'A1', timings: ['Arr', '8m', '17m'] },
-  { routeId: 'A2', timings: ['9m', '11m', '13m'] },
-  { routeId: 'D1', timings: ['Left', '6m', '14m'] },
-  { routeId: 'D2', timings: ['4m', '12m', '-'] },
-  { routeId: 'K', timings: ['3m', '-', '-'] },
-  { routeId: 'P', timings: ['10m', '16m', '-'] },
-  { routeId: 'R1', timings: ['Arr', '12m', '23m'] },
-  { routeId: 'R2', timings: ['Left', '7m', '18m'] },
-]
+export interface MobileStopScheduledDeparture {
+  readonly routeId: string
+  readonly routeName: string
+  readonly routeColor: string
+  readonly message: string
+}
 
-const PUBLIC_SERVICE_TIMINGS: Readonly<Record<string, readonly [string, string, string]>> = {
-  '10': ['5m', '14m', '23m'],
-  '33': ['Arr', '12m', '24m'],
-  '48': ['7m', '19m', '-'],
-  '67': ['4m', '16m', '29m'],
-  '95': ['8m', '17m', '26m'],
-  '96': ['3m', '12m', '-'],
-  '151': ['Left', '11m', '22m'],
-  '153': ['6m', '18m', '-'],
-  '154': ['9m', '21m', '-'],
-  '156': ['Arr', '13m', '25m'],
-  '170': ['5m', '16m', '-'],
-  '183': ['7m', '15m', '28m'],
-  '186': ['4m', '14m', '24m'],
-  '188': ['10m', '22m', '-'],
-  '200': ['6m', '17m', '-'],
-  '201': ['9m', '20m', '-'],
+type MobileStopServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
+
+interface MobileStopRouteAvailability {
+  readonly liveRouteIds: ReadonlySet<string>
+  readonly scheduledDepartures: readonly MobileStopScheduledDeparture[]
 }
 
 export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
@@ -110,24 +105,145 @@ export function mobileStopViewReducer(
   }
 }
 
-export function getMobileStopDepartures(
-  servedRouteIds: ReadonlySet<string>,
-): readonly MobileStopDeparture[] {
-  return MOBILE_STOP_DEPARTURES.filter(({ routeId }) => servedRouteIds.has(routeId))
+function formatArrivalSeconds(seconds: number): string {
+  return seconds <= 60 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
 }
 
-export function getPublicServiceTimings(serviceNumber: string): readonly [string, string, string] {
-  return PUBLIC_SERVICE_TIMINGS[serviceNumber] ?? ['7m', '15m', '-']
+function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, stopId: string, nowMs: number): number {
+  const observedAt = snapshot.stopObservations?.[stopId]?.observedAt ?? snapshot.observedAt
+  return Math.max(0, nowMs - Date.parse(observedAt))
+}
+
+function getLiveStopDepartures(
+  stop: TransitStop,
+  index: TransitIndex,
+  snapshot: ShuttleArrivalSnapshot | null,
+  nowMs: number,
+  allowStale: boolean,
+  liveRouteIds: ReadonlySet<string>,
+): readonly MobileStopDeparture[] {
+  if (!snapshot || (!allowStale && getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS)) return []
+
+  const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
+  const stopArrivals = snapshot.stops[stop.id] ?? {}
+  const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
+  return Array.from(servedRouteIds).flatMap((routeId) => {
+    if (!liveRouteIds.has(routeId)) return []
+    const route = index.routeById.get(routeId)
+    const arrival = stopArrivals[routeId]
+    if (!route || !arrival) return []
+
+    const timings = arrival.upcomingArrivalSeconds
+      .map((seconds) => seconds - ageSeconds)
+      .filter((seconds) => seconds >= 0)
+      .slice(0, 3)
+      .map(formatArrivalSeconds)
+    if (timings.length === 0) return []
+
+    return [{
+      routeId,
+      routeName: route.name,
+      routeColor: route.color,
+      timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
+      reachableFavoriteStops: [],
+    }]
+  })
+}
+
+function getLiveArrivalMessage(
+  snapshot: ShuttleArrivalSnapshot | null,
+  stopId: string,
+  nowMs: number,
+  departures: readonly MobileStopDeparture[],
+  scheduledDepartures: readonly MobileStopScheduledDeparture[],
+  isRefreshing: boolean,
+): string | null {
+  if (isRefreshing || scheduledDepartures.length > 0) return null
+  if (!snapshot) return null
+  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return 'Stale live data'
+  if (departures.length > 0) return null
+  return 'No live arrivals'
+}
+
+function compactStartLabel(label: string): string {
+  return label.replace(/^today at /, '').replace(/^tomorrow at /, 'tomorrow ')
+}
+
+function getRouteAvailability(
+  stop: TransitStop,
+  index: TransitIndex,
+  serviceWindows: MobileStopServiceWindows | null,
+  nowMs: number,
+): MobileStopRouteAvailability {
+  const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
+  if (!serviceWindows) {
+    return { liveRouteIds: new Set(routeIds), scheduledDepartures: [] }
+  }
+
+  const liveRouteIds = new Set<string>()
+  const scheduledDepartures: MobileStopScheduledDeparture[] = []
+  for (const routeId of routeIds) {
+    const route = index.routeById.get(routeId)
+    const windows = serviceWindows[routeId]
+    if (!route || !windows?.length) {
+      liveRouteIds.add(routeId)
+      continue
+    }
+
+    const evaluation = evaluateShuttleService(windows, new Date(nowMs))
+    if (evaluation.status === 'active' || evaluation.status === 'unavailable') {
+      liveRouteIds.add(routeId)
+      continue
+    }
+
+    const nextStart = getNextShuttleServiceStart(windows, new Date(nowMs))
+    if (!nextStart) {
+      liveRouteIds.add(routeId)
+      continue
+    }
+    const message = evaluation.status === 'before-start' &&
+      nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES
+      ? `First bus in ${Math.max(1, Math.ceil(nextStart.minutesUntil))}m`
+      : `Starts ${compactStartLabel(nextStart.label)}`
+    scheduledDepartures.push({
+      routeId,
+      routeName: route.name,
+      routeColor: route.color,
+      message,
+    })
+  }
+
+  return { liveRouteIds, scheduledDepartures }
 }
 
 export function getMobileStopSheetSelection(
   stop: TransitStop,
   index: TransitIndex,
   favoriteStopIds: readonly string[] = [],
+  arrivalSnapshot: ShuttleArrivalSnapshot | null = null,
+  nowMs: number,
+  serviceWindows: MobileStopServiceWindows | null = null,
+  isRefreshing = false,
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
-  const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
   const favorites = new Set(favoriteStopIds)
+  const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)
+  const departures = getLiveStopDepartures(
+    stop,
+    index,
+    arrivalSnapshot,
+    nowMs,
+    isRefreshing,
+    routeAvailability.liveRouteIds,
+  ).map((departure) => ({
+    ...departure,
+    reachableFavoriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
+      .map(({ id, shortName }) => ({
+        id,
+        name: shortName,
+        isOpposite: stop.opposite === id,
+      })),
+  }))
   return {
     id: stop.id,
     longName: stop.longName,
@@ -135,21 +251,16 @@ export function getMobileStopSheetSelection(
     publicServices: stop.services
       .filter((service) => service.startsWith('PUB:'))
       .map((service) => service.slice('PUB:'.length)),
-    departures: getMobileStopDepartures(servedRouteIds).flatMap((departure) => {
-      const route = index.routeById.get(departure.routeId)
-      return route
-        ? [{
-          ...departure,
-          routeName: route.name,
-          routeColor: route.color,
-          reachableFavoriteStops: getReachableFavoriteStops(index, route.id, stop.id, favorites)
-            .map(({ id, shortName }) => ({
-              id,
-              name: shortName,
-              isOpposite: stop.opposite === id,
-            })),
-        }]
-        : []
-    }),
+    departures,
+    scheduledDepartures: routeAvailability.scheduledDepartures,
+    live: departures.length > 0 && !isRefreshing,
+    liveArrivalMessage: getLiveArrivalMessage(
+      arrivalSnapshot,
+      stop.id,
+      nowMs,
+      departures,
+      routeAvailability.scheduledDepartures,
+      isRefreshing,
+    ),
   }
 }

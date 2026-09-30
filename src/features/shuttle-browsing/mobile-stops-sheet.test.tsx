@@ -25,12 +25,12 @@ const selectedStop: MobileStopSheetSelection = {
 describe('MobileStopsSheet', () => {
   it('offers an accessible grab handle to expand the map-based Stops sheet', async () => {
     const user = userEvent.setup()
-    const onExpandedChange = vi.fn()
+    const onDetentChange = vi.fn()
     const { rerender } = render(
       <MobileStopsSheet
-        expanded={false}
+        detent="collapsed"
         selectedStop={null}
-        onExpandedChange={onExpandedChange}
+        onDetentChange={onDetentChange}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
@@ -42,23 +42,25 @@ describe('MobileStopsSheet', () => {
     expect(toggle.getAttribute('aria-controls')).toBe('mobile-stops-sheet-content')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     await user.click(toggle)
-    expect(onExpandedChange).toHaveBeenCalledWith(true)
+    expect(onDetentChange).toHaveBeenCalledWith('partial')
 
     rerender(
       <MobileStopsSheet
-        expanded
+        detent="full"
         selectedStop={null}
-        onExpandedChange={onExpandedChange}
+        onDetentChange={onDetentChange}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
         onNavigateToStop={vi.fn()}
       />,
     )
-    expect(screen.getByRole('button', { name: 'Collapse Stops panel' }).getAttribute('aria-expanded'))
-      .toBe('true')
+    const fullToggle = screen.getByRole('button', { name: 'Collapse Stops panel' })
+    expect(fullToggle.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByText('Tap a shuttle stop on the map to view its details and route actions.'))
       .toBeTruthy()
+    await user.click(fullToggle)
+    expect(onDetentChange).toHaveBeenLastCalledWith('collapsed')
   })
 
   it('orders stop identity, destination action, routes, public services and departures', () => {

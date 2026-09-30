@@ -55,7 +55,11 @@ export function MobileTabBar({
   containerRef,
 }: MobileTabBarProps) {
   return (
-    <nav className="mobile-tab-bar" aria-label="Map views" ref={containerRef}>
+    <nav
+      className="mobile-tab-bar"
+      aria-label="Map views"
+      ref={containerRef}
+    >
       {MOBILE_TABS.map(({ id, label, panelId }) => (
         <button
           type="button"

@@ -1,6 +1,7 @@
 import type { Ref } from 'react'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
 import { BusStopTimings, type BusStopDeparture, type BusStopScheduledDeparture } from '../../ui/bus-stop-timings'
@@ -28,9 +29,12 @@ export interface MobileStopOverviewSelection {
 }
 
 interface MobileStopsSheetProps {
-  readonly expanded: boolean
+  readonly expanded?: boolean
+  readonly detent?: MobileSheetDetent
+  readonly lastNonCollapsedDetent?: OpenMobileSheetDetent
   readonly selectedStop: MobileStopSheetSelection | null
-  readonly onExpandedChange: (expanded: boolean) => void
+  readonly onExpandedChange?: (expanded: boolean) => void
+  readonly onDetentChange?: (detent: MobileSheetDetent) => void
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
@@ -51,8 +55,11 @@ interface MobileStopsSheetProps {
 
 export function MobileStopsSheet({
   expanded,
+  detent: passedDetent,
+  lastNonCollapsedDetent = 'partial',
   selectedStop,
   onExpandedChange,
+  onDetentChange,
   onBackToStops,
   onSelectOppositeStop,
   onSelectRoute,
@@ -71,29 +78,36 @@ export function MobileStopsSheet({
   onDismissLocationNotice,
 }: MobileStopsSheetProps) {
   const oppositeStop = selectedStop?.oppositeStop ?? null
+  const detent = passedDetent ?? (expanded === false ? 'collapsed' : 'partial')
+  const isExpanded = detent !== 'collapsed'
 
   return (
     <section
       className="mobile-stops-sheet"
       aria-label="Stops"
       data-mobile-sheet
-      data-expanded={expanded}
+      data-expanded={isExpanded}
+      data-detent={detent}
       ref={containerRef}
     >
       <div className="mobile-sheet-handle-row">
         <MobileSheetHandle
-          expanded={expanded}
+          detent={detent}
+          restoreDetent={lastNonCollapsedDetent}
           label="Stops panel"
           controlsId="mobile-stops-sheet-content"
           onBeforeClick={onBeforeSheetToggle}
-          onExpandedChange={onExpandedChange}
+          onDetentChange={(nextDetent) => {
+            if (onDetentChange) onDetentChange(nextDetent)
+            else onExpandedChange?.(nextDetent !== 'collapsed')
+          }}
         />
       </div>
       <div
         id="mobile-stops-sheet-content"
         data-mobile-sheet-content
         data-view={selectedStop ? 'selected' : 'overview'}
-        hidden={!expanded}
+        hidden={!isExpanded}
       >
         {selectedStop ? (
           <div className="mobile-stop-selection" data-testid="mobile-stop-detail">

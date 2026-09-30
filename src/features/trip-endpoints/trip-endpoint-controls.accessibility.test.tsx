@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TripEndpointControls } from './trip-endpoint-controls'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
@@ -15,6 +15,7 @@ import {
 } from '../../domain/trip/endpoints'
 import type { TripRequest } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -49,14 +50,14 @@ describe('TripEndpointControls interactions', () => {
   it('provides a labelled collapsed plan summary for empty endpoints and a stable toggle', async () => {
     const user = userEvent.setup()
     function CollapsedHarness() {
-      const [expanded, setExpanded] = useState(false)
+      const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
       return (
         <TripEndpointControls
           tripRequest={{ origin: null, destination: null }}
           venues={venues}
           networkIndex={createTransitIndex(createValidTransitNetwork())}
-          expanded={expanded}
-          onExpandedChange={setExpanded}
+          detent={detent}
+          onDetentChange={setDetent}
           onSwap={() => undefined}
           onSelectOriginEndpoint={() => undefined}
           onClearOriginEndpoint={() => undefined}
@@ -79,13 +80,80 @@ describe('TripEndpointControls interactions', () => {
     await user.click(toggle)
 
     expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(toggle.getAttribute('aria-description')).toBe('Opens the full-height sheet.')
     expect(document.activeElement).toBe(toggle)
     await user.tab()
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Origin' }))
 
     await user.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    await user.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(toggle)
+  })
+
+  it('reports search focus, cancel, and result selection for sheet detent transitions', async () => {
+    const user = userEvent.setup()
+    const onSearchFocus = vi.fn()
+    const onSearchCancel = vi.fn()
+    const onSearchResult = vi.fn()
+    function SearchTransitionHarness() {
+      const [detent, setDetent] = useState<MobileSheetDetent>('partial')
+      const [searchDetent, setSearchDetent] = useState<MobileSheetDetent>('partial')
+      return (
+        <TripEndpointControls
+          tripRequest={{ origin: null, destination: null }}
+          venues={venues}
+          networkIndex={createTransitIndex(createValidTransitNetwork())}
+          detent={detent}
+          onDetentChange={setDetent}
+          onSearchFocus={() => {
+            onSearchFocus()
+            setSearchDetent(detent)
+            setDetent('full')
+          }}
+          onSearchCancel={() => {
+            onSearchCancel()
+            setDetent(searchDetent)
+          }}
+          onSearchResult={() => {
+            onSearchResult()
+            setDetent('partial')
+          }}
+          onSwap={() => undefined}
+          onSelectOriginEndpoint={() => undefined}
+          onClearOriginEndpoint={() => undefined}
+          onSelectDestinationEndpoint={() => undefined}
+          onClearDestinationEndpoint={() => undefined}
+          onClearTrip={() => undefined}
+        />
+      )
+    }
+
+    render(<SearchTransitionHarness />)
+    const sheet = screen.getByRole('region', { name: 'Trip endpoints' })
+    const origin = screen.getByRole('searchbox', { name: 'Origin' })
+    await user.click(origin)
+
+    expect(onSearchFocus).toHaveBeenCalledOnce()
+    expect(sheet.getAttribute('data-detent')).toBe('full')
+    await user.keyboard('{Escape}')
+    expect(onSearchCancel).toHaveBeenCalledOnce()
+    expect(sheet.getAttribute('data-detent')).toBe('partial')
+
+    origin.blur()
+    await user.type(origin, 'COM1')
+
+    expect(onSearchFocus).toHaveBeenCalledTimes(2)
+    expect(sheet.getAttribute('data-detent')).toBe('full')
+    await user.keyboard('{Escape}')
+    expect(onSearchCancel).toHaveBeenCalledTimes(2)
+    expect(sheet.getAttribute('data-detent')).toBe('partial')
+
+    await user.type(origin, 'COM1')
+    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210' }))
+    expect(onSearchResult).toHaveBeenCalledOnce()
+    expect(sheet.getAttribute('data-detent')).toBe('partial')
   })
 
   it('only shows endpoint validation when the request needs attention', () => {

@@ -287,6 +287,7 @@ export default defineConfig(({ mode }) => {
     base: mode === 'production' ? '/NavUS/' : '/',
     plugins: [react(), createShuttleArrivalsPlugin(env)],
     server: {
+      host: '0.0.0.0',
       ...(allowedHost ? { allowedHosts: [allowedHost] } : {}),
       proxy: {
         '/valhalla': {

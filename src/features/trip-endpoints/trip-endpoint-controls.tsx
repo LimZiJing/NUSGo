@@ -10,6 +10,7 @@ import type {
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
@@ -20,10 +21,16 @@ interface TripEndpointControlsProps {
   venues: VenueLocationMap | null
   networkIndex: TransitIndex | null
   expanded?: boolean
+  detent?: MobileSheetDetent
+  lastNonCollapsedDetent?: OpenMobileSheetDetent
   mobileViewport?: boolean
   containerRef?: Ref<HTMLElement>
   onExpandedChange?: (expanded: boolean) => void
+  onDetentChange?: (detent: MobileSheetDetent) => void
   onBeforeSheetToggle?: () => void
+  onSearchFocus?: () => void
+  onSearchCancel?: () => void
+  onSearchResult?: () => void
   onSwap: () => void
   onSelectOriginEndpoint: (endpoint: TripEndpoint) => void
   onClearOriginEndpoint: () => void
@@ -40,6 +47,9 @@ interface TripEndpointControlProps {
   networkIndex: TransitIndex | null
   searchQuery: string
   onSearchQueryChange: (query: string) => void
+  onSearchFocus?: () => void
+  onSearchCancel?: () => void
+  onSearchResult?: () => void
   onSelect: (endpoint: TripEndpoint) => void
   onClear: () => void
 }
@@ -67,10 +77,16 @@ export function TripEndpointControls({
   venues,
   networkIndex,
   expanded,
+  detent: passedDetent,
+  lastNonCollapsedDetent = 'partial',
   mobileViewport = true,
   containerRef,
   onExpandedChange,
+  onDetentChange,
   onBeforeSheetToggle,
+  onSearchFocus,
+  onSearchCancel,
+  onSearchResult,
   onSwap,
   onSelectOriginEndpoint,
   onClearOriginEndpoint,
@@ -80,7 +96,8 @@ export function TripEndpointControls({
   journey = { status: 'idle', journey: null, error: null },
 }: TripEndpointControlsProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
-  const isExpanded = expanded ?? uncontrolledExpanded
+  const detent = passedDetent ?? (expanded ?? uncontrolledExpanded ? 'partial' : 'collapsed')
+  const isExpanded = detent !== 'collapsed'
   const tripHandleRef = useRef<HTMLButtonElement>(null)
   const setTripHandleRef = useCallback((button: HTMLButtonElement | null): void => {
     tripHandleRef.current = button
@@ -112,9 +129,12 @@ export function TripEndpointControls({
     onSwap()
   }
 
-  const setExpanded = (nextExpanded: boolean): void => {
-    if (expanded === undefined) setUncontrolledExpanded(nextExpanded)
-    onExpandedChange?.(nextExpanded)
+  const setDetent = (nextDetent: MobileSheetDetent): void => {
+    if (passedDetent === undefined && expanded === undefined) {
+      setUncontrolledExpanded(nextDetent !== 'collapsed')
+    }
+    if (onDetentChange) onDetentChange(nextDetent)
+    else onExpandedChange?.(nextDetent !== 'collapsed')
   }
 
   const tripSummary = getTripPlanSummary(tripRequest, venues, networkIndex)
@@ -170,16 +190,18 @@ export function TripEndpointControls({
       ref={containerRef}
       aria-label="Trip endpoints"
       data-expanded={isExpanded}
+      data-detent={detent}
       data-mobile-sheet
     >
       <div className="mobile-sheet-handle-row">
         <MobileSheetHandle
-          expanded={isExpanded}
+          detent={detent}
+          restoreDetent={lastNonCollapsedDetent}
           label={`Plan trip panel: ${tripSummary.accessible}`}
           controlsId={TRIP_CONTROLS_CONTENT_ID}
           onButtonRef={setTripHandleRef}
           onBeforeClick={onBeforeSheetToggle}
-          onExpandedChange={setExpanded}
+          onDetentChange={setDetent}
         />
       </div>
       <div className="trip-controls-heading">
@@ -216,6 +238,9 @@ export function TripEndpointControls({
             networkIndex={networkIndex}
             searchQuery={searchQueries.origin}
             onSearchQueryChange={(query) => setSearchQuery('origin', query)}
+            onSearchFocus={onSearchFocus}
+            onSearchCancel={onSearchCancel}
+            onSearchResult={onSearchResult}
             onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
             onClear={onClearOriginEndpoint}
           />
@@ -227,6 +252,9 @@ export function TripEndpointControls({
             networkIndex={networkIndex}
             searchQuery={searchQueries.destination}
             onSearchQueryChange={(query) => setSearchQuery('destination', query)}
+            onSearchFocus={onSearchFocus}
+            onSearchCancel={onSearchCancel}
+            onSearchResult={onSearchResult}
             onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
             onClear={onClearDestinationEndpoint}
           />
@@ -263,6 +291,9 @@ export function TripEndpointControl({
   networkIndex,
   searchQuery,
   onSearchQueryChange,
+  onSearchFocus,
+  onSearchCancel,
+  onSearchResult,
   onSelect,
   onClear,
 }: TripEndpointControlProps) {
@@ -287,6 +318,7 @@ export function TripEndpointControl({
         : ''
 
   const clearEndpoint = (): void => {
+    if (searchQuery.trim()) onSearchCancel?.()
     onSearchQueryChange('')
     if (endpoint) onClear()
   }
@@ -309,6 +341,7 @@ export function TripEndpointControl({
                 setEditing(true)
                 onSearchQueryChange('')
               }
+              onSearchFocus?.()
             }}
             onBlur={() => {
               if (endpoint && !searchQuery) setEditing(false)
@@ -323,11 +356,19 @@ export function TripEndpointControl({
                 event.preventDefault()
                 event.stopPropagation()
                 setEditing(false)
+                onSearchCancel?.()
                 return
               }
-              if (!searchQuery) return
+              if (!searchQuery) {
+                if (!onSearchCancel) return
+                event.preventDefault()
+                event.stopPropagation()
+                onSearchCancel()
+                return
+              }
               event.preventDefault()
               event.stopPropagation()
+              onSearchCancel?.()
               onSearchQueryChange('')
             }}
             autoComplete="off"
@@ -358,7 +399,10 @@ export function TripEndpointControl({
                   className="trip-endpoint-result"
                   type="button"
                   key={`${result.endpoint.kind}:${result.endpoint.id}`}
-                  onClick={() => onSelect(result.endpoint)}
+                  onClick={() => {
+                    onSearchResult?.()
+                    onSelect(result.endpoint)
+                  }}
                   aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}
                 >
                   <strong>{getResultLabel(result)}</strong>

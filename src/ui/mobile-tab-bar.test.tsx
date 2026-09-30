@@ -52,6 +52,8 @@ describe('MobileTabBar', () => {
     const stops = screen.getByRole('button', { name: 'Stops' })
 
     expect(navigation).toBeTruthy()
+    expect(navigation.hasAttribute('aria-hidden')).toBe(false)
+    expect(navigation.hasAttribute('inert')).toBe(false)
     expect(explore.getAttribute('aria-current')).toBe('page')
     expect(explore.getAttribute('aria-controls')).toBe('mobile-explore-panel')
     expect(stops.getAttribute('aria-current')).toBeNull()

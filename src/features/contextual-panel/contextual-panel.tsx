@@ -24,6 +24,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -65,10 +66,13 @@ interface ContextualPanelProps {
     options: ShuttleRouteRenderOptions,
   ) => ReactNode
   minimized?: boolean
+  sheetDetent?: MobileSheetDetent
+  lastNonCollapsedDetent?: OpenMobileSheetDetent
   mobileViewport?: boolean
   active?: boolean
   onRestore?: () => void
   onMinimize?: () => void
+  onDetentChange?: (detent: MobileSheetDetent) => void
   onBeforeSheetToggle?: () => void
   containerRef?: Ref<HTMLElement>
   status?: PanelStatus | null
@@ -86,6 +90,9 @@ interface ContextualPanelProps {
   onClose: () => void
   onEscape: () => void
   onDismissMapPopup?: () => boolean
+  onSearchFocus?: () => void
+  onSearchCancel?: () => void
+  onSearchResult?: () => void
 }
 
 function getPanelHeading(
@@ -139,10 +146,13 @@ export function ContextualPanel({
   shuttleRoutesAvailable,
   renderShuttleRoutes,
   minimized = false,
+  sheetDetent = minimized ? 'collapsed' : 'partial',
+  lastNonCollapsedDetent = 'partial',
   mobileViewport = true,
   active = true,
   onRestore,
   onMinimize,
+  onDetentChange,
   onBeforeSheetToggle,
   containerRef,
   status,
@@ -160,6 +170,9 @@ export function ContextualPanel({
   onClose,
   onEscape,
   onDismissMapPopup,
+  onSearchFocus,
+  onSearchCancel,
+  onSearchResult,
 }: ContextualPanelProps) {
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const restorePanelButtonRef = useRef<HTMLButtonElement>(null)
@@ -259,9 +272,17 @@ export function ContextualPanel({
         onLeaveMobileRoutes?.()
         return
       }
-      if (mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search') && onMinimize) {
-        pendingMinimizeFocusRef.current = true
-        onMinimize()
+      if (mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search')) {
+        if (onSearchCancel) {
+          onSearchCancel()
+          rememberPanelBackFocus()
+          onEscape()
+          return
+        }
+        if (onMinimize) {
+          pendingMinimizeFocusRef.current = true
+          onMinimize()
+        }
         return
       }
       rememberPanelBackFocus()
@@ -277,6 +298,7 @@ export function ContextualPanel({
     onDismissMapPopup,
     onEscape,
     onMinimize,
+    onSearchCancel,
     onLeaveMobileRoutes,
     rememberPanelBackFocus,
     state.mode,
@@ -449,6 +471,7 @@ export function ContextualPanel({
     event: MouseEvent<HTMLButtonElement>,
   ): void => {
     rememberCurrentControl(event, 'venue-search-opener')
+    onSearchResult?.()
     onVenueSelect(result)
   }
 
@@ -464,6 +487,7 @@ export function ContextualPanel({
   const handleClose = (): void => {
     pendingFocusRef.current = focusHistoryRef.current.at(-1) ?? null
     focusHistoryRef.current = []
+    onSearchCancel?.()
     onClose()
   }
 
@@ -498,7 +522,8 @@ export function ContextualPanel({
 
   const handleMinimize = (): void => {
     pendingMinimizeFocusRef.current = true
-    onMinimize?.()
+    if (onDetentChange) onDetentChange('collapsed')
+    else onMinimize?.()
   }
 
   const searchState = useMemo(() => {
@@ -538,26 +563,36 @@ export function ContextualPanel({
       aria-labelledby="contextual-panel-heading"
       data-minimized={minimized}
       data-mobile-sheet
-      data-expanded={!minimized}
+      data-expanded={sheetDetent !== 'collapsed'}
+      data-detent={sheetDetent}
       onFocusCapture={handlePanelFocusCapture}
       onBlurCapture={handlePanelBlurCapture}
     >
-      <div className="mobile-sheet-handle-row">
-        <MobileSheetHandle
-          expanded={!minimized}
-          label="Explore panel"
-          controlsId="contextual-panel-content"
-          onButtonRef={setRestorePanelButtonRef}
-          onBeforeClick={onBeforeSheetToggle}
-          onExpandedChange={(expanded) => {
-            if (expanded) onRestore?.()
-            else handleMinimize()
-          }}
-        />
-      </div>
+      {mobileViewport && (
+        <div className="mobile-sheet-handle-row">
+          <MobileSheetHandle
+            detent={sheetDetent}
+            restoreDetent={lastNonCollapsedDetent}
+            label="Explore panel"
+            controlsId="contextual-panel-content"
+            onButtonRef={setRestorePanelButtonRef}
+            onBeforeClick={onBeforeSheetToggle}
+            onDetentChange={(nextDetent) => {
+              if (nextDetent === 'collapsed') handleMinimize()
+              else if (onDetentChange) onDetentChange(nextDetent)
+              else onRestore?.()
+            }}
+          />
+        </div>
+      )}
       <div className="contextual-panel-header">
         {mobileExploreSegments && (
-          <div className="mobile-explore-segments" role="group" aria-label="Explore view">
+          <div
+            className="mobile-explore-segments"
+            role="group"
+            aria-label="Explore view"
+            data-mobile-sheet-content
+          >
             <button
               type="button"
               data-contextual-focus-id="mobile-explore-venue-segment"
@@ -630,7 +665,10 @@ export function ContextualPanel({
               placeholder="e.g. COM1-0210"
               value={state.query}
               inputRef={searchInputRef}
-              onFocus={() => { if (minimized) onRestore?.() }}
+              onFocus={() => {
+                if (minimized) onRestore?.()
+                onSearchFocus?.()
+              }}
               onChange={(event) => onQueryChange(event.target.value)}
               autoComplete="off"
             />

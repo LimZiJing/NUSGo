@@ -24,14 +24,22 @@ const snapshot: ShuttleArrivalSnapshot = {
   stops: { 'STOP-A': {} },
 }
 
+const refreshedSnapshot: ShuttleArrivalSnapshot = {
+  observedAt: '2026-09-30T00:00:30.000Z',
+  expiresAt: '2026-09-30T00:01:30.000Z',
+  stops: { 'STOP-A': {} },
+}
+
 function Probe({
   client,
   active,
+  stops: requestedStops = stops,
 }: {
   readonly client: MobileStopArrivalLoader
   readonly active: boolean
+  readonly stops?: readonly MobileStopArrivalStopRequest[]
 }) {
-  const state = useMobileStopArrivals(client, active, stops)
+  const state = useMobileStopArrivals(client, active, requestedStops)
   return (
     <>
       <output data-testid="status">{state.status}</output>
@@ -57,6 +65,33 @@ describe('useMobileStopArrivals', () => {
     expect(client).toHaveBeenCalledTimes(2)
   })
 
+  it('does not reload when the same stop request is recreated', async () => {
+    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const { rerender } = render(<Probe client={client} active stops={[...stops]} />)
+    await act(async () => undefined)
+
+    rerender(<Probe client={client} active stops={[...stops]} />)
+    await act(async () => undefined)
+
+    expect(client).toHaveBeenCalledOnce()
+  })
+
+  it('does not reload when the same stop requests are reordered', async () => {
+    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const firstOrder = [
+      { stopId: 'STOP-A', stopName: 'Stop A' },
+      { stopId: 'STOP-B', stopName: 'Stop B' },
+    ]
+    const secondOrder = [...firstOrder].reverse()
+    const { rerender } = render(<Probe client={client} active stops={firstOrder} />)
+    await act(async () => undefined)
+
+    rerender(<Probe client={client} active stops={secondOrder} />)
+    await act(async () => undefined)
+
+    expect(client).toHaveBeenCalledOnce()
+  })
+
   it('keeps the previous snapshot visible while a refresh is in flight', async () => {
     vi.useFakeTimers()
     let resolveRefresh: (value: ShuttleArrivalSnapshot) => void = () => undefined
@@ -77,9 +112,75 @@ describe('useMobileStopArrivals', () => {
     expect(screen.getByTestId('status').textContent).toBe('refreshing')
     expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
 
-    resolveRefresh(snapshot)
+    resolveRefresh(refreshedSnapshot)
     await act(async () => undefined)
     expect(screen.getByTestId('status').textContent).toBe('ready')
+    expect(screen.getByTestId('snapshot').textContent).toBe(refreshedSnapshot.observedAt)
+  })
+
+  it('keeps the previous snapshot visible when a refresh fails', async () => {
+    vi.useFakeTimers()
+    const client: MobileStopArrivalLoader = vi.fn()
+      .mockResolvedValueOnce(snapshot)
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+
+    expect(screen.getByTestId('status').textContent).toBe('error')
+    expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
+  })
+
+  it('debounces rapid stop-set changes and loads the latest set', async () => {
+    vi.useFakeTimers()
+    const nextStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
+    const latestStops = [{ stopId: 'STOP-C', stopName: 'Stop C' }]
+    const client = vi.fn<MobileStopArrivalLoader>(async () => snapshot)
+    const { rerender } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+
+    rerender(<Probe client={client} active stops={nextStops} />)
+    rerender(<Probe client={client} active stops={latestStops} />)
+    expect(client).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(149)
+    })
+    expect(client).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
+    })
+    expect(client).toHaveBeenCalledTimes(2)
+    expect(client.mock.calls[1]?.[0]).toEqual(latestStops)
+  })
+
+  it('does not replace a current snapshot with an older generation', async () => {
+    vi.useFakeTimers()
+    const currentSnapshot = {
+      ...snapshot,
+      observedAt: '2026-09-30T00:00:10.000Z',
+      snapshotVersion: '2026-09-30T00:00:10.000Z-2',
+    }
+    const olderSnapshot = {
+      ...snapshot,
+      observedAt: '2026-09-30T00:00:09.000Z',
+      snapshotVersion: '2026-09-30T00:00:09.000Z-1',
+    }
+    const client: MobileStopArrivalLoader = vi.fn()
+      .mockResolvedValueOnce(currentSnapshot)
+      .mockResolvedValueOnce(olderSnapshot)
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+
+    expect(screen.getByTestId('snapshot').textContent).toBe(currentSnapshot.observedAt)
   })
 
   it('does not request while inactive and aborts an active request during cleanup', async () => {

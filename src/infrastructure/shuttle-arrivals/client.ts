@@ -4,7 +4,10 @@ import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from '../../domain/transit/arrivals'
-import { SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS } from '../../domain/transit/arrivals'
+import {
+  isOlderShuttleArrivalSnapshot,
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+} from '../../domain/transit/arrivals'
 import type {
   ShuttleArrivalClient,
   ShuttleArrivalStopRequest,
@@ -17,11 +20,9 @@ export class ShuttleArrivalFetchError extends Error {
   }
 }
 
-interface CachedStop {
-  readonly observedAt: string
-  readonly expiresAt: string
-  readonly cacheExpiresAt: string
-  readonly routes: ShuttleArrivalSnapshot['stops'][string]
+interface CachedSnapshot {
+  readonly snapshot: ShuttleArrivalSnapshot
+  readonly cacheExpiresAt: number
 }
 
 interface ShuttleArrivalClientOptions {
@@ -32,7 +33,6 @@ interface ShuttleArrivalClientOptions {
 }
 
 const DEFAULT_CACHE_TTL_MS = SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS
-const MAX_STOPS_PER_REQUEST = 16
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -41,6 +41,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function parseTimestamp(value: unknown, label: string): string {
   if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) {
     throw new Error(`Shuttle arrival response has an invalid ${label}`)
+  }
+  return value
+}
+
+function parseOptionalTimestamp(value: unknown, label: string): string | undefined {
+  return value === undefined ? undefined : parseTimestamp(value, label)
+}
+
+function parseOptionalVersion(value: unknown): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error('Shuttle arrival response has an invalid snapshotVersion')
   }
   return value
 }
@@ -81,6 +93,23 @@ function normalizeRouteData(value: unknown): ShuttleRouteArrivalData | null {
   }
 }
 
+function parseStopObservations(value: unknown): Readonly<Record<string, ShuttleArrivalObservation>> | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) throw new Error('Shuttle arrival response has invalid stopObservations')
+
+  const observations: Record<string, ShuttleArrivalObservation> = {}
+  for (const [stopId, observationValue] of Object.entries(value)) {
+    if (!isRecord(observationValue)) throw new Error(`Shuttle arrival response has invalid observation for ${stopId}`)
+    const observedAt = parseTimestamp(observationValue.observedAt, `${stopId}.observedAt`)
+    const expiresAt = parseTimestamp(observationValue.expiresAt, `${stopId}.expiresAt`)
+    if (Date.parse(expiresAt) <= Date.parse(observedAt)) {
+      throw new Error(`Shuttle arrival response has an invalid expiry range for ${stopId}`)
+    }
+    observations[stopId] = { observedAt, expiresAt }
+  }
+  return observations
+}
+
 function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
   if (!isRecord(input) || !isRecord(input.stops)) {
     throw new Error('Shuttle arrival response was invalid')
@@ -101,27 +130,74 @@ function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
     }
     stops[stopId] = routes
   }
-  return { observedAt, expiresAt, stops }
+
+  return {
+    observedAt,
+    expiresAt,
+    snapshotVersion: parseOptionalVersion(input.snapshotVersion),
+    refreshedAt: parseOptionalTimestamp(input.refreshedAt, 'refreshedAt'),
+    nextRefreshAt: parseOptionalTimestamp(input.nextRefreshAt, 'nextRefreshAt'),
+    stops,
+    stopObservations: parseStopObservations(input.stopObservations),
+  }
 }
 
 function requestKey(stop: ShuttleArrivalStopRequest): string {
-  return `${stop.stopId}\u0000${stop.stopName}`
+  return stop.stopId
 }
 
-function createCachedStop(
-  stop: ShuttleArrivalStopRequest,
+function hasStops(
   snapshot: ShuttleArrivalSnapshot,
-  now: () => number,
-  cacheTtlMs: number,
-): CachedStop {
-  const providerExpiryMs = Date.parse(snapshot.expiresAt)
-  const cacheExpiryMs = now() + cacheTtlMs
-  return {
-    observedAt: snapshot.observedAt,
-    expiresAt: snapshot.expiresAt,
-    cacheExpiresAt: new Date(Math.min(providerExpiryMs, cacheExpiryMs)).toISOString(),
-    routes: snapshot.stops[stop.stopId] ?? {},
+  stops: readonly ShuttleArrivalStopRequest[],
+): boolean {
+  return stops.every((stop) => Object.prototype.hasOwnProperty.call(snapshot.stops, stop.stopId))
+}
+
+function selectStops(
+  snapshot: ShuttleArrivalSnapshot,
+  stops: readonly ShuttleArrivalStopRequest[],
+): ShuttleArrivalSnapshot {
+  const selectedStops: Record<string, ShuttleArrivalSnapshot['stops'][string]> = {}
+  for (const stop of stops) selectedStops[stop.stopId] = snapshot.stops[stop.stopId] ?? {}
+
+  const selectedObservations: Record<string, ShuttleArrivalObservation> = {}
+  for (const stop of stops) {
+    const observation = snapshot.stopObservations?.[stop.stopId]
+    if (observation) selectedObservations[stop.stopId] = observation
   }
+
+  return {
+    ...snapshot,
+    stops: selectedStops,
+    ...(snapshot.stopObservations ? { stopObservations: selectedObservations } : {}),
+  }
+}
+
+function sameGeneration(first: ShuttleArrivalSnapshot, second: ShuttleArrivalSnapshot): boolean {
+  if (first.snapshotVersion && second.snapshotVersion) {
+    return first.snapshotVersion === second.snapshotVersion
+  }
+  return first.refreshedAt !== undefined && first.refreshedAt === second.refreshedAt
+}
+
+function mergeSnapshot(
+  current: ShuttleArrivalSnapshot | null,
+  incoming: ShuttleArrivalSnapshot,
+): ShuttleArrivalSnapshot {
+  if (!current || isOlderShuttleArrivalSnapshot(incoming, current)) return current ?? incoming
+  if (!sameGeneration(current, incoming)) return incoming
+
+  return {
+    ...incoming,
+    stops: { ...current.stops, ...incoming.stops },
+    stopObservations: current.stopObservations || incoming.stopObservations
+      ? { ...current.stopObservations, ...incoming.stopObservations }
+      : undefined,
+  }
+}
+
+function cacheExpiryMs(snapshot: ShuttleArrivalSnapshot, now: () => number, cacheTtlMs: number): number {
+  return Math.min(Date.parse(snapshot.expiresAt), now() + cacheTtlMs)
 }
 
 export function createShuttleArrivalClient(
@@ -131,105 +207,74 @@ export function createShuttleArrivalClient(
   const cacheTtlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch
-  const cache = new Map<string, CachedStop>()
-  const inFlight = new Map<string, Promise<CachedStop | null>>()
+  let cached: CachedSnapshot | null = null
+  let inFlight: Promise<void> | null = null
 
-  const loadStops = async (
+  const readSnapshot = async (
     stops: readonly ShuttleArrivalStopRequest[],
     signal: AbortSignal,
-  ): Promise<readonly (CachedStop | null)[]> => {
-    const requests = new Map<string, Promise<CachedStop | null>>()
-    const uncachedStops: ShuttleArrivalStopRequest[] = []
-
-    for (const stop of stops) {
-      const key = requestKey(stop)
-      const cached = cache.get(key)
-      if (cached && Date.parse(cached.cacheExpiresAt) > now()) {
-        requests.set(key, Promise.resolve(cached))
-        continue
-      }
-      const existing = inFlight.get(key)
-      if (existing) {
-        requests.set(key, existing)
-        continue
-      }
-      uncachedStops.push(stop)
+  ): Promise<void> => {
+    if (inFlight) {
+      await inFlight
+      if (cached && cached.cacheExpiresAt > now() && hasStops(cached.snapshot, stops)) return
     }
 
-    for (let index = 0; index < uncachedStops.length; index += MAX_STOPS_PER_REQUEST) {
-      const batch = uncachedStops.slice(index, index + MAX_STOPS_PER_REQUEST)
-      const batchRequest = fetcher(
-        `${endpoint}?stops=${encodeURIComponent(JSON.stringify(batch))}`,
-        { signal },
-      )
-        .then(async (response) => {
-          if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
-          const snapshot = parseSnapshot(await response.json() as unknown)
-          if (Date.parse(snapshot.expiresAt) <= now()) {
-            throw new Error('Shuttle arrival response has expired')
+    const request = fetcher(
+      `${endpoint}?stops=${encodeURIComponent(JSON.stringify(stops))}`,
+      { signal },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
+        const snapshot = parseSnapshot(await response.json() as unknown)
+        if (Date.parse(snapshot.expiresAt) <= now()) {
+          throw new Error('Shuttle arrival response has expired')
+        }
+        const current = cached?.snapshot ?? null
+        const merged = mergeSnapshot(current, snapshot)
+        if (isOlderShuttleArrivalSnapshot(snapshot, merged)) {
+          if (cached) {
+            cached = {
+              snapshot: cached.snapshot,
+              cacheExpiresAt: cacheExpiryMs(cached.snapshot, now, cacheTtlMs),
+            }
           }
-          return snapshot
+          return
+        }
+        cached = {
+          snapshot: merged,
+          cacheExpiresAt: cacheExpiryMs(merged, now, cacheTtlMs),
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'AbortError') throw error
+        throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched', {
+          cause: error,
         })
-        .then((snapshot) => new Map(
-          batch.map((stop) => [
-            requestKey(stop),
-            createCachedStop(stop, snapshot, now, cacheTtlMs),
-          ] as const),
-        ))
+      })
 
-      for (const stop of batch) {
-        const key = requestKey(stop)
-        const trackedRequest = batchRequest
-          .then((entries) => {
-            const entry = entries.get(key) ?? null
-            if (entry) cache.set(key, entry)
-            return entry
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error && error.name === 'AbortError') throw error
-            throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched', {
-              cause: error,
-            })
-          })
-          .finally(() => {
-            inFlight.delete(key)
-          })
-        inFlight.set(key, trackedRequest)
-        requests.set(key, trackedRequest)
-      }
+    inFlight = request
+    try {
+      await request
+    } finally {
+      if (inFlight === request) inFlight = null
     }
-
-    return Promise.all(stops.map((stop) => requests.get(requestKey(stop))!))
   }
 
   return {
     async getArrivals(stops, signal) {
       const uniqueStops = [...new Map(stops.map((stop) => [requestKey(stop), stop])).values()]
-      const entries = await loadStops(uniqueStops, signal)
-      const validEntries = entries.filter((entry): entry is CachedStop => entry !== null)
-      const observedAt = validEntries
-        .map((entry) => entry.observedAt)
-        .sort()[0]
-      if (!observedAt) throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched')
-      const expiresAt = validEntries
-        .map((entry) => entry.expiresAt)
-        .sort()[0]
-      const result: Record<string, ShuttleArrivalSnapshot['stops'][string]> = {}
-      uniqueStops.forEach((stop, index) => {
-        const entry = entries[index]
-        if (entry) result[stop.stopId] = entry.routes
-      })
-      const stopObservations: Record<string, ShuttleArrivalObservation> = {}
-      uniqueStops.forEach((stop, index) => {
-        const entry = entries[index]
-        if (entry) {
-          stopObservations[stop.stopId] = {
-            observedAt: entry.observedAt,
-            expiresAt: entry.expiresAt,
-          }
-        }
-      })
-      return { observedAt, expiresAt, stops: result, stopObservations }
+      if (uniqueStops.length === 0) {
+        throw new ShuttleArrivalFetchError('At least one shuttle stop is required')
+      }
+
+      if (!cached || cached.cacheExpiresAt <= now() || !hasStops(cached.snapshot, uniqueStops)) {
+        await readSnapshot(uniqueStops, signal)
+      }
+
+      if (!cached || cached.cacheExpiresAt <= now() || !hasStops(cached.snapshot, uniqueStops)) {
+        throw new ShuttleArrivalFetchError('Live shuttle arrival data did not include the requested stops')
+      }
+      return selectStops(cached.snapshot, uniqueStops)
     },
   }
 }

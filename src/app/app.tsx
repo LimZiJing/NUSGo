@@ -482,6 +482,7 @@ function App() {
     isMobileViewport && activeTab === 'stops',
     serviceRouteIds,
   )
+  const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && transitIndex
     ? getMobileStopSheetSelection(
       selectedStop,
@@ -490,7 +491,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
-      stopArrivals.status === 'refreshing',
+      stopArrivalsUpdating,
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
@@ -501,7 +502,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
-      stopArrivals.status === 'refreshing',
+      stopArrivalsUpdating,
     ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
@@ -510,11 +511,13 @@ function App() {
   const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
-  const liveArrivalMessage = stopArrivals.status === 'loading'
-    ? 'Updating…'
-    : stopArrivals.status === 'error'
-      ? 'No live data'
-      : null
+  const liveArrivalMessage = stopArrivals.snapshot
+    ? null
+    : stopArrivals.status === 'loading'
+      ? 'Updating…'
+      : stopArrivals.status === 'error'
+        ? 'No live data'
+        : null
 
   const beginMobileSearch = (tab: 'explore' | 'plan'): void => {
     if (!isMobileViewport) return

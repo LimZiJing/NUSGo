@@ -50,7 +50,48 @@ describe('mobile stop view state', () => {
     expect(selection.liveArrivalMessage).toBeNull()
   })
 
-  it('does not present stale arrivals as live or replace them with placeholder timings', () => {
+  it('uses each stop observation clock for its displayed arrivals', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stopObservations: {
+        'STOP-A': {
+          observedAt: '2026-09-30T00:00:00.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+        },
+        'STOP-B': {
+          observedAt: '2026-09-30T00:00:10.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+        },
+      },
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 71,
+            upcomingArrivalSeconds: [71, 131],
+            headwaySeconds: { min: 60, median: 60, max: 60 },
+          },
+        },
+        'STOP-B': {
+          A1: {
+            nextArrivalSeconds: 71,
+            upcomingArrivalSeconds: [71, 131],
+            headwaySeconds: { min: 60, median: 60, max: 60 },
+          },
+        },
+      },
+    }
+
+    const nowMs = Date.parse('2026-09-30T00:00:20.000Z')
+    const stopA = getMobileStopSheetSelection(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
+    const stopB = getMobileStopSheetSelection(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
+
+    expect(stopA.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
+    expect(stopB.departures[0]?.timings).toEqual(['2m', '3m', '-'])
+  })
+
+  it('keeps slightly stale arrivals during the refresh grace period', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {
       observedAt: '2026-09-30T00:00:00.000Z',
@@ -74,9 +115,38 @@ describe('mobile stop view state', () => {
       Date.parse('2026-09-30T00:00:31.000Z'),
     )
 
+    expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
+    expect(selection.live).toBe(false)
+    expect(selection.liveArrivalMessage).toBeNull()
+  })
+
+  it('removes arrivals after the maximum stale boundary', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      snapshot,
+      Date.parse('2026-09-30T00:02:01.000Z'),
+    )
+
     expect(selection.departures).toEqual([])
     expect(selection.live).toBe(false)
-    expect(selection.liveArrivalMessage).toBe('Stale live data')
+    expect(selection.liveArrivalMessage).toBe('No live data')
   })
 
   it('shows a scheduled first-bus estimate within the 30-minute grace period', () => {

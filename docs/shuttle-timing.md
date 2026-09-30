@@ -103,8 +103,11 @@ the previous generation remains published. The HTTP endpoint is read-only and
 returns the latest complete generation, or `503` while the first generation is
 still unavailable.
 
-The browser adapter still has the 30-second cache and freshness policy. Its
-snapshot-aware consumer is tracked separately from this server-side change.
+The browser adapter reads the server snapshot and caches it until the next
+refresh boundary. Stops and Journey planning share that reader, apply only
+newer snapshot generations, and use each stop's observation time for display
+freshness. Rapid changes to the visible stop set are debounced so map movement
+does not create a request for every intermediate set.
 
 ## Waiting calculation
 

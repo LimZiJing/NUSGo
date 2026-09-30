@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   SHUTTLE_SERVICE_HOURS_REFRESH_INTERVAL_MS,
   type ShuttleServiceWindow,
@@ -36,8 +36,14 @@ export function useMobileStopServiceWindows(
     status: 'idle',
     windows: null,
   }))
-  const routeKey = routeIds.join('\u0001')
+  const routeKey = [...routeIds].sort().join('\u0001')
   const hasRoutes = active && routeIds.length > 0
+  // Location updates can recreate this array without changing the request.
+  const latestRouteIdsRef = useRef(routeIds)
+
+  useEffect(() => {
+    latestRouteIdsRef.current = routeIds
+  }, [routeIds])
 
   useEffect(() => {
     if (!hasRoutes) return
@@ -56,7 +62,7 @@ export function useMobileStopServiceWindows(
       }))
 
       try {
-        const windows = await loadServiceWindows(routeIds, controller.signal)
+        const windows = await loadServiceWindows(latestRouteIdsRef.current, controller.signal)
         if (disposed) return
         setState({ routeKey, status: 'ready', windows })
       } catch (error: unknown) {
@@ -79,7 +85,7 @@ export function useMobileStopServiceWindows(
       controller?.abort()
       if (refreshTimer) clearTimeout(refreshTimer)
     }
-  }, [hasRoutes, loadServiceWindows, routeIds, routeKey])
+  }, [hasRoutes, loadServiceWindows, routeKey])
 
   if (!hasRoutes) return { status: 'idle', windows: null }
   return { status: state.status, windows: state.windows }

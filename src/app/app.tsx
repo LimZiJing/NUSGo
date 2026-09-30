@@ -203,7 +203,7 @@ function App() {
       initialNearbyLocationRequestedRef.current
     ) return
     initialNearbyLocationRequestedRef.current = true
-    session.enableLocationTracking()
+    session.locateUser()
   }, [activeTab, isMobileViewport, mobileStopView.list, session, state.location.status])
 
   const getActiveMobileSheet = useCallback((): HTMLElement | null => {

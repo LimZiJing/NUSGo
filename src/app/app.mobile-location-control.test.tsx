@@ -2,24 +2,47 @@
 
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './app'
+import { createInitialNavigationSessionState } from './navigation-session'
 
-const { locateUser } = vi.hoisted(() => ({ locateUser: vi.fn() }))
+const appHarness = vi.hoisted(() => {
+  const noop = () => undefined
+  const locateUser = vi.fn()
+  return {
+    state: null as unknown,
+    session: {
+      locateUser: vi.fn(),
+      enableLocationTracking: vi.fn(),
+    },
+    commandLocateUser: locateUser,
+    commands: new Proxy({ locateUser }, {
+      get: (target, property) => target[property as keyof typeof target] ?? noop,
+    }),
+  }
+})
 
 vi.mock('./navigation-session-mount', () => ({
   createNavigationSessionMount: () => ({
-    session: null,
+    session: appHarness.session,
     dispose: () => undefined,
   }),
-  createNavigationSessionCommandAdapter: () => () => new Proxy({ locateUser }, {
-    get: (target, property) => target[property as keyof typeof target] ?? (() => undefined),
-  }),
+  createNavigationSessionCommandAdapter: () => () => appHarness.commands,
 }))
+
+vi.mock('./use-navigation-session', () => ({
+  useNavigationSession: () => appHarness.state,
+}))
+
+beforeEach(() => {
+  appHarness.state = createInitialNavigationSessionState()
+})
 
 afterEach(() => {
   cleanup()
-  locateUser.mockClear()
+  appHarness.commandLocateUser.mockClear()
+  appHarness.session.locateUser.mockClear()
+  appHarness.session.enableLocationTracking.mockClear()
 })
 
 function mockMobileViewport(): void {
@@ -60,6 +83,15 @@ describe('mobile location control integration', () => {
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Show my location' }))
 
-    expect(locateUser).toHaveBeenCalledOnce()
+    expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
+  })
+
+  it('uses the locate command for the automatic Nearby location request', async () => {
+    mockMobileViewport()
+
+    render(<App />)
+
+    await vi.waitFor(() => expect(appHarness.session.locateUser).toHaveBeenCalledOnce())
+    expect(appHarness.session.enableLocationTracking).not.toHaveBeenCalled()
   })
 })

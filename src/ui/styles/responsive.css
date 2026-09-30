@@ -50,6 +50,10 @@
     display: none !important;
   }
 
+  .map-control-stack {
+    display: contents;
+  }
+
   .map-legend {
     display: none;
   }

@@ -56,6 +56,17 @@ function mockMobileViewport(): void {
   })
 }
 
+function mockDesktopViewport(): void {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn().mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  })
+}
+
 describe('mobile location control integration', () => {
   it('renders one mobile location action without a separate recenter action', () => {
     mockMobileViewport()
@@ -93,5 +104,16 @@ describe('mobile location control integration', () => {
 
     await vi.waitFor(() => expect(appHarness.session.locateUser).toHaveBeenCalledOnce())
     expect(appHarness.session.enableLocationTracking).not.toHaveBeenCalled()
+  })
+
+  it('groups desktop map controls into one layout stack', () => {
+    mockDesktopViewport()
+
+    render(<App />)
+
+    const stack = document.querySelector('.map-control-stack')
+    expect(stack?.querySelector('.theme-toggle')).toBeTruthy()
+    expect(stack?.querySelector('.location-control')).toBeTruthy()
+    expect(stack?.querySelector('.map-legend')).toBeTruthy()
   })
 })

@@ -8,11 +8,16 @@
     --surface-overlay: rgb(31 32 40 / 95%);
     --surface-overlay-strong: rgb(31 32 40 / 98%);
     --surface-overlay-soft: rgb(31 32 40 / 90%);
+    --surface-overlay-panel: rgb(31 32 40 / 96%);
     --surface-neutral: #24252b;
     --surface-faint: #1f2028;
     --surface-info-soft: #25324a;
     --surface-control: #2e303a;
     --surface-warning: #3d3020;
+    --surface-segmented-control: #25324a;
+    --surface-card: #1f2028;
+    --surface-handle: #64748b;
+    --surface-journey-step: #64748b;
 
     --text-primary: #f3f4f6;
     --text-secondary: #cbd5e1;
@@ -21,10 +26,14 @@
     --text-muted: #94a3b8;
     --text-inverse: #16171d;
     --text-contrast: #f3f4f6;
+    --text-strong: #e2e8f0;
+    --text-secondary-strong: #cbd5e1;
     --text-disabled: #64748b;
     --text-warning: #fcd34d;
     --text-success-strong: #86efac;
     --text-error-strong: #fca5a5;
+    --text-favorite: #facc15;
+    --bus-stop-default-color: #94a3b8;
 
     --border-default: #2e303a;
     --border-subtle: #24252b;
@@ -36,6 +45,8 @@
     --border-success: #166534;
     --border-warning: #92400e;
     --border-info: #2563eb;
+    --border-focus: #94a3b8;
+    --border-card: #363944;
 
     --accent: #60a5fa;
     --accent-hover: #93c5fd;
@@ -44,6 +55,7 @@
     --focus-ring: #60a5fa;
     --focus-ring-soft: rgb(96 165 250 / 45%);
     --focus-ring-strong: rgb(96 165 250 / 55%);
+    --focus-ring-neutral: rgb(148 163 184 / 35%);
 
     --status-success: #6ee7b7;
     --status-success-surface: #064e3b;
@@ -56,10 +68,18 @@
     --status-error-strong: #fca5a5;
     --status-info: #93c5fd;
     --status-info-surface: #1e3a8a;
+    --status-marker-origin: #22c55e;
+    --status-marker-destination: #f87171;
 
     --shadow-sm: 0 1px 3px rgb(0 0 0 / 25%);
     --shadow-md: 0 1px 4px rgb(0 0 0 / 35%);
     --shadow-lg: 0 8px 24px rgb(0 0 0 / 30%);
     --shadow-panel: 0 1px 4px rgb(0 0 0 / 35%);
+    --shadow-card-strong: 0 1px 3px rgb(0 0 0 / 40%);
+    --shadow-chip: 0 2px 7px rgb(0 0 0 / 30%);
+    --shadow-sheet: 0 -6px 22px rgb(0 0 0 / 30%);
+    --shadow-soft: 0 1px 4px rgb(0 0 0 / 25%);
+    --shadow-results: 0 4px 12px rgb(0 0 0 / 35%);
+    --shadow-marker: 0 1px 3px rgb(0 0 0 / 45%);
   }
 }

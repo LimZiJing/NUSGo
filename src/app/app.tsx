@@ -435,7 +435,7 @@ function App() {
     dismissMapPopup()
   }, [activeTab, dismissMapPopup, isMobileViewport])
 
-  const selectedRouteColor = state.selectedRouteColor ?? '#334155'
+  const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
   const transitIndex = state.transitIndex
   const selectedStop = mobileStopView.focusedStopId === null
     ? undefined

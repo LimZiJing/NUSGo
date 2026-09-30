@@ -5,21 +5,21 @@ button.navigate-button {
   align-self: flex-start;
   gap: 8px;
   width: auto;
-  min-height: 36px;
+  min-height: var(--control-height-sm);
   box-sizing: border-box;
   padding: 7px 10px;
-  border: 1px solid #1d4ed8;
-  border-radius: 6px;
-  color: #fff;
-  background: #1d4ed8;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-panel);
+  color: var(--text-inverse);
+  background: var(--accent);
   font: 600 14px/1.2 system-ui, sans-serif;
   cursor: pointer;
 }
 
 button.navigate-button:disabled {
-  border-color: #cbd5e1;
-  color: #64748b;
-  background: #e2e8f0;
+  border-color: var(--border-control);
+  color: var(--text-muted);
+  background: var(--surface-control);
   cursor: not-allowed;
 }
 

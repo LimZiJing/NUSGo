@@ -7,11 +7,16 @@
   --surface-overlay: rgb(255 255 255 / 95%);
   --surface-overlay-strong: rgb(255 255 255 / 98%);
   --surface-overlay-soft: rgb(255 255 255 / 90%);
+  --surface-overlay-panel: rgb(255 255 255 / 96%);
   --surface-neutral: #eef0f4;
   --surface-faint: #f7f8fb;
   --surface-info-soft: #e8eef5;
   --surface-control: #e2e8f0;
   --surface-warning: #fff7ed;
+  --surface-segmented-control: #e8eef5;
+  --surface-card: #f7f8fb;
+  --surface-handle: #94a3b8;
+  --surface-journey-step: #475569;
 
   --text-primary: #1f2937;
   --text-secondary: #475569;
@@ -20,10 +25,14 @@
   --text-muted: #64748b;
   --text-inverse: #fff;
   --text-contrast: #0f172a;
+  --text-strong: #334155;
+  --text-secondary-strong: #4b5563;
   --text-disabled: #94a3b8;
   --text-warning: #b45309;
   --text-success-strong: #15803d;
   --text-error-strong: #b91c1c;
+  --text-favorite: #eab308;
+  --bus-stop-default-color: #334155;
 
   --border-default: #e5e4e7;
   --border-subtle: #e2e8f0;
@@ -35,6 +44,8 @@
   --border-success: #9ee8d0;
   --border-warning: #fde68a;
   --border-info: #93c5fd;
+  --border-focus: #64748b;
+  --border-card: #e4e8ef;
 
   --accent: #1d4ed8;
   --accent-hover: #1e40af;
@@ -43,6 +54,7 @@
   --focus-ring: #2563eb;
   --focus-ring-soft: rgb(37 99 235 / 45%);
   --focus-ring-strong: rgb(37 99 235 / 55%);
+  --focus-ring-neutral: rgb(100 116 139 / 25%);
 
   --status-success: #047857;
   --status-success-surface: #def8eb;
@@ -55,9 +67,17 @@
   --status-error-strong: #b91c1c;
   --status-info: #1d4ed8;
   --status-info-surface: #dbeafe;
+  --status-marker-origin: #15803d;
+  --status-marker-destination: #dc2626;
 
   --shadow-sm: 0 1px 3px rgb(15 23 42 / 10%);
   --shadow-md: 0 1px 4px rgb(15 23 42 / 25%);
   --shadow-lg: 0 8px 24px rgb(15 23 42 / 12%);
   --shadow-panel: 0 1px 4px rgb(0 0 0 / 25%);
+  --shadow-card-strong: 0 1px 3px rgb(15 23 42 / 30%);
+  --shadow-chip: 0 2px 7px rgb(15 23 42 / 18%);
+  --shadow-sheet: 0 -6px 22px rgb(15 23 42 / 14%);
+  --shadow-soft: 0 1px 4px rgb(15 23 42 / 20%);
+  --shadow-results: 0 4px 12px rgb(15 23 42 / 12%);
+  --shadow-marker: 0 1px 3px rgb(15 23 42 / 40%);
 }

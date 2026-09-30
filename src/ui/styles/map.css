@@ -8,9 +8,6 @@
   z-index: 13;
   top: 12px;
   left: 12px;
-  display: grid;
-  gap: 12px;
-  align-items: start;
   pointer-events: none;
 }
 
@@ -21,10 +18,35 @@
 }
 
 @media (min-width: 769px) {
+  .map-control-stack {
+    right: 12px;
+    left: auto;
+    display: grid;
+    grid-template-columns: max-content max-content;
+    grid-template-areas:
+      'legend legend'
+      'location theme';
+    gap: 12px;
+    align-items: start;
+  }
+
   .map-control-stack > .theme-toggle,
   .map-control-stack > .location-control,
   .map-control-stack > .map-legend {
     position: static;
+  }
+
+  .map-control-stack > .theme-toggle {
+    grid-area: theme;
+  }
+
+  .map-control-stack > .location-control {
+    grid-area: location;
+  }
+
+  .map-control-stack > .map-legend {
+    grid-area: legend;
+    justify-self: end;
   }
 }
 

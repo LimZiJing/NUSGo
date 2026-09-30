@@ -39,6 +39,7 @@ const journey: Journey = {
   totalDurationSeconds: 390,
   totalDistanceMeters: 2320,
   estimateStatus: 'estimated',
+  planningQuality: 'exact',
 }
 
 const venues = {
@@ -86,7 +87,7 @@ describe('TripJourneyResult', () => {
       />,
     )
 
-    expect(markup).toContain('Fastest estimated Journey')
+    expect(markup).toContain('Recommended estimated Journey')
     expect(markup).toContain('7 min')
     expect(markup).toContain('2.3 km')
     expect(markup).toContain('Walk')
@@ -98,6 +99,23 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Alight')
     expect(markup).toContain('Stops:')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
+  })
+
+  it('explains when the Journey was selected within a search budget', () => {
+    const markup = renderToStaticMarkup(
+      <TripJourneyResult
+        state={{
+          status: 'ready',
+          journey: { ...journey, planningQuality: 'bounded' },
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+
+    expect(markup).toContain('A faster route may exist')
+    expect(markup).not.toContain('Fastest estimated Journey')
   })
 
   it.each([

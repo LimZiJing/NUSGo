@@ -13,6 +13,7 @@ import type {
   JourneyEndpointLocation,
   JourneyLineString,
   JourneyLeg,
+  JourneyPlanningQuality,
   ShuttleJourneyLeg,
   WalkingJourneyLeg,
 } from './journey'
@@ -37,6 +38,23 @@ export type ShuttleWaitingTimeProvider = (
 ) => number | null
 
 export const zeroShuttleWaitingTime: ShuttleWaitingTimeProvider = () => 0
+
+export interface JourneyPlanningOptions {
+  readonly maxDurationMs?: number
+  readonly maxExpandedPaths?: number
+  readonly shouldCancel?: () => boolean
+  readonly yieldEvery?: number
+  readonly yieldControl?: () => Promise<void>
+  readonly now?: () => number
+}
+
+export type JourneyPlanningStatus = 'complete' | 'budget-exceeded' | 'cancelled'
+
+export interface JourneyPlanningResult {
+  readonly journey: Journey | null
+  readonly status: JourneyPlanningStatus
+  readonly expandedPathCount: number
+}
 
 export interface PlanJourneyInput {
   readonly origin: JourneyEndpointLocation
@@ -415,6 +433,59 @@ function hasPathLabel(
   ) ?? false
 }
 
+class JourneyPathQueue {
+  private readonly items: JourneyPath[] = []
+
+  get length(): number {
+    return this.items.length
+  }
+
+  peek(): JourneyPath | undefined {
+    return this.items[0]
+  }
+
+  push(path: JourneyPath): void {
+    this.items.push(path)
+    let index = this.items.length - 1
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2)
+      if (comparePaths(this.items[parentIndex], path) <= 0) break
+      this.items[index] = this.items[parentIndex]
+      index = parentIndex
+    }
+    this.items[index] = path
+  }
+
+  pop(): JourneyPath | undefined {
+    const first = this.items[0]
+    if (!first) return undefined
+
+    const last = this.items.pop()
+    if (last && this.items.length > 0) {
+      let index = 0
+      while (true) {
+        const leftIndex = index * 2 + 1
+        const rightIndex = leftIndex + 1
+        let nextIndex = index
+        if (
+          leftIndex < this.items.length &&
+          comparePaths(this.items[leftIndex], last) < 0
+        ) nextIndex = leftIndex
+        if (
+          rightIndex < this.items.length &&
+          comparePaths(this.items[rightIndex], this.items[nextIndex]) < 0
+        ) nextIndex = rightIndex
+        if (nextIndex === index) break
+        this.items[index] = this.items[nextIndex]
+        index = nextIndex
+      }
+      this.items[index] = last
+    }
+
+    return first
+  }
+}
+
 function isUpstreamBoarding(
   origin: TripEndpoint,
   edge: ShuttleJourneyEdge,
@@ -558,17 +629,17 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
   return graph
 }
 
-function findBestPath(
-  graph: Map<string, JourneyEdge[]>,
-  origin: TripEndpoint,
-  destination: TripEndpoint,
-  transitIndex: TransitIndex,
-  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
-): JourneyPath | null {
-  const originKey = endpointKey(origin)
-  const destinationKey = endpointKey(destination)
+interface PathSearchState {
+  readonly queue: JourneyPathQueue
+  readonly labelsByState: Map<string, JourneyPath[]>
+  bestDestinationPath: JourneyPath | null
+  complete: boolean
+  expandedPathCount: number
+}
+
+function createInitialPath(origin: TripEndpoint): JourneyPath {
   const initialPathState = {
-    nodeKey: originKey,
+    nodeKey: endpointKey(origin),
     durationSeconds: 0,
     distanceMeters: 0,
     walkingDistanceMeters: 0,
@@ -578,61 +649,122 @@ function findBestPath(
     legs: [],
     sequenceKey: '',
   }
-  const initialPath: JourneyPath = {
+  return {
     ...initialPathState,
     visitedStateKeys: new Set([journeyPathStateKey(initialPathState)]),
   }
-  const queue: JourneyPath[] = [initialPath]
-  const labelsByState = new Map<string, JourneyPath[]>()
-  retainPathLabels(labelsByState, initialPath)
-  let bestDestinationPath: JourneyPath | null = null
-
-  while (queue.length > 0) {
-    queue.sort(comparePaths)
-    const path = queue.shift()!
-    if (!hasPathLabel(labelsByState, path)) continue
-    if (bestDestinationPath && path.durationSeconds > bestDestinationPath.durationSeconds) continue
-    if (path.nodeKey === destinationKey) {
-      if (!bestDestinationPath || comparePaths(path, bestDestinationPath) < 0) {
-        bestDestinationPath = path
-      }
-      continue
-    }
-
-    for (const edge of graph.get(path.nodeKey) ?? []) {
-      if (
-        edge.kind === 'shuttle' &&
-        path.shuttleBoardings === 0 &&
-        isUpstreamBoarding(origin, edge, transitIndex)
-      ) continue
-      // A continuous ride cannot become another boarding on the same route.
-      if (
-        edge.kind === 'shuttle' &&
-        path.lastShuttleRouteId === edge.routeId &&
-        !path.lastShuttleReachedTerminal
-      ) continue
-      const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
-      if (!resolvedEdge) continue
-      const nextPath = extendPath(path, resolvedEdge)
-      if (path.visitedStateKeys.has(journeyPathStateKey(nextPath))) continue
-      if (retainPathLabels(labelsByState, nextPath)) {
-        queue.push(nextPath)
-      }
-    }
-  }
-
-  return bestDestinationPath
 }
 
-export function planJourney(input: PlanJourneyInput): Journey | null {
-  const graph = buildGraph(input)
-  const path = findBestPath(
-    graph,
-    input.origin.endpoint,
-    input.destination.endpoint,
-    input.transitIndex,
-    input.getShuttleWaitingSeconds,
+function createPathSearchState(origin: TripEndpoint): PathSearchState {
+  const initialPath = createInitialPath(origin)
+  const labelsByState = new Map<string, JourneyPath[]>()
+  retainPathLabels(labelsByState, initialPath)
+  const queue = new JourneyPathQueue()
+  queue.push(initialPath)
+  return {
+    queue,
+    labelsByState,
+    bestDestinationPath: null,
+    complete: false,
+    expandedPathCount: 0,
+  }
+}
+
+function updateSearchCompletion(
+  state: PathSearchState,
+): void {
+  const nextPath = state.queue.peek()
+  state.complete = !nextPath || (
+    state.bestDestinationPath !== null &&
+    nextPath.durationSeconds > state.bestDestinationPath.durationSeconds
   )
+}
+
+function advancePathSearch(
+  state: PathSearchState,
+  graph: Map<string, JourneyEdge[]>,
+  origin: TripEndpoint,
+  destination: TripEndpoint,
+  transitIndex: TransitIndex,
+  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
+): void {
+  const destinationKey = endpointKey(destination)
+  const path = state.queue.pop()
+  if (!path) {
+    state.complete = true
+    return
+  }
+
+  state.expandedPathCount += 1
+  if (!hasPathLabel(state.labelsByState, path)) {
+    updateSearchCompletion(state)
+    return
+  }
+  if (
+    state.bestDestinationPath &&
+    path.durationSeconds > state.bestDestinationPath.durationSeconds
+  ) {
+    updateSearchCompletion(state)
+    return
+  }
+  if (path.nodeKey === destinationKey) {
+    if (
+      !state.bestDestinationPath ||
+      comparePaths(path, state.bestDestinationPath) < 0
+    ) state.bestDestinationPath = path
+    updateSearchCompletion(state)
+    return
+  }
+
+  for (const edge of graph.get(path.nodeKey) ?? []) {
+    if (
+      edge.kind === 'shuttle' &&
+      path.shuttleBoardings === 0 &&
+      isUpstreamBoarding(origin, edge, transitIndex)
+    ) continue
+    // A continuous ride cannot become another boarding on the same route.
+    if (
+      edge.kind === 'shuttle' &&
+      path.lastShuttleRouteId === edge.routeId &&
+      !path.lastShuttleReachedTerminal
+    ) continue
+    const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
+    if (!resolvedEdge) continue
+    const nextPath = extendPath(path, resolvedEdge)
+    if (path.visitedStateKeys.has(journeyPathStateKey(nextPath))) continue
+    if (retainPathLabels(state.labelsByState, nextPath)) {
+      state.queue.push(nextPath)
+    }
+  }
+  updateSearchCompletion(state)
+}
+
+function findBestPath(
+  graph: Map<string, JourneyEdge[]>,
+  origin: TripEndpoint,
+  destination: TripEndpoint,
+  transitIndex: TransitIndex,
+  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
+): PathSearchState {
+  const state = createPathSearchState(origin)
+  while (!state.complete) {
+    advancePathSearch(
+      state,
+      graph,
+      origin,
+      destination,
+      transitIndex,
+      getShuttleWaitingSeconds,
+    )
+  }
+  return state
+}
+
+function createJourney(
+  input: PlanJourneyInput,
+  path: JourneyPath | null,
+  planningQuality: JourneyPlanningQuality,
+): Journey | null {
   if (!path || path.legs.length === 0) return null
 
   const legs = mergeConsecutiveWalkingLegs(path.legs)
@@ -643,5 +775,64 @@ export function planJourney(input: PlanJourneyInput): Journey | null {
     totalDurationSeconds: path.durationSeconds,
     totalDistanceMeters: path.distanceMeters,
     estimateStatus: 'estimated',
+    planningQuality,
   }
+}
+
+export function planJourney(input: PlanJourneyInput): Journey | null {
+  const graph = buildGraph(input)
+  const state = findBestPath(
+    graph,
+    input.origin.endpoint,
+    input.destination.endpoint,
+    input.transitIndex,
+    input.getShuttleWaitingSeconds,
+  )
+  return createJourney(input, state.bestDestinationPath, 'exact')
+}
+
+export async function planJourneyWithinBudget(
+  input: PlanJourneyInput,
+  options: JourneyPlanningOptions = {},
+): Promise<JourneyPlanningResult> {
+  const graph = buildGraph(input)
+  const state = createPathSearchState(input.origin.endpoint)
+  const now = options.now ?? Date.now
+  const startedAt = now()
+  const maxDurationMs = options.maxDurationMs
+  const maxExpandedPaths = options.maxExpandedPaths
+  const yieldEvery = options.yieldEvery ?? (options.yieldControl ? 64 : 0)
+
+  const createResult = (status: JourneyPlanningStatus): JourneyPlanningResult => ({
+    journey: createJourney(
+      input,
+      state.bestDestinationPath,
+      status === 'complete' ? 'exact' : 'bounded',
+    ),
+    status,
+    expandedPathCount: state.expandedPathCount,
+  })
+
+  while (!state.complete) {
+    if (options.shouldCancel?.()) return createResult('cancelled')
+    if (
+      (maxDurationMs !== undefined && now() - startedAt >= maxDurationMs) ||
+      (maxExpandedPaths !== undefined && state.expandedPathCount >= maxExpandedPaths)
+    ) return createResult('budget-exceeded')
+
+    advancePathSearch(
+      state,
+      graph,
+      input.origin.endpoint,
+      input.destination.endpoint,
+      input.transitIndex,
+      input.getShuttleWaitingSeconds,
+    )
+
+    if (!state.complete && yieldEvery > 0 && state.expandedPathCount % yieldEvery === 0) {
+      await options.yieldControl?.()
+    }
+  }
+
+  return createResult('complete')
 }

@@ -283,6 +283,7 @@ function createJourney(): Journey {
     totalDurationSeconds: 60,
     totalDistanceMeters: 100,
     estimateStatus: 'estimated',
+    planningQuality: 'exact',
   }
 }
 
@@ -398,6 +399,7 @@ function createTransferJourney(): Journey {
     totalDurationSeconds: 300,
     totalDistanceMeters: 1900,
     estimateStatus: 'estimated',
+    planningQuality: 'exact',
   }
 }
 
@@ -409,6 +411,7 @@ function createSingleRouteJourney(): Journey {
     totalDurationSeconds: 180,
     totalDistanceMeters: 1000,
     estimateStatus: 'estimated',
+    planningQuality: 'exact',
   }
 }
 
@@ -432,6 +435,7 @@ function createShuttleJourney(): Journey {
     totalDurationSeconds: 120,
     totalDistanceMeters: 900,
     estimateStatus: 'estimated',
+    planningQuality: 'exact',
   }
 }
 

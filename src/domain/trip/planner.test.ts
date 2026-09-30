@@ -6,6 +6,7 @@ import { validateTransitNetwork } from '../transit/model'
 import type { TripEndpoint } from './types'
 import {
   planJourney,
+  planJourneyWithinBudget,
   zeroShuttleWaitingTime,
   type PlanJourneyInput,
   type WalkingJourneyConnection,
@@ -648,5 +649,54 @@ describe('planJourney', () => {
 
   it('returns no journey when no complete connection exists', () => {
     expect(planJourney(createInput([]))).toBeNull()
+  })
+
+  it('returns an exact result when the bounded search finishes', async () => {
+    const result = await planJourneyWithinBudget(createInput([
+      walking(origin, stopA, 100),
+      walking(stopB, destination, 100),
+      walking(origin, destination, 500),
+    ]), { maxExpandedPaths: 10_000 })
+
+    expect(result.status).toBe('complete')
+    expect(result.journey?.planningQuality).toBe('exact')
+    expect(result.journey?.totalDurationSeconds).toBeLessThan(500)
+  })
+
+  it('returns the best complete result when the search budget is reached', async () => {
+    const input = createInput([
+      walking(origin, stopA, 1),
+      walking(stopB, destination, 1),
+    ])
+    const rideSeconds = input.shuttleTiming.records.find((record) => (
+      record.routeId === 'A1' &&
+      record.fromStopId === 'STOP-A' &&
+      record.toStopId === 'STOP-B'
+    ))?.rideSeconds
+    if (rideSeconds === null || rideSeconds === undefined) {
+      throw new Error('Expected a generated A1 ride estimate')
+    }
+
+    const result = await planJourneyWithinBudget({
+      ...input,
+      walkingConnections: [
+        ...input.walkingConnections,
+        walking(origin, destination, rideSeconds + 2),
+      ],
+    }, { maxExpandedPaths: 4 })
+
+    expect(result.status).toBe('budget-exceeded')
+    expect(result.journey?.planningQuality).toBe('bounded')
+    expect(result.journey?.totalDurationSeconds).toBe(rideSeconds + 2)
+  })
+
+  it('stops before expanding a path when cancelled', async () => {
+    const result = await planJourneyWithinBudget(createInput([
+      walking(origin, destination, 100),
+    ]), { shouldCancel: () => true })
+
+    expect(result.status).toBe('cancelled')
+    expect(result.expandedPathCount).toBe(0)
+    expect(result.journey).toBeNull()
   })
 })

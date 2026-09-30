@@ -135,6 +135,7 @@ describe('TripEndpointControls Journey result', () => {
       totalDurationSeconds: 60,
       totalDistanceMeters: 100,
       estimateStatus: 'estimated',
+      planningQuality: 'exact',
     }
 
     const markup = renderToStaticMarkup(
@@ -155,7 +156,7 @@ describe('TripEndpointControls Journey result', () => {
       />,
     )
 
-    expect(markup).toContain('Fastest estimated Journey')
+    expect(markup).toContain('Recommended estimated Journey')
     expect(markup).toContain('Walk')
   })
 })

@@ -168,7 +168,7 @@ export function TripJourneyResult({
       <div className="trip-journey-result-heading">
         <div>
           <p className="trip-journey-kicker">Recommended journey</p>
-          <h3 id="trip-journey-result-title">Fastest estimated Journey</h3>
+          <h3 id="trip-journey-result-title">Recommended estimated Journey</h3>
         </div>
         <div className="trip-journey-metrics" aria-label="Journey estimate">
           <strong>{formatDuration(journey.totalDurationSeconds)}</strong>
@@ -176,6 +176,9 @@ export function TripJourneyResult({
         </div>
       </div>
       <p className="trip-journey-notice" role="note">
+        {journey.planningQuality === 'bounded'
+          ? 'This is a valid route found within a short search budget. A faster route may exist. '
+          : ''}
         {hasShuttleLeg
           ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
           : 'Travel times are estimates, not guaranteed arrival times.'}

@@ -2,7 +2,7 @@
   width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
+  border-inline: 1px solid var(--border-default);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -22,7 +22,7 @@ h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--text-heading);
 }
 
 h1 {
@@ -85,7 +85,7 @@ input:focus-visible,
 select:focus-visible,
 h2:focus,
 h3:focus {
-  outline: 3px solid rgb(37 99 235 / 45%);
+  outline: 3px solid var(--focus-ring-soft);
   outline-offset: 2px;
 }
 

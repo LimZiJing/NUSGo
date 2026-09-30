@@ -1,9 +1,4 @@
 :root {
-  --text: var(--text-secondary);
-  --text-h: var(--text-primary);
-  --bg: var(--surface);
-  --border: var(--border-default);
-
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -27,8 +22,8 @@
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--text-body);
+  background: var(--surface);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

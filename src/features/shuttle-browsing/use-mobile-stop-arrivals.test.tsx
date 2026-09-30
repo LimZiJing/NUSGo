@@ -138,7 +138,7 @@ describe('useMobileStopArrivals', () => {
     vi.useFakeTimers()
     const nextStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
     const latestStops = [{ stopId: 'STOP-C', stopName: 'Stop C' }]
-    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const client = vi.fn<MobileStopArrivalLoader>(async () => snapshot)
     const { rerender } = render(<Probe client={client} active />)
     await act(async () => undefined)
 

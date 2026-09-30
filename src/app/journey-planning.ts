@@ -7,7 +7,9 @@ import type {
 import type { LoadedTransitData } from './contracts/data'
 import {
   planJourney,
+  planJourneyWithinBudget,
   zeroShuttleWaitingTime,
+  type JourneyPlanningResult,
   type WalkingJourneyConnection,
 } from '../domain/trip/planner'
 import { createLiveShuttleWaitingTimeProvider } from '../domain/trip/live-waiting'
@@ -53,6 +55,9 @@ interface WalkingCandidate {
 
 const MAX_ENDPOINT_WALK_SECONDS = 300
 const MAX_STOP_TRANSFER_WALK_SECONDS = 180
+const JOURNEY_PLANNING_MAX_DURATION_MS = 350
+const JOURNEY_PLANNING_MAX_EXPANDED_PATHS = 10_000
+const JOURNEY_PLANNING_YIELD_EVERY = 64
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -286,13 +291,34 @@ function createAbortError(): Error {
   return error
 }
 
-function planWalkingOnly(
+function yieldToBrowser(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+async function planWithBudget(
   planInput: Parameters<typeof planJourney>[0],
-): Journey | null {
-  return planJourney({
+  signal: AbortSignal,
+): Promise<JourneyPlanningResult> {
+  const result = await planJourneyWithinBudget(planInput, {
+    maxDurationMs: JOURNEY_PLANNING_MAX_DURATION_MS,
+    maxExpandedPaths: JOURNEY_PLANNING_MAX_EXPANDED_PATHS,
+    shouldCancel: () => signal.aborted,
+    yieldEvery: JOURNEY_PLANNING_YIELD_EVERY,
+    yieldControl: yieldToBrowser,
+  })
+  if (result.status === 'cancelled' || signal.aborted) throw createAbortError()
+  return result
+}
+
+async function planWalkingOnly(
+  planInput: Parameters<typeof planJourney>[0],
+  signal: AbortSignal,
+): Promise<Journey | null> {
+  const result = await planWithBudget({
     ...planInput,
     getShuttleWaitingSeconds: () => null,
-  })
+  }, signal)
+  return result.journey
 }
 
 function createPlanningWalkingGeometry(
@@ -441,8 +467,14 @@ export function createJourneyPlanningService(
       walkingConnections,
       getShuttleWaitingSeconds: zeroShuttleWaitingTime,
     }
-    const staticJourney = planJourney(planInput)
-    if (!staticJourney) return null
+    const staticSearch = await planWithBudget(planInput, request.signal)
+    const staticJourney = staticSearch.journey
+    if (!staticJourney) {
+      const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
+      return walkingOnlyJourney
+        ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+        : null
+    }
     if (!shuttleArrivalClient) {
       return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
     }
@@ -466,13 +498,16 @@ export function createJourneyPlanningService(
       } catch (error: unknown) {
         if (request.signal.aborted || isAbortError(error)) throw createAbortError()
         console.warn('Shuttle service-hour data is unavailable; removing shuttle options.', error)
-        const walkingOnlyJourney = planWalkingOnly(planInput)
+        const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
         return walkingOnlyJourney
           ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
           : null
       }
       if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) {
-        return planWalkingOnly(planInput)
+        const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
+        return walkingOnlyJourney
+          ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+          : null
       }
     }
 
@@ -486,7 +521,7 @@ export function createJourneyPlanningService(
 
     const nowMs = now()
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals, nowMs)
-    const liveJourney = planJourney({
+    const liveSearch = await planWithBudget({
       ...planInput,
       getShuttleWaitingSeconds: (record, context) => {
         const waitingSeconds = liveWaiting(record, context)
@@ -498,7 +533,8 @@ export function createJourneyPlanningService(
         if (service.status !== 'active') return null
         return waitingSeconds
       },
-    })
+    }, request.signal)
+    const liveJourney = liveSearch.journey
     if (liveJourney) {
       return enrichWalkingGeometry(routeEngine, liveJourney, locations.all, request.signal)
     }
@@ -507,7 +543,7 @@ export function createJourneyPlanningService(
       ? getStaticServiceEvaluation(staticJourney, serviceWindows, nowMs)
       : null
     if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-    const walkingOnlyJourney = planWalkingOnly(planInput)
+    const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
     return walkingOnlyJourney
       ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
       : null

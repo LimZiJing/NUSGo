@@ -87,7 +87,7 @@ describe('TripJourneyResult', () => {
       />,
     )
 
-    expect(markup).toContain('Fastest estimated Journey')
+    expect(markup).toContain('Recommended estimated Journey')
     expect(markup).toContain('7 min')
     expect(markup).toContain('2.3 km')
     expect(markup).toContain('Walk')

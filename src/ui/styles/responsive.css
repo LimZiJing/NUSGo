@@ -32,7 +32,7 @@
     bottom: 0;
     left: 0;
     height: var(--mobile-tab-bar-height);
-    background: #fff;
+    background: var(--surface-raised);
     content: '';
     pointer-events: none;
   }
@@ -63,11 +63,11 @@
   }
 
   .location-control-chip {
-    min-height: 44px;
+    min-height: var(--control-height-lg);
   }
 
   .location-control-chip:focus-visible {
-    outline: 3px solid #2563eb;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
   }
 
@@ -85,7 +85,7 @@
   }
 
   .trip-controls-heading {
-    min-height: 44px;
+    min-height: var(--control-height-lg);
   }
 
   .trip-controls-title {
@@ -133,7 +133,7 @@
     padding: 8px max(12px, env(safe-area-inset-right))
       12px
       max(12px, env(safe-area-inset-left));
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row) {
@@ -160,10 +160,10 @@
     padding: 8px max(16px, env(safe-area-inset-right))
       16px
       max(16px, env(safe-area-inset-left));
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-subtle);
     border-bottom: 0;
-    background: rgb(255 255 255 / 98%);
-    box-shadow: 0 -6px 22px rgb(15 23 42 / 14%);
+    background: var(--surface-overlay-strong);
+    box-shadow: var(--shadow-sheet);
   }
 
   .contextual-panel-header {
@@ -251,8 +251,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
     padding: 0;
-    border-radius: 10px;
-    background: #e8eef5;
+    border-radius: var(--radius-card);
+    background: var(--surface-segmented-control);
   }
 
   .contextual-panel .mobile-explore-segments button,
@@ -260,18 +260,18 @@
     position: relative;
     isolation: isolate;
     min-width: 0;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     padding: 8px 10px;
     border: 0;
     border-radius: 9px;
-    color: #475569;
+    color: var(--text-secondary);
     background: transparent;
     font: 600 14px/1.2 system-ui, sans-serif;
   }
 
   .contextual-panel .mobile-explore-segments button[aria-pressed='true'],
   .mobile-stops-sheet .mobile-stops-list-selector button[aria-pressed='true'] {
-    color: #0f172a;
+    color: var(--text-contrast);
   }
 
   .contextual-panel .mobile-explore-segments button[aria-pressed='true']::before,
@@ -280,8 +280,8 @@
     z-index: -1;
     inset: 3px;
     border-radius: 7px;
-    background: #fff;
-    box-shadow: 0 1px 4px rgb(15 23 42 / 20%);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-soft);
     content: '';
     pointer-events: none;
   }
@@ -305,7 +305,7 @@
     align-content: center;
     justify-items: center;
     gap: 10px;
-    color: #64748b;
+    color: var(--text-muted);
     font: 600 16px/1.3 system-ui, sans-serif;
   }
 
@@ -326,7 +326,7 @@
     min-height: 0;
     padding: 3px;
     border: 0;
-    color: #334155;
+    color: var(--text-strong);
     background: transparent;
     font: 600 14px/1.2 system-ui, sans-serif;
     cursor: pointer;
@@ -356,7 +356,7 @@
   }
 
   .contextual-panel-content > p {
-    color: #475569;
+    color: var(--text-secondary);
     line-height: 1.45;
   }
 
@@ -369,9 +369,9 @@
   .contextual-panel-actions button {
     min-height: 52px;
     padding: 10px 12px;
-    border-color: #d8e1ec;
-    border-radius: 12px;
-    background: #f8fafc;
+    border-color: var(--border-muted);
+    border-radius: var(--radius-lg);
+    background: var(--surface-muted);
     font-weight: 600;
   }
 
@@ -382,16 +382,16 @@
   .contextual-panel-search-row input {
     min-height: 48px;
     padding: 10px 54px 10px 12px;
-    border-color: #d8e1ec;
-    border-radius: 12px;
-    background: #f8fafc;
+    border-color: var(--border-muted);
+    border-radius: var(--radius-lg);
+    background: var(--surface-muted);
   }
 
   .contextual-panel .contextual-panel-search-clear {
     right: 2px;
     width: 44px;
     height: 44px;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
   }
 
   .contextual-panel-results {
@@ -403,9 +403,9 @@
     box-sizing: border-box;
     min-height: 3.5rem;
     padding: 10px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
   }
 
   .contextual-panel-detail h3 {
@@ -414,13 +414,13 @@
 
   .contextual-panel-header button,
   .contextual-panel button {
-    border-radius: 10px;
+    border-radius: var(--radius-card);
   }
 
   .contextual-panel button:focus-visible,
   .contextual-panel input:focus-visible,
   .contextual-panel select:focus-visible {
-    outline: 3px solid rgb(37 99 235 / 55%);
+    outline: 3px solid var(--focus-ring-strong);
     outline-offset: 2px;
   }
 
@@ -464,11 +464,11 @@
     display: grid;
     width: 44px;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     place-items: center;
     padding: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     color: inherit;
     background: transparent;
     cursor: grab;
@@ -484,8 +484,8 @@
     display: block;
     width: 40px;
     height: 5px;
-    border-radius: 999px;
-    background: #94a3b8;
+    border-radius: var(--radius-pill);
+    background: var(--surface-handle);
   }
 
   [data-mobile-sheet-measuring='collapsed'] [data-mobile-sheet-content],
@@ -554,11 +554,11 @@
     gap: 14px;
     overflow: hidden;
     scrollbar-gutter: auto;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-subtle);
     border-bottom: 0;
-    color: #1f2937;
-    background: rgb(255 255 255 / 96%);
-    box-shadow: 0 1px 4px rgb(15 23 42 / 25%);
+    color: var(--text-primary);
+    background: var(--surface-overlay-panel);
+    box-shadow: var(--shadow-md);
     font: 14px/1.2 system-ui, sans-serif;
     box-sizing: border-box;
     pointer-events: auto;
@@ -597,18 +597,18 @@
 
   .mobile-stops-sheet-header h2 {
     margin: 0;
-    color: #1f2937;
+    color: var(--text-primary);
     font: 600 18px/1.2 system-ui, sans-serif;
   }
 
   .mobile-stops-sheet button {
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     padding: 8px 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    color: #1f2937;
-    background: #f8fafc;
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-panel);
+    color: var(--text-primary);
+    background: var(--surface-muted);
     font: inherit;
     cursor: pointer;
   }
@@ -651,40 +651,40 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 12px;
   }
 
   .mobile-stop-live-arrival-message {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
   }
 
   .mobile-stops-sheet .mobile-stops-location-notice button {
     flex: 0 0 44px;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     padding: 0;
-    background: #fff;
+    background: var(--surface-raised);
   }
 
   .mobile-stops-empty {
     padding: 14px 4px;
-    color: #64748b;
+    color: var(--text-muted);
     text-align: left;
   }
 
   .bus-stop-card {
     overflow: hidden;
-    border: 1px solid #e4e8ef;
-    border-radius: 10px;
-    background: #f7f8fb;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    background: var(--surface-card);
   }
 
   .bus-stop-card-header {
     position: relative;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
   }
 
   .bus-stop-card-identity {
@@ -696,7 +696,7 @@
 
   .mobile-stops-sheet .bus-stop-card-header button {
     min-width: 0;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     padding: 4px;
     border: 0;
     background: transparent;
@@ -705,7 +705,7 @@
   .mobile-stops-sheet .bus-stop-card-name {
     flex: 0 1 auto;
     overflow: hidden;
-    color: #0f172a;
+    color: var(--text-contrast);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
@@ -730,7 +730,7 @@
     right: 49px;
     z-index: 1;
     width: 30px;
-    color: #eab308;
+    color: var(--text-favorite);
   }
 
   .mobile-stops-sheet .bus-stop-card-header .bus-stop-card-toggle {
@@ -740,7 +740,7 @@
     gap: 7px;
     width: 100%;
     padding: 0 12px;
-    color: #334155;
+    color: var(--text-strong);
     text-align: left;
   }
 
@@ -801,7 +801,7 @@
 
   .mobile-stop-selection-name {
     margin: 0;
-    color: #1f2937;
+    color: var(--text-primary);
     font: 600 24px/1.2 system-ui, sans-serif;
     text-align: left;
   }
@@ -824,12 +824,12 @@
   }
 
   .mobile-stop-id {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
   }
 
   .mobile-stop-favorite {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 23px;
     line-height: 1;
   }
@@ -838,10 +838,10 @@
     display: grid;
     place-items: center;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     padding: 0;
     border: 0;
-    color: #eab308;
+    color: var(--text-favorite);
     background: transparent;
   }
 
@@ -859,13 +859,13 @@
   .mobile-stop-actions .navigate-button {
     flex: 0 1 auto;
     min-width: 0;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     align-self: stretch;
   }
 
   .mobile-stop-selection h3 {
     margin: 0 0 8px;
-    color: #1f2937;
+    color: var(--text-primary);
     font: 600 14px/1.2 system-ui, sans-serif;
     text-align: left;
   }
@@ -875,7 +875,7 @@
     gap: 0;
     margin: 0;
     padding: 0;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border-subtle);
     list-style: none;
   }
 
@@ -884,10 +884,10 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 6px;
-    min-height: 36px;
+    min-height: var(--control-height-sm);
     box-sizing: border-box;
     padding: 2px 4px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .mobile-stop-departure-row .route-chip {
@@ -903,7 +903,7 @@
 
   .mobile-stop-departure-status {
     grid-column: 2 / -1;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 13px;
     line-height: 1.25;
   }
@@ -918,7 +918,7 @@
 
   .mobile-stop-reachable-favorites-arrow {
     flex: 0 0 auto;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 16px;
     line-height: 1;
   }
@@ -932,10 +932,10 @@
     max-width: 7rem;
     padding: 2px 6px;
     overflow: hidden;
-    border: 1px solid #fde68a;
-    border-radius: 999px;
-    color: #854d0e;
-    background: #fef3c7;
+    border: 1px solid var(--border-warning);
+    border-radius: var(--radius-pill);
+    color: var(--status-warning);
+    background: var(--status-warning-surface);
     font-size: 11px;
     line-height: 1.2;
     text-overflow: ellipsis;
@@ -943,9 +943,9 @@
   }
 
   .mobile-stop-reachable-favorite[data-opposite='true'] {
-    border-color: #93c5fd;
-    color: #1d4ed8;
-    background: #dbeafe;
+    border-color: var(--border-info);
+    color: var(--status-info);
+    background: var(--status-info-surface);
   }
 
   .mobile-stop-reachable-favorite svg {
@@ -959,24 +959,24 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    color: #334155;
-    background: #fff;
+    color: var(--text-strong);
+    background: var(--surface-raised);
     box-shadow: none;
     cursor: default;
   }
 
   .mobile-stop-departure-time {
-    color: #334155;
+    color: var(--text-strong);
     font: 600 13px/1 system-ui, sans-serif;
     text-align: right;
   }
 
   .mobile-stop-departure-time[data-timing-state='Arr'] {
-    color: #047857;
+    color: var(--status-success);
   }
 
   .mobile-stop-departure-time[data-timing-state='Left'] {
-    color: #64748b;
+    color: var(--text-muted);
   }
 
   .mobile-stops-sheet .mobile-stop-opposite {
@@ -986,14 +986,14 @@
     justify-content: center;
     gap: 4px;
     padding: 7px 8px;
-    border-color: #e2e8f0;
-    border-radius: 6px;
-    background: #fff;
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-panel);
+    background: var(--surface-raised);
     font: 600 12px/1.2 system-ui, sans-serif;
   }
 
   .mobile-stop-opposite span {
-    color: #334155;
+    color: var(--text-strong);
     font-size: 18px;
     line-height: 1;
   }
@@ -1009,9 +1009,9 @@
     gap: 0;
     height: var(--mobile-tab-bar-pill-height);
     padding: 6px 8px;
-    border-radius: 999px;
-    background: #fff;
-    box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+    border-radius: var(--radius-pill);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-lg);
     box-sizing: border-box;
   }
 
@@ -1022,17 +1022,17 @@
     justify-content: center;
     gap: 2px;
     min-width: 0;
-    min-height: 44px;
+    min-height: var(--control-height-lg);
     border: 0;
-    border-radius: 999px;
-    color: #4b5563;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary-strong);
     background: transparent;
     font: 500 12px/1.2 system-ui, sans-serif;
     cursor: pointer;
   }
 
   .mobile-tab-bar button[aria-current='page'] {
-    color: #0f172a;
+    color: var(--text-contrast);
     font-weight: 600;
   }
 
@@ -1062,7 +1062,7 @@
   .mobile-tab-bar button:focus-visible,
   .mobile-stops-sheet button:focus-visible,
   .mobile-sheet-handle:focus-visible {
-    outline: 3px solid rgb(37 99 235 / 55%);
+    outline: 3px solid var(--focus-ring-strong);
     outline-offset: 2px;
   }
 
@@ -1073,7 +1073,7 @@
   .trip-controls button,
   .trip-controls input,
   .trip-controls select {
-    min-height: 44px;
+    min-height: var(--control-height-lg);
   }
 
   .contextual-panel-content,
@@ -1101,20 +1101,20 @@
     overflow: hidden;
     padding: 0 !important;
     border: 0 !important;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     gap: 0 !important;
   }
 
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].contextual-panel {
     padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)) !important;
-    border-right: 1px solid #e2e8f0 !important;
-    border-left: 1px solid #e2e8f0 !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    border-left: 1px solid var(--border-subtle) !important;
   }
 
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].mobile-stops-sheet {
     padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)) !important;
-    border-right: 1px solid #e2e8f0 !important;
-    border-left: 1px solid #e2e8f0 !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    border-left: 1px solid var(--border-subtle) !important;
   }
 
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'].trip-controls {
@@ -1147,7 +1147,7 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle[data-mobile-sheet-restore-detent='partial'] {
@@ -1242,7 +1242,7 @@
   }
 
   .mobile-tab-bar button {
-    min-height: 36px;
+    min-height: var(--control-height-sm);
   }
 
   .map .maplibregl-ctrl-top-right,

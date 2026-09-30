@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   padding: 3px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
@@ -10,14 +10,14 @@
 }
 
 .info-pill[data-color-scheme='neutral'] {
-  color: #475569;
-  background: #eef0f4;
+  color: var(--text-secondary);
+  background: var(--surface-neutral);
 }
 
 .info-pill[data-color-scheme='success'] {
-  border: 1px solid #9ee8d0;
-  color: #047857;
-  background: #def8eb;
+  border: 1px solid var(--border-success);
+  color: var(--status-success);
+  background: var(--status-success-surface);
 }
 
 .info-pill[data-leading-dot='true']::before {

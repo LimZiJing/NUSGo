@@ -1,15 +1,7 @@
 :root {
-  --ui-scrollbar-track: #f8fafc;
-  --ui-scrollbar-thumb: #cbd5e1;
-  --ui-scrollbar-thumb-hover: #94a3b8;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ui-scrollbar-track: #24252b;
-    --ui-scrollbar-thumb: #64748b;
-    --ui-scrollbar-thumb-hover: #94a3b8;
-  }
+  --ui-scrollbar-track: var(--surface-muted);
+  --ui-scrollbar-thumb: var(--border-strong);
+  --ui-scrollbar-thumb-hover: var(--text-disabled);
 }
 
 .ui-scroll-area {

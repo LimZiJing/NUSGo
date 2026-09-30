@@ -21,7 +21,7 @@
   height: 18px;
   transform: translateY(-50%);
   fill: none;
-  stroke: #64748b;
+  stroke: var(--text-muted);
   stroke-width: 2;
   stroke-linecap: round;
   pointer-events: none;

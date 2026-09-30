@@ -4,7 +4,10 @@ import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from '../../domain/transit/arrivals'
-import { SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS } from '../../domain/transit/arrivals'
+import {
+  isOlderShuttleArrivalSnapshot,
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+} from '../../domain/transit/arrivals'
 import type {
   ShuttleArrivalClient,
   ShuttleArrivalStopRequest,
@@ -177,23 +180,11 @@ function sameGeneration(first: ShuttleArrivalSnapshot, second: ShuttleArrivalSna
   return first.refreshedAt !== undefined && first.refreshedAt === second.refreshedAt
 }
 
-function isOlderSnapshot(
-  candidate: ShuttleArrivalSnapshot,
-  current: ShuttleArrivalSnapshot,
-): boolean {
-  if (candidate.snapshotVersion && current.snapshotVersion) {
-    return candidate.snapshotVersion < current.snapshotVersion
-  }
-  const candidateTime = Date.parse(candidate.refreshedAt ?? candidate.observedAt)
-  const currentTime = Date.parse(current.refreshedAt ?? current.observedAt)
-  return candidateTime < currentTime
-}
-
 function mergeSnapshot(
   current: ShuttleArrivalSnapshot | null,
   incoming: ShuttleArrivalSnapshot,
 ): ShuttleArrivalSnapshot {
-  if (!current || isOlderSnapshot(incoming, current)) return current ?? incoming
+  if (!current || isOlderShuttleArrivalSnapshot(incoming, current)) return current ?? incoming
   if (!sameGeneration(current, incoming)) return incoming
 
   return {
@@ -240,7 +231,7 @@ export function createShuttleArrivalClient(
         }
         const current = cached?.snapshot ?? null
         const merged = mergeSnapshot(current, snapshot)
-        if (isOlderSnapshot(snapshot, merged)) {
+        if (isOlderShuttleArrivalSnapshot(snapshot, merged)) {
           if (cached) {
             cached = {
               snapshot: cached.snapshot,

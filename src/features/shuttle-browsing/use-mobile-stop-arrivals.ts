@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  isOlderShuttleArrivalSnapshot,
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
@@ -30,18 +31,6 @@ interface ArrivalRequestState {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
-}
-
-function isOlderSnapshot(
-  candidate: ShuttleArrivalSnapshot,
-  current: ShuttleArrivalSnapshot,
-): boolean {
-  if (candidate.snapshotVersion && current.snapshotVersion) {
-    return candidate.snapshotVersion < current.snapshotVersion
-  }
-  const candidateTime = Date.parse(candidate.refreshedAt ?? candidate.observedAt)
-  const currentTime = Date.parse(current.refreshedAt ?? current.observedAt)
-  return candidateTime < currentTime
 }
 
 const STOP_SET_DEBOUNCE_MS = 150
@@ -93,7 +82,7 @@ export function useMobileStopArrivals(
         setState((previous) => ({
           stopKey,
           status: 'ready',
-          snapshot: previous.snapshot && isOlderSnapshot(snapshot, previous.snapshot)
+          snapshot: previous.snapshot && isOlderShuttleArrivalSnapshot(snapshot, previous.snapshot)
             ? previous.snapshot
             : snapshot,
         }))

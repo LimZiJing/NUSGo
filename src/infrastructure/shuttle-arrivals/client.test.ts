@@ -5,6 +5,9 @@ function responseFor(stopId: string): Response {
   return new Response(JSON.stringify({
     observedAt: '2026-09-23T13:48:26+08:00',
     expiresAt: '2026-09-23T13:49:26+08:00',
+    snapshotVersion: '2026-09-23T13:48:26.000Z-1',
+    refreshedAt: '2026-09-23T13:48:26+08:00',
+    nextRefreshAt: '2026-09-23T13:49:26+08:00',
     stops: {
       [stopId]: {
         D2: {
@@ -12,6 +15,12 @@ function responseFor(stopId: string): Response {
           upcomingArrivalSeconds: [264, 624],
           headwaySeconds: { min: 360, max: 360, median: 360 },
         },
+      },
+    },
+    stopObservations: {
+      [stopId]: {
+        observedAt: '2026-09-23T13:48:26+08:00',
+        expiresAt: '2026-09-23T13:49:26+08:00',
       },
     },
   }), { status: 200, headers: { 'Content-Type': 'application/json' } })
@@ -44,6 +53,27 @@ describe('createShuttleArrivalClient', () => {
       { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
     ])
     expect(Object.keys(result.stops)).toEqual(['PGP', 'KR-MRT'])
+  })
+
+  it('requests more than 16 stops in one snapshot read', async () => {
+    const stops = Array.from({ length: 17 }, (_, index) => ({
+      stopId: `STOP-${index}`,
+      stopName: `Stop ${index}`,
+    }))
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      snapshotVersion: '2026-09-23T13:48:26.000Z-1',
+      stops: Object.fromEntries(stops.map(({ stopId }) => [stopId, {}])),
+    }), { status: 200 }))
+
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals(
+      stops,
+      new AbortController().signal,
+    )
+
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(Object.keys(result.stops)).toHaveLength(17)
   })
 
   it('reuses cached stop data and shares an in-progress request', async () => {
@@ -157,13 +187,18 @@ describe('createShuttleArrivalClient', () => {
       const requestedStops = JSON.parse(
         new URL(String(input), 'http://localhost').searchParams.get('stops') ?? '[]',
       ) as { stopId: string }[]
-      const stopId = requestedStops[0]?.stopId
-      const observedAt = stopId === 'PGP' ? '2026-09-23T13:48:26+08:00' : '2026-09-23T13:49:26+08:00'
-      const expiresAt = stopId === 'PGP' ? '2026-09-23T13:49:26+08:00' : '2026-09-23T13:50:26+08:00'
+      const stops = Object.fromEntries(requestedStops.map(({ stopId }) => [stopId, {}]))
+      const stopObservations = Object.fromEntries(requestedStops.map(({ stopId }) => [stopId, {
+        observedAt: stopId === 'PGP' ? '2026-09-23T13:48:26+08:00' : '2026-09-23T13:49:26+08:00',
+        expiresAt: stopId === 'PGP' ? '2026-09-23T13:49:26+08:00' : '2026-09-23T13:50:26+08:00',
+      }]))
       return new Response(JSON.stringify({
-        observedAt,
-        expiresAt,
-        stops: { [stopId]: {} },
+        observedAt: '2026-09-23T13:48:26+08:00',
+        expiresAt: '2026-09-23T13:50:26+08:00',
+        snapshotVersion: '2026-09-23T13:48:26.000Z-1',
+        refreshedAt: '2026-09-23T13:48:26+08:00',
+        stops,
+        stopObservations,
       }), { status: 200 })
     })
     const client = createShuttleArrivalClient({ fetcher, now: () => now, cacheTtlMs: 60_000 })
@@ -185,6 +220,41 @@ describe('createShuttleArrivalClient', () => {
         expiresAt: '2026-09-23T13:50:26+08:00',
       },
     })
+  })
+
+  it('keeps the current generation when a later response is older', async () => {
+    let now = nowMs
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        observedAt: '2026-09-23T13:48:40+08:00',
+        expiresAt: '2026-09-23T13:49:40+08:00',
+        snapshotVersion: '2026-09-23T13:48:40.000Z-2',
+        stops: { PGP: { D2: {
+          nextArrivalSeconds: 120,
+          upcomingArrivalSeconds: [120],
+          headwaySeconds: null,
+        } } },
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        observedAt: '2026-09-23T13:48:30+08:00',
+        expiresAt: '2026-09-23T13:49:30+08:00',
+        snapshotVersion: '2026-09-23T13:48:30.000Z-1',
+        stops: { PGP: { D2: {
+          nextArrivalSeconds: 600,
+          upcomingArrivalSeconds: [600],
+          headwaySeconds: null,
+        } } },
+      }), { status: 200 }))
+    const client = createShuttleArrivalClient({ fetcher, now: () => now, cacheTtlMs: 1 })
+    const stop = { stopId: 'PGP', stopName: 'PGP' }
+
+    const first = await client.getArrivals([stop], new AbortController().signal)
+    now += 2
+    const second = await client.getArrivals([stop], new AbortController().signal)
+
+    expect(first.snapshotVersion).toBe('2026-09-23T13:48:40.000Z-2')
+    expect(second.snapshotVersion).toBe(first.snapshotVersion)
+    expect(second.stops.PGP.D2.nextArrivalSeconds).toBe(120)
   })
 
   it('rejects a provider snapshot that is already expired', async () => {

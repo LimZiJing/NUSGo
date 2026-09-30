@@ -550,35 +550,37 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        <LocationControl
-          visible={!isMobileViewport || !(
-            mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent !== 'collapsed'
-          )}
-          onRootChange={(root) => {
-            locationControlRef.current = root
-          }}
-          topOffset={mapInsets.top || 76}
-          searching={state.location.status === 'requesting'}
-          onLocate={commands.locateUser}
-        />
-        <aside
-          className="map-legend"
-          aria-label="Map legend"
-          style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
-        >
-          <div><span className="legend-marker venue-marker" /> Venues</div>
-          <div className="bus-stop-legend-item">
-            <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
-            On selected route
-          </div>
-          <div className="bus-stop-legend-item">
-            <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
-            Other shuttle stop
-          </div>
-          <div><span className="legend-marker origin-marker" /> Origin</div>
-          <div><span className="legend-marker destination-marker" /> Destination</div>
-        </aside>
+        <div className="map-control-stack">
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <LocationControl
+            visible={!isMobileViewport || !(
+              mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent !== 'collapsed'
+            )}
+            onRootChange={(root) => {
+              locationControlRef.current = root
+            }}
+            topOffset={mapInsets.top || 76}
+            searching={state.location.status === 'requesting'}
+            onLocate={commands.locateUser}
+          />
+          <aside
+            className="map-legend"
+            aria-label="Map legend"
+            style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
+          >
+            <div><span className="legend-marker venue-marker" /> Venues</div>
+            <div className="bus-stop-legend-item">
+              <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
+              On selected route
+            </div>
+            <div className="bus-stop-legend-item">
+              <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
+              Other shuttle stop
+            </div>
+            <div><span className="legend-marker origin-marker" /> Origin</div>
+            <div><span className="legend-marker destination-marker" /> Destination</div>
+          </aside>
+        </div>
       </div>
       <div className="map-overlay-right">
         <div

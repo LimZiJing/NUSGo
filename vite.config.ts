@@ -1,38 +1,36 @@
+import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
-import {
-  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
-  type ShuttleRouteArrivalData,
-} from './src/domain/transit/arrivals.js'
+import { parseCanonicalShuttleStops } from './src/infrastructure/shuttle-arrivals/canonical.js'
+import { parseShuttleArrivalRefreshInterval } from './src/infrastructure/shuttle-arrivals/config.js'
 import { parseShuttleServiceResponse } from './src/infrastructure/shuttle-arrivals/response.js'
+import {
+  createShuttleArrivalSnapshotStore,
+  type ShuttleArrivalSnapshotStore,
+  type ShuttleArrivalStop,
+  type ShuttleArrivalStopResult,
+} from './src/infrastructure/shuttle-arrivals/snapshot.js'
+import { parseRequestedStops, selectRequestedStops } from './src/infrastructure/shuttle-arrivals/request.js'
 import type { ShuttleServiceWindow } from './src/domain/transit/service-hours.js'
 import { parseRouteServiceWindows } from './src/infrastructure/shuttle-service-hours/response.js'
 import {
   createNusAuthenticatedClient,
+  NusRequestError,
   type NusApiRequest,
   type NusApiSession,
   type NusAuthenticatedClient,
 } from './src/infrastructure/nus-api/client.js'
 
-interface RequestedStop {
-  readonly stopId: string
-  readonly stopName: string
-}
-
-interface CachedStopArrival {
-  readonly observedAt: string
-  readonly expiresAt: string
-  readonly routes: Record<string, ShuttleRouteArrivalData>
-}
+type RequestedStop = ShuttleArrivalStop
 
 interface CachedServiceWindows {
   readonly expiresAt: string
   readonly windows: readonly ShuttleServiceWindow[]
 }
 
-const SHUTTLE_CACHE_TTL_MS = SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS
 const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
 const DEFAULT_ACCESS_TOKEN_URL = 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
 
@@ -46,31 +44,10 @@ function sendJson(
   response.end(JSON.stringify(payload))
 }
 
-function parseRequestedStops(value: string | null): readonly RequestedStop[] {
-  if (!value) throw new Error('The stops query is required')
-  const parsed: unknown = JSON.parse(value)
-  if (!Array.isArray(parsed) || parsed.length === 0 || parsed.length > 16) {
-    throw new Error('The stops query must contain between 1 and 16 stops')
-  }
-  const seen = new Set<string>()
-  const stops: RequestedStop[] = []
-  for (const item of parsed) {
-    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-      throw new Error('Each requested stop must be an object')
-    }
-    const stop = item as { stopId?: unknown; stopName?: unknown }
-    if (
-      typeof stop.stopId !== 'string' ||
-      typeof stop.stopName !== 'string' ||
-      !/^[A-Za-z0-9._-]{1,80}$/.test(stop.stopId) ||
-      stop.stopName.trim().length === 0 ||
-      stop.stopName.length > 160
-    ) throw new Error('Each requested stop must have a valid ID and name')
-    if (seen.has(stop.stopId)) continue
-    seen.add(stop.stopId)
-    stops.push({ stopId: stop.stopId, stopName: stop.stopName.trim() })
-  }
-  return stops
+function loadCanonicalStops(): readonly RequestedStop[] {
+  return parseCanonicalShuttleStops(JSON.parse(
+    readFileSync(resolve(process.cwd(), 'public/data/shuttle-network.json'), 'utf8'),
+  ) as unknown)
 }
 
 function getRequiredEnv(env: Record<string, string>, name: string): string {
@@ -113,8 +90,8 @@ function createBusProxyRequest(
 }
 
 function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
-  const cache = new Map<string, CachedStopArrival>()
-  const inFlight = new Map<string, Promise<CachedStopArrival | null>>()
+  const canonicalStops = loadCanonicalStops()
+  const refreshIntervalMs = parseShuttleArrivalRefreshInterval(env)
   const serviceWindowsCache = new Map<string, CachedServiceWindows>()
   const serviceWindowsInFlight = new Map<string, Promise<CachedServiceWindows | null>>()
   let nusClient: NusAuthenticatedClient | null = null
@@ -137,40 +114,53 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
     return nusClient
   }
 
-  const loadStop = async (stopName: string): Promise<CachedStopArrival | null> => {
-    const cached = cache.get(stopName)
-    if (cached && Date.parse(cached.expiresAt) > Date.now()) return cached
-    const existing = inFlight.get(stopName)
-    if (existing) return existing
-
-    const request = (async () => {
-      try {
-        const payload = await getNusClient().requestJson((session) => createBusProxyRequest(
-          env,
-          session,
-          deviceId!,
-          'shuttle-service',
-          { busstopname: stopName },
-        ), 'shuttle-service')
-        const parsed = parseShuttleServiceResponse(payload)
-        const observedAt = new Date().toISOString()
-        const entry: CachedStopArrival = {
-          observedAt,
-          expiresAt: new Date(Date.now() + SHUTTLE_CACHE_TTL_MS).toISOString(),
-          routes: Object.fromEntries(parsed.map((route) => [route.routeId, route.arrival])),
-        }
-        cache.set(stopName, entry)
-        return entry
-      } catch (error: unknown) {
-        console.warn(`NUS shuttle-service data unavailable for ${stopName}.`, error)
-        return null
-      } finally {
-        inFlight.delete(stopName)
-      }
-    })()
-    inFlight.set(stopName, request)
-    return request
+  const loadStop = async (
+    stop: ShuttleArrivalStop,
+    signal: AbortSignal,
+  ): Promise<ShuttleArrivalStopResult> => {
+    const payload = await getNusClient().requestJson((session) => {
+      const request = createBusProxyRequest(
+        env,
+        session,
+        deviceId!,
+        'shuttle-service',
+        { busstopname: stop.stopName },
+      )
+      return { ...request, init: { ...request.init, signal } }
+    }, 'shuttle-service')
+    const parsed = parseShuttleServiceResponse(payload)
+    const observedAt = new Date().toISOString()
+    return {
+      observedAt,
+      expiresAt: new Date(Date.now() + refreshIntervalMs).toISOString(),
+      routes: Object.fromEntries(parsed.map((route) => [route.routeId, route.arrival])),
+    }
   }
+
+  const snapshotStore: ShuttleArrivalSnapshotStore = createShuttleArrivalSnapshotStore({
+    stops: canonicalStops,
+    loadStop,
+    refreshIntervalMs,
+    onRefreshComplete(log, failures) {
+      const statusCounts: Record<string, number> = {}
+      for (const { error } of failures) {
+        const status = error instanceof NusRequestError && error.status !== null
+          ? String(error.status)
+          : 'unknown'
+        statusCounts[status] = (statusCounts[status] ?? 0) + 1
+      }
+      console.info('NUS shuttle arrival refresh completed.', {
+        ...log,
+        httpStatusCounts: statusCounts,
+      })
+      if (failures.length > 0) {
+        console.warn('NUS shuttle arrival refresh had failed stops.', {
+          stopIds: failures.map(({ stopId }) => stopId),
+          httpStatusCounts: statusCounts,
+        })
+      }
+    },
+  })
 
   const loadServiceWindows = async (routeId: string): Promise<CachedServiceWindows | null> => {
     const cached = serviceWindowsCache.get(routeId)
@@ -207,6 +197,9 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
   return {
     name: 'navus-shuttle-arrivals',
     configureServer(server) {
+      if (process.env.VITEST === 'true') return
+      snapshotStore.start()
+      server.httpServer?.once('close', () => snapshotStore.stop())
       server.middlewares.use('/api/shuttle-arrivals', (request: IncomingMessage, response: ServerResponse) => {
         if (request.method !== 'GET') {
           sendJson(response, 405, { error: 'Only GET is supported' })
@@ -216,23 +209,13 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
         void (async () => {
           try {
             const url = new URL(request.url ?? '/', 'http://localhost')
-            const stops = parseRequestedStops(url.searchParams.get('stops'))
-            const entries = await Promise.all(stops.map(async (stop) => ({
-              stopId: stop.stopId,
-              entry: await loadStop(stop.stopName),
-            })))
-            const available = entries.filter((item): item is { stopId: string; entry: CachedStopArrival } => item.entry !== null)
-            if (available.length === 0) {
-              sendJson(response, 503, { error: 'No shuttle arrival data is available' })
+            const stops = parseRequestedStops(url.searchParams.get('stops'), canonicalStops)
+            const snapshot = snapshotStore.getSnapshot()
+            if (!snapshot) {
+              sendJson(response, 503, { error: 'Shuttle arrival snapshot is still initializing' })
               return
             }
-            const observedAt = available.map((item) => item.entry.observedAt).sort()[0]
-            const expiresAt = available.map((item) => item.entry.expiresAt).sort()[0]
-            sendJson(response, 200, {
-              observedAt,
-              expiresAt,
-              stops: Object.fromEntries(available.map((item) => [item.stopId, item.entry.routes])),
-            })
+            sendJson(response, 200, selectRequestedStops(snapshot, stops))
           } catch (error: unknown) {
             sendJson(response, 400, {
               error: error instanceof Error ? error.message : 'Invalid shuttle arrival request',

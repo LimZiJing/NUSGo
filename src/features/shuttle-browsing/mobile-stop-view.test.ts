@@ -50,6 +50,47 @@ describe('mobile stop view state', () => {
     expect(selection.liveArrivalMessage).toBeNull()
   })
 
+  it('uses one observation clock for all stops in a displayed snapshot', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: ShuttleArrivalSnapshot = {
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      stopObservations: {
+        'STOP-A': {
+          observedAt: '2026-09-30T00:00:00.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+        },
+        'STOP-B': {
+          observedAt: '2026-09-30T00:00:10.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+        },
+      },
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 71,
+            upcomingArrivalSeconds: [71, 131],
+            headwaySeconds: { min: 60, median: 60, max: 60 },
+          },
+        },
+        'STOP-B': {
+          A1: {
+            nextArrivalSeconds: 71,
+            upcomingArrivalSeconds: [71, 131],
+            headwaySeconds: { min: 60, median: 60, max: 60 },
+          },
+        },
+      },
+    }
+
+    const nowMs = Date.parse('2026-09-30T00:00:20.000Z')
+    const stopA = getMobileStopSheetSelection(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
+    const stopB = getMobileStopSheetSelection(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
+
+    expect(stopA.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
+    expect(stopB.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
+  })
+
   it('keeps slightly stale arrivals during the refresh grace period', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {

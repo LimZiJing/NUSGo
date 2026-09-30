@@ -101,6 +101,23 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Live shuttle arrivals may be used when available')
   })
 
+  it('explains when the Journey was selected within a search budget', () => {
+    const markup = renderToStaticMarkup(
+      <TripJourneyResult
+        state={{
+          status: 'ready',
+          journey: { ...journey, planningQuality: 'bounded' },
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+
+    expect(markup).toContain('A faster route may exist')
+    expect(markup).not.toContain('Fastest estimated Journey')
+  })
+
   it.each([
     [0, 'Arriving now'],
     [29, 'Arriving soon'],

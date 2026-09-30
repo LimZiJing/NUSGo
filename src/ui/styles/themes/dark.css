@@ -1,5 +1,4 @@
-@media (prefers-color-scheme: dark) {
-  :root {
+:root[data-theme='dark'] {
     --surface: #16171d;
     --surface-raised: #1f2028;
     --surface-muted: #24252b;
@@ -81,5 +80,4 @@
     --shadow-soft: 0 1px 4px rgb(0 0 0 / 25%);
     --shadow-results: 0 4px 12px rgb(0 0 0 / 35%);
     --shadow-marker: 0 1px 3px rgb(0 0 0 / 45%);
-  }
 }

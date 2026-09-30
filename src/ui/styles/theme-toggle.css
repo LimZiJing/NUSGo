@@ -1,0 +1,15 @@
+.theme-toggle {
+  position: absolute;
+  z-index: 12;
+  top: 12px;
+  left: 12px;
+  min-height: var(--control-height-sm);
+  padding: 6px 10px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  font: 600 13px/1 var(--sans);
+  cursor: pointer;
+}

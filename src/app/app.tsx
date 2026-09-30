@@ -49,6 +49,8 @@ import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/c
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
+import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
+import { ThemeToggle } from '../ui/theme-toggle'
 
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
@@ -59,6 +61,7 @@ function App() {
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mobileTabBarRef = useRef<HTMLElement>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
+  const [theme, setTheme] = useState<Theme>(getSystemTheme)
   const state = useNavigationSession(session)
   const panelStatus = deriveContextualPanelStatus(
     state.resourceStatus,
@@ -531,6 +534,13 @@ function App() {
     if (isMobileViewport) prepareSheetTransition(true)
     dispatchMobileNavigation({ type: 'select-search-result', tab })
   }
+  const toggleTheme = useCallback((): void => {
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark'
+      applyTheme(nextTheme)
+      return nextTheme
+    })
+  }, [])
 
   return (
     <main className="map-shell" ref={mapShellRef}>
@@ -540,6 +550,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
         <LocationControl
           visible={!isMobileViewport || !(
             mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent !== 'collapsed'

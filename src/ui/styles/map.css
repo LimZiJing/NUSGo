@@ -19,8 +19,8 @@
 
 @media (min-width: 769px) {
   .map-control-stack {
-    right: 12px;
-    left: auto;
+    right: auto;
+    left: 12px;
     display: grid;
     grid-template-columns: max-content max-content;
     grid-template-areas:
@@ -46,7 +46,7 @@
 
   .map-control-stack > .map-legend {
     grid-area: legend;
-    justify-self: end;
+    justify-self: start;
   }
 }
 

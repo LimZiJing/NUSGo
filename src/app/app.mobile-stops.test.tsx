@@ -31,6 +31,10 @@ vi.mock('./use-navigation-session', () => ({
   useNavigationSession: () => appHarness.state,
 }))
 
+vi.mock('../infrastructure/map/session', () => ({
+  createMapSession: vi.fn(),
+}))
+
 vi.mock('../infrastructure/shuttle-arrivals/client', () => ({
   createShuttleArrivalClient: () => appHarness.arrivalsClient,
 }))
@@ -117,5 +121,19 @@ describe('mobile Stops tab state', () => {
       .toBe('true')
     expect(screen.getByRole('button', { name: 'Expand Stop A bus timings' }).getAttribute('aria-expanded'))
       .toBe('false')
+  })
+
+  it('keeps a fully expanded Explore sheet when switching from venue search to shuttle routes', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Explore panel' }))
+
+    expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
+
+    expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
   })
 })

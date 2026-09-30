@@ -684,7 +684,6 @@ function App() {
               if (isMobileViewport) {
                 prepareSheetTransition(true)
                 dismissMobileSearch('explore')
-                dispatchMobileNavigation({ type: 'set-sheet-detent', tab: 'explore', detent: 'partial' })
                 commands.enterMobileRoutes()
               } else commands.openShuttle()
             }}

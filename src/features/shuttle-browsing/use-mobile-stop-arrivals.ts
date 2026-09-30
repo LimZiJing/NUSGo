@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   type ShuttleArrivalSnapshot,
@@ -43,8 +43,17 @@ export function useMobileStopArrivals(
     snapshot: null,
   }))
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const stopKey = stops.map(({ stopId, stopName }) => `${stopId}\u0000${stopName}`).join('\u0001')
+  const stopKey = stops
+    .map(({ stopId, stopName }) => `${stopId}\u0000${stopName}`)
+    .sort()
+    .join('\u0001')
   const hasActiveStops = active && stops.length > 0
+  // Location updates can recreate this array without changing the request.
+  const latestStopsRef = useRef(stops)
+
+  useEffect(() => {
+    latestStopsRef.current = stops
+  }, [stops])
 
   useEffect(() => {
     if (!hasActiveStops) return
@@ -63,7 +72,7 @@ export function useMobileStopArrivals(
       }))
 
       try {
-        const snapshot = await loadArrivals(stops, controller.signal)
+        const snapshot = await loadArrivals(latestStopsRef.current, controller.signal)
         if (disposed) return
         setState({ stopKey, status: 'ready', snapshot })
       } catch (error: unknown) {
@@ -86,7 +95,7 @@ export function useMobileStopArrivals(
       controller?.abort()
       if (refreshTimer) clearTimeout(refreshTimer)
     }
-  }, [hasActiveStops, loadArrivals, stopKey, stops])
+  }, [hasActiveStops, loadArrivals, stopKey])
 
   useEffect(() => {
     if (!active) return

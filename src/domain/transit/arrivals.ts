@@ -27,3 +27,4 @@ export interface ShuttleArrivalObservation {
 
 export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000
 export const SHUTTLE_ARRIVAL_FRESHNESS_MS = 30_000
+export const SHUTTLE_ARRIVAL_MAX_AGE_MS = 120_000

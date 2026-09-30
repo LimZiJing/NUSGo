@@ -1,6 +1,7 @@
 import { getReachableFavoriteStops, type TransitIndex } from '../../domain/transit'
 import {
   SHUTTLE_ARRIVAL_FRESHNESS_MS,
+  SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
 import {
@@ -119,10 +120,9 @@ function getLiveStopDepartures(
   index: TransitIndex,
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
-  allowStale: boolean,
   liveRouteIds: ReadonlySet<string>,
 ): readonly MobileStopDeparture[] {
-  if (!snapshot || (!allowStale && getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS)) return []
+  if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
   const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
   const stopArrivals = snapshot.stops[stop.id] ?? {}
@@ -160,7 +160,7 @@ function getLiveArrivalMessage(
 ): string | null {
   if (isRefreshing || scheduledDepartures.length > 0) return null
   if (!snapshot) return null
-  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_FRESHNESS_MS) return 'Stale live data'
+  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return 'No live data'
   if (departures.length > 0) return null
   return 'No live arrivals'
 }
@@ -233,7 +233,6 @@ export function getMobileStopSheetSelection(
     index,
     arrivalSnapshot,
     nowMs,
-    isRefreshing,
     routeAvailability.liveRouteIds,
   ).map((departure) => ({
     ...departure,
@@ -253,7 +252,8 @@ export function getMobileStopSheetSelection(
       .map((service) => service.slice('PUB:'.length)),
     departures,
     scheduledDepartures: routeAvailability.scheduledDepartures,
-    live: departures.length > 0 && !isRefreshing,
+    live: departures.length > 0 && !isRefreshing && arrivalSnapshot !== null &&
+      getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS,
     liveArrivalMessage: getLiveArrivalMessage(
       arrivalSnapshot,
       stop.id,

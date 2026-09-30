@@ -482,6 +482,7 @@ function App() {
     isMobileViewport && activeTab === 'stops',
     serviceRouteIds,
   )
+  const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
   const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && transitIndex
     ? getMobileStopSheetSelection(
       selectedStop,
@@ -490,7 +491,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
-      stopArrivals.status === 'refreshing',
+      stopArrivalsUpdating,
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
@@ -501,7 +502,7 @@ function App() {
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
-      stopArrivals.status === 'refreshing',
+      stopArrivalsUpdating,
     ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),

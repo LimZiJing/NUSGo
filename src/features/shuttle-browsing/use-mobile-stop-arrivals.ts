@@ -72,8 +72,8 @@ export function useMobileStopArrivals(
       controller = new AbortController()
       setState((previous) => ({
         stopKey,
-        status: previous.snapshot ? 'refreshing' : 'loading',
-        snapshot: previous.snapshot,
+        status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
+        snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
       }))
 
       try {
@@ -82,7 +82,8 @@ export function useMobileStopArrivals(
         setState((previous) => ({
           stopKey,
           status: 'ready',
-          snapshot: previous.snapshot && isOlderShuttleArrivalSnapshot(snapshot, previous.snapshot)
+          snapshot: previous.stopKey === stopKey && previous.snapshot &&
+            isOlderShuttleArrivalSnapshot(snapshot, previous.snapshot)
             ? previous.snapshot
             : snapshot,
         }))
@@ -91,7 +92,7 @@ export function useMobileStopArrivals(
         setState((previous) => ({
           stopKey,
           status: 'error',
-          snapshot: previous.snapshot,
+          snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
         }))
       }
 

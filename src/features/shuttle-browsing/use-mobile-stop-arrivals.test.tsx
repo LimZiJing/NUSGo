@@ -158,6 +158,23 @@ describe('useMobileStopArrivals', () => {
     expect(client.mock.calls[1]?.[0]).toEqual(latestStops)
   })
 
+  it('does not expose the previous snapshot while the requested stop set changes', async () => {
+    vi.useFakeTimers()
+    const nextStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
+    const client = vi.fn<MobileStopArrivalLoader>()
+      .mockResolvedValueOnce(snapshot)
+      .mockImplementationOnce(() => new Promise(() => undefined))
+    const { rerender } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+
+    rerender(<Probe client={client} active stops={nextStops} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150)
+    })
+
+    expect(screen.getByTestId('snapshot').textContent).toBe('none')
+  })
+
   it('does not replace a current snapshot with an older generation', async () => {
     vi.useFakeTimers()
     const currentSnapshot = {

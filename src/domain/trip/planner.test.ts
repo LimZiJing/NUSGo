@@ -449,7 +449,7 @@ describe('planJourney', () => {
     expect(journey?.totalDurationSeconds).toBe(500)
   })
 
-  it('merges consecutive walking legs around an internal shuttle-stop waypoint', () => {
+  it('uses the direct walking connection instead of composing endpoint connectors', () => {
     const journey = planJourney(createInput([
       walking(origin, stopA, 100, 120),
       walking(stopA, destination, 200, 240),
@@ -461,19 +461,18 @@ describe('planJourney', () => {
       mode: 'walking',
       from: origin,
       to: destination,
-      durationSeconds: 300,
-      distanceMeters: 360,
+      durationSeconds: 500,
+      distanceMeters: 600,
       geometry: {
         type: 'LineString',
         coordinates: [
           [102.999, 1],
-          [103, 1],
           [103.002, 1],
         ],
       },
     })
-    expect(journey?.totalDurationSeconds).toBe(300)
-    expect(journey?.totalDistanceMeters).toBe(360)
+    expect(journey?.totalDurationSeconds).toBe(500)
+    expect(journey?.totalDistanceMeters).toBe(600)
   })
 
   it('keeps a continuous same-route ride as one shuttle leg', () => {
@@ -489,7 +488,7 @@ describe('planJourney', () => {
     })
   })
 
-  it('does not walk upstream to board the same route when the origin is already a stop', () => {
+  it('keeps a selected stop fixed instead of walking to another boarding stop', () => {
     const journey = planJourney(createUpstreamBoardingInput())
 
     expect(journey?.legs.map((leg) => leg.mode)).toEqual(['shuttle', 'walking'])
@@ -500,46 +499,25 @@ describe('planJourney', () => {
     })
   })
 
-  it('reboards the same route after reaching its declared terminal', () => {
+  it('does not reboard after a route reaches its declared terminal', () => {
     const journey = planJourney(createTerminalReboardingInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual([
-      'walking',
-      'shuttle',
-      'shuttle',
-      'walking',
-    ])
-    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => ({
-      boardingStopId: leg.boardingStopId,
-      alightingStopId: leg.alightingStopId,
-      waitingSeconds: leg.waitingSeconds,
-    }))).toEqual([
-      { boardingStopId: 'STOP-B', alightingStopId: 'STOP-A', waitingSeconds: 5 },
-      { boardingStopId: 'STOP-A', alightingStopId: 'STOP-C', waitingSeconds: 5 },
-    ])
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(journey?.totalDurationSeconds).toBe(1_000)
   })
 
-  it('keeps a later arrival when it catches the next bus sooner', () => {
+  it('uses direct walking when only a two-shuttle route could reach the destination', () => {
     const journey = planJourney(createTimeDependentInput())
 
-    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => ({
-      routeId: leg.routeId,
-      boardingStopId: leg.boardingStopId,
-    }))).toEqual([
-      { routeId: 'A1', boardingStopId: 'STOP-C' },
-      { routeId: 'B1', boardingStopId: 'STOP-D' },
-    ])
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(journey?.totalDurationSeconds).toBe(1_000)
   })
 
-  it('keeps a useful timing alternative beyond the label cutoff', () => {
+  it('does not treat stop-to-stop walking as a path into the shuttle network', () => {
     const journey = planJourney(createLabelOverflowInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs[1]).toMatchObject({
-      routeId: 'A1',
-      boardingStopId: 'STOP-X',
-      waitingSeconds: 0,
-    })
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(journey?.totalDurationSeconds).toBe(1_000)
   })
 
   it('does not use a walking cycle to manufacture a later shuttle opportunity', () => {
@@ -574,22 +552,11 @@ describe('planJourney', () => {
     expect(contexts).toContain(100)
   })
 
-  it('charges a wait for all three boardings on a two-transfer Journey', () => {
+  it('falls back to direct walking when reaching the destination needs two transfers', () => {
     const journey = planJourney(createTwoTransferInput(() => 25))
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual([
-      'walking',
-      'shuttle',
-      'shuttle',
-      'shuttle',
-      'walking',
-    ])
-    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle'))
-      .toHaveLength(3)
-    expect(journey?.legs
-      .filter((leg) => leg.mode === 'shuttle')
-      .map((leg) => leg.waitingSeconds))
-      .toEqual([25, 25, 25])
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(journey?.totalDurationSeconds).toBe(1_000)
   })
 
   it('keeps shuttle movement directed and falls back to walking', () => {
@@ -683,7 +650,7 @@ describe('planJourney', () => {
         ...input.walkingConnections,
         walking(origin, destination, rideSeconds + 2),
       ],
-    }, { maxExpandedPaths: 4 })
+    }, { maxExpandedPaths: 1 })
 
     expect(result.status).toBe('budget-exceeded')
     expect(result.journey?.planningQuality).toBe('bounded')

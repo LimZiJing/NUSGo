@@ -38,7 +38,7 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
     })).toBe(264)
   })
 
-  it('uses a future arrival for a transfer and half headway after the snapshot', () => {
+  it('includes time walking to the stop and uses half headway after arrivals pass', () => {
     const waiting = createLiveShuttleWaitingTimeProvider(snapshot, Date.parse(snapshot.observedAt))
 
     expect(waiting(record, {

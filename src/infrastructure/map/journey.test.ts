@@ -138,7 +138,7 @@ describe('journey route layer adapter', () => {
     expect(state.removedLayers).toHaveLength(6)
   })
 
-  it('uses each canonical route color for transfer Journey shuttle legs', () => {
+  it('uses each canonical route color for shuttle legs in a Journey', () => {
     const index = createTransitIndex(createTransferTransitNetwork())
     const state = createFakeMap()
     const layers = createJourneyRouteLayers(state.map, index)

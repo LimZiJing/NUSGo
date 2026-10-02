@@ -53,14 +53,19 @@ interface WalkingCandidate {
   readonly connection: WalkingConnection
 }
 
-const MAX_ENDPOINT_WALK_SECONDS = 300
-const MAX_STOP_TRANSFER_WALK_SECONDS = 180
+const MAX_VENUE_STOP_CONNECTORS = 3
 const JOURNEY_PLANNING_MAX_DURATION_MS = 350
 const JOURNEY_PLANNING_MAX_EXPANDED_PATHS = 10_000
 const JOURNEY_PLANNING_YIELD_EVERY = 64
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
+}
+
+function compareText(first: string, second: string): number {
+  if (first < second) return -1
+  if (first > second) return 1
+  return 0
 }
 
 function isFiniteCoordinate(value: number): boolean {
@@ -137,99 +142,47 @@ function resolveLocations(
 function isCandidatePair(
   from: ResolvedLocation,
   to: ResolvedLocation,
-  connection: WalkingConnection,
-  transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
 ): boolean {
   if (from.key === to.key) return false
-  const fromCanWalkToTransit = from.key === originKey || from.endpoint.kind === 'stop'
-  const toCanWalkFromTransit = to.key === destinationKey || to.endpoint.kind === 'stop'
-  const touchesTripEndpoint = from.key === originKey || to.key === destinationKey
-  const isStopToStopTransfer = from.endpoint.kind === 'stop' && to.endpoint.kind === 'stop'
-  if (!fromCanWalkToTransit || !toCanWalkFromTransit) return false
   if (from.key === originKey && to.key === destinationKey) return true
-
-  const fromStop = transit.index.stopById.get(from.endpoint.id)
-  const toStop = transit.index.stopById.get(to.endpoint.id)
-  const isOppositePair = fromStop?.opposite === to.endpoint.id || toStop?.opposite === from.endpoint.id
-
-  if (touchesTripEndpoint && !isStopToStopTransfer) {
-    return connection.durationSeconds <= MAX_ENDPOINT_WALK_SECONDS
-  }
-  if (!isStopToStopTransfer) return true
-  return isOppositePair || connection.durationSeconds <= MAX_STOP_TRANSFER_WALK_SECONDS
+  if (from.key === originKey && from.endpoint.kind === 'venue' && to.endpoint.kind === 'stop') return true
+  return to.key === destinationKey && to.endpoint.kind === 'venue' && from.endpoint.kind === 'stop'
 }
 
 function selectWalkingCandidates(
   connections: readonly WalkingConnection[],
   locations: readonly ResolvedLocation[],
-  transit: LoadedTransitData,
   originKey: string,
   destinationKey: string,
 ): WalkingCandidate[] {
   const locationByKey = new Map(locations.map((location) => [location.key, location]))
-  return connections.flatMap((connection) => {
+  const candidates = connections.flatMap((connection) => {
     const from = locationByKey.get(connection.fromKey)
     const to = locationByKey.get(connection.toKey)
-    if (!from || !to || !isCandidatePair(from, to, connection, transit, originKey, destinationKey)) return []
+    if (!from || !to || !isCandidatePair(from, to, originKey, destinationKey)) return []
     return [{ from, to, connection }]
   })
-}
 
-function collectReachableStops(
-  startStopIds: ReadonlySet<string>,
-  edges: ReadonlyMap<string, ReadonlySet<string>>,
-): Set<string> {
-  const reachable = new Set(startStopIds)
-  const queue = [...startStopIds]
-  let queueIndex = 0
-  while (queueIndex < queue.length) {
-    const stopId = queue[queueIndex]
-    queueIndex += 1
-    for (const nextStopId of edges.get(stopId) ?? []) {
-      if (reachable.has(nextStopId)) continue
-      reachable.add(nextStopId)
-      queue.push(nextStopId)
-    }
-  }
-  return reachable
-}
-
-function createTransitStopEdges(
-  transit: LoadedTransitData,
-  walkingConnections: readonly WalkingJourneyConnection[],
-): {
-  readonly forward: ReadonlyMap<string, ReadonlySet<string>>
-  readonly reverse: ReadonlyMap<string, ReadonlySet<string>>
-  readonly shuttleForward: ReadonlyMap<string, ReadonlySet<string>>
-} {
-  const forward = new Map<string, Set<string>>()
-  const reverse = new Map<string, Set<string>>()
-  const shuttleForward = new Map<string, Set<string>>()
-  for (const stop of transit.index.stops) {
-    forward.set(stop.id, new Set())
-    reverse.set(stop.id, new Set())
-    shuttleForward.set(stop.id, new Set())
-  }
-  for (const route of transit.index.routes) {
-    for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
-      for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
-        const fromStopId = route.stopIds[fromIndex]
-        const toStopId = route.stopIds[toIndex]
-        if (fromStopId === toStopId) continue
-        forward.get(fromStopId)?.add(toStopId)
-        reverse.get(toStopId)?.add(fromStopId)
-        shuttleForward.get(fromStopId)?.add(toStopId)
-      }
-    }
-  }
-  for (const connection of walkingConnections) {
-    if (connection.from.kind !== 'stop' || connection.to.kind !== 'stop') continue
-    forward.get(connection.from.id)?.add(connection.to.id)
-    reverse.get(connection.to.id)?.add(connection.from.id)
-  }
-  return { forward, reverse, shuttleForward }
+  const compareCandidates = (first: WalkingCandidate, second: WalkingCandidate) => (
+    first.connection.durationSeconds - second.connection.durationSeconds ||
+    first.connection.distanceMeters - second.connection.distanceMeters ||
+    compareText(first.to.key, second.to.key) ||
+    compareText(first.from.key, second.from.key)
+  )
+  const direct = candidates.filter((candidate) => (
+    candidate.from.key === originKey && candidate.to.key === destinationKey
+  ))
+  const originConnectors = candidates
+    .filter((candidate) => candidate.from.key === originKey && candidate.to.endpoint.kind === 'stop')
+    .sort(compareCandidates)
+    .slice(0, MAX_VENUE_STOP_CONNECTORS)
+  const destinationConnectors = candidates
+    .filter((candidate) => candidate.from.endpoint.kind === 'stop' && candidate.to.key === destinationKey)
+    .sort(compareCandidates)
+    .slice(0, MAX_VENUE_STOP_CONNECTORS)
+  return [...direct, ...originConnectors, ...destinationConnectors]
 }
 
 function collectEligibleBoardingStops(
@@ -257,17 +210,18 @@ function collectEligibleBoardingStops(
   }
   if (originStopIds.size === 0 || destinationStopIds.size === 0) return []
 
-  const { forward, reverse, shuttleForward } = createTransitStopEdges(
-    transit,
-    walkingConnections,
-  )
-  const reachableFromOrigin = collectReachableStops(originStopIds, forward)
-  const canReachDestination = collectReachableStops(destinationStopIds, reverse)
+  const eligibleBoardingIds = new Set<string>()
+  for (const route of transit.index.routes) {
+    for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
+      const boardingStopId = route.stopIds[fromIndex]
+      if (!originStopIds.has(boardingStopId)) continue
+      if (route.stopIds.slice(fromIndex + 1).some((stopId) => destinationStopIds.has(stopId))) {
+        eligibleBoardingIds.add(boardingStopId)
+      }
+    }
+  }
   return transit.index.stops
-    .filter((stop) => (
-      reachableFromOrigin.has(stop.id) &&
-      [...(shuttleForward.get(stop.id) ?? [])].some((nextStopId) => canReachDestination.has(nextStopId))
-    ))
+    .filter((stop) => eligibleBoardingIds.has(stop.id))
     .map((stop) => ({ stopId: stop.id, stopName: stop.longName }))
 }
 
@@ -452,7 +406,6 @@ export function createJourneyPlanningService(
     const candidates = selectWalkingCandidates(
       matrixConnections,
       locations.all,
-      request.transit,
       locations.origin.key,
       locations.destination.key,
     )

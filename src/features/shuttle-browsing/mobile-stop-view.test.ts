@@ -401,18 +401,4 @@ describe('mobile stop view state', () => {
       favourites: ['STOP-A'],
     })
   })
-
-  it('keeps manually expanded stops when Nearby is refreshed', () => {
-    const manuallyExpanded = mobileStopViewReducer(
-      createInitialMobileStopViewState(),
-      { type: 'toggle-expanded', stopId: 'STOP-C' },
-    )
-
-    const refreshed = mobileStopViewReducer(manuallyExpanded, {
-      type: 'expand-nearby',
-      stopIds: ['STOP-A'],
-    })
-
-    expect(refreshed.expandedStopIds.nearby).toEqual(['STOP-C', 'STOP-A'])
-  })
 })

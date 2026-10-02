@@ -376,13 +376,13 @@ describe('mobile stop view state', () => {
       .expandedStopIds).toEqual({ nearby: [], favourites: [] })
   })
 
-  it('starts timings closed and expands Nearby without expanding Favourites', () => {
+  it('starts timings closed and replaces Nearby expansion without expanding Favourites', () => {
     const initial = createInitialMobileStopViewState()
 
     expect(initial.expandedStopIds).toEqual({ nearby: [], favourites: [] })
 
     const nearbyExpanded = mobileStopViewReducer(initial, {
-      type: 'expand-nearby',
+      type: 'set-nearby-expanded',
       stopIds: ['STOP-A', 'STOP-B'],
     })
 
@@ -391,13 +391,23 @@ describe('mobile stop view state', () => {
       favourites: [],
     })
 
+    const nearbyReplaced = mobileStopViewReducer(nearbyExpanded, {
+      type: 'set-nearby-expanded',
+      stopIds: ['STOP-B'],
+    })
+
+    expect(nearbyReplaced.expandedStopIds).toEqual({
+      nearby: ['STOP-B'],
+      favourites: [],
+    })
+
     const favouritesExpanded = mobileStopViewReducer(
-      mobileStopViewReducer(nearbyExpanded, { type: 'select-list', list: 'favourites' }),
+      mobileStopViewReducer(nearbyReplaced, { type: 'select-list', list: 'favourites' }),
       { type: 'toggle-expanded', stopId: 'STOP-A' },
     )
 
     expect(favouritesExpanded.expandedStopIds).toEqual({
-      nearby: ['STOP-A', 'STOP-B'],
+      nearby: ['STOP-B'],
       favourites: ['STOP-A'],
     })
   })

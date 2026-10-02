@@ -540,7 +540,7 @@ function App() {
   const expandNearbyTimings = useCallback((): boolean => {
     if (locationNearbyStopEntries === null) return false
     dispatchMobileStopView({
-      type: 'expand-nearby',
+      type: 'set-nearby-expanded',
       stopIds: locationNearbyStopEntries.map(({ stop }) => stop.id),
     })
     return true

@@ -100,12 +100,14 @@ function createCaseDefinitions(fixtures, modules, manifest) {
 }
 
 async function loadBenchmarkModules(vite) {
-  const [valhalla, outcomeValidator, manifest, fixturesModule, report] = await Promise.all([
+  const [valhalla, outcomeValidator, manifest, fixturesModule, report, instrumentation, identity] = await Promise.all([
     vite.ssrLoadModule('/src/infrastructure/routing/valhalla.ts'),
     vite.ssrLoadModule('/scripts/benchmark/outcome.ts'),
     vite.ssrLoadModule('/scripts/benchmark/manifest.ts'),
     vite.ssrLoadModule('/scripts/benchmark/fixtures.ts'),
     vite.ssrLoadModule('/scripts/benchmark/report.ts'),
+    vite.ssrLoadModule('/scripts/benchmark/instrumentation.ts'),
+    vite.ssrLoadModule('/scripts/benchmark/identity.ts'),
   ])
   return {
     createValhallaRouteEngine: valhalla.createValhallaRouteEngine,
@@ -117,6 +119,8 @@ async function loadBenchmarkModules(vite) {
     createJourneyBenchmarkModeReport: report.createJourneyBenchmarkModeReport,
     shouldFailBenchmarkRun: report.shouldFailBenchmarkRun,
     compareBenchmarkCaseResults: report.compareBenchmarkCaseResults,
+    createMeasuredRouteEngine: instrumentation.createMeasuredRouteEngine,
+    assertUniqueAdapterIds: identity.assertUniqueAdapterIds,
   }
 }
 
@@ -162,36 +166,6 @@ async function loadAdapters(vite, paths, context) {
   return loaded
 }
 
-function createMeasuredRouteEngine(routeEngine) {
-  let elapsedMs = 0
-  let matrixRequestCount = 0
-  let routeRequestCount = 0
-  const instrument = (method, counter) => async (...args) => {
-    counter()
-    const startedAt = performance.now()
-    try {
-      return await routeEngine[method](...args)
-    } finally {
-      elapsedMs += performance.now() - startedAt
-    }
-  }
-  return {
-    reset() {
-      elapsedMs = 0
-      matrixRequestCount = 0
-      routeRequestCount = 0
-    },
-    get elapsedMs() {
-      return elapsedMs
-    },
-    get requestCounts() {
-      return { matrix: matrixRequestCount, route: routeRequestCount }
-    },
-    routeWalking: instrument('routeWalking', () => { routeRequestCount += 1 }),
-    matrixWalking: instrument('matrixWalking', () => { matrixRequestCount += 1 }),
-  }
-}
-
 function createArrivalClient(benchmarkCase) {
   const snapshot = benchmarkCase.arrivalSnapshot
   return { getArrivals: async () => snapshot }
@@ -219,12 +193,27 @@ function createCaseContext(adapterContext, benchmarkCase) {
 }
 
 async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, modules) {
-  if (mode === 'local') routeEngine.reset()
+  routeEngine.reset()
   const startedAt = performance.now()
-  const outcome = await runner(new AbortController().signal)
+  let outcome
+  try {
+    outcome = await runner(new AbortController().signal)
+  } catch (error) {
+    const counts = routeEngine.requestCounts
+    const message = error instanceof Error ? error.message : 'Adapter run failed'
+    if (mode === 'offline' && (counts.matrix > 0 || counts.route > 0)) {
+      throw new Error(`${message}; offline benchmark attempted ${counts.matrix} Valhalla matrix and ${counts.route} route requests`)
+    }
+    throw error
+  }
   const elapsedMs = performance.now() - startedAt
   const transit = benchmarkCase.transit ?? fixtures.transit
-  const validation = modules.validateOutcome(outcome, benchmarkCase, transit, fixtures.venues)
+  const validation = modules.validateOutcome(outcome, benchmarkCase, transit, fixtures.venues, {
+    mode,
+    matrixRequests: mode === 'local' ? routeEngine.matrixRequests : [],
+    walkingStopGraph: fixtures.walkingGraph,
+    valhallaRequestCounts: routeEngine.requestCounts,
+  })
   const result = { elapsedMs, validation }
   if (mode === 'local') result.valhallaMs = routeEngine.elapsedMs
   return result
@@ -294,11 +283,18 @@ async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixt
     progress.update(`${adapterId} | ${mode} | case ${casePosition} | setup`)
     let runner
     let failure = null
+    adapterContext.routeEngine.reset()
     try {
       runner = await loadedAdapter.adapter[makeRunnerName](createCaseContext(adapterContext, benchmarkCase))
       if (typeof runner !== 'function') throw new Error(`${makeRunnerName} must return a runner function`)
     } catch (error) {
       failure = error instanceof Error ? error.message : 'Adapter setup failed'
+    }
+    const setupRequests = adapterContext.routeEngine.requestCounts
+    if (mode === 'offline' && (setupRequests.matrix > 0 || setupRequests.route > 0)) {
+      const requestError = `offline benchmark adapter setup attempted ${setupRequests.matrix} Valhalla matrix and ${setupRequests.route} route requests`
+      failure = failure ? `${failure}; ${requestError}` : requestError
+      runner = undefined
     }
 
     const measuredSamples = []
@@ -455,7 +451,7 @@ async function main() {
     const fixtures = await loadFixtures(modules)
     const caseDefs = createCaseDefinitions(fixtures, modules, manifest)
     const rawRouteEngine = modules.createValhallaRouteEngine({ baseUrl: options.valhallaUrl })
-    const routeEngine = createMeasuredRouteEngine(rawRouteEngine)
+    const routeEngine = modules.createMeasuredRouteEngine(rawRouteEngine)
     const adapterContext = createAdapterContext(fixtures, routeEngine, caseDefs, fixedNowMs, modules)
     report.configuration.caseCount = caseDefs.length
     report.configuration.fixedNow = manifest.fixedNow
@@ -486,6 +482,10 @@ async function main() {
         adapterLoadResults.push({ error: error instanceof Error ? error.message : 'Adapter loading failed', path })
       }
     }
+
+    modules.assertUniqueAdapterIds(adapterLoadResults.flatMap((entry) => (
+      entry.loaded ? [{ id: entry.loaded.adapter.id, path: entry.loaded.path }] : []
+    )))
 
     const selectedModeCount = options.mode === 'all' ? 2 : 1
     const totalCases = adapterLoadResults.length * selectedModeCount * caseDefs.length

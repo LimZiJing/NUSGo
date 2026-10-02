@@ -127,15 +127,18 @@ function validateProfile(value: unknown, index: number): JourneyBenchmarkTimingP
   const label = `profiles[${index}]`
   if (!isRecord(value)) throw new Error(`${label} must be an object`)
   const arrivals = value.arrivals
-  if (!['fresh', 'stale', 'expired', 'headway', 'missing'].includes(String(arrivals))) {
+  if (
+    arrivals !== 'fresh' && arrivals !== 'stale' && arrivals !== 'expired' &&
+    arrivals !== 'headway' && arrivals !== 'missing'
+  ) {
     throw new Error(`${label}.arrivals is unsupported`)
   }
   const service = value.service
-  if (!['active', 'before-start', 'after-end'].includes(String(service))) {
+  if (service !== 'active' && service !== 'before-start' && service !== 'after-end') {
     throw new Error(`${label}.service is unsupported`)
   }
   const shuttleTiming = value.shuttleTiming
-  if (!['canonical', 'equal-rides', 'unavailable'].includes(String(shuttleTiming))) {
+  if (shuttleTiming !== 'canonical' && shuttleTiming !== 'equal-rides' && shuttleTiming !== 'unavailable') {
     throw new Error(`${label}.shuttleTiming is unsupported`)
   }
   const arrivalSeconds = value.arrivalSeconds === null

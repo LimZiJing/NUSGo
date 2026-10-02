@@ -69,9 +69,9 @@
       "shuttleRideSecondsOverride": null
     },
     {
-      "id": "stale-usable",
+      "id": "stale-46",
       "arrivals": "stale",
-      "observedAgeSeconds": 35,
+      "observedAgeSeconds": 46,
       "expiresInSeconds": 10800,
       "arrivalSeconds": 60,
       "headwayMedianSeconds": null,
@@ -1199,7 +1199,7 @@
     },
     {
       "id": "timing-stale-arrival",
-      "label": "Recently stale arrival timing from KV to UTown",
+      "label": "Reject a 46-second stale arrival and walk from KV to UTown",
       "group": "timing",
       "scenario": "stale",
       "origin": {
@@ -1210,12 +1210,12 @@
         "kind": "stop",
         "id": "UTOWN"
       },
-      "timingProfile": "stale-usable",
+      "timingProfile": "stale-46",
       "expected": {
         "outcome": "journey",
-        "shuttleBoardings": 1,
+        "shuttleBoardings": 0,
         "modes": [
-          "shuttle"
+          "walking"
         ]
       },
       "arrivalRouteIds": [

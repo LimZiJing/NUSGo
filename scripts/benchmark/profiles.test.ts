@@ -48,7 +48,7 @@ describe('Journey benchmark timing profiles', () => {
     }
 
     expect(getWait('fresh-30')).toBe(30)
-    expect(getWait('stale-usable')).toBe(25)
+    expect(getWait('stale-46')).toBeNull()
     expect(getWait('headway-only')).toBe(60)
     expect(getWait('no-arrivals')).toBeNull()
     expect(getWait('expired-arrivals')).toBeNull()

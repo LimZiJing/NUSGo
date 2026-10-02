@@ -29,6 +29,7 @@ describe('manifest Journey correctness cases', () => {
           benchmarkCase,
           benchmarkCase.transit,
           fixtures.venues,
+          { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
         ),
       }
     }))

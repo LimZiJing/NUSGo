@@ -84,7 +84,7 @@ function summarizeStatistics(values: readonly number[]): JourneyBenchmarkStatist
   }
 }
 
-function emptyQualityCounts(): JourneyBenchmarkQualityCounts {
+function emptyQualityCounts(): { journeys: number; noRoutes: number; exact: number; bounded: number; invalid: number } {
   return { journeys: 0, noRoutes: 0, exact: 0, bounded: 0, invalid: 0 }
 }
 

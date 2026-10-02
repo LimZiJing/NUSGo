@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { JourneyBenchmarkValidation } from './outcome'
+import type { JourneyBenchmarkCaseRun } from './report'
 import {
   compareBenchmarkCaseResults,
   createJourneyBenchmarkModeReport,
@@ -14,7 +15,7 @@ function run(
   valid = true,
   planningQuality: 'exact' | 'bounded' = 'exact',
   routeId = 'P',
-) {
+): JourneyBenchmarkCaseRun {
   const validation: JourneyBenchmarkValidation = {
     valid,
     errors: valid ? [] : ['wrong result'],

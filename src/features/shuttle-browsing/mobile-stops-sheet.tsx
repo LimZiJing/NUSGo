@@ -211,7 +211,7 @@ export function MobileStopsSheet({
                   ? 'Loading stops…'
                   : selectedList === 'favourites'
                   ? 'No favourite stops yet. Star a stop to save it here.'
-                  : 'No stops within 200 m of the map centre.'}
+                  : 'No stops available.'}
               </p>
             )}
           </div>

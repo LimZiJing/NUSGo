@@ -14,7 +14,10 @@ import {
   type MobileStopSheetSelection,
 } from '../features/shuttle-browsing/mobile-stops-sheet'
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
-import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
+import {
+  getMobileStopsOverview,
+  getMobileStopsWithinNearbyRadius,
+} from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
 import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-stop-arrivals'
 import { LocationControl } from '../ui/location-control'
@@ -460,14 +463,8 @@ function App() {
   ])
   const locationNearbyStopEntries = useMemo(() => {
     if (!transitIndex || !locationFix) return null
-    return getMobileStopsOverview(
-      transitIndex,
-      'nearby',
-      locationFix,
-      locationFix,
-      mobileStopView.favoriteStopIds,
-    )
-  }, [locationFix, mobileStopView.favoriteStopIds, transitIndex])
+    return getMobileStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
+  }, [locationFix, transitIndex])
   const overviewStopEntries = useMemo(() => mobileStopView.list === 'nearby'
     ? nearbyStopEntries
     : transitIndex ? getMobileStopsOverview(

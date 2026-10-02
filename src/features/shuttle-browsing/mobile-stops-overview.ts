@@ -21,9 +21,7 @@ export function getMobileStopsOverview(
   if (!index) return []
   const favorites = new Set(favoriteStopIds)
   return index.stops
-    .filter((stop) => list === 'favourites'
-      ? favorites.has(stop.id)
-      : center !== null && getDistanceMeters(center, stop) <= NEARBY_STOP_RADIUS_METERS)
+    .filter((stop) => list === 'favourites' ? favorites.has(stop.id) : true)
     .map((stop) => ({
       stop,
       distanceMeters: fix ? getDistanceMeters(fix, stop) : null,
@@ -33,4 +31,14 @@ export function getMobileStopsOverview(
         ? getDistanceMeters(center, first.stop) - getDistanceMeters(center, second.stop)
         : first.stop.longName.localeCompare(second.stop.longName)
     ) || first.stop.id.localeCompare(second.stop.id))
+}
+
+export function getMobileStopsWithinNearbyRadius(
+  index: TransitIndex | null,
+  center: Coordinate | null,
+  fix: DeviceLocationFix | null,
+): readonly StopOverviewItem[] {
+  if (!center) return []
+  return getMobileStopsOverview(index, 'nearby', center, fix, [])
+    .filter(({ stop }) => getDistanceMeters(center, stop) <= NEARBY_STOP_RADIUS_METERS)
 }

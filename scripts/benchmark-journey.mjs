@@ -104,13 +104,15 @@ function getGitIdentity() {
 
 function createArrivalSnapshot(transit, arrivalSeconds) {
   const stops = {}
-  for (const route of transit.index.routes) {
-    for (const stopId of route.stopIds) {
-      stops[stopId] ??= {}
-      stops[stopId][route.id] = {
-        nextArrivalSeconds: arrivalSeconds,
-        upcomingArrivalSeconds: [arrivalSeconds],
-        headwaySeconds: null,
+  if (arrivalSeconds !== null) {
+    for (const route of transit.index.routes) {
+      for (const stopId of route.stopIds) {
+        stops[stopId] ??= {}
+        stops[stopId][route.id] = {
+          nextArrivalSeconds: arrivalSeconds,
+          upcomingArrivalSeconds: [arrivalSeconds],
+          headwaySeconds: null,
+        }
       }
     }
   }
@@ -144,7 +146,7 @@ function distanceMeters(first, second) {
 
 function createOfflineWalkingConnections(benchmarkCase, fixtures) {
   const { transit, venues, walkingGraph } = fixtures
-  if (benchmarkCase.id === 'no-eligible-shuttle') {
+  if (benchmarkCase.id === 'no-shuttle-arrivals') {
     const from = getEndpointCoordinate(benchmarkCase.origin, venues, transit)
     const to = getEndpointCoordinate(benchmarkCase.destination, venues, transit)
     const distance = Math.round(distanceMeters(from, to))
@@ -197,11 +199,11 @@ function createCaseDefinitions(fixtures, modules) {
       expected: { outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'] },
     },
     {
-      id: 'no-eligible-shuttle',
-      label: 'Nearby venues beyond endpoint shuttle eligibility',
+      id: 'no-shuttle-arrivals',
+      label: 'Direct venue walk with no shuttle arrivals',
       origin: { kind: 'venue', id: 'RC3-01-01' },
       destination: { kind: 'venue', id: 'RC3-01-04' },
-      arrivalSeconds: 30,
+      arrivalSeconds: null,
       expected: { outcome: 'journey', shuttleBoardings: 0, modes: ['walking'] },
     },
   ]

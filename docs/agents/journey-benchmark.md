@@ -18,7 +18,7 @@ npm run benchmark:journey -- \
 
 ## Cases and measurements
 
-The three fixed cases are a direct walk from Museum to UTown, a one-shuttle ride from Oei Tiong Ham to UTown, and a short venue walk between two RC3 rooms whose nearest shuttle stops are beyond the endpoint walking limit. Each case has fixed shuttle arrivals and an expected outcome, ordered modes, and shuttle boarding count. Fixtures, validation, adapter construction, and runner construction happen outside measured samples.
+The three fixed cases are a direct walk from Museum to UTown, a one-shuttle ride from Oei Tiong Ham to UTown, and a short direct venue walk between two RC3 rooms. The venue case receives an empty shuttle-arrival snapshot, so its expected walking result does not depend on an algorithm's endpoint eligibility cutoff. Each case has fixed shuttle-arrival input and an expected outcome, ordered modes, and shuttle boarding count. Fixtures, validation, adapter construction, and runner construction happen outside measured samples.
 
 Search-only offline timing calls the algorithm with an in-memory walking graph and fixed waiting provider. It makes no routing requests. The no-eligible-shuttle case has a deterministic direct walking connection between its two fixture venues.
 

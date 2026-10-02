@@ -6,8 +6,8 @@ import { getMobileStopsOverview } from './mobile-stops-overview'
 function createOverviewIndex() {
   const network = createValidTransitNetwork()
   network.stops.push(
-    { id: 'STOP-C', longName: 'Zulu', shortName: 'Zulu', latitude: 1.006, longitude: 103, services: ['A1'] },
-    { id: 'STOP-D', longName: 'Alpha', shortName: 'Alpha', latitude: 1.004, longitude: 103, services: ['A1'] },
+    { id: 'STOP-C', longName: 'Zulu', shortName: 'Zulu', latitude: 1.0006, longitude: 103, services: ['A1'] },
+    { id: 'STOP-D', longName: 'Alpha', shortName: 'Alpha', latitude: 1.0004, longitude: 103, services: ['A1'] },
   )
   return createTransitIndex(network)
 }

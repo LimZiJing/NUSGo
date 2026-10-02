@@ -2,7 +2,7 @@ import { getDistanceMeters, type TransitIndex } from '../../domain/transit'
 import type { TransitStop } from '../../domain/transit/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
-export const NEARBY_STOP_RADIUS_METERS = 1_500
+export const NEARBY_STOP_RADIUS_METERS = 200
 
 export interface StopOverviewItem {
   readonly stop: TransitStop

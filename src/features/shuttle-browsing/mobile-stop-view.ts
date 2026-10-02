@@ -94,13 +94,15 @@ export function mobileStopViewReducer(
       const expandedStopIds = [...new Set(action.stopIds)]
       if (
         expandedStopIds.length === state.expandedStopIds.nearby.length &&
-        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index])
+        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index]) &&
+        state.expandedStopIds.favourites.length === 0
       ) return state
       return {
         ...state,
         expandedStopIds: {
           ...state.expandedStopIds,
           nearby: expandedStopIds,
+          favourites: [],
         },
       }
     }

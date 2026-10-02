@@ -142,6 +142,49 @@ describe('createJourneyPlanningService', () => {
     expect(routeEngine.routeWalking).toHaveBeenCalledTimes(2)
   })
 
+  it('tries the next ranked Journey when geometry enrichment fails', async () => {
+    const transit = createTransitData()
+    let routeCall = 0
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 500, durationSeconds: 500 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => {
+        routeCall += 1
+        if (routeCall === 1) throw new Error('Selected walking geometry unavailable')
+        return {
+          distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+          durationSeconds: 100,
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: [
+              [origin.longitude, origin.latitude] as const,
+              [destination.longitude, destination.latitude] as const,
+            ],
+          },
+        }
+      }),
+    }
+
+    const journey = await createJourneyPlanningService(routeEngine)({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(routeEngine.routeWalking).toHaveBeenCalledTimes(3)
+  })
+
   it('uses the walking connection provider instead of the full matrix', async () => {
     const transit = createTransitData()
     const routeEngine = {
@@ -421,7 +464,7 @@ describe('createJourneyPlanningService', () => {
     expect(journey?.legs[0].mode).toBe('walking')
   })
 
-  it('requests live arrivals only for nearby boarding stops', async () => {
+  it('requests live arrivals only for bounded candidate boarding stops', async () => {
     const transit = createTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => [
@@ -472,12 +515,15 @@ describe('createJourneyPlanningService', () => {
     })
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
-      [{ stopId: 'STOP-A', stopName: 'Stop A' }],
+      [
+        { stopId: 'STOP-A', stopName: 'Stop A' },
+        { stopId: 'STOP-B', stopName: 'Stop B' },
+      ],
       expect.any(AbortSignal),
     )
   })
 
-  it('lets a better-timed alternative replace the static winner', async () => {
+  it('chooses the best live-timed candidate', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = createAlternativeRouteEngine()
     const shuttleArrivalClient = {

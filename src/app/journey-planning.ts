@@ -6,10 +6,9 @@ import type {
 } from './contracts/routing'
 import type { LoadedTransitData } from './contracts/data'
 import {
-  planJourney,
-  planJourneyWithinBudget,
+  getCandidateBoardingStopIds,
+  planJourneyCandidates,
   zeroShuttleWaitingTime,
-  type JourneyPlanningResult,
   type WalkingJourneyConnection,
 } from '../domain/trip/planner'
 import { createLiveShuttleWaitingTimeProvider } from '../domain/trip/live-waiting'
@@ -53,11 +52,7 @@ interface WalkingCandidate {
   readonly connection: WalkingConnection
 }
 
-const MAX_ENDPOINT_WALK_SECONDS = 300
 const MAX_STOP_TRANSFER_WALK_SECONDS = 180
-const JOURNEY_PLANNING_MAX_DURATION_MS = 350
-const JOURNEY_PLANNING_MAX_EXPANDED_PATHS = 10_000
-const JOURNEY_PLANNING_YIELD_EVERY = 64
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -155,7 +150,7 @@ function isCandidatePair(
   const isOppositePair = fromStop?.opposite === to.endpoint.id || toStop?.opposite === from.endpoint.id
 
   if (touchesTripEndpoint && !isStopToStopTransfer) {
-    return connection.durationSeconds <= MAX_ENDPOINT_WALK_SECONDS
+    return true
   }
   if (!isStopToStopTransfer) return true
   return isOppositePair || connection.durationSeconds <= MAX_STOP_TRANSFER_WALK_SECONDS
@@ -175,100 +170,6 @@ function selectWalkingCandidates(
     if (!from || !to || !isCandidatePair(from, to, connection, transit, originKey, destinationKey)) return []
     return [{ from, to, connection }]
   })
-}
-
-function collectReachableStops(
-  startStopIds: ReadonlySet<string>,
-  edges: ReadonlyMap<string, ReadonlySet<string>>,
-): Set<string> {
-  const reachable = new Set(startStopIds)
-  const queue = [...startStopIds]
-  let queueIndex = 0
-  while (queueIndex < queue.length) {
-    const stopId = queue[queueIndex]
-    queueIndex += 1
-    for (const nextStopId of edges.get(stopId) ?? []) {
-      if (reachable.has(nextStopId)) continue
-      reachable.add(nextStopId)
-      queue.push(nextStopId)
-    }
-  }
-  return reachable
-}
-
-function createTransitStopEdges(
-  transit: LoadedTransitData,
-  walkingConnections: readonly WalkingJourneyConnection[],
-): {
-  readonly forward: ReadonlyMap<string, ReadonlySet<string>>
-  readonly reverse: ReadonlyMap<string, ReadonlySet<string>>
-  readonly shuttleForward: ReadonlyMap<string, ReadonlySet<string>>
-} {
-  const forward = new Map<string, Set<string>>()
-  const reverse = new Map<string, Set<string>>()
-  const shuttleForward = new Map<string, Set<string>>()
-  for (const stop of transit.index.stops) {
-    forward.set(stop.id, new Set())
-    reverse.set(stop.id, new Set())
-    shuttleForward.set(stop.id, new Set())
-  }
-  for (const route of transit.index.routes) {
-    for (let fromIndex = 0; fromIndex < route.stopIds.length - 1; fromIndex += 1) {
-      for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
-        const fromStopId = route.stopIds[fromIndex]
-        const toStopId = route.stopIds[toIndex]
-        if (fromStopId === toStopId) continue
-        forward.get(fromStopId)?.add(toStopId)
-        reverse.get(toStopId)?.add(fromStopId)
-        shuttleForward.get(fromStopId)?.add(toStopId)
-      }
-    }
-  }
-  for (const connection of walkingConnections) {
-    if (connection.from.kind !== 'stop' || connection.to.kind !== 'stop') continue
-    forward.get(connection.from.id)?.add(connection.to.id)
-    reverse.get(connection.to.id)?.add(connection.from.id)
-  }
-  return { forward, reverse, shuttleForward }
-}
-
-function collectEligibleBoardingStops(
-  transit: LoadedTransitData,
-  walkingConnections: readonly WalkingJourneyConnection[],
-  origin: ResolvedLocation,
-  destination: ResolvedLocation,
-): readonly ShuttleArrivalStopRequest[] {
-  const originStopIds = new Set<string>()
-  if (origin.endpoint.kind === 'stop') originStopIds.add(origin.endpoint.id)
-  for (const connection of walkingConnections) {
-    if (
-      endpointKey(connection.from) === origin.key &&
-      connection.to.kind === 'stop'
-    ) originStopIds.add(connection.to.id)
-  }
-
-  const destinationStopIds = new Set<string>()
-  if (destination.endpoint.kind === 'stop') destinationStopIds.add(destination.endpoint.id)
-  for (const connection of walkingConnections) {
-    if (
-      endpointKey(connection.to) === destination.key &&
-      connection.from.kind === 'stop'
-    ) destinationStopIds.add(connection.from.id)
-  }
-  if (originStopIds.size === 0 || destinationStopIds.size === 0) return []
-
-  const { forward, reverse, shuttleForward } = createTransitStopEdges(
-    transit,
-    walkingConnections,
-  )
-  const reachableFromOrigin = collectReachableStops(originStopIds, forward)
-  const canReachDestination = collectReachableStops(destinationStopIds, reverse)
-  return transit.index.stops
-    .filter((stop) => (
-      reachableFromOrigin.has(stop.id) &&
-      [...(shuttleForward.get(stop.id) ?? [])].some((nextStopId) => canReachDestination.has(nextStopId))
-    ))
-    .map((stop) => ({ stopId: stop.id, stopName: stop.longName }))
 }
 
 function collectEligibleRouteIds(
@@ -291,34 +192,15 @@ function createAbortError(): Error {
   return error
 }
 
-function yieldToBrowser(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0))
-}
-
-async function planWithBudget(
-  planInput: Parameters<typeof planJourney>[0],
-  signal: AbortSignal,
-): Promise<JourneyPlanningResult> {
-  const result = await planJourneyWithinBudget(planInput, {
-    maxDurationMs: JOURNEY_PLANNING_MAX_DURATION_MS,
-    maxExpandedPaths: JOURNEY_PLANNING_MAX_EXPANDED_PATHS,
-    shouldCancel: () => signal.aborted,
-    yieldEvery: JOURNEY_PLANNING_YIELD_EVERY,
-    yieldControl: yieldToBrowser,
-  })
-  if (result.status === 'cancelled' || signal.aborted) throw createAbortError()
-  return result
-}
-
 async function planWalkingOnly(
-  planInput: Parameters<typeof planJourney>[0],
+  planInput: Parameters<typeof planJourneyCandidates>[0],
   signal: AbortSignal,
 ): Promise<Journey | null> {
-  const result = await planWithBudget({
+  if (signal.aborted) throw createAbortError()
+  return planJourneyCandidates({
     ...planInput,
     getShuttleWaitingSeconds: () => null,
-  }, signal)
-  return result.journey
+  })[0] ?? null
 }
 
 function createPlanningWalkingGeometry(
@@ -335,10 +217,11 @@ function createPlanningWalkingGeometry(
 }
 
 function getStaticServiceEvaluation(
-  journey: Journey,
+  journey: Journey | null,
   serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
   nowMs: number,
 ): ShuttleServiceEvaluation | null {
+  if (!journey) return null
   let elapsedSeconds = 0
   for (const leg of journey.legs) {
     if (leg.mode === 'shuttle') {
@@ -410,6 +293,37 @@ async function enrichWalkingGeometry(
   return { ...journey, legs }
 }
 
+async function enrichRankedJourneys(
+  routeEngine: WalkingRouteEngine,
+  journeys: readonly Journey[],
+  locations: readonly ResolvedLocation[],
+  signal: AbortSignal,
+): Promise<Journey | null> {
+  for (const journey of journeys) {
+    try {
+      return await enrichWalkingGeometry(routeEngine, journey, locations, signal)
+    } catch (error: unknown) {
+      if (signal.aborted || isAbortError(error)) throw createAbortError()
+      console.warn('Walking route geometry was unavailable; trying the next Journey candidate.', error)
+    }
+  }
+  return null
+}
+
+function planAndEnrich(
+  routeEngine: WalkingRouteEngine,
+  planInput: Parameters<typeof planJourneyCandidates>[0],
+  locations: readonly ResolvedLocation[],
+  signal: AbortSignal,
+): Promise<Journey | null> {
+  return enrichRankedJourneys(
+    routeEngine,
+    planJourneyCandidates(planInput),
+    locations,
+    signal,
+  )
+}
+
 export function createJourneyPlanningService(
   routeEngine: WalkingRouteEngine,
   shuttleArrivalClient?: ShuttleArrivalClient,
@@ -467,32 +381,25 @@ export function createJourneyPlanningService(
       walkingConnections,
       getShuttleWaitingSeconds: zeroShuttleWaitingTime,
     }
-    const staticSearch = await planWithBudget(planInput, request.signal)
-    const staticJourney = staticSearch.journey
-    if (!staticJourney) {
-      const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
-      return walkingOnlyJourney
-        ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
-        : null
-    }
     if (!shuttleArrivalClient) {
-      return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
+      return planAndEnrich(routeEngine, planInput, locations.all, request.signal)
     }
 
-    const boardingStops = collectEligibleBoardingStops(
-      request.transit,
-      walkingConnections,
-      locations.origin,
-      locations.destination,
-    )
+    const boardingStops = getCandidateBoardingStopIds(planInput)
+      .flatMap((stopId) => {
+        const stop = request.transit.index.stopById.get(stopId)
+        return stop ? [{ stopId: stop.id, stopName: stop.longName }] : []
+    })
     if (boardingStops.length === 0) {
-      return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
+      return planAndEnrich(routeEngine, planInput, locations.all, request.signal)
     }
 
     let serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null = null
     if (shuttleServiceHoursClient) {
       const routeIds = collectEligibleRouteIds(request.transit, boardingStops)
-      if (routeIds.length === 0) return staticJourney
+      if (routeIds.length === 0) {
+        return planAndEnrich(routeEngine, planInput, locations.all, request.signal)
+      }
       try {
         serviceWindows = await shuttleServiceHoursClient.getServiceWindows(routeIds, request.signal)
       } catch (error: unknown) {
@@ -500,13 +407,13 @@ export function createJourneyPlanningService(
         console.warn('Shuttle service-hour data is unavailable; removing shuttle options.', error)
         const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
         return walkingOnlyJourney
-          ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+          ? enrichRankedJourneys(routeEngine, [walkingOnlyJourney], locations.all, request.signal)
           : null
       }
       if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) {
         const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
         return walkingOnlyJourney
-          ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+          ? enrichRankedJourneys(routeEngine, [walkingOnlyJourney], locations.all, request.signal)
           : null
       }
     }
@@ -521,7 +428,7 @@ export function createJourneyPlanningService(
 
     const nowMs = now()
     const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals, nowMs)
-    const liveSearch = await planWithBudget({
+    const liveJourneys = planJourneyCandidates({
       ...planInput,
       getShuttleWaitingSeconds: (record, context) => {
         const waitingSeconds = liveWaiting(record, context)
@@ -533,19 +440,22 @@ export function createJourneyPlanningService(
         if (service.status !== 'active') return null
         return waitingSeconds
       },
-    }, request.signal)
-    const liveJourney = liveSearch.journey
-    if (liveJourney) {
-      return enrichWalkingGeometry(routeEngine, liveJourney, locations.all, request.signal)
-    }
+    })
+    const liveJourney = await enrichRankedJourneys(
+      routeEngine,
+      liveJourneys,
+      locations.all,
+      request.signal,
+    )
+    if (liveJourney) return liveJourney
 
+    // Static candidates are needed only to explain a service-window failure
+    // after live timing removed every complete Journey.
+    const staticJourneys = planJourneyCandidates(planInput)
     const unavailable = serviceWindows
-      ? getStaticServiceEvaluation(staticJourney, serviceWindows, nowMs)
+      ? getStaticServiceEvaluation(staticJourneys[0] ?? null, serviceWindows, nowMs)
       : null
     if (unavailable) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
-    const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
-    return walkingOnlyJourney
-      ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
-      : null
+    return null
   }
 }

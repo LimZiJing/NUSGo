@@ -3,20 +3,21 @@ import type {
   ShuttleTimingData,
   ShuttleTimingRecord,
 } from '../transit/timing'
-import type {
-  TransitGeoJsonPosition,
-  TransitRouteGeometry,
-} from '../transit/types'
+import type { TransitGeoJsonPosition, TransitRouteGeometry } from '../transit/types'
 import type { TripEndpoint } from './types'
 import type {
   Journey,
   JourneyEndpointLocation,
   JourneyLineString,
   JourneyLeg,
-  JourneyPlanningQuality,
   ShuttleJourneyLeg,
   WalkingJourneyLeg,
 } from './journey'
+
+const MAX_ENDPOINT_STOP_CANDIDATES = 5
+const METRES_PER_LATITUDE_DEGREE = 110540
+const METRES_PER_LONGITUDE_DEGREE = 111320
+const PROJECTION_EPSILON_METRES = 0.001
 
 export interface WalkingJourneyConnection {
   readonly from: TripEndpoint
@@ -39,23 +40,6 @@ export type ShuttleWaitingTimeProvider = (
 
 export const zeroShuttleWaitingTime: ShuttleWaitingTimeProvider = () => 0
 
-export interface JourneyPlanningOptions {
-  readonly maxDurationMs?: number
-  readonly maxExpandedPaths?: number
-  readonly shouldCancel?: () => boolean
-  readonly yieldEvery?: number
-  readonly yieldControl?: () => Promise<void>
-  readonly now?: () => number
-}
-
-export type JourneyPlanningStatus = 'complete' | 'budget-exceeded' | 'cancelled'
-
-export interface JourneyPlanningResult {
-  readonly journey: Journey | null
-  readonly status: JourneyPlanningStatus
-  readonly expandedPathCount: number
-}
-
 export interface PlanJourneyInput {
   readonly origin: JourneyEndpointLocation
   readonly destination: JourneyEndpointLocation
@@ -66,55 +50,38 @@ export interface PlanJourneyInput {
   readonly getShuttleWaitingSeconds: ShuttleWaitingTimeProvider
 }
 
-interface JourneyEdgeBase {
-  readonly to: TripEndpoint
-  readonly distanceMeters: number
+interface StopAccess {
+  readonly stopId: string
+  readonly walking: WalkingJourneyConnection | null
   readonly walkingDistanceMeters: number
-  readonly shuttleBoardings: number
-  readonly sequenceKey: string
 }
 
-interface WalkingJourneyEdge extends JourneyEdgeBase {
-  readonly kind: 'walking'
-  readonly durationSeconds: number
-  readonly leg: WalkingJourneyLeg
-}
-
-interface ShuttleJourneyEdge extends JourneyEdgeBase {
-  readonly kind: 'shuttle'
+interface ShuttleSegment {
   readonly routeId: string
   readonly fromStopId: string
   readonly toStopId: string
   readonly rideSeconds: number
   readonly record: ShuttleTimingRecord
   readonly geometry: JourneyLineString
-  readonly reachesRouteTerminal: boolean
-}
-
-type JourneyEdge = WalkingJourneyEdge | ShuttleJourneyEdge
-
-interface ResolvedJourneyEdge {
-  readonly to: TripEndpoint
-  readonly durationSeconds: number
   readonly distanceMeters: number
-  readonly walkingDistanceMeters: number
-  readonly shuttleBoardings: number
   readonly reachesRouteTerminal: boolean
-  readonly leg: JourneyLeg
   readonly sequenceKey: string
 }
 
-interface JourneyPath {
-  readonly nodeKey: string
-  readonly durationSeconds: number
-  readonly distanceMeters: number
-  readonly walkingDistanceMeters: number
+interface JourneyCandidate {
+  readonly journey: Journey
   readonly shuttleBoardings: number
-  readonly lastShuttleRouteId: string | null
-  readonly lastShuttleReachedTerminal: boolean
-  readonly legs: readonly JourneyLeg[]
+  readonly walkingDistanceMeters: number
   readonly sequenceKey: string
-  readonly visitedStateKeys: ReadonlySet<string>
+}
+
+interface PlannerContext {
+  readonly originAccesses: readonly StopAccess[]
+  readonly destinationAccesses: readonly StopAccess[]
+  readonly transferWalking: ReadonlyMap<string, ReadonlyMap<string, WalkingJourneyConnection>>
+  readonly segmentsByFromStop: ReadonlyMap<string, readonly ShuttleSegment[]>
+  readonly segmentsByToStop: ReadonlyMap<string, readonly ShuttleSegment[]>
+  readonly segmentsByStopPair: ReadonlyMap<string, readonly ShuttleSegment[]>
 }
 
 interface ProjectedPoint {
@@ -123,10 +90,6 @@ interface ProjectedPoint {
   readonly distanceToLine: number
   readonly coordinate: TransitGeoJsonPosition
 }
-
-const METRES_PER_LATITUDE_DEGREE = 110540
-const METRES_PER_LONGITUDE_DEGREE = 111320
-const PROJECTION_EPSILON_METRES = 0.001
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -138,94 +101,103 @@ function compareText(first: string, second: string): number {
   return 0
 }
 
+function compareNumbers(first: number, second: number): number {
+  return first - second
+}
+
 function isFiniteNonNegativeInteger(value: number): boolean {
   return Number.isInteger(value) && Number.isFinite(value) && value >= 0
 }
 
-function isValidLineString(geometry: JourneyLineString): boolean {
-  return geometry.type === 'LineString' && geometry.coordinates.length >= 2
+function isValidLineString(geometry: JourneyLineString | null | undefined): boolean {
+  return geometry?.type === 'LineString' && Array.isArray(geometry.coordinates) &&
+    geometry.coordinates.length >= 2 && geometry.coordinates.every(
+    (coordinate) => Array.isArray(coordinate) && coordinate.length >= 2 &&
+      Number.isFinite(coordinate[0]) && Number.isFinite(coordinate[1]),
+  )
 }
 
-function createNodeSet(
-  origin: JourneyEndpointLocation,
-  destination: JourneyEndpointLocation,
-  transitIndex: TransitIndex,
-): Set<string> {
-  const nodes = new Set([endpointKey(origin.endpoint), endpointKey(destination.endpoint)])
-  for (const stop of transitIndex.stops) nodes.add(endpointKey({ kind: 'stop', id: stop.id }))
-  return nodes
+function isValidWalkingConnection(connection: WalkingJourneyConnection): boolean {
+  return isFiniteNonNegativeInteger(connection.durationSeconds) &&
+    isFiniteNonNegativeInteger(connection.distanceMeters) &&
+    isValidLineString(connection.geometry)
 }
 
-function addEdge(
-  graph: Map<string, JourneyEdge[]>,
-  from: TripEndpoint,
-  edge: JourneyEdge,
-): void {
-  const edges = graph.get(endpointKey(from))
-  if (edges) edges.push(edge)
+function walkingSequenceKey(connection: WalkingJourneyConnection): string {
+  return `walking:${endpointKey(connection.from)}>${endpointKey(connection.to)}`
 }
 
-function toPosition(longitude: number, latitude: number): TransitGeoJsonPosition {
-  return [longitude, latitude]
+function stopPairKey(fromStopId: string, toStopId: string): string {
+  return `${fromStopId}\u0000${toStopId}`
 }
 
-function toLocalMeters(
-  position: TransitGeoJsonPosition,
-  referenceLatitude: number,
-): [number, number] {
-  const longitudeScale = METRES_PER_LONGITUDE_DEGREE * Math.cos(referenceLatitude * Math.PI / 180)
-  return [position[0] * longitudeScale, position[1] * METRES_PER_LATITUDE_DEGREE]
+function addToMapSet<T>(map: Map<string, T[]>, key: string, value: T): void {
+  const values = map.get(key) ?? []
+  values.push(value)
+  map.set(key, values)
 }
 
 function distanceBetween(
   first: TransitGeoJsonPosition,
   second: TransitGeoJsonPosition,
 ): number {
-  const referenceLatitude = (first[1] + second[1]) / 2
-  const firstMeters = toLocalMeters(first, referenceLatitude)
-  const secondMeters = toLocalMeters(second, referenceLatitude)
-  return Math.hypot(secondMeters[0] - firstMeters[0], secondMeters[1] - firstMeters[1])
+  const firstLatitude = first[1] * Math.PI / 180
+  const secondLatitude = second[1] * Math.PI / 180
+  const latitudeDelta = (second[1] - first[1]) * Math.PI / 180
+  const longitudeDelta = (second[0] - first[0]) * Math.PI / 180
+  const haversine = Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(firstLatitude) * Math.cos(secondLatitude) * Math.sin(longitudeDelta / 2) ** 2
+  return 6_371_008.8 * 2 * Math.asin(Math.sqrt(Math.min(1, haversine)))
 }
 
 function projectPointOntoLine(
   point: TransitGeoJsonPosition,
   line: readonly TransitGeoJsonPosition[],
-): readonly ProjectedPoint[] {
-  let distanceAlongLine = 0
+): ProjectedPoint[] {
   const candidates: ProjectedPoint[] = []
+  let distanceAlongLine = 0
 
-  for (let index = 1; index < line.length; index += 1) {
-    const start = line[index - 1]
-    const end = line[index]
-    const segmentLength = distanceBetween(start, end)
-    const pointMeters = toLocalMeters(point, point[1])
-    const startMeters = toLocalMeters(start, point[1])
-    const endMeters = toLocalMeters(end, point[1])
+  for (let index = 0; index < line.length - 1; index += 1) {
+    const start = line[index]
+    const end = line[index + 1]
+    if (!start || !end) continue
+
+    const startMeters: TransitGeoJsonPosition = [
+      start[0] * METRES_PER_LONGITUDE_DEGREE * Math.cos(start[1] * Math.PI / 180),
+      start[1] * METRES_PER_LATITUDE_DEGREE,
+    ]
+    const endMeters: TransitGeoJsonPosition = [
+      end[0] * METRES_PER_LONGITUDE_DEGREE * Math.cos(end[1] * Math.PI / 180),
+      end[1] * METRES_PER_LATITUDE_DEGREE,
+    ]
+    const pointMeters: TransitGeoJsonPosition = [
+      point[0] * METRES_PER_LONGITUDE_DEGREE * Math.cos(point[1] * Math.PI / 180),
+      point[1] * METRES_PER_LATITUDE_DEGREE,
+    ]
     const deltaX = endMeters[0] - startMeters[0]
     const deltaY = endMeters[1] - startMeters[1]
-    const lengthSquared = deltaX * deltaX + deltaY * deltaY
-    const ratio = lengthSquared === 0
-      ? 0
-      : Math.max(
-        0,
-        Math.min(
-          1,
-          ((pointMeters[0] - startMeters[0]) * deltaX +
-            (pointMeters[1] - startMeters[1]) * deltaY) / lengthSquared,
-        ),
-      )
+    const lengthSquared = deltaX ** 2 + deltaY ** 2
+    const segmentLength = Math.sqrt(lengthSquared)
+    if (segmentLength === 0) continue
+
+    const ratio = Math.max(
+      0,
+      Math.min(
+        1,
+        ((pointMeters[0] - startMeters[0]) * deltaX +
+          (pointMeters[1] - startMeters[1]) * deltaY) / lengthSquared,
+      ),
+    )
     const projected: TransitGeoJsonPosition = [
       start[0] + (end[0] - start[0]) * ratio,
       start[1] + (end[1] - start[1]) * ratio,
     ]
-    const distanceToLine = distanceBetween(point, projected)
-    const candidate: ProjectedPoint = {
+    candidates.push({
       segmentIndex: index,
       distanceAlongLine: distanceAlongLine + segmentLength * ratio,
-      distanceToLine,
+      distanceToLine: distanceBetween(point, projected),
       coordinate: projected,
-    }
-    candidates.push(candidate)
+    })
     distanceAlongLine += segmentLength
   }
 
@@ -250,6 +222,7 @@ function sliceRouteGeometry(
   const fromCandidates = projectPointOntoLine(fromStop, line)
   const toCandidates = projectPointOntoLine(toStop, line)
   let selected: { readonly from: ProjectedPoint; readonly to: ProjectedPoint } | null = null
+
   for (const from of fromCandidates) {
     for (const to of toCandidates) {
       if (to.distanceAlongLine <= from.distanceAlongLine + PROJECTION_EPSILON_METRES) continue
@@ -258,16 +231,12 @@ function sliceRouteGeometry(
         !selected ||
         from.distanceToLine + to.distanceToLine <
           selected.from.distanceToLine + selected.to.distanceToLine
-      ) {
-        selected = candidate
-      }
+      ) selected = candidate
     }
   }
-  if (!selected) {
-    return null
-  }
-  const { from, to } = selected
+  if (!selected) return null
 
+  const { from, to } = selected
   const coordinates = withoutDuplicateCoordinates([
     from.coordinate,
     ...line.slice(from.segmentIndex, to.segmentIndex),
@@ -282,28 +251,21 @@ function sliceRouteGeometry(
 }
 
 function createShuttleLeg(
-  routeId: string,
-  fromStopId: string,
-  toStopId: string,
+  segment: ShuttleSegment,
   waitingSeconds: number,
-  rideSeconds: number,
-  geometry: JourneyLineString,
-  distanceMeters: number,
 ): ShuttleJourneyLeg {
-  const from: TripEndpoint = { kind: 'stop', id: fromStopId }
-  const to: TripEndpoint = { kind: 'stop', id: toStopId }
   return {
     mode: 'shuttle',
-    from,
-    to,
-    durationSeconds: waitingSeconds + rideSeconds,
-    distanceMeters,
-    geometry,
-    routeId,
-    boardingStopId: fromStopId,
-    alightingStopId: toStopId,
+    from: { kind: 'stop', id: segment.fromStopId },
+    to: { kind: 'stop', id: segment.toStopId },
+    durationSeconds: waitingSeconds + segment.rideSeconds,
+    distanceMeters: segment.distanceMeters,
+    geometry: segment.geometry,
+    routeId: segment.routeId,
+    boardingStopId: segment.fromStopId,
+    alightingStopId: segment.toStopId,
     waitingSeconds,
-    rideSeconds,
+    rideSeconds: segment.rideSeconds,
   }
 }
 
@@ -352,220 +314,112 @@ function mergeConsecutiveWalkingLegs(
       }
       continue
     }
-
     normalized.push(leg)
   }
 
   return normalized
 }
 
-function comparePaths(first: JourneyPath, second: JourneyPath): number {
-  for (const [firstValue, secondValue] of [
-    [first.durationSeconds, second.durationSeconds],
-    [first.shuttleBoardings, second.shuttleBoardings],
-    [first.walkingDistanceMeters, second.walkingDistanceMeters],
-    [first.legs.length, second.legs.length],
-  ] as const) {
-    if (firstValue !== secondValue) return firstValue - secondValue
-  }
-  return compareText(first.sequenceKey, second.sequenceKey)
+function selectShortestWalkingConnection(
+  current: WalkingJourneyConnection | undefined,
+  candidate: WalkingJourneyConnection,
+): WalkingJourneyConnection {
+  if (!current) return candidate
+  return candidate.distanceMeters < current.distanceMeters || (
+    candidate.distanceMeters === current.distanceMeters &&
+    candidate.durationSeconds < current.durationSeconds
+  ) ? candidate : current
 }
 
-function journeyPathStateKey(
-  path: Pick<JourneyPath, 'nodeKey' | 'lastShuttleRouteId' | 'lastShuttleReachedTerminal' | 'shuttleBoardings'>,
-): string {
-  return `${path.nodeKey}\u0000${path.lastShuttleRouteId ?? ''}\u0000${path.lastShuttleReachedTerminal ? 'terminal' : ''}\u0000${path.shuttleBoardings > 0 ? 'boarded' : 'unboarded'}`
-}
-
-function extendPath(path: JourneyPath, edge: ResolvedJourneyEdge): JourneyPath {
-  const nextPath = {
-    nodeKey: endpointKey(edge.to),
-    durationSeconds: path.durationSeconds + edge.durationSeconds,
-    distanceMeters: path.distanceMeters + edge.distanceMeters,
-    walkingDistanceMeters: path.walkingDistanceMeters + edge.walkingDistanceMeters,
-    shuttleBoardings: path.shuttleBoardings + edge.shuttleBoardings,
-    lastShuttleRouteId: edge.leg.mode === 'shuttle' ? edge.leg.routeId : null,
-    lastShuttleReachedTerminal: edge.leg.mode === 'shuttle' ? edge.reachesRouteTerminal : false,
-    legs: [...path.legs, edge.leg],
-    sequenceKey: path.sequenceKey
-      ? `${path.sequenceKey}|${edge.sequenceKey}`
-      : edge.sequenceKey,
-  }
-  return {
-    ...nextPath,
-    visitedStateKeys: new Set([
-      ...path.visitedStateKeys,
-      journeyPathStateKey(nextPath),
-    ]),
-  }
-}
-
-function dominatesPath(first: JourneyPath, second: JourneyPath): boolean {
-  // Different arrival times can produce different live shuttle choices. Only
-  // compare labels when the future timing context is exactly the same.
-  return first.durationSeconds === second.durationSeconds && comparePaths(first, second) < 0
-}
-
-function retainPathLabels(
-  labelsByState: Map<string, JourneyPath[]>,
-  path: JourneyPath,
-): boolean {
-  const stateKey = journeyPathStateKey(path)
-  const labels = labelsByState.get(stateKey) ?? []
-  if (labels.some((label) => label.sequenceKey === path.sequenceKey)) return false
-
-  if (labels.some((label) => dominatesPath(label, path))) return false
-
-  const retainedLabels = labels.filter((label) => !dominatesPath(path, label))
-  retainedLabels.push(path)
-  retainedLabels.sort(comparePaths)
-  labelsByState.set(stateKey, retainedLabels)
-
-  return labelsByState.get(stateKey)?.some((label) => label.sequenceKey === path.sequenceKey) ?? false
-}
-
-function hasPathLabel(
-  labelsByState: ReadonlyMap<string, readonly JourneyPath[]>,
-  path: JourneyPath,
-): boolean {
-  return labelsByState.get(journeyPathStateKey(path))?.some(
-    (label) => label.sequenceKey === path.sequenceKey,
-  ) ?? false
-}
-
-class JourneyPathQueue {
-  private readonly items: JourneyPath[] = []
-
-  get length(): number {
-    return this.items.length
-  }
-
-  peek(): JourneyPath | undefined {
-    return this.items[0]
-  }
-
-  push(path: JourneyPath): void {
-    this.items.push(path)
-    let index = this.items.length - 1
-    while (index > 0) {
-      const parentIndex = Math.floor((index - 1) / 2)
-      if (comparePaths(this.items[parentIndex], path) <= 0) break
-      this.items[index] = this.items[parentIndex]
-      index = parentIndex
-    }
-    this.items[index] = path
-  }
-
-  pop(): JourneyPath | undefined {
-    const first = this.items[0]
-    if (!first) return undefined
-
-    const last = this.items.pop()
-    if (last && this.items.length > 0) {
-      let index = 0
-      while (true) {
-        const leftIndex = index * 2 + 1
-        const rightIndex = leftIndex + 1
-        let nextIndex = index
-        if (
-          leftIndex < this.items.length &&
-          comparePaths(this.items[leftIndex], last) < 0
-        ) nextIndex = leftIndex
-        if (
-          rightIndex < this.items.length &&
-          comparePaths(this.items[rightIndex], this.items[nextIndex]) < 0
-        ) nextIndex = rightIndex
-        if (nextIndex === index) break
-        this.items[index] = this.items[nextIndex]
-        index = nextIndex
-      }
-      this.items[index] = last
-    }
-
-    return first
-  }
-}
-
-function isUpstreamBoarding(
-  origin: TripEndpoint,
-  edge: ShuttleJourneyEdge,
-  transitIndex: TransitIndex,
-): boolean {
-  if (origin.kind !== 'stop') return false
-  const route = transitIndex.routeById.get(edge.routeId)
-  if (!route) return false
-  const originIndex = route.stopIds.indexOf(origin.id)
-  const boardingIndex = route.stopIds.indexOf(edge.fromStopId)
-  return originIndex >= 0 && boardingIndex >= 0 && boardingIndex < originIndex
-}
-
-function resolveJourneyEdge(
-  edge: JourneyEdge,
-  elapsedSeconds: number,
-  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
-): ResolvedJourneyEdge | null {
-  if (edge.kind === 'walking') {
-    return { ...edge, reachesRouteTerminal: false }
-  }
-
-  const waitingSeconds = getShuttleWaitingSeconds(edge.record, {
-    routeId: edge.routeId,
-    boardingStopId: edge.fromStopId,
-    elapsedSeconds,
-  })
-  if (
-    waitingSeconds === null ||
-    !isFiniteNonNegativeInteger(waitingSeconds) ||
-    !isFiniteNonNegativeInteger(edge.rideSeconds)
-  ) return null
-
-  return {
-    to: edge.to,
-    durationSeconds: waitingSeconds + edge.rideSeconds,
-    distanceMeters: edge.distanceMeters,
-    walkingDistanceMeters: edge.walkingDistanceMeters,
-    shuttleBoardings: edge.shuttleBoardings,
-    reachesRouteTerminal: edge.kind === 'shuttle' && edge.reachesRouteTerminal,
-    leg: createShuttleLeg(
-      edge.routeId,
-      edge.fromStopId,
-      edge.toStopId,
-      waitingSeconds,
-      edge.rideSeconds,
-      edge.geometry,
-      edge.distanceMeters,
-    ),
-    sequenceKey: edge.sequenceKey,
-  }
-}
-
-function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
-  const graph = new Map<string, JourneyEdge[]>()
-  const nodes = createNodeSet(input.origin, input.destination, input.transitIndex)
-  for (const node of nodes) graph.set(node, [])
-
-  for (const connection of input.walkingConnections) {
+function selectNearestStopAccesses(accesses: readonly StopAccess[]): readonly StopAccess[] {
+  const shortestByStop = new Map<string, StopAccess>()
+  for (const access of accesses) {
+    const current = shortestByStop.get(access.stopId)
     if (
-      !nodes.has(endpointKey(connection.from)) ||
-      !nodes.has(endpointKey(connection.to)) ||
-      !isFiniteNonNegativeInteger(connection.durationSeconds) ||
-      !isFiniteNonNegativeInteger(connection.distanceMeters) ||
-      !isValidLineString(connection.geometry)
-    ) continue
+      !current ||
+      access.walkingDistanceMeters < current.walkingDistanceMeters ||
+      (
+        access.walkingDistanceMeters === current.walkingDistanceMeters &&
+        access.walking?.durationSeconds !== undefined &&
+        access.walking.durationSeconds < (current.walking?.durationSeconds ?? Number.MAX_SAFE_INTEGER)
+      )
+    ) shortestByStop.set(access.stopId, access)
+  }
 
-    const leg = createWalkingLeg(connection)
-    addEdge(graph, connection.from, {
-      kind: 'walking',
-      to: connection.to,
-      durationSeconds: connection.durationSeconds,
-      distanceMeters: connection.distanceMeters,
-      walkingDistanceMeters: connection.distanceMeters,
-      shuttleBoardings: 0,
-      leg,
-      sequenceKey: `walking:${endpointKey(connection.from)}>${endpointKey(connection.to)}`,
+  return [...shortestByStop.values()]
+    .sort((first, second) => (
+      compareNumbers(first.walkingDistanceMeters, second.walkingDistanceMeters) ||
+      compareText(first.stopId, second.stopId)
+    ))
+    .slice(0, MAX_ENDPOINT_STOP_CANDIDATES)
+}
+
+function createStopAccesses(
+  input: PlanJourneyInput,
+  walkingConnections: readonly WalkingJourneyConnection[],
+): { readonly origin: readonly StopAccess[]; readonly destination: readonly StopAccess[] } {
+  const originAccesses: StopAccess[] = []
+  const destinationAccesses: StopAccess[] = []
+
+  if (input.origin.endpoint.kind === 'stop') {
+    originAccesses.push({
+      stopId: input.origin.endpoint.id,
+      walking: null,
+      walkingDistanceMeters: 0,
+    })
+  }
+  if (input.destination.endpoint.kind === 'stop') {
+    destinationAccesses.push({
+      stopId: input.destination.endpoint.id,
+      walking: null,
+      walkingDistanceMeters: 0,
     })
   }
 
+  for (const connection of walkingConnections) {
+    if (connection.from.kind === input.origin.endpoint.kind &&
+      connection.from.id === input.origin.endpoint.id &&
+      connection.to.kind === 'stop') {
+      originAccesses.push({
+        stopId: connection.to.id,
+        walking: connection,
+        walkingDistanceMeters: connection.distanceMeters,
+      })
+    }
+    if (connection.to.kind === input.destination.endpoint.kind &&
+      connection.to.id === input.destination.endpoint.id &&
+      connection.from.kind === 'stop') {
+      destinationAccesses.push({
+        stopId: connection.from.id,
+        walking: connection,
+        walkingDistanceMeters: connection.distanceMeters,
+      })
+    }
+  }
+
+  return {
+    origin: selectNearestStopAccesses(originAccesses),
+    destination: selectNearestStopAccesses(destinationAccesses),
+  }
+}
+
+function createTransferWalking(
+  walkingConnections: readonly WalkingJourneyConnection[],
+): ReadonlyMap<string, ReadonlyMap<string, WalkingJourneyConnection>> {
+  const connections = new Map<string, Map<string, WalkingJourneyConnection>>()
+  for (const connection of walkingConnections) {
+    if (connection.from.kind !== 'stop' || connection.to.kind !== 'stop') continue
+    const toConnections = connections.get(connection.from.id) ?? new Map()
+    toConnections.set(
+      connection.to.id,
+      selectShortestWalkingConnection(toConnections.get(connection.to.id), connection),
+    )
+    connections.set(connection.from.id, toConnections)
+  }
+  return connections
+}
+
+function buildShuttleSegments(input: PlanJourneyInput): readonly ShuttleSegment[] {
   const timingByKey = new Map(
     input.shuttleTiming.records.map((record) => [
       `${record.routeId}:${record.fromStopId}->${record.toStopId}`,
@@ -575,6 +429,7 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
   const geometryByRouteId = new Map(
     input.routeGeometry.features.map((feature) => [feature.properties.routeId, feature.geometry.coordinates]),
   )
+  const segments: ShuttleSegment[] = []
 
   for (const route of input.transitIndex.routes) {
     const line = geometryByRouteId.get(route.id)
@@ -584,255 +439,317 @@ function buildGraph(input: PlanJourneyInput): Map<string, JourneyEdge[]> {
       for (let toIndex = fromIndex + 1; toIndex < route.stopIds.length; toIndex += 1) {
         const fromStopId = route.stopIds[fromIndex]
         const toStopId = route.stopIds[toIndex]
-        if (fromStopId === toStopId) continue
-        const record = timingByKey.get(`${route.id}:${fromStopId}->${toStopId}`)
-        if (
-          !record ||
-          record.status !== 'estimated' ||
-          record.rideSeconds === null
-        ) continue
+        if (!fromStopId || !toStopId || fromStopId === toStopId) continue
 
+        const record = timingByKey.get(`${route.id}:${fromStopId}->${toStopId}`)
+        if (!record || record.status !== 'estimated' || record.rideSeconds === null) continue
         if (!isFiniteNonNegativeInteger(record.rideSeconds)) continue
 
         const fromStop = input.transitIndex.stopById.get(fromStopId)
         const toStop = input.transitIndex.stopById.get(toStopId)
         if (!fromStop || !toStop) continue
+
         const sliced = sliceRouteGeometry(
           line,
-          toPosition(fromStop.longitude, fromStop.latitude),
-          toPosition(toStop.longitude, toStop.latitude),
+          [fromStop.longitude, fromStop.latitude],
+          [toStop.longitude, toStop.latitude],
         )
         if (!sliced) continue
 
-        addEdge(graph, { kind: 'stop', id: fromStopId }, {
-          kind: 'shuttle',
-          to: { kind: 'stop', id: toStopId },
-          distanceMeters: sliced.distanceMeters,
-          walkingDistanceMeters: 0,
-          shuttleBoardings: 1,
+        segments.push({
           routeId: route.id,
           fromStopId,
           toStopId,
           rideSeconds: record.rideSeconds,
           record,
           geometry: sliced.geometry,
-          sequenceKey: `shuttle:${route.id}:${fromStopId}>${toStopId}`,
+          distanceMeters: sliced.distanceMeters,
           reachesRouteTerminal: toIndex === route.stopIds.length - 1 && toStopId === route.stopIds[0],
+          sequenceKey: `shuttle:${route.id}:${fromIndex}>${toIndex}`,
         })
       }
     }
   }
 
-  for (const edges of graph.values()) {
-    edges.sort((first, second) => compareText(first.sequenceKey, second.sequenceKey))
-  }
-  return graph
+  return segments.sort((first, second) => compareText(first.sequenceKey, second.sequenceKey))
 }
 
-interface PathSearchState {
-  readonly queue: JourneyPathQueue
-  readonly labelsByState: Map<string, JourneyPath[]>
-  bestDestinationPath: JourneyPath | null
-  complete: boolean
-  expandedPathCount: number
-}
+function createPlannerContext(input: PlanJourneyInput): PlannerContext {
+  const validWalkingConnections = input.walkingConnections.filter(isValidWalkingConnection)
+  const accesses = createStopAccesses(input, validWalkingConnections)
+  const transferWalking = createTransferWalking(validWalkingConnections)
+  const segments = buildShuttleSegments(input)
+  const segmentsByFromStop = new Map<string, ShuttleSegment[]>()
+  const segmentsByToStop = new Map<string, ShuttleSegment[]>()
+  const segmentsByStopPair = new Map<string, ShuttleSegment[]>()
 
-function createInitialPath(origin: TripEndpoint): JourneyPath {
-  const initialPathState = {
-    nodeKey: endpointKey(origin),
-    durationSeconds: 0,
-    distanceMeters: 0,
-    walkingDistanceMeters: 0,
-    shuttleBoardings: 0,
-    lastShuttleRouteId: null,
-    lastShuttleReachedTerminal: false,
-    legs: [],
-    sequenceKey: '',
+  for (const segment of segments) {
+    addToMapSet(segmentsByFromStop, segment.fromStopId, segment)
+    addToMapSet(segmentsByToStop, segment.toStopId, segment)
+    addToMapSet(segmentsByStopPair, stopPairKey(segment.fromStopId, segment.toStopId), segment)
   }
+
   return {
-    ...initialPathState,
-    visitedStateKeys: new Set([journeyPathStateKey(initialPathState)]),
+    originAccesses: accesses.origin,
+    destinationAccesses: accesses.destination,
+    transferWalking,
+    segmentsByFromStop,
+    segmentsByToStop,
+    segmentsByStopPair,
   }
 }
 
-function createPathSearchState(origin: TripEndpoint): PathSearchState {
-  const initialPath = createInitialPath(origin)
-  const labelsByState = new Map<string, JourneyPath[]>()
-  retainPathLabels(labelsByState, initialPath)
-  const queue = new JourneyPathQueue()
-  queue.push(initialPath)
-  return {
-    queue,
-    labelsByState,
-    bestDestinationPath: null,
-    complete: false,
-    expandedPathCount: 0,
-  }
+function getTransferWalking(
+  context: PlannerContext,
+  fromStopId: string,
+  toStopId: string,
+): WalkingJourneyConnection | null {
+  if (fromStopId === toStopId) return null
+  return context.transferWalking.get(fromStopId)?.get(toStopId) ?? null
 }
 
-function updateSearchCompletion(
-  state: PathSearchState,
-): void {
-  const nextPath = state.queue.peek()
-  state.complete = !nextPath || (
-    state.bestDestinationPath !== null &&
-    nextPath.durationSeconds > state.bestDestinationPath.durationSeconds
-  )
+function canUseAsTransfer(
+  first: ShuttleSegment,
+  second: ShuttleSegment,
+  transferWalking: WalkingJourneyConnection | null,
+): boolean {
+  if (first.routeId === second.routeId && !first.reachesRouteTerminal) return false
+  return first.toStopId === second.fromStopId || transferWalking !== null
 }
 
-function advancePathSearch(
-  state: PathSearchState,
-  graph: Map<string, JourneyEdge[]>,
+function canBoardFromOrigin(
   origin: TripEndpoint,
-  destination: TripEndpoint,
+  segment: ShuttleSegment,
   transitIndex: TransitIndex,
+): boolean {
+  if (origin.kind !== 'stop') return true
+  const route = transitIndex.routeById.get(segment.routeId)
+  if (!route) return false
+  const originIndex = route.stopIds.indexOf(origin.id)
+  const boardingIndex = route.stopIds.indexOf(segment.fromStopId)
+  return originIndex < 0 || boardingIndex < 0 || boardingIndex >= originIndex
+}
+
+function createJourneyCandidate(
+  input: PlanJourneyInput,
+  legs: readonly JourneyLeg[],
+  sequenceKey: string,
+): JourneyCandidate {
+  const normalizedLegs = mergeConsecutiveWalkingLegs(legs)
+  return {
+    journey: {
+      origin: input.origin.endpoint,
+      destination: input.destination.endpoint,
+      legs: normalizedLegs,
+      totalDurationSeconds: normalizedLegs.reduce((total, leg) => total + leg.durationSeconds, 0),
+      totalDistanceMeters: normalizedLegs.reduce((total, leg) => total + leg.distanceMeters, 0),
+      estimateStatus: 'estimated',
+      planningQuality: 'bounded',
+    },
+    shuttleBoardings: normalizedLegs.filter((leg) => leg.mode === 'shuttle').length,
+    walkingDistanceMeters: normalizedLegs
+      .filter((leg) => leg.mode === 'walking')
+      .reduce((total, leg) => total + leg.distanceMeters, 0),
+    sequenceKey,
+  }
+}
+
+function evaluateShuttleLeg(
+  segment: ShuttleSegment,
+  elapsedSeconds: number,
   getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
-): void {
-  const destinationKey = endpointKey(destination)
-  const path = state.queue.pop()
-  if (!path) {
-    state.complete = true
-    return
+): ShuttleJourneyLeg | null {
+  const waitingSeconds = getShuttleWaitingSeconds(segment.record, {
+    routeId: segment.routeId,
+    boardingStopId: segment.fromStopId,
+    elapsedSeconds,
+  })
+  if (waitingSeconds === null || !isFiniteNonNegativeInteger(waitingSeconds)) return null
+  return createShuttleLeg(segment, waitingSeconds)
+}
+
+function createShuttleCandidate(
+  input: PlanJourneyInput,
+  originAccess: StopAccess,
+  destinationAccess: StopAccess,
+  first: ShuttleSegment,
+  second: ShuttleSegment | null,
+  transferWalking: WalkingJourneyConnection | null,
+): JourneyCandidate | null {
+  const legs: JourneyLeg[] = []
+  const sequenceParts: string[] = []
+  let elapsedSeconds = 0
+
+  if (originAccess.walking) {
+    legs.push(createWalkingLeg(originAccess.walking))
+    sequenceParts.push(walkingSequenceKey(originAccess.walking))
+    elapsedSeconds += originAccess.walking.durationSeconds
   }
 
-  state.expandedPathCount += 1
-  if (!hasPathLabel(state.labelsByState, path)) {
-    updateSearchCompletion(state)
-    return
-  }
-  if (
-    state.bestDestinationPath &&
-    path.durationSeconds > state.bestDestinationPath.durationSeconds
-  ) {
-    updateSearchCompletion(state)
-    return
-  }
-  if (path.nodeKey === destinationKey) {
-    if (
-      !state.bestDestinationPath ||
-      comparePaths(path, state.bestDestinationPath) < 0
-    ) state.bestDestinationPath = path
-    updateSearchCompletion(state)
-    return
+  const firstLeg = evaluateShuttleLeg(first, elapsedSeconds, input.getShuttleWaitingSeconds)
+  if (!firstLeg) return null
+  legs.push(firstLeg)
+  sequenceParts.push(first.sequenceKey)
+  elapsedSeconds += firstLeg.durationSeconds
+
+  if (second) {
+    if (!canUseAsTransfer(first, second, transferWalking)) return null
+    if (transferWalking) {
+      legs.push(createWalkingLeg(transferWalking))
+      sequenceParts.push(walkingSequenceKey(transferWalking))
+      elapsedSeconds += transferWalking.durationSeconds
+    } else {
+      sequenceParts.push(`transfer:${first.toStopId}`)
+    }
+
+    const secondLeg = evaluateShuttleLeg(second, elapsedSeconds, input.getShuttleWaitingSeconds)
+    if (!secondLeg) return null
+    legs.push(secondLeg)
+    sequenceParts.push(second.sequenceKey)
   }
 
-  for (const edge of graph.get(path.nodeKey) ?? []) {
-    if (
-      edge.kind === 'shuttle' &&
-      path.shuttleBoardings === 0 &&
-      isUpstreamBoarding(origin, edge, transitIndex)
-    ) continue
-    // A continuous ride cannot become another boarding on the same route.
-    if (
-      edge.kind === 'shuttle' &&
-      path.lastShuttleRouteId === edge.routeId &&
-      !path.lastShuttleReachedTerminal
-    ) continue
-    const resolvedEdge = resolveJourneyEdge(edge, path.durationSeconds, getShuttleWaitingSeconds)
-    if (!resolvedEdge) continue
-    const nextPath = extendPath(path, resolvedEdge)
-    if (path.visitedStateKeys.has(journeyPathStateKey(nextPath))) continue
-    if (retainPathLabels(state.labelsByState, nextPath)) {
-      state.queue.push(nextPath)
+  if (destinationAccess.walking) {
+    legs.push(createWalkingLeg(destinationAccess.walking))
+    sequenceParts.push(walkingSequenceKey(destinationAccess.walking))
+  }
+
+  return createJourneyCandidate(input, legs, sequenceParts.join('|'))
+}
+
+function compareCandidates(first: JourneyCandidate, second: JourneyCandidate): number {
+  return compareNumbers(
+    first.journey.totalDurationSeconds,
+    second.journey.totalDurationSeconds,
+  ) || compareNumbers(first.shuttleBoardings, second.shuttleBoardings) ||
+    compareNumbers(first.walkingDistanceMeters, second.walkingDistanceMeters) ||
+    compareNumbers(first.journey.legs.length, second.journey.legs.length) ||
+    compareText(first.sequenceKey, second.sequenceKey)
+}
+
+function createDirectWalkingCandidates(
+  input: PlanJourneyInput,
+): JourneyCandidate[] {
+  return input.walkingConnections
+    .filter((connection) => (
+      isValidWalkingConnection(connection) &&
+      connection.from.kind === input.origin.endpoint.kind &&
+      connection.from.id === input.origin.endpoint.id &&
+      connection.to.kind === input.destination.endpoint.kind &&
+      connection.to.id === input.destination.endpoint.id
+    ))
+    .map((connection) => createJourneyCandidate(
+      input,
+      [createWalkingLeg(connection)],
+      walkingSequenceKey(connection),
+    ))
+}
+
+function createShuttleCandidates(
+  input: PlanJourneyInput,
+  context: PlannerContext,
+): JourneyCandidate[] {
+  const candidates: JourneyCandidate[] = []
+
+  for (const originAccess of context.originAccesses) {
+    const firstSegments = (context.segmentsByFromStop.get(originAccess.stopId) ?? [])
+      .filter((segment) => canBoardFromOrigin(input.origin.endpoint, segment, input.transitIndex))
+    for (const destinationAccess of context.destinationAccesses) {
+      const directSegments = context.segmentsByStopPair.get(
+        stopPairKey(originAccess.stopId, destinationAccess.stopId),
+      )?.filter((segment) => canBoardFromOrigin(
+        input.origin.endpoint,
+        segment,
+        input.transitIndex,
+      )) ?? []
+      for (const direct of directSegments) {
+        const candidate = createShuttleCandidate(
+          input,
+          originAccess,
+          destinationAccess,
+          direct,
+          null,
+          null,
+        )
+        if (candidate) candidates.push(candidate)
+      }
+
+      const secondSegments = context.segmentsByToStop.get(destinationAccess.stopId) ?? []
+      for (const first of firstSegments) {
+        for (const second of secondSegments) {
+          const transferWalking = getTransferWalking(
+            context,
+            first.toStopId,
+            second.fromStopId,
+          )
+          if (!canUseAsTransfer(first, second, transferWalking)) continue
+          const candidate = createShuttleCandidate(
+            input,
+            originAccess,
+            destinationAccess,
+            first,
+            second,
+            transferWalking,
+          )
+          if (candidate) candidates.push(candidate)
+        }
+      }
     }
   }
-  updateSearchCompletion(state)
+
+  return candidates
 }
 
-function findBestPath(
-  graph: Map<string, JourneyEdge[]>,
-  origin: TripEndpoint,
-  destination: TripEndpoint,
-  transitIndex: TransitIndex,
-  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
-): PathSearchState {
-  const state = createPathSearchState(origin)
-  while (!state.complete) {
-    advancePathSearch(
-      state,
-      graph,
-      origin,
-      destination,
-      transitIndex,
-      getShuttleWaitingSeconds,
-    )
-  }
-  return state
-}
-
-function createJourney(
+/**
+ * Returns the finite set of stops whose live waits can affect this bounded
+ * candidate set. This is a structural preflight, not a second ranking pass.
+ */
+export function getCandidateBoardingStopIds(
   input: PlanJourneyInput,
-  path: JourneyPath | null,
-  planningQuality: JourneyPlanningQuality,
-): Journey | null {
-  if (!path || path.legs.length === 0) return null
+): readonly string[] {
+  const context = createPlannerContext(input)
+  const boardingStopIds = new Set<string>()
 
-  const legs = mergeConsecutiveWalkingLegs(path.legs)
-  return {
-    origin: input.origin.endpoint,
-    destination: input.destination.endpoint,
-    legs,
-    totalDurationSeconds: path.durationSeconds,
-    totalDistanceMeters: path.distanceMeters,
-    estimateStatus: 'estimated',
-    planningQuality,
+  for (const originAccess of context.originAccesses) {
+    boardingStopIds.add(originAccess.stopId)
+    const firstSegments = (context.segmentsByFromStop.get(originAccess.stopId) ?? [])
+      .filter((segment) => canBoardFromOrigin(input.origin.endpoint, segment, input.transitIndex))
+    for (const first of firstSegments) {
+      for (const destinationAccess of context.destinationAccesses) {
+        const secondSegments = context.segmentsByToStop.get(destinationAccess.stopId) ?? []
+        for (const second of secondSegments) {
+          const transferWalking = getTransferWalking(
+            context,
+            first.toStopId,
+            second.fromStopId,
+          )
+          if (canUseAsTransfer(first, second, transferWalking)) {
+            boardingStopIds.add(second.fromStopId)
+          }
+        }
+      }
+    }
   }
+
+  return [...boardingStopIds].sort(compareText)
+}
+
+/**
+ * The planner is exhaustive only within the deliberate NUS candidate policy:
+ * five endpoint stops and at most one shuttle transfer. It must therefore
+ * remain a recommended, bounded Journey rather than claim global optimality.
+ */
+export function planJourneyCandidates(
+  input: PlanJourneyInput,
+): readonly Journey[] {
+  const context = createPlannerContext(input)
+  return [
+    ...createDirectWalkingCandidates(input),
+    ...createShuttleCandidates(input, context),
+  ]
+    .sort(compareCandidates)
+    .map((candidate) => candidate.journey)
 }
 
 export function planJourney(input: PlanJourneyInput): Journey | null {
-  const graph = buildGraph(input)
-  const state = findBestPath(
-    graph,
-    input.origin.endpoint,
-    input.destination.endpoint,
-    input.transitIndex,
-    input.getShuttleWaitingSeconds,
-  )
-  return createJourney(input, state.bestDestinationPath, 'exact')
-}
-
-export async function planJourneyWithinBudget(
-  input: PlanJourneyInput,
-  options: JourneyPlanningOptions = {},
-): Promise<JourneyPlanningResult> {
-  const graph = buildGraph(input)
-  const state = createPathSearchState(input.origin.endpoint)
-  const now = options.now ?? Date.now
-  const startedAt = now()
-  const maxDurationMs = options.maxDurationMs
-  const maxExpandedPaths = options.maxExpandedPaths
-  const yieldEvery = options.yieldEvery ?? (options.yieldControl ? 64 : 0)
-
-  const createResult = (status: JourneyPlanningStatus): JourneyPlanningResult => ({
-    journey: createJourney(
-      input,
-      state.bestDestinationPath,
-      status === 'complete' ? 'exact' : 'bounded',
-    ),
-    status,
-    expandedPathCount: state.expandedPathCount,
-  })
-
-  while (!state.complete) {
-    if (options.shouldCancel?.()) return createResult('cancelled')
-    if (
-      (maxDurationMs !== undefined && now() - startedAt >= maxDurationMs) ||
-      (maxExpandedPaths !== undefined && state.expandedPathCount >= maxExpandedPaths)
-    ) return createResult('budget-exceeded')
-
-    advancePathSearch(
-      state,
-      graph,
-      input.origin.endpoint,
-      input.destination.endpoint,
-      input.transitIndex,
-      input.getShuttleWaitingSeconds,
-    )
-
-    if (!state.complete && yieldEvery > 0 && state.expandedPathCount % yieldEvery === 0) {
-      await options.yieldControl?.()
-    }
-  }
-
-  return createResult('complete')
+  return planJourneyCandidates(input)[0] ?? null
 }

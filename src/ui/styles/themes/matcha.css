@@ -1,0 +1,83 @@
+:root[data-theme='matcha'] {
+  --surface: #f7f5ea;
+  --surface-raised: #fffdf7;
+  --surface-muted: #eef2e3;
+  --surface-subtle: #e2ead5;
+  --surface-inverse: #294536;
+  --surface-overlay: rgb(255 253 247 / 95%);
+  --surface-overlay-strong: rgb(255 253 247 / 98%);
+  --surface-overlay-soft: rgb(255 253 247 / 90%);
+  --surface-overlay-panel: rgb(255 253 247 / 96%);
+  --surface-neutral: #e5ebdf;
+  --surface-faint: #f5f7ef;
+  --surface-info-soft: #deecec;
+  --surface-control: #d9e4d2;
+  --surface-warning: #fff1cc;
+  --surface-segmented-control: #e6efde;
+  --surface-card: #f5f7ef;
+  --surface-handle: #8da48d;
+  --surface-journey-step: #42664d;
+
+  --text-primary: #294536;
+  --text-secondary: #4a6150;
+  --text-body: #56675b;
+  --text-heading: #1f3428;
+  --text-muted: #687b6b;
+  --text-inverse: #fffdf7;
+  --text-contrast: #294536;
+  --text-strong: #365441;
+  --text-secondary-strong: #42604a;
+  --text-disabled: #9aaa9a;
+  --text-warning: #7a5410;
+  --text-success-strong: #286448;
+  --text-error-strong: #9b3d48;
+  --text-favorite: #b17a00;
+  --bus-stop-default-color: #365441;
+
+  --border-default: #d8dfd2;
+  --border-subtle: #dbe5d5;
+  --border-strong: #bdcdbb;
+  --border-inverse: #5e7a62;
+  --border-control: #b8cab5;
+  --border-muted: #cbd8c9;
+  --border-faint: #e0e8db;
+  --border-success: #98d3b1;
+  --border-warning: #efd28a;
+  --border-info: #8cbebe;
+  --border-focus: #618066;
+  --border-card: #dde6d9;
+
+  --accent: #4e7558;
+  --accent-hover: #3d6048;
+  --accent-contrast: #fffdf7;
+  --accent-soft: #dcebdd;
+  --focus-ring: #527a60;
+  --focus-ring-soft: rgb(82 122 96 / 45%);
+  --focus-ring-strong: rgb(82 122 96 / 55%);
+  --focus-ring-neutral: rgb(97 128 102 / 25%);
+
+  --status-success: #2f6b4b;
+  --status-success-surface: #dff0e4;
+  --status-success-strong: #286448;
+  --status-warning: #7a5410;
+  --status-warning-surface: #fff1cc;
+  --status-warning-strong: #a56b08;
+  --status-error: #9b3d48;
+  --status-error-surface: #fbe5e6;
+  --status-error-strong: #a33e48;
+  --status-info: #2d6473;
+  --status-info-surface: #dceff0;
+  --status-marker-origin: #286448;
+  --status-marker-destination: #b44a51;
+
+  --shadow-sm: 0 1px 3px rgb(41 69 54 / 10%);
+  --shadow-md: 0 1px 4px rgb(41 69 54 / 25%);
+  --shadow-lg: 0 8px 24px rgb(41 69 54 / 12%);
+  --shadow-panel: 0 1px 4px rgb(41 69 54 / 25%);
+  --shadow-card-strong: 0 1px 3px rgb(41 69 54 / 30%);
+  --shadow-chip: 0 2px 7px rgb(41 69 54 / 18%);
+  --shadow-sheet: 0 -6px 22px rgb(41 69 54 / 14%);
+  --shadow-soft: 0 1px 4px rgb(41 69 54 / 20%);
+  --shadow-results: 0 4px 12px rgb(41 69 54 / 12%);
+  --shadow-marker: 0 1px 3px rgb(41 69 54 / 40%);
+}

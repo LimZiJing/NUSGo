@@ -65,6 +65,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     style: MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
+    attributionControl: { compact: false },
   })
   const navigationControl = new NavigationControl()
   let disposed = false

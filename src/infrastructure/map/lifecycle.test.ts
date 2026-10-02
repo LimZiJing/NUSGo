@@ -15,6 +15,7 @@ vi.mock('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url', () => ({
 
 vi.mock('maplibre-gl', () => ({
   Map: class FakeMap {
+    readonly options: Record<string, unknown>
     readonly handlers = new globalThis.Map<string, Set<(event: unknown) => void>>()
     readonly layers = new Set<string>()
     readonly renderedFeatures: unknown[] = []
@@ -47,7 +48,8 @@ vi.mock('maplibre-gl', () => ({
     readonly unproject = vi.fn(([x, y]: [number, number]) => ({ lng: x, lat: y }))
     readonly remove = vi.fn()
 
-    constructor() {
+    constructor(options: Record<string, unknown>) {
+      this.options = options
       fakeMapState.maps.push(this)
     }
 
@@ -78,6 +80,7 @@ class FakeElement {
 }
 
 type FakeMap = {
+  readonly options: Record<string, unknown>
   readonly handlers: Map<string, Set<(event: unknown) => void>>
   readonly layers: Set<string>
   readonly renderedFeatures: unknown[]
@@ -100,6 +103,21 @@ beforeEach(() => {
 })
 
 describe('map lifecycle style readiness', () => {
+  it('keeps map attribution visible without the compact disclosure control', () => {
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+
+    expect(map.options).toEqual(expect.objectContaining({
+      attributionControl: { compact: false },
+    }))
+
+    lifecycle.dispose()
+  })
+
   it('reports the centre of the visible map after movement, inset, and size changes', () => {
     const onMapCenterChange = vi.fn()
     const lifecycle = createMapLifecycle({

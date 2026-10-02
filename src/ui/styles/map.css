@@ -3,6 +3,17 @@
   height: 100%;
 }
 
+.map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  padding: 2px 6px;
+  color: var(--text-secondary);
+  background-color: var(--surface-overlay-soft);
+  font: 10px/14px var(--sans);
+}
+
+.map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+
 .map-control-stack {
   position: absolute;
   z-index: 13;

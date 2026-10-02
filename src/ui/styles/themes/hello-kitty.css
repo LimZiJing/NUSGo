@@ -1,0 +1,83 @@
+:root[data-theme='hello-kitty'] {
+  --surface: #fff7f8;
+  --surface-raised: #fffdfd;
+  --surface-muted: #fcecef;
+  --surface-subtle: #f7dde5;
+  --surface-inverse: #4a2633;
+  --surface-overlay: rgb(255 253 253 / 95%);
+  --surface-overlay-strong: rgb(255 253 253 / 98%);
+  --surface-overlay-soft: rgb(255 253 253 / 90%);
+  --surface-overlay-panel: rgb(255 253 253 / 96%);
+  --surface-neutral: #f7ecee;
+  --surface-faint: #fff1f3;
+  --surface-info-soft: #eee8fa;
+  --surface-control: #f4dce4;
+  --surface-warning: #fff1cf;
+  --surface-segmented-control: #f1e4f5;
+  --surface-card: #fff0f2;
+  --surface-handle: #cfaeb8;
+  --surface-journey-step: #704050;
+
+  --text-primary: #55303d;
+  --text-secondary: #775564;
+  --text-body: #715866;
+  --text-heading: #4a2633;
+  --text-muted: #8b6c78;
+  --text-inverse: #fffdfd;
+  --text-contrast: #4a2633;
+  --text-strong: #6b4050;
+  --text-secondary-strong: #7a5061;
+  --text-disabled: #c7adb7;
+  --text-warning: #7b5315;
+  --text-success-strong: #2f6c5a;
+  --text-error-strong: #963948;
+  --text-favorite: #b47d00;
+  --bus-stop-default-color: #6b4050;
+
+  --border-default: #ecdde2;
+  --border-subtle: #f0dce2;
+  --border-strong: #d9b7c4;
+  --border-inverse: #9c6678;
+  --border-control: #d7b6c1;
+  --border-muted: #e3c9d2;
+  --border-faint: #f0e2e7;
+  --border-success: #a4d6c6;
+  --border-warning: #efcf8e;
+  --border-info: #bcb0df;
+  --border-focus: #b04b68;
+  --border-card: #eedfe4;
+
+  --accent: #b84f6b;
+  --accent-hover: #983e58;
+  --accent-contrast: #fff;
+  --accent-soft: #f7d1db;
+  --focus-ring: #b04b68;
+  --focus-ring-soft: rgb(176 75 104 / 45%);
+  --focus-ring-strong: rgb(176 75 104 / 55%);
+  --focus-ring-neutral: rgb(176 75 104 / 25%);
+
+  --status-success: #2f6c5a;
+  --status-success-surface: #dff1eb;
+  --status-success-strong: #2f6c5a;
+  --status-warning: #79520f;
+  --status-warning-surface: #fff1cf;
+  --status-warning-strong: #a66b11;
+  --status-error: #963948;
+  --status-error-surface: #fbe2e6;
+  --status-error-strong: #a33e4e;
+  --status-info: #5c4c91;
+  --status-info-surface: #eee8fa;
+  --status-marker-origin: #2f6c5a;
+  --status-marker-destination: #b23d57;
+
+  --shadow-sm: 0 1px 3px rgb(74 38 51 / 10%);
+  --shadow-md: 0 1px 4px rgb(74 38 51 / 25%);
+  --shadow-lg: 0 8px 24px rgb(74 38 51 / 12%);
+  --shadow-panel: 0 1px 4px rgb(74 38 51 / 25%);
+  --shadow-card-strong: 0 1px 3px rgb(74 38 51 / 30%);
+  --shadow-chip: 0 2px 7px rgb(74 38 51 / 18%);
+  --shadow-sheet: 0 -6px 22px rgb(74 38 51 / 14%);
+  --shadow-soft: 0 1px 4px rgb(74 38 51 / 20%);
+  --shadow-results: 0 4px 12px rgb(74 38 51 / 12%);
+  --shadow-marker: 0 1px 3px rgb(74 38 51 / 40%);
+}

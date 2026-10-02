@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
@@ -13,6 +13,7 @@ const appHarness = vi.hoisted(() => {
   const locateUser = vi.fn()
   return {
     state: null as unknown,
+    onMapCenterChange: null as ((center: readonly [number, number]) => void) | null,
     session: {
       locateUser: vi.fn(),
       enableLocationTracking: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock('./navigation-session-mount', () => ({
     _container: HTMLElement,
     dependencies: { onMapCenterChange?: (center: readonly [number, number]) => void },
   ) => {
+    appHarness.onMapCenterChange = dependencies.onMapCenterChange ?? null
     dependencies.onMapCenterChange?.([103, 1])
     return {
       session: appHarness.session,
@@ -48,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  appHarness.onMapCenterChange = null
   localStorage.clear()
   appHarness.commandLocateUser.mockClear()
   appHarness.session.locateUser.mockClear()
@@ -148,6 +151,42 @@ describe('mobile location control integration', () => {
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
 
     expect(screen.getByRole('button', { name: 'Expand Stop A bus timings' })).toBeTruthy()
+  })
+
+  it('opens stops that become Nearby after the location-driven recenter completes', async () => {
+    mockMobileViewport()
+    const network = createValidTransitNetwork()
+    network.stops[1] = { ...network.stops[1], latitude: 1, longitude: 103.02 }
+    const initialState = {
+      ...createInitialNavigationSessionState(),
+      transitIndex: createTransitIndex(network),
+    }
+    appHarness.state = initialState
+
+    const { rerender } = render(<App />)
+
+    await vi.waitFor(() => expect(appHarness.session.locateUser).toHaveBeenCalledOnce())
+
+    appHarness.state = {
+      ...initialState,
+      location: {
+        status: 'tracking',
+        latestFix: {
+          longitude: 103.02,
+          latitude: 1,
+          accuracy: 10,
+          timestamp: Date.now(),
+        },
+      },
+    }
+    rerender(<App />)
+    await act(async () => {
+      appHarness.onMapCenterChange?.([103.02, 1])
+    })
+
+    await vi.waitFor(() => expect(
+      screen.getByRole('button', { name: 'Collapse Stop B bus timings' }),
+    ).toBeTruthy())
   })
 
   it('opens Nearby timings when the location button succeeds with an active fix', async () => {

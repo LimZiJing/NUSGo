@@ -458,6 +458,16 @@ function App() {
     mobileStopView.favoriteStopIds,
     transitIndex,
   ])
+  const locationNearbyStopEntries = useMemo(() => {
+    if (!transitIndex || !locationFix) return null
+    return getMobileStopsOverview(
+      transitIndex,
+      'nearby',
+      locationFix,
+      locationFix,
+      mobileStopView.favoriteStopIds,
+    )
+  }, [locationFix, mobileStopView.favoriteStopIds, transitIndex])
   const overviewStopEntries = useMemo(() => mobileStopView.list === 'nearby'
     ? nearbyStopEntries
     : transitIndex ? getMobileStopsOverview(
@@ -528,13 +538,13 @@ function App() {
     expanded: mobileStopView.expandedStopIds[mobileStopView.list].includes(stop.id),
   })) : []
   const expandNearbyTimings = useCallback((): boolean => {
-    if (mapCenter === null) return false
+    if (locationNearbyStopEntries === null) return false
     dispatchMobileStopView({
       type: 'expand-nearby',
-      stopIds: nearbyStopEntries.map(({ stop }) => stop.id),
+      stopIds: locationNearbyStopEntries.map(({ stop }) => stop.id),
     })
     return true
-  }, [dispatchMobileStopView, mapCenter, nearbyStopEntries])
+  }, [dispatchMobileStopView, locationNearbyStopEntries])
 
   const tryExpandNearbyTimings = useCallback((): boolean => {
     if (!hasSuccessfulLocation(state.location) || !expandNearbyTimings()) return false

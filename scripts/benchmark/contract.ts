@@ -1,11 +1,14 @@
 import type { LoadedTransitData } from '../../src/app/contracts/data.js'
 import type { WalkingRouteEngine } from '../../src/app/contracts/routing.js'
 import type { ShuttleArrivalClient } from '../../src/app/contracts/shuttle-arrivals.js'
+import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import type { Journey } from '../../src/domain/trip/journey.js'
 import type { PlanJourneyInput } from '../../src/domain/trip/planner.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import type { VenueLocationMap } from '../../src/domain/venue/types.js'
 import type { WalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
+import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
+import type { JourneyBenchmarkGroup, JourneyBenchmarkScenario, JourneyBenchmarkTimingProfile } from './manifest.js'
 
 export interface JourneyBenchmarkExpectation {
   readonly outcome: 'journey' | 'no-route'
@@ -25,6 +28,12 @@ export interface JourneyBenchmarkCase {
   readonly origin: TripEndpoint
   readonly destination: TripEndpoint
   readonly arrivalSeconds: number
+  readonly group?: JourneyBenchmarkGroup
+  readonly scenario?: JourneyBenchmarkScenario
+  readonly timingProfile?: JourneyBenchmarkTimingProfile
+  readonly arrivalRouteIds?: readonly string[]
+  readonly arrivalSnapshot?: ShuttleArrivalSnapshot
+  readonly transit?: LoadedTransitData
   readonly expected: JourneyBenchmarkExpectation
   readonly durationBoundsSeconds?: JourneyBenchmarkDurationBounds
   readonly searchInput: PlanJourneyInput
@@ -53,6 +62,7 @@ export interface JourneyBenchmarkContext {
   readonly routeEngine: WalkingRouteEngine
   readonly now: () => number
   readonly createArrivalClient: (benchmarkCase: JourneyBenchmarkCase) => ShuttleArrivalClient
+  readonly createServiceHoursClient?: (benchmarkCase: JourneyBenchmarkCase) => ShuttleServiceHoursClient
   readonly cases: readonly JourneyBenchmarkCase[]
 }
 

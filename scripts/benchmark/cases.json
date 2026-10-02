@@ -22,7 +22,7 @@
       "headwayMedianSeconds": null,
       "service": "active",
       "shuttleTiming": "equal-rides",
-      "shuttleRideSecondsOverride": 300
+      "shuttleRideSecondsOverride": 1
     },
     {
       "id": "no-arrivals",
@@ -627,13 +627,13 @@
       ]
     },
     {
-      "id": "one-p-kv-utown",
-      "label": "P from KV to UTown",
+      "id": "one-p-oth-utown",
+      "label": "P from OTH to UTown",
       "group": "normal",
       "scenario": "one-shuttle",
       "origin": {
         "kind": "stop",
-        "id": "KV"
+        "id": "OTH"
       },
       "destination": {
         "kind": "stop",

@@ -50,4 +50,14 @@ describe('Journey benchmark manifest', () => {
     expect(() => validateJourneyBenchmarkManifest({ ...input, cases }))
       .toThrow('routeIds requires a shuttle mode expectation')
   })
+
+  it('keeps no-route resilience cases outside the timed manifest', async () => {
+    const input = await readRawManifest() as { cases: Array<Record<string, unknown>> }
+    const cases = input.cases.map((benchmarkCase, index) => index === 0
+      ? { ...benchmarkCase, expected: { outcome: 'no-route' } }
+      : benchmarkCase)
+
+    expect(() => validateJourneyBenchmarkManifest({ ...input, cases }))
+      .toThrow('no-route cases belong in non-timed resilience tests')
+  })
 })

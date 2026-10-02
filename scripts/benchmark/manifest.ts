@@ -248,6 +248,11 @@ function validateCase(
     durationBoundsSeconds = { ...(min === undefined ? {} : { min }), ...(max === undefined ? {} : { max }) }
   }
 
+  const expected = validateExpectation(value.expected, `${label}.expected`)
+  if (expected.outcome !== 'journey') {
+    throw new Error(`${label}.expected must be a Journey; no-route cases belong in non-timed resilience tests`)
+  }
+
   return {
     id: requireText(value.id, `${label}.id`),
     label: requireText(value.label, `${label}.label`),
@@ -257,7 +262,7 @@ function validateCase(
     destination: validateEndpoint(value.destination, `${label}.destination`),
     timingProfile,
     ...(arrivalRouteIds === undefined ? {} : { arrivalRouteIds }),
-    expected: validateExpectation(value.expected, `${label}.expected`),
+    expected,
     ...(durationBoundsSeconds === undefined ? {} : { durationBoundsSeconds }),
   }
 }

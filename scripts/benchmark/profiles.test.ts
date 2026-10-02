@@ -87,9 +87,9 @@ describe('Journey benchmark timing profiles', () => {
     if (!profile) throw new Error('Missing tie profile')
 
     expect(applyBenchmarkShuttleTimingProfile([RECORD], profile, ['P'])[0]).toMatchObject({
-      rideSeconds: 300,
-      rideSecondsLowerBound: 300,
-      rideSecondsUpperBound: 300,
+      rideSeconds: 1,
+      rideSecondsLowerBound: 1,
+      rideSecondsUpperBound: 1,
     })
   })
 })

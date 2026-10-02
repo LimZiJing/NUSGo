@@ -1,14 +1,11 @@
-import { access, readFile } from 'node:fs/promises'
+import { access } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createServer } from 'vite'
 
-const FIXED_OBSERVED_AT = '2026-10-01T00:00:00.000Z'
-const FIXED_NOW_MS = Date.parse(FIXED_OBSERVED_AT)
-const FIXED_EXPIRES_AT = '2026-10-01T03:00:00.000Z'
-const DEFAULT_SAMPLES = 10
-const DEFAULT_WARMUPS = 2
+const DEFAULT_SAMPLES = 2
+const DEFAULT_WARMUPS = 10
 const MAX_RUNS = 1000
 
 function parseCount(value, label, allowZero = false) {
@@ -73,10 +70,6 @@ function parseArguments(args) {
   return options
 }
 
-async function readJson(path) {
-  return JSON.parse(await readFile(resolve(process.cwd(), path), 'utf8'))
-}
-
 function getGitIdentity() {
   const dotGitPath = resolve(process.cwd(), '.git')
   const dotGitContent = readFileSync(dotGitPath, 'utf8')
@@ -102,174 +95,33 @@ function getGitIdentity() {
   }
 }
 
-function createArrivalSnapshot(transit, arrivalSeconds) {
-  const stops = {}
-  if (arrivalSeconds !== null) {
-    for (const route of transit.index.routes) {
-      for (const stopId of route.stopIds) {
-        stops[stopId] ??= {}
-        stops[stopId][route.id] = {
-          nextArrivalSeconds: arrivalSeconds,
-          upcomingArrivalSeconds: [arrivalSeconds],
-          headwaySeconds: null,
-        }
-      }
-    }
-  }
-  return {
-    observedAt: FIXED_OBSERVED_AT,
-    expiresAt: FIXED_EXPIRES_AT,
-    snapshotVersion: `${FIXED_OBSERVED_AT}-1`,
-    stops,
-  }
-}
-
-function getEndpointCoordinate(endpoint, venues, transit) {
-  if (endpoint.kind === 'stop') {
-    const stop = transit.index.stopById.get(endpoint.id)
-    if (!stop) throw new Error(`Unknown benchmark stop: ${endpoint.id}`)
-    return { longitude: stop.longitude, latitude: stop.latitude }
-  }
-  const venue = venues[endpoint.id]
-  if (!venue?.location) throw new Error(`Unknown benchmark venue: ${endpoint.id}`)
-  return { longitude: venue.location.x, latitude: venue.location.y }
-}
-
-function distanceMeters(first, second) {
-  const latitude = (first.latitude + second.latitude) / 2
-  const longitudeScale = 111320 * Math.cos(latitude * Math.PI / 180)
-  return Math.hypot(
-    (second.longitude - first.longitude) * longitudeScale,
-    (second.latitude - first.latitude) * 110540,
-  )
-}
-
-function createOfflineWalkingConnections(benchmarkCase, fixtures) {
-  const { transit, venues, walkingGraph } = fixtures
-  if (benchmarkCase.id === 'no-shuttle-arrivals') {
-    const from = getEndpointCoordinate(benchmarkCase.origin, venues, transit)
-    const to = getEndpointCoordinate(benchmarkCase.destination, venues, transit)
-    const distance = Math.round(distanceMeters(from, to))
-    return [{
-      from: benchmarkCase.origin,
-      to: benchmarkCase.destination,
-      durationSeconds: Math.max(1, Math.round(distance / 1.3)),
-      distanceMeters: distance,
-      geometry: {
-        type: 'LineString',
-        coordinates: [[from.longitude, from.latitude], [to.longitude, to.latitude]],
-      },
-    }]
-  }
-  return walkingGraph.connections.map((connection) => {
-    const fromStopId = connection.fromKey.slice('stop:'.length)
-    const toStopId = connection.toKey.slice('stop:'.length)
-    const from = transit.index.stopById.get(fromStopId)
-    const to = transit.index.stopById.get(toStopId)
-    if (!from || !to) throw new Error('Walking stop graph does not match the transit fixture')
-    return {
-      from: { kind: 'stop', id: fromStopId },
-      to: { kind: 'stop', id: toStopId },
-      durationSeconds: connection.durationSeconds,
-      distanceMeters: connection.distanceMeters,
-      geometry: {
-        type: 'LineString',
-        coordinates: [[from.longitude, from.latitude], [to.longitude, to.latitude]],
-      },
-    }
-  })
-}
-
-function createCaseDefinitions(fixtures, modules) {
-  const definitions = [
-    {
-      id: 'direct-walk',
-      label: 'Direct walk; shuttle arrivals delayed',
-      origin: { kind: 'stop', id: 'MUSEUM' },
-      destination: { kind: 'stop', id: 'UTOWN' },
-      arrivalSeconds: 1800,
-      expected: { outcome: 'journey', shuttleBoardings: 0, modes: ['walking'] },
-    },
-    {
-      id: 'one-shuttle',
-      label: 'One shuttle from OTH to UTOWN',
-      origin: { kind: 'stop', id: 'OTH' },
-      destination: { kind: 'stop', id: 'UTOWN' },
-      arrivalSeconds: 30,
-      expected: { outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'] },
-    },
-    {
-      id: 'no-shuttle-arrivals',
-      label: 'Direct venue walk with no shuttle arrivals',
-      origin: { kind: 'venue', id: 'RC3-01-01' },
-      destination: { kind: 'venue', id: 'RC3-01-04' },
-      arrivalSeconds: null,
-      expected: { outcome: 'journey', shuttleBoardings: 0, modes: ['walking'] },
-    },
-  ]
-  return definitions.map((definition) => {
-    const arrivalSnapshot = createArrivalSnapshot(fixtures.transit, definition.arrivalSeconds)
-    const originCoordinate = getEndpointCoordinate(definition.origin, fixtures.venues, fixtures.transit)
-    const destinationCoordinate = getEndpointCoordinate(definition.destination, fixtures.venues, fixtures.transit)
-    return {
-      ...definition,
-      arrivalSnapshot,
-      searchInput: {
-        origin: { endpoint: definition.origin, coordinate: originCoordinate },
-        destination: { endpoint: definition.destination, coordinate: destinationCoordinate },
-        transitIndex: fixtures.transit.index,
-        routeGeometry: fixtures.transit.geometry,
-        shuttleTiming: fixtures.transit.shuttleTiming,
-        walkingConnections: createOfflineWalkingConnections(definition, fixtures),
-        getShuttleWaitingSeconds: modules.createLiveShuttleWaitingTimeProvider(arrivalSnapshot, FIXED_NOW_MS),
-      },
-    }
-  })
+function createCaseDefinitions(fixtures, modules, manifest) {
+  return modules.createJourneyBenchmarkCases(manifest, fixtures)
 }
 
 async function loadBenchmarkModules(vite) {
-  const [transitMapData, transitIndex, timing, walkingGraphModule, liveWaiting, venueValidation, valhalla, outcomeValidator] = await Promise.all([
-    vite.ssrLoadModule('/src/domain/transit/map-data.ts'),
-    vite.ssrLoadModule('/src/domain/transit/index.ts'),
-    vite.ssrLoadModule('/src/domain/transit/timing.ts'),
-    vite.ssrLoadModule('/src/infrastructure/routing/walking-stop-graph.ts'),
-    vite.ssrLoadModule('/src/domain/trip/live-waiting.ts'),
-    vite.ssrLoadModule('/src/domain/venue/validation.ts'),
+  const [valhalla, outcomeValidator, manifest, fixturesModule, report] = await Promise.all([
     vite.ssrLoadModule('/src/infrastructure/routing/valhalla.ts'),
     vite.ssrLoadModule('/scripts/benchmark/outcome.ts'),
+    vite.ssrLoadModule('/scripts/benchmark/manifest.ts'),
+    vite.ssrLoadModule('/scripts/benchmark/fixtures.ts'),
+    vite.ssrLoadModule('/scripts/benchmark/report.ts'),
   ])
   return {
-    validateTransitMapData: transitMapData.validateTransitMapData,
-    createTransitIndex: transitIndex.createTransitIndex,
-    generateShuttleTimingData: timing.generateShuttleTimingData,
-    validateWalkingStopGraph: walkingGraphModule.validateWalkingStopGraph,
-    createLiveShuttleWaitingTimeProvider: liveWaiting.createLiveShuttleWaitingTimeProvider,
-    validateVenueLocationMap: venueValidation.validateVenueLocationMap,
     createValhallaRouteEngine: valhalla.createValhallaRouteEngine,
     validateOutcome: outcomeValidator.validateJourneyBenchmarkOutcome,
+    loadJourneyBenchmarkManifest: manifest.loadJourneyBenchmarkManifest,
+    loadJourneyBenchmarkFixtures: fixturesModule.loadJourneyBenchmarkFixtures,
+    createJourneyBenchmarkCases: fixturesModule.createJourneyBenchmarkCases,
+    createBenchmarkServiceHoursClient: fixturesModule.createBenchmarkServiceHoursClient,
+    createJourneyBenchmarkModeReport: report.createJourneyBenchmarkModeReport,
+    shouldFailBenchmarkRun: report.shouldFailBenchmarkRun,
+    compareBenchmarkCaseResults: report.compareBenchmarkCaseResults,
   }
 }
 
 async function loadFixtures(modules) {
-  const [networkInput, geometryInput, venuesInput, walkingGraphInput] = await Promise.all([
-    readJson('public/data/shuttle-network.json'),
-    readJson('public/data/shuttle-routes.geojson'),
-    readJson('public/data/venues.json'),
-    readJson('public/data/walking-stop-graph.json'),
-  ])
-  const { network, geometry } = modules.validateTransitMapData(networkInput, geometryInput)
-  const index = modules.createTransitIndex(network)
-  const transit = {
-    network: index.network,
-    geometry,
-    index,
-    shuttleTiming: modules.generateShuttleTimingData(index.network, geometry, '2026-10-01'),
-  }
-  return {
-    transit,
-    venues: modules.validateVenueLocationMap(venuesInput),
-    walkingGraph: modules.validateWalkingStopGraph(walkingGraphInput),
-  }
+  return modules.loadJourneyBenchmarkFixtures()
 }
 
 async function findProjectRoot(adapterPath) {
@@ -340,47 +192,30 @@ function createMeasuredRouteEngine(routeEngine) {
   }
 }
 
-function summarizeStatistics(samples) {
-  if (samples.length === 0) return null
-  const sorted = [...samples].sort((first, second) => first - second)
-  const mean = samples.reduce((sum, sample) => sum + sample, 0) / samples.length
-  const median = sorted.length % 2 === 0
-    ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-    : sorted[Math.floor(sorted.length / 2)]
-  const p95 = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)]
-  const round = (value) => Number(value.toFixed(3))
-  return {
-    meanMs: round(mean),
-    medianMs: round(median),
-    p95Ms: round(p95),
-    sampleCount: samples.length,
-  }
-}
-
-function equalWeightMean(caseReports, statsKey) {
-  if (caseReports.some((report) => !report[statsKey])) return null
-  return Number((caseReports.reduce((sum, report) => sum + report[statsKey].meanMs, 0) / caseReports.length).toFixed(3))
-}
-
 function createArrivalClient(benchmarkCase) {
   const snapshot = benchmarkCase.arrivalSnapshot
   return { getArrivals: async () => snapshot }
 }
 
-function createAdapterContext(fixtures, routeEngine, caseDefs) {
+function createAdapterContext(fixtures, routeEngine, caseDefs, fixedNowMs, modules) {
   return {
     transit: fixtures.transit,
     venues: fixtures.venues,
     walkingGraph: fixtures.walkingGraph,
     routeEngine,
-    now: () => FIXED_NOW_MS,
+    now: () => fixedNowMs,
     createArrivalClient,
+    createServiceHoursClient: (benchmarkCase) => modules.createBenchmarkServiceHoursClient(benchmarkCase, fixedNowMs),
     cases: caseDefs,
   }
 }
 
 function createCaseContext(adapterContext, benchmarkCase) {
-  return { ...adapterContext, benchmarkCase }
+  return {
+    ...adapterContext,
+    ...(benchmarkCase.transit ? { transit: benchmarkCase.transit } : {}),
+    benchmarkCase,
+  }
 }
 
 async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, modules) {
@@ -388,104 +223,77 @@ async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, mo
   const startedAt = performance.now()
   const outcome = await runner(new AbortController().signal)
   const elapsedMs = performance.now() - startedAt
-  const validation = modules.validateOutcome(outcome, benchmarkCase, fixtures.transit, fixtures.venues)
-  const result = {
-    elapsedMs,
-    validation,
-    outcome,
-  }
-  if (mode === 'local') {
-    result.valhallaMs = routeEngine.elapsedMs
-    result.valhallaRequests = routeEngine.requestCounts
-  }
+  const transit = benchmarkCase.transit ?? fixtures.transit
+  const validation = modules.validateOutcome(outcome, benchmarkCase, transit, fixtures.venues)
+  const result = { elapsedMs, validation }
+  if (mode === 'local') result.valhallaMs = routeEngine.elapsedMs
   return result
 }
 
 async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixtures, modules, options) {
   const isSearch = mode === 'offline'
   const makeRunnerName = isSearch ? 'createSearchRunner' : 'createJourneyRunner'
-  const caseReports = []
-  let modeStatus = 'available'
+  const caseRuns = []
 
   for (const benchmarkCase of caseDefs) {
     let runner
+    let failure = null
     try {
       runner = await loadedAdapter.adapter[makeRunnerName](createCaseContext(adapterContext, benchmarkCase))
       if (typeof runner !== 'function') throw new Error(`${makeRunnerName} must return a runner function`)
     } catch (error) {
-      modeStatus = 'partial'
-      caseReports.push({ id: benchmarkCase.id, status: 'failed', error: error instanceof Error ? error.message : 'Adapter setup failed' })
-      continue
+      failure = error instanceof Error ? error.message : 'Adapter setup failed'
     }
 
-    const runRecords = []
-    let failure = null
-    for (let index = 0; index < options.warmups + options.samples; index += 1) {
-      try {
-        const record = await measureRun(runner, mode, adapterContext.routeEngine, benchmarkCase, fixtures, modules)
-        if (!record.validation.valid) {
-          failure = record.validation.errors.join('; ')
-          if (index >= options.warmups) runRecords.push(record)
+    const measuredSamples = []
+    if (runner) {
+      for (let index = 0; index < options.warmups + options.samples; index += 1) {
+        try {
+          const record = await measureRun(runner, mode, adapterContext.routeEngine, benchmarkCase, fixtures, modules)
+          if (!record.validation.valid) {
+            failure = record.validation.errors.join('; ')
+            if (index >= options.warmups) measuredSamples.push(record)
+            break
+          }
+          if (index >= options.warmups) measuredSamples.push(record)
+        } catch (error) {
+          failure = error instanceof Error ? error.message : 'Adapter run failed'
           break
         }
-        if (index >= options.warmups) runRecords.push(record)
-      } catch (error) {
-        failure = error instanceof Error ? error.message : 'Adapter run failed'
-        break
       }
     }
-
-    const lastRecord = runRecords.at(-1)
-    const caseReport = {
-      id: benchmarkCase.id,
-      label: benchmarkCase.label,
-      expected: benchmarkCase.expected,
-      status: failure ? 'failed' : 'available',
-      statistics: summarizeStatistics(runRecords.map((record) => record.elapsedMs)),
-      planning: lastRecord?.validation.result ?? null,
-      validationErrors: failure ? [failure] : [],
-      resultStableAcrossSamples: new Set(runRecords.map((record) => JSON.stringify(record.validation.result))).size <= 1,
-    }
-    if (lastRecord?.outcome?.diagnostics) caseReport.diagnostics = lastRecord.outcome.diagnostics
-    if (!isSearch) {
-      caseReport.valhalla = {
-        ...summarizeStatistics(runRecords.flatMap((record) => record.valhallaMs === undefined ? [] : [record.valhallaMs])),
-        definition: 'sum of local Valhalla matrix and route request durations within one case run',
-        meanMatrixRequestsPerRun: runRecords.length
-          ? Number((runRecords.reduce((sum, record) => sum + record.valhallaRequests.matrix, 0) / runRecords.length).toFixed(2))
-          : null,
-        meanRouteRequestsPerRun: runRecords.length
-          ? Number((runRecords.reduce((sum, record) => sum + record.valhallaRequests.route, 0) / runRecords.length).toFixed(2))
-          : null,
-      }
-    }
-    if (failure) modeStatus = 'partial'
-    caseReports.push(caseReport)
+    caseRuns.push({
+      benchmarkCase,
+      samples: measuredSamples,
+      ...(failure ? { setupError: failure } : {}),
+    })
   }
 
-  const report = {
-    status: modeStatus,
-    cases: caseReports,
+  const report = modules.createJourneyBenchmarkModeReport(caseRuns, options.samples)
+  const equalWeightHeadline = report.overall.statistics?.meanMs ?? null
+  return {
+    ...report,
+    sampleCountPerCase: options.samples,
+    warmupsPerCase: options.warmups,
     headline: isSearch
       ? {
-        definition: 'equal-weight mean of the three per-case mean search times',
-        meanMs: equalWeightMean(caseReports, 'statistics'),
+        definition: 'equal-weight average of the per-case mean search times',
+        meanMs: equalWeightHeadline,
         sampleCountPerCase: options.samples,
       }
       : {
         endToEnd: {
-          definition: 'equal-weight mean of the three per-case mean end-to-end times',
-          meanMs: equalWeightMean(caseReports, 'statistics'),
+          definition: 'equal-weight average of the per-case mean end-to-end times',
+          meanMs: equalWeightHeadline,
           sampleCountPerCase: options.samples,
         },
         valhalla: {
-          definition: 'equal-weight mean of the three per-case mean summed Valhalla request times',
-          meanMs: equalWeightMean(caseReports, 'valhalla'),
+          definition: 'equal-weight average of the per-case mean Valhalla request times',
+          meanMs: report.overall.valhalla?.meanMs ?? null,
           sampleCountPerCase: options.samples,
         },
       },
   }
-  return report
 }
 
 function unavailableMode(reason, mode, options) {
@@ -497,6 +305,15 @@ function unavailableMode(reason, mode, options) {
   }
 }
 
+function formatStatistics(statistics) {
+  if (!statistics) return 'unavailable'
+  return `mean ${statistics.meanMs} ms, median ${statistics.medianMs} ms, p95 ${statistics.p95Ms} ms, n=${statistics.sampleCount}`
+}
+
+function formatQuality(quality) {
+  return `journeys ${quality.journeys} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
+}
+
 function formatMode(name, modeReport, local = false) {
   const lines = [`  ${name}: ${modeReport.status}`]
   if (modeReport.status !== 'available' && modeReport.status !== 'partial') {
@@ -504,29 +321,23 @@ function formatMode(name, modeReport, local = false) {
     return lines
   }
   for (const benchmarkCase of modeReport.cases) {
-    if (!benchmarkCase.statistics) {
-      lines.push(`    ${benchmarkCase.id}: ${benchmarkCase.status}${benchmarkCase.error ? ` (${benchmarkCase.error})` : ''}`)
-      continue
-    }
-    const stats = benchmarkCase.statistics
     const result = benchmarkCase.planning?.kind ?? 'invalid'
     const boardings = benchmarkCase.planning?.shuttleBoardings
-    lines.push(`    ${benchmarkCase.id}: mean ${stats.meanMs} ms, median ${stats.medianMs} ms, p95 ${stats.p95Ms} ms, n=${stats.sampleCount}; ${result}${boardings === undefined ? '' : `, ${boardings} shuttle boardings`}`)
-    if (local && benchmarkCase.valhalla?.sampleCount !== undefined) {
-      lines.push(`      Valhalla: mean ${benchmarkCase.valhalla.meanMs} ms, median ${benchmarkCase.valhalla.medianMs} ms, p95 ${benchmarkCase.valhalla.p95Ms} ms, n=${benchmarkCase.valhalla.sampleCount}`)
-    }
-    if (benchmarkCase.validationErrors?.length) lines.push(`      validation: ${benchmarkCase.validationErrors.join('; ')}`)
+    lines.push(`    ${benchmarkCase.id} [${benchmarkCase.group}/${benchmarkCase.scenario}]: ${formatStatistics(benchmarkCase.statistics)}; ${result}${boardings === undefined ? '' : `, ${boardings} shuttle boardings`}; ${formatQuality(benchmarkCase.resultQuality)}; validation ${benchmarkCase.validation.status}`)
+    if (local) lines.push(`      Valhalla: ${formatStatistics(benchmarkCase.valhalla)}`)
+    if (benchmarkCase.validation.errors.length) lines.push(`      validation: ${benchmarkCase.validation.errors.join('; ')}`)
   }
-  const headline = local ? modeReport.headline.endToEnd : modeReport.headline
-  lines.push(`    equal-weight headline mean: ${headline.meanMs ?? 'unavailable'} ms`)
-  if (local) lines.push(`    equal-weight Valhalla mean: ${modeReport.headline.valhalla.meanMs ?? 'unavailable'} ms`)
+  for (const [category, aggregate] of Object.entries(modeReport.categories)) {
+    lines.push(`    ${category}: ${formatStatistics(aggregate.statistics)}; Valhalla ${formatStatistics(aggregate.valhalla)}; ${formatQuality(aggregate.resultQuality)}; validation ${aggregate.validation.status}; cases ${aggregate.caseCount}; samples ${aggregate.sampleCount}`)
+  }
+  lines.push(`    overall (equal weight per case): ${formatStatistics(modeReport.overall.statistics)}; Valhalla ${formatStatistics(modeReport.overall.valhalla)}; ${formatQuality(modeReport.overall.resultQuality)}; validation ${modeReport.overall.validation.status}; cases ${modeReport.overall.caseCount}; samples ${modeReport.overall.sampleCount}`)
   return lines
 }
 
 function printReport(report) {
   const lines = [
     `NavUS Journey benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
-    `Cases: ${report.configuration.samplesPerCase} samples and ${report.configuration.warmupsPerCase} warmups each; arrivals fixed at ${report.configuration.arrivalObservedAt}.`,
+    `Cases: ${report.configuration.caseCount}; ${report.configuration.samplesPerCase} samples and ${report.configuration.warmupsPerCase} warmups per case; fixed clock ${report.configuration.fixedNow}.`,
   ]
   for (const adapter of report.adapters) {
     lines.push(`\n${adapter.label} [${adapter.id}]`)
@@ -568,29 +379,38 @@ async function main() {
       samplesPerCase: options.samples,
       warmupsPerCase: options.warmups,
       adapterPaths: options.adapterPaths,
-      fixedShuttleArrivals: true,
-      arrivalObservedAt: FIXED_OBSERVED_AT,
+      caseCount: 50,
+      fixedClock: true,
+      fixedNow: null,
       valhallaUrl: options.valhallaUrl,
     },
   }
 
   try {
     const modules = await loadBenchmarkModules(vite)
+    const manifest = await modules.loadJourneyBenchmarkManifest()
+    const fixedNowMs = Date.parse(manifest.fixedNow)
     const fixtures = await loadFixtures(modules)
-    const caseDefs = createCaseDefinitions(fixtures, modules)
+    const caseDefs = createCaseDefinitions(fixtures, modules, manifest)
     const rawRouteEngine = modules.createValhallaRouteEngine({ baseUrl: options.valhallaUrl })
     const routeEngine = createMeasuredRouteEngine(rawRouteEngine)
-    const adapterContext = createAdapterContext(fixtures, routeEngine, caseDefs)
+    const adapterContext = createAdapterContext(fixtures, routeEngine, caseDefs, fixedNowMs, modules)
+    report.configuration.caseCount = caseDefs.length
+    report.configuration.fixedNow = manifest.fixedNow
     report.fixtures = {
       transitStops: fixtures.transit.index.stops.length,
       walkingConnections: fixtures.walkingGraph.connections.length,
-      cases: caseDefs.map(({ id, label, origin, destination, arrivalSeconds, expected }) => ({
+      cases: caseDefs.map(({ id, label, group, scenario, timingProfile, arrivalRouteIds, origin, destination, expected, durationBoundsSeconds }) => ({
         id,
         label,
+        group,
+        scenario,
+        timingProfile: timingProfile.id,
+        arrivalRouteIds: arrivalRouteIds ?? 'all routes',
         origin,
         destination,
-        fixedArrivalSeconds: arrivalSeconds,
         expected,
+        durationBoundsSeconds,
       })),
     }
 
@@ -633,6 +453,15 @@ async function main() {
       ) process.exitCode = 2
       report.adapters.push(adapterReport)
     }
+    report.comparison = {
+      offline: modules.compareBenchmarkCaseResults(report.adapters
+        .filter((adapter) => adapter.searchOnlyOffline?.status === 'available' || adapter.searchOnlyOffline?.status === 'partial')
+        .map((adapter) => ({ id: adapter.id, cases: adapter.searchOnlyOffline.cases }))),
+      local: modules.compareBenchmarkCaseResults(report.adapters
+        .filter((adapter) => adapter.endToEndLocalValhalla?.status === 'available' || adapter.endToEndLocalValhalla?.status === 'partial')
+        .map((adapter) => ({ id: adapter.id, cases: adapter.endToEndLocalValhalla.cases }))),
+    }
+    if (modules.shouldFailBenchmarkRun(report)) process.exitCode = 2
     printReport(report)
   } finally {
     for (const { adapter } of loadedAdapters) await adapter.dispose?.()

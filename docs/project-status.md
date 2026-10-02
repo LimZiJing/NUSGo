@@ -14,6 +14,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 ## Current implementation
 
 - Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style, with bus POI labels suppressed and low-priority local POIs reduced while rail, airport, and major campus context remain visible.
+- Map attribution remains visible as a small, readable footer without the expanded disclosure control, preserving the OpenFreeMap and OpenStreetMap credits on mobile and desktop.
 - Map tile error reporting and MapLibre navigation controls.
 - Venue data loaded from `public/data/venues.json`.
 - Venue search by venue code or room name, with ranked results and a selected venue marker.

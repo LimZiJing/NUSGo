@@ -3,6 +3,26 @@
   height: 100%;
 }
 
+.map .navus-map-attribution {
+  padding: 0;
+  color: var(--text-muted);
+  background-color: transparent;
+  font: 10px/14px var(--sans);
+}
+
+.map .maplibregl-ctrl-bottom-right > .navus-map-attribution {
+  margin-bottom: 0;
+}
+
+.map .navus-map-attribution a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.map .navus-map-attribution a:hover {
+  text-decoration: underline;
+}
+
 .map-control-stack {
   position: absolute;
   z-index: 13;

@@ -23,6 +23,24 @@ setWorkerUrl(maplibreWorkerUrl)
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
+class NavusAttributionControl {
+  private container: HTMLElement | null = null
+
+  onAdd(): HTMLElement {
+    const container = document.createElement('div')
+    container.className = 'maplibregl-ctrl navus-map-attribution'
+    container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
+      + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    this.container = container
+    return container
+  }
+
+  onRemove(): void {
+    this.container?.remove()
+    this.container = null
+  }
+}
+
 export interface MapLifecycle {
   readonly map: Map
   readonly ready: Promise<void>
@@ -65,8 +83,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     style: MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
+    attributionControl: false,
   })
   const navigationControl = new NavigationControl()
+  const attributionControl = new NavusAttributionControl()
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
 
@@ -116,6 +136,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   }
 
   map.addControl(navigationControl, 'top-right')
+  map.addControl(attributionControl, 'bottom-right')
   map.on('error', handleMapError)
   map.on('click', handleMapClick)
   if (options.onMapCenterChange) {
@@ -145,6 +166,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
         map.off('resize', reportMapCenter)
       }
       map.removeControl(navigationControl)
+      map.removeControl(attributionControl)
       map.remove()
     },
   }

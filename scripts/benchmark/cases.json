@@ -1,0 +1,1305 @@
+{
+  "version": 1,
+  "fixedNow": "2026-10-01T00:00:00.000Z",
+  "profiles": [
+    {
+      "id": "fresh-30",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "tie-equal-rides",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "equal-rides",
+      "shuttleRideSecondsOverride": 300
+    },
+    {
+      "id": "no-arrivals",
+      "arrivals": "missing",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 0,
+      "arrivalSeconds": null,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "expired-arrivals",
+      "arrivals": "expired",
+      "observedAgeSeconds": 180,
+      "expiresInSeconds": -1,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "closed-service",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "after-end",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "invalid-shuttle-timing",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "unavailable",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "stale-usable",
+      "arrivals": "stale",
+      "observedAgeSeconds": 35,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 60,
+      "headwayMedianSeconds": null,
+      "service": "active",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "headway-only",
+      "arrivals": "headway",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": null,
+      "headwayMedianSeconds": 120,
+      "service": "active",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "pre-service",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "before-start",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    },
+    {
+      "id": "post-service",
+      "arrivals": "fresh",
+      "observedAgeSeconds": 0,
+      "expiresInSeconds": 10800,
+      "arrivalSeconds": 30,
+      "headwayMedianSeconds": null,
+      "service": "after-end",
+      "shuttleTiming": "canonical",
+      "shuttleRideSecondsOverride": null
+    }
+  ],
+  "cases": [
+    {
+      "id": "route-a1-kbr-as5",
+      "label": "Route A1, KRB to AS5",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "KRB"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "AS5"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "A1"
+      ]
+    },
+    {
+      "id": "route-a2-kbr-museum",
+      "label": "Route A2, KRB to Museum",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "KRB"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "MUSEUM"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "A2"
+      ]
+    },
+    {
+      "id": "route-d1-com3-utown",
+      "label": "Route D1, COM3 to UTown",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "D1"
+      ]
+    },
+    {
+      "id": "route-d2-com3-utown",
+      "label": "Route D2, COM3 to UTown",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "D2"
+      ]
+    },
+    {
+      "id": "route-k-pgp-yih",
+      "label": "Route K, PGP to YIH",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "YIH"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "K"
+      ]
+    },
+    {
+      "id": "route-p-kv-utown",
+      "label": "Route P, KV to UTown",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "P"
+      ]
+    },
+    {
+      "id": "route-r1-kv-biz2",
+      "label": "Route R1, KV to BIZ2",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "BIZ2"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "R1"
+      ]
+    },
+    {
+      "id": "route-r2-pgp-utown",
+      "label": "Route R2, PGP to UTown",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "arrivalRouteIds": [
+        "R2"
+      ]
+    },
+    {
+      "id": "stop-museum-utown",
+      "label": "Museum to UTown shuttle stops",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "MUSEUM"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "stop-utown-museum",
+      "label": "UTown to Museum shuttle stops",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "MUSEUM"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "stop-lt13-tcoms",
+      "label": "LT13 to TCOMS shuttle stops",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "LT13"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "TCOMS"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "stop-oth-bg-mrt",
+      "label": "OTH to BG-MRT shuttle stops",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "OTH"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "BG-MRT"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "venue-biz2-lt13",
+      "label": "BIZ2 venue to LT13 stop",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "BIZ2-0111"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "LT13"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "venue-lt17-uhall",
+      "label": "LT17 venue to UHALL stop",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "LT17"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UHALL"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "venue-ea-lt3",
+      "label": "Engineering venue to LT3 venue",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "EA-06-04"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "LT3"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "stop-com3-venue-biz2",
+      "label": "COM3 stop to BIZ2 venue",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "BIZ2-0111"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "venue-rc3-short",
+      "label": "Short walk between RC3 venues",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "RC3-01-01"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "RC3-01-04"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      },
+      "durationBoundsSeconds": {
+        "max": 900
+      }
+    },
+    {
+      "id": "venue-as7-lt3",
+      "label": "AS7 venue to LT3 venue",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "AS7-0214"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "LT3"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "stop-kv-venue-lt17",
+      "label": "KV stop to LT17 venue",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "LT17"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "venue-biz2-lt17",
+      "label": "BIZ2 venue to LT17 venue",
+      "group": "normal",
+      "scenario": "route-pair",
+      "origin": {
+        "kind": "venue",
+        "id": "BIZ2-0111"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "LT17"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey"
+      }
+    },
+    {
+      "id": "one-a1-kbr-lt13",
+      "label": "A1 from KRB to LT13",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "KRB"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "LT13"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1"
+      ]
+    },
+    {
+      "id": "one-a2-kbr-uhc",
+      "label": "A2 from KRB to UHC",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "KRB"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UHC"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A2"
+      ]
+    },
+    {
+      "id": "one-d1-com3-utown",
+      "label": "D1 from COM3 to UTown",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "D1"
+      ]
+    },
+    {
+      "id": "one-d2-com3-utown",
+      "label": "D2 from COM3 to UTown",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "D2"
+      ]
+    },
+    {
+      "id": "one-k-pgp-yih",
+      "label": "K from PGP to YIH",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "YIH"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "K"
+      ]
+    },
+    {
+      "id": "one-p-kv-utown",
+      "label": "P from KV to UTown",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P"
+      ]
+    },
+    {
+      "id": "one-p-oth-bg-mrt",
+      "label": "P from OTH to BG-MRT",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "OTH"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "BG-MRT"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P"
+      ]
+    },
+    {
+      "id": "one-r1-kv-utown",
+      "label": "R1 from KV to UTown",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "R1"
+      ]
+    },
+    {
+      "id": "one-r2-pgp-utown",
+      "label": "R2 from PGP to UTown",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "R2"
+      ]
+    },
+    {
+      "id": "one-a1-kbr-pgp",
+      "label": "A1 from KRB to PGP",
+      "group": "normal",
+      "scenario": "one-shuttle",
+      "origin": {
+        "kind": "stop",
+        "id": "KRB"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1"
+      ]
+    },
+    {
+      "id": "tie-kv-utown-p-r1",
+      "label": "Equal P and R1 journeys from KV to UTown",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "P"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "tie-kv-museum-k-r1",
+      "label": "Equal K and R1 journeys from KV to Museum",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "MUSEUM"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "K"
+        ]
+      },
+      "arrivalRouteIds": [
+        "K",
+        "R1"
+      ]
+    },
+    {
+      "id": "tie-com3-utown-d1-d2",
+      "label": "Equal D1 and D2 journeys from COM3 to UTown",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "COM3"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "D1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "D1",
+        "D2"
+      ]
+    },
+    {
+      "id": "tie-museum-utown-d1-d2-r1",
+      "label": "Equal D1, D2, and R1 journeys from Museum to UTown",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "MUSEUM"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "D1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "D1",
+        "D2",
+        "R1"
+      ]
+    },
+    {
+      "id": "tie-yih-clb-a1-d1-r1",
+      "label": "Equal A1, D1, and R1 journeys from YIH to CLB",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "YIH"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "CLB"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1",
+        "D1",
+        "R1"
+      ]
+    },
+    {
+      "id": "tie-pgp-krmrt-a1-k",
+      "label": "Equal A1 and K journeys from PGP to KR-MRT",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "PGP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "KR-MRT"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1",
+        "K"
+      ]
+    },
+    {
+      "id": "tie-krmrt-uhall-a1-d2-k",
+      "label": "Equal A1, D2, and K journeys from KR-MRT to UHALL",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "KR-MRT"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UHALL"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1",
+        "D2",
+        "K"
+      ]
+    },
+    {
+      "id": "tie-lt13-as5-a1-d1-r1",
+      "label": "Equal A1, D1, and R1 journeys from LT13 to AS5",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "LT13"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "AS5"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1",
+        "D1",
+        "R1"
+      ]
+    },
+    {
+      "id": "tie-tcoms-opp-krmrt-a1-d2",
+      "label": "Equal A1 and D2 journeys from TCOMS-OPP to KR-MRT",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "TCOMS-OPP"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "KR-MRT"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A1"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A1",
+        "D2"
+      ]
+    },
+    {
+      "id": "tie-uhc-uhall-opp-a2-d2-k",
+      "label": "Equal A2, D2, and K journeys from UHC to UHALL-OPP",
+      "group": "normal",
+      "scenario": "selection-tie",
+      "origin": {
+        "kind": "stop",
+        "id": "UHC"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UHALL-OPP"
+      },
+      "timingProfile": "tie-equal-rides",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ],
+        "routeIds": [
+          "A2"
+        ]
+      },
+      "arrivalRouteIds": [
+        "A2",
+        "D2",
+        "K"
+      ]
+    },
+    {
+      "id": "fallback-no-arrivals",
+      "label": "Walk when shuttle arrivals are missing",
+      "group": "fallback",
+      "scenario": "missing-arrivals",
+      "origin": {
+        "kind": "venue",
+        "id": "RC3-01-01"
+      },
+      "destination": {
+        "kind": "venue",
+        "id": "RC3-01-04"
+      },
+      "timingProfile": "no-arrivals",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      }
+    },
+    {
+      "id": "fallback-stale-expired",
+      "label": "Walk when shuttle arrivals are stale and expired",
+      "group": "fallback",
+      "scenario": "stale-expired-arrivals",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "expired-arrivals",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "fallback-closed-service",
+      "label": "Walk when shuttle service is closed",
+      "group": "fallback",
+      "scenario": "closed-service",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "closed-service",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "fallback-invalid-timing",
+      "label": "Walk when shuttle ride timing is unavailable",
+      "group": "fallback",
+      "scenario": "invalid-shuttle-timing",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "invalid-shuttle-timing",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "fallback-multi-transfer-only",
+      "label": "Walk when available transit requires a transfer chain",
+      "group": "fallback",
+      "scenario": "multi-transfer-only",
+      "origin": {
+        "kind": "stop",
+        "id": "OTH"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "BIZ2"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P"
+      ]
+    },
+    {
+      "id": "timing-fresh-arrival",
+      "label": "Fresh arrival timing from KV to UTown",
+      "group": "timing",
+      "scenario": "fresh",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "fresh-30",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "timing-stale-arrival",
+      "label": "Recently stale arrival timing from KV to UTown",
+      "group": "timing",
+      "scenario": "stale",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "stale-usable",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "timing-headway",
+      "label": "Headway-based wait from KV to UTown",
+      "group": "timing",
+      "scenario": "headway",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "headway-only",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 1,
+        "modes": [
+          "shuttle"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "timing-pre-service",
+      "label": "Pre-service window behavior from KV to UTown",
+      "group": "timing",
+      "scenario": "pre-service",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "pre-service",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    },
+    {
+      "id": "timing-post-service",
+      "label": "Post-service window behavior from KV to UTown",
+      "group": "timing",
+      "scenario": "post-service",
+      "origin": {
+        "kind": "stop",
+        "id": "KV"
+      },
+      "destination": {
+        "kind": "stop",
+        "id": "UTOWN"
+      },
+      "timingProfile": "post-service",
+      "expected": {
+        "outcome": "journey",
+        "shuttleBoardings": 0,
+        "modes": [
+          "walking"
+        ]
+      },
+      "arrivalRouteIds": [
+        "P",
+        "R1"
+      ]
+    }
+  ]
+}

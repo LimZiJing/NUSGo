@@ -358,11 +358,11 @@ describe('mobile stop view state', () => {
   it('keeps list, expansion, and favourites state until canonical stops are reconciled', () => {
     const initial = createInitialMobileStopViewState(['STOP-A', 'missing'])
     const favourites = mobileStopViewReducer(initial, { type: 'select-list', list: 'favourites' })
-    const collapsed = mobileStopViewReducer(favourites, { type: 'toggle-expanded', stopId: 'STOP-A' })
-    const focused = mobileStopViewReducer(collapsed, { type: 'focus-stop', stopId: 'STOP-A' })
+    const expanded = mobileStopViewReducer(favourites, { type: 'toggle-expanded', stopId: 'STOP-A' })
+    const focused = mobileStopViewReducer(expanded, { type: 'focus-stop', stopId: 'STOP-A' })
 
     expect(focused.list).toBe('favourites')
-    expect(focused.collapsedStopIds).toEqual(['STOP-A'])
+    expect(focused.expandedStopIds).toEqual({ nearby: [], favourites: ['STOP-A'] })
     expect(focused.favoriteStopIds).toEqual(['STOP-A', 'missing'])
 
     const reconciled = mobileStopViewReducer(focused, {
@@ -370,9 +370,35 @@ describe('mobile stop view state', () => {
       stopIds: new Set(['STOP-A']),
     })
     expect(reconciled.favoriteStopIds).toEqual(['STOP-A'])
-    expect(reconciled.collapsedStopIds).toEqual(['STOP-A'])
+    expect(reconciled.expandedStopIds).toEqual({ nearby: [], favourites: ['STOP-A'] })
     expect(reconciled.focusedStopId).toBe('STOP-A')
     expect(mobileStopViewReducer(reconciled, { type: 'toggle-expanded', stopId: 'STOP-A' })
-      .collapsedStopIds).toEqual([])
+      .expandedStopIds).toEqual({ nearby: [], favourites: [] })
+  })
+
+  it('starts timings closed and expands Nearby without expanding Favourites', () => {
+    const initial = createInitialMobileStopViewState()
+
+    expect(initial.expandedStopIds).toEqual({ nearby: [], favourites: [] })
+
+    const nearbyExpanded = mobileStopViewReducer(initial, {
+      type: 'expand-nearby',
+      stopIds: ['STOP-A', 'STOP-B'],
+    })
+
+    expect(nearbyExpanded.expandedStopIds).toEqual({
+      nearby: ['STOP-A', 'STOP-B'],
+      favourites: [],
+    })
+
+    const favouritesExpanded = mobileStopViewReducer(
+      mobileStopViewReducer(nearbyExpanded, { type: 'select-list', list: 'favourites' }),
+      { type: 'toggle-expanded', stopId: 'STOP-A' },
+    )
+
+    expect(favouritesExpanded.expandedStopIds).toEqual({
+      nearby: ['STOP-A', 'STOP-B'],
+      favourites: ['STOP-A'],
+    })
   })
 })

@@ -93,6 +93,7 @@ describe('mobile Stops tab state', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Stop A bus timings' }))
     await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
 
     expect(screen.getByText('LIVE')).toBeTruthy()
@@ -108,8 +109,9 @@ describe('mobile Stops tab state', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
-    const stopCard = screen.getByRole('button', { name: 'Collapse Stop A bus timings' })
+    const stopCard = screen.getByRole('button', { name: 'Expand Stop A bus timings' })
     await user.click(stopCard)
+    await user.click(screen.getByRole('button', { name: 'Collapse Stop A bus timings' }))
 
     expect(screen.getByRole('button', { name: 'Expand Stop A bus timings' }).getAttribute('aria-expanded'))
       .toBe('false')

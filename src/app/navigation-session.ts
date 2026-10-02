@@ -95,6 +95,7 @@ export interface NavigationSession {
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
   clearTrip(): void
+  replanJourney(): void
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   reportStartupFailure(): void
@@ -648,6 +649,14 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         updateTripRequest(createEmptyTripRequest())
+      })
+    },
+
+    replanJourney() {
+      if (disposed) return
+      cancelJourneyPlanning()
+      enqueueTransition(() => {
+        if (!disposed) requestJourneyPlanning()
       })
     },
 

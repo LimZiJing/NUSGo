@@ -16,6 +16,7 @@ interface TripJourneyResultProps {
   readonly state: TripJourneyState
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
+  readonly simulated?: boolean
 }
 
 function formatDuration(seconds: number): string {
@@ -152,6 +153,7 @@ export function TripJourneyResult({
   state,
   networkIndex,
   venues,
+  simulated = false,
 }: TripJourneyResultProps) {
   if (state.status !== 'ready' || state.journey === null) {
     return renderJourneyStatus(state)
@@ -179,7 +181,9 @@ export function TripJourneyResult({
         {journey.planningQuality === 'bounded'
           ? 'This is a valid route found within a short search budget. A faster route may exist. '
           : ''}
-        {hasShuttleLeg
+        {simulated
+          ? 'This simulated route is for development testing only. Travel times are estimates.'
+          : hasShuttleLeg
           ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
           : 'Travel times are estimates, not guaranteed arrival times.'}
       </p>

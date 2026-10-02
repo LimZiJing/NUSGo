@@ -15,6 +15,7 @@ import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
+import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
 interface TripEndpointControlsProps {
   tripRequest: TripRequest
@@ -38,6 +39,7 @@ interface TripEndpointControlsProps {
   onClearDestinationEndpoint: () => void
   onClearTrip: () => void
   journey?: TripJourneyState
+  simulatedAtMs?: number | null
 }
 
 interface TripEndpointControlProps {
@@ -94,6 +96,7 @@ export function TripEndpointControls({
   onClearDestinationEndpoint,
   onClearTrip,
   journey = { status: 'idle', journey: null, error: null },
+  simulatedAtMs = null,
 }: TripEndpointControlsProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
   const detent = passedDetent ?? (expanded ?? uncontrolledExpanded ? 'partial' : 'collapsed')
@@ -274,10 +277,17 @@ export function TripEndpointControls({
             Clear all
           </button>
         </div>
+        {simulatedAtMs !== null && (
+          <p className="trip-journey-notice" role="note">
+            Simulated Journey at {formatSingaporeDateTime(simulatedAtMs).replace('T', ' ')} SGT.
+            Each shuttle boarding uses a 5-minute test wait; these are not live arrivals.
+          </p>
+        )}
         <TripJourneyResult
           state={journey}
           venues={venues}
           networkIndex={networkIndex}
+          simulated={simulatedAtMs !== null}
         />
       </div>
     </section>

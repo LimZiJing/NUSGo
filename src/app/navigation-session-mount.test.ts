@@ -47,6 +47,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     zoomOut: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
+    replanJourney: vi.fn(),
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
     clearTrip: vi.fn(),

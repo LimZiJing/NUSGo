@@ -64,14 +64,16 @@ For a complete trip request, the planner receives:
 
 The walking adapter precomputes directed walking costs between the canonical shuttle stops and stores only distance and duration. For each trip request it uses two smaller Valhalla matrix queries in parallel: origin to the destination and stop candidates, and stop candidates to the destination. The selected walking legs are then enriched with individual route geometries. A matrix result is never treated as map geometry.
 
-The pure planner builds a directed graph:
+The pure planner uses a bounded candidate policy rather than an open-ended graph search:
 
-- walking edges connect the resolved endpoint and shuttle-stop locations using the returned walking connections;
-- for every canonical route, each ordered stop can board and travel to every later stop in that route direction;
-- each shuttle edge carries its route ID, boarding stop, alighting stop, waiting estimate, and ride-time estimate; and
-- opposite stops are distinct stops. The planner may connect them only through a valid walking edge, not through an assumed interchange.
+- it selects the five nearest origin stops and five nearest destination stops by directed walking distance;
+- every canonical stop remains eligible as a transfer stop when a valid walking connection exists;
+- it evaluates direct walking, direct shuttle journeys, and journeys with one shuttle transfer;
+- a same-stop transfer has zero transfer-walking time;
+- a second boarding on the same route is allowed only after the first shuttle leg reaches that route's terminal; and
+- opposite stops remain distinct stops and may connect only through a valid walking connection.
 
-This graph supports direct walking, one or more internal shuttle legs, walking transfers, and direct walking between shuttle stops. It does not hard-code a one-shuttle result. The planner ranks complete paths and returns only the best valid path after deterministic tie-breaking when the search completes.
+Each shuttle segment follows the route's ordered stop direction. The ride estimate includes travel and intermediate-stop dwell time. Every boarding receives its own waiting estimate, including the second boarding after a transfer. The planner returns all complete candidates in deterministic ranking order so the application can try the next candidate if route geometry enrichment fails.
 
 The first implementation is still deliberately limited to walking and the current internal shuttle mode. It does not add cycling, driving, external public transit, turn-by-turn instructions, accessibility constraints, or live vehicle positions.
 
@@ -96,11 +98,11 @@ Equal total durations use stable tie-breaking in this order:
 
 The UI should call the output a `Recommended journey` and show that its duration is estimated. It must not claim that a journey is fastest when required timing data is unavailable or when the comparison cannot be made from complete estimates.
 
-## Search completion and responsiveness
+## Candidate bounds and responsiveness
 
-The planner must preserve Journey validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Browser requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Journey is marked `exact`. If the budget is reached after a complete Journey has been found, that Journey is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Journey exists. If no complete multimodal Journey is found, the application may return a valid walking-only fallback or a clear failure.
+The planner exhaustively evaluates the deliberate candidate set, but the candidate set is intentionally bounded by the five-stop and one-transfer rules. Returned Journeys are therefore marked `bounded`: they are valid and are the best candidates considered, but NavUS does not claim that no faster journey exists outside those limits.
 
-This is a responsiveness policy, not a change to the Valhalla boundary or the canonical shuttle source of truth. The UI presents both exact and bounded results as `Recommended journey` and explains the tradeoff when a bounded result may not be globally fastest.
+The browser no longer needs a priority queue, path-label dominance, cycle detection, or search-expansion budget for this planner. Live planning performs a structural boarding-stop preflight, reads the required live timing snapshot once, and then evaluates the bounded candidates with time-dependent waiting estimates. If no complete shuttle candidate remains, a valid walking-only Journey remains eligible.
 
 Issue #104 owns the provider-neutral shuttle timing policy and validated timing contract, recorded in [Shuttle timing policy](../shuttle-timing.md). Issue #25 owns provider/API normalization. The planner consumes the validated contract; it does not recalculate timing, silently replace missing values, or treat a transfer as free.
 

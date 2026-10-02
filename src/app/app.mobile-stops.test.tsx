@@ -98,7 +98,10 @@ describe('mobile Stops tab state', () => {
 
     expect(screen.getByText('LIVE')).toBeTruthy()
     expect(appHarness.arrivalsClient.getArrivals).toHaveBeenCalledWith(
-      [{ stopId: 'STOP-A', stopName: 'Stop A' }],
+      [
+        { stopId: 'STOP-A', stopName: 'Stop A' },
+        { stopId: 'STOP-B', stopName: 'Stop B' },
+      ],
       expect.any(AbortSignal),
     )
   })

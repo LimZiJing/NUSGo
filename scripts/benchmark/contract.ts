@@ -11,6 +11,12 @@ export interface JourneyBenchmarkExpectation {
   readonly outcome: 'journey' | 'no-route'
   readonly shuttleBoardings?: number
   readonly modes?: readonly ('walking' | 'shuttle')[]
+  readonly routeIds?: readonly string[]
+}
+
+export interface JourneyBenchmarkDurationBounds {
+  readonly min?: number
+  readonly max?: number
 }
 
 export interface JourneyBenchmarkCase {
@@ -20,6 +26,7 @@ export interface JourneyBenchmarkCase {
   readonly destination: TripEndpoint
   readonly arrivalSeconds: number
   readonly expected: JourneyBenchmarkExpectation
+  readonly durationBoundsSeconds?: JourneyBenchmarkDurationBounds
   readonly searchInput: PlanJourneyInput
 }
 

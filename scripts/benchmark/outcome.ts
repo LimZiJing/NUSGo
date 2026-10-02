@@ -47,7 +47,71 @@ function isLineString(value: unknown): value is JourneyLineString {
       Number.isFinite(coordinate[1]) &&
       coordinate[1] >= -90 &&
       coordinate[1] <= 90
-    ))
+  ))
+}
+
+function endpointCoordinate(
+  endpoint: TripEndpoint,
+  transit: LoadedTransitData,
+  venues: VenueLocationMap,
+): readonly [number, number] | null {
+  if (endpoint.kind === 'stop') {
+    const stop = transit.index.stopById.get(endpoint.id)
+    return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
+      ? [stop.longitude, stop.latitude]
+      : null
+  }
+  const location = venues[endpoint.id]?.location
+  return location && Number.isFinite(location.x) && Number.isFinite(location.y)
+    ? [location.x, location.y]
+    : null
+}
+
+function distanceMeters(
+  first: readonly [number, number],
+  second: readonly [number, number],
+): number {
+  const referenceLatitude = (first[1] + second[1]) / 2
+  const longitudeScale = 111320 * Math.cos(referenceLatitude * Math.PI / 180)
+  return Math.hypot(
+    (first[0] - second[0]) * longitudeScale,
+    (first[1] - second[1]) * 110540,
+  )
+}
+
+function validateLegGeometry(
+  value: unknown,
+  from: TripEndpoint,
+  to: TripEndpoint,
+  mode: unknown,
+  transit: LoadedTransitData,
+  venues: VenueLocationMap,
+  label: string,
+  errors: string[],
+): void {
+  if (!isLineString(value)) {
+    errors.push(`${label} geometry must be a valid LineString`)
+    return
+  }
+  const fromCoordinate = endpointCoordinate(from, transit, venues)
+  const toCoordinate = endpointCoordinate(to, transit, venues)
+  if (!fromCoordinate || !toCoordinate) {
+    errors.push(`${label} geometry endpoints cannot be checked against fixture coordinates`)
+    return
+  }
+  const firstCoordinate = value.coordinates[0]
+  const lastCoordinate = value.coordinates.at(-1)
+  if (!firstCoordinate || !lastCoordinate) {
+    errors.push(`${label} geometry must have start and end coordinates`)
+    return
+  }
+  const toleranceMeters = mode === 'shuttle' ? 75 : 250
+  if (distanceMeters(fromCoordinate, firstCoordinate) > toleranceMeters) {
+    errors.push(`${label} geometry does not start near its from endpoint`)
+  }
+  if (distanceMeters(toCoordinate, lastCoordinate) > toleranceMeters) {
+    errors.push(`${label} geometry does not end near its to endpoint`)
+  }
 }
 
 function validateEndpointReference(
@@ -98,6 +162,7 @@ function validateJourney(
   let distanceTotal = 0
   let shuttleBoardings = 0
   const modes: string[] = []
+  const routeIds: string[] = []
   value.legs.forEach((legValue, index) => {
     if (!isRecord(legValue)) {
       errors.push(`leg ${index + 1} must be an object`)
@@ -121,7 +186,16 @@ function validateJourney(
     if (!isNonNegativeInteger(legValue.distanceMeters)) {
       errors.push(`leg ${index + 1} distanceMeters must be a non-negative integer`)
     } else distanceTotal += legValue.distanceMeters
-    if (!isLineString(legValue.geometry)) errors.push(`leg ${index + 1} geometry must be a valid LineString`)
+    validateLegGeometry(
+      legValue.geometry,
+      from,
+      to,
+      legValue.mode,
+      transit,
+      venues,
+      `leg ${index + 1}`,
+      errors,
+    )
 
     if (legValue.mode === 'walking') {
       modes.push('walking')
@@ -144,6 +218,7 @@ function validateJourney(
       errors.push(`shuttle leg ${index + 1} references an unknown route`)
       return
     }
+    routeIds.push(route.id)
     const fromIndex = route.stopIds.indexOf(from.id)
     const toIndex = route.stopIds.indexOf(to.id)
     if (fromIndex < 0 || toIndex <= fromIndex) {
@@ -173,6 +248,18 @@ function validateJourney(
   }
   if (benchmarkCase.expected.modes && JSON.stringify(modes) !== JSON.stringify(benchmarkCase.expected.modes)) {
     errors.push(`expected modes ${benchmarkCase.expected.modes.join(', ')}; got ${modes.join(', ')}`)
+  }
+  if (benchmarkCase.expected.routeIds && JSON.stringify(routeIds) !== JSON.stringify(benchmarkCase.expected.routeIds)) {
+    errors.push(`expected routes ${benchmarkCase.expected.routeIds.join(', ')}; got ${routeIds.join(', ')}`)
+  }
+  const bounds = benchmarkCase.durationBoundsSeconds
+  if (isNonNegativeInteger(value.totalDurationSeconds)) {
+    if (bounds?.min !== undefined && value.totalDurationSeconds < bounds.min) {
+      errors.push(`journey totalDurationSeconds is below the minimum ${bounds.min}`)
+    }
+    if (bounds?.max !== undefined && value.totalDurationSeconds > bounds.max) {
+      errors.push(`journey totalDurationSeconds exceeds the maximum ${bounds.max}`)
+    }
   }
 
   return value as unknown as Journey
@@ -205,6 +292,9 @@ export function validateJourneyBenchmarkOutcome(
         kind: 'journey',
         modes: journey.legs.map((leg) => leg.mode),
         shuttleBoardings: journey.legs.filter((leg) => leg.mode === 'shuttle').length,
+        routeIds: journey.legs.flatMap((leg) => leg.mode === 'shuttle' ? [leg.routeId] : []),
+        waitingSeconds: journey.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.waitingSeconds : 0), 0),
+        rideSeconds: journey.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.rideSeconds : 0), 0),
         totalDurationSeconds: journey.totalDurationSeconds,
         totalDistanceMeters: journey.totalDistanceMeters,
         planningQuality: journey.planningQuality,

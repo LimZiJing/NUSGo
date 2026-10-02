@@ -10,8 +10,8 @@ const destination = { kind: 'stop', id: 'B' } as const
 const transit = {
   index: {
     stopById: new Map([
-      ['A', { id: 'A' }],
-      ['B', { id: 'B' }],
+      ['A', { id: 'A', longitude: 103.77, latitude: 1.29 }],
+      ['B', { id: 'B', longitude: 103.771, latitude: 1.291 }],
     ]),
     routeById: new Map([
       ['R1', { id: 'R1', stopIds: ['A', 'B'] }],
@@ -23,6 +23,7 @@ const venues = {}
 
 function createCase(
   expected: JourneyBenchmarkCase['expected'],
+  durationBoundsSeconds?: JourneyBenchmarkCase['durationBoundsSeconds'],
 ): JourneyBenchmarkCase {
   return {
     id: 'fixture',
@@ -31,6 +32,7 @@ function createCase(
     destination,
     arrivalSeconds: 60,
     expected,
+    ...(durationBoundsSeconds ? { durationBoundsSeconds } : {}),
     searchInput: undefined as unknown as JourneyBenchmarkCase['searchInput'],
   }
 }
@@ -108,6 +110,65 @@ describe('validateJourneyBenchmarkOutcome', () => {
     )
 
     expect(result.valid).toBe(true)
+    expect(result.result).toMatchObject({ waitingSeconds: 10, rideSeconds: 80, routeIds: ['R1'] })
+  })
+
+  it('rejects geometry that does not meet the Journey endpoints', () => {
+    const journey = {
+      ...createWalkJourney(),
+      legs: [{
+        ...createWalkJourney().legs[0],
+        geometry: { type: 'LineString', coordinates: [[103.78, 1.3], [103.771, 1.291]] },
+      }],
+    }
+    const result = validateJourneyBenchmarkOutcome(
+      { kind: 'journey', journey },
+      createCase({ outcome: 'journey' }),
+      transit,
+      venues,
+    )
+
+    expect(result.errors).toContain('leg 1 geometry does not start near its from endpoint')
+  })
+
+  it('checks exact route selection for tie cases only when expected', () => {
+    const journey: Journey = {
+      ...createWalkJourney(),
+      legs: [{
+        mode: 'shuttle',
+        from: origin,
+        to: destination,
+        routeId: 'R1',
+        boardingStopId: 'A',
+        alightingStopId: 'B',
+        waitingSeconds: 10,
+        rideSeconds: 80,
+        durationSeconds: 90,
+        distanceMeters: 1200,
+        geometry: { type: 'LineString', coordinates: [[103.77, 1.29], [103.771, 1.291]] },
+      }],
+      totalDurationSeconds: 90,
+      totalDistanceMeters: 1200,
+    }
+    const result = validateJourneyBenchmarkOutcome(
+      { kind: 'journey', journey },
+      createCase({ outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'], routeIds: ['R2'] }),
+      transit,
+      venues,
+    )
+
+    expect(result.errors).toContain('expected routes R2; got R1')
+  })
+
+  it('enforces an optional Journey duration bound', () => {
+    const result = validateJourneyBenchmarkOutcome(
+      { kind: 'journey', journey: createWalkJourney() },
+      createCase({ outcome: 'journey' }, { max: 40 }),
+      transit,
+      venues,
+    )
+
+    expect(result.errors).toContain('journey totalDurationSeconds exceeds the maximum 40')
   })
 
   it('accepts an explicit no-route result only when the case expects one', () => {

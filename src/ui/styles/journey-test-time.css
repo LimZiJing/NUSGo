@@ -64,12 +64,17 @@
   .map-control-stack > .journey-test-time-control {
     position: absolute;
     z-index: 14;
-    top: max(64px, calc(env(safe-area-inset-top, 0px) + 64px));
-    right: max(12px, calc(env(safe-area-inset-right, 0px) + 12px));
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 56px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     width: min(240px, calc(100vw - 88px));
   }
 
   .journey-test-time-panel {
+    box-sizing: border-box;
+    width: 100%;
     max-height: 50dvh;
     overflow-y: auto;
   }

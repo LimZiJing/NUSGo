@@ -10,6 +10,10 @@
   font: 10px/14px var(--sans);
 }
 
+.map .maplibregl-ctrl-bottom-right > .navus-map-attribution {
+  margin-bottom: 0;
+}
+
 .map .navus-map-attribution a {
   color: inherit;
   text-decoration: none;

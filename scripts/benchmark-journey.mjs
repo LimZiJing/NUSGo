@@ -230,12 +230,68 @@ async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, mo
   return result
 }
 
-async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixtures, modules, options) {
+function createBenchmarkProgress(totalCases) {
+  const isInteractive = Boolean(process.stderr.isTTY && totalCases > 0)
+  const barWidth = 12
+  let completedCases = 0
+  let currentStatus = 'Preparing benchmark'
+  let hasRendered = false
+  let finished = false
+
+  function render() {
+    if (!isInteractive || finished) return
+
+    const ratio = Math.min(1, completedCases / totalCases)
+    const filledWidth = Math.floor(ratio * barWidth)
+    const bar = `${'#'.repeat(filledWidth)}${'-'.repeat(barWidth - filledWidth)}`
+    const percentage = Math.floor(ratio * 100)
+    const summary = `[${bar}] ${percentage}% ${completedCases}/${totalCases}`
+    const terminalWidth = process.stderr.columns ?? 80
+    const statusWidth = Math.max(0, terminalWidth - summary.length - 1)
+    const status = currentStatus.length > statusWidth
+      ? statusWidth > 1
+        ? `${currentStatus.slice(0, statusWidth - 1)}…`
+        : ''
+      : currentStatus
+
+    process.stderr.write(`\r\x1B[2K${summary}${status ? ` ${status}` : ''}`)
+    hasRendered = true
+  }
+
+  return {
+    update(status) {
+      currentStatus = status
+      render()
+    },
+    completeCase(outcome) {
+      completedCases = Math.min(totalCases, completedCases + 1)
+      currentStatus = `${currentStatus} | ${outcome}`
+      render()
+    },
+    skipCases(count, reason) {
+      completedCases = Math.min(totalCases, completedCases + count)
+      currentStatus = reason
+      render()
+    },
+    finish() {
+      if (finished) return
+      finished = true
+      if (isInteractive && hasRendered) process.stderr.write('\r\x1B[2K\n')
+    },
+  }
+}
+
+async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixtures, modules, options, progress) {
   const isSearch = mode === 'offline'
   const makeRunnerName = isSearch ? 'createSearchRunner' : 'createJourneyRunner'
   const caseRuns = []
+  const adapterId = loadedAdapter.adapter.id.length > 14
+    ? `${loadedAdapter.adapter.id.slice(0, 13)}…`
+    : loadedAdapter.adapter.id
 
-  for (const benchmarkCase of caseDefs) {
+  for (const [caseIndex, benchmarkCase] of caseDefs.entries()) {
+    const casePosition = `${caseIndex + 1}/${caseDefs.length}`
+    progress.update(`${adapterId} | ${mode} | case ${casePosition} | setup`)
     let runner
     let failure = null
     try {
@@ -248,6 +304,10 @@ async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixt
     const measuredSamples = []
     if (runner) {
       for (let index = 0; index < options.warmups + options.samples; index += 1) {
+        const runPosition = index < options.warmups
+          ? `warmup ${index + 1}/${options.warmups}`
+          : `sample ${index - options.warmups + 1}/${options.samples}`
+        progress.update(`${adapterId} | ${mode} | case ${casePosition} | ${runPosition}`)
         try {
           const record = await measureRun(runner, mode, adapterContext.routeEngine, benchmarkCase, fixtures, modules)
           if (!record.validation.valid) {
@@ -267,6 +327,7 @@ async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixt
       samples: measuredSamples,
       ...(failure ? { setupError: failure } : {}),
     })
+    progress.completeCase(failure ? 'failed' : 'complete')
   }
 
   const report = modules.createJourneyBenchmarkModeReport(caseRuns, options.samples)
@@ -371,6 +432,7 @@ async function main() {
     },
   })
   let loadedAdapters = []
+  let progress
   const report = {
     benchmark: 'NavUS Journey planner benchmark',
     baseline: getGitIdentity(),
@@ -425,9 +487,16 @@ async function main() {
       }
     }
 
+    const selectedModeCount = options.mode === 'all' ? 2 : 1
+    const totalCases = adapterLoadResults.length * selectedModeCount * caseDefs.length
+    progress = createBenchmarkProgress(totalCases)
+    progress.update('Starting benchmark cases')
+
     report.adapters = []
     for (const entry of adapterLoadResults) {
       if (entry.error) {
+        const skippedCases = selectedModeCount * caseDefs.length
+        progress.skipCases(skippedCases, `adapter load failed; skipped ${skippedCases} cases`)
         report.adapters.push({
           id: entry.path,
           label: entry.path,
@@ -442,10 +511,10 @@ async function main() {
       const { adapter, path } = entry.loaded
       const adapterReport = { id: adapter.id, label: adapter.label, path }
       adapterReport.searchOnlyOffline = options.mode === 'all' || options.mode === 'offline'
-        ? await benchmarkMode(entry.loaded, 'offline', caseDefs, adapterContext, fixtures, modules, options)
+        ? await benchmarkMode(entry.loaded, 'offline', caseDefs, adapterContext, fixtures, modules, options, progress)
         : unavailableMode('Excluded by --mode=local.', 'offline', options)
       adapterReport.endToEndLocalValhalla = options.mode === 'all' || options.mode === 'local'
-        ? await benchmarkMode(entry.loaded, 'local', caseDefs, adapterContext, fixtures, modules, options)
+        ? await benchmarkMode(entry.loaded, 'local', caseDefs, adapterContext, fixtures, modules, options, progress)
         : unavailableMode('Excluded by --mode=offline.', 'local', options)
       if (
         adapterReport.searchOnlyOffline.status === 'partial' ||
@@ -462,8 +531,10 @@ async function main() {
         .map((adapter) => ({ id: adapter.id, cases: adapter.endToEndLocalValhalla.cases }))),
     }
     if (modules.shouldFailBenchmarkRun(report)) process.exitCode = 2
+    progress.finish()
     printReport(report)
   } finally {
+    progress?.finish()
     for (const { adapter } of loadedAdapters) await adapter.dispose?.()
     await vite.close()
   }

@@ -6,15 +6,13 @@
   .map-control-stack > .journey-test-time-control {
     grid-area: test;
     justify-self: start;
-  }
-
-  .journey-test-time-control {
     width: max-content;
+    text-align: left;
   }
 
   .journey-test-time-panel {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 8px);
     left: 0;
     z-index: 14;
     box-sizing: border-box;

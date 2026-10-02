@@ -60,6 +60,7 @@
 
   .map-control-stack > .theme-toggle {
     grid-area: theme;
+    justify-self: start;
   }
 
   .map-control-stack > .location-control {

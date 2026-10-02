@@ -138,6 +138,69 @@ function createInput(
   }
 }
 
+function createFiveStopConnectorInput(
+  walkingConnections: readonly WalkingJourneyConnection[],
+  rideSecondsByPair: ReadonlyMap<string, number>,
+): PlanJourneyInput {
+  const stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-D', 'STOP-E']
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds }],
+    stops: stopIds.map((id, index) => ({
+      id,
+      longName: 'Stop ' + id.slice(-1),
+      shortName: id.slice(-1),
+      latitude: 1,
+      longitude: 103 + index * 0.001,
+      services: ['A1'],
+    })),
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      geometry: {
+        type: 'LineString',
+        coordinates: stopIds.map((_, index) => [103 + index * 0.001, 1]),
+      },
+    }],
+  })
+  const generatedTiming = generateShuttleTimingData(network, routeGeometry, '2026-09-22')
+  const shuttleTiming = {
+    ...generatedTiming,
+    records: generatedTiming.records.map((record) => {
+      const rideSeconds = rideSecondsByPair.get(record.fromStopId + '>' + record.toStopId)
+      return rideSeconds === undefined
+        ? record
+        : {
+          ...record,
+          rideSeconds,
+          rideSecondsLowerBound: rideSeconds,
+          rideSecondsUpperBound: rideSeconds,
+        }
+    }),
+  }
+
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.005, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming,
+    walkingConnections,
+    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+  }
+}
+
 function createSameRouteInput(): PlanJourneyInput {
   const network = validateTransitNetwork({
     version: 1,
@@ -419,6 +482,52 @@ function createCompleteAlternativeInput(): PlanJourneyInput {
 }
 
 describe('planJourney', () => {
+  it('caps venue-origin connectors to the three shortest walking durations', () => {
+    const input = createFiveStopConnectorInput([
+      walking(origin, stopA, 1),
+      walking(origin, stopB, 2),
+      walking(origin, stopC, 3),
+      walking(origin, { kind: 'stop', id: 'STOP-D' }, 4),
+      walking(stopE, destination, 1),
+      walking(origin, destination, 10_000),
+    ], new Map([
+      ['STOP-A>STOP-E', 900],
+      ['STOP-B>STOP-E', 800],
+      ['STOP-C>STOP-E', 700],
+      ['STOP-D>STOP-E', 1],
+    ]))
+
+    const journey = planJourney(input)
+
+    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+      boardingStopId: 'STOP-C',
+      alightingStopId: 'STOP-E',
+    })
+  })
+
+  it('caps venue-destination connectors to the three shortest walking durations', () => {
+    const input = createFiveStopConnectorInput([
+      walking(origin, stopA, 1),
+      walking({ kind: 'stop', id: 'STOP-B' }, destination, 1),
+      walking({ kind: 'stop', id: 'STOP-C' }, destination, 2),
+      walking({ kind: 'stop', id: 'STOP-D' }, destination, 3),
+      walking(stopE, destination, 4),
+      walking(origin, destination, 10_000),
+    ], new Map([
+      ['STOP-A>STOP-B', 900],
+      ['STOP-A>STOP-C', 800],
+      ['STOP-A>STOP-D', 700],
+      ['STOP-A>STOP-E', 1],
+    ]))
+
+    const journey = planJourney(input)
+
+    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+      boardingStopId: 'STOP-A',
+      alightingStopId: 'STOP-D',
+    })
+  })
+
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
     const journey = planJourney(createInput([
       walking(origin, stopA, 100),

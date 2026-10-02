@@ -76,6 +76,7 @@ interface ProjectedPoint {
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
+const MAX_VENUE_STOP_CONNECTORS = 3
 
 function endpointKey(endpoint: TripEndpoint): string {
   return `${endpoint.kind}:${endpoint.id}`
@@ -337,7 +338,7 @@ function collectConnectors(
       selectedByStop.set(stopId, candidate)
     }
   }
-  return [...selectedByStop.values()].sort(compareConnectors)
+  return [...selectedByStop.values()].sort(compareConnectors).slice(0, MAX_VENUE_STOP_CONNECTORS)
 }
 
 function buildCandidateDefinitions(input: PlanJourneyInput): readonly JourneyCandidateDefinition[] {

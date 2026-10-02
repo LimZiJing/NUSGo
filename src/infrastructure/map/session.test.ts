@@ -1236,7 +1236,7 @@ describe('MapSession', () => {
       (popup as { remove: ReturnType<typeof vi.fn> }).remove.mock.calls.length === 1
     ))).toBe(true)
     expect(map.off).toHaveBeenCalled()
-    expect(map.removeControl).toHaveBeenCalledOnce()
+    expect(map.removeControl).toHaveBeenCalledTimes(2)
     expect(map.remove).toHaveBeenCalledOnce()
 
     const markerCount = map.addedMarkers.length

@@ -112,7 +112,7 @@ describe('map lifecycle style readiness', () => {
     const map = fakeMapState.maps.at(-1) as FakeMap
 
     expect(map.options).toEqual(expect.objectContaining({
-      attributionControl: { compact: false },
+      attributionControl: false,
     }))
 
     lifecycle.dispose()
@@ -252,7 +252,7 @@ describe('map lifecycle style readiness', () => {
 
     expect(onMapError).toHaveBeenCalledOnce()
     expect(onEmptyMapClick).toHaveBeenCalledOnce()
-    expect(map.removeControl).toHaveBeenCalledOnce()
+    expect(map.removeControl).toHaveBeenCalledTimes(2)
     expect(map.remove).toHaveBeenCalledOnce()
     expect(map.off).toHaveBeenCalledWith('error', expect.any(Function))
     expect(map.off).toHaveBeenCalledWith('click', expect.any(Function))

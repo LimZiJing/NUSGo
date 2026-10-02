@@ -249,6 +249,19 @@ describe('navigation session', () => {
     )
   })
 
+  it('notifies the shell when a map stop endpoint action is used', async () => {
+    const onMapStopInteraction = vi.fn()
+    const dependencies = createDependencies({ onMapStopInteraction })
+    const session = createNavigationSession(dependencies)
+
+    await session.start(new AbortController().signal)
+
+    const setMapEndpoint = vi.mocked(dependencies.map.loadTransitData).mock.calls[0]?.[2]
+    setMapEndpoint?.('origin', { kind: 'stop', id: 'STOP-A' })
+
+    expect(onMapStopInteraction).toHaveBeenCalledWith('STOP-A')
+  })
+
   it('publishes Journey loading and ready states for complete endpoints', async () => {
     const planning = createDeferred<Journey | null>()
     const journeyPlanner = vi.fn(() => planning.promise)

@@ -18,6 +18,7 @@ export interface NavigationSessionMountDependencies {
   readonly journeyPlanner: JourneyPlanningService
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
+  readonly onMapStopInteraction?: (stopId: string) => void
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
 
@@ -44,6 +45,7 @@ export function createNavigationSessionMount(
     loadTransit: dependencies.loadTransit,
     journeyPlanner: dependencies.journeyPlanner,
     locationTracker: dependencies.locationTracker,
+    onMapStopInteraction: dependencies.onMapStopInteraction,
   })
 
   const controller = new AbortController()

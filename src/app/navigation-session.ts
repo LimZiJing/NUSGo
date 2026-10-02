@@ -70,6 +70,7 @@ export interface NavigationSessionDependencies {
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
   readonly journeyPlanner?: JourneyPlanningService
   readonly locationTracker: LocationTracker
+  readonly onMapStopInteraction?: (stopId: string) => void
 }
 
 export type NavigationSessionListener = () => void
@@ -378,7 +379,10 @@ export function createNavigationSession(
       dependencies.map.loadTransitData(
         data,
         reconciledSelection,
-        setTripEndpointCommand,
+        (role, endpoint) => {
+          setTripEndpointCommand(role, endpoint)
+          if (endpoint.kind === 'stop') dependencies.onMapStopInteraction?.(endpoint.id)
+        },
       )
       syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
     } catch (error) {

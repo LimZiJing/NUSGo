@@ -1,0 +1,165 @@
+.navigation-column,
+.navigation-view-stack {
+  display: contents;
+}
+
+.navigation-view[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .navigation-column {
+    position: absolute;
+    z-index: 20;
+    inset: 0 auto 0 0;
+    display: flex;
+    width: clamp(320px, 28vw, 380px);
+    max-height: none;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border-subtle);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-panel);
+    pointer-events: auto;
+  }
+
+  .navigation-column > .main-navigation {
+    display: grid;
+    flex: 0 0 auto;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-raised);
+  }
+
+  .navigation-column > .main-navigation button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: var(--radius-card);
+    color: var(--text-secondary-strong);
+    background: transparent;
+    font: 600 14px/1.2 var(--sans);
+    cursor: pointer;
+  }
+
+  .navigation-column > .main-navigation button[aria-current='page'] {
+    color: var(--text-contrast);
+    background: var(--surface-subtle);
+  }
+
+  .navigation-column > .main-navigation button:focus-visible {
+    outline: 3px solid var(--focus-ring-soft);
+    outline-offset: 2px;
+  }
+
+  .navigation-view-stack {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .navigation-view {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .navigation-column .contextual-panel,
+  .navigation-column .mobile-stops-sheet,
+  .navigation-column .trip-controls {
+    position: static;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface-raised);
+    box-shadow: none;
+  }
+
+  .navigation-column .contextual-panel {
+    display: grid;
+    align-content: start;
+  }
+
+  .navigation-column .mobile-explore-segments,
+  .navigation-column .mobile-stops-list-selector {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 0;
+    border-radius: var(--radius-card);
+    background: var(--surface-segmented-control);
+  }
+
+  .navigation-column .mobile-explore-segments button,
+  .navigation-column .mobile-stops-list-selector button {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    min-height: var(--control-height-lg);
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 9px;
+    color: var(--text-secondary);
+    background: transparent;
+    font: 600 14px/1.2 var(--sans);
+    cursor: pointer;
+  }
+
+  .navigation-column .mobile-explore-segments button[aria-pressed='true'],
+  .navigation-column .mobile-stops-list-selector button[aria-pressed='true'] {
+    color: var(--text-contrast);
+  }
+
+  .navigation-column .mobile-explore-segments button[aria-pressed='true']::before,
+  .navigation-column .mobile-stops-list-selector button[aria-pressed='true']::before {
+    position: absolute;
+    z-index: -1;
+    inset: 3px;
+    border-radius: 7px;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-soft);
+    content: '';
+    pointer-events: none;
+  }
+
+  .navigation-column .mobile-explore-segments button:hover,
+  .navigation-column .mobile-stops-list-selector button:hover {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .navigation-column .mobile-sheet-handle-row {
+    display: none !important;
+  }
+
+  .navigation-column .trip-controls-body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .navigation-column .route-control-mobile {
+    display: block;
+  }
+
+  .navigation-column .route-timeline-card,
+  .navigation-column .route-timeline-scroll {
+    max-height: none;
+  }
+
+  .map-control-stack {
+    left: calc(var(--desktop-navigation-width, 0px) + 12px);
+  }
+}

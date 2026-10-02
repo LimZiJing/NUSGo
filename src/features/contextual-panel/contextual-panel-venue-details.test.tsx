@@ -81,7 +81,6 @@ function renderVenueDetails({
       mobileViewport={mobileViewport}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => undefined}
       onOpenShuttle={() => undefined}
       onNavigateToVenue={() => undefined}
       onFocusStop={() => undefined}

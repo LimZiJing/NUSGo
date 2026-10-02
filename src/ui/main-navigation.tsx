@@ -1,14 +1,14 @@
 import type { Ref } from 'react'
-import { MOBILE_TABS, type MobileTab } from './mobile-tab'
+import { NAVIGATION_VIEWS, type NavigationView } from './navigation-view'
 
-interface MobileTabBarProps {
-  readonly activeTab: MobileTab
-  readonly onSelectTab: (tab: MobileTab) => void
+interface MainNavigationProps {
+  readonly activeView: NavigationView
+  readonly onSelectView: (view: NavigationView) => void
   readonly containerRef?: Ref<HTMLElement>
 }
 
-function MobileTabIcon({ tab }: { readonly tab: MobileTab }) {
-  if (tab === 'explore') {
+function NavigationIcon({ view }: { readonly view: NavigationView }) {
+  if (view === 'explore') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <circle cx="12" cy="12" r="9.5" />
@@ -21,7 +21,7 @@ function MobileTabIcon({ tab }: { readonly tab: MobileTab }) {
     )
   }
 
-  if (tab === 'stops') {
+  if (view === 'stops') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
@@ -49,27 +49,27 @@ function MobileTabIcon({ tab }: { readonly tab: MobileTab }) {
   )
 }
 
-export function MobileTabBar({
-  activeTab,
-  onSelectTab,
+export function MainNavigation({
+  activeView,
+  onSelectView,
   containerRef,
-}: MobileTabBarProps) {
+}: MainNavigationProps) {
   return (
     <nav
-      className="mobile-tab-bar"
+      className="main-navigation"
       aria-label="Map views"
       ref={containerRef}
     >
-      {MOBILE_TABS.map(({ id, label, panelId }) => (
+      {NAVIGATION_VIEWS.map(({ id, label, panelId }) => (
         <button
           type="button"
           key={id}
           aria-controls={panelId}
-          aria-current={activeTab === id ? 'page' : undefined}
-          onClick={() => onSelectTab(id)}
+          aria-current={activeView === id ? 'page' : undefined}
+          onClick={() => onSelectView(id)}
         >
           <span className="mobile-tab-icon">
-            <MobileTabIcon tab={id} />
+            <NavigationIcon view={id} />
           </span>
           <span className="mobile-tab-label">{label}</span>
         </button>

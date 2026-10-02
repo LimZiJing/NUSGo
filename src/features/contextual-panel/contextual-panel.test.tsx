@@ -26,7 +26,6 @@ function renderPanel(
       renderShuttleRoutes={() => <span>Showing all 1 shuttle routes and all 2 shuttle stops.</span>}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => undefined}
       onOpenShuttle={() => undefined}
       onBack={() => undefined}
       onClose={() => undefined}
@@ -45,13 +44,13 @@ describe('ContextualPanel', () => {
     expect(markup).not.toContain('Browse shuttle routes')
   })
 
-  it('keeps the desktop Explore NUS root actions', () => {
+  it('uses the shared Explore segments on desktop', () => {
     const markup = renderPanel(createInitialContextualPanelState(), venues, false)
 
-    expect(markup).toContain('>Explore NUS</h2>')
-    expect(markup).toContain('Find a venue')
-    expect(markup).toContain('Browse shuttle routes')
-    expect(markup).not.toContain('mobile-explore-segments')
+    expect(markup).toContain('mobile-explore-segments')
+    expect(markup).toContain('Find venue</button>')
+    expect(markup).toContain('>Shuttle routes</button>')
+    expect(markup).not.toContain('Explore NUS')
   })
 
   it('shows venue search without a route shortcut', () => {
@@ -61,7 +60,7 @@ describe('ContextualPanel', () => {
     expect(markup).toContain('>Find a venue</h2>')
     expect(markup).toContain('aria-labelledby="contextual-panel-heading"')
     expect(markup).toContain('Search for a venue')
-    expect(markup).not.toContain('Browse shuttle routes')
+    expect(markup).toContain('>Shuttle routes</button>')
     expect(markup).not.toContain('mobile-ghost-back-button')
     expect(markup).not.toContain('Search by venue code or room name.')
   })

@@ -118,7 +118,6 @@ function PanelHarness({
       onQueryChange={(query) => dispatch({ type: 'set-query', query })}
       onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
       onNavigateToVenue={onNavigateToVenue}
-      onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
       onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
       onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
       onBack={() => dispatch({ type: 'back' })}
@@ -164,7 +163,6 @@ function ShuttleRouteNavigationHarness() {
       )}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => dispatch({ type: 'open-venue-search' })}
       onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
       onOpenShuttleRouteDetail={() => dispatch({ type: 'open-shuttle-route-detail' })}
       onShowAllRoutes={() => {
@@ -201,7 +199,6 @@ function RootSheetEscapeHarness() {
       onMinimize={() => setMinimized(true)}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => undefined}
       onOpenShuttle={() => undefined}
       onBack={() => undefined}
       onClose={() => undefined}
@@ -243,7 +240,6 @@ function MobileStopPopupHarness() {
         )}
         onQueryChange={() => undefined}
         onVenueSelect={() => undefined}
-        onOpenVenueSearch={() => undefined}
         onOpenShuttle={() => undefined}
         onFocusStop={() => popupActionRef.current?.focus()}
         onLeaveMobileRoutes={() => undefined}
@@ -303,7 +299,6 @@ function MinimizedPanelHarness() {
       onDetentChange={setDetent}
       onQueryChange={(query) => setState((current) => ({ ...current, query }))}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => undefined}
       onOpenShuttle={() => undefined}
       onBack={() => undefined}
       onClose={() => undefined}
@@ -332,10 +327,10 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<ShuttleRouteNavigationHarness />)
 
-    const browseRoutes = screen.getByRole('button', { name: 'Browse shuttle routes' })
+    const browseRoutes = screen.getByRole('button', { name: 'Shuttle routes' })
     await user.click(browseRoutes)
     const routeCard = await screen.findByRole('button', { name: 'Route A1' })
-    await waitFor(() => expect(document.activeElement).toBe(routeCard))
+    await waitFor(() => expect(document.activeElement).toBe(browseRoutes))
 
     await user.click(routeCard)
     expect(await screen.findByRole('heading', { name: 'A1 Shuttle' })).toBeTruthy()
@@ -356,12 +351,12 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<ShuttleRouteNavigationHarness />)
 
-    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     await user.click(await screen.findByRole('button', { name: 'Route A1' }))
     await screen.findByRole('heading', { name: 'A1 Shuttle' })
     await user.click(screen.getByRole('button', { name: 'Close map context' }))
 
-    const browseRoutes = await screen.findByRole('button', { name: 'Browse shuttle routes' })
+    const browseRoutes = await screen.findByRole('button', { name: 'Shuttle routes' })
     await waitFor(() => expect(document.activeElement).toBe(browseRoutes))
     await user.click(browseRoutes)
     expect((await screen.findByRole('button', { name: 'Route A1' })).getAttribute('aria-pressed'))
@@ -538,7 +533,6 @@ describe('ContextualPanel accessibility workflows', () => {
       ),
       onQueryChange: () => undefined,
       onVenueSelect: () => undefined,
-      onOpenVenueSearch: () => undefined,
       onOpenShuttle: () => undefined,
       onBack: () => undefined,
       onClose: () => undefined,
@@ -620,7 +614,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
     expect(screen.getByText('Search for a venue')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Browse shuttle routes' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Shuttle routes' })).toBeTruthy()
     expect(screen.queryByText('Search by venue code or room name.')).toBeNull()
   })
 
@@ -643,7 +637,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.queryByRole('button', { name: 'Back to venue search' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Browse shuttle routes' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Shuttle routes' })).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Find venue' }))
     const restoredSearch = await screen.findByRole('searchbox', { name: 'Find a venue' })
@@ -667,11 +661,11 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     render(<PanelHarness mobileViewport={false} />)
     await user.click(screen.getByRole('button', { name: 'Close map context' }))
-    const opener = screen.getByRole('button', { name: 'Browse shuttle routes' })
+    const opener = screen.getByRole('button', { name: 'Shuttle routes' })
 
     await user.click(opener)
     const routeSelect = await screen.findByRole('combobox', { name: 'Shuttle route' })
-    await waitFor(() => expect(document.activeElement).toBe(routeSelect))
+    await waitFor(() => expect(document.activeElement).toBe(opener))
     expect(screen.queryByText('Shuttle routes opened.')).toBeNull()
     expect(screen.getByText(/Showing all 1 shuttle routes/)).toBeTruthy()
 
@@ -679,15 +673,15 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByText(/Route A1 selected\./)).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back to previous map context' }))
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Shuttle routes' })))
 
-    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     await user.keyboard('{Escape}')
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Shuttle routes' })))
 
-    await user.click(screen.getByRole('button', { name: 'Browse shuttle routes' }))
+    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     await user.click(screen.getByRole('button', { name: 'Close map context' }))
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Browse shuttle routes' })))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Shuttle routes' })))
   })
 
   it('switches mobile Explore segments and restores focus to the selected segment', async () => {

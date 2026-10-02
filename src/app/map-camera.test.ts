@@ -17,6 +17,7 @@ function measurements(overrides: Partial<MapOverlayMeasurements> = {}): MapOverl
     contextualSheetHeight: 184,
     tripCardVisible: true,
     contextualSheetVisible: true,
+    desktopNavigationWidth: 0,
     ...overrides,
   }
 }

@@ -14,7 +14,10 @@ import {
   type MobileStopSheetSelection,
 } from '../features/shuttle-browsing/mobile-stops-sheet'
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
-import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
+import {
+  getMobileStopsOverview,
+  getMobileStopsWithinNearbyRadius,
+} from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
 import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-stop-arrivals'
 import { LocationControl } from '../ui/location-control'
@@ -48,9 +51,19 @@ import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
+import type { LocationTrackingState } from '../domain/location/types'
 import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
+
+function hasSuccessfulLocation(location: LocationTrackingState): boolean {
+  const fix = location.latestFix
+  return location.status === 'tracking' && fix !== null && isValidLocationCoordinates(
+    fix.longitude,
+    fix.latitude,
+  )
+}
 
 function App() {
   const mapShellRef = useRef<HTMLElement>(null)
@@ -85,6 +98,7 @@ function App() {
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
   const initialNearbyLocationRequestedRef = useRef(false)
+  const pendingNearbyTimingExpansionRef = useRef(false)
   const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
     top: 0,
     right: 0,
@@ -195,16 +209,6 @@ function App() {
   const activeSheetDetent = mobileNavigation.sheets[activeTab].detent
   const activeSheetExpanded = activeSheetDetent !== 'collapsed'
   const dismissMapPopup = commands.dismissMapPopup
-
-  useEffect(() => {
-    if (
-      !session || !isMobileViewport || activeTab !== 'stops' ||
-      mobileStopView.list !== 'nearby' || state.location.status !== 'disabled' ||
-      initialNearbyLocationRequestedRef.current
-    ) return
-    initialNearbyLocationRequestedRef.current = true
-    session.locateUser()
-  }, [activeTab, isMobileViewport, mobileStopView.list, session, state.location.status])
 
   const getActiveMobileSheet = useCallback((): HTMLElement | null => {
     if (mobileNavigation.activeTab === 'plan') return tripControlsRef.current
@@ -445,9 +449,9 @@ function App() {
     : transitIndex?.stopById.get(mobileStopView.focusedStopId)
   const hasLocationError = ['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)
   const locationFix = hasLocationError ? null : state.location.latestFix
-  const overviewStopEntries = useMemo(() => transitIndex ? getMobileStopsOverview(
+  const nearbyStopEntries = useMemo(() => transitIndex ? getMobileStopsOverview(
     transitIndex,
-    mobileStopView.list,
+    'nearby',
     mapCenter,
     locationFix,
     mobileStopView.favoriteStopIds,
@@ -455,7 +459,26 @@ function App() {
     locationFix,
     mapCenter,
     mobileStopView.favoriteStopIds,
+    transitIndex,
+  ])
+  const locationNearbyStopEntries = useMemo(() => {
+    if (!transitIndex || !locationFix) return null
+    return getMobileStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
+  }, [locationFix, transitIndex])
+  const overviewStopEntries = useMemo(() => mobileStopView.list === 'nearby'
+    ? nearbyStopEntries
+    : transitIndex ? getMobileStopsOverview(
+      transitIndex,
+      'favourites',
+      mapCenter,
+      locationFix,
+      mobileStopView.favoriteStopIds,
+    ) : [], [
+    locationFix,
+    mapCenter,
+    mobileStopView.favoriteStopIds,
     mobileStopView.list,
+    nearbyStopEntries,
     transitIndex,
   ])
   const arrivalStopRequests = useMemo(() => {
@@ -509,8 +532,56 @@ function App() {
     ),
     distanceMeters,
     favorite: mobileStopView.favoriteStopIds.includes(stop.id),
-    expanded: !mobileStopView.collapsedStopIds.includes(stop.id),
+    expanded: mobileStopView.expandedStopIds[mobileStopView.list].includes(stop.id),
   })) : []
+  const expandNearbyTimings = useCallback((): boolean => {
+    if (locationNearbyStopEntries === null) return false
+    dispatchMobileStopView({
+      type: 'set-nearby-expanded',
+      stopIds: locationNearbyStopEntries.map(({ stop }) => stop.id),
+    })
+    return true
+  }, [dispatchMobileStopView, locationNearbyStopEntries])
+
+  const tryExpandNearbyTimings = useCallback((): boolean => {
+    if (!hasSuccessfulLocation(state.location) || !expandNearbyTimings()) return false
+    pendingNearbyTimingExpansionRef.current = false
+    return true
+  }, [expandNearbyTimings, state.location])
+
+  const requestLocationWithNearbyExpansion = useCallback((locateUser: () => void): void => {
+    if (isMobileViewport) {
+      pendingNearbyTimingExpansionRef.current = true
+      tryExpandNearbyTimings()
+    }
+    locateUser()
+  }, [isMobileViewport, tryExpandNearbyTimings])
+
+  useEffect(() => {
+    if (!pendingNearbyTimingExpansionRef.current) return
+    if (['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)) {
+      pendingNearbyTimingExpansionRef.current = false
+      return
+    }
+    tryExpandNearbyTimings()
+  }, [state.location, tryExpandNearbyTimings])
+
+  useEffect(() => {
+    if (
+      !session || !isMobileViewport || activeTab !== 'stops' ||
+      mobileStopView.list !== 'nearby' || state.location.status !== 'disabled' ||
+      initialNearbyLocationRequestedRef.current
+    ) return
+    initialNearbyLocationRequestedRef.current = true
+    requestLocationWithNearbyExpansion(session.locateUser)
+  }, [
+    activeTab,
+    isMobileViewport,
+    mobileStopView.list,
+    requestLocationWithNearbyExpansion,
+    session,
+    state.location.status,
+  ])
   const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
@@ -561,7 +632,7 @@ function App() {
             }}
             topOffset={mapInsets.top || 76}
             searching={state.location.status === 'requesting'}
-            onLocate={commands.locateUser}
+            onLocate={() => requestLocationWithNearbyExpansion(commands.locateUser)}
           />
           <aside
             className="map-legend"

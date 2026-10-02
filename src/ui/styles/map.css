@@ -42,11 +42,13 @@
     right: auto;
     left: 12px;
     display: grid;
-    grid-template-columns: max-content max-content;
+    grid-template-columns: max-content;
     grid-template-areas:
-      'legend legend'
-      'location theme';
-    gap: 12px;
+      'legend'
+      'location'
+      'theme'
+      'test';
+    gap: 8px;
     align-items: start;
   }
 

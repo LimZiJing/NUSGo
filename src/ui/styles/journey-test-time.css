@@ -3,16 +3,23 @@
 }
 
 @media (min-width: 769px) {
-  .map-control-stack {
-    grid-template-areas:
-      'legend legend'
-      'location theme'
-      'test test';
-  }
-
   .map-control-stack > .journey-test-time-control {
     grid-area: test;
     justify-self: start;
+  }
+
+  .journey-test-time-control {
+    width: max-content;
+  }
+
+  .journey-test-time-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 14;
+    box-sizing: border-box;
+    width: min(280px, calc(100vw - 24px));
+    margin-top: 0;
   }
 }
 

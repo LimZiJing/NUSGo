@@ -57,7 +57,7 @@ export function BusStopTimings({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   if (departures.length === 0 && scheduledDepartures.length === 0 && publicServices.length === 0) {
-    return <p>{liveArrivalMessage ?? 'No bus timings available.'}</p>
+    return <p className="mobile-stop-timings-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
 
   return (

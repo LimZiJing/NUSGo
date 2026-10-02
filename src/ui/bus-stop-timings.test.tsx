@@ -7,6 +7,18 @@ import { BusStopTimings } from './bus-stop-timings'
 afterEach(cleanup)
 
 describe('BusStopTimings', () => {
+  it('marks the empty timing state for muted card styling', () => {
+    render(
+      <BusStopTimings
+        departures={[]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('No bus timings available.').className).toBe('mobile-stop-timings-empty')
+  })
+
   it('shows reachable favourite stop nicknames beside an internal route', () => {
     render(
       <BusStopTimings

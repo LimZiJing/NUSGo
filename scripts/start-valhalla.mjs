@@ -30,6 +30,11 @@ async function isReady() {
 }
 
 async function main() {
+  if (await isReady()) {
+    console.log('Valhalla is already ready at http://127.0.0.1:8002')
+    return
+  }
+
   runCompose(['up', '-d'])
 
   const deadline = Date.now() + waitTimeoutMs

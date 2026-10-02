@@ -793,6 +793,12 @@
     margin: 0 7px 6px;
   }
 
+  .bus-stop-card .mobile-stop-timings-empty {
+    padding: 0 7px 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
   .bus-stop-card .mobile-stop-departure-row:last-child {
     border-bottom: 0;
   }

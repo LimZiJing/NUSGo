@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { TripEndpointControls } from './trip-endpoint-controls'
+import { PlanView } from './plan-view'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import {
@@ -30,7 +30,7 @@ function TripEndpointHarness() {
   const networkIndex = createTransitIndex(network)
 
   return (
-    <TripEndpointControls
+    <PlanView
       tripRequest={tripRequest}
       venues={venues}
       networkIndex={networkIndex}
@@ -52,7 +52,7 @@ describe('TripEndpointControls interactions', () => {
     function CollapsedHarness() {
       const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
       return (
-        <TripEndpointControls
+        <PlanView
           tripRequest={{ origin: null, destination: null }}
           venues={venues}
           networkIndex={createTransitIndex(createValidTransitNetwork())}
@@ -101,7 +101,7 @@ describe('TripEndpointControls interactions', () => {
       const [detent, setDetent] = useState<MobileSheetDetent>('partial')
       const [searchDetent, setSearchDetent] = useState<MobileSheetDetent>('partial')
       return (
-        <TripEndpointControls
+        <PlanView
           tripRequest={{ origin: null, destination: null }}
           venues={venues}
           networkIndex={createTransitIndex(createValidTransitNetwork())}
@@ -171,7 +171,7 @@ describe('TripEndpointControls interactions', () => {
     }
 
     const { rerender } = render(
-      <TripEndpointControls
+      <PlanView
         {...controls}
         tripRequest={{
           origin: { kind: 'venue', id: 'COM1-0210' },
@@ -181,7 +181,7 @@ describe('TripEndpointControls interactions', () => {
     )
 
     expect(screen.queryByText('Origin and destination are set.')).toBeNull()
-    rerender(<TripEndpointControls {...controls} tripRequest={{ origin: null, destination: null }} />)
+    rerender(<PlanView {...controls} tripRequest={{ origin: null, destination: null }} />)
     const validation = screen.getByText('Origin is required.')
     expect(validation).toBeTruthy()
     expect(within(validation.parentElement as HTMLElement)
@@ -215,7 +215,7 @@ describe('TripEndpointControls interactions', () => {
     }
     const networkIndex = createTransitIndex(createValidTransitNetwork())
     render(
-      <TripEndpointControls
+      <PlanView
         tripRequest={{
           origin: { kind: 'venue', id: 'COM1-0210' },
           destination: { kind: 'stop', id: 'STOP-A' },
@@ -261,7 +261,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport={false} />
+        <PlanView {...props} mobileViewport={false} />
       </>,
     )
 
@@ -274,7 +274,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport />
+        <PlanView {...props} mobileViewport />
       </>,
     )
     await waitFor(() => expect(document.activeElement).toBe(mapControl))
@@ -285,7 +285,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport={false} />
+        <PlanView {...props} mobileViewport={false} />
       </>,
     )
     rerender(
@@ -293,7 +293,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport />
+        <PlanView {...props} mobileViewport />
       </>,
     )
     await waitFor(() => expect(document.activeElement).toBe(contextualSearch))
@@ -305,7 +305,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport={false} />
+        <PlanView {...props} mobileViewport={false} />
       </>,
     )
     rerender(
@@ -313,7 +313,7 @@ describe('TripEndpointControls interactions', () => {
         <button type="button">Map control</button>
         <input aria-label="Contextual panel search" />
         <button type="button">Contextual action</button>
-        <TripEndpointControls {...props} mobileViewport />
+        <PlanView {...props} mobileViewport />
       </>,
     )
     await waitFor(() => expect(document.activeElement).toBe(contextualAction))
@@ -334,17 +334,17 @@ describe('TripEndpointControls interactions', () => {
       onClearDestinationEndpoint: () => undefined,
       onClearTrip: () => undefined,
     }
-    const { rerender } = render(<TripEndpointControls {...props} />)
+    const { rerender } = render(<PlanView {...props} />)
     const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
     destinationSearch.focus()
 
-    rerender(<TripEndpointControls {...props} expanded={false} mobileViewport={false} />)
+    rerender(<PlanView {...props} expanded={false} mobileViewport={false} />)
     await waitFor(() => expect(document.activeElement).toBe(destinationSearch))
   })
 
   it('labels a partial summary with the selected origin and a destination prompt', () => {
     render(
-      <TripEndpointControls
+      <PlanView
         tripRequest={{ origin: { kind: 'venue', id: 'COM1-0210' }, destination: null }}
         venues={venues}
         networkIndex={createTransitIndex(createValidTransitNetwork())}
@@ -364,7 +364,7 @@ describe('TripEndpointControls interactions', () => {
 
   it('labels a complete summary with both selected endpoint names', () => {
     render(
-      <TripEndpointControls
+      <PlanView
         tripRequest={{
           origin: { kind: 'venue', id: 'COM1-0210' },
           destination: { kind: 'stop', id: 'STOP-A' },

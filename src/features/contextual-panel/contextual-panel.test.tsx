@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ContextualPanel } from './contextual-panel'
+import { ExploreView } from './explore-view'
 import { createInitialContextualPanelState } from './state'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
@@ -18,7 +18,7 @@ function renderPanel(
   mobileViewport = true,
 ) {
   return renderToStaticMarkup(
-    <ContextualPanel
+    <ExploreView
       state={state}
       mobileViewport={mobileViewport}
       venues={venueData}

@@ -5,7 +5,7 @@ import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitNetworkInput } from '../../domain/transit/types'
 import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
 import { contextualPanelReducer, createInitialContextualPanelState } from './state'
-import { ContextualPanel } from './contextual-panel'
+import { ExploreView } from './explore-view'
 
 const venue: VenueLocation = {
   roomName: 'Seminar Room 3',
@@ -72,7 +72,7 @@ function renderVenueDetails({
   mobileViewport?: boolean
 } = {}): string {
   return renderToStaticMarkup(
-    <ContextualPanel
+    <ExploreView
       state={createVenueDetailState(code, selectedVenue)}
       venues={venues}
       transitIndex={transitIndex}

@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode, type RefObject } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ContextualPanel } from './contextual-panel'
+import { ExploreView } from './explore-view'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -100,7 +100,7 @@ function PanelHarness({
   }
 
   return (
-    <ContextualPanel
+    <ExploreView
       state={state}
       venues={venues}
       shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
@@ -129,7 +129,7 @@ function PanelHarness({
 }
 
 function ShuttleRouteNavigationHarness() {
-  const [state, setState] = useState<ContextualPanelState>({
+  const [state, setState] = useState<ExploreViewState>({
     ...createInitialContextualPanelState(),
     mode: 'neutral',
   })
@@ -139,7 +139,7 @@ function ShuttleRouteNavigationHarness() {
   }
 
   return (
-    <ContextualPanel
+    <ExploreView
       state={state}
       mobileViewport={false}
       venues={venues}
@@ -183,7 +183,7 @@ function RootSheetEscapeHarness() {
   const networkIndex = createTransitIndex(network)
 
   return (
-    <ContextualPanel
+    <ExploreView
       state={state}
       venues={venues}
       shuttleRoutesAvailable={networkIndex.routes.length > 0}
@@ -214,7 +214,7 @@ function MobileStopPopupHarness() {
   return (
     <>
       <button ref={popupActionRef} type="button">Popup action</button>
-      <ContextualPanel
+      <ExploreView
         state={state}
         venues={venues}
         shuttleRoutesAvailable
@@ -283,7 +283,7 @@ function MinimizedPanelHarness() {
   const networkIndex = createTransitIndex(network)
 
   return (
-    <ContextualPanel
+    <ExploreView
       state={state}
       venues={venues}
       shuttleRoutesAvailable={networkIndex.routes.length > 0}
@@ -541,7 +541,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const { rerender } = render(
       <>
         <input aria-label="Trip endpoint input" />
-        <ContextualPanel {...panelProps} minimized mobileViewport />
+        <ExploreView {...panelProps} minimized mobileViewport />
       </>,
     )
     const endpointInput = screen.getByRole('textbox', { name: 'Trip endpoint input' })
@@ -550,7 +550,7 @@ describe('ContextualPanel accessibility workflows', () => {
     rerender(
       <>
         <input aria-label="Trip endpoint input" />
-        <ContextualPanel {...panelProps} minimized={false} mobileViewport={false} />
+        <ExploreView {...panelProps} minimized={false} mobileViewport={false} />
       </>,
     )
 

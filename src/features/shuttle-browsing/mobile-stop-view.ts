@@ -11,7 +11,7 @@ import {
   type ShuttleServiceWindow,
 } from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
-import type { MobileStopSheetSelection } from './mobile-stops-sheet'
+import type { MobileStopSheetSelection } from './stops-view'
 
 type MobileStopList = 'nearby' | 'favourites'
 

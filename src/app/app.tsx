@@ -8,11 +8,14 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
-import { ContextualPanel } from '../features/contextual-panel/contextual-panel'
 import {
-  MobileStopsSheet,
+  ExploreView,
+  getExploreShellClassName,
+} from '../features/contextual-panel/explore-view'
+import {
+  StopsView,
   type MobileStopSheetSelection,
-} from '../features/shuttle-browsing/mobile-stops-sheet'
+} from '../features/shuttle-browsing/stops-view'
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
 import {
   getMobileStopsOverview,
@@ -23,9 +26,11 @@ import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-s
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MainNavigation } from '../ui/main-navigation'
+import { DesktopColumnShell } from '../ui/desktop-column-shell'
+import { MobileSheetShell } from '../ui/mobile-sheet-shell'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { getMobileSheetHeights, getMobileTabBarInset } from '../ui/mobile-sheet-layout'
-import { TripEndpointControls } from '../features/trip-endpoints/trip-endpoint-controls'
+import { PlanView } from '../features/trip-endpoints/plan-view'
 import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
@@ -756,194 +761,209 @@ function App() {
           containerRef={mainNavigationRef}
         />
         <div className="navigation-view-stack">
-        <div
-          id="plan-panel"
-          className="navigation-view"
-          hidden={navigation.activeView !== 'plan'}
-          inert={navigation.activeView !== 'plan'}
-        >
-          <TripEndpointControls
-            tripRequest={state.tripRequest}
-            venues={state.venues}
-            networkIndex={state.transitIndex}
-            onSwap={commands.swapTripEndpoints}
-            onSelectOriginEndpoint={commands.selectOriginEndpoint}
-            onClearOriginEndpoint={commands.clearOriginEndpoint}
-            onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
-            onClearDestinationEndpoint={commands.clearDestinationEndpoint}
-            onClearTrip={commands.clearTrip}
-            journey={state.journey}
-            simulatedAtMs={simulatedAtMs}
-            containerRef={tripControlsRef}
-            detent={isMobileViewport ? navigation.sheets.plan.detent : undefined}
+        <DesktopColumnShell id="plan-panel" active={navigation.activeView === 'plan'}>
+          <MobileSheetShell
+            className={`trip-controls${!isMobileViewport || navigation.sheets.plan.detent !== 'collapsed' ? ' trip-controls-expanded' : ' trip-controls-collapsed'}`}
+            label="Plan trip panel"
+            controlsId="trip-controls-panel-content"
+            detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.plan.lastNonCollapsedDetent}
-            mobileViewport={isMobileViewport}
+            enabled={isMobileViewport}
+            onBeforeToggle={() => prepareSheetTransition()}
             onDetentChange={(detent) => {
-              if (!isMobileViewport) return
               if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
                 focusTripControlAfterOverlayRef.current = true
               }
               dispatchNavigation({ type: 'set-sheet-detent', view: 'plan', detent, source: 'manual' })
             }}
-            onBeforeSheetToggle={() => prepareSheetTransition()}
-            onSearchFocus={() => beginMobileSearch('plan')}
-            onSearchCancel={() => dismissMobileSearch('plan')}
-            onSearchResult={() => selectMobileSearchResult('plan')}
-          />
-        </div>
-        <div
-          id="explore-panel"
-          className="navigation-view"
-          hidden={navigation.activeView !== 'explore'}
-          inert={navigation.activeView !== 'explore'}
-        >
-          <ContextualPanel
-            state={state.contextualPanel}
-            venues={state.venues}
-            transitIndex={state.transitIndex}
-            shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
-            renderShuttleRoutes={(selectRef, options) => (
-              <ShuttleRouteControl
-                network={state.transitIndex?.network ?? null}
-                networkIndex={state.transitIndex}
-                selectedRouteId={state.selectedRouteId}
-                onRouteSelect={isMobileViewport
-                  ? (routeId) => { if (routeId) commands.selectMobileRoute(routeId) }
-                  : commands.selectRoute}
-                selectRef={selectRef}
-                mobileViewport={isMobileViewport}
-                firstRouteCardRef={options.firstRouteCardRef}
-                onFocusStop={options.onFocusStop}
-              />
+            sectionProps={{ 'aria-label': 'Trip endpoints' }}
+            shellRef={tripControlsRef}
+          >
+            <PlanView
+              tripRequest={state.tripRequest}
+              venues={state.venues}
+              networkIndex={state.transitIndex}
+              expanded={!isMobileViewport || navigation.sheets.plan.detent !== 'collapsed'}
+              onSwap={commands.swapTripEndpoints}
+              onSelectOriginEndpoint={commands.selectOriginEndpoint}
+              onClearOriginEndpoint={commands.clearOriginEndpoint}
+              onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
+              onClearDestinationEndpoint={commands.clearDestinationEndpoint}
+              onClearTrip={commands.clearTrip}
+              journey={state.journey}
+              simulatedAtMs={simulatedAtMs}
+              onSearchFocus={() => beginMobileSearch('plan')}
+              onSearchCancel={() => dismissMobileSearch('plan')}
+              onSearchResult={() => selectMobileSearchResult('plan')}
+            />
+          </MobileSheetShell>
+        </DesktopColumnShell>
+        <DesktopColumnShell id="explore-panel" active={navigation.activeView === 'explore'}>
+          <MobileSheetShell
+            className={getExploreShellClassName(
+              state.contextualPanel,
+              isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
             )}
-            selectedRouteId={state.selectedRouteId}
-            minimized={isMobileViewport && navigation.sheets.explore.detent === 'collapsed'}
-            sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : undefined}
+            label="Explore panel"
+            controlsId="contextual-panel-content"
+            detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.explore.lastNonCollapsedDetent}
-            mobileViewport={isMobileViewport}
-            active={navigation.activeView === 'explore'}
-            onRestore={() => dispatchNavigation({
-              type: 'set-sheet-detent',
-              view: 'explore',
-              detent: 'partial',
-            })}
-            onMinimize={() => dispatchNavigation({
-              type: 'set-sheet-detent',
-              view: 'explore',
-              detent: 'collapsed',
-              source: 'manual',
-            })}
+            enabled={isMobileViewport}
+            onBeforeToggle={() => prepareSheetTransition()}
             onDetentChange={(detent) => dispatchNavigation({
               type: 'set-sheet-detent',
               view: 'explore',
               detent,
               source: 'manual',
             })}
-            onBeforeSheetToggle={() => prepareSheetTransition()}
-            containerRef={contextualPanelRef}
-            status={panelStatus}
-            onQueryChange={commands.setContextualPanelQuery}
-            onVenueSelect={commands.selectVenue}
-            onNavigateToVenue={(venueCode) => {
-              commands.selectDestinationEndpoint({ kind: 'venue', id: venueCode })
-              if (isMobileViewport) prepareSheetTransition(true)
-              pendingViewFocusRef.current = 'plan'
-              dispatchNavigation(isMobileViewport
-                ? { type: 'open-plan' }
-                : { type: 'select-view', view: 'plan' })
+            sectionProps={{
+              'aria-labelledby': 'contextual-panel-heading',
+              'data-minimized': isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
             }}
-            onSearchFocus={() => beginMobileSearch('explore')}
-            onSearchCancel={() => dismissMobileSearch('explore')}
-            onSearchResult={() => selectMobileSearchResult('explore')}
-            onOpenShuttle={() => {
-              if (isMobileViewport) {
-                prepareSheetTransition(true)
+            shellRef={contextualPanelRef}
+          >
+            <ExploreView
+              state={state.contextualPanel}
+              venues={state.venues}
+              transitIndex={state.transitIndex}
+              shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
+              renderShuttleRoutes={(selectRef, options) => (
+                <ShuttleRouteControl
+                  network={state.transitIndex?.network ?? null}
+                  networkIndex={state.transitIndex}
+                  selectedRouteId={state.selectedRouteId}
+                  onRouteSelect={isMobileViewport
+                    ? (routeId) => { if (routeId) commands.selectMobileRoute(routeId) }
+                    : commands.selectRoute}
+                  selectRef={selectRef}
+                  mobileViewport={isMobileViewport}
+                  firstRouteCardRef={options.firstRouteCardRef}
+                  onFocusStop={options.onFocusStop}
+                />
+              )}
+              selectedRouteId={state.selectedRouteId}
+              minimized={isMobileViewport && navigation.sheets.explore.detent === 'collapsed'}
+              mobileViewport={isMobileViewport}
+              active={navigation.activeView === 'explore'}
+              onRestore={() => dispatchNavigation({
+                type: 'set-sheet-detent',
+                view: 'explore',
+                detent: 'partial',
+              })}
+              onMinimize={() => dispatchNavigation({
+                type: 'set-sheet-detent',
+                view: 'explore',
+                detent: 'collapsed',
+                source: 'manual',
+              })}
+              status={panelStatus}
+              onQueryChange={commands.setContextualPanelQuery}
+              onVenueSelect={commands.selectVenue}
+              onNavigateToVenue={(venueCode) => {
+                commands.selectDestinationEndpoint({ kind: 'venue', id: venueCode })
+                if (isMobileViewport) prepareSheetTransition(true)
+                pendingViewFocusRef.current = 'plan'
+                dispatchNavigation(isMobileViewport
+                  ? { type: 'open-plan' }
+                  : { type: 'select-view', view: 'plan' })
+              }}
+              onSearchFocus={() => beginMobileSearch('explore')}
+              onSearchCancel={() => dismissMobileSearch('explore')}
+              onSearchResult={() => selectMobileSearchResult('explore')}
+              onOpenShuttle={() => {
+                if (isMobileViewport) {
+                  prepareSheetTransition(true)
+                  dismissMobileSearch('explore')
+                  commands.enterMobileRoutes()
+                } else commands.openShuttle()
+              }}
+              onLeaveMobileRoutes={() => {
+                if (isMobileViewport) {
+                  beginMobileSearch('explore')
+                  commands.leaveMobileRoutes()
+                } else {
+                  commands.openVenueSearch()
+                }
+              }}
+              onFocusStop={commands.focusStop}
+              onBack={commands.back}
+              onClose={() => {
                 dismissMobileSearch('explore')
-                commands.enterMobileRoutes()
-              } else commands.openShuttle()
-            }}
-            onLeaveMobileRoutes={() => {
-              if (isMobileViewport) {
-                beginMobileSearch('explore')
-                commands.leaveMobileRoutes()
-              } else {
-                commands.openVenueSearch()
-              }
-            }}
-            onFocusStop={commands.focusStop}
-            onBack={commands.back}
-            onClose={() => {
-              dismissMobileSearch('explore')
-              if (isMobileViewport) commands.closeToRoot()
-              else commands.close()
-            }}
-            onEscape={() => {
-              dismissMobileSearch('explore')
-              commands.escape()
-            }}
-            onDismissMapPopup={commands.dismissMapPopup}
-          />
-        </div>
-        <div
-          id="stops-panel"
-          className="navigation-view"
-          hidden={navigation.activeView !== 'stops'}
-          inert={navigation.activeView !== 'stops'}
-        >
-          <MobileStopsSheet
-            detent={isMobileViewport ? navigation.sheets.stops.detent : undefined}
+                if (isMobileViewport) commands.closeToRoot()
+                else commands.close()
+              }}
+              onEscape={() => {
+                dismissMobileSearch('explore')
+                commands.escape()
+              }}
+              onDismissMapPopup={commands.dismissMapPopup}
+            />
+          </MobileSheetShell>
+        </DesktopColumnShell>
+        <DesktopColumnShell id="stops-panel" active={navigation.activeView === 'stops'}>
+          <MobileSheetShell
+            className="mobile-stops-sheet"
+            label="Stops panel"
+            controlsId="mobile-stops-sheet-content"
+            detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.stops.lastNonCollapsedDetent}
-            selectedStop={mobileStopSelection}
-            overviewStops={overviewStops}
-            overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}
-            liveArrivalMessage={liveArrivalMessage}
-            selectedList={mobileStopView.list}
-            selectedStopFavorite={selectedStop
-              ? mobileStopView.favoriteStopIds.includes(selectedStop.id)
-              : false}
-            locationNotice={locationNotice}
-            onSelectList={(list) => {
-              if (list === 'nearby' && state.location.status === 'disabled') commands.enableLocationTracking()
-              dispatchMobileStopView({ type: 'select-list', list })
-            }}
-            onToggleFavorite={(stopId) => dispatchMobileStopView({ type: 'toggle-favorite', stopId })}
-            onToggleExpanded={(stopId) => dispatchMobileStopView({ type: 'toggle-expanded', stopId })}
-            onDismissLocationNotice={() => dispatchMobileStopView({ type: 'dismiss-location-notice' })}
+            enabled={isMobileViewport}
+            onBeforeToggle={() => prepareSheetTransition()}
             onDetentChange={(detent) => dispatchNavigation({
               type: 'set-sheet-detent',
               view: 'stops',
               detent,
               source: 'manual',
             })}
-            onBackToStops={() => dispatchMobileStopView({ type: 'back-to-stops' })}
-            onSelectOppositeStop={(stopId) => {
-              handleStopSelected(stopId)
-            }}
-            onSelectRoute={(routeId) => {
-              if (isMobileViewport) {
+            sectionProps={{ 'aria-label': 'Stops' }}
+            shellRef={stopsSheetRef}
+          >
+            <StopsView
+              expanded={!isMobileViewport || navigation.sheets.stops.detent !== 'collapsed'}
+              selectedStop={mobileStopSelection}
+              overviewStops={overviewStops}
+              overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}
+              liveArrivalMessage={liveArrivalMessage}
+              selectedList={mobileStopView.list}
+              selectedStopFavorite={selectedStop
+                ? mobileStopView.favoriteStopIds.includes(selectedStop.id)
+                : false}
+              locationNotice={locationNotice}
+              onSelectList={(list) => {
+                if (list === 'nearby' && state.location.status === 'disabled') commands.enableLocationTracking()
+                dispatchMobileStopView({ type: 'select-list', list })
+              }}
+              onToggleFavorite={(stopId) => dispatchMobileStopView({ type: 'toggle-favorite', stopId })}
+              onToggleExpanded={(stopId) => dispatchMobileStopView({ type: 'toggle-expanded', stopId })}
+              onDismissLocationNotice={() => dispatchMobileStopView({ type: 'dismiss-location-notice' })}
+              onBackToStops={() => dispatchMobileStopView({ type: 'back-to-stops' })}
+              onSelectOppositeStop={(stopId) => {
+                handleStopSelected(stopId)
+              }}
+              onSelectRoute={(routeId) => {
+                if (isMobileViewport) {
+                  prepareSheetTransition(true)
+                  commands.enterMobileRoutes()
+                  commands.selectMobileRoute(routeId)
+                  dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
+                } else {
+                  commands.openShuttle()
+                  commands.selectRoute(routeId)
+                }
+                pendingViewFocusRef.current = 'explore'
+                dispatchNavigation({ type: 'select-view', view: 'explore' })
+              }}
+              onNavigateToStop={(stopId) => {
+                commands.selectDestinationEndpoint({ kind: 'stop', id: stopId })
                 prepareSheetTransition(true)
-                commands.enterMobileRoutes()
-                commands.selectMobileRoute(routeId)
-                dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
-              } else {
-                commands.openShuttle()
-                commands.selectRoute(routeId)
-              }
-              pendingViewFocusRef.current = 'explore'
-              dispatchNavigation({ type: 'select-view', view: 'explore' })
-            }}
-            onNavigateToStop={(stopId) => {
-              commands.selectDestinationEndpoint({ kind: 'stop', id: stopId })
-              prepareSheetTransition(true)
-              pendingViewFocusRef.current = 'plan'
-              dispatchNavigation(isMobileViewport
-                ? { type: 'open-plan' }
-                : { type: 'select-view', view: 'plan' })
-            }}
-            onBeforeSheetToggle={() => prepareSheetTransition()}
-            containerRef={stopsSheetRef}
-          />
-        </div>
+                pendingViewFocusRef.current = 'plan'
+                dispatchNavigation(isMobileViewport
+                  ? { type: 'open-plan' }
+                  : { type: 'select-view', view: 'plan' })
+              }}
+            />
+          </MobileSheetShell>
+        </DesktopColumnShell>
         </div>
       </aside>
     </main>

@@ -6,7 +6,6 @@ import {
   useRef,
   type FocusEvent,
   type MouseEvent,
-  type Ref,
   type RefObject,
   type ReactNode,
 } from 'react'
@@ -18,13 +17,11 @@ import {
   hasVenueCoordinates,
 } from '../../domain/venue/details'
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
-import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ContextualPanelMode, ContextualPanelState } from './state'
 import type { PanelStatus } from './status'
 
@@ -56,7 +53,7 @@ function getMobileVenueDetailReturnLabel(state: ContextualPanelState): string {
   return MOBILE_RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
 }
 
-interface ContextualPanelProps {
+interface ExploreViewProps {
   state: ContextualPanelState
   venues: VenueLocationMap | null
   transitIndex?: TransitIndex | null
@@ -66,15 +63,10 @@ interface ContextualPanelProps {
     options: ShuttleRouteRenderOptions,
   ) => ReactNode
   minimized?: boolean
-  sheetDetent?: MobileSheetDetent
-  lastNonCollapsedDetent?: OpenMobileSheetDetent
   mobileViewport?: boolean
   active?: boolean
   onRestore?: () => void
   onMinimize?: () => void
-  onDetentChange?: (detent: MobileSheetDetent) => void
-  onBeforeSheetToggle?: () => void
-  containerRef?: Ref<HTMLElement>
   status?: PanelStatus | null
   selectedRouteId?: string | null
   onQueryChange: (query: string) => void
@@ -135,22 +127,17 @@ function getVisiblePanelStatus(
   return status
 }
 
-export function ContextualPanel({
+export function ExploreView({
   state,
   venues,
   transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
   minimized = false,
-  sheetDetent = minimized ? 'collapsed' : 'partial',
-  lastNonCollapsedDetent = 'partial',
   mobileViewport = true,
   active = true,
   onRestore,
   onMinimize,
-  onDetentChange,
-  onBeforeSheetToggle,
-  containerRef,
   status,
   selectedRouteId = null,
   onQueryChange,
@@ -168,12 +155,8 @@ export function ContextualPanel({
   onSearchFocus,
   onSearchCancel,
   onSearchResult,
-}: ContextualPanelProps) {
+}: ExploreViewProps) {
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
-  const restorePanelButtonRef = useRef<HTMLButtonElement>(null)
-  const setRestorePanelButtonRef = useCallback((button: HTMLButtonElement | null): void => {
-    restorePanelButtonRef.current = button
-  }, [])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
   const routeSelectRef = useRef<HTMLSelectElement>(null)
@@ -190,7 +173,6 @@ export function ContextualPanel({
   const shuttleRouteFocusPendingRef = useRef(false)
   const shuttleFocusMovedRef = useRef(false)
   const programmaticFocusRef = useRef(false)
-  const pendingMinimizeFocusRef = useRef(false)
   const pendingStopRowFocusRef = useRef<HTMLElement | null>(null)
 
   const focusElement = (element: HTMLElement | null): void => {
@@ -275,7 +257,6 @@ export function ContextualPanel({
           return
         }
         if (onMinimize) {
-          pendingMinimizeFocusRef.current = true
           onMinimize()
         }
         return
@@ -319,13 +300,7 @@ export function ContextualPanel({
     previousMinimizedRef.current = minimized
     const wasMobileViewport = previousMobileViewportRef.current
     previousMobileViewportRef.current = mobileViewport
-    if (minimized) {
-      if (!wasMinimized && pendingMinimizeFocusRef.current) {
-        pendingMinimizeFocusRef.current = false
-        focusElement(restorePanelButtonRef.current)
-      }
-      return
-    }
+    if (minimized) return
 
     if (wasMobileViewport !== mobileViewport && !wasMinimized) {
       previousModeRef.current = state.mode
@@ -510,12 +485,6 @@ export function ContextualPanel({
     onFocusStop?.(stopId)
   }
 
-  const handleMinimize = (): void => {
-    pendingMinimizeFocusRef.current = true
-    if (onDetentChange) onDetentChange('collapsed')
-    else onMinimize?.()
-  }
-
   const searchState = useMemo(() => {
     if (!venues) return { results: [], failed: false }
 
@@ -546,34 +515,11 @@ export function ContextualPanel({
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
 
   return (
-    <section
-      className={`contextual-panel contextual-panel-${state.mode}${venueSearchView ? ' contextual-panel-mobile-venue-search' : ''}${minimized ? ' contextual-panel-minimized' : ''}`}
-      ref={containerRef}
-      aria-labelledby="contextual-panel-heading"
-      data-minimized={minimized}
-      data-mobile-sheet
-      data-expanded={sheetDetent !== 'collapsed'}
-      data-detent={sheetDetent}
+    <div
+      className="contextual-panel-focus-scope"
       onFocusCapture={handlePanelFocusCapture}
       onBlurCapture={handlePanelBlurCapture}
     >
-      {mobileViewport && (
-        <div className="mobile-sheet-handle-row">
-          <MobileSheetHandle
-            detent={sheetDetent}
-            restoreDetent={lastNonCollapsedDetent}
-            label="Explore panel"
-            controlsId="contextual-panel-content"
-            onButtonRef={setRestorePanelButtonRef}
-            onBeforeClick={onBeforeSheetToggle}
-            onDetentChange={(nextDetent) => {
-              if (nextDetent === 'collapsed') handleMinimize()
-              else if (onDetentChange) onDetentChange(nextDetent)
-              else onRestore?.()
-            }}
-          />
-        </div>
-      )}
       <div className="contextual-panel-header">
         {exploreSegments && (
           <div
@@ -842,6 +788,14 @@ export function ContextualPanel({
           {panelAnnouncement}
         </p>
       )}
-    </section>
+    </div>
   )
+}
+
+export function getExploreShellClassName(
+  state: ContextualPanelState,
+  minimized: boolean,
+): string {
+  const venueSearchView = state.mode === 'neutral' || state.mode === 'venue-search'
+  return `contextual-panel contextual-panel-${state.mode}${venueSearchView ? ' contextual-panel-mobile-venue-search' : ''}${minimized ? ' contextual-panel-minimized' : ''}`
 }

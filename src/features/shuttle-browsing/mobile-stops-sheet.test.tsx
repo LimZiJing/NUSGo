@@ -3,8 +3,8 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MobileStopsSheet } from './mobile-stops-sheet'
-import type { MobileStopSheetSelection } from './mobile-stops-sheet'
+import { StopsView } from './stops-view'
+import type { MobileStopSheetSelection } from './stops-view'
 
 afterEach(cleanup)
 
@@ -27,7 +27,7 @@ describe('MobileStopsSheet', () => {
     const user = userEvent.setup()
     const onDetentChange = vi.fn()
     const { rerender } = render(
-      <MobileStopsSheet
+      <StopsView
         detent="collapsed"
         selectedStop={null}
         onDetentChange={onDetentChange}
@@ -45,7 +45,7 @@ describe('MobileStopsSheet', () => {
     expect(onDetentChange).toHaveBeenCalledWith('partial')
 
     rerender(
-      <MobileStopsSheet
+      <StopsView
         detent="full"
         selectedStop={null}
         onDetentChange={onDetentChange}
@@ -65,7 +65,7 @@ describe('MobileStopsSheet', () => {
 
   it('orders stop identity, destination action, routes, public services and departures', () => {
     const { container } = render(
-      <MobileStopsSheet
+      <StopsView
         expanded
         selectedStop={selectedStop}
         onExpandedChange={vi.fn()}
@@ -102,7 +102,7 @@ describe('MobileStopsSheet', () => {
     const onSelectRoute = vi.fn()
     const onNavigateToStop = vi.fn()
     render(
-      <MobileStopsSheet
+      <StopsView
         expanded
         selectedStop={selectedStop}
         onExpandedChange={vi.fn()}

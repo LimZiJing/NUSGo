@@ -14,6 +14,10 @@
   pointer-events: auto;
 }
 
+.contextual-panel-focus-scope {
+  display: contents;
+}
+
 .contextual-panel-header,
 .contextual-panel-actions {
   display: flex;

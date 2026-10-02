@@ -29,16 +29,8 @@ class NavusAttributionControl {
   onAdd(): HTMLElement {
     const container = document.createElement('div')
     container.className = 'maplibregl-ctrl navus-map-attribution'
-
-    const openMapTilesLink = document.createElement('a')
-    openMapTilesLink.href = 'https://openmaptiles.org/'
-    openMapTilesLink.textContent = '© OpenMapTiles'
-
-    const openStreetMapLink = document.createElement('a')
-    openStreetMapLink.href = 'https://www.openstreetmap.org/copyright'
-    openStreetMapLink.textContent = 'OpenStreetMap'
-
-    container.append(openMapTilesLink, ' · ', openStreetMapLink)
+    container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
+      + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     this.container = container
     return container
   }

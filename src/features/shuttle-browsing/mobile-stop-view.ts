@@ -28,7 +28,7 @@ export type MobileStopViewAction =
   | { readonly type: 'back-to-stops' }
   | { readonly type: 'select-list'; readonly list: MobileStopList }
   | { readonly type: 'toggle-expanded'; readonly stopId: string }
-  | { readonly type: 'expand-nearby'; readonly stopIds: readonly string[] }
+  | { readonly type: 'set-nearby-expanded'; readonly stopIds: readonly string[] }
   | { readonly type: 'toggle-favorite'; readonly stopId: string }
   | { readonly type: 'reconcile-stops'; readonly stopIds: ReadonlySet<string> }
   | { readonly type: 'dismiss-location-notice' }
@@ -90,14 +90,19 @@ export function mobileStopViewReducer(
         },
       }
     }
-    case 'expand-nearby': {
-      const expandedStopIds = [...new Set([...state.expandedStopIds.nearby, ...action.stopIds])]
-      if (expandedStopIds.length === state.expandedStopIds.nearby.length) return state
+    case 'set-nearby-expanded': {
+      const expandedStopIds = [...new Set(action.stopIds)]
+      if (
+        expandedStopIds.length === state.expandedStopIds.nearby.length &&
+        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index]) &&
+        state.expandedStopIds.favourites.length === 0
+      ) return state
       return {
         ...state,
         expandedStopIds: {
           ...state.expandedStopIds,
           nearby: expandedStopIds,
+          favourites: [],
         },
       }
     }

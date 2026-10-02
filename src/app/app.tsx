@@ -14,7 +14,10 @@ import {
   type MobileStopSheetSelection,
 } from '../features/shuttle-browsing/mobile-stops-sheet'
 import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
-import { getMobileStopsOverview } from '../features/shuttle-browsing/mobile-stops-overview'
+import {
+  getMobileStopsOverview,
+  getMobileStopsWithinNearbyRadius,
+} from '../features/shuttle-browsing/mobile-stops-overview'
 import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
 import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-stop-arrivals'
 import { LocationControl } from '../ui/location-control'
@@ -458,6 +461,10 @@ function App() {
     mobileStopView.favoriteStopIds,
     transitIndex,
   ])
+  const locationNearbyStopEntries = useMemo(() => {
+    if (!transitIndex || !locationFix) return null
+    return getMobileStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
+  }, [locationFix, transitIndex])
   const overviewStopEntries = useMemo(() => mobileStopView.list === 'nearby'
     ? nearbyStopEntries
     : transitIndex ? getMobileStopsOverview(
@@ -528,13 +535,13 @@ function App() {
     expanded: mobileStopView.expandedStopIds[mobileStopView.list].includes(stop.id),
   })) : []
   const expandNearbyTimings = useCallback((): boolean => {
-    if (mapCenter === null) return false
+    if (locationNearbyStopEntries === null) return false
     dispatchMobileStopView({
-      type: 'expand-nearby',
-      stopIds: nearbyStopEntries.map(({ stop }) => stop.id),
+      type: 'set-nearby-expanded',
+      stopIds: locationNearbyStopEntries.map(({ stop }) => stop.id),
     })
     return true
-  }, [dispatchMobileStopView, mapCenter, nearbyStopEntries])
+  }, [dispatchMobileStopView, locationNearbyStopEntries])
 
   const tryExpandNearbyTimings = useCallback((): boolean => {
     if (!hasSuccessfulLocation(state.location) || !expandNearbyTimings()) return false

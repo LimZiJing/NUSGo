@@ -6,6 +6,7 @@ import type { PlanJourneyInput } from '../../src/domain/trip/planner.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import type { VenueLocationMap } from '../../src/domain/venue/types.js'
 import type { WalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
+import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
 
 export interface JourneyBenchmarkExpectation {
   readonly outcome: 'journey' | 'no-route'
@@ -46,6 +47,7 @@ export interface JourneyBenchmarkContext {
   readonly routeEngine: WalkingRouteEngine
   readonly now: () => number
   readonly createArrivalClient: (benchmarkCase: JourneyBenchmarkCase) => ShuttleArrivalClient
+  readonly createServiceHoursClient?: (benchmarkCase: JourneyBenchmarkCase) => ShuttleServiceHoursClient
   readonly cases: readonly JourneyBenchmarkCase[]
 }
 

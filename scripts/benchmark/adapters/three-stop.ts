@@ -34,7 +34,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
     }
   },
 
-  createJourneyRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient }) {
+  createJourneyRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
     const walkingConnectionProvider = createWalkingConnectionProvider({
       routeEngine,
       loadGraph: async () => walkingGraph,
@@ -42,7 +42,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
     const service = createJourneyPlanningService(
       routeEngine,
       createArrivalClient(benchmarkCase),
-      undefined,
+      createServiceHoursClient?.(benchmarkCase),
       now,
       walkingConnectionProvider,
     )

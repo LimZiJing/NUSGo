@@ -1,4 +1,4 @@
-import type { LtaPublicBusStopMapping } from './mapping'
+import type { LtaPublicBusStopMapping } from './mapping.js'
 
 export function parseRequestedLtaStops(
   value: string | null,

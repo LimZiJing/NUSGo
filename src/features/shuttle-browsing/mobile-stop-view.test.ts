@@ -6,6 +6,7 @@ import {
 } from './mobile-stop-view'
 import { createTransitIndex } from '../../domain/transit'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
 import type { ShuttleServiceWindow } from '../../domain/transit/service-hours'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
@@ -48,6 +49,49 @@ describe('mobile stop view state', () => {
     expect(selection.departures[0]?.timings).toEqual(['Arr', '6m', '16m'])
     expect(selection.live).toBe(true)
     expect(selection.liveArrivalMessage).toBeNull()
+  })
+
+  it('maps LTA public arrivals into the same timing tuple used by internal buses', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshot: PublicBusArrivalSnapshot = {
+      source: 'lta-datamall',
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      refreshedAt: '2026-09-30T00:00:00.000Z',
+      stops: {
+        'STOP-A': {
+          observedAt: '2026-09-30T00:00:00.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+          services: {
+            '95': {
+              status: 'live',
+              arrivals: [
+                { estimatedAt: '2026-09-30T00:00:30.000Z', monitored: true },
+                { estimatedAt: '2026-09-30T00:05:00.000Z', monitored: true },
+              ],
+            },
+          },
+        },
+      },
+    }
+
+    const selection = getMobileStopSheetSelection(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      null,
+      Date.parse('2026-09-30T00:00:00.000Z'),
+      null,
+      false,
+      snapshot,
+    )
+
+    expect(selection.publicServices).toEqual([{
+      serviceNumber: '95',
+      timings: ['Arr', '5m', '-'],
+      status: 'live',
+    }])
+    expect(selection.live).toBe(true)
   })
 
   it('uses each stop observation clock for its displayed arrivals', () => {

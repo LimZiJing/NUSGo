@@ -4,7 +4,12 @@ import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
-import { BusStopTimings, type BusStopDeparture, type BusStopScheduledDeparture } from '../../ui/bus-stop-timings'
+import {
+  BusStopTimings,
+  type BusStopDeparture,
+  type BusStopScheduledDeparture,
+  type PublicServiceTiming,
+} from '../../ui/bus-stop-timings'
 import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
 import { type MobileStopDeparture } from './mobile-stop-view'
 
@@ -14,7 +19,7 @@ export interface MobileStopSheetSelection {
   readonly id: string
   readonly longName: string
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
-  readonly publicServices: readonly string[]
+  readonly publicServices: readonly PublicServiceTiming[]
   readonly departures: readonly MobileStopSheetDeparture[]
   readonly scheduledDepartures: readonly BusStopScheduledDeparture[]
   readonly live: boolean
@@ -156,10 +161,7 @@ export function MobileStopsSheet({
                 departures={selectedStop.departures}
                 scheduledDepartures={selectedStop.scheduledDepartures}
                 liveArrivalMessage={selectedStop.liveArrivalMessage}
-                publicServices={selectedStop.publicServices.map((serviceNumber) => ({
-                  serviceNumber,
-                  timings: null,
-                }))}
+                publicServices={selectedStop.publicServices}
                 onSelectRoute={onSelectRoute}
               />
             </div>
@@ -195,10 +197,7 @@ export function MobileStopsSheet({
                     liveArrivalMessage={stop.liveArrivalMessage}
                     departures={stop.departures}
                     scheduledDepartures={stop.scheduledDepartures}
-                    publicServices={stop.publicServices.map((serviceNumber) => ({
-                      serviceNumber,
-                      timings: null,
-                    }))}
+                    publicServices={stop.publicServices}
                     onToggleFavorite={(stopId) => onToggleFavorite?.(stopId)}
                     onToggleExpanded={(stopId) => onToggleExpanded?.(stopId)}
                     onSelectRoute={onSelectRoute}

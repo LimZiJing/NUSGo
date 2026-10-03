@@ -107,6 +107,15 @@ the NUS settings out of the client bundle. The GitHub Pages build has no server
 endpoint, so it continues to use static timing estimates when live data is not
 available.
 
+## Local LTA public bus timings
+
+Set `LTA_ACCOUNT_KEY` in `.env` for local public-bus timings. Keep it as a
+server-only value; do not rename it with a `VITE_` prefix. The Vite server
+exposes `/api/public-bus-arrivals`, which the Stops view refreshes every 30
+seconds. Public buses provide display-only arrival timings and are not used by
+Journey routing. Stop-code mappings are maintained in
+`public/data/lta-public-bus-stops.json`.
+
 Examples:
 
 ```bash

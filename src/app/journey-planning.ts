@@ -24,6 +24,7 @@ import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueLocationMap } from '../domain/venue/types'
 import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from './contracts/shuttle-arrivals'
 import type { ShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
+import { createTestShuttleWaitingTimeProvider } from '../domain/trip/journey-test-clock'
 
 export interface JourneyPlanningRequest {
   readonly tripRequest: TripRequest
@@ -370,8 +371,10 @@ export function createJourneyPlanningService(
   shuttleServiceHoursClient?: ShuttleServiceHoursClient,
   now: () => number = Date.now,
   walkingConnectionProvider?: WalkingConnectionProvider,
+  getTestDepartureMs: () => number | null = () => null,
 ): JourneyPlanningService {
   return async (request) => {
+    const testDepartureMs = getTestDepartureMs()
     const locations = resolveLocations(request)
     if (!locations) return null
 
@@ -428,7 +431,7 @@ export function createJourneyPlanningService(
         ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
         : null
     }
-    if (!shuttleArrivalClient) {
+    if (!shuttleArrivalClient && testDepartureMs === null) {
       return enrichWalkingGeometry(routeEngine, staticJourney, locations.all, request.signal)
     }
 
@@ -464,6 +467,23 @@ export function createJourneyPlanningService(
       }
     }
 
+    if (testDepartureMs !== null) {
+      if (serviceWindows) {
+        const testSearch = await planWithBudget({
+          ...planInput,
+          getShuttleWaitingSeconds: createTestShuttleWaitingTimeProvider(testDepartureMs, serviceWindows),
+        }, request.signal)
+        if (testSearch.journey) {
+          return enrichWalkingGeometry(routeEngine, testSearch.journey, locations.all, request.signal)
+        }
+      }
+      const walkingOnlyJourney = await planWalkingOnly(planInput, request.signal)
+      return walkingOnlyJourney
+        ? enrichWalkingGeometry(routeEngine, walkingOnlyJourney, locations.all, request.signal)
+        : null
+    }
+
+    if (!shuttleArrivalClient) return null
     let liveArrivals
     try {
       liveArrivals = await shuttleArrivalClient.getArrivals([...boardingStops.values()], request.signal)

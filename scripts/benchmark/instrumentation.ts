@@ -1,0 +1,68 @@
+import type {
+  WalkingMatrixConnection,
+  WalkingMatrixRequest,
+  WalkingRouteEngine,
+  WalkingRouteRequest,
+} from '../../src/app/contracts/routing.js'
+import type { JourneyBenchmarkMatrixResult } from './outcome.js'
+
+export interface MeasuredWalkingRouteEngine extends WalkingRouteEngine {
+  readonly elapsedMs: number
+  readonly matrixRequests: readonly JourneyBenchmarkMatrixResult[]
+  readonly requestCounts: { readonly matrix: number; readonly route: number }
+  reset(): void
+}
+
+export function createMeasuredRouteEngine(
+  routeEngine: WalkingRouteEngine,
+): MeasuredWalkingRouteEngine {
+  let elapsedMs = 0
+  let matrixRequestCount = 0
+  let routeRequestCount = 0
+  const matrixRequests: JourneyBenchmarkMatrixResult[] = []
+
+  return {
+    reset() {
+      elapsedMs = 0
+      matrixRequestCount = 0
+      routeRequestCount = 0
+      matrixRequests.length = 0
+    },
+    get elapsedMs() {
+      return elapsedMs
+    },
+    get matrixRequests() {
+      return [...matrixRequests]
+    },
+    get requestCounts() {
+      return { matrix: matrixRequestCount, route: routeRequestCount }
+    },
+    async routeWalking(request: WalkingRouteRequest, signal: AbortSignal) {
+      routeRequestCount += 1
+      const startedAt = performance.now()
+      try {
+        return await routeEngine.routeWalking(request, signal)
+      } finally {
+        elapsedMs += performance.now() - startedAt
+      }
+    },
+    async matrixWalking(request: WalkingMatrixRequest, signal: AbortSignal): Promise<readonly WalkingMatrixConnection[]> {
+      matrixRequestCount += 1
+      const startedAt = performance.now()
+      const capturedRequest: WalkingMatrixRequest = {
+        sources: request.sources.map(({ longitude, latitude }) => ({ longitude, latitude })),
+        targets: request.targets.map(({ longitude, latitude }) => ({ longitude, latitude })),
+      }
+      try {
+        const connections = await routeEngine.matrixWalking(request, signal)
+        matrixRequests.push({
+          request: capturedRequest,
+          connections: connections.map((connection) => ({ ...connection })),
+        })
+        return connections
+      } finally {
+        elapsedMs += performance.now() - startedAt
+      }
+    },
+  }
+}

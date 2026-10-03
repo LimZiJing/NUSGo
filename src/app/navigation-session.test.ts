@@ -278,6 +278,29 @@ describe('navigation session', () => {
     expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
   })
 
+  it('cancels an in-flight Journey and replans when test time changes', async () => {
+    const firstPlanning = createDeferred<Journey | null>()
+    const secondPlanning = createDeferred<Journey | null>()
+    const journeyPlanner = vi.fn()
+      .mockImplementationOnce(() => firstPlanning.promise)
+      .mockImplementationOnce(() => secondPlanning.promise)
+    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    const firstSignal = journeyPlanner.mock.calls[0][0].signal as AbortSignal
+
+    session.replanJourney()
+    expect(firstSignal.aborted).toBe(true)
+    expect(journeyPlanner).toHaveBeenCalledTimes(2)
+    const updated = createJourney({ kind: 'stop', id: 'STOP-A' })
+    secondPlanning.resolve(updated)
+    await waitForState(session, (state) => state.journey.status === 'ready')
+    firstPlanning.resolve(null)
+    await Promise.resolve()
+    expect(session.getState().journey.journey).toEqual(updated)
+  })
+
   it('publishes a safe failure state when planning fails', async () => {
     const journeyPlanner = vi.fn(async () => {
       throw new Error('routing service unavailable')

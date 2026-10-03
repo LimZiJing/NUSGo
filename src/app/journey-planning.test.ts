@@ -956,4 +956,62 @@ describe('createJourneyPlanningService', () => {
       message: 'Shuttle service has ended for today. It resumes tomorrow at 7:15 AM.',
     })
   })
+
+  it('uses fixed test waits and the selected service window without fetching live arrivals', async () => {
+    const transit = createTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 2_000, durationSeconds: 2_000 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = { getArrivals: vi.fn() }
+    const shuttleServiceHoursClient = {
+      getServiceWindows: vi.fn(async () => ({
+        A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+      })),
+    }
+    let testDepartureMs = Date.parse('2026-09-23T04:00:00Z')
+    const service = createJourneyPlanningService(
+      routeEngine,
+      shuttleArrivalClient,
+      shuttleServiceHoursClient,
+      Date.now,
+      undefined,
+      () => testDepartureMs,
+    )
+    const request = {
+      tripRequest: {
+        origin: { kind: 'venue' as const, id: 'ORIGIN' },
+        destination: { kind: 'venue' as const, id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    }
+
+    const activeJourney = await service(request)
+    expect(activeJourney?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 300 })
+    expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
+
+    testDepartureMs = Date.parse('2026-09-23T15:25:00Z')
+    const endedJourney = await service(request)
+    expect(endedJourney?.legs.every((leg) => leg.mode === 'walking')).toBe(true)
+    expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
+  })
 })

@@ -56,6 +56,8 @@ import type { LocationTrackingState } from '../domain/location/types'
 import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
+import { JourneyTestTimeControl } from '../ui/journey-test-time-control'
+import { createJourneyTestClockStore } from './journey-test-clock-store'
 
 function hasSuccessfulLocation(location: LocationTrackingState): boolean {
   const fix = location.latestFix
@@ -75,6 +77,8 @@ function App() {
   const mobileTabBarRef = useRef<HTMLElement>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [theme, setTheme] = useState<Theme>(getSystemTheme)
+  const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
+  const [testClock] = useState(createJourneyTestClockStore)
   const state = useNavigationSession(session)
   const panelStatus = deriveContextualPanelStatus(
     state.resourceStatus,
@@ -142,7 +146,8 @@ function App() {
     shuttleServiceHoursClient,
     Date.now,
     walkingConnectionProvider,
-  ), [routeEngine, shuttleArrivalClient, shuttleServiceHoursClient, walkingConnectionProvider])
+    testClock.get,
+  ), [routeEngine, shuttleArrivalClient, shuttleServiceHoursClient, walkingConnectionProvider, testClock])
 
   useEffect(() => {
     const updateViewport = (): void => {
@@ -623,6 +628,21 @@ function App() {
         />
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          {import.meta.env.DEV && (
+            <JourneyTestTimeControl
+              simulatedAtMs={simulatedAtMs}
+              onApply={(instantMs) => {
+                testClock.set(instantMs)
+                setSimulatedAtMs(instantMs)
+                session?.replanJourney()
+              }}
+              onReset={() => {
+                testClock.set(null)
+                setSimulatedAtMs(null)
+                session?.replanJourney()
+              }}
+            />
+          )}
           <LocationControl
             visible={!isMobileViewport || !(
               mobileNavigation.activeTab === 'plan' && mobileNavigation.sheets.plan.detent !== 'collapsed'
@@ -669,6 +689,7 @@ function App() {
             onClearDestinationEndpoint={commands.clearDestinationEndpoint}
             onClearTrip={commands.clearTrip}
             journey={state.journey}
+            simulatedAtMs={simulatedAtMs}
             containerRef={tripControlsRef}
             detent={isMobileViewport ? mobileNavigation.sheets.plan.detent : undefined}
             lastNonCollapsedDetent={mobileNavigation.sheets.plan.lastNonCollapsedDetent}

@@ -5,6 +5,11 @@ import {
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
 import {
+  PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
+  PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
+  type PublicBusArrivalSnapshot,
+} from '../../domain/transit/public-bus-arrivals'
+import {
   evaluateShuttleService,
   getNextShuttleServiceStart,
   SHUTTLE_SERVICE_START_GRACE_MINUTES,
@@ -12,6 +17,7 @@ import {
 } from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
 import type { MobileStopSheetSelection } from './mobile-stops-sheet'
+import type { PublicServiceTiming } from '../../ui/bus-stop-timings'
 
 type MobileStopList = 'nearby' | 'favourites'
 
@@ -144,6 +150,43 @@ function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, stopId: string, nowMs
   return Math.max(0, nowMs - Date.parse(observedAt))
 }
 
+function getPublicArrivalAgeMs(snapshot: PublicBusArrivalSnapshot, stopId: string, nowMs: number): number {
+  const observedAt = snapshot.stops[stopId]?.observedAt ?? snapshot.observedAt
+  return Math.max(0, nowMs - Date.parse(observedAt))
+}
+
+function getPublicServiceTimings(
+  stop: TransitStop,
+  snapshot: PublicBusArrivalSnapshot | null,
+  nowMs: number,
+): readonly PublicServiceTiming[] {
+  const serviceNumbers = stop.services
+    .filter((service) => service.startsWith('PUB:'))
+    .map((service) => service.slice('PUB:'.length))
+  if (!snapshot) return serviceNumbers.map((serviceNumber) => ({ serviceNumber, timings: null }))
+
+  const stopData = snapshot.stops[stop.id]
+  const stale = getPublicArrivalAgeMs(snapshot, stop.id, nowMs) > PUBLIC_BUS_ARRIVAL_MAX_AGE_MS
+  return serviceNumbers.map((serviceNumber) => {
+    const service = stopData?.services[serviceNumber]
+    if (!service) return { serviceNumber, timings: null, status: 'provider-error' as const }
+    if (stale) return { serviceNumber, timings: null, status: 'provider-error' as const }
+    if (service.status !== 'live') return { serviceNumber, timings: null, status: service.status }
+    const timings = service.arrivals
+      .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - nowMs) / 1_000))
+      .filter((seconds) => seconds >= 0)
+      .slice(0, 3)
+      .map(formatArrivalSeconds)
+    return timings.length > 0
+      ? {
+        serviceNumber,
+        timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
+        status: 'live' as const,
+      }
+      : { serviceNumber, timings: null, status: 'no-estimate' as const }
+  })
+}
+
 function getLiveStopDepartures(
   stop: TransitStop,
   index: TransitIndex,
@@ -186,8 +229,10 @@ function getLiveArrivalMessage(
   departures: readonly MobileStopDeparture[],
   scheduledDepartures: readonly MobileStopScheduledDeparture[],
   isRefreshing: boolean,
+  publicArrivalSnapshot: PublicBusArrivalSnapshot | null,
 ): string | null {
   if (isRefreshing || scheduledDepartures.length > 0) return null
+  if (publicArrivalSnapshot?.stops[stopId]) return null
   if (!snapshot) return null
   if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return 'No live data'
   if (departures.length > 0) return null
@@ -253,6 +298,8 @@ export function getMobileStopSheetSelection(
   nowMs: number,
   serviceWindows: MobileStopServiceWindows | null = null,
   isRefreshing = false,
+  publicArrivalSnapshot: PublicBusArrivalSnapshot | null = null,
+  publicIsRefreshing = false,
 ): MobileStopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const favorites = new Set(favoriteStopIds)
@@ -272,17 +319,23 @@ export function getMobileStopSheetSelection(
         isOpposite: stop.opposite === id,
       })),
   }))
+  const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs)
   return {
     id: stop.id,
     longName: stop.longName,
     oppositeStop: oppositeStop ? { id: oppositeStop.id, longName: oppositeStop.longName } : null,
-    publicServices: stop.services
-      .filter((service) => service.startsWith('PUB:'))
-      .map((service) => service.slice('PUB:'.length)),
+    publicServices,
     departures,
     scheduledDepartures: routeAvailability.scheduledDepartures,
-    live: departures.length > 0 && !isRefreshing && arrivalSnapshot !== null &&
-      getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS,
+    live: (
+      !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
+      getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
+    ) || (
+      !isRefreshing && !publicIsRefreshing &&
+      publicServices.some(({ timings, status }) => timings !== null && status === 'live') &&
+      publicArrivalSnapshot !== null &&
+      getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
+    ),
     liveArrivalMessage: getLiveArrivalMessage(
       arrivalSnapshot,
       stop.id,
@@ -290,6 +343,7 @@ export function getMobileStopSheetSelection(
       departures,
       routeAvailability.scheduledDepartures,
       isRefreshing,
+      publicArrivalSnapshot,
     ),
   }
 }

@@ -70,4 +70,22 @@ describe('BusStopTimings', () => {
     expect(screen.getByText('No live timing')).toBeTruthy()
     expect(document.querySelectorAll('.mobile-stop-departure-status')).toHaveLength(2)
   })
+
+  it('explains normalized public timing states', () => {
+    render(
+      <BusStopTimings
+        departures={[]}
+        publicServices={[
+          { serviceNumber: '95', timings: null, status: 'no-estimate' },
+          { serviceNumber: '151', timings: null, status: 'not-in-operation' },
+          { serviceNumber: '96', timings: null, status: 'provider-error' },
+        ]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('No estimate available')).toBeTruthy()
+    expect(screen.getByText('Not in operation')).toBeTruthy()
+    expect(screen.getByText('Live timing unavailable')).toBeTruthy()
+  })
 })

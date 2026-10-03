@@ -688,6 +688,7 @@ function App() {
             onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
             onClearDestinationEndpoint={commands.clearDestinationEndpoint}
             onClearTrip={commands.clearTrip}
+            onPlanJourney={commands.planJourney}
             journey={state.journey}
             simulatedAtMs={simulatedAtMs}
             containerRef={tripControlsRef}

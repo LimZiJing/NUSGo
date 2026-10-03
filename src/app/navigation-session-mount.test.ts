@@ -48,6 +48,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     replanJourney: vi.fn(),
+    planJourney: vi.fn(),
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
     clearTrip: vi.fn(),
@@ -194,6 +195,8 @@ describe('navigation session application seam', () => {
     expect(secondCommands.selectOriginEndpoint).toBe(firstCommands.selectOriginEndpoint)
     firstCommands.selectOriginEndpoint({ kind: 'venue', id: 'COM1' })
     expect(session.setTripEndpoint).toHaveBeenCalledWith('origin', { kind: 'venue', id: 'COM1' })
+    firstCommands.planJourney()
+    expect(session.planJourney).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
     firstCommands.focusStopInStopsTab('STOP-A')

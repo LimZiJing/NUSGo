@@ -78,6 +78,7 @@ export interface NavigationSessionCommands {
   ) => void
   readonly clearDestinationEndpoint: () => void
   readonly clearTrip: () => void
+  readonly planJourney: () => void
   readonly setContextualPanelQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
   readonly openVenueSearch: () => void
@@ -117,6 +118,7 @@ function createNavigationSessionCommands(
     selectDestinationEndpoint: (endpoint) => session?.setTripEndpoint('destination', endpoint),
     clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
     clearTrip: () => session?.clearTrip(),
+    planJourney: () => session?.planJourney(),
     setContextualPanelQuery: (query) => session?.setContextualPanelQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
     openVenueSearch: () => session?.openVenueSearch(),

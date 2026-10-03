@@ -207,6 +207,29 @@
   min-height: 28px;
 }
 
+.trip-controls-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.trip-plan-submit {
+  min-height: var(--control-height-sm);
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.trip-plan-submit:not(:disabled):hover,
+.trip-plan-submit:not(:disabled):focus-visible {
+  background: var(--accent-hover);
+}
+
 .trip-endpoint-results {
   display: grid;
   gap: 4px;

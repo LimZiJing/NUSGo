@@ -1,3 +1,7 @@
+.stops-view {
+  box-sizing: border-box;
+}
+
 .stops-view button {
   min-width: 44px;
   min-height: var(--control-height-lg);

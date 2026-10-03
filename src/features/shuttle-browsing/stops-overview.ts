@@ -11,7 +11,7 @@ export interface StopOverviewItem {
 
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
-export function getMobileStopsOverview(
+export function getStopsOverview(
   index: TransitIndex | null,
   list: 'nearby' | 'favourites',
   center: Coordinate | null,
@@ -33,12 +33,12 @@ export function getMobileStopsOverview(
     ) || first.stop.id.localeCompare(second.stop.id))
 }
 
-export function getMobileStopsWithinNearbyRadius(
+export function getStopsWithinNearbyRadius(
   index: TransitIndex | null,
   center: Coordinate | null,
   fix: DeviceLocationFix | null,
 ): readonly StopOverviewItem[] {
   if (!center) return []
-  return getMobileStopsOverview(index, 'nearby', center, fix, [])
+  return getStopsOverview(index, 'nearby', center, fix, [])
     .filter(({ stop }) => getDistanceMeters(center, stop) <= NEARBY_STOP_RADIUS_METERS)
 }

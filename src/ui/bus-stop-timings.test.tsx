@@ -16,7 +16,7 @@ describe('BusStopTimings', () => {
       />,
     )
 
-    expect(screen.getByText('No bus timings available.').className).toBe('mobile-stop-timings-empty')
+    expect(screen.getByText('No bus timings available.').className).toBe('stop-timings-empty')
   })
 
   it('shows reachable favourite stop nicknames beside an internal route', () => {
@@ -45,7 +45,7 @@ describe('BusStopTimings', () => {
     expect(screen.getByText('11m')).toBeTruthy()
     expect(screen.getByText('13m')).toBeTruthy()
 
-    const destinations = document.querySelectorAll('.mobile-stop-reachable-favorite')
+    const destinations = document.querySelectorAll('.stop-reachable-favorite')
     expect(destinations).toHaveLength(2)
     expect(destinations[0]?.getAttribute('data-opposite')).toBeNull()
     expect(destinations[1]?.getAttribute('data-opposite')).toBe('true')
@@ -68,6 +68,6 @@ describe('BusStopTimings', () => {
 
     expect(screen.getByText('Starts 7:04 AM')).toBeTruthy()
     expect(screen.getByText('No live timing')).toBeTruthy()
-    expect(document.querySelectorAll('.mobile-stop-departure-status')).toHaveLength(2)
+    expect(document.querySelectorAll('.stop-departure-status')).toHaveLength(2)
   })
 })

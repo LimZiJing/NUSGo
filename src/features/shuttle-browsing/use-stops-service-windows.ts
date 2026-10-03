@@ -4,21 +4,21 @@ import {
   type ShuttleServiceWindow,
 } from '../../domain/transit/service-hours'
 
-export type MobileStopServiceWindowsLoader = (
+export type StopsServiceWindowsLoader = (
   routeIds: readonly string[],
   signal: AbortSignal,
 ) => Promise<Readonly<Record<string, readonly ShuttleServiceWindow[]>>>
 
-export type MobileStopServiceWindowsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
+export type StopsServiceWindowsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
 
-export interface MobileStopServiceWindowsState {
-  readonly status: MobileStopServiceWindowsStatus
+export interface StopsServiceWindowsState {
+  readonly status: StopsServiceWindowsStatus
   readonly windows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null
 }
 
 interface ServiceWindowsRequestState {
   readonly routeKey: string | null
-  readonly status: MobileStopServiceWindowsStatus
+  readonly status: StopsServiceWindowsStatus
   readonly windows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null
 }
 
@@ -26,11 +26,11 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
 }
 
-export function useMobileStopServiceWindows(
-  loadServiceWindows: MobileStopServiceWindowsLoader,
+export function useStopsServiceWindows(
+  loadServiceWindows: StopsServiceWindowsLoader,
   active: boolean,
   routeIds: readonly string[],
-): MobileStopServiceWindowsState {
+): StopsServiceWindowsState {
   const [state, setState] = useState<ServiceWindowsRequestState>(() => ({
     routeKey: null,
     status: 'idle',

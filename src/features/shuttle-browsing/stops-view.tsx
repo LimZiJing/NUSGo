@@ -3,23 +3,23 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { BusStopCard } from '../../ui/bus-stop-card'
 import { BusStopTimings, type BusStopDeparture, type BusStopScheduledDeparture } from '../../ui/bus-stop-timings'
 import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
-import { type MobileStopDeparture } from './mobile-stop-view'
+import { type StopDeparture } from './stops-view-state'
 
-type MobileStopSheetDeparture = MobileStopDeparture & BusStopDeparture
+type StopSheetDeparture = StopDeparture & BusStopDeparture
 
-export interface MobileStopSheetSelection {
+export interface StopSheetSelection {
   readonly id: string
   readonly longName: string
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly string[]
-  readonly departures: readonly MobileStopSheetDeparture[]
+  readonly departures: readonly StopSheetDeparture[]
   readonly scheduledDepartures: readonly BusStopScheduledDeparture[]
   readonly live: boolean
   readonly liveArrivalMessage: string | null
 }
 
-export interface MobileStopOverviewSelection {
-  readonly stop: MobileStopSheetSelection
+export interface StopOverviewSelection {
+  readonly stop: StopSheetSelection
   readonly distanceMeters: number | null
   readonly favorite: boolean
   readonly expanded: boolean
@@ -27,12 +27,12 @@ export interface MobileStopOverviewSelection {
 
 interface StopsViewProps {
   readonly expanded?: boolean
-  readonly selectedStop: MobileStopSheetSelection | null
+  readonly selectedStop: StopSheetSelection | null
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
-  readonly overviewStops?: readonly MobileStopOverviewSelection[]
+  readonly overviewStops?: readonly StopOverviewSelection[]
   readonly overviewLoading?: boolean
   readonly selectedList?: 'nearby' | 'favourites'
   readonly selectedStopFavorite?: boolean
@@ -67,23 +67,23 @@ export function StopsView({
 
   return (
     <div
-      id="mobile-stops-sheet-content"
+      id="stops-view-content"
       data-mobile-sheet-content
       data-view={selectedStop ? 'selected' : 'overview'}
       hidden={!isExpanded}
     >
         {selectedStop ? (
-          <div className="mobile-stop-selection" data-testid="mobile-stop-detail">
+          <div className="stop-selection" data-testid="stop-detail">
             <GhostBackButton label="Back to stops" onClick={onBackToStops} />
-            <div className="mobile-stop-identity">
-              <div className="mobile-stop-identity-copy">
-                <h2 id="mobile-stops-sheet-heading" className="mobile-stop-selection-name">
+            <div className="stop-identity">
+              <div className="stop-identity-copy">
+                <h2 id="stops-view-heading" className="stop-selection-name">
                   {selectedStop.longName}
                 </h2>
-                <span className="mobile-stop-id">{selectedStop.id}</span>
+                <span className="stop-id">{selectedStop.id}</span>
               </div>
               <button
-                className="mobile-stop-favorite"
+                className="stop-favorite"
                 type="button"
                 aria-label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName} ${selectedStopFavorite ? 'from' : 'to'} favourites`}
                 aria-pressed={selectedStopFavorite}
@@ -92,14 +92,14 @@ export function StopsView({
                 <FavoriteStarIcon filled={selectedStopFavorite} />
               </button>
             </div>
-            <div className="mobile-stop-actions">
+            <div className="stop-actions">
               <NavigateButton
                 ariaLabel="Navigate to this stop"
                 onClick={() => onNavigateToStop(selectedStop.id)}
               />
               {oppositeStop ? (
                 <button
-                  className="mobile-stop-opposite"
+                  className="stop-opposite"
                   type="button"
                   aria-label={`Opposite stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
                   title={`${oppositeStop.longName} (${oppositeStop.id})`}
@@ -110,11 +110,11 @@ export function StopsView({
               ) : null}
             </div>
             {liveArrivalMessage && (
-              <p className="mobile-stop-live-arrival-message" role="status">
+              <p className="stop-live-arrival-message" role="status">
                 {liveArrivalMessage}
               </p>
             )}
-            <div className="mobile-stop-departures">
+            <div className="stop-departures">
               <BusStopTimings
                 departures={selectedStop.departures}
                 scheduledDepartures={selectedStop.scheduledDepartures}
@@ -128,24 +128,24 @@ export function StopsView({
             </div>
           </div>
         ) : overviewStops ? (
-          <div className="mobile-stops-overview">
-            <div className="mobile-stops-list-selector" role="group" aria-label="Stop list">
+          <div className="stops-overview">
+            <div className="stops-list-selector" role="group" aria-label="Stop list">
               <button type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
               <button type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
             </div>
             {liveArrivalMessage && (
-              <p className="mobile-stop-live-arrival-message" role="status">
+              <p className="stop-live-arrival-message" role="status">
                 {liveArrivalMessage}
               </p>
             )}
             {locationNotice && selectedList === 'nearby' && (
-              <div className="mobile-stops-location-notice" role="status">
+              <div className="stops-location-notice" role="status">
                 <span>{locationNotice}</span>
                 <button type="button" aria-label="Dismiss location notice" onClick={onDismissLocationNotice}>×</button>
               </div>
             )}
             {overviewStops.length ? (
-              <div className="mobile-stops-card-list">
+              <div className="stops-card-list">
                 {overviewStops.map(({ stop, distanceMeters, favorite, expanded }) => (
                   <BusStopCard
                     key={stop.id}
@@ -169,7 +169,7 @@ export function StopsView({
                 ))}
               </div>
             ) : (
-              <p className="mobile-stops-empty">
+              <p className="stops-empty">
                 {overviewLoading
                   ? 'Loading stops…'
                   : selectedList === 'favourites'

@@ -4,17 +4,17 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
 import {
-  type MobileStopArrivalLoader,
-  type MobileStopArrivalStopRequest,
-  useMobileStopArrivals,
-} from './use-mobile-stop-arrivals'
+  type StopsArrivalLoader,
+  type StopsArrivalStopRequest,
+  useStopsArrivals,
+} from './use-stops-arrivals'
 
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
 })
 
-const stops: readonly MobileStopArrivalStopRequest[] = [
+const stops: readonly StopsArrivalStopRequest[] = [
   { stopId: 'STOP-A', stopName: 'Stop A' },
 ]
 
@@ -35,11 +35,11 @@ function Probe({
   active,
   stops: requestedStops = stops,
 }: {
-  readonly client: MobileStopArrivalLoader
+  readonly client: StopsArrivalLoader
   readonly active: boolean
-  readonly stops?: readonly MobileStopArrivalStopRequest[]
+  readonly stops?: readonly StopsArrivalStopRequest[]
 }) {
-  const state = useMobileStopArrivals(client, active, requestedStops)
+  const state = useStopsArrivals(client, active, requestedStops)
   return (
     <>
       <output data-testid="status">{state.status}</output>
@@ -48,10 +48,10 @@ function Probe({
   )
 }
 
-describe('useMobileStopArrivals', () => {
+describe('useStopsArrivals', () => {
   it('loads immediately and refreshes active Stops at the 30-second interval', async () => {
     vi.useFakeTimers()
-    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
 
     render(<Probe client={client} active />)
     await act(async () => undefined)
@@ -66,7 +66,7 @@ describe('useMobileStopArrivals', () => {
   })
 
   it('does not reload when the same stop request is recreated', async () => {
-    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
     const { rerender } = render(<Probe client={client} active stops={[...stops]} />)
     await act(async () => undefined)
 
@@ -77,7 +77,7 @@ describe('useMobileStopArrivals', () => {
   })
 
   it('does not reload when the same stop requests are reordered', async () => {
-    const client: MobileStopArrivalLoader = vi.fn(async () => snapshot)
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
     const firstOrder = [
       { stopId: 'STOP-A', stopName: 'Stop A' },
       { stopId: 'STOP-B', stopName: 'Stop B' },
@@ -95,7 +95,7 @@ describe('useMobileStopArrivals', () => {
   it('keeps the previous snapshot visible while a refresh is in flight', async () => {
     vi.useFakeTimers()
     let resolveRefresh: (value: ShuttleArrivalSnapshot) => void = () => undefined
-    const client: MobileStopArrivalLoader = vi.fn()
+    const client: StopsArrivalLoader = vi.fn()
       .mockResolvedValueOnce(snapshot)
       .mockImplementationOnce(() => new Promise((resolve) => {
         resolveRefresh = resolve
@@ -120,7 +120,7 @@ describe('useMobileStopArrivals', () => {
 
   it('keeps the previous snapshot visible when a refresh fails', async () => {
     vi.useFakeTimers()
-    const client: MobileStopArrivalLoader = vi.fn()
+    const client: StopsArrivalLoader = vi.fn()
       .mockResolvedValueOnce(snapshot)
       .mockRejectedValueOnce(new Error('provider unavailable'))
 
@@ -138,7 +138,7 @@ describe('useMobileStopArrivals', () => {
     vi.useFakeTimers()
     const nextStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
     const latestStops = [{ stopId: 'STOP-C', stopName: 'Stop C' }]
-    const client = vi.fn<MobileStopArrivalLoader>(async () => snapshot)
+    const client = vi.fn<StopsArrivalLoader>(async () => snapshot)
     const { rerender } = render(<Probe client={client} active />)
     await act(async () => undefined)
 
@@ -161,7 +161,7 @@ describe('useMobileStopArrivals', () => {
   it('does not expose the previous snapshot while the requested stop set changes', async () => {
     vi.useFakeTimers()
     const nextStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
-    const client = vi.fn<MobileStopArrivalLoader>()
+    const client = vi.fn<StopsArrivalLoader>()
       .mockResolvedValueOnce(snapshot)
       .mockImplementationOnce(() => new Promise(() => undefined))
     const { rerender } = render(<Probe client={client} active />)
@@ -187,7 +187,7 @@ describe('useMobileStopArrivals', () => {
       observedAt: '2026-09-30T00:00:09.000Z',
       snapshotVersion: '2026-09-30T00:00:09.000Z-1',
     }
-    const client: MobileStopArrivalLoader = vi.fn()
+    const client: StopsArrivalLoader = vi.fn()
       .mockResolvedValueOnce(currentSnapshot)
       .mockResolvedValueOnce(olderSnapshot)
 
@@ -203,7 +203,7 @@ describe('useMobileStopArrivals', () => {
   it('does not request while inactive and aborts an active request during cleanup', async () => {
     let resolveRequest: (value: ShuttleArrivalSnapshot) => void = () => undefined
     let requestSignal: AbortSignal | undefined
-    const client: MobileStopArrivalLoader = vi.fn((_requestedStops, signal) => {
+    const client: StopsArrivalLoader = vi.fn((_requestedStops, signal) => {
         requestSignal = signal
         return new Promise<ShuttleArrivalSnapshot>((resolve) => {
           resolveRequest = resolve
@@ -223,7 +223,7 @@ describe('useMobileStopArrivals', () => {
   })
 
   it('publishes an error state when the arrivals interface fails', async () => {
-    const client: MobileStopArrivalLoader = vi.fn(async () => {
+    const client: StopsArrivalLoader = vi.fn(async () => {
         throw new Error('provider unavailable')
       })
 

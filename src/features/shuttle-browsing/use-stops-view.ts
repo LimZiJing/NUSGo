@@ -1,13 +1,13 @@
 import { useEffect, useReducer } from 'react'
 import type { TransitIndex } from '../../domain/transit'
-import { readFavoriteStopIds, writeFavoriteStopIds } from './mobile-stop-favorites'
-import { createInitialMobileStopViewState, mobileStopViewReducer } from './mobile-stop-view'
+import { readFavoriteStopIds, writeFavoriteStopIds } from './stop-favorites'
+import { createInitialStopsViewState, stopsViewReducer } from './stops-view-state'
 
-export function useMobileStopView(index: TransitIndex | null) {
+export function useStopsView(index: TransitIndex | null) {
   const [view, dispatch] = useReducer(
-    mobileStopViewReducer,
+    stopsViewReducer,
     undefined,
-    () => createInitialMobileStopViewState(readFavoriteStopIds()),
+    () => createInitialStopsViewState(readFavoriteStopIds()),
   )
 
   useEffect(() => {

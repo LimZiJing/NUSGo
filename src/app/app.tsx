@@ -14,15 +14,15 @@ import {
 } from '../features/contextual-panel/explore-view'
 import {
   StopsView,
-  type MobileStopSheetSelection,
+  type StopSheetSelection,
 } from '../features/shuttle-browsing/stops-view'
-import { getMobileStopSheetSelection } from '../features/shuttle-browsing/mobile-stop-view'
+import { getStopSheetSelection } from '../features/shuttle-browsing/stops-view-state'
 import {
-  getMobileStopsOverview,
-  getMobileStopsWithinNearbyRadius,
-} from '../features/shuttle-browsing/mobile-stops-overview'
-import { useMobileStopView } from '../features/shuttle-browsing/use-mobile-stop-view'
-import { useMobileStopArrivals } from '../features/shuttle-browsing/use-mobile-stop-arrivals'
+  getStopsOverview,
+  getStopsWithinNearbyRadius,
+} from '../features/shuttle-browsing/stops-overview'
+import { useStopsView } from '../features/shuttle-browsing/use-stops-view'
+import { useStopsArrivals } from '../features/shuttle-browsing/use-stops-arrivals'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MainNavigation } from '../ui/main-navigation'
@@ -59,7 +59,7 @@ import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-servi
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { LocationTrackingState } from '../domain/location/types'
-import { useMobileStopServiceWindows } from '../features/shuttle-browsing/use-mobile-stop-service-windows'
+import { useStopsServiceWindows } from '../features/shuttle-browsing/use-stops-service-windows'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
 import { JourneyTestTimeControl } from '../ui/journey-test-time-control'
@@ -103,7 +103,7 @@ function App() {
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const isMobileViewportRef = useRef(isMobileViewport)
   const prepareSheetTransitionRef = useRef<(() => void) | null>(null)
-  const [mobileStopView, dispatchMobileStopView] = useMobileStopView(state.transitIndex)
+  const [stopsView, dispatchStopsView] = useStopsView(state.transitIndex)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
   const [stopFocusRequest, setStopFocusRequest] = useState<{
     readonly stopId: string | null
@@ -130,14 +130,14 @@ function App() {
   const commands = commandAdapter(session)
 
   const shuttleArrivalClient = useMemo(() => createShuttleArrivalClient(), [])
-  const loadMobileStopArrivals = useCallback(
+  const loadStopsArrivals = useCallback(
     (stops: readonly { readonly stopId: string; readonly stopName: string }[], signal: AbortSignal) => (
       shuttleArrivalClient.getArrivals(stops, signal)
     ),
     [shuttleArrivalClient],
   )
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
-  const loadMobileStopServiceWindows = useCallback(
+  const loadStopsServiceWindows = useCallback(
     (routeIds: readonly string[], signal: AbortSignal) => (
       shuttleServiceHoursClient.getServiceWindows(routeIds, signal)
     ),
@@ -266,13 +266,13 @@ function App() {
   }, [prepareSheetTransition])
 
   const openStopInStopsView = useCallback((stopId: string): void => {
-    dispatchMobileStopView({ type: 'focus-stop', stopId })
+    dispatchStopsView({ type: 'focus-stop', stopId })
     setStopFocusRequest((current) => ({ stopId, sequence: current.sequence + 1 }))
     if (navigationRef.current.activeView !== 'stops') {
       pendingViewFocusRef.current = 'stops'
       dispatchNavigation({ type: 'select-view', view: 'stops' })
     }
-  }, [dispatchMobileStopView])
+  }, [dispatchStopsView])
 
   const handleStopSelected = useCallback((stopId: string): boolean => {
     const currentNavigation = navigationRef.current
@@ -496,40 +496,40 @@ function App() {
 
   const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
   const transitIndex = state.transitIndex
-  const selectedStop = mobileStopView.focusedStopId === null
+  const selectedStop = stopsView.focusedStopId === null
     ? undefined
-    : transitIndex?.stopById.get(mobileStopView.focusedStopId)
+    : transitIndex?.stopById.get(stopsView.focusedStopId)
   const hasLocationError = ['denied', 'unavailable', 'timeout', 'invalid'].includes(state.location.status)
   const locationFix = hasLocationError ? null : state.location.latestFix
-  const nearbyStopEntries = useMemo(() => transitIndex ? getMobileStopsOverview(
+  const nearbyStopEntries = useMemo(() => transitIndex ? getStopsOverview(
     transitIndex,
     'nearby',
     mapCenter,
     locationFix,
-    mobileStopView.favoriteStopIds,
+    stopsView.favoriteStopIds,
   ) : [], [
     locationFix,
     mapCenter,
-    mobileStopView.favoriteStopIds,
+    stopsView.favoriteStopIds,
     transitIndex,
   ])
   const locationNearbyStopEntries = useMemo(() => {
     if (!transitIndex || !locationFix) return null
-    return getMobileStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
+    return getStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
   }, [locationFix, transitIndex])
-  const overviewStopEntries = useMemo(() => mobileStopView.list === 'nearby'
+  const overviewStopEntries = useMemo(() => stopsView.list === 'nearby'
     ? nearbyStopEntries
-    : transitIndex ? getMobileStopsOverview(
+    : transitIndex ? getStopsOverview(
       transitIndex,
       'favourites',
       mapCenter,
       locationFix,
-      mobileStopView.favoriteStopIds,
+      stopsView.favoriteStopIds,
     ) : [], [
     locationFix,
     mapCenter,
-    mobileStopView.favoriteStopIds,
-    mobileStopView.list,
+    stopsView.favoriteStopIds,
+    stopsView.list,
     nearbyStopEntries,
     transitIndex,
   ])
@@ -543,8 +543,8 @@ function App() {
     }
     return [...requests.values()]
   }, [overviewStopEntries, selectedStop])
-  const stopArrivals = useMobileStopArrivals(
-    loadMobileStopArrivals,
+  const stopArrivals = useStopsArrivals(
+    loadStopsArrivals,
     activeView === 'stops',
     arrivalStopRequests,
   )
@@ -555,17 +555,17 @@ function App() {
     }
     return [...routeIds].sort()
   }, [arrivalStopRequests, transitIndex])
-  const stopServiceWindows = useMobileStopServiceWindows(
-    loadMobileStopServiceWindows,
+  const stopServiceWindows = useStopsServiceWindows(
+    loadStopsServiceWindows,
     activeView === 'stops',
     serviceRouteIds,
   )
   const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
-  const mobileStopSelection: MobileStopSheetSelection | null = selectedStop && transitIndex
-    ? getMobileStopSheetSelection(
+  const stopSelection: StopSheetSelection | null = selectedStop && transitIndex
+    ? getStopSheetSelection(
       selectedStop,
       transitIndex,
-      mobileStopView.favoriteStopIds,
+      stopsView.favoriteStopIds,
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
@@ -573,27 +573,27 @@ function App() {
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
-    stop: getMobileStopSheetSelection(
+    stop: getStopSheetSelection(
       stop,
       transitIndex,
-      mobileStopView.favoriteStopIds,
+      stopsView.favoriteStopIds,
       stopArrivals.snapshot,
       stopArrivals.nowMs,
       stopServiceWindows.windows,
       stopArrivalsUpdating,
     ),
     distanceMeters,
-    favorite: mobileStopView.favoriteStopIds.includes(stop.id),
-    expanded: mobileStopView.expandedStopIds[mobileStopView.list].includes(stop.id),
+    favorite: stopsView.favoriteStopIds.includes(stop.id),
+    expanded: stopsView.expandedStopIds[stopsView.list].includes(stop.id),
   })) : []
   const expandNearbyTimings = useCallback((): boolean => {
     if (locationNearbyStopEntries === null) return false
-    dispatchMobileStopView({
+    dispatchStopsView({
       type: 'set-nearby-expanded',
       stopIds: locationNearbyStopEntries.map(({ stop }) => stop.id),
     })
     return true
-  }, [dispatchMobileStopView, locationNearbyStopEntries])
+  }, [dispatchStopsView, locationNearbyStopEntries])
 
   const tryExpandNearbyTimings = useCallback((): boolean => {
     if (!hasSuccessfulLocation(state.location) || !expandNearbyTimings()) return false
@@ -619,19 +619,19 @@ function App() {
   useEffect(() => {
     if (
       !session || activeView !== 'stops' ||
-      mobileStopView.list !== 'nearby' || state.location.status !== 'disabled' ||
+      stopsView.list !== 'nearby' || state.location.status !== 'disabled' ||
       initialNearbyLocationRequestedRef.current
     ) return
     initialNearbyLocationRequestedRef.current = true
     requestLocationWithNearbyExpansion(session.locateUser)
   }, [
     activeView,
-    mobileStopView.list,
+    stopsView.list,
     requestLocationWithNearbyExpansion,
     session,
     state.location.status,
   ])
-  const locationNotice = hasLocationError && !mobileStopView.locationNoticeDismissed
+  const locationNotice = hasLocationError && !stopsView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
   const liveArrivalMessage = stopArrivals.snapshot
@@ -753,7 +753,7 @@ function App() {
                 commands.enterMobileRoutes()
               }
             }
-            if (view === 'stops' && mobileStopView.list === 'nearby' && state.location.status === 'disabled') {
+            if (view === 'stops' && stopsView.list === 'nearby' && state.location.status === 'disabled') {
               commands.enableLocationTracking()
             }
             dispatchNavigation({ type: 'select-view', view })
@@ -902,9 +902,9 @@ function App() {
         </DesktopColumnShell>
         <DesktopColumnShell id="stops-panel" active={navigation.activeView === 'stops'}>
           <MobileSheetShell
-            className="mobile-stops-sheet"
+            className="stops-view"
             label="Stops panel"
-            controlsId="mobile-stops-sheet-content"
+            controlsId="stops-view-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.stops.lastNonCollapsedDetent}
             enabled={isMobileViewport}
@@ -920,23 +920,23 @@ function App() {
           >
             <StopsView
               expanded={!isMobileViewport || navigation.sheets.stops.detent !== 'collapsed'}
-              selectedStop={mobileStopSelection}
+              selectedStop={stopSelection}
               overviewStops={overviewStops}
-              overviewLoading={!transitIndex || (mobileStopView.list === 'nearby' && !mapCenter)}
+              overviewLoading={!transitIndex || (stopsView.list === 'nearby' && !mapCenter)}
               liveArrivalMessage={liveArrivalMessage}
-              selectedList={mobileStopView.list}
+              selectedList={stopsView.list}
               selectedStopFavorite={selectedStop
-                ? mobileStopView.favoriteStopIds.includes(selectedStop.id)
+                ? stopsView.favoriteStopIds.includes(selectedStop.id)
                 : false}
               locationNotice={locationNotice}
               onSelectList={(list) => {
                 if (list === 'nearby' && state.location.status === 'disabled') commands.enableLocationTracking()
-                dispatchMobileStopView({ type: 'select-list', list })
+                dispatchStopsView({ type: 'select-list', list })
               }}
-              onToggleFavorite={(stopId) => dispatchMobileStopView({ type: 'toggle-favorite', stopId })}
-              onToggleExpanded={(stopId) => dispatchMobileStopView({ type: 'toggle-expanded', stopId })}
-              onDismissLocationNotice={() => dispatchMobileStopView({ type: 'dismiss-location-notice' })}
-              onBackToStops={() => dispatchMobileStopView({ type: 'back-to-stops' })}
+              onToggleFavorite={(stopId) => dispatchStopsView({ type: 'toggle-favorite', stopId })}
+              onToggleExpanded={(stopId) => dispatchStopsView({ type: 'toggle-expanded', stopId })}
+              onDismissLocationNotice={() => dispatchStopsView({ type: 'dismiss-location-notice' })}
+              onBackToStops={() => dispatchStopsView({ type: 'back-to-stops' })}
               onSelectOppositeStop={(stopId) => {
                 handleStopSelected(stopId)
               }}

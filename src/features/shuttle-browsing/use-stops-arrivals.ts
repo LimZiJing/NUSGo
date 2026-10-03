@@ -5,27 +5,27 @@ import {
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
 
-export interface MobileStopArrivalStopRequest {
+export interface StopsArrivalStopRequest {
   readonly stopId: string
   readonly stopName: string
 }
 
-export type MobileStopArrivalLoader = (
-  stops: readonly MobileStopArrivalStopRequest[],
+export type StopsArrivalLoader = (
+  stops: readonly StopsArrivalStopRequest[],
   signal: AbortSignal,
 ) => Promise<ShuttleArrivalSnapshot>
 
-export type MobileStopArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
+export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
 
-export interface MobileStopArrivalsState {
-  readonly status: MobileStopArrivalsStatus
+export interface StopsArrivalsState {
+  readonly status: StopsArrivalsStatus
   readonly snapshot: ShuttleArrivalSnapshot | null
   readonly nowMs: number
 }
 
 interface ArrivalRequestState {
   readonly stopKey: string | null
-  readonly status: MobileStopArrivalsStatus
+  readonly status: StopsArrivalsStatus
   readonly snapshot: ShuttleArrivalSnapshot | null
 }
 
@@ -35,11 +35,11 @@ function isAbortError(error: unknown): boolean {
 
 const STOP_SET_DEBOUNCE_MS = 150
 
-export function useMobileStopArrivals(
-  loadArrivals: MobileStopArrivalLoader,
+export function useStopsArrivals(
+  loadArrivals: StopsArrivalLoader,
   active: boolean,
-  stops: readonly MobileStopArrivalStopRequest[],
-): MobileStopArrivalsState {
+  stops: readonly StopsArrivalStopRequest[],
+): StopsArrivalsState {
   const [state, setState] = useState<ArrivalRequestState>(() => ({
     stopKey: null,
     status: 'idle',

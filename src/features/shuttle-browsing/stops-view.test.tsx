@@ -4,11 +4,11 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopsView } from './stops-view'
-import type { MobileStopSheetSelection } from './stops-view'
+import type { StopSheetSelection } from './stops-view'
 
 afterEach(cleanup)
 
-const selectedStop: MobileStopSheetSelection = {
+const selectedStop: StopSheetSelection = {
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },
@@ -22,7 +22,7 @@ const selectedStop: MobileStopSheetSelection = {
   liveArrivalMessage: null,
 }
 
-describe('MobileStopsSheet', () => {
+describe('StopsView', () => {
   it('offers an accessible grab handle to expand the map-based Stops sheet', async () => {
     const user = userEvent.setup()
     const onDetentChange = vi.fn()
@@ -39,7 +39,7 @@ describe('MobileStopsSheet', () => {
     )
 
     const toggle = screen.getByRole('button', { name: 'Expand Stops panel' })
-    expect(toggle.getAttribute('aria-controls')).toBe('mobile-stops-sheet-content')
+    expect(toggle.getAttribute('aria-controls')).toBe('stops-view-content')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     await user.click(toggle)
     expect(onDetentChange).toHaveBeenCalledWith('partial')
@@ -82,7 +82,7 @@ describe('MobileStopsSheet', () => {
     expect(screen.getByRole('button', { name: 'Add University Hall to favourites' }).getAttribute('aria-pressed'))
       .toBe('false')
 
-    const content = screen.getByTestId('mobile-stop-detail')
+    const content = screen.getByTestId('stop-detail')
     const order = ['University Hall', 'Navigate', 'Opposite stop']
     const contentText = content.textContent ?? ''
     expect(order.map((label) => contentText.indexOf(label))).toEqual(
@@ -92,7 +92,7 @@ describe('MobileStopsSheet', () => {
       .toHaveLength(3)
     expect(screen.getByText('No live timing')).toBeTruthy()
     expect(screen.queryByText('26m')).toBeNull()
-    expect(container.querySelector('.mobile-stop-favorite')?.tagName).toBe('BUTTON')
+    expect(container.querySelector('.stop-favorite')?.tagName).toBe('BUTTON')
   })
 
   it('routes Back, opposite stop, route and destination actions through their callbacks', async () => {

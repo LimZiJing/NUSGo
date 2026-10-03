@@ -71,7 +71,7 @@
   }
 
   .navigation-column .contextual-panel,
-  .navigation-column .mobile-stops-sheet,
+  .navigation-column .stops-view,
   .navigation-column .trip-controls {
     position: static;
     inset: auto;
@@ -93,8 +93,7 @@
     align-content: start;
   }
 
-  .navigation-column .mobile-explore-segments,
-  .navigation-column .mobile-stops-list-selector {
+  .navigation-column .mobile-explore-segments {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
@@ -103,8 +102,7 @@
     background: var(--surface-segmented-control);
   }
 
-  .navigation-column .mobile-explore-segments button,
-  .navigation-column .mobile-stops-list-selector button {
+  .navigation-column .mobile-explore-segments button {
     position: relative;
     isolation: isolate;
     min-width: 0;
@@ -118,13 +116,11 @@
     cursor: pointer;
   }
 
-  .navigation-column .mobile-explore-segments button[aria-pressed='true'],
-  .navigation-column .mobile-stops-list-selector button[aria-pressed='true'] {
+  .navigation-column .mobile-explore-segments button[aria-pressed='true'] {
     color: var(--text-contrast);
   }
 
-  .navigation-column .mobile-explore-segments button[aria-pressed='true']::before,
-  .navigation-column .mobile-stops-list-selector button[aria-pressed='true']::before {
+  .navigation-column .mobile-explore-segments button[aria-pressed='true']::before {
     position: absolute;
     z-index: -1;
     inset: 3px;
@@ -135,8 +131,7 @@
     pointer-events: none;
   }
 
-  .navigation-column .mobile-explore-segments button:hover,
-  .navigation-column .mobile-stops-list-selector button:hover {
+  .navigation-column .mobile-explore-segments button:hover {
     border-color: transparent;
     background: transparent;
   }

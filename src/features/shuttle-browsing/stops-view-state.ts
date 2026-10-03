@@ -11,50 +11,50 @@ import {
   type ShuttleServiceWindow,
 } from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
-import type { MobileStopSheetSelection } from './stops-view'
+import type { StopSheetSelection } from './stops-view'
 
-type MobileStopList = 'nearby' | 'favourites'
+type StopList = 'nearby' | 'favourites'
 
-export interface MobileStopViewState {
+export interface StopsViewState {
   readonly focusedStopId: string | null
-  readonly list: MobileStopList
-  readonly expandedStopIds: Readonly<Record<MobileStopList, readonly string[]>>
+  readonly list: StopList
+  readonly expandedStopIds: Readonly<Record<StopList, readonly string[]>>
   readonly favoriteStopIds: readonly string[]
   readonly locationNoticeDismissed: boolean
 }
 
-export type MobileStopViewAction =
+export type StopsViewAction =
   | { readonly type: 'focus-stop'; readonly stopId: string }
   | { readonly type: 'back-to-stops' }
-  | { readonly type: 'select-list'; readonly list: MobileStopList }
+  | { readonly type: 'select-list'; readonly list: StopList }
   | { readonly type: 'toggle-expanded'; readonly stopId: string }
   | { readonly type: 'set-nearby-expanded'; readonly stopIds: readonly string[] }
   | { readonly type: 'toggle-favorite'; readonly stopId: string }
   | { readonly type: 'reconcile-stops'; readonly stopIds: ReadonlySet<string> }
   | { readonly type: 'dismiss-location-notice' }
 
-export interface MobileStopDeparture {
+export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
 }
 
-export interface MobileStopScheduledDeparture {
+export interface StopScheduledDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly message: string
 }
 
-type MobileStopServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
+type StopsServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
 
-interface MobileStopRouteAvailability {
+interface StopRouteAvailability {
   readonly liveRouteIds: ReadonlySet<string>
-  readonly scheduledDepartures: readonly MobileStopScheduledDeparture[]
+  readonly scheduledDepartures: readonly StopScheduledDeparture[]
 }
 
-export function createInitialMobileStopViewState(favoriteStopIds: readonly string[] = []): MobileStopViewState {
+export function createInitialStopsViewState(favoriteStopIds: readonly string[] = []): StopsViewState {
   return {
     focusedStopId: null,
     list: 'nearby',
@@ -64,10 +64,10 @@ export function createInitialMobileStopViewState(favoriteStopIds: readonly strin
   }
 }
 
-export function mobileStopViewReducer(
-  state: MobileStopViewState,
-  action: MobileStopViewAction,
-): MobileStopViewState {
+export function stopsViewReducer(
+  state: StopsViewState,
+  action: StopsViewAction,
+): StopsViewState {
   switch (action.type) {
     case 'focus-stop':
       return state.focusedStopId === action.stopId
@@ -150,7 +150,7 @@ function getLiveStopDepartures(
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
   liveRouteIds: ReadonlySet<string>,
-): readonly MobileStopDeparture[] {
+): readonly StopDeparture[] {
   if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
   const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
@@ -183,8 +183,8 @@ function getLiveArrivalMessage(
   snapshot: ShuttleArrivalSnapshot | null,
   stopId: string,
   nowMs: number,
-  departures: readonly MobileStopDeparture[],
-  scheduledDepartures: readonly MobileStopScheduledDeparture[],
+  departures: readonly StopDeparture[],
+  scheduledDepartures: readonly StopScheduledDeparture[],
   isRefreshing: boolean,
 ): string | null {
   if (isRefreshing || scheduledDepartures.length > 0) return null
@@ -201,16 +201,16 @@ function compactStartLabel(label: string): string {
 function getRouteAvailability(
   stop: TransitStop,
   index: TransitIndex,
-  serviceWindows: MobileStopServiceWindows | null,
+  serviceWindows: StopsServiceWindows | null,
   nowMs: number,
-): MobileStopRouteAvailability {
+): StopRouteAvailability {
   const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
   if (!serviceWindows) {
     return { liveRouteIds: new Set(routeIds), scheduledDepartures: [] }
   }
 
   const liveRouteIds = new Set<string>()
-  const scheduledDepartures: MobileStopScheduledDeparture[] = []
+  const scheduledDepartures: StopScheduledDeparture[] = []
   for (const routeId of routeIds) {
     const route = index.routeById.get(routeId)
     const windows = serviceWindows[routeId]
@@ -245,15 +245,15 @@ function getRouteAvailability(
   return { liveRouteIds, scheduledDepartures }
 }
 
-export function getMobileStopSheetSelection(
+export function getStopSheetSelection(
   stop: TransitStop,
   index: TransitIndex,
   favoriteStopIds: readonly string[] = [],
   arrivalSnapshot: ShuttleArrivalSnapshot | null = null,
   nowMs: number,
-  serviceWindows: MobileStopServiceWindows | null = null,
+  serviceWindows: StopsServiceWindows | null = null,
   isRefreshing = false,
-): MobileStopSheetSelection {
+): StopSheetSelection {
   const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
   const favorites = new Set(favoriteStopIds)
   const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)

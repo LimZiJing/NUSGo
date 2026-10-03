@@ -108,6 +108,47 @@
   color: var(--text-secondary);
 }
 
+.contextual-panel .route-chip,
+.stops-view .route-chip {
+  flex: 0 0 auto;
+  min-width: 48px;
+  min-height: var(--control-height-lg);
+  padding: 8px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  color: var(--text-strong);
+  background: var(--surface-muted);
+  font: 700 14px/1 system-ui, sans-serif;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.contextual-panel .route-chip[data-size='compact'],
+.stops-view .route-chip[data-size='compact'] {
+  min-width: 34px;
+  min-height: 24px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.contextual-panel .route-chip[data-active='true'],
+.stops-view .route-chip[data-active='true'] {
+  border-color: var(--route-color);
+  color: var(--route-text-color);
+  background: var(--route-color);
+  box-shadow: var(--shadow-chip);
+}
+
+.contextual-panel .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
+.stops-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
+  color: #fff;
+}
+
+.route-chip:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
 @media (max-width: 768px) {
   .route-control-mobile {
     display: grid;
@@ -127,43 +168,6 @@
     scroll-snap-type: x proximity;
   }
 
-  .contextual-panel .route-chip,
-  .mobile-stops-sheet .route-chip {
-    flex: 0 0 auto;
-    min-width: 48px;
-    min-height: var(--control-height-lg);
-    padding: 8px 12px;
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-pill);
-    color: var(--text-strong);
-    background: var(--surface-muted);
-    font: 700 14px/1 system-ui, sans-serif;
-    cursor: pointer;
-    scroll-snap-align: start;
-  }
-
-  .contextual-panel .route-chip[data-size='compact'],
-  .mobile-stops-sheet .route-chip[data-size='compact'] {
-    min-width: 34px;
-    min-height: 24px;
-    padding: 2px 6px;
-    font-size: 12px;
-  }
-
-  .contextual-panel .route-chip[data-active='true'],
-  .mobile-stops-sheet .route-chip[data-active='true'] {
-    border-color: var(--route-color);
-    color: var(--route-text-color);
-    background: var(--route-color);
-    box-shadow: var(--shadow-chip);
-  }
-
-  .contextual-panel .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
-  .mobile-stops-sheet .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
-    color: #fff;
-  }
-
-  .route-chip:focus-visible,
   .route-timeline-stop:focus-visible,
   .mobile-ghost-back-button:focus-visible {
     outline: 3px solid var(--focus-ring-strong);

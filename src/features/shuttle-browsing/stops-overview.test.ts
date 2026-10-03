@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import {
-  getMobileStopsOverview,
-  getMobileStopsWithinNearbyRadius,
-} from './mobile-stops-overview'
+  getStopsOverview,
+  getStopsWithinNearbyRadius,
+} from './stops-overview'
 
 function createOverviewIndex() {
   const network = createValidTransitNetwork()
@@ -19,21 +19,21 @@ describe('mobile Stops overview', () => {
   it('shows all stops and orders the Nearby list by map distance', () => {
     const index = createOverviewIndex()
     const centre = { longitude: 103, latitude: 1 }
-    const nearby = getMobileStopsOverview(index, 'nearby', centre, null, [])
+    const nearby = getStopsOverview(index, 'nearby', centre, null, [])
 
     expect(nearby.map(({ stop }) => stop.id)).toEqual(['STOP-A', 'STOP-D', 'STOP-C', 'STOP-B'])
     expect(nearby.every(({ distanceMeters }) => distanceMeters === null)).toBe(true)
-    expect(getMobileStopsOverview(index, 'nearby', { longitude: 103.1, latitude: 1.1 }, null, [])
+    expect(getStopsOverview(index, 'nearby', { longitude: 103.1, latitude: 1.1 }, null, [])
       .map(({ stop }) => stop.id)).toEqual(['STOP-B', 'STOP-C', 'STOP-D', 'STOP-A'])
 
-    expect(getMobileStopsWithinNearbyRadius(index, centre, null)
+    expect(getStopsWithinNearbyRadius(index, centre, null)
       .map(({ stop }) => stop.id)).toEqual(['STOP-A', 'STOP-D', 'STOP-C'])
-    expect(getMobileStopsWithinNearbyRadius(index, { longitude: 103.1, latitude: 1.1 }, null)
+    expect(getStopsWithinNearbyRadius(index, { longitude: 103.1, latitude: 1.1 }, null)
       .map(({ stop }) => stop.id)).toEqual(['STOP-B'])
   })
 
   it('keeps map-centre ordering when a device fix supplies distance badges', () => {
-    const nearby = getMobileStopsOverview(
+    const nearby = getStopsOverview(
       createOverviewIndex(),
       'nearby',
       { longitude: 103, latitude: 1 },
@@ -46,7 +46,7 @@ describe('mobile Stops overview', () => {
   })
 
   it('shows every saved canonical stop alphabetically regardless of map radius', () => {
-    const favourites = getMobileStopsOverview(
+    const favourites = getStopsOverview(
       createOverviewIndex(),
       'favourites',
       { longitude: 103, latitude: 1 },
@@ -55,6 +55,6 @@ describe('mobile Stops overview', () => {
     )
 
     expect(favourites.map(({ stop }) => stop.id)).toEqual(['STOP-B', 'STOP-C'])
-    expect(getMobileStopsOverview(null, 'nearby', null, null, [])).toEqual([])
+    expect(getStopsOverview(null, 'nearby', null, null, [])).toEqual([])
   })
 })

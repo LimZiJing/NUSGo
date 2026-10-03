@@ -40,17 +40,17 @@ interface ShuttleRouteRenderOptions {
 }
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
-const MOBILE_EXPLORE_LABELS = { venue: 'Find venue', shuttle: 'Shuttle routes' } as const
-const MOBILE_RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
-  neutral: MOBILE_EXPLORE_LABELS.venue,
-  'venue-search': MOBILE_EXPLORE_LABELS.venue,
+const EXPLORE_LABELS = { venue: 'Find venue', shuttle: 'Shuttle routes' } as const
+const RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
+  neutral: EXPLORE_LABELS.venue,
+  'venue-search': EXPLORE_LABELS.venue,
   'venue-detail': 'Venue details',
-  shuttle: MOBILE_EXPLORE_LABELS.shuttle,
-  'shuttle-route-detail': MOBILE_EXPLORE_LABELS.shuttle,
+  shuttle: EXPLORE_LABELS.shuttle,
+  'shuttle-route-detail': EXPLORE_LABELS.shuttle,
 }
 
-function getMobileVenueDetailReturnLabel(state: ContextualPanelState): string {
-  return MOBILE_RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
+function getVenueDetailReturnLabel(state: ContextualPanelState): string {
+  return RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
 }
 
 interface ExploreViewProps {
@@ -534,7 +534,7 @@ export function ExploreView({
               aria-pressed={venueSearchView}
               onClick={handleSelectMobileVenueSearch}
             >
-              {MOBILE_EXPLORE_LABELS.venue}
+              {EXPLORE_LABELS.venue}
             </button>
             <button
               type="button"
@@ -542,12 +542,12 @@ export function ExploreView({
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectMobileShuttle}
             >
-              {MOBILE_EXPLORE_LABELS.shuttle}
+              {EXPLORE_LABELS.shuttle}
             </button>
           </div>
         )}
         {mobileViewport && state.mode === 'venue-detail' && !minimized && (
-          <GhostBackButton label={getMobileVenueDetailReturnLabel(state)} onClick={handleBack} />
+          <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={handleBack} />
         )}
         {!mobileViewport && state.mode === 'venue-detail' && (
           <button type="button" onClick={handleBack} aria-label="Back to venue search">

@@ -207,7 +207,7 @@ function RootSheetEscapeHarness() {
   )
 }
 
-function MobileStopPopupHarness() {
+function StopPopupHarness() {
   const popupActionRef = useRef<HTMLButtonElement>(null)
   const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
 
@@ -705,7 +705,7 @@ describe('ContextualPanel accessibility workflows', () => {
 
   it('restores the tapped mobile stop row after Escape closes its popup', async () => {
     const user = userEvent.setup()
-    render(<MobileStopPopupHarness />)
+    render(<StopPopupHarness />)
 
     const stopRow = screen.getByRole('button', { name: /Stop A, stop STOP-A/ })
     await user.click(stopRow)

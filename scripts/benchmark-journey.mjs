@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createServer } from 'vite'
+import { toViteFsModuleId } from './benchmark/vite-module-id.mjs'
 
 const DEFAULT_SAMPLES = 2
 const DEFAULT_WARMUPS = 10
@@ -145,7 +146,7 @@ async function findProjectRoot(adapterPath) {
 async function loadAdapters(vite, paths, context) {
   const loaded = []
   for (const path of paths) {
-    const module = await vite.ssrLoadModule(`/@fs${path}`)
+    const module = await vite.ssrLoadModule(toViteFsModuleId(path))
     if (typeof module.createJourneyBenchmarkAdapter !== 'function') {
       throw new Error(`${path} must export createJourneyBenchmarkAdapter(context)`)
     }

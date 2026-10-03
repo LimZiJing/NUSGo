@@ -1,6 +1,6 @@
 # NUS route recommendation architecture
 
-Status: accepted
+Status: accepted; the application candidate-search scope is superseded by [ADR 0003](0003-three-stop-single-shuttle-recommendation.md).
 
 Date: 2026-09-21
 

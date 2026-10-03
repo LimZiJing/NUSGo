@@ -67,5 +67,6 @@ export const createJourneyBenchmarkAdapter = (context) => ({
 Adapter IDs must be unique across all provided adapter paths. The CLI rejects duplicate IDs before starting any timed cases.
 
 `scripts/benchmark/adapters/current.ts` is the reference adapter for the current priority-queue planner.
+`scripts/benchmark/adapters/three-stop.ts` is the comparison adapter for the three-stop single-shuttle planner.
 
 The benchmark's TypeScript helpers, adapters, and tests are included in the root TypeScript project references, so `npm run build` typechecks them with the application.

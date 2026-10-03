@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createServer } from 'vite'
+import { toViteFsModuleId } from './benchmark/vite-module-id.mjs'
 
 const FIXED_OBSERVED_AT = '2026-10-01T00:00:00.000Z'
 const FIXED_NOW_MS = Date.parse(FIXED_OBSERVED_AT)
@@ -289,7 +290,7 @@ async function findProjectRoot(adapterPath) {
 async function loadAdapters(vite, paths, context) {
   const loaded = []
   for (const path of paths) {
-    const module = await vite.ssrLoadModule(`/@fs${path}`)
+    const module = await vite.ssrLoadModule(toViteFsModuleId(path))
     if (typeof module.createJourneyBenchmarkAdapter !== 'function') {
       throw new Error(`${path} must export createJourneyBenchmarkAdapter(context)`)
     }

@@ -827,23 +827,19 @@ function App() {
               venues={state.venues}
               transitIndex={state.transitIndex}
               shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
-              renderShuttleRoutes={(selectRef, options) => (
+              renderShuttleRoutes={(options) => (
                 <ShuttleRouteControl
                   network={state.transitIndex?.network ?? null}
                   networkIndex={state.transitIndex}
                   selectedRouteId={state.selectedRouteId}
-                  onRouteSelect={isMobileViewport
-                    ? (routeId) => { if (routeId) commands.selectMobileRoute(routeId) }
-                    : commands.selectRoute}
-                  selectRef={selectRef}
-                  mobileViewport={isMobileViewport}
+                  onRouteSelect={(routeId) => commands.selectMobileRoute(routeId)}
                   firstRouteCardRef={options.firstRouteCardRef}
                   onFocusStop={options.onFocusStop}
                 />
               )}
               selectedRouteId={state.selectedRouteId}
               minimized={isMobileViewport && navigation.sheets.explore.detent === 'collapsed'}
-              mobileViewport={isMobileViewport}
+              mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
               onRestore={() => dispatchNavigation({
                 type: 'set-sheet-detent',
@@ -874,24 +870,17 @@ function App() {
                 if (isMobileViewport) {
                   prepareSheetTransition(true)
                   dismissMobileSearch('explore')
-                  commands.enterMobileRoutes()
-                } else commands.openShuttle()
+                }
+                commands.enterMobileRoutes()
               }}
               onLeaveMobileRoutes={() => {
                 if (isMobileViewport) {
                   beginMobileSearch('explore')
-                  commands.leaveMobileRoutes()
-                } else {
-                  commands.openVenueSearch()
                 }
+                commands.leaveMobileRoutes()
               }}
               onFocusStop={commands.focusStop}
               onBack={commands.back}
-              onClose={() => {
-                dismissMobileSearch('explore')
-                if (isMobileViewport) commands.closeToRoot()
-                else commands.close()
-              }}
               onEscape={() => {
                 dismissMobileSearch('explore')
                 commands.escape()
@@ -943,13 +932,10 @@ function App() {
               onSelectRoute={(routeId) => {
                 if (isMobileViewport) {
                   prepareSheetTransition(true)
-                  commands.enterMobileRoutes()
-                  commands.selectMobileRoute(routeId)
                   dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
-                } else {
-                  commands.openShuttle()
-                  commands.selectRoute(routeId)
                 }
+                commands.enterMobileRoutes()
+                commands.selectMobileRoute(routeId)
                 pendingViewFocusRef.current = 'explore'
                 dispatchNavigation({ type: 'select-view', view: 'explore' })
               }}

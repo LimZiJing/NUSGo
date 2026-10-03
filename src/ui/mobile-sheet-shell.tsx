@@ -21,7 +21,9 @@ interface MobileSheetShellProps {
   readonly sectionProps?: Omit<
     ComponentPropsWithoutRef<'section'>,
     'className' | 'children' | 'ref'
-  >
+  > & {
+    readonly [key: `data-${string}`]: string | number | boolean | undefined
+  }
   readonly children: ReactNode
 }
 

@@ -180,7 +180,7 @@
   }
 
   .contextual-panel-shuttle .contextual-panel-header,
-  .contextual-panel-mobile-venue-search .contextual-panel-header {
+  .contextual-panel-venue-search .contextual-panel-header {
     display: block;
   }
 
@@ -210,7 +210,7 @@
     overflow: hidden;
   }
 
-  .contextual-panel-shuttle .route-control-mobile {
+  .contextual-panel-shuttle .route-control {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
@@ -236,20 +236,20 @@
     gap: 4px;
   }
 
-  .contextual-panel-mobile-venue-search {
+  .contextual-panel-venue-search {
     grid-template-rows: max-content max-content minmax(0, 1fr);
   }
 
-  .contextual-panel-mobile-venue-search .contextual-panel-content {
+  .contextual-panel-venue-search .contextual-panel-content {
     grid-template-rows: max-content minmax(0, 1fr);
   }
 
-  .contextual-panel-mobile-venue-search .contextual-panel-search-body {
+  .contextual-panel-venue-search .contextual-panel-search-body {
     display: grid;
     min-height: 0;
   }
 
-  .mobile-explore-segments {
+  .explore-segments {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
@@ -258,7 +258,7 @@
     background: var(--surface-segmented-control);
   }
 
-  .contextual-panel .mobile-explore-segments button {
+  .contextual-panel .explore-segments button {
     position: relative;
     isolation: isolate;
     min-width: 0;
@@ -271,11 +271,11 @@
     font: 600 14px/1.2 system-ui, sans-serif;
   }
 
-  .contextual-panel .mobile-explore-segments button[aria-pressed='true'] {
+  .contextual-panel .explore-segments button[aria-pressed='true'] {
     color: var(--text-contrast);
   }
 
-  .contextual-panel .mobile-explore-segments button[aria-pressed='true']::before {
+  .contextual-panel .explore-segments button[aria-pressed='true']::before {
     position: absolute;
     z-index: -1;
     inset: 3px;
@@ -286,13 +286,13 @@
     pointer-events: none;
   }
 
-  .contextual-panel .mobile-explore-segments button:hover {
+  .contextual-panel .explore-segments button:hover {
     border-color: transparent;
     background: transparent;
   }
 
-  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:hover,
-  .contextual-panel .mobile-explore-segments button[aria-pressed='true']:focus-visible {
+  .contextual-panel .explore-segments button[aria-pressed='true']:hover,
+  .contextual-panel .explore-segments button[aria-pressed='true']:focus-visible {
     border-color: transparent;
     background: transparent;
   }
@@ -313,39 +313,6 @@
     stroke: currentColor;
     stroke-width: 1.75;
     stroke-linecap: round;
-  }
-
-  .contextual-panel .mobile-ghost-back-button,
-  .stops-view .mobile-ghost-back-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    min-height: 0;
-    padding: 3px;
-    border: 0;
-    color: var(--text-strong);
-    background: transparent;
-    font: 600 14px/1.2 system-ui, sans-serif;
-    cursor: pointer;
-  }
-
-  .contextual-panel .mobile-ghost-back-button:hover,
-  .contextual-panel .mobile-ghost-back-button:focus-visible,
-  .stops-view .mobile-ghost-back-button:hover,
-  .stops-view .mobile-ghost-back-button:focus-visible {
-    border-color: transparent;
-    background: transparent;
-  }
-
-  .mobile-ghost-back-button svg {
-    flex: 0 0 17px;
-    width: 17px;
-    height: 17px;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 2;
   }
 
   .contextual-panel-content {
@@ -425,7 +392,7 @@
     display: none;
   }
 
-  .contextual-panel-mobile-venue-search.contextual-panel-minimized .contextual-panel-content,
+  .contextual-panel-venue-search.contextual-panel-minimized .contextual-panel-content,
   .contextual-panel-shuttle.contextual-panel-minimized .contextual-panel-content {
     display: grid;
   }
@@ -436,9 +403,9 @@
     flex: 0 0 auto;
   }
 
-  .contextual-panel-shuttle.contextual-panel-minimized .route-control-mobile,
-  [data-mobile-sheet-measuring='collapsed'].contextual-panel-shuttle .route-control-mobile,
-  [data-mobile-sheet-settling='collapsed'].contextual-panel-shuttle .route-control-mobile {
+  .contextual-panel-shuttle.contextual-panel-minimized .route-control,
+  [data-mobile-sheet-measuring='collapsed'].contextual-panel-shuttle .route-control,
+  [data-mobile-sheet-settling='collapsed'].contextual-panel-shuttle .route-control {
     flex: 0 0 auto;
   }
 
@@ -810,8 +777,8 @@
     height: var(--mobile-sheet-max-height) !important;
   }
 
-  .contextual-panel-mobile-venue-search[data-detent='full'] .contextual-panel-results,
-  .contextual-panel-mobile-venue-search[data-mobile-sheet-measuring='full'] .contextual-panel-results {
+  .contextual-panel-venue-search[data-detent='full'] .contextual-panel-results,
+  .contextual-panel-venue-search[data-mobile-sheet-measuring='full'] .contextual-panel-results {
     max-height: none;
   }
 

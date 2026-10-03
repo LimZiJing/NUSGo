@@ -339,3 +339,36 @@
 .contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
   background: var(--surface-subtle);
 }
+
+.contextual-panel .ghost-back-button,
+.stops-view .ghost-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 0;
+  padding: 3px;
+  border: 0;
+  color: var(--text-strong);
+  background: transparent;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.contextual-panel .ghost-back-button:hover,
+.contextual-panel .ghost-back-button:focus-visible,
+.stops-view .ghost-back-button:hover,
+.stops-view .ghost-back-button:focus-visible {
+  border-color: transparent;
+  background: transparent;
+}
+
+.ghost-back-button svg {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}

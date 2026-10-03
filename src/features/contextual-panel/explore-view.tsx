@@ -32,10 +32,7 @@ interface FocusTarget {
 }
 
 interface ShuttleRouteRenderOptions {
-  readonly mobileRouteDetail: boolean
   readonly firstRouteCardRef: RefObject<HTMLButtonElement | null>
-  readonly onOpenRouteDetail: () => void
-  readonly onShowAllRoutes: () => void
   readonly onFocusStop: (stopId: string) => void
 }
 
@@ -46,7 +43,6 @@ const RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
   'venue-search': EXPLORE_LABELS.venue,
   'venue-detail': 'Venue details',
   shuttle: EXPLORE_LABELS.shuttle,
-  'shuttle-route-detail': EXPLORE_LABELS.shuttle,
 }
 
 function getVenueDetailReturnLabel(state: ContextualPanelState): string {
@@ -58,12 +54,9 @@ interface ExploreViewProps {
   venues: VenueLocationMap | null
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
-  renderShuttleRoutes: (
-    selectRef: RefObject<HTMLSelectElement | null>,
-    options: ShuttleRouteRenderOptions,
-  ) => ReactNode
+  renderShuttleRoutes: (options: ShuttleRouteRenderOptions) => ReactNode
   minimized?: boolean
-  mobileViewport?: boolean
+  mobileSheet?: boolean
   active?: boolean
   onRestore?: () => void
   onMinimize?: () => void
@@ -75,10 +68,7 @@ interface ExploreViewProps {
   onOpenShuttle: () => void
   onLeaveMobileRoutes?: () => void
   onFocusStop?: (stopId: string) => void
-  onOpenShuttleRouteDetail?: () => void
-  onShowAllRoutes?: () => void
   onBack: () => void
-  onClose: () => void
   onEscape: () => void
   onDismissMapPopup?: () => boolean
   onSearchFocus?: () => void
@@ -86,14 +76,8 @@ interface ExploreViewProps {
   onSearchResult?: () => void
 }
 
-function getPanelHeading(
-  state: ContextualPanelState,
-  selectedRouteId: string | null,
-): string {
+function getPanelHeading(state: ContextualPanelState): string {
   if (state.mode === 'shuttle') return 'Shuttle routes'
-  if (state.mode === 'shuttle-route-detail') {
-    return selectedRouteId ? `${selectedRouteId} Shuttle` : 'Shuttle route details'
-  }
   if (state.mode === 'venue-detail') return 'Venue details'
   if (state.mode === 'venue-search') return 'Find a venue'
   return 'Find a venue'
@@ -104,14 +88,8 @@ function findFocusTarget(key: string): HTMLElement | undefined {
     .find((element) => element.dataset.contextualFocusId === key)
 }
 
-function getPanelAnnouncement(
-  state: ContextualPanelState,
-  selectedRouteId: string | null,
-): string | null {
+function getPanelAnnouncement(state: ContextualPanelState): string | null {
   if (state.mode === 'shuttle') return null
-  if (state.mode === 'shuttle-route-detail' && selectedRouteId) {
-    return `Route ${selectedRouteId} details opened.`
-  }
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
   }
@@ -134,7 +112,7 @@ export function ExploreView({
   shuttleRoutesAvailable,
   renderShuttleRoutes,
   minimized = false,
-  mobileViewport = true,
+  mobileSheet = true,
   active = true,
   onRestore,
   onMinimize,
@@ -146,10 +124,7 @@ export function ExploreView({
   onOpenShuttle,
   onLeaveMobileRoutes,
   onFocusStop,
-  onOpenShuttleRouteDetail,
-  onShowAllRoutes,
   onBack,
-  onClose,
   onEscape,
   onDismissMapPopup,
   onSearchFocus,
@@ -159,15 +134,12 @@ export function ExploreView({
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
-  const routeSelectRef = useRef<HTMLSelectElement>(null)
   const firstRouteCardRef = useRef<HTMLButtonElement>(null)
-  const shuttleBackRef = useRef<HTMLButtonElement>(null)
-  const shuttleRouteDetailBackRef = useRef<HTMLButtonElement>(null)
   const focusHistoryRef = useRef<FocusTarget[]>([])
   const pendingFocusRef = useRef<FocusTarget | null>(null)
   const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
   const previousMinimizedRef = useRef(minimized)
-  const previousMobileViewportRef = useRef(mobileViewport)
+  const previousMobileSheetRef = useRef(mobileSheet)
   const previousActiveRef = useRef(active)
   const panelFocusRef = useRef(false)
   const shuttleRouteFocusPendingRef = useRef(false)
@@ -195,27 +167,8 @@ export function ExploreView({
   }
 
   const rememberPanelBackFocus = useCallback((): void => {
-    if (state.mode === 'shuttle-route-detail' && selectedRouteId) {
-      pendingFocusRef.current = {
-        element: null,
-        key: null,
-        fallbackKey: `shuttle-route-${selectedRouteId}`,
-      }
-      return
-    }
     pendingFocusRef.current = focusHistoryRef.current.pop() ?? null
-  }, [selectedRouteId, state.mode])
-
-  const handleShowAllRoutes = (): void => {
-    if (selectedRouteId) {
-      pendingFocusRef.current = {
-        element: null,
-        key: null,
-        fallbackKey: `shuttle-route-${selectedRouteId}`,
-      }
-    }
-    onShowAllRoutes?.()
-  }
+  }, [])
 
   const handlePanelBlurCapture = (event: FocusEvent<HTMLElement>): void => {
     const relatedTarget = event.relatedTarget
@@ -238,27 +191,25 @@ export function ExploreView({
       }
       if (minimized) return
       event.preventDefault()
-      if (mobileViewport && state.mode === 'shuttle') {
+      if (state.mode === 'shuttle') {
         focusHistoryRef.current = []
         pendingStopRowFocusRef.current = null
         pendingFocusRef.current = {
           element: null,
-          key: 'mobile-explore-venue-segment',
+          key: 'explore-venue-segment',
           fallbackKey: null,
         }
         onLeaveMobileRoutes?.()
         return
       }
-      if (mobileViewport && (state.mode === 'neutral' || state.mode === 'venue-search')) {
+      if (state.mode === 'neutral' || state.mode === 'venue-search') {
         if (onSearchCancel) {
           onSearchCancel()
           rememberPanelBackFocus()
           onEscape()
           return
         }
-        if (onMinimize) {
-          onMinimize()
-        }
+        onMinimize?.()
         return
       }
       rememberPanelBackFocus()
@@ -270,7 +221,6 @@ export function ExploreView({
   }, [
     active,
     minimized,
-    mobileViewport,
     onDismissMapPopup,
     onEscape,
     onMinimize,
@@ -285,24 +235,23 @@ export function ExploreView({
     previousActiveRef.current = active
     if (!active) {
       previousMinimizedRef.current = minimized
-      previousMobileViewportRef.current = mobileViewport
+      previousMobileSheetRef.current = mobileSheet
       previousModeRef.current = state.mode
       return
     }
     if (!wasActive) {
       previousMinimizedRef.current = minimized
-      previousMobileViewportRef.current = mobileViewport
+      previousMobileSheetRef.current = mobileSheet
       previousModeRef.current = state.mode
       return
     }
 
     const wasMinimized = previousMinimizedRef.current
     previousMinimizedRef.current = minimized
-    const wasMobileViewport = previousMobileViewportRef.current
-    previousMobileViewportRef.current = mobileViewport
+    const wasMobileSheet = previousMobileSheetRef.current
+    previousMobileSheetRef.current = mobileSheet
     if (minimized) return
-
-    if (wasMobileViewport !== mobileViewport && !wasMinimized) {
+    if (wasMobileSheet !== mobileSheet && !wasMinimized) {
       previousModeRef.current = state.mode
       return
     }
@@ -325,18 +274,12 @@ export function ExploreView({
     }
 
     if (wasMinimized) {
-      if (!mobileViewport && !panelFocusRef.current) {
-        previousModeRef.current = state.mode
-        return
-      }
-      if (state.mode === 'venue-search' || (mobileViewport && state.mode === 'neutral')) {
+      if (state.mode === 'venue-search' || state.mode === 'neutral') {
         focusElement(searchInputRef.current)
       } else if (state.mode === 'venue-detail') {
         focusElement(detailHeadingRef.current)
       } else if (state.mode === 'shuttle') {
-        focusElement(routeSelectRef.current && !routeSelectRef.current.disabled
-          ? routeSelectRef.current
-          : shuttleBackRef.current)
+        focusElement(firstRouteCardRef.current)
       } else {
         focusElement(panelHeadingRef.current)
       }
@@ -354,31 +297,16 @@ export function ExploreView({
       previousModeRef.current = state.mode
       return
     }
-    if (state.mode === 'shuttle-route-detail') {
-      focusElement(panelHeadingRef.current)
-      previousModeRef.current = state.mode
-      return
-    }
     if (state.mode === 'shuttle') {
       const enteringShuttle = previousModeRef.current !== 'shuttle'
-      const fallback = shuttleBackRef.current ?? panelHeadingRef.current
+      const fallback = panelHeadingRef.current
 
       if (enteringShuttle) {
         shuttleRouteFocusPendingRef.current = true
         shuttleFocusMovedRef.current = false
       }
 
-      if (routeSelectRef.current && !routeSelectRef.current.disabled) {
-        const mayFocusRouteSelect = enteringShuttle || (
-          shuttleRouteFocusPendingRef.current &&
-          !shuttleFocusMovedRef.current &&
-          document.activeElement === fallback
-        )
-        if (mayFocusRouteSelect) {
-          focusElement(routeSelectRef.current)
-        }
-        shuttleRouteFocusPendingRef.current = false
-      } else if (enteringShuttle || (
+      if (enteringShuttle || (
         shuttleRouteFocusPendingRef.current &&
         !shuttleFocusMovedRef.current &&
         document.activeElement === fallback
@@ -399,7 +327,7 @@ export function ExploreView({
     }
 
     focusHistoryRef.current = []
-    if (mobileViewport && state.mode === 'neutral') {
+    if (state.mode === 'neutral') {
       if (previousModeRef.current !== null) focusElement(searchInputRef.current)
     } else {
       focusElement(panelHeadingRef.current)
@@ -408,7 +336,7 @@ export function ExploreView({
   }, [
     active,
     minimized,
-    mobileViewport,
+    mobileSheet,
     routesAvailable,
     selectedRouteId,
     state.mode,
@@ -440,39 +368,28 @@ export function ExploreView({
     onBack()
   }
 
-  const handleOpenRouteDetail = (): void => {
-    onOpenShuttleRouteDetail?.()
-  }
-
-  const handleClose = (): void => {
-    pendingFocusRef.current = focusHistoryRef.current.at(-1) ?? null
-    focusHistoryRef.current = []
-    onSearchCancel?.()
-    onClose()
-  }
-
-  const handleSelectMobileVenueSearch = (): void => {
+  const handleSelectVenueSearch = (): void => {
     if (state.mode !== 'shuttle') return
     focusHistoryRef.current = []
     pendingStopRowFocusRef.current = null
     pendingFocusRef.current = {
       element: null,
-      key: 'mobile-explore-venue-segment',
+      key: 'explore-venue-segment',
       fallbackKey: null,
     }
     onLeaveMobileRoutes?.()
   }
 
-  const handleSelectMobileShuttle = (event: MouseEvent<HTMLButtonElement>): void => {
+  const handleSelectShuttle = (event: MouseEvent<HTMLButtonElement>): void => {
     if (state.mode === 'shuttle') return
     pendingFocusRef.current = {
       element: event.currentTarget,
-      key: 'mobile-explore-shuttle-segment',
+      key: 'explore-shuttle-segment',
       fallbackKey: null,
     }
     focusHistoryRef.current.push({
       element: event.currentTarget,
-      key: 'mobile-explore-shuttle-segment',
+      key: 'explore-shuttle-segment',
       fallbackKey: null,
     })
     onOpenShuttle()
@@ -509,7 +426,7 @@ export function ExploreView({
   const nearbyStops = venueHasCoordinates && selectedVenueLocation && transitIndex
     ? findNearbyShuttleStops(selectedVenueLocation, transitIndex)
     : []
-  const panelAnnouncement = getPanelAnnouncement(state, selectedRouteId)
+  const panelAnnouncement = getPanelAnnouncement(state)
   const panelStatus = getVisiblePanelStatus(status)
   const venueSearchView = state.mode === 'neutral' || state.mode === 'venue-search'
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
@@ -523,36 +440,31 @@ export function ExploreView({
       <div className="contextual-panel-header">
         {exploreSegments && (
           <div
-            className="mobile-explore-segments"
+            className="explore-segments"
             role="group"
             aria-label="Explore view"
             data-mobile-sheet-content
           >
             <button
               type="button"
-              data-contextual-focus-id="mobile-explore-venue-segment"
+              data-contextual-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
-              onClick={handleSelectMobileVenueSearch}
+              onClick={handleSelectVenueSearch}
             >
               {EXPLORE_LABELS.venue}
             </button>
             <button
               type="button"
-              data-contextual-focus-id="mobile-explore-shuttle-segment"
+              data-contextual-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
-              onClick={handleSelectMobileShuttle}
+              onClick={handleSelectShuttle}
             >
               {EXPLORE_LABELS.shuttle}
             </button>
           </div>
         )}
-        {mobileViewport && state.mode === 'venue-detail' && !minimized && (
+        {state.mode === 'venue-detail' && !minimized && (
           <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={handleBack} />
-        )}
-        {!mobileViewport && state.mode === 'venue-detail' && (
-          <button type="button" onClick={handleBack} aria-label="Back to venue search">
-            Back
-          </button>
         )}
         <h2
           id="contextual-panel-heading"
@@ -560,13 +472,8 @@ export function ExploreView({
           tabIndex={-1}
           className={exploreSegments || state.mode === 'venue-detail' ? 'visually-hidden' : undefined}
         >
-          {getPanelHeading(state, selectedRouteId)}
+          {getPanelHeading(state)}
         </h2>
-        {state.mode !== 'neutral' && !(mobileViewport && (state.mode === 'shuttle' || state.mode === 'venue-search' || state.mode === 'venue-detail')) && (
-          <button type="button" onClick={handleClose} aria-label="Close map context">
-            Close
-          </button>
-        )}
       </div>
 
       {(state.mode === 'venue-search' || state.mode === 'neutral') && (
@@ -625,7 +532,7 @@ export function ExploreView({
                   <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
                 )}
               </ScrollArea>
-            ) : mobileViewport ? (
+            ) : (
               <div className="contextual-panel-search-prompt">
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
                   <circle cx="14" cy="14" r="8" />
@@ -633,7 +540,7 @@ export function ExploreView({
                 </svg>
                 <p>Search for a venue</p>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       )}
@@ -729,36 +636,14 @@ export function ExploreView({
         </div>
       )}
 
-      {(state.mode === 'shuttle' || state.mode === 'shuttle-route-detail') && (
+      {state.mode === 'shuttle' && (
         <div
           id="contextual-panel-content"
           className="contextual-panel-content"
-          data-mobile-sheet-content={state.mode === 'shuttle-route-detail' ? '' : undefined}
+          data-mobile-sheet-content
         >
-          {mobileViewport && state.mode === 'shuttle' ? null : state.mode === 'shuttle-route-detail' ? (
-            <button
-              ref={shuttleRouteDetailBackRef}
-              type="button"
-              onClick={handleBack}
-              aria-label="Back to shuttle routes"
-            >
-              Back to routes
-            </button>
-          ) : (
-            <button
-              ref={shuttleBackRef}
-              type="button"
-              onClick={handleBack}
-              aria-label="Back to previous map context"
-            >
-              Back
-            </button>
-          )}
-          {renderShuttleRoutes(routeSelectRef, {
-            mobileRouteDetail: state.mode === 'shuttle-route-detail',
+          {renderShuttleRoutes({
             firstRouteCardRef,
-            onOpenRouteDetail: handleOpenRouteDetail,
-            onShowAllRoutes: handleShowAllRoutes,
             onFocusStop: handleFocusStop,
           })}
         </div>
@@ -766,7 +651,7 @@ export function ExploreView({
       {panelStatus && (
         <p
           className={`contextual-panel-status contextual-panel-status-${panelStatus.kind}`}
-          data-mobile-sheet-content={mobileViewport && panelStatus.kind === 'success' ? '' : undefined}
+          data-mobile-sheet-content={mobileSheet && panelStatus.kind === 'success' ? '' : undefined}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"
@@ -797,5 +682,5 @@ export function getExploreShellClassName(
   minimized: boolean,
 ): string {
   const venueSearchView = state.mode === 'neutral' || state.mode === 'venue-search'
-  return `contextual-panel contextual-panel-${state.mode}${venueSearchView ? ' contextual-panel-mobile-venue-search' : ''}${minimized ? ' contextual-panel-minimized' : ''}`
+  return `contextual-panel contextual-panel-${state.mode}${venueSearchView ? ' contextual-panel-venue-search' : ''}${minimized ? ' contextual-panel-minimized' : ''}`
 }

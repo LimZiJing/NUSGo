@@ -79,7 +79,6 @@ export interface NavigationSession {
   getState(): NavigationSessionState
   subscribe(listener: NavigationSessionListener): () => void
   start(signal: AbortSignal): Promise<void>
-  selectRoute(routeId: string | null): void
   enterMobileRoutes(): void
   suspendMobileRoutes(): void
   leaveMobileRoutes(): void
@@ -100,12 +99,8 @@ export interface NavigationSession {
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   reportStartupFailure(): void
-  openVenueSearch(): void
-  openShuttle(): void
-  openShuttleRouteDetail(): void
   back(): void
   escape(): void
-  close(): void
   closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
@@ -448,16 +443,6 @@ export function createNavigationSession(
     setContextualPanel: (contextualPanel) => updateState({ contextualPanel }),
     selectVenue: (venue) => dependencies.map.selectVenue(venue),
     clearVenue: () => dependencies.map.clearVenue(),
-    clearRouteSelection: () => {
-      dependencies.map.setRouteSelection({
-        route: null,
-        overlappingRouteIds: EMPTY_ROUTE_OVERLAP,
-      })
-      updateState({
-        selectedRouteId: null,
-        selectedRouteColor: null,
-      })
-    },
   })
 
   const setActiveRoute = (routeId: string | null, remember: boolean, fit = true): void => {
@@ -500,13 +485,6 @@ export function createNavigationSession(
     },
 
     start: (signal) => startup.start(signal, resourceLoading),
-
-    selectRoute(routeId) {
-      enqueueTransition(() => {
-        if (disposed) return
-        setActiveRoute(routeId, false)
-      })
-    },
 
     enterMobileRoutes() {
       enqueueTransition(() => {
@@ -664,7 +642,12 @@ export function createNavigationSession(
       })
     },
 
-    ...panelTransitions,
+    setContextualPanelQuery: panelTransitions.setContextualPanelQuery,
+    selectVenue: panelTransitions.selectVenue,
+    back: panelTransitions.back,
+    escape: panelTransitions.escape,
+    closeToRoot: panelTransitions.closeToRoot,
+    handleMapClick: panelTransitions.handleMapClick,
 
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return

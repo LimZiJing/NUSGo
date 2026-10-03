@@ -49,10 +49,7 @@ function createNearbyTransitIndex() {
 }
 
 function createVenueDetailState(code: string, selectedVenue: VenueLocation) {
-  const searchState = contextualPanelReducer(createInitialContextualPanelState(), {
-    type: 'open-venue-search',
-  })
-  return contextualPanelReducer(searchState, {
+  return contextualPanelReducer(createInitialContextualPanelState(), {
     type: 'select-venue',
     result: { code, venue: selectedVenue },
   })
@@ -63,13 +60,13 @@ function renderVenueDetails({
   selectedVenue = venue,
   venues = { [code]: selectedVenue },
   transitIndex = createNearbyTransitIndex(),
-  mobileViewport = true,
+  mobileSheet = true,
 }: {
   code?: string
   selectedVenue?: VenueLocation
   venues?: VenueLocationMap
   transitIndex?: ReturnType<typeof createNearbyTransitIndex> | null
-  mobileViewport?: boolean
+  mobileSheet?: boolean
 } = {}): string {
   return renderToStaticMarkup(
     <ExploreView
@@ -78,14 +75,13 @@ function renderVenueDetails({
       transitIndex={transitIndex}
       shuttleRoutesAvailable
       renderShuttleRoutes={() => null}
-      mobileViewport={mobileViewport}
+      mobileSheet={mobileSheet}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
       onOpenShuttle={() => undefined}
       onNavigateToVenue={() => undefined}
       onFocusStop={() => undefined}
       onBack={() => undefined}
-      onClose={() => undefined}
       onEscape={() => undefined}
     />,
   )
@@ -174,7 +170,7 @@ describe('ContextualPanel venue details', () => {
   })
 
   it('uses the same naturally sized detail actions on desktop', () => {
-    const markup = renderVenueDetails({ mobileViewport: false })
+    const markup = renderVenueDetails({ mobileSheet: false })
 
     expect(markup).toContain('class="venue-detail-actions"')
     expect(markup).toContain('<span>Navigate</span>')

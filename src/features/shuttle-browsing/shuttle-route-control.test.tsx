@@ -2,7 +2,6 @@
 
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ShuttleRouteControl } from './shuttle-route-control'
 import { createTransitIndex } from '../../domain/transit'
@@ -65,62 +64,13 @@ function createD2Network() {
 }
 
 describe('ShuttleRouteControl', () => {
-  it('lists all routes and shows the selected route details', () => {
-    const markup = renderToStaticMarkup(
-      <ShuttleRouteControl
-        network={createEightRouteNetwork()}
-        networkIndex={createTransitIndex(createEightRouteNetwork())}
-        selectedRouteId="A1"
-        onRouteSelect={() => undefined}
-      />,
-    )
-
-    expect(markup.match(/<option/g)).toHaveLength(9)
-    expect(markup).toContain('value="A1"')
-    expect(markup).toContain('Route A1 selected.')
-    expect(markup).toContain('Direction:')
-    expect(markup).toContain('Stop A (STOP-A)')
-    expect(markup).toContain('2 of 2 shuttle stops shown')
-    expect(markup).toContain('Ordered stops')
-    expect(markup).toContain('Show all routes')
-  })
-
-  it('announces that all routes are shown when selection is cleared', () => {
-    const markup = renderToStaticMarkup(
-      <ShuttleRouteControl
-        network={createEightRouteNetwork()}
-        networkIndex={createTransitIndex(createEightRouteNetwork())}
-        selectedRouteId={null}
-        onRouteSelect={() => undefined}
-      />,
-    )
-
-    expect(markup).toContain('Showing all 8 shuttle routes and all 2 shuttle stops.')
-    expect(markup).not.toContain('route-details')
-  })
-
-  it('treats an unknown selection as the all-routes state', () => {
-    const markup = renderToStaticMarkup(
-      <ShuttleRouteControl
-        network={createEightRouteNetwork()}
-        networkIndex={createTransitIndex(createEightRouteNetwork())}
-        selectedRouteId="UNKNOWN"
-        onRouteSelect={() => undefined}
-      />,
-    )
-
-    expect(markup).toContain('Showing all 8 shuttle routes and all 2 shuttle stops.')
-    expect(markup).not.toContain('route-details')
-  })
-
-  it('shows route cards in network order with their canonical ids and colors on mobile', () => {
+  it('shows route cards in network order with their canonical ids and colors', () => {
     const network = createEightRouteNetwork()
     render(
       <ShuttleRouteControl
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
-        mobileViewport
         onRouteSelect={() => undefined}
       />,
     )
@@ -145,7 +95,6 @@ describe('ShuttleRouteControl', () => {
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
-        mobileViewport
         onRouteSelect={onRouteSelect}
       />,
     )
@@ -165,7 +114,6 @@ describe('ShuttleRouteControl', () => {
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="A1"
-        mobileViewport
         onRouteSelect={() => undefined}
         onFocusStop={onFocusStop}
       />,
@@ -183,7 +131,6 @@ describe('ShuttleRouteControl', () => {
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
-        mobileViewport
         onRouteSelect={() => undefined}
       />,
     )
@@ -209,7 +156,6 @@ describe('ShuttleRouteControl', () => {
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
-        mobileViewport
         onRouteSelect={() => undefined}
       />,
     )

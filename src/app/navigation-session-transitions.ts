@@ -51,7 +51,6 @@ interface NavigationSessionPanelHost {
   readonly setContextualPanel: (panel: ContextualPanelState) => void
   readonly selectVenue: (venue: VenueLocation) => void
   readonly clearVenue: () => void
-  readonly clearRouteSelection: () => void
 }
 
 export function createNavigationSessionPanelTransitions(
@@ -84,24 +83,10 @@ export function createNavigationSessionPanelTransitions(
       })
     },
 
-    openVenueSearch(): void {
-      host.enqueue(() => {
-        if (host.isDisposed()) return
-        updatePanel({ type: 'open-venue-search' })
-      })
-    },
-
     openShuttle(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
         updatePanel({ type: 'open-shuttle' })
-      })
-    },
-
-    openShuttleRouteDetail(): void {
-      host.enqueue(() => {
-        if (host.isDisposed()) return
-        updatePanel({ type: 'open-shuttle-route-detail' })
       })
     },
 
@@ -129,15 +114,6 @@ export function createNavigationSessionPanelTransitions(
           host.clearVenue()
         }
         updatePanel({ type: 'escape' })
-      })
-    },
-
-    close(): void {
-      host.enqueue(() => {
-        if (host.isDisposed()) return
-        host.clearVenue()
-        host.clearRouteSelection()
-        updatePanel({ type: 'close' })
       })
     },
 

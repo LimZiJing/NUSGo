@@ -110,23 +110,6 @@ function createDependencies(
   }
 }
 
-function createTwoRouteTransit(): LoadedTransitData {
-  const network = createValidTransitNetwork()
-  const index = createTransitIndex({
-    ...network,
-    routes: [
-      ...network.routes,
-      { id: 'B1', name: 'B1', color: '#654321', stopIds: ['STOP-B', 'STOP-A'] },
-    ],
-  })
-  return {
-    network: index.network,
-    geometry,
-    index,
-    shuttleTiming: generateShuttleTimingData(index.network, geometry, '2026-09-22'),
-  }
-}
-
 function createDeferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (error: unknown) => void
@@ -558,34 +541,6 @@ describe('navigation session', () => {
     }
   })
 
-  it('selects, clears, and rejects routes deterministically', async () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
-
-    session.selectRoute('A1')
-    expect(session.getState()).toMatchObject({
-      selectedRouteId: 'A1',
-      selectedRouteColor: '#123456',
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
-      route: expect.objectContaining({ id: 'A1' }),
-      overlappingRouteIds: expect.any(Set),
-    })
-
-    session.selectRoute(null)
-    session.selectRoute('missing-route')
-    expect(session.getState()).toMatchObject({
-      selectedRouteId: null,
-      selectedRouteColor: null,
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
-      route: null,
-      overlappingRouteIds: expect.any(Set),
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenCalledTimes(3)
-  })
-
   it('remembers a mobile route while clearing and restoring its map selection', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -643,72 +598,6 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: 'A1',
       rememberedMobileRouteId: 'A1',
-    })
-  })
-
-  it('keeps the final route selection aligned after a reentrant notification', async () => {
-    const transit = createTwoRouteTransit()
-    const dependencies = createDependencies({
-      loadTransit: vi.fn(async () => transit),
-    })
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
-
-    let redirected = false
-    session.subscribe(() => {
-      if (!redirected && session.getState().selectedRouteId === 'A1') {
-        redirected = true
-        session.selectRoute('B1')
-      }
-    })
-
-    session.selectRoute('A1')
-
-    expect(session.getState()).toMatchObject({
-      selectedRouteId: 'B1',
-      selectedRouteColor: '#654321',
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
-      route: expect.objectContaining({ id: 'B1' }),
-      overlappingRouteIds: expect.any(Set),
-    })
-  })
-
-  it('serializes reentrant route transitions for a stable subscriber snapshot', async () => {
-    const dependencies = createDependencies({
-      loadTransit: vi.fn(async () => createTwoRouteTransit()),
-    })
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
-
-    const events: string[] = []
-    let redirected = false
-    session.subscribe(() => {
-      events.push(`first:${session.getState().selectedRouteId ?? 'none'}`)
-      if (!redirected && session.getState().selectedRouteId === 'A1') {
-        redirected = true
-        session.selectRoute('B1')
-      }
-    })
-    session.subscribe(() => {
-      events.push(`second:${session.getState().selectedRouteId ?? 'none'}`)
-    })
-
-    session.selectRoute('A1')
-
-    expect(events).toEqual([
-      'first:A1',
-      'second:A1',
-      'first:B1',
-      'second:B1',
-    ])
-    expect(session.getState()).toMatchObject({
-      selectedRouteId: 'B1',
-      selectedRouteColor: '#654321',
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
-      route: expect.objectContaining({ id: 'B1' }),
-      overlappingRouteIds: expect.any(Set),
     })
   })
 
@@ -905,7 +794,6 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.openVenueSearch()
     session.setContextualPanelQuery('COM1')
     session.selectVenue(venueResult)
     expect(session.getState().contextualPanel).toMatchObject({
@@ -920,26 +808,21 @@ describe('navigation session', () => {
 
     session.back()
     expect(session.getState().contextualPanel).toMatchObject({
-      mode: 'venue-search',
+      mode: 'neutral',
       query: 'COM1',
       selectedVenue: null,
     })
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
-    session.openShuttle()
+    session.enterMobileRoutes()
     expect(session.getState().contextualPanel.mode).toBe('shuttle')
     session.back()
-    expect(session.getState().contextualPanel.mode).toBe('venue-search')
+    expect(session.getState().contextualPanel.mode).toBe('neutral')
 
     session.selectVenue(venueResult)
     session.handleMapClick()
     expect(session.getState().contextualPanel.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
-
-    session.openVenueSearch()
-    session.close()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
-    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
   })
 
   it('opens a nearby stop while preserving the venue-details return path', async () => {
@@ -947,7 +830,6 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.openVenueSearch()
     session.selectVenue(venueResult)
     const history = session.getState().contextualPanel.history
 
@@ -960,22 +842,21 @@ describe('navigation session', () => {
       history,
     })
     session.back()
-    expect(session.getState().contextualPanel.mode).toBe('venue-search')
+    expect(session.getState().contextualPanel.mode).toBe('neutral')
   })
 
-  it('clears the selected route when closing the shuttle panel', async () => {
+  it('clears the selected route when leaving mobile routes', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.openShuttle()
-    session.selectRoute('A1')
+    session.enterMobileRoutes()
     expect(session.getState()).toMatchObject({
       selectedRouteId: 'A1',
       selectedRouteColor: '#123456',
     })
 
-    session.close()
+    session.leaveMobileRoutes()
 
     expect(session.getState()).toMatchObject({
       contextualPanel: { mode: 'neutral' },
@@ -985,7 +866,7 @@ describe('navigation session', () => {
     expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
       route: null,
       overlappingRouteIds: expect.any(Set),
-    })
+    }, false)
   })
 
   it('returns to the mobile tab root without clearing map context or trip endpoints', async () => {
@@ -994,7 +875,7 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
 
     session.selectVenue(venueResult)
-    session.selectRoute('A1')
+    session.enterMobileRoutes()
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
 
@@ -1019,56 +900,23 @@ describe('navigation session', () => {
     })
   })
 
-  it('backs from route details to route choices and preserves map selection on Close', async () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
-
-    session.closeToRoot()
-    session.openShuttle()
-    session.selectRoute('A1')
-    session.openShuttleRouteDetail()
-    expect(session.getState()).toMatchObject({
-      contextualPanel: { mode: 'shuttle-route-detail' },
-      selectedRouteId: 'A1',
-    })
-
-    session.back()
-    expect(session.getState()).toMatchObject({
-      contextualPanel: { mode: 'shuttle' },
-      selectedRouteId: 'A1',
-    })
-
-    session.openShuttleRouteDetail()
-    session.closeToRoot()
-    expect(session.getState()).toMatchObject({
-      contextualPanel: { mode: 'neutral', history: [] },
-      selectedRouteId: 'A1',
-    })
-    expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
-      route: expect.objectContaining({ id: 'A1' }),
-      overlappingRouteIds: expect.any(Set),
-    })
-  })
-
   it('escapes through panel history while retaining venue marker context', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.openVenueSearch()
     session.selectVenue(venueResult)
     session.escape()
-    expect(session.getState().contextualPanel.mode).toBe('venue-search')
+    expect(session.getState().contextualPanel.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.selectVenue(venueResult)
-    session.openShuttle()
+    session.enterMobileRoutes()
     session.escape()
     expect(session.getState().contextualPanel.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
-    session.close()
+    session.back()
     expect(session.getState().contextualPanel.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
@@ -1081,7 +929,7 @@ describe('navigation session', () => {
     session.back()
     expect(dependencies.map.clearVenue).not.toHaveBeenCalled()
 
-    session.openShuttle()
+    session.enterMobileRoutes()
     session.back()
     expect(dependencies.map.clearVenue).not.toHaveBeenCalled()
 
@@ -1096,9 +944,8 @@ describe('navigation session', () => {
     session.back()
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
 
-    session.close()
     session.back()
-    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(3)
+    expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
   it('keeps Escape clearing its no-history and detail-leaving cases', async () => {
@@ -1109,12 +956,12 @@ describe('navigation session', () => {
     session.escape()
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
-    session.openShuttle()
+    session.enterMobileRoutes()
     session.escape()
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.selectVenue(venueResult)
-    session.openShuttle()
+    session.enterMobileRoutes()
     session.escape()
     expect(session.getState().contextualPanel.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()

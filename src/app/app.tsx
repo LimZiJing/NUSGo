@@ -725,41 +725,6 @@ function App() {
         className="map-overlay-right navigation-column"
         ref={navigationColumnRef}
       >
-        <MainNavigation
-          activeView={navigation.activeView}
-          onSelectView={(view) => {
-            if (!isMobileViewport && view === navigation.activeView) return
-            const switchingView = view !== navigation.activeView
-            const reopeningCollapsedView = !switchingView && activeSheetDetent === 'collapsed'
-            if (isMobileViewport && (switchingView || reopeningCollapsedView)) {
-              prepareSheetTransition(reopeningCollapsedView)
-              if (switchingView && navigation.sheets[navigation.activeView].search) {
-                dispatchNavigation({
-                  type: 'dismiss-search',
-                  view: navigation.activeView,
-                })
-              }
-              if (
-                switchingView &&
-                navigation.activeView === 'explore' &&
-                state.contextualPanel.mode === 'shuttle'
-              ) {
-                commands.suspendMobileRoutes()
-              } else if (
-                switchingView &&
-                view === 'explore' &&
-                state.contextualPanel.mode === 'shuttle'
-              ) {
-                commands.enterMobileRoutes()
-              }
-            }
-            if (view === 'stops' && stopsView.list === 'nearby' && state.location.status === 'disabled') {
-              commands.enableLocationTracking()
-            }
-            dispatchNavigation({ type: 'select-view', view })
-          }}
-          containerRef={mainNavigationRef}
-        />
         <div className="navigation-view-stack">
         <DesktopColumnShell id="plan-panel" active={navigation.activeView === 'plan'}>
           <MobileSheetShell
@@ -951,6 +916,41 @@ function App() {
           </MobileSheetShell>
         </DesktopColumnShell>
         </div>
+        <MainNavigation
+          activeView={navigation.activeView}
+          onSelectView={(view) => {
+            if (!isMobileViewport && view === navigation.activeView) return
+            const switchingView = view !== navigation.activeView
+            const reopeningCollapsedView = !switchingView && activeSheetDetent === 'collapsed'
+            if (isMobileViewport && (switchingView || reopeningCollapsedView)) {
+              prepareSheetTransition(reopeningCollapsedView)
+              if (switchingView && navigation.sheets[navigation.activeView].search) {
+                dispatchNavigation({
+                  type: 'dismiss-search',
+                  view: navigation.activeView,
+                })
+              }
+              if (
+                switchingView &&
+                navigation.activeView === 'explore' &&
+                state.contextualPanel.mode === 'shuttle'
+              ) {
+                commands.suspendMobileRoutes()
+              } else if (
+                switchingView &&
+                view === 'explore' &&
+                state.contextualPanel.mode === 'shuttle'
+              ) {
+                commands.enterMobileRoutes()
+              }
+            }
+            if (view === 'stops' && stopsView.list === 'nearby' && state.location.status === 'disabled') {
+              commands.enableLocationTracking()
+            }
+            dispatchNavigation({ type: 'select-view', view })
+          }}
+          containerRef={mainNavigationRef}
+        />
       </aside>
     </main>
   )

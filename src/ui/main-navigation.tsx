@@ -68,10 +68,10 @@ export function MainNavigation({
           aria-current={activeView === id ? 'page' : undefined}
           onClick={() => onSelectView(id)}
         >
-          <span className="mobile-tab-icon">
+          <span className="navigation-tab-icon">
             <NavigationIcon view={id} />
           </span>
-          <span className="mobile-tab-label">{label}</span>
+          <span className="navigation-tab-label">{label}</span>
         </button>
       ))}
     </nav>

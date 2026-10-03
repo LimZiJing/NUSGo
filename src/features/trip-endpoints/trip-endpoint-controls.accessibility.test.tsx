@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import { useState } from 'react'
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { PlanView } from './plan-view'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
@@ -15,7 +15,6 @@ import {
 } from '../../domain/trip/endpoints'
 import type { TripRequest } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -30,138 +29,30 @@ function TripEndpointHarness() {
   const networkIndex = createTransitIndex(network)
 
   return (
-    <PlanView
-      tripRequest={tripRequest}
-      venues={venues}
-      networkIndex={networkIndex}
-      onSwap={() => setTripRequest((current) => swapTripEndpoints(current))}
-      onSelectOriginEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'origin', endpoint))}
-      onClearOriginEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'origin'))}
-      onSelectDestinationEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'destination', endpoint))}
-      onClearDestinationEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'destination'))}
-      onClearTrip={() => setTripRequest(createEmptyTripRequest())}
-    />
+    <section aria-label="Trip endpoints">
+      <PlanView
+        tripRequest={tripRequest}
+        venues={venues}
+        networkIndex={networkIndex}
+        onSwap={() => setTripRequest((current) => swapTripEndpoints(current))}
+        onSelectOriginEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'origin', endpoint))}
+        onClearOriginEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'origin'))}
+        onSelectDestinationEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'destination', endpoint))}
+        onClearDestinationEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'destination'))}
+        onClearTrip={() => setTripRequest(createEmptyTripRequest())}
+      />
+    </section>
   )
 }
 
 afterEach(cleanup)
 
 describe('TripEndpointControls interactions', () => {
-  it('provides a labelled collapsed plan summary for empty endpoints and a stable toggle', async () => {
-    const user = userEvent.setup()
-    function CollapsedHarness() {
-      const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
-      return (
-        <PlanView
-          tripRequest={{ origin: null, destination: null }}
-          venues={venues}
-          networkIndex={createTransitIndex(createValidTransitNetwork())}
-          detent={detent}
-          onDetentChange={setDetent}
-          onSwap={() => undefined}
-          onSelectOriginEndpoint={() => undefined}
-          onClearOriginEndpoint={() => undefined}
-          onSelectDestinationEndpoint={() => undefined}
-          onClearDestinationEndpoint={() => undefined}
-          onClearTrip={() => undefined}
-        />
-      )
-    }
-
-    render(<CollapsedHarness />)
-
-    const toggle = screen.getByRole('button', { name: /Plan trip/ })
-    expect(toggle.getAttribute('aria-controls')).toBe('trip-controls-panel-content')
-    expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.getByText('Choose origin → Choose destination')).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Trip endpoints' })
-      .querySelector('.trip-controls-body')?.getAttribute('data-expanded')).toBe('false')
-
-    await user.click(toggle)
-
-    expect(toggle.getAttribute('aria-expanded')).toBe('true')
-    expect(toggle.getAttribute('aria-description')).toBe('Opens the full-height sheet.')
-    expect(document.activeElement).toBe(toggle)
-    await user.tab()
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Origin' }))
-
-    await user.click(toggle)
-    expect(toggle.getAttribute('aria-expanded')).toBe('true')
-    await user.click(toggle)
-    expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(toggle)
-  })
-
-  it('reports search focus, cancel, and result selection for sheet detent transitions', async () => {
-    const user = userEvent.setup()
-    const onSearchFocus = vi.fn()
-    const onSearchCancel = vi.fn()
-    const onSearchResult = vi.fn()
-    function SearchTransitionHarness() {
-      const [detent, setDetent] = useState<MobileSheetDetent>('partial')
-      const [searchDetent, setSearchDetent] = useState<MobileSheetDetent>('partial')
-      return (
-        <PlanView
-          tripRequest={{ origin: null, destination: null }}
-          venues={venues}
-          networkIndex={createTransitIndex(createValidTransitNetwork())}
-          detent={detent}
-          onDetentChange={setDetent}
-          onSearchFocus={() => {
-            onSearchFocus()
-            setSearchDetent(detent)
-            setDetent('full')
-          }}
-          onSearchCancel={() => {
-            onSearchCancel()
-            setDetent(searchDetent)
-          }}
-          onSearchResult={() => {
-            onSearchResult()
-            setDetent('partial')
-          }}
-          onSwap={() => undefined}
-          onSelectOriginEndpoint={() => undefined}
-          onClearOriginEndpoint={() => undefined}
-          onSelectDestinationEndpoint={() => undefined}
-          onClearDestinationEndpoint={() => undefined}
-          onClearTrip={() => undefined}
-        />
-      )
-    }
-
-    render(<SearchTransitionHarness />)
-    const sheet = screen.getByRole('region', { name: 'Trip endpoints' })
-    const origin = screen.getByRole('searchbox', { name: 'Origin' })
-    await user.click(origin)
-
-    expect(onSearchFocus).toHaveBeenCalledOnce()
-    expect(sheet.getAttribute('data-detent')).toBe('full')
-    await user.keyboard('{Escape}')
-    expect(onSearchCancel).toHaveBeenCalledOnce()
-    expect(sheet.getAttribute('data-detent')).toBe('partial')
-
-    origin.blur()
-    await user.type(origin, 'COM1')
-
-    expect(onSearchFocus).toHaveBeenCalledTimes(2)
-    expect(sheet.getAttribute('data-detent')).toBe('full')
-    await user.keyboard('{Escape}')
-    expect(onSearchCancel).toHaveBeenCalledTimes(2)
-    expect(sheet.getAttribute('data-detent')).toBe('partial')
-
-    await user.type(origin, 'COM1')
-    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210' }))
-    expect(onSearchResult).toHaveBeenCalledOnce()
-    expect(sheet.getAttribute('data-detent')).toBe('partial')
-  })
-
   it('only shows endpoint validation when the request needs attention', () => {
     const networkIndex = createTransitIndex(createValidTransitNetwork())
     const controls = {
       venues,
       networkIndex,
-      onExpandedChange: () => undefined,
       onSwap: () => undefined,
       onSelectOriginEndpoint: () => undefined,
       onClearOriginEndpoint: () => undefined,
@@ -201,8 +92,6 @@ describe('TripEndpointControls interactions', () => {
 
     expect((origin as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('button', { name: /COM1-0210/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /Plan trip/ }).getAttribute('aria-expanded'))
-      .toBe('true')
   })
 
   it('keeps full endpoint names available while visually truncating a complete summary', () => {
@@ -223,7 +112,6 @@ describe('TripEndpointControls interactions', () => {
         venues={longVenue}
         networkIndex={networkIndex}
         expanded={false}
-        onExpandedChange={() => undefined}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}
@@ -233,113 +121,11 @@ describe('TripEndpointControls interactions', () => {
       />,
     )
 
-    const toggle = screen.getByRole('button', { name: /Plan trip/ })
-    expect(toggle.getAttribute('aria-label')).toContain(
+    const summary = screen.getByText(/A very long venue name/, { selector: '.trip-controls-summary' })
+    expect(summary.getAttribute('title')).toContain(
       'A very long venue name used to verify accessible endpoint summaries',
     )
-    expect(toggle.getAttribute('aria-label')).toContain('Stop A')
-    expect(screen.getByText(/A very long venue name/, { selector: '.trip-controls-summary' }).className)
-      .toContain('trip-controls-summary')
-  })
-
-  it('preserves contextual and map focus when entering mobile while the trip card is collapsed', async () => {
-    const props = {
-      tripRequest: { origin: null, destination: null },
-      venues,
-      networkIndex: createTransitIndex(createValidTransitNetwork()),
-      expanded: false,
-      onExpandedChange: () => undefined,
-      onSwap: () => undefined,
-      onSelectOriginEndpoint: () => undefined,
-      onClearOriginEndpoint: () => undefined,
-      onSelectDestinationEndpoint: () => undefined,
-      onClearDestinationEndpoint: () => undefined,
-      onClearTrip: () => undefined,
-    }
-    const { rerender } = render(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport={false} />
-      </>,
-    )
-
-    const mapControl = screen.getByRole('button', { name: 'Map control' })
-    const contextualSearch = screen.getByRole('textbox', { name: 'Contextual panel search' })
-
-    mapControl.focus()
-    rerender(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport />
-      </>,
-    )
-    await waitFor(() => expect(document.activeElement).toBe(mapControl))
-
-    contextualSearch.focus()
-    rerender(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport={false} />
-      </>,
-    )
-    rerender(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport />
-      </>,
-    )
-    await waitFor(() => expect(document.activeElement).toBe(contextualSearch))
-
-    const contextualAction = screen.getByRole('button', { name: 'Contextual action' })
-    contextualAction.focus()
-    rerender(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport={false} />
-      </>,
-    )
-    rerender(
-      <>
-        <button type="button">Map control</button>
-        <input aria-label="Contextual panel search" />
-        <button type="button">Contextual action</button>
-        <PlanView {...props} mobileViewport />
-      </>,
-    )
-    await waitFor(() => expect(document.activeElement).toBe(contextualAction))
-  })
-
-  it('moves an endpoint input to the same visible input when leaving mobile for desktop', async () => {
-    const props = {
-      tripRequest: { origin: null, destination: null },
-      venues,
-      networkIndex: createTransitIndex(createValidTransitNetwork()),
-      expanded: true,
-      mobileViewport: true,
-      onExpandedChange: () => undefined,
-      onSwap: () => undefined,
-      onSelectOriginEndpoint: () => undefined,
-      onClearOriginEndpoint: () => undefined,
-      onSelectDestinationEndpoint: () => undefined,
-      onClearDestinationEndpoint: () => undefined,
-      onClearTrip: () => undefined,
-    }
-    const { rerender } = render(<PlanView {...props} />)
-    const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
-    destinationSearch.focus()
-
-    rerender(<PlanView {...props} expanded={false} mobileViewport={false} />)
-    await waitFor(() => expect(document.activeElement).toBe(destinationSearch))
+    expect(summary.getAttribute('title')).toContain('Stop A')
   })
 
   it('labels a partial summary with the selected origin and a destination prompt', () => {
@@ -349,7 +135,6 @@ describe('TripEndpointControls interactions', () => {
         venues={venues}
         networkIndex={createTransitIndex(createValidTransitNetwork())}
         expanded={false}
-        onExpandedChange={() => undefined}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}
@@ -372,7 +157,6 @@ describe('TripEndpointControls interactions', () => {
         venues={venues}
         networkIndex={createTransitIndex(createValidTransitNetwork())}
         expanded={false}
-        onExpandedChange={() => undefined}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}

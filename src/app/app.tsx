@@ -10,8 +10,8 @@ import {
 } from 'react'
 import {
   ExploreView,
-  getExploreShellClassName,
 } from '../features/contextual-panel/explore-view'
+import { getExploreShellClassName } from '../features/contextual-panel/explore-view-shell'
 import {
   StopsView,
   type StopSheetSelection,

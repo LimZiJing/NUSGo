@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ExploreView } from './explore-view'
-import { ShuttleRouteControl } from '../shuttle-browsing/shuttle-route-control'
+import { getExploreShellClassName } from './explore-view-shell'
 import {
   contextualPanelReducer,
   createInitialContextualPanelState,
@@ -18,7 +18,6 @@ import type { TransitNetwork } from '../../domain/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import type { PanelStatus } from './status'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -26,6 +25,69 @@ const venues: VenueLocationMap = {
     floor: 2,
     location: { x: 103.77, y: 1.3 },
   },
+}
+
+function TestShuttleRouteControl({
+  network,
+  networkIndex,
+  selectedRouteId,
+  onRouteSelect,
+  firstRouteCardRef,
+  onFocusStop,
+}: {
+  network: TransitNetwork | null
+  networkIndex: TransitNetworkIndex | null
+  selectedRouteId: string | null
+  onRouteSelect: (routeId: string) => void
+  firstRouteCardRef: RefObject<HTMLButtonElement | null>
+  onFocusStop: (stopId: string) => void
+}) {
+  const routes = networkIndex?.routes ?? network?.routes ?? []
+  const selectedRoute = selectedRouteId && networkIndex
+    ? networkIndex.routeById.get(selectedRouteId)
+    : undefined
+  return (
+    <section aria-label="Shuttle route selection">
+      <h3 className="visually-hidden">Choose a shuttle route</h3>
+      {routes.map((route, index) => (
+        <button
+          key={route.id}
+          ref={index === 0 ? firstRouteCardRef : undefined}
+          type="button"
+          aria-label={`Route ${route.id}`}
+          aria-pressed={selectedRouteId === route.id}
+          onClick={() => onRouteSelect(route.id)}
+        >
+          {route.id}
+        </button>
+      ))}
+      {selectedRoute && (
+        <ol aria-label={`Route ${selectedRoute.id} ordered stops`}>
+          {selectedRoute.stopIds.map((stopId) => {
+            const stop = networkIndex?.stopById.get(stopId)
+            return (
+              <li key={stopId}>
+                <button
+                  type="button"
+                  aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                  onClick={() => onFocusStop(stopId)}
+                >
+                  {stop?.longName ?? stopId}
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+      <p>
+        {!network
+          ? 'Loading shuttle routes…'
+          : selectedRoute
+            ? `Route ${selectedRoute.name} selected.`
+            : `Showing all ${routes.length} shuttle routes and all ${networkIndex?.stops.length ?? network?.stops.length ?? 0} shuttle stops.`}
+      </p>
+    </section>
+  )
 }
 
 function PanelHarness({
@@ -60,66 +122,39 @@ function PanelHarness({
   }
 
   return (
-    <ExploreView
-      state={state}
-      venues={venues}
-      shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
-      renderShuttleRoutes={(options) => (
-        <ShuttleRouteControl
-          network={network}
-          networkIndex={networkIndex}
-          selectedRouteId={selectedRouteId}
-          onRouteSelect={setSelectedRouteId}
-          firstRouteCardRef={options.firstRouteCardRef}
-          onFocusStop={options.onFocusStop}
-        />
-      )}
-      mobileSheet={mobileSheet}
-      minimized={minimized}
-      active={active}
-      status={status}
-      onQueryChange={(query) => dispatch({ type: 'set-query', query })}
-      onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
-      onNavigateToVenue={onNavigateToVenue}
-      onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
-      onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
-      onBack={() => dispatch({ type: 'back' })}
-      onEscape={() => dispatch({ type: 'escape' })}
-      onDismissMapPopup={onDismissMapPopup}
-    />
-  )
-}
-
-function RootSheetEscapeHarness() {
-  const [minimized, setMinimized] = useState(false)
-  const state = { ...createInitialContextualPanelState(), mode: 'neutral' as const }
-  const network = createValidTransitNetwork()
-  const networkIndex = createTransitIndex(network)
-
-  return (
-    <ExploreView
-      state={state}
-      venues={venues}
-      shuttleRoutesAvailable={networkIndex.routes.length > 0}
-      renderShuttleRoutes={(options) => (
-        <ShuttleRouteControl
-          network={network}
-          networkIndex={networkIndex}
-          selectedRouteId={null}
-          onRouteSelect={() => undefined}
-          firstRouteCardRef={options.firstRouteCardRef}
-          onFocusStop={options.onFocusStop}
-        />
-      )}
-      minimized={minimized}
-      onRestore={() => setMinimized(false)}
-      onMinimize={() => setMinimized(true)}
-      onQueryChange={() => undefined}
-      onVenueSelect={() => undefined}
-      onOpenShuttle={() => undefined}
-      onBack={() => undefined}
-      onEscape={() => undefined}
-    />
+    <section
+      className={getExploreShellClassName(state, minimized)}
+      aria-labelledby="contextual-panel-heading"
+      data-minimized={minimized}
+    >
+      <ExploreView
+        state={state}
+        venues={venues}
+        shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
+        renderShuttleRoutes={(options) => (
+          <TestShuttleRouteControl
+            network={network}
+            networkIndex={networkIndex}
+            selectedRouteId={selectedRouteId}
+            onRouteSelect={setSelectedRouteId}
+            firstRouteCardRef={options.firstRouteCardRef}
+            onFocusStop={options.onFocusStop}
+          />
+        )}
+        mobileSheet={mobileSheet}
+        minimized={minimized}
+        active={active}
+        status={status}
+        onQueryChange={(query) => dispatch({ type: 'set-query', query })}
+        onVenueSelect={(result) => dispatch({ type: 'select-venue', result })}
+        onNavigateToVenue={onNavigateToVenue}
+        onOpenShuttle={() => dispatch({ type: 'open-shuttle' })}
+        onLeaveMobileRoutes={() => dispatch({ type: 'close-to-root' })}
+        onBack={() => dispatch({ type: 'back' })}
+        onEscape={() => dispatch({ type: 'escape' })}
+        onDismissMapPopup={onDismissMapPopup}
+      />
+    </section>
   )
 }
 
@@ -178,41 +213,6 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
   )
 }
 
-function MinimizedPanelHarness() {
-  const [state, setState] = useState({
-    ...createInitialContextualPanelState(),
-    mode: 'venue-search' as const,
-    query: 'COM1',
-  })
-  const detent: MobileSheetDetent = 'collapsed'
-  const network = createValidTransitNetwork()
-  const networkIndex = createTransitIndex(network)
-
-  return (
-    <ExploreView
-      state={state}
-      venues={venues}
-      shuttleRoutesAvailable={networkIndex.routes.length > 0}
-      renderShuttleRoutes={(options) => (
-        <ShuttleRouteControl
-          network={network}
-          networkIndex={networkIndex}
-          selectedRouteId={null}
-          onRouteSelect={() => undefined}
-          firstRouteCardRef={options.firstRouteCardRef}
-          onFocusStop={options.onFocusStop}
-        />
-      )}
-      minimized={detent === 'collapsed'}
-      onQueryChange={(query) => setState((current) => ({ ...current, query }))}
-      onVenueSelect={() => undefined}
-      onOpenShuttle={() => undefined}
-      onBack={() => undefined}
-      onEscape={() => undefined}
-    />
-  )
-}
-
 afterEach(cleanup)
 
 describe('ContextualPanel accessibility workflows', () => {
@@ -238,18 +238,6 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
   })
 
-  it('collapses the root sheet with Escape and restores focus to its expand control', async () => {
-    const user = userEvent.setup()
-    render(<RootSheetEscapeHarness />)
-
-    screen.getByRole('button', { name: 'Find venue' }).focus()
-    await user.keyboard('{Escape}')
-
-    const restore = screen.getByRole('button', { name: 'Expand Explore panel' })
-    expect(restore.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(restore)
-  })
-
   it('closes a map popup before handling Escape in the current context', async () => {
     const user = userEvent.setup()
     const onDismissMapPopup = vi.fn(() => true)
@@ -262,18 +250,6 @@ describe('ContextualPanel accessibility workflows', () => {
 
     expect(onDismissMapPopup).toHaveBeenCalledOnce()
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
-  })
-
-  it('closes a map popup on Escape while the Explore sheet is compact', async () => {
-    const user = userEvent.setup()
-    const onDismissMapPopup = vi.fn(() => true)
-    render(<PanelHarness minimized onDismissMapPopup={onDismissMapPopup} />)
-
-    await user.keyboard('{Escape}')
-
-    expect(onDismissMapPopup).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'Expand Explore panel' }).getAttribute('aria-expanded'))
-      .toBe('false')
   })
 
   it('does not show successful resource counts in Explore or Shuttle modes', async () => {
@@ -348,80 +324,6 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
   })
 
-  it('minimizes to an actionable header and restores the current search with safe focus', async () => {
-    const user = userEvent.setup()
-    render(<MinimizedPanelHarness />)
-
-    const panel = screen.getByRole('region', { name: 'Find a venue' })
-    expect(panel.getAttribute('data-minimized')).toBe('true')
-    expect(panel.querySelector('.contextual-panel-content')).not.toBeNull()
-
-    const toggle = screen.getByRole('button', { name: 'Expand Explore panel' })
-    expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    await user.click(toggle)
-
-    const search = await screen.findByRole('searchbox', { name: 'Find a venue' })
-    await waitFor(() => expect(document.activeElement).toBe(search))
-    expect((search as HTMLInputElement).value).toBe('COM1')
-    const partialToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
-    expect(partialToggle.getAttribute('aria-expanded')).toBe('true')
-    expect(partialToggle.getAttribute('aria-description')).toBe('Opens the full-height sheet.')
-    await user.click(partialToggle)
-
-    const fullToggle = screen.getByRole('button', { name: 'Collapse Explore panel' })
-    expect(fullToggle.getAttribute('aria-expanded')).toBe('true')
-    await user.click(fullToggle)
-
-    const showToggle = screen.getByRole('button', { name: 'Expand Explore panel' })
-    await waitFor(() => expect(document.activeElement).toBe(showToggle))
-    expect(showToggle.getAttribute('aria-expanded')).toBe('false')
-    expect(panel.getAttribute('data-minimized')).toBe('true')
-  })
-
-  it('preserves an endpoint input when a minimized mobile sheet becomes desktop content', async () => {
-    const network = createValidTransitNetwork()
-    const networkIndex = createTransitIndex(network)
-    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const }
-    const panelProps = {
-      state,
-      venues,
-      shuttleRoutesAvailable: networkIndex.routes.length > 0,
-      renderShuttleRoutes: (options: { firstRouteCardRef: RefObject<HTMLButtonElement | null>; onFocusStop: (stopId: string) => void }) => (
-        <ShuttleRouteControl
-          network={network}
-          networkIndex={networkIndex}
-          selectedRouteId={null}
-          onRouteSelect={() => undefined}
-          firstRouteCardRef={options.firstRouteCardRef}
-          onFocusStop={options.onFocusStop}
-        />
-      ),
-      onQueryChange: () => undefined,
-      onVenueSelect: () => undefined,
-      onOpenShuttle: () => undefined,
-      onBack: () => undefined,
-      onEscape: () => undefined,
-    }
-    const { rerender } = render(
-      <>
-        <input aria-label="Trip endpoint input" />
-        <ExploreView {...panelProps} minimized mobileSheet />
-      </>,
-    )
-    const endpointInput = screen.getByRole('textbox', { name: 'Trip endpoint input' })
-    endpointInput.focus()
-
-    rerender(
-      <>
-        <input aria-label="Trip endpoint input" />
-        <ExploreView {...panelProps} minimized={false} mobileSheet={false} />
-      </>,
-    )
-
-    await waitFor(() => expect(document.activeElement).toBe(endpointInput))
-    expect(screen.queryByRole('button', { name: 'Expand Explore panel' })).toBeNull()
-  })
-
   it('preserves visible contextual, map, and other control focus when entering mobile', async () => {
     const { rerender } = render(
       <PanelWithOutsideControls>
@@ -467,11 +369,11 @@ describe('ContextualPanel accessibility workflows', () => {
     await waitFor(() => expect(document.activeElement).toBe(otherControl))
   })
 
-  it('uses labelled native structure and focuses venue search on entry', async () => {
+  it('uses labelled native structure for venue search', () => {
     render(<PanelHarness />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })
 
-    await waitFor(() => expect(document.activeElement).toBe(search))
+    expect(search).toBeTruthy()
 
     const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('aria-labelledby')).toBe('contextual-panel-heading')

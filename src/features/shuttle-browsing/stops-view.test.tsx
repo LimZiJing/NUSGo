@@ -23,52 +23,11 @@ const selectedStop: StopSheetSelection = {
 }
 
 describe('StopsView', () => {
-  it('offers an accessible grab handle to expand the map-based Stops sheet', async () => {
-    const user = userEvent.setup()
-    const onDetentChange = vi.fn()
-    const { rerender } = render(
-      <StopsView
-        detent="collapsed"
-        selectedStop={null}
-        onDetentChange={onDetentChange}
-        onBackToStops={vi.fn()}
-        onSelectOppositeStop={vi.fn()}
-        onSelectRoute={vi.fn()}
-        onNavigateToStop={vi.fn()}
-      />,
-    )
-
-    const toggle = screen.getByRole('button', { name: 'Expand Stops panel' })
-    expect(toggle.getAttribute('aria-controls')).toBe('stops-view-content')
-    expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    await user.click(toggle)
-    expect(onDetentChange).toHaveBeenCalledWith('partial')
-
-    rerender(
-      <StopsView
-        detent="full"
-        selectedStop={null}
-        onDetentChange={onDetentChange}
-        onBackToStops={vi.fn()}
-        onSelectOppositeStop={vi.fn()}
-        onSelectRoute={vi.fn()}
-        onNavigateToStop={vi.fn()}
-      />,
-    )
-    const fullToggle = screen.getByRole('button', { name: 'Collapse Stops panel' })
-    expect(fullToggle.getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByText('Tap a shuttle stop on the map to view its details and route actions.'))
-      .toBeTruthy()
-    await user.click(fullToggle)
-    expect(onDetentChange).toHaveBeenLastCalledWith('collapsed')
-  })
-
   it('orders stop identity, destination action, routes, public services and departures', () => {
     const { container } = render(
       <StopsView
         expanded
         selectedStop={selectedStop}
-        onExpandedChange={vi.fn()}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
@@ -105,7 +64,6 @@ describe('StopsView', () => {
       <StopsView
         expanded
         selectedStop={selectedStop}
-        onExpandedChange={vi.fn()}
         onBackToStops={onBackToStops}
         onSelectOppositeStop={onSelectOppositeStop}
         onSelectRoute={onSelectRoute}

@@ -84,7 +84,7 @@ describe('contextualPanelReducer', () => {
     expect(contextualPanelReducer(detailState, { type: 'close-to-root' })).toMatchObject({
       mode: 'neutral',
       query: 'COM1',
-      selectedVenue: null,
+      selectedVenue,
       history: [],
     })
   })

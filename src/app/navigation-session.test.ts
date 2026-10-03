@@ -874,8 +874,8 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.selectVenue(venueResult)
     session.enterMobileRoutes()
+    session.selectVenue(venueResult)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
 

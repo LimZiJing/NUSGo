@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useImperativeHandle,
   useRef,
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -67,11 +68,7 @@ export function MobileSheetShell({
     target?.focus()
   }, [enabled])
 
-  const setShellRef = (element: HTMLElement | null): void => {
-    internalShellRef.current = element
-    if (typeof shellRef === 'function') shellRef(element)
-    else if (shellRef) shellRef.current = element
-  }
+  useImperativeHandle(shellRef, () => internalShellRef.current as HTMLElement, [])
 
   return (
     <section
@@ -80,7 +77,7 @@ export function MobileSheetShell({
       data-mobile-sheet
       data-expanded={isExpanded}
       data-detent={detent}
-      ref={setShellRef}
+      ref={internalShellRef}
     >
       {enabled && (
         <div className="mobile-sheet-handle-row">

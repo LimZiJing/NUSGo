@@ -11,7 +11,6 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
@@ -131,8 +130,6 @@ export function PlanView({
     onSwap()
   }
 
-  const tripSummary = getTripPlanSummary(tripRequest, venues, networkIndex)
-
   useEffect(() => {
     const previous = previousTripRequest.current
     previousTripRequest.current = tripRequest
@@ -156,9 +153,6 @@ export function PlanView({
       <div className="trip-controls-heading">
         <div className="trip-controls-title">
           <h2>Plan trip</h2>
-          <span className="trip-controls-summary" title={tripSummary.visible}>
-            {tripSummary.visible}
-          </span>
         </div>
         <button
           type="button"

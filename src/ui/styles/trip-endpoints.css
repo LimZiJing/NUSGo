@@ -24,16 +24,6 @@
   min-width: 0;
 }
 
-.trip-controls-summary {
-  display: none;
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .trip-controls-body {
   display: grid;
   gap: 8px;
@@ -225,6 +215,8 @@
 }
 
 .trip-controls-actions {
+  /* Keep the actions at the right edge even when no validation message is present. */
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 6px;

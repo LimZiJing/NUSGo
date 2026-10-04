@@ -20,6 +20,90 @@
   gap: 8px;
   padding: 2px 2px 8px;
   scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x;
+  cursor: grab;
+}
+
+.route-chip-list::-webkit-scrollbar {
+  display: none;
+}
+
+.route-chip-list:active {
+  cursor: grabbing;
+}
+
+.route-chip-scroller {
+  position: relative;
+  min-width: 0;
+}
+
+.route-chip-scroller::before,
+.route-chip-scroller::after {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  pointer-events: none;
+  content: '';
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.route-chip-scroller::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--surface-overlay-panel), transparent);
+}
+
+.route-chip-scroller::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--surface-overlay-panel), transparent);
+}
+
+.route-chip-scroller[data-can-scroll-left='true']::before,
+.route-chip-scroller[data-can-scroll-right='true']::after {
+  opacity: 1;
+}
+
+.route-scroll-arrow {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  display: grid;
+  width: 36px;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 0;
+  color: var(--text-muted);
+  background: transparent;
+  font: 30px/1 var(--sans);
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.route-scroll-arrow:hover {
+  color: var(--text-primary);
+  background: transparent;
+  opacity: 1;
+}
+
+.route-scroll-arrow:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: -2px;
+}
+
+.route-scroll-arrow-left {
+  left: 0;
+}
+
+.route-scroll-arrow-right {
+  right: 0;
 }
 
 .contextual-panel .route-chip,

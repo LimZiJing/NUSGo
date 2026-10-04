@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ShuttleRouteControl } from './shuttle-route-control'
@@ -63,6 +63,14 @@ function createD2Network() {
   return network
 }
 
+function setRouteListMetrics(routeList: HTMLElement, clientWidth: number, scrollWidth: number, scrollLeft = 0) {
+  Object.defineProperties(routeList, {
+    clientWidth: { configurable: true, value: clientWidth },
+    scrollWidth: { configurable: true, value: scrollWidth },
+    scrollLeft: { configurable: true, value: scrollLeft, writable: true },
+  })
+}
+
 describe('ShuttleRouteControl', () => {
   it('shows route cards in network order with their canonical ids and colors', () => {
     const network = createEightRouteNetwork()
@@ -77,7 +85,7 @@ describe('ShuttleRouteControl', () => {
 
     const cards = screen.getAllByRole('button', { name: /^Route / })
     expect(cards.map((card) => card.getAttribute('data-route-id'))).toEqual([
-      'A1', 'A2', 'D1', 'D2', 'K', 'P', 'R1', 'R2',
+      'A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P',
     ])
     expect(cards[0].textContent).toContain('A1')
     expect((cards[0] as HTMLButtonElement).style.getPropertyValue('--route-color')).toBe('#fb0101')
@@ -162,5 +170,71 @@ describe('ShuttleRouteControl', () => {
 
     expect(screen.getByRole('button', { name: 'Route D2' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByRole('button', { name: 'Show all routes' })).toBeNull()
+  })
+
+  it('shows directional controls and edge fades only when the row overflows', () => {
+    const network = createEightRouteNetwork()
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId={null}
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
+    const routeScroller = routeList.parentElement as HTMLElement
+    setRouteListMetrics(routeList, 600, 600)
+    fireEvent.scroll(routeList)
+    expect(screen.queryByRole('button', { name: 'Scroll shuttle routes left' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Scroll shuttle routes right' })).toBeNull()
+
+    setRouteListMetrics(routeList, 200, 600)
+    fireEvent.scroll(routeList)
+    expect(screen.queryByRole('button', { name: 'Scroll shuttle routes left' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Scroll shuttle routes right' })).toBeTruthy()
+    expect(routeScroller.getAttribute('data-can-scroll-right')).toBe('true')
+
+    setRouteListMetrics(routeList, 200, 600, 200)
+    fireEvent.scroll(routeList)
+    expect(screen.getByRole('button', { name: 'Scroll shuttle routes left' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Scroll shuttle routes right' })).toBeTruthy()
+    expect(routeScroller.getAttribute('data-can-scroll-left')).toBe('true')
+    expect(routeScroller.getAttribute('data-can-scroll-right')).toBe('true')
+
+    setRouteListMetrics(routeList, 200, 600, 400)
+    fireEvent.scroll(routeList)
+    expect(screen.getByRole('button', { name: 'Scroll shuttle routes left' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Scroll shuttle routes right' })).toBeNull()
+    expect(routeScroller.getAttribute('data-can-scroll-left')).toBe('true')
+    expect(routeScroller.getAttribute('data-can-scroll-right')).toBeNull()
+  })
+
+  it('maps vertical wheel and drag movement onto horizontal scrolling', () => {
+    const network = createEightRouteNetwork()
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId={null}
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
+    setRouteListMetrics(routeList, 200, 600)
+
+    fireEvent.wheel(routeList, { deltaY: 80 })
+    expect(routeList.scrollLeft).toBe(80)
+
+    fireEvent.pointerDown(routeList, { button: 0, clientX: 200, pointerId: 1, pointerType: 'mouse' })
+    fireEvent.pointerMove(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
+    fireEvent.pointerUp(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
+    expect(routeList.scrollLeft).toBe(160)
+
+    setRouteListMetrics(routeList, 200, 600, 400)
+    fireEvent.wheel(routeList, { deltaY: 80 })
+    expect(routeList.scrollLeft).toBe(400)
   })
 })

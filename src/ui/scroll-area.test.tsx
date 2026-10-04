@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
+import { createRef } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ScrollArea } from './scroll-area'
 
@@ -27,5 +28,12 @@ describe('ScrollArea', () => {
     expect(scrollArea.classList.contains('ui-scroll-area-horizontal')).toBe(true)
     expect(scrollArea.classList.contains('route-chip-list')).toBe(true)
     expect(screen.getByRole('button', { name: 'Route A1' })).toBeTruthy()
+  })
+
+  it('forwards a ref to the scroll container', () => {
+    const ref = createRef<HTMLDivElement>()
+    render(<ScrollArea ref={ref}>Scrollable content</ScrollArea>)
+
+    expect(ref.current).toBe(screen.getByText('Scrollable content'))
   })
 })

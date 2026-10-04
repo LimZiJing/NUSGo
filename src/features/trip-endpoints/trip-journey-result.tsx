@@ -44,6 +44,36 @@ function BusIcon() {
   )
 }
 
+function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttle' }>) {
+  const label = (
+    <>
+      <BusIcon />
+      <span>{entry.routeLabel}</span>
+    </>
+  )
+
+  if (entry.stopLabels.length === 0) {
+    return <span className="trip-journey-route-chip">{label}</span>
+  }
+
+  return (
+    <details className="trip-journey-stop-disclosure">
+      <summary className="trip-journey-route-chip" aria-label={`${entry.routeLabel}, show bus stops`}>
+        {label}
+        <span className="trip-journey-disclosure-chevron" aria-hidden="true" />
+      </summary>
+      <ol className="trip-journey-stop-list" aria-label={`${entry.routeLabel} bus stops`}>
+        {entry.stopLabels.map((stopLabel, stopIndex) => (
+          <li key={`${entry.id}-stop-${stopIndex}`}>
+            <span className="trip-journey-stop-marker" aria-hidden="true" />
+            <span>{stopLabel}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  )
+}
+
 function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
   if (entry.kind === 'location') {
     return (
@@ -58,9 +88,9 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
     return (
       <li className="trip-journey-timeline-item trip-journey-timeline-leg trip-journey-timeline-walking" key={entry.id}>
         <span className="trip-journey-timeline-marker" aria-hidden="true" />
-        <div className="trip-journey-timeline-content">
+        <div className="trip-journey-timeline-content trip-journey-walking-content">
           <strong className="trip-journey-mode-label"><WalkingIcon />Walk</strong>
-          <span>{entry.durationLabel} · {entry.distanceLabel}</span>
+          <span className="trip-journey-leg-summary">{entry.durationLabel} · {entry.distanceLabel}</span>
         </div>
       </li>
     )
@@ -73,12 +103,9 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
       style={entry.routeColor ? { '--journey-route-color': entry.routeColor } as CSSProperties : undefined}
     >
       <span className="trip-journey-timeline-marker" aria-hidden="true" />
-      <div className="trip-journey-timeline-content">
-        <strong className="trip-journey-route-chip">
-          <BusIcon />
-          {entry.routeLabel}
-        </strong>
-        <span>{entry.waitLabel} · {entry.rideLabel}</span>
+      <div className="trip-journey-timeline-content trip-journey-shuttle-content">
+        {renderShuttleLabel(entry)}
+        <span className="trip-journey-leg-summary">{entry.waitLabel} · {entry.rideLabel}</span>
       </div>
     </li>
   )

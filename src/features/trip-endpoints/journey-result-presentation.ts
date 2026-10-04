@@ -20,6 +20,7 @@ export type JourneyTimelineEntry =
       readonly id: string
       readonly routeLabel: string
       readonly routeColor: string | null
+      readonly stopLabels: readonly string[]
       readonly waitLabel: string
       readonly rideLabel: string
     }
@@ -56,6 +57,27 @@ export function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1).replace('.0', '')} km`
 }
 
+function getShuttleStopLabels(
+  leg: ShuttleJourneyLeg,
+  networkIndex: TransitIndex | null,
+): readonly string[] {
+  if (!networkIndex) return []
+  const route = networkIndex.routeById.get(leg.routeId)
+  if (!route) return []
+
+  const boardingIndex = route.stopIds.indexOf(leg.boardingStopId)
+  const alightingIndex = route.stopIds.indexOf(leg.alightingStopId)
+  if (boardingIndex < 0 || alightingIndex < 0) return []
+
+  const stopIds = boardingIndex <= alightingIndex
+    ? route.stopIds.slice(boardingIndex, alightingIndex + 1)
+    : route.stopIds.slice(alightingIndex, boardingIndex + 1).reverse()
+
+  return stopIds
+    .slice(1, -1)
+    .map((stopId) => networkIndex.stopById.get(stopId)?.shortName ?? stopId)
+}
+
 function getLegEntry(
   leg: JourneyLeg,
   legIndex: number,
@@ -78,6 +100,7 @@ function getLegEntry(
     routeLabel: route?.name ?? getRouteName(shuttleLeg.routeId, networkIndex),
     // Route colors come from the validated transit index so the journey uses the same palette as the map.
     routeColor: route?.color ?? null,
+    stopLabels: getShuttleStopLabels(shuttleLeg, networkIndex),
     waitLabel: `Wait ${formatWaitDuration(shuttleLeg.waitingSeconds)}`,
     rideLabel: `Ride ${formatDuration(shuttleLeg.rideSeconds)}`,
   }

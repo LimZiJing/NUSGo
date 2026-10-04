@@ -6,7 +6,18 @@ import type { Journey } from '../../domain/trip/journey'
 import { getJourneyTimelineEntries } from './journey-result-presentation'
 import { TripJourneyResult } from './trip-journey-result'
 
-const networkIndex = createTransitIndex(createValidTransitNetwork())
+const network = createValidTransitNetwork()
+network.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B']
+network.stops.push({
+  id: 'STOP-MID',
+  longName: 'Middle Stop',
+  shortName: 'MID',
+  latitude: 1.05,
+  longitude: 103.05,
+  services: ['A1'],
+  opposite: null,
+})
+const networkIndex = createTransitIndex(network)
 const route = networkIndex.routes[0]
 const boardingStopId = route.stopIds[0]
 const alightingStopId = route.stopIds[2]
@@ -106,6 +117,11 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('trip-journey-walking-icon')
     expect(markup).toContain(`>${route.name}<`)
     expect(markup).toContain('trip-journey-bus-icon')
+    expect(markup).toContain('trip-journey-disclosure-chevron')
+    expect(markup).toContain(`aria-label="${route.name}, show bus stops"`)
+    expect(markup).toContain('trip-journey-stop-marker')
+    expect(markup).toContain('>MID</span>')
+    expect(markup).not.toContain('Middle Stop')
     expect(markup).toContain(`--journey-route-color:${route.color}`)
     expect(markup).toContain('Wait Arriving now')
     expect(markup).toContain('Arriving now')
@@ -133,7 +149,10 @@ describe('TripJourneyResult', () => {
       'location',
     ])
     expect(entries.filter((entry) => entry.kind === 'location')).toHaveLength(4)
-    expect(entries.find((entry) => entry.kind === 'shuttle')).toMatchObject({ routeColor: route.color })
+    expect(entries.find((entry) => entry.kind === 'shuttle')).toMatchObject({
+      routeColor: route.color,
+      stopLabels: ['MID'],
+    })
   })
 
   it('explains when the Journey was selected within a search budget', () => {

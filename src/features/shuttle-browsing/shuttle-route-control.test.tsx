@@ -172,6 +172,32 @@ describe('ShuttleRouteControl', () => {
     expect(screen.queryByRole('button', { name: 'Show all routes' })).toBeNull()
   })
 
+  it('does not scroll an already-visible first route when the tab opens', () => {
+    const network = createEightRouteNetwork()
+    const scrollIntoView = vi.fn()
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    })
+
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId="A1"
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: originalScrollIntoView,
+    })
+
+    expect(scrollIntoView).not.toHaveBeenCalled()
+  })
+
   it('shows directional controls and edge fades only when the row overflows', () => {
     const network = createEightRouteNetwork()
     render(
@@ -289,5 +315,31 @@ describe('ShuttleRouteControl', () => {
     fireEvent.pointerUp(routeList, { clientX: 240, pointerId: 3, pointerType: 'mouse' })
 
     expect(routeList.scrollLeft).toBe(0)
+  })
+
+  it('keeps edge arrows clickable without capturing a stationary click', async () => {
+    const user = userEvent.setup()
+    const network = createEightRouteNetwork()
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId={null}
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
+    setRouteListMetrics(routeList, 200, 600, 200)
+    fireEvent.scroll(routeList)
+    const scrollBy = vi.fn()
+    const setPointerCapture = vi.fn()
+    Object.defineProperty(routeList, 'scrollBy', { configurable: true, value: scrollBy })
+    Object.defineProperty(routeList, 'setPointerCapture', { configurable: true, value: setPointerCapture })
+
+    await user.click(screen.getByRole('button', { name: 'Scroll shuttle routes left' }))
+
+    expect(scrollBy).toHaveBeenCalledWith({ left: -150, behavior: 'smooth' })
+    expect(setPointerCapture).not.toHaveBeenCalled()
   })
 })

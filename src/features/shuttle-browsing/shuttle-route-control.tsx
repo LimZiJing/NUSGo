@@ -89,26 +89,43 @@ export function ShuttleRouteControl({
     ))
   }, [])
 
+  const ensureSelectedRouteVisible = useCallback(() => {
+    const routeList = routeListRef.current
+    const selectedChip = selectedChipRef.current
+    if (!routeList || !selectedChip || routeList.clientWidth <= 0 || selectedChip.offsetWidth <= 0) return
+
+    const viewportStart = routeList.scrollLeft
+    const viewportEnd = viewportStart + routeList.clientWidth
+    const chipStart = selectedChip.offsetLeft
+    const chipEnd = chipStart + selectedChip.offsetWidth
+    if (chipStart >= viewportStart && chipEnd <= viewportEnd) return
+
+    selectedChip.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [])
+
   useEffect(() => {
     const routeList = routeListRef.current
     if (!routeList) return
 
-    updateRouteScrollState()
-    window.addEventListener('resize', updateRouteScrollState)
-    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateRouteScrollState)
+    const updateRouteLayout = () => {
+      updateRouteScrollState()
+      ensureSelectedRouteVisible()
+    }
+
+    updateRouteLayout()
+    window.addEventListener('resize', updateRouteLayout)
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateRouteLayout)
     resizeObserver?.observe(routeList)
 
     return () => {
-      window.removeEventListener('resize', updateRouteScrollState)
+      window.removeEventListener('resize', updateRouteLayout)
       resizeObserver?.disconnect()
     }
-  }, [routes.length, updateRouteScrollState])
+  }, [ensureSelectedRouteVisible, routes.length, updateRouteScrollState])
 
   useEffect(() => {
-    if (selectedRouteId) {
-      selectedChipRef.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
-    }
-  }, [routes.length, selectedRouteId])
+    if (selectedRouteId) ensureSelectedRouteVisible()
+  }, [ensureSelectedRouteVisible, routes.length, selectedRouteId])
 
   const selectedRoute = selectedRouteId && networkIndex
     ? networkIndex.routeById.get(selectedRouteId)
@@ -143,10 +160,9 @@ export function ShuttleRouteControl({
       startScrollLeft: routeList.scrollLeft,
       moved: false,
     }
-    routeList.setPointerCapture?.(event.pointerId)
   }
 
-  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+  function handlePointerMove(event: ReactPointerEvent<HTMLElement>) {
     const drag = dragRef.current
     const routeList = routeListRef.current
     if (!drag || drag.pointerId !== event.pointerId || !routeList) return
@@ -155,12 +171,13 @@ export function ShuttleRouteControl({
     if (!drag.moved && Math.abs(distance) < 4) return
 
     drag.moved = true
+    routeList.setPointerCapture?.(event.pointerId)
     event.preventDefault()
     setRouteScrollLeft(routeList, drag.startScrollLeft - distance)
     updateRouteScrollState()
   }
 
-  function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>) {
+  function handlePointerEnd(event: ReactPointerEvent<HTMLElement>) {
     const drag = dragRef.current
     const routeList = routeListRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
@@ -257,6 +274,10 @@ export function ShuttleRouteControl({
             aria-label="Scroll shuttle routes left"
             hidden={!routeScrollState.canScrollLeft}
             onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+            onLostPointerCapture={handlePointerEnd}
             onClick={() => scrollRoutes(-1)}
           >
             <span aria-hidden="true">‹</span>
@@ -267,6 +288,10 @@ export function ShuttleRouteControl({
             aria-label="Scroll shuttle routes right"
             hidden={!routeScrollState.canScrollRight}
             onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+            onLostPointerCapture={handlePointerEnd}
             onClick={() => scrollRoutes(1)}
           >
             <span aria-hidden="true">›</span>

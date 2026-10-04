@@ -108,6 +108,7 @@ export function freezeNavigationSessionSnapshot(state: NavigationSessionState): 
     tripRequest: snapshotTripRequest(state.tripRequest),
     journey: snapshotJourneyState(state.journey),
     location: snapshotLocationState(state.location),
+    originVenueAutofill: freeze({ ...state.originVenueAutofill }),
     resourceStatus: snapshotResourceStatus(state.resourceStatus),
     startupFailure: snapshotStartupFailure(state.startupFailure),
   })

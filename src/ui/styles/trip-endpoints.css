@@ -144,7 +144,7 @@
 
 .trip-endpoint-control .search-field input {
   min-height: var(--control-height-lg);
-  padding: 10px 42px 10px 12px;
+  padding: 10px 78px 10px 12px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -162,10 +162,18 @@
   color: var(--text-muted);
 }
 
-.trip-endpoint-clear {
+.trip-endpoint-actions {
   position: absolute;
   top: 50%;
   right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transform: translateY(-50%);
+}
+
+.trip-endpoint-location,
+.trip-endpoint-clear {
   display: grid;
   width: 28px;
   height: 28px;
@@ -176,15 +184,17 @@
   color: var(--text-secondary);
   background: transparent;
   cursor: pointer;
-  transform: translateY(-50%);
 }
 
+.trip-endpoint-location:hover,
+.trip-endpoint-location:focus-visible,
 .trip-endpoint-clear:hover,
 .trip-endpoint-clear:focus-visible {
   color: var(--text-primary);
   background: var(--surface-control);
 }
 
+.trip-endpoint-location svg,
 .trip-endpoint-clear svg {
   width: 16px;
   height: 16px;
@@ -192,6 +202,13 @@
   stroke: currentColor;
   stroke-linecap: round;
   stroke-width: 2;
+}
+
+.trip-endpoint-location-status {
+  margin: 4px 0 0;
+  color: var(--text-warning);
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .trip-endpoint-search-status,

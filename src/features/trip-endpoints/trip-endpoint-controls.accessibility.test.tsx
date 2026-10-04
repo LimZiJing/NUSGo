@@ -111,6 +111,44 @@ describe('PlanView interactions', () => {
     expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('offers a retryable nearest-venue location action for the origin', async () => {
+    const user = userEvent.setup()
+    const onUseCurrentLocationForOrigin = vi.fn()
+    const controls = {
+      venues,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
+      tripRequest: { origin: null, destination: null },
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+      onPlanJourney: () => undefined,
+      onUseCurrentLocationForOrigin,
+    }
+
+    const { rerender } = render(<PlanView {...controls} />)
+    await user.click(screen.getByRole('button', { name: 'Use current location' }))
+    expect(onUseCurrentLocationForOrigin).toHaveBeenCalledOnce()
+
+    rerender(<PlanView
+      {...controls}
+      originVenueAutofill={{ status: 'requesting', error: null }}
+    />)
+    expect((screen.getByRole('button', { name: 'Finding nearest venue' }) as HTMLButtonElement).disabled).toBe(true)
+
+    rerender(<PlanView
+      {...controls}
+      originVenueAutofill={{
+        status: 'error',
+        error: 'Device location is unavailable. Please try again.',
+      }}
+    />)
+    expect(screen.getByText('Device location is unavailable. Please try again.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry nearest venue' })).toBeTruthy()
+  })
+
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {
     const user = userEvent.setup()
     render(<TripEndpointHarness />)

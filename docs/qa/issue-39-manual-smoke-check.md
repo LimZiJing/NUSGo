@@ -8,7 +8,7 @@ This checklist is intentionally honest about the boundary between automated evid
 - [x] `npm run lint` passes.
 - [x] `npm run build` passes.
 - [x] `git diff --check` passes before each Issue #39 commit.
-- [x] CI/test validation covers `public/data/transit-verification.json`; the manifest is not fetched at runtime.
+- [x] CI/test validation covers `frontend/public/data/transit-verification.json`; the manifest is not fetched at runtime.
 
 ## Manual desktop/map checks — pending
 

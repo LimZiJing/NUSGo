@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { validateTransitNetwork } from '../src/domain/transit/model.ts'
-import { createValhallaRouteEngine } from '../src/infrastructure/routing/valhalla.ts'
-import { validateWalkingStopGraph } from '../src/infrastructure/routing/walking-stop-graph.ts'
+import { validateTransitNetwork } from '../frontend/src/domain/transit/model.ts'
+import { createValhallaRouteEngine } from '../frontend/src/infrastructure/routing/valhalla.ts'
+import { validateWalkingStopGraph } from '../frontend/src/infrastructure/routing/walking-stop-graph.ts'
 
-const outputPath = 'public/data/walking-stop-graph.json'
+const outputPath = 'frontend/public/data/walking-stop-graph.json'
 const baseUrl = process.env.NAVUS_VALHALLA_BASE_URL?.trim() || 'http://127.0.0.1:8002'
 const routingDataVersion = process.env.NAVUS_VALHALLA_DATA_VERSION?.trim() || 'local-valhalla'
 const timeoutMs = Number(process.env.NAVUS_VALHALLA_TIMEOUT_MS ?? 30_000)
@@ -13,7 +13,7 @@ if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
 }
 
 const network = validateTransitNetwork(
-  JSON.parse(await readFile('public/data/shuttle-network.json', 'utf8')),
+  JSON.parse(await readFile('frontend/public/data/shuttle-network.json', 'utf8')),
 )
 const stops = network.stops
 const coordinates = stops.map((stop) => ({

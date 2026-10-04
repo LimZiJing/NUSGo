@@ -93,6 +93,10 @@ function getEndpointCoordinate(
   transitIndex: TransitIndex | null,
 ): MapCoordinate | null {
   if (!request) return null
+  if (request.kind === 'current-location') {
+    const { longitude, latitude } = request.coordinate
+    return isValidLocationCoordinates(longitude, latitude) ? [longitude, latitude] : null
+  }
   if (request.kind === 'venue') return getVenueCoordinate(request.id, venues)
   const stop = transitIndex?.stopById.get(request.id)
   if (!stop || !Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) return null
@@ -100,7 +104,9 @@ function getEndpointCoordinate(
 }
 
 export function getResetTarget(context: ResetTargetContext): MapResetTarget {
-  if (context.panelMode === 'venue-detail') {
+  const hasCurrentLocationEndpoint = context.tripRequest.origin?.kind === 'current-location' ||
+    context.tripRequest.destination?.kind === 'current-location'
+  if (context.panelMode === 'venue-detail' && !hasCurrentLocationEndpoint) {
     const selectedLocation = context.selectedVenue?.venue.location
     if (selectedLocation && Number.isFinite(selectedLocation.x) && Number.isFinite(selectedLocation.y)) {
       return {
@@ -111,7 +117,12 @@ export function getResetTarget(context: ResetTargetContext): MapResetTarget {
     }
   }
 
-  if (context.panelMode === 'shuttle' && context.selectedRouteId && context.transitIndex?.routeById.has(context.selectedRouteId)) {
+  if (
+    context.panelMode === 'shuttle' &&
+    !hasCurrentLocationEndpoint &&
+    context.selectedRouteId &&
+    context.transitIndex?.routeById.has(context.selectedRouteId)
+  ) {
     return { kind: 'route', routeId: context.selectedRouteId }
   }
 

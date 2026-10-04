@@ -848,7 +848,7 @@ function App() {
               onQueryChange={commands.setContextualPanelQuery}
               onVenueSelect={commands.selectVenue}
               onNavigateToVenue={(venueCode) => {
-                commands.selectDestinationEndpoint({ kind: 'venue', id: venueCode })
+                commands.navigateToEndpoint({ kind: 'venue', id: venueCode })
                 if (isMobileViewport) prepareSheetTransition(true)
                 pendingViewFocusRef.current = 'plan'
                 dispatchNavigation(isMobileViewport
@@ -932,7 +932,7 @@ function App() {
                 dispatchNavigation({ type: 'select-view', view: 'explore' })
               }}
               onNavigateToStop={(stopId) => {
-                commands.selectDestinationEndpoint({ kind: 'stop', id: stopId })
+                commands.navigateToEndpoint({ kind: 'stop', id: stopId })
                 prepareSheetTransition(true)
                 pendingViewFocusRef.current = 'plan'
                 dispatchNavigation(isMobileViewport

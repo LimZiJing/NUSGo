@@ -120,4 +120,11 @@ describe('getTripEndpointLabel', () => {
     expect(getTripEndpointLabel({ kind: 'venue', id: 'MISSING' }, venues, stops)).toBe('MISSING')
     expect(getTripEndpointLabel({ kind: 'stop', id: 'MISSING' }, venues, stops)).toBe('MISSING')
   })
+
+  it('labels Current location without an identifier', () => {
+    expect(getTripEndpointLabel({
+      kind: 'current-location',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    }, venues, stops)).toBe('Current location')
+  })
 })

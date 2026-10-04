@@ -4,6 +4,7 @@ import { validateTransitRouteGeometry } from '../transit/geometry'
 import { generateShuttleTimingData } from '../transit/timing'
 import { validateTransitNetwork } from '../transit/model'
 import type { TripEndpoint } from './types'
+import { getTripEndpointKey } from './endpoints'
 import {
   planJourney,
   planJourneyWithinBudget,
@@ -31,7 +32,7 @@ function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConne
   ])
   return {
     type: 'LineString',
-    coordinates: [coordinateByEndpoint.get(`${from.kind}:${from.id}`)!, coordinateByEndpoint.get(`${to.kind}:${to.id}`)!],
+    coordinates: [coordinateByEndpoint.get(getTripEndpointKey(from))!, coordinateByEndpoint.get(getTripEndpointKey(to))!],
   }
 }
 

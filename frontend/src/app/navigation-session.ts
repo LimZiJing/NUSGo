@@ -3,6 +3,7 @@ import type { TransitIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import {
   clearTripEndpoint,
+  createCurrentLocationTripEndpoint,
   createEmptyTripRequest,
   setTripEndpoint,
   swapTripEndpoints,
@@ -107,6 +108,7 @@ export interface NavigationSession {
   hideLocationMarker(): void
   showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
+  navigateTo(destination: TripEndpoint): void
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
   clearTrip(): void
@@ -751,6 +753,22 @@ export function createNavigationSession(
 
     setTripEndpoint(role, endpoint) {
       setTripEndpointCommand(role, endpoint)
+    },
+
+    navigateTo(destination) {
+      const canonicalDestination = canonicalizeTripEndpoint(destination, state.venues, transitIndex)
+      if (disposed || canonicalDestination === null) return
+      enqueueTransition(() => {
+        if (disposed) return
+        const location = state.location
+        const currentLocationOrigin = location.status === 'tracking' && location.latestFix !== null
+          ? createCurrentLocationTripEndpoint(location.latestFix)
+          : null
+        updateTripRequest({
+          origin: currentLocationOrigin ?? state.tripRequest.origin,
+          destination: canonicalDestination,
+        })
+      })
     },
 
     clearTripEndpoint(role) {

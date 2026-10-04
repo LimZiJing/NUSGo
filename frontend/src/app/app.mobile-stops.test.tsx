@@ -10,10 +10,17 @@ import { createInitialNavigationSessionState } from './navigation-session'
 
 const appHarness = vi.hoisted(() => {
   const noop = () => undefined
+  const commandStubs = {
+    navigateToEndpoint: vi.fn(),
+    locateUser: vi.fn(),
+    enableLocationTracking: vi.fn(),
+  }
   return {
     state: null as unknown,
     onStopSelected: null as ((stopId: string) => boolean) | null,
-    commands: new Proxy<Record<string, () => undefined>>({}, { get: () => noop }),
+    commands: new Proxy(commandStubs, {
+      get: (target, property, receiver) => Reflect.get(target, property, receiver) ?? noop,
+    }),
     arrivalsClient: {
       getArrivals: vi.fn(),
     },
@@ -91,10 +98,33 @@ afterEach(() => {
   localStorage.clear()
   appHarness.arrivalsClient.getArrivals.mockReset()
   appHarness.serviceHoursClient.getServiceWindows.mockReset()
+  appHarness.commands.navigateToEndpoint.mockReset()
+  appHarness.commands.locateUser.mockReset()
+  appHarness.commands.enableLocationTracking.mockReset()
   appHarness.onStopSelected = null
 })
 
 describe('mobile Stops tab state', () => {
+  it('uses the shared Navigate command from stop details and opens Plan', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    act(() => {
+      expect(appHarness.onStopSelected?.('STOP-A')).toBe(true)
+    })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Navigate to this stop' })).toBeTruthy())
+    appHarness.commands.navigateToEndpoint.mockClear()
+    appHarness.commands.locateUser.mockClear()
+    appHarness.commands.enableLocationTracking.mockClear()
+
+    await user.click(screen.getByRole('button', { name: 'Navigate to this stop' }))
+
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'stop', id: 'STOP-A' })
+    expect(appHarness.commands.locateUser).not.toHaveBeenCalled()
+    expect(appHarness.commands.enableLocationTracking).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
+  })
+
   it('renders live internal-shuttle arrivals for visible Stops cards', async () => {
     const user = userEvent.setup()
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { validateTripRequest } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
+import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   TripEndpoint,
@@ -72,7 +73,9 @@ function getEndpointLabel(
 }
 
 function getResultLabel(result: TripLocationSearchResult): string {
-  return result.endpoint.id
+  return result.endpoint.kind === 'current-location'
+    ? result.label
+    : result.endpoint.id
 }
 
 const TRIP_CONTROLS_CONTENT_ID = 'trip-controls-panel-content'
@@ -174,7 +177,7 @@ export function PlanView({
       >
         <div className="trip-endpoint-picker">
           <TripEndpointControl
-            key={`origin:${tripRequest.origin?.kind ?? 'none'}:${tripRequest.origin?.id ?? 'none'}`}
+            key={`origin:${tripRequest.origin ? getTripEndpointKey(tripRequest.origin) : 'none'}`}
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
@@ -191,7 +194,7 @@ export function PlanView({
             onCancelOriginVenueAutofill={onCancelOriginVenueAutofill}
           />
           <TripEndpointControl
-            key={`destination:${tripRequest.destination?.kind ?? 'none'}:${tripRequest.destination?.id ?? 'none'}`}
+            key={`destination:${tripRequest.destination ? getTripEndpointKey(tripRequest.destination) : 'none'}`}
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
@@ -287,7 +290,9 @@ export function TripEndpointControl({
     : showResults
       ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`
       : endpoint
-        ? `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
+        ? endpoint.kind === 'current-location'
+          ? `${roleLabel} set to ${endpointLabel}.`
+          : `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
         : ''
 
   const clearEndpoint = (): void => {
@@ -398,7 +403,7 @@ export function TripEndpointControl({
                 <button
                   className="trip-endpoint-result"
                   type="button"
-                  key={`${result.endpoint.kind}:${result.endpoint.id}`}
+                  key={getTripEndpointKey(result.endpoint)}
                   onClick={() => {
                     onSearchResult?.()
                     onSelect(result.endpoint)

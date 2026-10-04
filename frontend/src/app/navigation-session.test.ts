@@ -163,6 +163,11 @@ function createJourney(destination: TripEndpoint): Journey {
   }
 }
 
+function endpointTestLabel(endpoint: TripEndpoint | null): string {
+  if (endpoint === null) return 'none'
+  return endpoint.kind === 'current-location' ? 'Current location' : endpoint.id
+}
+
 const venueResult: VenueSearchResult = {
   code: 'COM1',
   venue: {
@@ -1085,6 +1090,84 @@ describe('navigation session', () => {
     )
   })
 
+  it('atomically captures the active fix as a frozen origin when Navigate is used', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'stop', id: 'STOP-A' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+
+    const activeFix = {
+      longitude: 103.7844,
+      latitude: 1.2933,
+      accuracy: 12,
+      timestamp: Date.now(),
+    }
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit({ status: 'tracking', latestFix: activeFix })
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.setTripRequest.mockClear()
+    const notifications: ReturnType<NavigationSession['getState']>['tripRequest'][] = []
+    session.subscribe(() => notifications.push(session.getState().tripRequest))
+
+    session.navigateTo({ kind: 'venue', id: 'COM1' })
+
+    const request = session.getState().tripRequest
+    expect(request).toEqual({
+      origin: {
+        kind: 'current-location',
+        coordinate: { longitude: 103.7844, latitude: 1.2933 },
+      },
+      destination: { kind: 'venue', id: 'COM1' },
+    })
+    expect(Object.isFrozen(request.origin)).toBe(true)
+    const capturedCoordinate = request.origin?.kind === 'current-location'
+      ? request.origin.coordinate
+      : null
+    expect(Object.isFrozen(capturedCoordinate)).toBe(true)
+    expect(notifications).toEqual([request])
+    expect(map.setTripRequest).toHaveBeenCalledOnce()
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { ...activeFix, longitude: 103.785, timestamp: Date.now() + 1 },
+    })
+    expect(session.getState().tripRequest.origin).toBe(request.origin)
+    expect(map.setTripRequest).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    ['missing', { status: 'disabled', latestFix: null }],
+    ['requesting', { status: 'requesting', latestFix: null }],
+    ['stale', { status: 'stale', latestFix: { longitude: 103, latitude: 1, accuracy: 10, timestamp: 1 } }],
+    ['denied', { status: 'denied', latestFix: null }],
+    ['unavailable', { status: 'unavailable', latestFix: null }],
+    ['timed out', { status: 'timeout', latestFix: null }],
+    ['invalid', { status: 'invalid', latestFix: null }],
+    ['tracking without a fix', { status: 'tracking', latestFix: null }],
+    ['tracking with invalid coordinates', { status: 'tracking', latestFix: { longitude: 181, latitude: 1, accuracy: 10, timestamp: 1 } }],
+  ] as const)('preserves the existing origin without requesting location when the fix is %s', async (_name, location) => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'stop', id: 'STOP-A' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    locationTracker.emit(location as LocationTrackingState)
+    const map = dependencies.map as ReturnType<typeof createMapDouble>
+    map.setTripRequest.mockClear()
+
+    session.navigateTo({ kind: 'venue', id: 'COM1' })
+
+    expect(session.getState().tripRequest).toEqual({
+      origin: { kind: 'stop', id: 'STOP-A' },
+      destination: { kind: 'venue', id: 'COM1' },
+    })
+    expect(map.setTripRequest).toHaveBeenCalledOnce()
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
+  })
+
   it('keeps caller endpoint mutation out of state and map synchronization', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -1118,7 +1201,8 @@ describe('navigation session', () => {
     let cleared = false
     session.subscribe(() => {
       events.push('notify')
-      if (!cleared && session.getState().tripRequest.origin?.id === 'COM1') {
+      const origin = session.getState().tripRequest.origin
+      if (!cleared && origin?.kind === 'venue' && origin.id === 'COM1') {
         cleared = true
         session.clearTripEndpoint('origin')
       }
@@ -1144,15 +1228,15 @@ describe('navigation session', () => {
     let selectedDestination = false
     session.subscribe(() => {
       const request = session.getState().tripRequest
-      events.push(`first:${request.origin?.id ?? 'none'}>${request.destination?.id ?? 'none'}`)
-      if (!selectedDestination && request.origin?.id === 'COM1') {
+      events.push(`first:${endpointTestLabel(request.origin)}>${endpointTestLabel(request.destination)}`)
+      if (!selectedDestination && request.origin?.kind === 'venue' && request.origin.id === 'COM1') {
         selectedDestination = true
         session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
       }
     })
     session.subscribe(() => {
       const request = session.getState().tripRequest
-      events.push(`second:${request.origin?.id ?? 'none'}>${request.destination?.id ?? 'none'}`)
+      events.push(`second:${endpointTestLabel(request.origin)}>${endpointTestLabel(request.destination)}`)
     })
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })

@@ -5,6 +5,7 @@ import { validateTransitRouteGeometry } from '../domain/transit/geometry'
 import { generateShuttleTimingData } from '../domain/transit/timing'
 import type { LoadedTransitData } from './contracts/data'
 import { createJourneyPlanningService } from './journey-planning'
+import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
 
 function createTransitData(): LoadedTransitData {
   const network = validateTransitNetwork({
@@ -143,6 +144,55 @@ function createAlternativeRouteEngine() {
 }
 
 describe('createJourneyPlanningService', () => {
+  it('plans a walking Journey from the frozen Current location coordinate', async () => {
+    const transit = createTransitData()
+    const currentLocation = createCurrentLocationTripEndpoint({
+      longitude: 103.78,
+      latitude: 1.29,
+    })!
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 250, durationSeconds: 180 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: 250,
+        durationSeconds: 180,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const journey = await createJourneyPlanningService(routeEngine)({
+      tripRequest: {
+        origin: currentLocation,
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        DESTINATION: { roomName: 'Destination', location: { x: 103.79, y: 1.295 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey).toMatchObject({
+      origin: currentLocation,
+      destination: { kind: 'venue', id: 'DESTINATION' },
+      legs: [{
+        mode: 'walking',
+        from: currentLocation,
+        to: { kind: 'venue', id: 'DESTINATION' },
+        geometry: { coordinates: [[103.78, 1.29], [103.79, 1.295]] },
+      }],
+    })
+    expect(routeEngine.routeWalking).toHaveBeenCalledWith(expect.objectContaining({
+      origin: { longitude: 103.78, latitude: 1.29 },
+    }), expect.any(AbortSignal))
+  })
+
   it('uses the three shortest reachable venue connectors even when each exceeds five minutes', async () => {
     const transit = createFourStopTransitData()
     const routeEngine = {

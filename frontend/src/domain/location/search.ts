@@ -5,6 +5,7 @@ import type {
   TripLocationSearchResult,
 } from '../trip/types'
 import type { VenueLocationMap } from '../venue/types'
+import { getTripEndpointKey } from '../trip/endpoints'
 
 const MAX_RESULTS = 8
 
@@ -65,6 +66,7 @@ export function getTripEndpointLabel(
   venues: VenueLocationMap,
   stops: TransitStopSource,
 ): string {
+  if (endpoint.kind === 'current-location') return 'Current location'
   if (endpoint.kind === 'venue') {
     return venues[endpoint.id]?.roomName ?? endpoint.id
   }
@@ -124,8 +126,8 @@ export function searchTripLocations(
       if (kindDifference !== 0) return kindDifference
 
       return compareText(
-        normalize(first.result.endpoint.id),
-        normalize(second.result.endpoint.id),
+        normalize(getTripEndpointKey(first.result.endpoint)),
+        normalize(getTripEndpointKey(second.result.endpoint)),
       )
     })
     .slice(0, getResultLimit(limit))

@@ -85,11 +85,11 @@
     width: auto;
     max-height: var(--mobile-sheet-max-height);
     overflow: hidden;
-    padding: 8px 10px 10px;
+    padding: 6px 8px 8px;
   }
 
   .trip-controls-heading {
-    min-height: var(--control-height-lg);
+    min-height: var(--control-height-sm);
   }
 
   .trip-controls-title {
@@ -107,7 +107,7 @@
 
   .trip-controls-body {
     min-height: 0;
-    max-height: max(0px, calc(var(--mobile-sheet-max-height) - 132px));
+    max-height: max(0px, calc(var(--mobile-sheet-max-height) - 112px));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
@@ -628,7 +628,7 @@
   .trip-controls button,
   .trip-controls input,
   .trip-controls select {
-    min-height: var(--control-height-lg);
+    min-height: var(--control-height-sm);
   }
 
   .contextual-panel-content,

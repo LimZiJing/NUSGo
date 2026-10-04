@@ -1,8 +1,8 @@
 .trip-controls {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   max-height: min(66vh, calc(100vh - 36px));
-  padding: 12px;
+  padding: 10px;
   overflow-y: auto;
   border-radius: var(--radius-panel);
   color: var(--text-primary);
@@ -36,7 +36,7 @@
 
 .trip-controls-body {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .trip-controls-heading h2 {
@@ -63,15 +63,15 @@
 
 .trip-controls-swap {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
   padding: 0 !important;
   place-items: center;
 }
 
 .trip-controls-swap svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -82,8 +82,8 @@
 .trip-endpoint-picker {
   position: relative;
   display: grid;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
@@ -92,9 +92,9 @@
 
 .trip-endpoint-picker::before {
   position: absolute;
-  top: 28px;
-  bottom: 28px;
-  left: 25px;
+  top: 26px;
+  bottom: 26px;
+  left: 19px;
   border-left: 2px dotted var(--border-control);
   content: '';
 }
@@ -103,7 +103,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr);
   align-items: start;
   gap: 8px;
   min-width: 0;
@@ -113,10 +113,10 @@
 }
 
 .trip-endpoint-marker {
-  width: 14px;
-  height: 14px;
-  margin: 15px 7px 0;
-  border: 3px solid var(--surface-raised);
+  width: 12px;
+  height: 12px;
+  margin: 14px 6px 0;
+  border: 2px solid var(--surface-raised);
   border-radius: 50%;
   box-shadow: var(--shadow-marker);
   box-sizing: border-box;
@@ -143,8 +143,8 @@
 }
 
 .trip-endpoint-control .search-field input {
-  min-height: var(--control-height-lg);
-  padding: 10px 78px 10px 12px;
+  min-height: var(--control-height-md);
+  padding: 8px 86px 8px 10px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -165,7 +165,7 @@
 .trip-endpoint-actions {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 6px;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -175,8 +175,8 @@
 .trip-endpoint-location,
 .trip-endpoint-clear {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
   padding: 0;
   place-items: center;
   border: 0;
@@ -196,8 +196,8 @@
 
 .trip-endpoint-location svg,
 .trip-endpoint-clear svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -217,23 +217,22 @@
 }
 
 .trip-controls-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 28px;
+  gap: 6px;
+  min-height: var(--control-height-sm);
 }
 
 .trip-controls-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 6px;
 }
 
 .trip-plan-submit {
   min-height: var(--control-height-sm);
-  padding: 5px 12px;
+  padding: 5px 10px;
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   color: var(--accent-contrast);
@@ -293,7 +292,7 @@
 
 .trip-clear-both {
   flex: 0 0 auto;
-  margin-left: auto;
+  min-height: var(--control-height-sm);
   border-color: transparent;
   color: var(--text-secondary);
   background: transparent;
@@ -330,7 +329,7 @@
 
 .trip-journey-status {
   margin: 0;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-status);
   color: var(--text-strong);
@@ -339,8 +338,8 @@
 
 .trip-journey-result {
   display: grid;
-  gap: 10px;
-  padding-top: 10px;
+  gap: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border-control);
 }
 
@@ -349,13 +348,13 @@
   flex-wrap: wrap;
   align-items: start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .trip-journey-kicker {
-  margin: 0 0 2px;
+  margin: 0 0 1px;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -384,19 +383,19 @@
 .trip-journey-notice,
 .trip-journey-leg p {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .trip-journey-notice {
   margin: 0;
-  padding: 8px;
+  padding: 6px 8px;
   border-left: 3px solid var(--status-warning-strong);
   background: var(--surface-warning);
 }
 
 .trip-journey-legs {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -406,8 +405,8 @@
 .trip-journey-leg {
   position: relative;
   display: grid;
-  gap: 4px;
-  padding: 9px 10px 9px 34px;
+  gap: 3px;
+  padding: 8px 8px 8px 30px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-status);
   background: var(--surface-raised);
@@ -416,17 +415,17 @@
 
 .trip-journey-leg::before {
   position: absolute;
-  top: 9px;
-  left: 10px;
+  top: 8px;
+  left: 8px;
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   place-items: center;
   border-radius: 50%;
   color: var(--text-inverse);
   background: var(--surface-journey-step);
   content: counter(journey-leg);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -454,16 +453,16 @@
 
 .trip-journey-leg-details {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   margin: 0;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .trip-journey-leg-details div {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 4px;
 }
 
 .trip-journey-leg-details dt {

@@ -122,6 +122,10 @@
     align-content: start;
   }
 
+  .navigation-column .trip-controls {
+    padding: 12px;
+  }
+
   .navigation-column .explore-segments {
     display: grid;
     width: 100%;

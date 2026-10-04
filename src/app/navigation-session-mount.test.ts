@@ -62,6 +62,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setStopsPinVisible: vi.fn(),
     enableLocationTracking: vi.fn(),
     locateUser: vi.fn(),
+    useCurrentLocationForOrigin: vi.fn(),
+    cancelOriginVenueAutofill: vi.fn(),
     disableLocationTracking: vi.fn(),
     hideLocationMarker: vi.fn(),
     showLocationMarker: vi.fn(),

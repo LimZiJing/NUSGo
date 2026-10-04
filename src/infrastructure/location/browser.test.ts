@@ -9,18 +9,23 @@ interface GeolocationCallbacks {
 function createProvider(): {
   readonly provider: BrowserGeolocation
   readonly callbacks: GeolocationCallbacks[]
+  readonly currentPositionCallbacks: GeolocationCallbacks[]
   readonly clearWatch: ReturnType<typeof vi.fn>
 } {
   const callbacks: GeolocationCallbacks[] = []
+  const currentPositionCallbacks: GeolocationCallbacks[] = []
   const clearWatch = vi.fn()
   const provider: BrowserGeolocation = {
+    getCurrentPosition: vi.fn((success, error) => {
+      currentPositionCallbacks.push({ success, error })
+    }),
     watchPosition: vi.fn((success, error) => {
       callbacks.push({ success, error })
       return callbacks.length
     }),
     clearWatch,
   }
-  return { provider, callbacks, clearWatch }
+  return { provider, callbacks, currentPositionCallbacks, clearWatch }
 }
 
 function createPosition(overrides: Partial<GeolocationCoordinates & { timestamp: number }> = {}): GeolocationPosition {
@@ -194,5 +199,37 @@ describe('Browser location tracker', () => {
     tracker.enable()
 
     expect(tracker.getState()).toEqual({ status: 'unavailable', latestFix: null })
+  })
+
+  it('requests a single current location without starting a tracking watch', async () => {
+    const { provider, callbacks, currentPositionCallbacks } = createProvider()
+    const tracker = createBrowserLocationTracker(provider, { now: () => 1_000 })
+
+    const request = tracker.requestCurrentLocation?.()
+
+    expect(provider.getCurrentPosition).toHaveBeenCalledOnce()
+    expect(callbacks).toHaveLength(0)
+    currentPositionCallbacks[0].success(createPosition({ timestamp: 1_000 }))
+
+    await expect(request).resolves.toEqual({
+      longitude: 103.7844,
+      latitude: 1.2933,
+      accuracy: 12,
+      timestamp: 1_000,
+    })
+    expect(tracker.getState()).toEqual({ status: 'disabled', latestFix: null })
+  })
+
+  it('returns safe failures for one-shot location errors and invalid payloads', async () => {
+    const { provider, currentPositionCallbacks } = createProvider()
+    const tracker = createBrowserLocationTracker(provider)
+
+    const deniedRequest = tracker.requestCurrentLocation?.()
+    currentPositionCallbacks[0].error(createError(1))
+    await expect(deniedRequest).rejects.toEqual({ status: 'denied' })
+
+    const invalidRequest = tracker.requestCurrentLocation?.()
+    currentPositionCallbacks[1].success({ coords: null } as unknown as GeolocationPosition)
+    await expect(invalidRequest).rejects.toEqual({ status: 'invalid' })
   })
 })

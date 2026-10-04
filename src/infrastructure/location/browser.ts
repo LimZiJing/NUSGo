@@ -1,5 +1,6 @@
 import {
   INITIAL_LOCATION_TRACKING_STATE,
+  type LocationRequestFailureStatus,
   type DeviceLocationFix,
   type LocationTrackingState,
 } from '../../domain/location/types'
@@ -10,6 +11,11 @@ const DEFAULT_STALE_AFTER_MS = 2 * 60 * 1_000
 const MAXIMUM_FUTURE_TIMESTAMP_MS = 5_000
 
 export interface BrowserGeolocation {
+  getCurrentPosition?(
+    success: (position: unknown) => void,
+    error: (error: unknown) => void,
+    options?: PositionOptions,
+  ): void
   watchPosition(
     success: (position: unknown) => void,
     error: (error: unknown) => void,
@@ -64,6 +70,15 @@ function createLocationFix(
     kind: 'valid',
     fix: Object.freeze({ longitude, latitude, accuracy, timestamp }),
   }
+}
+
+function getLocationRequestFailureStatus(error: unknown): LocationRequestFailureStatus {
+  const code = isRecord(error) && typeof error.code === 'number' ? error.code : null
+  return code === 1
+    ? 'denied'
+    : code === 3
+      ? 'timeout'
+      : 'unavailable'
 }
 
 export function createBrowserLocationTracker(
@@ -166,6 +181,33 @@ export function createBrowserLocationTracker(
       if (disposed) return () => undefined
       listeners.add(listener)
       return () => listeners.delete(listener)
+    },
+
+    requestCurrentLocation() {
+      return new Promise<DeviceLocationFix>((resolve, reject) => {
+        if (disposed || !provider?.getCurrentPosition) {
+          reject({ status: 'unavailable' satisfies LocationRequestFailureStatus })
+          return
+        }
+
+        try {
+          provider.getCurrentPosition(
+            (position) => {
+              const result = createLocationFix(position, now())
+              if (result.kind === 'valid') {
+                resolve(result.fix)
+              } else {
+                reject({ status: 'invalid' satisfies LocationRequestFailureStatus })
+              }
+            },
+            (error) => reject({ status: getLocationRequestFailureStatus(error) }),
+            watchOptions,
+          )
+        } catch (error) {
+          console.error('Location request failed:', error)
+          reject({ status: 'unavailable' satisfies LocationRequestFailureStatus })
+        }
+      })
     },
 
     enable() {

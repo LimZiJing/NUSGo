@@ -15,6 +15,18 @@ export interface DeviceLocationFix {
   readonly timestamp: number
 }
 
+export type LocationRequestFailureStatus = 'denied' | 'unavailable' | 'timeout' | 'invalid'
+
+export interface LocationRequestFailure {
+  readonly status: LocationRequestFailureStatus
+}
+
+export function isLocationRequestFailure(error: unknown): error is LocationRequestFailure {
+  if (typeof error !== 'object' || error === null) return false
+  const status = (error as { status?: unknown }).status
+  return status === 'denied' || status === 'unavailable' || status === 'timeout' || status === 'invalid'
+}
+
 export interface LocationTrackingState {
   readonly status: LocationTrackingStatus
   readonly latestFix: DeviceLocationFix | null

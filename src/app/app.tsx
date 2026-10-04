@@ -779,6 +779,9 @@ function App() {
               onClearDestinationEndpoint={commands.clearDestinationEndpoint}
               onClearTrip={commands.clearTrip}
               onPlanJourney={commands.planJourney}
+              originVenueAutofill={state.originVenueAutofill}
+              onUseCurrentLocationForOrigin={commands.useCurrentLocationForOrigin}
+              onCancelOriginVenueAutofill={commands.cancelOriginVenueAutofill}
               journey={state.journey}
               simulatedAtMs={simulatedAtMs}
               onSearchFocus={() => beginMobileSearch('plan')}

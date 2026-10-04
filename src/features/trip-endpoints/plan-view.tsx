@@ -30,8 +30,16 @@ interface PlanViewProps {
   onClearDestinationEndpoint: () => void
   onClearTrip: () => void
   onPlanJourney: () => void
+  originVenueAutofill?: OriginVenueAutofillState
+  onUseCurrentLocationForOrigin?: () => void
+  onCancelOriginVenueAutofill?: () => void
   journey?: TripJourneyState
   simulatedAtMs?: number | null
+}
+
+interface OriginVenueAutofillState {
+  readonly status: 'idle' | 'requesting' | 'error'
+  readonly error: string | null
 }
 
 interface TripEndpointControlProps {
@@ -46,6 +54,9 @@ interface TripEndpointControlProps {
   onSearchResult?: () => void
   onSelect: (endpoint: TripEndpoint) => void
   onClear: () => void
+  originVenueAutofill?: OriginVenueAutofillState
+  onUseCurrentLocation?: () => void
+  onCancelOriginVenueAutofill?: () => void
 }
 
 function getRoleLabel(role: TripEndpointRole): string {
@@ -81,6 +92,9 @@ export function PlanView({
   onClearDestinationEndpoint,
   onClearTrip,
   onPlanJourney,
+  originVenueAutofill = { status: 'idle', error: null },
+  onUseCurrentLocationForOrigin,
+  onCancelOriginVenueAutofill,
   journey = { status: 'idle', journey: null, error: null },
   simulatedAtMs = null,
 }: PlanViewProps) {
@@ -91,6 +105,7 @@ export function PlanView({
   })
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
+    if (role === 'origin') onCancelOriginVenueAutofill?.()
     setSearchQueries((current) => ({ ...current, [role]: query }))
   }
   const selectEndpoint = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
@@ -171,6 +186,9 @@ export function PlanView({
             onSearchResult={onSearchResult}
             onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
             onClear={onClearOriginEndpoint}
+            originVenueAutofill={originVenueAutofill}
+            onUseCurrentLocation={onUseCurrentLocationForOrigin}
+            onCancelOriginVenueAutofill={onCancelOriginVenueAutofill}
           />
           <TripEndpointControl
             key={`destination:${tripRequest.destination?.kind ?? 'none'}:${tripRequest.destination?.id ?? 'none'}`}
@@ -241,10 +259,14 @@ export function TripEndpointControl({
   onSearchResult,
   onSelect,
   onClear,
+  originVenueAutofill = { status: 'idle', error: null },
+  onUseCurrentLocation,
+  onCancelOriginVenueAutofill,
 }: TripEndpointControlProps) {
   const roleLabel = getRoleLabel(role)
   const inputId = `trip-${role}-search`
   const statusId = `trip-${role}-search-status`
+  const locationStatusId = `trip-${role}-location-status`
   const hasLocationData = venues !== null || networkIndex !== null
   const [editing, setEditing] = useState(endpoint === null)
   const results = useMemo(
@@ -254,6 +276,12 @@ export function TripEndpointControl({
   const showResults = searchQuery.trim().length > 0
   const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex) : ''
   const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
+  const isFindingNearestVenue = originVenueAutofill.status === 'requesting'
+  const locationActionLabel = isFindingNearestVenue
+    ? 'Finding nearest venue'
+    : originVenueAutofill.error
+      ? 'Retry nearest venue'
+      : 'Use current location'
   const searchStatus = !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : showResults
@@ -263,6 +291,7 @@ export function TripEndpointControl({
         : ''
 
   const clearEndpoint = (): void => {
+    onCancelOriginVenueAutofill?.()
     if (searchQuery.trim()) onSearchCancel?.()
     onSearchQueryChange('')
     if (endpoint) onClear()
@@ -282,6 +311,7 @@ export function TripEndpointControl({
             value={inputValue}
             placeholder={role === 'origin' ? 'Choose starting point' : 'Choose destination'}
             onFocus={() => {
+              onCancelOriginVenueAutofill?.()
               if (endpoint && !editing) {
                 setEditing(true)
                 onSearchQueryChange('')
@@ -292,6 +322,7 @@ export function TripEndpointControl({
               if (endpoint && !searchQuery) setEditing(false)
             }}
             onChange={(event) => {
+              onCancelOriginVenueAutofill?.()
               setEditing(true)
               onSearchQueryChange(event.target.value)
             }}
@@ -317,24 +348,48 @@ export function TripEndpointControl({
               onSearchQueryChange('')
             }}
             autoComplete="off"
-            aria-describedby={statusId}
+            aria-describedby={originVenueAutofill.error ? `${statusId} ${locationStatusId}` : statusId}
           />
-          {(endpoint || searchQuery) && (
-            <button
-              type="button"
-              className="trip-endpoint-clear"
-              onClick={clearEndpoint}
-              aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
-            >
-              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
-            </button>
-          )}
+          <div className="trip-endpoint-actions">
+            {role === 'origin' && onUseCurrentLocation && (
+              <button
+                type="button"
+                className="trip-endpoint-location"
+                onClick={onUseCurrentLocation}
+                disabled={isFindingNearestVenue}
+                aria-label={locationActionLabel}
+                aria-busy={isFindingNearestVenue}
+                title={locationActionLabel}
+              >
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                  <path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+                  <circle cx="12" cy="12" r="5" />
+                </svg>
+              </button>
+            )}
+            {(endpoint || searchQuery) && (
+              <button
+                type="button"
+                className="trip-endpoint-clear"
+                onClick={clearEndpoint}
+                aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
+              >
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
         <p id={statusId} className="trip-endpoint-search-status visually-hidden" role="status" aria-live="polite">
           {searchStatus}
         </p>
+
+        {role === 'origin' && originVenueAutofill.error && (
+          <p id={locationStatusId} className="trip-endpoint-location-status" role="status" aria-live="polite">
+            {originVenueAutofill.error}
+          </p>
+        )}
 
         {showResults && hasLocationData && (
           <ScrollArea className="trip-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>

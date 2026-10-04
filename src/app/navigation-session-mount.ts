@@ -95,6 +95,8 @@ export interface NavigationSessionCommands {
   readonly setStopsPinVisible: (visible: boolean) => void
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
+  readonly useCurrentLocationForOrigin: () => void
+  readonly cancelOriginVenueAutofill: () => void
   readonly disableLocationTracking: () => void
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
@@ -130,6 +132,8 @@ function createNavigationSessionCommands(
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),
+    useCurrentLocationForOrigin: () => session?.useCurrentLocationForOrigin(),
+    cancelOriginVenueAutofill: () => session?.cancelOriginVenueAutofill(),
     disableLocationTracking: () => session?.disableLocationTracking(),
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),

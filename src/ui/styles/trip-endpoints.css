@@ -482,8 +482,9 @@
 }
 
 .trip-journey-timeline-walking .trip-journey-timeline-marker {
-  background: var(--surface-raised);
-  box-shadow: 0 0 0 1px var(--border-subtle);
+  /* Keep the shared rail visually continuous through the walking leg marker. */
+  background: var(--border-control);
+  box-shadow: none;
 }
 
 .trip-journey-timeline-content .trip-journey-mode-label {

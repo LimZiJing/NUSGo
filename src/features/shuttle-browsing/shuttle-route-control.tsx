@@ -135,6 +135,7 @@ export function ShuttleRouteControl({
     const routeList = routeListRef.current
     if (!routeList) return
 
+    suppressChipClickRef.current = false
     dragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -163,12 +164,7 @@ export function ShuttleRouteControl({
     const routeList = routeListRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
 
-    if (drag.moved) {
-      suppressChipClickRef.current = true
-      window.setTimeout(() => {
-        suppressChipClickRef.current = false
-      }, 0)
-    }
+    if (drag.moved) suppressChipClickRef.current = true
     dragRef.current = null
     if (routeList?.hasPointerCapture?.(event.pointerId)) routeList.releasePointerCapture(event.pointerId)
   }

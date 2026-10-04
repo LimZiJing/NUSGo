@@ -339,8 +339,10 @@
 .trip-journey-result {
   display: grid;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-control);
+  padding: 10px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-status);
+  background: var(--surface-raised);
 }
 
 .trip-journey-result-heading {
@@ -392,6 +394,17 @@
   list-style: none;
 }
 
+/* One shared rail keeps the journey continuous while markers vary by entry type. */
+.trip-journey-timeline::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 2px;
+  background: var(--border-control);
+  content: '';
+}
+
 .trip-journey-timeline-item {
   position: relative;
   display: grid;
@@ -412,16 +425,6 @@
   border-radius: 50%;
   background: var(--surface-journey-step);
   box-shadow: 0 0 0 1px var(--border-control);
-}
-
-.trip-journey-timeline-item:not(:last-child)::after {
-  position: absolute;
-  top: 22px;
-  bottom: -2px;
-  left: 8px;
-  width: 2px;
-  background: var(--border-control);
-  content: '';
 }
 
 .trip-journey-timeline-content {

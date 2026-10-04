@@ -26,7 +26,7 @@ export function getTripPlanSummary(
     venues,
     networkIndex,
   )
-  const summary = `${origin} → ${destination}`
+  const summary = `${origin} to ${destination}`
   return {
     visible: summary,
     accessible: `Plan trip: origin ${origin}; destination ${destination}`,

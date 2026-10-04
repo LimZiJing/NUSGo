@@ -146,6 +146,20 @@ describe('TripJourneyResult', () => {
     expect(markup).not.toContain('Fastest estimated Journey')
   })
 
+  it('leaves the detailed simulation notice to PlanView', () => {
+    const markup = renderToStaticMarkup(
+      <TripJourneyResult
+        state={{ status: 'ready', journey, error: null }}
+        venues={venues}
+        networkIndex={networkIndex}
+        simulated
+      />,
+    )
+
+    expect(markup).not.toContain('simulated route')
+    expect(markup).toContain('Recommended Journey')
+  })
+
   it.each([
     [0, 'Arriving now'],
     [29, 'Arriving soon'],

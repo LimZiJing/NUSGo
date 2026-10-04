@@ -89,6 +89,16 @@ export function TripJourneyResult({
 
   const journey: Journey = state.journey
   const hasShuttleLeg = journey.legs.some((leg) => leg.mode === 'shuttle')
+  const planningNotice = journey.planningQuality === 'bounded'
+    ? 'This is a valid route found within a short search budget. A faster route may exist.'
+    : null
+  // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
+  const timingNotice = simulated
+    ? null
+    : hasShuttleLeg
+      ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
+      : 'Travel times are estimates, not guaranteed arrival times.'
+  const journeyNotice = [planningNotice, timingNotice].filter(Boolean).join(' ')
   return (
     <section
       className="trip-journey-result"
@@ -104,16 +114,11 @@ export function TripJourneyResult({
           <span>{formatDistance(journey.totalDistanceMeters)}</span>
         </div>
       </div>
-      <p className="trip-journey-notice" role="note">
-        {journey.planningQuality === 'bounded'
-          ? 'This is a valid route found within a short search budget. A faster route may exist. '
-          : ''}
-        {simulated
-          ? 'This simulated route is for development testing only. Travel times are estimates.'
-          : hasShuttleLeg
-          ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
-          : 'Travel times are estimates, not guaranteed arrival times.'}
-      </p>
+      {journeyNotice && (
+        <p className="trip-journey-notice" role="note">
+          {journeyNotice}
+        </p>
+      )}
       <ol className="trip-journey-timeline" aria-label="Journey details">
         {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
       </ol>

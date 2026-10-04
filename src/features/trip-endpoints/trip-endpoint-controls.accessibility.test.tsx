@@ -215,7 +215,7 @@ describe('PlanView interactions', () => {
       />,
     )
 
-    expect(screen.getByText('Computing 1, Level 2 → Choose destination')).toBeTruthy()
+    expect(screen.getByText('Computing 1, Level 2 to Choose destination')).toBeTruthy()
   })
 
   it('labels a complete summary with both selected endpoint names', () => {
@@ -238,7 +238,7 @@ describe('PlanView interactions', () => {
       />,
     )
 
-    expect(screen.getByText('Computing 1, Level 2 → Stop A')).toBeTruthy()
+    expect(screen.getByText('Computing 1, Level 2 to Stop A')).toBeTruthy()
   })
 
   it('keeps empty endpoint results in a labelled group with native semantics', async () => {

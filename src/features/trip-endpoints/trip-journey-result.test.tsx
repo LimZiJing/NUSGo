@@ -93,14 +93,20 @@ describe('TripJourneyResult', () => {
         state={{ status: 'ready', journey, error: null }}
         venues={venues}
         networkIndex={networkIndex}
+        referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
       />,
     )
 
-    expect(markup).toContain('Recommended Journey')
+    expect(markup).toContain('Recommended')
+    expect(markup).not.toContain('Recommended Journey')
     expect(markup).toContain('10 min')
     expect(markup).toContain('2.6 km')
+    expect(markup).toContain('Arrive 08:10')
     expect(markup).toContain('Walk')
-    expect(markup).toContain(`Shuttle ${route.name}`)
+    expect(markup).toContain('trip-journey-walking-icon')
+    expect(markup).toContain(`>${route.name}<`)
+    expect(markup).toContain('trip-journey-bus-icon')
+    expect(markup).toContain(`--journey-route-color:${route.color}`)
     expect(markup).toContain('Wait Arriving now')
     expect(markup).toContain('Arriving now')
     expect(markup).toContain('Ride')
@@ -127,6 +133,7 @@ describe('TripJourneyResult', () => {
       'location',
     ])
     expect(entries.filter((entry) => entry.kind === 'location')).toHaveLength(4)
+    expect(entries.find((entry) => entry.kind === 'shuttle')).toMatchObject({ routeColor: route.color })
   })
 
   it('explains when the Journey was selected within a search budget', () => {
@@ -157,7 +164,7 @@ describe('TripJourneyResult', () => {
     )
 
     expect(markup).not.toContain('simulated route')
-    expect(markup).toContain('Recommended Journey')
+    expect(markup).toContain('Recommended')
   })
 
   it.each([

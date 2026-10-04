@@ -103,6 +103,7 @@ export function PlanView({
     origin: '',
     destination: '',
   })
+  const [journeyReferenceTimeMs, setJourneyReferenceTimeMs] = useState<number | null>(null)
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
     if (role === 'origin') onCancelOriginVenueAutofill?.()
@@ -115,7 +116,12 @@ export function PlanView({
   }
   const clearTrip = (): void => {
     setSearchQueries({ origin: '', destination: '' })
+    setJourneyReferenceTimeMs(null)
     onClearTrip()
+  }
+  const planJourney = (): void => {
+    setJourneyReferenceTimeMs(Date.now())
+    onPlanJourney()
   }
 
   const previousTripRequest = useRef(tripRequest)
@@ -223,7 +229,7 @@ export function PlanView({
             <button
               type="button"
               className="trip-plan-submit"
-              onClick={onPlanJourney}
+              onClick={planJourney}
               disabled={tripValidation !== null || journey.status === 'loading'}
             >
               Get route
@@ -241,6 +247,7 @@ export function PlanView({
           venues={venues}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
+          referenceTimeMs={simulatedAtMs ?? journeyReferenceTimeMs}
         />
       </div>
     </>

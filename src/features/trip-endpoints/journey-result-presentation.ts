@@ -19,6 +19,7 @@ export type JourneyTimelineEntry =
       readonly kind: 'shuttle'
       readonly id: string
       readonly routeLabel: string
+      readonly routeColor: string | null
       readonly waitLabel: string
       readonly rideLabel: string
     }
@@ -70,10 +71,13 @@ function getLegEntry(
   }
 
   const shuttleLeg: ShuttleJourneyLeg = leg
+  const route = networkIndex?.routeById.get(shuttleLeg.routeId)
   return {
     kind: 'shuttle',
     id: `shuttle-${legIndex}`,
-    routeLabel: `Shuttle ${getRouteName(shuttleLeg.routeId, networkIndex)}`,
+    routeLabel: route?.name ?? getRouteName(shuttleLeg.routeId, networkIndex),
+    // Route colors come from the validated transit index so the journey uses the same palette as the map.
+    routeColor: route?.color ?? null,
     waitLabel: `Wait ${formatWaitDuration(shuttleLeg.waitingSeconds)}`,
     rideLabel: `Ride ${formatDuration(shuttleLeg.rideSeconds)}`,
   }

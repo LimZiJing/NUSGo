@@ -353,10 +353,20 @@
   gap: 8px;
 }
 
+.trip-journey-result-title {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-width: 0;
+  text-align: left;
+}
+
 .trip-journey-result h3 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
@@ -368,14 +378,20 @@
 }
 
 .trip-journey-metrics strong {
-  color: var(--text-primary);
+  color: var(--accent);
   font-size: 18px;
+  font-weight: 750;
 }
 
 .trip-journey-metrics span,
 .trip-journey-notice {
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.trip-journey-arrival {
+  color: var(--status-success-strong) !important;
+  font-weight: 650;
 }
 
 .trip-journey-notice {
@@ -439,7 +455,15 @@
 .trip-journey-timeline-location strong,
 .trip-journey-timeline-content strong {
   color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
   line-height: 1.35;
+}
+
+.trip-journey-timeline-location strong {
+  justify-self: start;
+  max-width: 100%;
+  text-align: left;
 }
 
 .trip-journey-timeline-content span {
@@ -455,6 +479,53 @@
   margin-left: 4px;
   border-width: 2px;
   background: var(--surface-muted);
+}
+
+.trip-journey-timeline-walking .trip-journey-timeline-marker {
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+
+.trip-journey-timeline-content .trip-journey-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.trip-journey-mode-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.trip-journey-walking-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.trip-journey-timeline-shuttle .trip-journey-timeline-marker {
+  background: var(--journey-route-color, var(--status-info));
+}
+
+.trip-journey-route-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  color: var(--journey-route-color, var(--status-info)) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.01em;
 }
 
 @media (max-width: 480px) {

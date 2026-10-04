@@ -41,6 +41,7 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
 - [ ] Shuttle browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and shuttle stops.
+- [ ] In Plan, the Origin location action requests browser location only after activation, fills the closest mapped venue, keeps the existing origin until success, and shows a retryable message when location is denied or unavailable.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
 - [ ] Native MapLibre controls and attribution remain visible and usable.

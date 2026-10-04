@@ -42,6 +42,8 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 - [ ] Shuttle browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and shuttle stops.
 - [ ] In Plan, the Origin location action requests browser location only after activation, fills the closest mapped venue, keeps the existing origin until success, and shows a retryable message when location is denied or unavailable.
+- [ ] In Plan, the endpoint rows, swap and location actions, validation message, Clear all control, and Get route action use compact, consistent alignment without clipping. The Journey summary and leg details remain readable.
+- [ ] Repeat the Plan layout check in both light and dark themes.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
 - [ ] Native MapLibre controls and attribution remain visible and usable.
@@ -86,6 +88,7 @@ The issue #140 and #141 screenshots document the pre-consolidation layout with s
 - [ ] The centered 44 × 44px handle toggles the active sheet by tap, Enter, or Space; dragging snaps to the nearer existing state, and a cancelled drag restores its starting state without a second toggle. Dragging beyond either stop shows resisted travel up to 32px and a 220ms return; releasing after moving back inside the allowed range uses the normal snap, and reduced-motion settings skip the rebound.
 - [ ] Dragging starts only on the handle; sheet content scrolls independently, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
+- [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.

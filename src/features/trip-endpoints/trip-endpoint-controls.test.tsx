@@ -153,6 +153,7 @@ describe('TripEndpointControls Journey result', () => {
         onSelectDestinationEndpoint={() => undefined}
         onClearDestinationEndpoint={() => undefined}
         onClearTrip={() => undefined}
+        onPlanJourney={() => undefined}
       />,
     )
 

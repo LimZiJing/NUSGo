@@ -40,6 +40,7 @@ function TripEndpointHarness() {
       onSelectDestinationEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'destination', endpoint))}
       onClearDestinationEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'destination'))}
       onClearTrip={() => setTripRequest(createEmptyTripRequest())}
+      onPlanJourney={() => undefined}
     />
   )
 }
@@ -64,6 +65,7 @@ describe('TripEndpointControls interactions', () => {
           onSelectDestinationEndpoint={() => undefined}
           onClearDestinationEndpoint={() => undefined}
           onClearTrip={() => undefined}
+          onPlanJourney={() => undefined}
         />
       )
     }
@@ -126,6 +128,7 @@ describe('TripEndpointControls interactions', () => {
           onSelectDestinationEndpoint={() => undefined}
           onClearDestinationEndpoint={() => undefined}
           onClearTrip={() => undefined}
+          onPlanJourney={() => undefined}
         />
       )
     }
@@ -168,6 +171,7 @@ describe('TripEndpointControls interactions', () => {
       onSelectDestinationEndpoint: () => undefined,
       onClearDestinationEndpoint: () => undefined,
       onClearTrip: () => undefined,
+      onPlanJourney: () => undefined,
     }
 
     const { rerender } = render(
@@ -187,6 +191,36 @@ describe('TripEndpointControls interactions', () => {
     expect(within(validation.parentElement as HTMLElement)
       .getByRole('button', { name: 'Clear all' }))
       .toBeTruthy()
+  })
+
+  it('uses Get route as the explicit planning action', async () => {
+    const user = userEvent.setup()
+    const onPlanJourney = vi.fn()
+    const controls = {
+      venues,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
+      tripRequest: {
+        origin: { kind: 'venue' as const, id: 'COM1-0210' },
+        destination: { kind: 'stop' as const, id: 'STOP-A' },
+      },
+      onExpandedChange: () => undefined,
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+      onPlanJourney,
+    }
+
+    const { rerender } = render(<TripEndpointControls {...controls} />)
+    const submit = screen.getByRole('button', { name: 'Get route' })
+    expect((submit as HTMLButtonElement).disabled).toBe(false)
+    await user.click(submit)
+    expect(onPlanJourney).toHaveBeenCalledOnce()
+
+    rerender(<TripEndpointControls {...controls} journey={{ status: 'loading', journey: null, error: null }} />)
+    expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {
@@ -230,6 +264,7 @@ describe('TripEndpointControls interactions', () => {
         onSelectDestinationEndpoint={() => undefined}
         onClearDestinationEndpoint={() => undefined}
         onClearTrip={() => undefined}
+        onPlanJourney={() => undefined}
       />,
     )
 
@@ -255,6 +290,7 @@ describe('TripEndpointControls interactions', () => {
       onSelectDestinationEndpoint: () => undefined,
       onClearDestinationEndpoint: () => undefined,
       onClearTrip: () => undefined,
+      onPlanJourney: () => undefined,
     }
     const { rerender } = render(
       <>
@@ -333,6 +369,7 @@ describe('TripEndpointControls interactions', () => {
       onSelectDestinationEndpoint: () => undefined,
       onClearDestinationEndpoint: () => undefined,
       onClearTrip: () => undefined,
+      onPlanJourney: () => undefined,
     }
     const { rerender } = render(<TripEndpointControls {...props} />)
     const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
@@ -356,6 +393,7 @@ describe('TripEndpointControls interactions', () => {
         onSelectDestinationEndpoint={() => undefined}
         onClearDestinationEndpoint={() => undefined}
         onClearTrip={() => undefined}
+        onPlanJourney={() => undefined}
       />,
     )
 
@@ -379,6 +417,7 @@ describe('TripEndpointControls interactions', () => {
         onSelectDestinationEndpoint={() => undefined}
         onClearDestinationEndpoint={() => undefined}
         onClearTrip={() => undefined}
+        onPlanJourney={() => undefined}
       />,
     )
 

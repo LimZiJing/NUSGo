@@ -21,6 +21,8 @@ import {
 } from '../domain/transit/service-hours'
 import type { Journey, JourneyEndpointLocation } from '../domain/trip/journey'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
+import { getTripEndpointKey } from '../domain/trip/endpoints'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { VenueLocationMap } from '../domain/venue/types'
 import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from './contracts/shuttle-arrivals'
 import type { ShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
@@ -54,14 +56,10 @@ interface WalkingCandidate {
   readonly connection: WalkingConnection
 }
 
-const MAX_VENUE_STOP_CONNECTORS = 3
+const MAX_ENDPOINT_STOP_CONNECTORS = 3
 const JOURNEY_PLANNING_MAX_DURATION_MS = 350
 const JOURNEY_PLANNING_MAX_EXPANDED_PATHS = 10_000
 const JOURNEY_PLANNING_YIELD_EVERY = 64
-
-function endpointKey(endpoint: TripEndpoint): string {
-  return `${endpoint.kind}:${endpoint.id}`
-}
 
 function compareText(first: string, second: string): number {
   if (first < second) return -1
@@ -84,12 +82,22 @@ function resolveEndpoint(
   venues: VenueLocationMap,
   transit: LoadedTransitData,
 ): ResolvedLocation | null {
+  if (endpoint.kind === 'current-location') {
+    const { longitude, latitude } = endpoint.coordinate
+    if (!isValidLocationCoordinates(longitude, latitude)) return null
+    return {
+      key: getTripEndpointKey(endpoint),
+      endpoint,
+      coordinate: { longitude, latitude },
+    }
+  }
+
   if (endpoint.kind === 'venue') {
     const location = venues[endpoint.id]?.location
     const coordinate = location ? toCoordinate(location.x, location.y) : null
     if (!coordinate) return null
     return {
-      key: endpointKey(endpoint),
+      key: getTripEndpointKey(endpoint),
       endpoint,
       coordinate,
     }
@@ -99,7 +107,7 @@ function resolveEndpoint(
   const coordinate = stop ? toCoordinate(stop.longitude, stop.latitude) : null
   if (!coordinate) return null
   return {
-    key: endpointKey(endpoint),
+    key: getTripEndpointKey(endpoint),
     endpoint,
     coordinate,
   }
@@ -131,7 +139,7 @@ function resolveLocations(
     if (!coordinate) continue
     const endpoint: TripEndpoint = { kind: 'stop', id: stop.id }
     addLocation(locations, {
-      key: endpointKey(endpoint),
+      key: getTripEndpointKey(endpoint),
       endpoint,
       coordinate,
     })
@@ -148,8 +156,8 @@ function isCandidatePair(
 ): boolean {
   if (from.key === to.key) return false
   if (from.key === originKey && to.key === destinationKey) return true
-  if (from.key === originKey && from.endpoint.kind === 'venue' && to.endpoint.kind === 'stop') return true
-  return to.key === destinationKey && to.endpoint.kind === 'venue' && from.endpoint.kind === 'stop'
+  if (from.key === originKey && from.endpoint.kind !== 'stop' && to.endpoint.kind === 'stop') return true
+  return to.key === destinationKey && to.endpoint.kind !== 'stop' && from.endpoint.kind === 'stop'
 }
 
 function selectWalkingCandidates(
@@ -178,11 +186,11 @@ function selectWalkingCandidates(
   const originConnectors = candidates
     .filter((candidate) => candidate.from.key === originKey && candidate.to.endpoint.kind === 'stop')
     .sort(compareCandidates)
-    .slice(0, MAX_VENUE_STOP_CONNECTORS)
+    .slice(0, MAX_ENDPOINT_STOP_CONNECTORS)
   const destinationConnectors = candidates
     .filter((candidate) => candidate.from.endpoint.kind === 'stop' && candidate.to.key === destinationKey)
     .sort(compareCandidates)
-    .slice(0, MAX_VENUE_STOP_CONNECTORS)
+    .slice(0, MAX_ENDPOINT_STOP_CONNECTORS)
   return [...direct, ...originConnectors, ...destinationConnectors]
 }
 
@@ -196,7 +204,7 @@ function collectEligibleBoardingStops(
   if (origin.endpoint.kind === 'stop') originStopIds.add(origin.endpoint.id)
   for (const connection of walkingConnections) {
     if (
-      endpointKey(connection.from) === origin.key &&
+      getTripEndpointKey(connection.from) === origin.key &&
       connection.to.kind === 'stop'
     ) originStopIds.add(connection.to.id)
   }
@@ -205,7 +213,7 @@ function collectEligibleBoardingStops(
   if (destination.endpoint.kind === 'stop') destinationStopIds.add(destination.endpoint.id)
   for (const connection of walkingConnections) {
     if (
-      endpointKey(connection.to) === destination.key &&
+      getTripEndpointKey(connection.to) === destination.key &&
       connection.from.kind === 'stop'
     ) destinationStopIds.add(connection.from.id)
   }
@@ -351,8 +359,8 @@ async function enrichWalkingGeometry(
   const locationByKey = new Map(locations.map((location) => [location.key, location]))
   const legs = await Promise.all(journey.legs.map(async (leg) => {
     if (leg.mode === 'shuttle') return leg
-    const from = locationByKey.get(endpointKey(leg.from))
-    const to = locationByKey.get(endpointKey(leg.to))
+    const from = locationByKey.get(getTripEndpointKey(leg.from))
+    const to = locationByKey.get(getTripEndpointKey(leg.to))
     if (!from || !to) throw new Error('Walking Journey leg has an unknown endpoint')
     const route = await routeEngine.routeWalking(
       { origin: from.coordinate, destination: to.coordinate },

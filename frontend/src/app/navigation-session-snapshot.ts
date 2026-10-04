@@ -32,15 +32,28 @@ function snapshotContextualPanel(panel: ContextualPanelState): ContextualPanelSt
 }
 
 function snapshotTripRequest(request: TripRequest): TripRequest {
+  const isFrozenEndpoint = (endpoint: TripEndpoint | null): boolean => (
+    endpoint === null || (
+      Object.isFrozen(endpoint) &&
+      (!('coordinate' in endpoint) || Object.isFrozen(endpoint.coordinate))
+    )
+  )
   if (
     Object.isFrozen(request) &&
-    (request.origin === null || Object.isFrozen(request.origin)) &&
-    (request.destination === null || Object.isFrozen(request.destination))
+    isFrozenEndpoint(request.origin) &&
+    isFrozenEndpoint(request.destination)
   ) return request
 
-  const snapshotEndpoint = (endpoint: TripEndpoint | null): TripEndpoint | null => (
-    endpoint === null ? null : freeze({ kind: endpoint.kind, id: endpoint.id })
-  )
+  const snapshotEndpoint = (endpoint: TripEndpoint | null): TripEndpoint | null => {
+    if (endpoint === null) return null
+    if (endpoint.kind === 'current-location') {
+      return freeze({
+        kind: 'current-location',
+        coordinate: freeze({ ...endpoint.coordinate }),
+      })
+    }
+    return freeze({ kind: endpoint.kind, id: endpoint.id })
+  }
   return freeze({
     origin: snapshotEndpoint(request.origin),
     destination: snapshotEndpoint(request.destination),

@@ -8,6 +8,7 @@ import type {
   TransitRouteGeometry,
 } from '../transit/types'
 import type { TripEndpoint } from './types'
+import { getTripEndpointKey } from './endpoints'
 import type {
   Journey,
   JourneyEndpointLocation,
@@ -76,11 +77,7 @@ interface ProjectedPoint {
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
-const MAX_VENUE_STOP_CONNECTORS = 3
-
-function endpointKey(endpoint: TripEndpoint): string {
-  return `${endpoint.kind}:${endpoint.id}`
-}
+const MAX_ENDPOINT_STOP_CONNECTORS = 3
 
 function compareText(first: string, second: string): number {
   if (first < second) return -1
@@ -326,11 +323,13 @@ function collectConnectors(
   for (const connection of input.walkingConnections) {
     if (!isValidWalkingConnection(connection)) continue
     const matchesEndpoint = isOrigin
-      ? endpointKey(connection.from) === endpointKey(endpoint.endpoint) && connection.to.kind === 'stop'
-      : connection.from.kind === 'stop' && endpointKey(connection.to) === endpointKey(endpoint.endpoint)
+      ? getTripEndpointKey(connection.from) === getTripEndpointKey(endpoint.endpoint) && connection.to.kind === 'stop'
+      : connection.from.kind === 'stop' && getTripEndpointKey(connection.to) === getTripEndpointKey(endpoint.endpoint)
     if (!matchesEndpoint) continue
 
-    const stopId = isOrigin ? connection.to.id : connection.from.id
+    const stopEndpoint = isOrigin ? connection.to : connection.from
+    if (stopEndpoint.kind !== 'stop') continue
+    const stopId = stopEndpoint.id
     if (!input.transitIndex.stopById.has(stopId)) continue
     const candidate = { stopId, connection }
     const selected = selectedByStop.get(stopId)
@@ -338,15 +337,15 @@ function collectConnectors(
       selectedByStop.set(stopId, candidate)
     }
   }
-  return [...selectedByStop.values()].sort(compareConnectors).slice(0, MAX_VENUE_STOP_CONNECTORS)
+  return [...selectedByStop.values()].sort(compareConnectors).slice(0, MAX_ENDPOINT_STOP_CONNECTORS)
 }
 
 function buildCandidateDefinitions(input: PlanJourneyInput): readonly JourneyCandidateDefinition[] {
   const definitions: JourneyCandidateDefinition[] = []
   for (const connection of input.walkingConnections) {
     if (
-      endpointKey(connection.from) === endpointKey(input.origin.endpoint) &&
-      endpointKey(connection.to) === endpointKey(input.destination.endpoint) &&
+      getTripEndpointKey(connection.from) === getTripEndpointKey(input.origin.endpoint) &&
+      getTripEndpointKey(connection.to) === getTripEndpointKey(input.destination.endpoint) &&
       isValidWalkingConnection(connection)
     ) definitions.push({ kind: 'walking', connection })
   }
@@ -433,7 +432,7 @@ function createCandidate(legs: readonly JourneyLeg[], sequenceKey: string): Jour
 }
 
 function walkingSequenceKey(connection: WalkingJourneyConnection): string {
-  return 'walking:' + endpointKey(connection.from) + '>' + endpointKey(connection.to)
+  return 'walking:' + getTripEndpointKey(connection.from) + '>' + getTripEndpointKey(connection.to)
 }
 
 function resolveCandidate(

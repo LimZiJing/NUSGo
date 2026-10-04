@@ -10,6 +10,10 @@ import { createInitialNavigationSessionState } from './navigation-session'
 
 const appHarness = vi.hoisted(() => {
   const noop = () => undefined
+  const commandStubs = {
+    navigateToEndpoint: vi.fn(),
+    locateUser: vi.fn(),
+  }
   return {
     state: null as unknown,
     onStopSelected: null as ((stopId: string) => boolean) | null,
@@ -18,7 +22,9 @@ const appHarness = vi.hoisted(() => {
       locateUser: vi.fn(),
       enableLocationTracking: vi.fn(),
     },
-    commands: new Proxy<Record<string, () => undefined>>({}, { get: () => noop }),
+    commands: new Proxy(commandStubs, {
+      get: (target, property, receiver) => Reflect.get(target, property, receiver) ?? noop,
+    }),
     arrivalsClient: {
       getArrivals: vi.fn(),
     },
@@ -94,9 +100,37 @@ afterEach(() => {
   appHarness.session.enableLocationTracking.mockReset()
   appHarness.arrivalsClient.getArrivals.mockReset()
   appHarness.serviceHoursClient.getServiceWindows.mockReset()
+  appHarness.commands.navigateToEndpoint.mockReset()
+  appHarness.commands.locateUser.mockReset()
 })
 
 describe('desktop shared navigation shell', () => {
+  it('uses the shared Navigate command from venue details and opens Plan', async () => {
+    const user = userEvent.setup()
+    const venue = { roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } }
+    appHarness.state = {
+      ...createInitialNavigationSessionState(),
+      transitIndex: createTransitIndex(createValidTransitNetwork()),
+      venues: { COM1: venue },
+      contextualPanel: {
+        mode: 'venue-detail',
+        query: '',
+        selectedVenue: { code: 'COM1', venue },
+        history: [],
+      },
+    }
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    appHarness.commands.navigateToEndpoint.mockClear()
+    appHarness.commands.locateUser.mockClear()
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
+
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'venue', id: 'COM1' })
+    expect(appHarness.commands.locateUser).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
+  })
+
   it('starts on Stops and renders one active view at a time', () => {
     render(<App />)
 

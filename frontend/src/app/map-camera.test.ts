@@ -85,6 +85,24 @@ describe('map camera application seams', () => {
     })
   })
 
+  it('prioritizes the frozen Current location trip over retained venue and route context', () => {
+    expect(getResetTarget(createContext({
+      panelMode: 'shuttle',
+      selectedVenue: venueResult,
+      selectedRouteId: 'A1',
+      tripRequest: {
+        origin: {
+          kind: 'current-location',
+          coordinate: { longitude: 103.7844, latitude: 1.2933 },
+        },
+        destination: { kind: 'venue', id: 'COM1' },
+      },
+    }))).toEqual({
+      kind: 'trip',
+      coordinates: [[103.7844, 1.2933], [103.7, 1.3]],
+    })
+  })
+
   it('prioritizes the currently visible selected shuttle route over endpoints', () => {
     expect(getResetTarget(createContext({
       panelMode: 'shuttle',

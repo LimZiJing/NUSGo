@@ -2,6 +2,7 @@ import type { TransitIndex } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
+import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
 
 type MappedVenue = VenueLocation & {
   readonly location: { readonly x: number; readonly y: number }
@@ -25,7 +26,11 @@ export function canonicalizeTripEndpoint(
   venues: VenueLocationMap | null,
   transitIndex: TransitIndex | null,
 ): TripEndpoint | null {
-  if (!isRecord(endpoint) || typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return null
+  if (!isRecord(endpoint)) return null
+  if (endpoint.kind === 'current-location') {
+    return createCurrentLocationTripEndpoint(endpoint.coordinate)
+  }
+  if (typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return null
   if (endpoint.kind === 'venue' && hasMappedLocation(venues?.[endpoint.id])) {
     return { kind: 'venue', id: endpoint.id }
   }

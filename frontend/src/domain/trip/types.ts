@@ -1,6 +1,7 @@
 export type TripEndpoint = (
   | { readonly kind: 'venue'; readonly id: string }
   | { readonly kind: 'stop'; readonly id: string }
+  | { readonly kind: 'current-location'; readonly coordinate: TripCoordinate }
 )
 
 export type TripEndpointRole = 'origin' | 'destination'

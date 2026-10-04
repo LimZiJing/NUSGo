@@ -6,6 +6,7 @@ import type {
 import type { Journey, JourneyLineString } from '../../src/domain/trip/journey.js'
 import type { ShuttleTimingRecord } from '../../src/domain/transit/timing.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
+import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
 import type { VenueLocationMap } from '../../src/domain/venue/types.js'
 import type { WalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
 import type {
@@ -39,12 +40,15 @@ function isNonNegativeInteger(value: unknown): value is number {
 }
 
 function endpointKey(endpoint: TripEndpoint): string {
-  return `${endpoint.kind}:${endpoint.id}`
+  return getTripEndpointKey(endpoint)
 }
 
 function isEndpoint(value: unknown): value is TripEndpoint {
-  return isRecord(value) &&
-    (value.kind === 'venue' || value.kind === 'stop') &&
+  if (!isRecord(value)) return false
+  if (value.kind === 'current-location') {
+    return createCurrentLocationTripEndpoint(value.coordinate) !== null
+  }
+  return (value.kind === 'venue' || value.kind === 'stop') &&
     typeof value.id === 'string' &&
     value.id.length > 0
 }
@@ -73,6 +77,9 @@ function endpointCoordinate(
   transit: LoadedTransitData,
   venues: VenueLocationMap,
 ): readonly [number, number] | null {
+  if (endpoint.kind === 'current-location') {
+    return [endpoint.coordinate.longitude, endpoint.coordinate.latitude]
+  }
   if (endpoint.kind === 'stop') {
     const stop = transit.index.stopById.get(endpoint.id)
     return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)

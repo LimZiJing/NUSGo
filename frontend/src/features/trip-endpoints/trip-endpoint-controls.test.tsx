@@ -50,6 +50,28 @@ describe('TripEndpointControl', () => {
     expect(markup).toContain('id="trip-destination-search"')
   })
 
+  it('shows Current location without fabricating an endpoint identifier', () => {
+    const markup = renderToStaticMarkup(
+      <TripEndpointControl
+        role="origin"
+        endpoint={{
+          kind: 'current-location',
+          coordinate: { longitude: 103.78, latitude: 1.29 },
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('value="Current location"')
+    expect(markup).toContain('Origin set to Current location.')
+    expect(markup).not.toContain('undefined')
+  })
+
   it('uses the shared location search model and shows stable venue and stop IDs', () => {
     const venueMarkup = renderToStaticMarkup(
       <TripEndpointControl

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearTripEndpoint,
+  createCurrentLocationTripEndpoint,
   createEmptyTripRequest,
+  getTripEndpointKey,
   setTripEndpoint,
   swapTripEndpoints,
   validateTripRequest,
@@ -48,6 +50,29 @@ describe('trip endpoint state', () => {
     })
     expect(request).toEqual({ origin: venue, destination: stop })
   })
+
+  it('creates an immutable Current location endpoint only from valid coordinates', () => {
+    const endpoint = createCurrentLocationTripEndpoint({ longitude: 103.78, latitude: 1.29 })
+
+    expect(endpoint).toEqual({
+      kind: 'current-location',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    })
+    expect(Object.isFrozen(endpoint)).toBe(true)
+    expect(Object.isFrozen(endpoint?.coordinate)).toBe(true)
+    expect(createCurrentLocationTripEndpoint({ longitude: 181, latitude: 1 })).toBeNull()
+    expect(createCurrentLocationTripEndpoint({ longitude: 103, latitude: Number.NaN })).toBeNull()
+    expect(createCurrentLocationTripEndpoint(null)).toBeNull()
+  })
+
+  it('uses frozen coordinates as the Current location identity', () => {
+    const first = createCurrentLocationTripEndpoint({ longitude: 103.78, latitude: 1.29 })!
+    const same = createCurrentLocationTripEndpoint({ longitude: 103.78, latitude: 1.29 })!
+    const different = createCurrentLocationTripEndpoint({ longitude: 103.79, latitude: 1.29 })!
+
+    expect(getTripEndpointKey(first)).toBe(getTripEndpointKey(same))
+    expect(getTripEndpointKey(first)).not.toBe(getTripEndpointKey(different))
+  })
 })
 
 describe('validateTripRequest', () => {
@@ -78,5 +103,22 @@ describe('validateTripRequest', () => {
 
   it('accepts two complete, different endpoints', () => {
     expect(validateTripRequest({ origin: venue, destination: stop })).toBeNull()
+  })
+
+  it('validates Current location coordinates and rejects identical snapshots', () => {
+    const currentLocation = createCurrentLocationTripEndpoint({ longitude: 103.78, latitude: 1.29 })!
+    const sameCurrentLocation = createCurrentLocationTripEndpoint({ longitude: 103.78, latitude: 1.29 })!
+    const invalidCurrentLocation = {
+      kind: 'current-location',
+      coordinate: { longitude: 181, latitude: 1 },
+    } as TripEndpoint
+
+    expect(validateTripRequest({ origin: currentLocation, destination: stop })).toBeNull()
+    expect(validateTripRequest({ origin: currentLocation, destination: sameCurrentLocation })).toBe(
+      'Origin and destination must be different locations.',
+    )
+    expect(validateTripRequest({ origin: invalidCurrentLocation, destination: stop })).toBe(
+      'Origin selection is incomplete.',
+    )
   })
 })

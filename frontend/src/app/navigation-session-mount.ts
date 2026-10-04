@@ -78,6 +78,9 @@ export interface NavigationSessionCommands {
   readonly selectDestinationEndpoint: (
     endpoint: Parameters<NavigationSession['setTripEndpoint']>[1],
   ) => void
+  readonly navigateToEndpoint: (
+    endpoint: Parameters<NavigationSession['navigateTo']>[0],
+  ) => void
   readonly clearDestinationEndpoint: () => void
   readonly clearTrip: () => void
   readonly planJourney: () => void
@@ -115,6 +118,7 @@ function createNavigationSessionCommands(
     selectOriginEndpoint: (endpoint) => session?.setTripEndpoint('origin', endpoint),
     clearOriginEndpoint: () => session?.clearTripEndpoint('origin'),
     selectDestinationEndpoint: (endpoint) => session?.setTripEndpoint('destination', endpoint),
+    navigateToEndpoint: (endpoint) => session?.navigateTo(endpoint),
     clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
     clearTrip: () => session?.clearTrip(),
     planJourney: () => session?.planJourney(),

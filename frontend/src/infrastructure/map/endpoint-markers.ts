@@ -3,6 +3,7 @@ import { getTripEndpointLabel } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripEndpoint, TripRequest } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import { createPopupContent } from './popup'
 
 export interface TripEndpointMarkers {
@@ -30,6 +31,10 @@ function getTripEndpointCoordinate(
   venues: VenueLocationMap,
   transitIndex: TransitIndex | null,
 ): [number, number] | null {
+  if (endpoint.kind === 'current-location') {
+    const { longitude, latitude } = endpoint.coordinate
+    return isValidLocationCoordinates(longitude, latitude) ? [longitude, latitude] : null
+  }
   if (endpoint.kind === 'venue') {
     const location = venues[endpoint.id]?.location
     return location && Number.isFinite(location.x) && Number.isFinite(location.y)
@@ -62,7 +67,10 @@ export function createTripEndpointMarkers(
 
     const label = getTripEndpointLabel(endpoint, venues, transitIndex)
     const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
-    const popupContent = createPopupContent(roleLabel, [label, `ID: ${endpoint.id}`])
+    const details = endpoint.kind === 'current-location'
+      ? [label]
+      : [label, `ID: ${endpoint.id}`]
+    const popupContent = createPopupContent(roleLabel, details)
     const popup = new Popup({ offset: 24 }).setDOMContent(popupContent.element)
     const marker = new Marker({
       anchor: 'center',

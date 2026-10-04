@@ -245,7 +245,7 @@ describe('navigation session', () => {
     expect(onMapStopInteraction).toHaveBeenCalledWith('STOP-A')
   })
 
-  it('publishes Journey loading and ready states for complete endpoints', async () => {
+  it('does not plan when endpoints are selected until the user submits the trip', async () => {
     const planning = createDeferred<Journey | null>()
     const journeyPlanner = vi.fn(() => planning.promise)
     const dependencies = createDependencies({ journeyPlanner })
@@ -255,6 +255,14 @@ describe('navigation session', () => {
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
 
+    expect(journeyPlanner).not.toHaveBeenCalled()
+    expect(session.getState().journey).toEqual({
+      status: 'idle',
+      journey: null,
+      error: null,
+    })
+
+    session.planJourney()
     expect(session.getState().journey).toEqual({
       status: 'loading',
       journey: null,
@@ -274,6 +282,22 @@ describe('navigation session', () => {
     expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
   })
 
+  it('does not duplicate an in-flight Journey when submitted again', async () => {
+    const firstPlanning = createDeferred<Journey | null>()
+    const journeyPlanner = vi.fn(() => firstPlanning.promise)
+    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+
+    session.planJourney()
+    session.planJourney()
+    expect(journeyPlanner).toHaveBeenCalledOnce()
+
+    firstPlanning.resolve(createJourney({ kind: 'stop', id: 'STOP-A' }))
+    await waitForState(session, (state) => state.journey.status === 'ready')
+  })
+
   it('cancels an in-flight Journey and replans when test time changes', async () => {
     const firstPlanning = createDeferred<Journey | null>()
     const secondPlanning = createDeferred<Journey | null>()
@@ -284,6 +308,7 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.planJourney()
     const firstSignal = journeyPlanner.mock.calls[0][0].signal as AbortSignal
 
     session.replanJourney()
@@ -297,6 +322,30 @@ describe('navigation session', () => {
     expect(session.getState().journey.journey).toEqual(updated)
   })
 
+  it('cancels an in-flight Journey and clears it when an endpoint changes', async () => {
+    const planning = createDeferred<Journey | null>()
+    const journeyPlanner = vi.fn(() => planning.promise)
+    const dependencies = createDependencies({ journeyPlanner })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.planJourney()
+    const firstCall = journeyPlanner.mock.calls[0] as unknown as [{ signal: AbortSignal }]
+    const signal = firstCall[0].signal
+
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+
+    expect(signal.aborted).toBe(true)
+    expect(session.getState().journey).toEqual({
+      status: 'idle',
+      journey: null,
+      error: null,
+    })
+    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
+    expect(journeyPlanner).toHaveBeenCalledOnce()
+  })
+
   it('publishes a safe failure state when planning fails', async () => {
     const journeyPlanner = vi.fn(async () => {
       throw new Error('routing service unavailable')
@@ -307,6 +356,7 @@ describe('navigation session', () => {
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.planJourney()
     await waitForState(session, (state) => state.journey.status === 'failed')
 
     expect(session.getState().journey).toEqual({
@@ -316,7 +366,7 @@ describe('navigation session', () => {
     })
   })
 
-  it('ignores stale Journey results and clears the current Journey when an endpoint is cleared', async () => {
+  it('requires a new submission after an endpoint is changed', async () => {
     const firstPlanning = createDeferred<Journey | null>()
     const secondPlanning = createDeferred<Journey | null>()
     const journeyPlanner = vi.fn()
@@ -328,9 +378,14 @@ describe('navigation session', () => {
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.planJourney()
     const firstSignal = journeyPlanner.mock.calls[0]?.[0].signal as AbortSignal
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
     expect(firstSignal.aborted).toBe(true)
+
+    expect(journeyPlanner).toHaveBeenCalledOnce()
+    session.planJourney()
+    expect(journeyPlanner).toHaveBeenCalledTimes(2)
 
     const secondJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
     secondPlanning.resolve(secondJourney)

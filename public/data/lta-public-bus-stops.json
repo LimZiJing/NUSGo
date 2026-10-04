@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "source": "LTA DataMall BusStops and BusRoutes APIs",
+  "verifiedAt": "2026-10-03",
+  "stops": [
+    { "stopId": "KR-MRT", "busStopCode": "18331", "services": ["95"] },
+    { "stopId": "LT27", "busStopCode": "18301", "services": ["95"] },
+    { "stopId": "UHALL", "busStopCode": "18311", "services": ["95"] },
+    { "stopId": "UHC-OPP", "busStopCode": "18321", "services": ["95"] },
+    { "stopId": "RAFFLES", "busStopCode": "16169", "services": ["151", "96"] },
+    { "stopId": "MUSEUM", "busStopCode": "16161", "services": ["151"] },
+    { "stopId": "YIH", "busStopCode": "16171", "services": ["151", "95"] },
+    { "stopId": "CLB", "busStopCode": "16181", "services": ["151", "95"] },
+    { "stopId": "CG", "busStopCode": "41029", "services": ["151", "153", "154", "156", "170", "186", "48", "67"] },
+    { "stopId": "IT", "busStopCode": "16189", "services": ["151", "95", "96"] },
+    { "stopId": "YIH-OPP", "busStopCode": "16179", "services": ["151", "95", "96"] },
+    { "stopId": "SDE3-OPP", "busStopCode": "16141", "services": ["183", "188", "33"] },
+    { "stopId": "JP-SCH-16151", "busStopCode": "16151", "services": ["183", "188", "33"] },
+    { "stopId": "UHC", "busStopCode": "18329", "services": ["95"] },
+    { "stopId": "UHALL-OPP", "busStopCode": "18319", "services": ["95"] },
+    { "stopId": "S17", "busStopCode": "18309", "services": ["95"] },
+    { "stopId": "KR-MRT-OPP", "busStopCode": "18339", "services": ["95"] },
+    { "stopId": "KRB", "busStopCode": "16009", "services": ["10", "151", "200", "201", "33", "95"] }
+  ]
+}

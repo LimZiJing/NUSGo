@@ -29,6 +29,7 @@ interface PlanViewProps {
   onSelectDestinationEndpoint: (endpoint: TripEndpoint) => void
   onClearDestinationEndpoint: () => void
   onClearTrip: () => void
+  onPlanJourney: () => void
   journey?: TripJourneyState
   simulatedAtMs?: number | null
 }
@@ -79,6 +80,7 @@ export function PlanView({
   onSelectDestinationEndpoint,
   onClearDestinationEndpoint,
   onClearTrip,
+  onPlanJourney,
   journey = { status: 'idle', journey: null, error: null },
   simulatedAtMs = null,
 }: PlanViewProps) {
@@ -191,14 +193,24 @@ export function PlanView({
               {tripValidation}
             </p>
           )}
-          <button
-            type="button"
-            className="trip-clear-both"
-            onClick={clearTrip}
-            disabled={!tripRequest.origin && !tripRequest.destination}
-          >
-            Clear all
-          </button>
+          <div className="trip-controls-actions">
+            <button
+              type="button"
+              className="trip-clear-both"
+              onClick={clearTrip}
+              disabled={!tripRequest.origin && !tripRequest.destination}
+            >
+              Clear all
+            </button>
+            <button
+              type="button"
+              className="trip-plan-submit"
+              onClick={onPlanJourney}
+              disabled={tripValidation !== null || journey.status === 'loading'}
+            >
+              Get route
+            </button>
+          </div>
         </div>
         {simulatedAtMs !== null && (
           <p className="trip-journey-notice" role="note">

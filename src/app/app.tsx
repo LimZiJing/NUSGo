@@ -55,6 +55,8 @@ import { createWalkingConnectionProvider } from '../infrastructure/routing/walki
 import { getValhallaBaseUrl } from './routing-config'
 import { createJourneyPlanningService } from './journey-planning'
 import { createShuttleArrivalClient } from '../infrastructure/shuttle-arrivals/client'
+import { createPublicBusArrivalClient } from '../infrastructure/lta-datamall/client'
+import { isOlderPublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
@@ -135,6 +137,13 @@ function App() {
       shuttleArrivalClient.getArrivals(stops, signal)
     ),
     [shuttleArrivalClient],
+  )
+  const publicBusArrivalClient = useMemo(() => createPublicBusArrivalClient(), [])
+  const loadPublicBusArrivals = useCallback(
+    (stops: readonly { readonly stopId: string; readonly stopName: string }[], signal: AbortSignal) => (
+      publicBusArrivalClient.getArrivals(stops, signal)
+    ),
+    [publicBusArrivalClient],
   )
   const shuttleServiceHoursClient = useMemo(() => createShuttleServiceHoursClient(), [])
   const loadStopsServiceWindows = useCallback(
@@ -548,6 +557,15 @@ function App() {
     activeView === 'stops',
     arrivalStopRequests,
   )
+  const publicArrivalStopRequests = useMemo(() => arrivalStopRequests.filter(({ stopId }) => (
+    transitIndex?.stopById.get(stopId)?.services.some((service) => service.startsWith('PUB:')) ?? false
+  )), [arrivalStopRequests, transitIndex])
+  const publicStopArrivals = useStopsArrivals(
+    loadPublicBusArrivals,
+    activeView === 'stops',
+    publicArrivalStopRequests,
+    isOlderPublicBusArrivalSnapshot,
+  )
   const serviceRouteIds = useMemo(() => {
     const routeIds = new Set<string>()
     for (const { stopId } of arrivalStopRequests) {
@@ -561,6 +579,7 @@ function App() {
     serviceRouteIds,
   )
   const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
+  const publicStopArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
   const stopSelection: StopSheetSelection | null = selectedStop && transitIndex
     ? getStopSheetSelection(
       selectedStop,
@@ -570,6 +589,8 @@ function App() {
       stopArrivals.nowMs,
       stopServiceWindows.windows,
       stopArrivalsUpdating,
+      publicStopArrivals.snapshot,
+      publicStopArrivalsUpdating,
     )
     : null
   const overviewStops = transitIndex ? overviewStopEntries.map(({ stop, distanceMeters }) => ({
@@ -581,6 +602,8 @@ function App() {
       stopArrivals.nowMs,
       stopServiceWindows.windows,
       stopArrivalsUpdating,
+      publicStopArrivals.snapshot,
+      publicStopArrivalsUpdating,
     ),
     distanceMeters,
     favorite: stopsView.favoriteStopIds.includes(stop.id),
@@ -634,7 +657,7 @@ function App() {
   const locationNotice = hasLocationError && !stopsView.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
-  const liveArrivalMessage = stopArrivals.snapshot
+  const liveArrivalMessage = stopArrivals.snapshot || publicStopArrivals.snapshot
     ? null
     : stopArrivals.status === 'loading'
       ? 'Updating…'
@@ -755,6 +778,7 @@ function App() {
               onSelectDestinationEndpoint={commands.selectDestinationEndpoint}
               onClearDestinationEndpoint={commands.clearDestinationEndpoint}
               onClearTrip={commands.clearTrip}
+              onPlanJourney={commands.planJourney}
               journey={state.journey}
               simulatedAtMs={simulatedAtMs}
               onSearchFocus={() => beginMobileSearch('plan')}

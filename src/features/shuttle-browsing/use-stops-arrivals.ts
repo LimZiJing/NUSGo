@@ -10,23 +10,23 @@ export interface StopsArrivalStopRequest {
   readonly stopName: string
 }
 
-export type StopsArrivalLoader = (
+export type StopsArrivalLoader<TSnapshot = ShuttleArrivalSnapshot> = (
   stops: readonly StopsArrivalStopRequest[],
   signal: AbortSignal,
-) => Promise<ShuttleArrivalSnapshot>
+) => Promise<TSnapshot>
 
 export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
 
-export interface StopsArrivalsState {
+export interface StopsArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
   readonly status: StopsArrivalsStatus
-  readonly snapshot: ShuttleArrivalSnapshot | null
+  readonly snapshot: TSnapshot | null
   readonly nowMs: number
 }
 
-interface ArrivalRequestState {
+interface ArrivalRequestState<TSnapshot> {
   readonly stopKey: string | null
   readonly status: StopsArrivalsStatus
-  readonly snapshot: ShuttleArrivalSnapshot | null
+  readonly snapshot: TSnapshot | null
 }
 
 function isAbortError(error: unknown): boolean {
@@ -35,12 +35,16 @@ function isAbortError(error: unknown): boolean {
 
 const STOP_SET_DEBOUNCE_MS = 150
 
-export function useStopsArrivals(
-  loadArrivals: StopsArrivalLoader,
+export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
+  loadArrivals: StopsArrivalLoader<TSnapshot>,
   active: boolean,
   stops: readonly StopsArrivalStopRequest[],
-): StopsArrivalsState {
-  const [state, setState] = useState<ArrivalRequestState>(() => ({
+  isOlderSnapshot: (candidate: TSnapshot, current: TSnapshot) => boolean = isOlderShuttleArrivalSnapshot as (
+    candidate: TSnapshot,
+    current: TSnapshot,
+  ) => boolean,
+): StopsArrivalsState<TSnapshot> {
+  const [state, setState] = useState<ArrivalRequestState<TSnapshot>>(() => ({
     stopKey: null,
     status: 'idle',
     snapshot: null,
@@ -83,7 +87,7 @@ export function useStopsArrivals(
           stopKey,
           status: 'ready',
           snapshot: previous.stopKey === stopKey && previous.snapshot &&
-            isOlderShuttleArrivalSnapshot(snapshot, previous.snapshot)
+            isOlderSnapshot(snapshot, previous.snapshot)
             ? previous.snapshot
             : snapshot,
         }))
@@ -114,7 +118,7 @@ export function useStopsArrivals(
       if (stopSetTimer) clearTimeout(stopSetTimer)
       if (refreshTimer) clearTimeout(refreshTimer)
     }
-  }, [hasActiveStops, loadArrivals, stopKey])
+  }, [hasActiveStops, isOlderSnapshot, loadArrivals, stopKey])
 
   useEffect(() => {
     if (!active) return
@@ -122,7 +126,7 @@ export function useStopsArrivals(
     return () => clearInterval(clock)
   }, [active])
 
-  const visibleState: ArrivalRequestState = hasActiveStops
+  const visibleState: ArrivalRequestState<TSnapshot> = hasActiveStops
     ? state
     : { stopKey: null, status: 'idle', snapshot: null }
 

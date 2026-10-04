@@ -95,6 +95,7 @@ export interface NavigationSession {
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
   clearTrip(): void
+  planJourney(): void
   replanJourney(): void
   setContextualPanelQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
@@ -159,6 +160,7 @@ export function createNavigationSession(
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   let journeyPlanningAbortController: AbortController | null = null
   let journeyPlanningRequestId = 0
+  let journeyPlanningRequested = false
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
@@ -238,7 +240,7 @@ export function createNavigationSession(
   }
 
   const requestJourneyPlanning = (): void => {
-    cancelJourneyPlanning()
+    if (!journeyPlanningRequested || journeyPlanningAbortController) return
     const journeyPlanner = dependencies.journeyPlanner
 
     if (
@@ -248,7 +250,6 @@ export function createNavigationSession(
       !state.venues ||
       !transitData
     ) {
-      resetJourney()
       return
     }
 
@@ -326,14 +327,17 @@ export function createNavigationSession(
     patch: Partial<NavigationSessionState> = {},
   ): void => {
     if (disposed) return
+    journeyPlanningRequested = false
+    cancelJourneyPlanning()
+    dependencies.map.setJourney(null)
     const nextState = freezeNavigationSessionSnapshot({
       ...state,
       ...patch,
       tripRequest: request,
+      journey: createInitialJourneyState(),
     })
     syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
     publishSnapshot(nextState)
-    requestJourneyPlanning()
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
@@ -634,8 +638,24 @@ export function createNavigationSession(
       })
     },
 
+    planJourney() {
+      if (
+        disposed ||
+        journeyPlanningAbortController ||
+        state.journey.status === 'loading' ||
+        !state.tripRequest.origin ||
+        !state.tripRequest.destination
+      ) return
+      journeyPlanningRequested = true
+      enqueueTransition(() => {
+        if (disposed) return
+        updateState({ journey: { status: 'loading', journey: null, error: null } })
+        requestJourneyPlanning()
+      })
+    },
+
     replanJourney() {
-      if (disposed) return
+      if (disposed || !journeyPlanningRequested) return
       cancelJourneyPlanning()
       enqueueTransition(() => {
         if (!disposed) requestJourneyPlanning()

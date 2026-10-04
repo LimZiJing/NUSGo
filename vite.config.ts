@@ -16,6 +16,10 @@ import {
 import { parseRequestedStops, selectRequestedStops } from './src/infrastructure/shuttle-arrivals/request.js'
 import type { ShuttleServiceWindow } from './src/domain/transit/service-hours.js'
 import { parseRouteServiceWindows } from './src/infrastructure/shuttle-service-hours/response.js'
+import { parseLtaPublicBusStopMapping } from './src/infrastructure/lta-datamall/mapping.js'
+import { parseRequestedLtaStops } from './src/infrastructure/lta-datamall/request.js'
+import { createLtaPublicBusArrivalProvider } from './src/infrastructure/lta-datamall/server.js'
+import { createLtaScheduleLoader } from './src/infrastructure/lta-datamall/schedule.js'
 import {
   createNusAuthenticatedClient,
   NusRequestError,
@@ -47,6 +51,12 @@ function sendJson(
 function loadCanonicalStops(): readonly RequestedStop[] {
   return parseCanonicalShuttleStops(JSON.parse(
     readFileSync(resolve(process.cwd(), 'public/data/shuttle-network.json'), 'utf8'),
+  ) as unknown)
+}
+
+function loadLtaPublicBusStopMappings() {
+  return parseLtaPublicBusStopMapping(JSON.parse(
+    readFileSync(resolve(process.cwd(), 'public/data/lta-public-bus-stops.json'), 'utf8'),
   ) as unknown)
 }
 
@@ -91,11 +101,29 @@ function createBusProxyRequest(
 
 function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
   const canonicalStops = loadCanonicalStops()
+  const ltaMappings = loadLtaPublicBusStopMappings()
   const refreshIntervalMs = parseShuttleArrivalRefreshInterval(env)
   const serviceWindowsCache = new Map<string, CachedServiceWindows>()
   const serviceWindowsInFlight = new Map<string, Promise<CachedServiceWindows | null>>()
   let nusClient: NusAuthenticatedClient | null = null
   let deviceId: string | null = null
+  const ltaAccountKey = env.LTA_ACCOUNT_KEY?.trim() ?? ''
+  const ltaScheduleLoader = createLtaScheduleLoader({
+    mappings: ltaMappings,
+    fetcher: async (url, signal) => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json', AccountKey: ltaAccountKey },
+        signal,
+      })
+      if (!response.ok) throw new Error(`LTA DataMall route request failed: ${response.status}`)
+      return response.json() as Promise<unknown>
+    },
+  })
+  const ltaProvider = createLtaPublicBusArrivalProvider({
+    accountKey: ltaAccountKey,
+    mappings: ltaMappings,
+    scheduleLoader: ltaScheduleLoader,
+  })
 
   const getNusClient = (): NusAuthenticatedClient => {
     if (nusClient) return nusClient
@@ -219,6 +247,29 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
           } catch (error: unknown) {
             sendJson(response, 400, {
               error: error instanceof Error ? error.message : 'Invalid shuttle arrival request',
+            })
+          }
+        })()
+      })
+      server.middlewares.use('/api/public-bus-arrivals', (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          sendJson(response, 405, { error: 'Only GET is supported' })
+          return
+        }
+
+        void (async () => {
+          try {
+            if (!ltaAccountKey) {
+              sendJson(response, 503, { error: 'LTA DataMall account key is not configured' })
+              return
+            }
+            const url = new URL(request.url ?? '/', 'http://localhost')
+            const stops = parseRequestedLtaStops(url.searchParams.get('stops'), ltaMappings)
+            const snapshot = await ltaProvider.getArrivals(stops, new AbortController().signal)
+            sendJson(response, 200, snapshot)
+          } catch (error: unknown) {
+            sendJson(response, 400, {
+              error: error instanceof Error ? error.message : 'Invalid public bus arrival request',
             })
           }
         })()

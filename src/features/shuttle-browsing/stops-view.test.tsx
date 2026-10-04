@@ -12,7 +12,7 @@ const selectedStop: StopSheetSelection = {
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },
-  publicServices: ['95'],
+  publicServices: [{ serviceNumber: '95', timings: null }],
   departures: [
     { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', timings: ['Arr', '8m', '17m'] },
     { routeId: 'D2', routeName: 'D2', routeColor: '#6e1d72', timings: ['4m', '12m', '-'] },

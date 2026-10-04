@@ -18,6 +18,7 @@ export interface BusStopDeparture {
 export interface PublicServiceTiming {
   readonly serviceNumber: string
   readonly timings: readonly [string, string, string] | null
+  readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
 }
 
 export interface BusStopScheduledDeparture {
@@ -41,6 +42,19 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
       ))}
     </span>
   )
+}
+
+function publicTimingMessage(status: PublicServiceTiming['status']): string {
+  switch (status) {
+    case 'not-in-operation':
+      return 'Not in operation'
+    case 'provider-error':
+      return 'Live timing unavailable'
+    case 'no-estimate':
+      return 'No estimate available'
+    default:
+      return 'No live timing'
+  }
 }
 
 export function BusStopTimings({
@@ -114,12 +128,12 @@ export function BusStopTimings({
             <span className="stop-departure-status">{message}</span>
           </li>
         ))}
-        {publicServices.map(({ serviceNumber, timings }) => (
+        {publicServices.map(({ serviceNumber, timings, status }) => (
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
               <span className="stop-departure-status">
-                No live timing
+                {publicTimingMessage(status)}
               </span>
             )}
           </li>

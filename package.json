@@ -21,6 +21,6 @@
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
     "test": "npm --workspace @navus/frontend run test",
-    "benchmark:journey": "npm --workspace @navus/frontend run benchmark:journey"
+    "benchmark:journey": "npm --workspace @navus/frontend run benchmark:journey --"
   }
 }

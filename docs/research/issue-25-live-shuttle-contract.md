@@ -29,7 +29,7 @@ The common upstream request includes `deviceid`, `domain`, `ipaddr`, `token`,
 `Authorization: Bearer <token>`.
 
 These details are implemented in [vite.config.ts](../../vite.config.ts),
-[nus-api/client.ts](../../src/infrastructure/nus-api/client.ts), and the
+[nus-api/client.ts](../../frontend/src/infrastructure/nus-api/client.ts), and the
 command-line probe in [nus-bus-stops.ps1](../../scripts/nus-bus-stops.ps1).
 
 ## Authentication and retries
@@ -44,7 +44,7 @@ command-line probe in [nus-bus-stops.ps1](../../scripts/nus-bus-stops.ps1).
   automatically.
 
 The tests for this behavior are in
-[client.test.ts](../../src/infrastructure/nus-api/client.test.ts).
+[client.test.ts](../../frontend/src/infrastructure/nus-api/client.test.ts).
 
 ## Normalized arrival contract
 
@@ -64,9 +64,9 @@ If no requested stop has usable data, the client reports that no arrival data
 is available.
 
 The provider parser is in
-[shuttle-arrivals/response.ts](../../src/infrastructure/shuttle-arrivals/response.ts).
+[shuttle-arrivals/response.ts](../../frontend/src/infrastructure/shuttle-arrivals/response.ts).
 The browser-side boundary validation is in
-[shuttle-arrivals/client.ts](../../src/infrastructure/shuttle-arrivals/client.ts).
+[shuttle-arrivals/client.ts](../../frontend/src/infrastructure/shuttle-arrivals/client.ts).
 
 ## Freshness and failures
 

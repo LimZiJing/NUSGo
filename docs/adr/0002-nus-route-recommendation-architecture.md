@@ -11,7 +11,7 @@ Issue: [#70](https://github.com/LimZiJing/NavUS/issues/70)
 NavUS will use a composed routing architecture for the first recommended-journey implementation:
 
 - A self-hosted Valhalla instance will provide walking routes and walking travel-time/distance connections using pedestrian costing.
-- NavUS will keep `public/data/shuttle-network.json` and its validated route geometry as the only canonical source for internal shuttle routes, stops, service associations, ordered stop lists, and shuttle map geometry.
+- NavUS will keep `frontend/public/data/shuttle-network.json` and its validated route geometry as the only canonical source for internal shuttle routes, stops, service associations, ordered stop lists, and shuttle map geometry.
 - A pure NavUS planner will compose the walking connections with directed internal-shuttle edges and validated shuttle timing estimates.
 - The application will return one complete `Journey` made of ordered `Journey leg` values. Walking and internal shuttle travel are modes inside that journey, not separate products.
 

@@ -28,8 +28,8 @@ provider API, credentials, deployment, or UI implementation.
 ## Static ride estimates
 
 Static ride estimates are planning estimates derived from the canonical route
-geometry in `public/data/shuttle-routes.geojson` and the ordered stops in
-`public/data/shuttle-network.json`.
+geometry in `frontend/public/data/shuttle-routes.geojson` and the ordered stops in
+`frontend/public/data/shuttle-network.json`.
 
 The current approved method uses:
 

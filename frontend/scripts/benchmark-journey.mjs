@@ -2,6 +2,7 @@ import { access } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 import { toViteFsModuleId } from './benchmark/vite-module-id.mjs'
 
@@ -72,7 +73,7 @@ function parseArguments(args) {
 }
 
 function getGitIdentity() {
-  const dotGitPath = resolve(process.cwd(), '.git')
+  const dotGitPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../.git')
   const dotGitContent = readFileSync(dotGitPath, 'utf8')
   const gitDirectory = dotGitContent.startsWith('gitdir: ')
     ? resolve(dirname(dotGitPath), dotGitContent.slice('gitdir: '.length).trim())

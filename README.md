@@ -12,22 +12,48 @@ OpenFreeMap attribution is included by the MapLibre style. Review the provider's
 
 ## Development
 
-Requirements: Node.js, npm, and Docker Desktop with Docker Compose.
+Requirements: Node.js 22 or later, npm, and Docker Desktop with Docker Compose.
+
+Install dependencies and start the full local stack from the repository root:
 
 ```bash
 npm install
 npm run dev
 ```
 
-### Local Valhalla routing with Docker
+The root development command starts Valhalla, regenerates shuttle timing data, and starts the frontend. Vite reads the ignored `.env` file from the repository root. Keep credentials and server-only settings there; values prefixed with `VITE_` are included in the browser build.
 
-NavUS uses [Valhalla](https://github.com/valhalla/valhalla) to calculate walking routes. Docker Desktop must be running before starting the app.
+### Workspace commands
 
-The normal development command starts Valhalla automatically:
+The npm workspaces are `@navus/frontend`, `@navus/backend`, and `@navus/shared`. The backend and shared workspaces are minimal placeholders for the next migration steps.
+
+Root commands:
 
 ```bash
 npm run dev
+npm test
+npm run lint
+npm run build
+npm run preview
 ```
+
+Run a frontend command directly when you only need that workspace:
+
+```bash
+npm --workspace @navus/frontend run dev
+npm --workspace @navus/frontend run test
+npm --workspace @navus/frontend run lint
+npm --workspace @navus/frontend run build
+npm --workspace @navus/frontend run preview
+```
+
+The targeted frontend development command starts Vite without starting Valhalla. The root command is the complete local stack. The backend and shared packages do not have runnable scripts yet.
+
+In preview worktrees, `frontend/public/data/shuttle-timing.json` may be linked to shared timing data. Root and frontend `dev` and `build` commands, along with timing-generation commands, regenerate that file. Remove the worktree link before running them so generation stays local; restore it only after removing the generated local file and confirming the shared source exists and the destination is absent. Never run `npm run dev` through the timing link.
+
+### Local Valhalla routing with Docker
+
+NavUS uses [Valhalla](https://github.com/valhalla/valhalla) to calculate walking routes. Docker Desktop must be running before starting the full app.
 
 On the first run, Docker downloads the Malaysia, Singapore, and Brunei OpenStreetMap extract and builds the routing tiles. This can take several minutes and uses local disk space. Later runs reuse the saved data.
 
@@ -45,18 +71,9 @@ Stop the service with:
 npm run valhalla:down
 ```
 
-Stopping the service does not delete the downloaded routing data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in `.env` to use another Valhalla endpoint. For the local Docker service, leave this variable unset or set it to `/valhalla`; NavUS uses the Vite proxy so browser requests do not hit local Valhalla directly.
+Stopping the service does not delete the downloaded routing data. Set `NAVUS_VALHALLA_WAIT_MS` to change the startup timeout, or set `VITE_VALHALLA_BASE_URL` in the root `.env` to use another Valhalla endpoint. For the local Docker service, leave this variable unset or set it to `/valhalla`; NavUS uses the Vite proxy so browser requests do not hit local Valhalla directly.
 
-Useful checks:
-
-```bash
-npm run lint
-npm run build
-```
-
-Set `VITE_VALHALLA_BASE_URL` when the local Valhalla service is not running at
-`http://localhost:8002`. This value is only a routing endpoint URL, not an API
-credential.
+Set `VITE_VALHALLA_BASE_URL` when the local Valhalla service is not running at `http://localhost:8002`. This value is only a routing endpoint URL, not an API credential.
 
 ## GitHub Pages deployment
 
@@ -114,7 +131,7 @@ server-only value; do not rename it with a `VITE_` prefix. The Vite server
 exposes `/api/public-bus-arrivals`, which the Stops view refreshes every 30
 seconds. Public buses provide display-only arrival timings and are not used by
 Journey routing. Stop-code mappings are maintained in
-`public/data/lta-public-bus-stops.json`.
+`frontend/public/data/lta-public-bus-stops.json`.
 
 Examples:
 

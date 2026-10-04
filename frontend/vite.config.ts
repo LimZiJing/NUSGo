@@ -314,10 +314,12 @@ function createShuttleArrivalsPlugin(env: Record<string, string>): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const envDir = resolve(process.cwd(), '..')
+  const env = loadEnv(mode, envDir, '')
   const allowedHost = env.NAVUS_VITE_ALLOWED_HOST?.trim()
 
   return {
+    envDir,
     base: mode === 'production' ? '/NavUS/' : '/',
     plugins: [react(), createShuttleArrivalsPlugin(env)],
     server: {

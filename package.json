@@ -3,43 +3,24 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
   "scripts": {
-    "dev": "vite",
-    "predev": "npm run valhalla:up && npm run shuttle:timing:generate:geometry",
-    "build": "tsc -b && vite build",
-    "prebuild": "npm run shuttle:timing:generate:geometry",
-    "lint": "eslint .",
-    "preview": "vite preview",
+    "predev": "npm run valhalla:up",
+    "dev": "npm --workspace @navus/frontend run dev",
+    "build": "npm --workspace @navus/frontend run build",
+    "lint": "npm --workspace @navus/frontend run lint",
+    "preview": "npm --workspace @navus/frontend run preview",
     "valhalla:up": "node scripts/start-valhalla.mjs",
     "walking:graph:generate": "node --experimental-strip-types scripts/generate-walking-stop-graph.mjs",
     "valhalla:down": "docker compose -f docker-compose.valhalla.yml down",
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
-    "test": "vitest run --passWithNoTests",
-    "benchmark:journey": "node scripts/benchmark-journey.mjs"
-  },
-  "dependencies": {
-    "maplibre-gl": "^6.8.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "eslint": "^10.9.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.4",
-    "globals": "^17.11.0",
-    "jsdom": "^29.1.1",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.67.0",
-    "vite": "^8.2.2",
-    "vitest": "^5.0.1"
+    "test": "npm --workspace @navus/frontend run test",
+    "benchmark:journey": "npm --workspace @navus/frontend run benchmark:journey --"
   }
 }

@@ -262,4 +262,32 @@ describe('ShuttleRouteControl', () => {
     fireEvent.pointerUp(routeList, { clientX: 120, pointerId: 2, pointerType: 'touch' })
     expect(routeList.scrollLeft).toBe(0)
   })
+
+  it('can drag from the visible left indicator all the way to the start', () => {
+    const network = createEightRouteNetwork()
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId={null}
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
+    setRouteListMetrics(routeList, 200, 600, 200)
+    fireEvent.scroll(routeList)
+
+    const leftArrow = screen.getByRole('button', { name: 'Scroll shuttle routes left' })
+    fireEvent.pointerDown(leftArrow, {
+      button: 0,
+      clientX: 40,
+      pointerId: 3,
+      pointerType: 'mouse',
+    })
+    fireEvent.pointerMove(routeList, { clientX: 240, pointerId: 3, pointerType: 'mouse' })
+    fireEvent.pointerUp(routeList, { clientX: 240, pointerId: 3, pointerType: 'mouse' })
+
+    expect(routeList.scrollLeft).toBe(0)
+  })
 })

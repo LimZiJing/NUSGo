@@ -130,7 +130,7 @@ export function ShuttleRouteControl({
     updateRouteScrollState()
   }
 
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+  function handlePointerDown(event: ReactPointerEvent<HTMLElement>) {
     if (event.pointerType === 'touch') return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     const routeList = routeListRef.current
@@ -256,6 +256,7 @@ export function ShuttleRouteControl({
             type="button"
             aria-label="Scroll shuttle routes left"
             hidden={!routeScrollState.canScrollLeft}
+            onPointerDown={handlePointerDown}
             onClick={() => scrollRoutes(-1)}
           >
             <span aria-hidden="true">‹</span>
@@ -265,6 +266,7 @@ export function ShuttleRouteControl({
             type="button"
             aria-label="Scroll shuttle routes right"
             hidden={!routeScrollState.canScrollRight}
+            onPointerDown={handlePointerDown}
             onClick={() => scrollRoutes(1)}
           >
             <span aria-hidden="true">›</span>

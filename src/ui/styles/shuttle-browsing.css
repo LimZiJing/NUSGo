@@ -19,6 +19,7 @@
   display: flex;
   gap: 8px;
   padding: 2px 2px 8px;
+  scroll-padding-inline-start: 2px;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
   scrollbar-width: none;

@@ -12,6 +12,7 @@ describe('shuttle route scrolling styles', () => {
     expect(styles).toMatch(/\.route-chip-list\s*{[^}]*scrollbar-width:\s*none;/s)
     expect(styles).toMatch(/\.route-chip-list::-webkit-scrollbar\s*{[^}]*display:\s*none;/s)
     expect(styles).toMatch(/\.route-chip-list\s*{[^}]*-webkit-overflow-scrolling:\s*touch;/s)
+    expect(styles).toMatch(/\.route-chip-list\s*{[^}]*scroll-padding-inline-start:\s*2px;/s)
   })
 
   it('keeps arrow indicators visually unstyled and fully hidden at an endpoint', () => {

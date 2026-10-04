@@ -78,8 +78,8 @@ export function ShuttleRouteControl({
 
     const maxScrollLeft = Math.max(0, routeList.scrollWidth - routeList.clientWidth)
     const nextState = {
-      canScrollLeft: routeList.scrollLeft > 1,
-      canScrollRight: routeList.scrollLeft < maxScrollLeft - 1,
+      canScrollLeft: routeList.scrollLeft > 4,
+      canScrollRight: routeList.scrollLeft < maxScrollLeft - 4,
     }
     setRouteScrollState((current) => (
       current.canScrollLeft === nextState.canScrollLeft

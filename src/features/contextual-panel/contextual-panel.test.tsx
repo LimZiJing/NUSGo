@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ContextualPanel } from './contextual-panel'
+import { ExploreView } from './explore-view'
 import { createInitialContextualPanelState } from './state'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
@@ -15,21 +15,19 @@ const venues: VenueLocationMap = {
 function renderPanel(
   state = createInitialContextualPanelState(),
   venueData: VenueLocationMap | null = venues,
-  mobileViewport = true,
+  mobileSheet = true,
 ) {
   return renderToStaticMarkup(
-    <ContextualPanel
+    <ExploreView
       state={state}
-      mobileViewport={mobileViewport}
+      mobileSheet={mobileSheet}
       venues={venueData}
       shuttleRoutesAvailable
       renderShuttleRoutes={() => <span>Showing all 1 shuttle routes and all 2 shuttle stops.</span>}
       onQueryChange={() => undefined}
       onVenueSelect={() => undefined}
-      onOpenVenueSearch={() => undefined}
       onOpenShuttle={() => undefined}
       onBack={() => undefined}
-      onClose={() => undefined}
       onEscape={() => undefined}
     />,
   )
@@ -45,13 +43,13 @@ describe('ContextualPanel', () => {
     expect(markup).not.toContain('Browse shuttle routes')
   })
 
-  it('keeps the desktop Explore NUS root actions', () => {
+  it('uses the shared Explore segments on desktop', () => {
     const markup = renderPanel(createInitialContextualPanelState(), venues, false)
 
-    expect(markup).toContain('>Explore NUS</h2>')
-    expect(markup).toContain('Find a venue')
-    expect(markup).toContain('Browse shuttle routes')
-    expect(markup).not.toContain('mobile-explore-segments')
+    expect(markup).toContain('explore-segments')
+    expect(markup).toContain('Find venue</button>')
+    expect(markup).toContain('>Shuttle routes</button>')
+    expect(markup).not.toContain('Explore NUS')
   })
 
   it('shows venue search without a route shortcut', () => {
@@ -61,8 +59,8 @@ describe('ContextualPanel', () => {
     expect(markup).toContain('>Find a venue</h2>')
     expect(markup).toContain('aria-labelledby="contextual-panel-heading"')
     expect(markup).toContain('Search for a venue')
-    expect(markup).not.toContain('Browse shuttle routes')
-    expect(markup).not.toContain('mobile-ghost-back-button')
+    expect(markup).toContain('>Shuttle routes</button>')
+    expect(markup).not.toContain('ghost-back-button')
     expect(markup).not.toContain('Search by venue code or room name.')
   })
 
@@ -92,7 +90,7 @@ describe('ContextualPanel', () => {
     expect(markup).not.toContain('maplibregl-popup')
   })
 
-  it('labels the mobile detail return control from its previous context', () => {
+  it('labels the detail return control from its previous context', () => {
     const state = {
       ...createInitialContextualPanelState(),
       mode: 'venue-detail' as const,
@@ -106,13 +104,13 @@ describe('ContextualPanel', () => {
     const markup = renderPanel(state)
 
     expect(markup).toContain('Shuttle routes</button>')
-    expect(markup).toContain('class="mobile-ghost-back-button"')
+    expect(markup).toContain('class="ghost-back-button"')
     expect(markup).toContain('<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">')
     expect(markup).toContain('M19 12H5m7-7-7 7 7 7')
     expect(markup).not.toContain('←')
   })
 
-  it('keeps desktop venue detail navigation actions', () => {
+  it('uses shared venue detail navigation actions', () => {
     const state = {
       ...createInitialContextualPanelState(),
       mode: 'venue-detail' as const,
@@ -123,8 +121,8 @@ describe('ContextualPanel', () => {
     }
     const markup = renderPanel(state, venues, false)
 
-    expect(markup).toContain('aria-label="Back to venue search"')
-    expect(markup).toContain('aria-label="Close map context"')
+    expect(markup).toContain('class="ghost-back-button"')
+    expect(markup).not.toContain('Close map context')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')
     expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')

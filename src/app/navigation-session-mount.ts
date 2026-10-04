@@ -18,6 +18,7 @@ export interface NavigationSessionMountDependencies {
   readonly journeyPlanner: JourneyPlanningService
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
+  readonly onMapStopInteraction?: (stopId: string) => void
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
 
@@ -44,6 +45,7 @@ export function createNavigationSessionMount(
     loadTransit: dependencies.loadTransit,
     journeyPlanner: dependencies.journeyPlanner,
     locationTracker: dependencies.locationTracker,
+    onMapStopInteraction: dependencies.onMapStopInteraction,
   })
 
   const controller = new AbortController()
@@ -81,14 +83,9 @@ export interface NavigationSessionCommands {
   readonly planJourney: () => void
   readonly setContextualPanelQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
-  readonly openVenueSearch: () => void
-  readonly openShuttle: () => void
-  readonly openShuttleRouteDetail: () => void
   readonly back: () => void
-  readonly close: () => void
   readonly closeToRoot: () => void
   readonly escape: () => void
-  readonly selectRoute: (routeId: string | null) => void
   readonly enterMobileRoutes: () => void
   readonly suspendMobileRoutes: () => void
   readonly leaveMobileRoutes: () => void
@@ -121,14 +118,9 @@ function createNavigationSessionCommands(
     planJourney: () => session?.planJourney(),
     setContextualPanelQuery: (query) => session?.setContextualPanelQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
-    openVenueSearch: () => session?.openVenueSearch(),
-    openShuttle: () => session?.openShuttle(),
-    openShuttleRouteDetail: () => session?.openShuttleRouteDetail(),
     back: () => session?.back(),
-    close: () => session?.close(),
     closeToRoot: () => session?.closeToRoot(),
     escape: () => session?.escape(),
-    selectRoute: (routeId) => session?.selectRoute(routeId),
     enterMobileRoutes: () => session?.enterMobileRoutes(),
     suspendMobileRoutes: () => session?.suspendMobileRoutes(),
     leaveMobileRoutes: () => session?.leaveMobileRoutes(),

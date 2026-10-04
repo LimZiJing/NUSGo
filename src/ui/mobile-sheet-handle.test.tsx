@@ -73,7 +73,7 @@ function renderHandle(
           />
         </div>
       </section>
-      <nav className="mobile-tab-bar" aria-label="Main navigation" />
+      <nav className="main-navigation" aria-label="Main navigation" />
     </>,
   )
 

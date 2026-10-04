@@ -2,52 +2,52 @@ import type {
   MobileSheetDetent,
   OpenMobileSheetDetent,
 } from '../ui/mobile-sheet-detent'
-import type { MobileTab } from '../ui/mobile-tab'
+import type { NavigationView } from '../ui/navigation-view'
 
 export type { MobileSheetDetent } from '../ui/mobile-sheet-detent'
-export type { MobileTab } from '../ui/mobile-tab'
+export type { NavigationView } from '../ui/navigation-view'
 
-interface MobileSheetSearchState {
+interface NavigationSheetSearchState {
   readonly returnDetent: OpenMobileSheetDetent
   readonly changedManually: boolean
 }
 
-export interface MobileTabSheetState {
+export interface NavigationSheetState {
   readonly detent: MobileSheetDetent
   readonly lastNonCollapsedDetent: OpenMobileSheetDetent
-  readonly search: MobileSheetSearchState | null
+  readonly search: NavigationSheetSearchState | null
 }
 
-export interface MobileNavigationState {
-  readonly activeTab: MobileTab
-  readonly sheets: Readonly<Record<MobileTab, MobileTabSheetState>>
+export interface NavigationState {
+  readonly activeView: NavigationView
+  readonly sheets: Readonly<Record<NavigationView, NavigationSheetState>>
 }
 
 export const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 768px)'
 
-export type MobileNavigationAction =
-  | { readonly type: 'select-tab'; readonly tab: MobileTab }
+export type NavigationAction =
+  | { readonly type: 'select-view'; readonly view: NavigationView }
   | { readonly type: 'open-plan' }
   | {
       readonly type: 'set-sheet-detent'
-      readonly tab: MobileTab
+      readonly view: NavigationView
       readonly detent: MobileSheetDetent
       readonly source?: 'manual' | 'programmatic'
     }
-  | { readonly type: 'start-search'; readonly tab: MobileTab }
-  | { readonly type: 'dismiss-search'; readonly tab: MobileTab }
-  | { readonly type: 'select-search-result'; readonly tab: MobileTab }
-  | { readonly type: 'close-active-tab' }
+  | { readonly type: 'start-search'; readonly view: NavigationView }
+  | { readonly type: 'dismiss-search'; readonly view: NavigationView }
+  | { readonly type: 'select-search-result'; readonly view: NavigationView }
+  | { readonly type: 'close-active-view' }
 
-const initialSheetState: MobileTabSheetState = {
+const initialSheetState: NavigationSheetState = {
   detent: 'partial',
   lastNonCollapsedDetent: 'partial',
   search: null,
 }
 
-export function createInitialMobileNavigationState(): MobileNavigationState {
+export function createInitialNavigationState(): NavigationState {
   return {
-    activeTab: 'stops',
+    activeView: 'stops',
     sheets: {
       explore: initialSheetState,
       stops: initialSheetState,
@@ -81,12 +81,12 @@ export function subscribeToMobileViewport(listener: () => void): () => void {
 }
 
 function setSheetDetent(
-  state: MobileNavigationState,
-  tab: MobileTab,
+  state: NavigationState,
+  view: NavigationView,
   detent: MobileSheetDetent,
   source: 'manual' | 'programmatic' = 'programmatic',
-): MobileNavigationState {
-  const sheet = state.sheets[tab]
+): NavigationState {
+  const sheet = state.sheets[view]
   const search = source === 'manual' && sheet.search
     ? { ...sheet.search, changedManually: true }
     : sheet.search
@@ -104,13 +104,13 @@ function setSheetDetent(
     ...state,
     sheets: {
       ...state.sheets,
-      [tab]: { detent, lastNonCollapsedDetent, search },
+      [view]: { detent, lastNonCollapsedDetent, search },
     },
   }
 }
 
-function startSearch(state: MobileNavigationState, tab: MobileTab): MobileNavigationState {
-  const sheet = state.sheets[tab]
+function startSearch(state: NavigationState, view: NavigationView): NavigationState {
+  const sheet = state.sheets[view]
   const search = sheet.search ?? {
     returnDetent: sheet.detent === 'collapsed'
       ? sheet.lastNonCollapsedDetent
@@ -120,10 +120,10 @@ function startSearch(state: MobileNavigationState, tab: MobileTab): MobileNaviga
 
   return {
     ...state,
-    activeTab: tab,
+    activeView: view,
     sheets: {
       ...state.sheets,
-      [tab]: {
+      [view]: {
         ...sheet,
         detent: 'full',
         lastNonCollapsedDetent: sheet.lastNonCollapsedDetent,
@@ -133,23 +133,23 @@ function startSearch(state: MobileNavigationState, tab: MobileTab): MobileNaviga
   }
 }
 
-export function mobileNavigationReducer(
-  state: MobileNavigationState,
-  action: MobileNavigationAction,
-): MobileNavigationState {
+export function navigationReducer(
+  state: NavigationState,
+  action: NavigationAction,
+): NavigationState {
   switch (action.type) {
-    case 'select-tab':
-      if (state.activeTab !== action.tab) return { ...state, activeTab: action.tab }
-      if (state.sheets[action.tab].detent !== 'collapsed') return state
-      return setSheetDetent(state, action.tab, state.sheets[action.tab].lastNonCollapsedDetent)
+    case 'select-view':
+      if (state.activeView !== action.view) return { ...state, activeView: action.view }
+      if (state.sheets[action.view].detent !== 'collapsed') return state
+      return setSheetDetent(state, action.view, state.sheets[action.view].lastNonCollapsedDetent)
     case 'open-plan':
-      return setSheetDetent({ ...state, activeTab: 'plan' }, 'plan', 'partial')
+      return setSheetDetent({ ...state, activeView: 'plan' }, 'plan', 'partial')
     case 'set-sheet-detent':
-      return setSheetDetent(state, action.tab, action.detent, action.source)
+      return setSheetDetent(state, action.view, action.detent, action.source)
     case 'start-search':
-      return startSearch(state, action.tab)
+      return startSearch(state, action.view)
     case 'dismiss-search': {
-      const sheet = state.sheets[action.tab]
+      const sheet = state.sheets[action.view]
       if (!sheet.search) return state
       const detent = sheet.search.changedManually
         ? sheet.detent
@@ -158,7 +158,7 @@ export function mobileNavigationReducer(
         ...state,
         sheets: {
           ...state.sheets,
-          [action.tab]: {
+          [action.view]: {
             ...sheet,
             detent,
             lastNonCollapsedDetent: detent === 'collapsed'
@@ -174,15 +174,15 @@ export function mobileNavigationReducer(
         ...state,
         sheets: {
           ...state.sheets,
-          [action.tab]: {
-            ...state.sheets[action.tab],
+          [action.view]: {
+            ...state.sheets[action.view],
             detent: 'partial',
             lastNonCollapsedDetent: 'partial',
             search: null,
           },
         },
       }
-    case 'close-active-tab':
-      return setSheetDetent(state, state.activeTab, 'collapsed', 'manual')
+    case 'close-active-view':
+      return setSheetDetent(state, state.activeView, 'collapsed', 'manual')
   }
 }

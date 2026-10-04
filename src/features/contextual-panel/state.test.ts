@@ -15,9 +15,7 @@ const selectedVenue: VenueSearchResult = {
 }
 
 function createVenueSearchState() {
-  return contextualPanelReducer(createInitialContextualPanelState(), {
-    type: 'open-venue-search',
-  })
+  return { ...createInitialContextualPanelState(), mode: 'venue-search' as const }
 }
 
 describe('contextualPanelReducer', () => {
@@ -61,26 +59,6 @@ describe('contextualPanelReducer', () => {
     })
   })
 
-  it('returns from a selected shuttle route to route choices before Explore', () => {
-    const exploreState = contextualPanelReducer(
-      createInitialContextualPanelState(),
-      { type: 'close' },
-    )
-    const routeListState = contextualPanelReducer(exploreState, { type: 'open-shuttle' })
-    const routeDetailState = contextualPanelReducer(routeListState, {
-      type: 'open-shuttle-route-detail',
-    })
-
-    expect(routeDetailState.mode).toBe('shuttle-route-detail')
-    expect(contextualPanelReducer(routeDetailState, { type: 'back' })).toMatchObject({
-      mode: 'shuttle',
-    })
-    expect(contextualPanelReducer(
-      contextualPanelReducer(routeDetailState, { type: 'back' }),
-      { type: 'back' },
-    )).toMatchObject({ mode: 'neutral' })
-  })
-
   it('escapes through history before closing to the neutral state', () => {
     const detailState = contextualPanelReducer(
       createVenueSearchState(),
@@ -97,16 +75,16 @@ describe('contextualPanelReducer', () => {
     })
   })
 
-  it('returns directly to the neutral state when closed', () => {
+  it('returns directly to the neutral state with close-to-root', () => {
     const detailState = contextualPanelReducer(
       { ...createVenueSearchState(), query: 'COM1' },
       { type: 'select-venue', result: selectedVenue },
     )
 
-    expect(contextualPanelReducer(detailState, { type: 'close' })).toMatchObject({
+    expect(contextualPanelReducer(detailState, { type: 'close-to-root' })).toMatchObject({
       mode: 'neutral',
       query: 'COM1',
-      selectedVenue: null,
+      selectedVenue,
       history: [],
     })
   })
@@ -124,10 +102,7 @@ describe('contextualPanelReducer', () => {
   })
 
   it('keeps shuttle browsing available when venue data is unavailable', () => {
-    const neutralState = contextualPanelReducer(
-      createInitialContextualPanelState(),
-      { type: 'close' },
-    )
+    const neutralState = createInitialContextualPanelState()
 
     expect(contextualPanelReducer(neutralState, { type: 'open-shuttle' }).mode).toBe('shuttle')
   })

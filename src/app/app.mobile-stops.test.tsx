@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
@@ -12,6 +12,7 @@ const appHarness = vi.hoisted(() => {
   const noop = () => undefined
   return {
     state: null as unknown,
+    onStopSelected: null as ((stopId: string) => boolean) | null,
     commands: new Proxy<Record<string, () => undefined>>({}, { get: () => noop }),
     arrivalsClient: {
       getArrivals: vi.fn(),
@@ -23,7 +24,13 @@ const appHarness = vi.hoisted(() => {
 })
 
 vi.mock('./navigation-session-mount', () => ({
-  createNavigationSessionMount: () => ({ session: null, dispose: () => undefined }),
+  createNavigationSessionMount: (
+    _container: HTMLElement,
+    dependencies: { onStopSelected?: (stopId: string) => boolean },
+  ) => {
+    appHarness.onStopSelected = dependencies.onStopSelected ?? null
+    return { session: null, dispose: () => undefined }
+  },
   createNavigationSessionCommandAdapter: () => () => appHarness.commands,
 }))
 
@@ -84,6 +91,7 @@ afterEach(() => {
   localStorage.clear()
   appHarness.arrivalsClient.getArrivals.mockReset()
   appHarness.serviceHoursClient.getServiceWindows.mockReset()
+  appHarness.onStopSelected = null
 })
 
 describe('mobile Stops tab state', () => {
@@ -140,5 +148,18 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
 
     expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
+  })
+
+  it('keeps mobile Explore popup behavior when a stop is selected', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    act(() => {
+      expect(appHarness.onStopSelected?.('STOP-A')).toBe(false)
+    })
+
+    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('heading', { name: 'Stop A' })).toBeNull()
   })
 })

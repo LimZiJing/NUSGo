@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { validateTripRequest } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel, searchTripLocations } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
@@ -9,26 +9,17 @@ import type {
   TripRequest,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
-import { MobileSheetHandle } from '../../ui/mobile-sheet-handle'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
-interface TripEndpointControlsProps {
+interface PlanViewProps {
   tripRequest: TripRequest
   venues: VenueLocationMap | null
   networkIndex: TransitIndex | null
   expanded?: boolean
-  detent?: MobileSheetDetent
-  lastNonCollapsedDetent?: OpenMobileSheetDetent
-  mobileViewport?: boolean
-  containerRef?: Ref<HTMLElement>
-  onExpandedChange?: (expanded: boolean) => void
-  onDetentChange?: (detent: MobileSheetDetent) => void
-  onBeforeSheetToggle?: () => void
   onSearchFocus?: () => void
   onSearchCancel?: () => void
   onSearchResult?: () => void
@@ -75,18 +66,11 @@ function getResultLabel(result: TripLocationSearchResult): string {
 
 const TRIP_CONTROLS_CONTENT_ID = 'trip-controls-panel-content'
 
-export function TripEndpointControls({
+export function PlanView({
   tripRequest,
   venues,
   networkIndex,
   expanded,
-  detent: passedDetent,
-  lastNonCollapsedDetent = 'partial',
-  mobileViewport = true,
-  containerRef,
-  onExpandedChange,
-  onDetentChange,
-  onBeforeSheetToggle,
   onSearchFocus,
   onSearchCancel,
   onSearchResult,
@@ -99,16 +83,8 @@ export function TripEndpointControls({
   onPlanJourney,
   journey = { status: 'idle', journey: null, error: null },
   simulatedAtMs = null,
-}: TripEndpointControlsProps) {
-  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(true)
-  const detent = passedDetent ?? (expanded ?? uncontrolledExpanded ? 'partial' : 'collapsed')
-  const isExpanded = detent !== 'collapsed'
-  const tripHandleRef = useRef<HTMLButtonElement>(null)
-  const setTripHandleRef = useCallback((button: HTMLButtonElement | null): void => {
-    tripHandleRef.current = button
-  }, [])
-  const previousExpandedRef = useRef(isExpanded)
-  const previousMobileViewportRef = useRef(mobileViewport)
+}: PlanViewProps) {
+  const isExpanded = expanded ?? true
   const [searchQueries, setSearchQueries] = useState({
     origin: '',
     destination: '',
@@ -134,42 +110,7 @@ export function TripEndpointControls({
     onSwap()
   }
 
-  const setDetent = (nextDetent: MobileSheetDetent): void => {
-    if (passedDetent === undefined && expanded === undefined) {
-      setUncontrolledExpanded(nextDetent !== 'collapsed')
-    }
-    if (onDetentChange) onDetentChange(nextDetent)
-    else onExpandedChange?.(nextDetent !== 'collapsed')
-  }
-
   const tripSummary = getTripPlanSummary(tripRequest, venues, networkIndex)
-
-  useEffect(() => {
-    const wasExpanded = previousExpandedRef.current
-    previousExpandedRef.current = isExpanded
-    if (!wasExpanded || isExpanded || !mobileViewport) return
-    const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
-    if (body?.contains(document.activeElement)) tripHandleRef.current?.focus()
-  }, [isExpanded, mobileViewport])
-
-  useEffect(() => {
-    const wasMobileViewport = previousMobileViewportRef.current
-    previousMobileViewportRef.current = mobileViewport
-    if (wasMobileViewport === mobileViewport) return
-
-    const body = document.getElementById(TRIP_CONTROLS_CONTENT_ID)
-    if (!mobileViewport && document.activeElement === tripHandleRef.current) {
-      const firstFormControl = body?.querySelector<HTMLElement>('input, select, textarea')
-      const firstFocusable = firstFormControl ?? body?.querySelector<HTMLElement>('button')
-      firstFocusable?.focus()
-      return
-    }
-    if (
-      mobileViewport &&
-      !isExpanded &&
-      body?.contains(document.activeElement)
-    ) tripHandleRef.current?.focus()
-  }, [isExpanded, mobileViewport])
 
   useEffect(() => {
     const previous = previousTripRequest.current
@@ -190,25 +131,7 @@ export function TripEndpointControls({
   }, [tripRequest])
 
   return (
-    <section
-      className={`trip-controls${isExpanded ? ' trip-controls-expanded' : ' trip-controls-collapsed'}`}
-      ref={containerRef}
-      aria-label="Trip endpoints"
-      data-expanded={isExpanded}
-      data-detent={detent}
-      data-mobile-sheet
-    >
-      <div className="mobile-sheet-handle-row">
-        <MobileSheetHandle
-          detent={detent}
-          restoreDetent={lastNonCollapsedDetent}
-          label={`Plan trip panel: ${tripSummary.accessible}`}
-          controlsId={TRIP_CONTROLS_CONTENT_ID}
-          onButtonRef={setTripHandleRef}
-          onBeforeClick={onBeforeSheetToggle}
-          onDetentChange={setDetent}
-        />
-      </div>
+    <>
       <div className="trip-controls-heading">
         <div className="trip-controls-title">
           <h2>Plan trip</h2>
@@ -302,7 +225,7 @@ export function TripEndpointControls({
           simulated={simulatedAtMs !== null}
         />
       </div>
-    </section>
+    </>
   )
 }
 

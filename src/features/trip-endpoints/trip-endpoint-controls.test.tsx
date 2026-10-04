@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { TripEndpointControl, TripEndpointControls } from './trip-endpoint-controls'
+import { TripEndpointControl, PlanView } from './plan-view'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '../../domain/transit/types'
@@ -139,7 +139,7 @@ describe('TripEndpointControls Journey result', () => {
     }
 
     const markup = renderToStaticMarkup(
-      <TripEndpointControls
+      <PlanView
         tripRequest={{
           origin: { kind: 'venue', id: 'COM1-0210' },
           destination: { kind: 'stop', id: 'STOP-A' },

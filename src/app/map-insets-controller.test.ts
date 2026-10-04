@@ -13,6 +13,7 @@ describe('map overlay measurement seam', () => {
         contextualSheetHeight: 196,
         tripCardVisible: true,
         contextualSheetVisible: true,
+        desktopNavigationWidth: 0,
       },
     )
 
@@ -20,7 +21,7 @@ describe('map overlay measurement seam', () => {
     expect(insets).toEqual({ top: 104, right: 12, bottom: 208, left: 12 })
   })
 
-  it('removes overlay insets for a desktop measurement', () => {
+  it('reserves the measured desktop navigation column', () => {
     const setViewportInsets = vi.fn()
     applyMapOverlayMeasurements(
       { setViewportInsets },
@@ -31,9 +32,10 @@ describe('map overlay measurement seam', () => {
         contextualSheetHeight: 280,
         tripCardVisible: true,
         contextualSheetVisible: true,
+        desktopNavigationWidth: 360,
       },
     )
 
-    expect(setViewportInsets).toHaveBeenCalledWith({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(setViewportInsets).toHaveBeenCalledWith({ top: 0, right: 0, bottom: 0, left: 372 })
   })
 })

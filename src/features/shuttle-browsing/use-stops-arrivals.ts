@@ -5,27 +5,27 @@ import {
   type ShuttleArrivalSnapshot,
 } from '../../domain/transit/arrivals'
 
-export interface MobileStopArrivalStopRequest {
+export interface StopsArrivalStopRequest {
   readonly stopId: string
   readonly stopName: string
 }
 
-export type MobileStopArrivalLoader<TSnapshot = ShuttleArrivalSnapshot> = (
-  stops: readonly MobileStopArrivalStopRequest[],
+export type StopsArrivalLoader<TSnapshot = ShuttleArrivalSnapshot> = (
+  stops: readonly StopsArrivalStopRequest[],
   signal: AbortSignal,
 ) => Promise<TSnapshot>
 
-export type MobileStopArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
+export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error'
 
-export interface MobileStopArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
-  readonly status: MobileStopArrivalsStatus
+export interface StopsArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
+  readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
   readonly nowMs: number
 }
 
 interface ArrivalRequestState<TSnapshot> {
   readonly stopKey: string | null
-  readonly status: MobileStopArrivalsStatus
+  readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
 }
 
@@ -35,15 +35,15 @@ function isAbortError(error: unknown): boolean {
 
 const STOP_SET_DEBOUNCE_MS = 150
 
-export function useMobileStopArrivals<TSnapshot = ShuttleArrivalSnapshot>(
-  loadArrivals: MobileStopArrivalLoader<TSnapshot>,
+export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
+  loadArrivals: StopsArrivalLoader<TSnapshot>,
   active: boolean,
-  stops: readonly MobileStopArrivalStopRequest[],
+  stops: readonly StopsArrivalStopRequest[],
   isOlderSnapshot: (candidate: TSnapshot, current: TSnapshot) => boolean = isOlderShuttleArrivalSnapshot as (
     candidate: TSnapshot,
     current: TSnapshot,
   ) => boolean,
-): MobileStopArrivalsState<TSnapshot> {
+): StopsArrivalsState<TSnapshot> {
   const [state, setState] = useState<ArrivalRequestState<TSnapshot>>(() => ({
     stopKey: null,
     status: 'idle',

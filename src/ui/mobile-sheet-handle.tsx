@@ -213,7 +213,7 @@ function stopForDragRelease(session: DragSession): DragStop {
 
 function getBottomInset(sheet: HTMLElement): number {
   const shell = sheet.closest<HTMLElement>('.map-shell')
-  const tabBar = shell?.querySelector<HTMLElement>('.mobile-tab-bar')
+  const tabBar = shell?.querySelector<HTMLElement>('.main-navigation')
   const tabBarRect = tabBar?.getBoundingClientRect()
   if (!shell) return tabBarRect?.height ?? 0
 

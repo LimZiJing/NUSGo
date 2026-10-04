@@ -5,7 +5,6 @@ export type ContextualPanelMode =
   | 'venue-search'
   | 'venue-detail'
   | 'shuttle'
-  | 'shuttle-route-detail'
 
 export interface ContextualPanelState {
   readonly mode: ContextualPanelMode
@@ -23,12 +22,9 @@ export interface ContextualPanelSnapshot {
 export type ContextualPanelAction =
   | { type: 'set-query'; query: string }
   | { type: 'select-venue'; result: VenueSearchResult }
-  | { type: 'open-venue-search' }
   | { type: 'open-shuttle' }
-  | { type: 'open-shuttle-route-detail' }
   | { type: 'back' }
   | { type: 'escape' }
-  | { type: 'close' }
   | { type: 'close-to-root' }
   | { type: 'map-click' }
 
@@ -91,13 +87,6 @@ export function contextualPanelReducer(
         query: state.query,
         selectedVenue: action.result,
       })
-    case 'open-venue-search':
-      if (state.mode === 'venue-search') return state
-      return pushCurrentState(state, {
-        mode: 'venue-search',
-        query: state.query,
-        selectedVenue: null,
-      })
     case 'open-shuttle':
       if (state.mode === 'shuttle') return state
       return pushCurrentState(state, {
@@ -105,19 +94,10 @@ export function contextualPanelReducer(
         query: state.query,
         selectedVenue: null,
       })
-    case 'open-shuttle-route-detail':
-      if (state.mode !== 'shuttle') return state
-      return pushCurrentState(state, {
-        mode: 'shuttle-route-detail',
-        query: state.query,
-        selectedVenue: null,
-      })
     case 'back':
       return goBack(state)
     case 'escape':
       return goBack(state)
-    case 'close':
-      return closePanel(state)
     case 'close-to-root':
       return {
         ...state,

@@ -40,6 +40,7 @@ export interface MapOverlayMeasurements {
   readonly contextualSheetHeight: number
   readonly tripCardVisible: boolean
   readonly contextualSheetVisible: boolean
+  readonly desktopNavigationWidth: number
 }
 
 export type { MapCoordinate, MapResetTarget, MapViewportInsets } from './contracts/map'
@@ -57,7 +58,12 @@ export function calculateMapOverlayInsets(
   measurements: MapOverlayMeasurements,
 ): MapViewportInsets {
   if (measurements.viewportWidth > MOBILE_MAP_BREAKPOINT) {
-    return { top: 0, right: 0, bottom: 0, left: 0 }
+    return {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: Math.ceil(Math.max(0, measurements.desktopNavigationWidth)) + MAP_OVERLAY_MARGIN,
+    }
   }
 
   return {

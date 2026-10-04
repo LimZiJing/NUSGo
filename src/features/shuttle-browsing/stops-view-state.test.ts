@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  createInitialMobileStopViewState,
-  getMobileStopSheetSelection,
-  mobileStopViewReducer,
-} from './mobile-stop-view'
+  createInitialStopsViewState,
+  getStopSheetSelection,
+  stopsViewReducer,
+} from './stops-view-state'
 import { createTransitIndex } from '../../domain/transit'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
@@ -12,13 +12,13 @@ import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
 describe('mobile stop view state', () => {
   it('keeps a focused stop until Back to stops is explicitly selected', () => {
-    const focused = mobileStopViewReducer(createInitialMobileStopViewState(), {
+    const focused = stopsViewReducer(createInitialStopsViewState(), {
       type: 'focus-stop',
       stopId: 'SR7',
     })
 
     expect(focused.focusedStopId).toBe('SR7')
-    expect(mobileStopViewReducer(focused, { type: 'back-to-stops' }).focusedStopId).toBeNull()
+    expect(stopsViewReducer(focused, { type: 'back-to-stops' }).focusedStopId).toBeNull()
   })
 
   it('maps a fresh arrival snapshot to canonical route departures and adjusts for snapshot age', () => {
@@ -37,7 +37,7 @@ describe('mobile stop view state', () => {
       },
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -75,7 +75,7 @@ describe('mobile stop view state', () => {
       },
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -128,8 +128,8 @@ describe('mobile stop view state', () => {
     }
 
     const nowMs = Date.parse('2026-09-30T00:00:20.000Z')
-    const stopA = getMobileStopSheetSelection(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
-    const stopB = getMobileStopSheetSelection(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
+    const stopA = getStopSheetSelection(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
+    const stopB = getStopSheetSelection(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
 
     expect(stopA.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
     expect(stopB.departures[0]?.timings).toEqual(['2m', '3m', '-'])
@@ -151,7 +151,7 @@ describe('mobile stop view state', () => {
       },
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -180,7 +180,7 @@ describe('mobile stop view state', () => {
       },
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -204,7 +204,7 @@ describe('mobile stop view state', () => {
       A1: [{ routeId: 'A1', firstTime: '00:06', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -243,7 +243,7 @@ describe('mobile stop view state', () => {
       A1: [{ routeId: 'A1', firstTime: '06:00', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -279,7 +279,7 @@ describe('mobile stop view state', () => {
       A1: [{ routeId: 'A1', firstTime: '00:00', lastTime: '23:59', dayType: 'Mon-Fri', dates: [] }],
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -305,7 +305,7 @@ describe('mobile stop view state', () => {
       A1: [{ routeId: 'A1', firstTime: '01:00', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
     }
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       [],
@@ -334,7 +334,7 @@ describe('mobile stop view state', () => {
     })
     const index = createTransitIndex(network)
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       ['STOP-C'],
@@ -373,7 +373,7 @@ describe('mobile stop view state', () => {
     })
     const index = createTransitIndex(network)
 
-    const selection = getMobileStopSheetSelection(
+    const selection = getStopSheetSelection(
       index.stopById.get('STOP-A')!,
       index,
       ['STOP-B', 'STOP-C'],
@@ -400,32 +400,32 @@ describe('mobile stop view state', () => {
   })
 
   it('keeps list, expansion, and favourites state until canonical stops are reconciled', () => {
-    const initial = createInitialMobileStopViewState(['STOP-A', 'missing'])
-    const favourites = mobileStopViewReducer(initial, { type: 'select-list', list: 'favourites' })
-    const expanded = mobileStopViewReducer(favourites, { type: 'toggle-expanded', stopId: 'STOP-A' })
-    const focused = mobileStopViewReducer(expanded, { type: 'focus-stop', stopId: 'STOP-A' })
+    const initial = createInitialStopsViewState(['STOP-A', 'missing'])
+    const favourites = stopsViewReducer(initial, { type: 'select-list', list: 'favourites' })
+    const expanded = stopsViewReducer(favourites, { type: 'toggle-expanded', stopId: 'STOP-A' })
+    const focused = stopsViewReducer(expanded, { type: 'focus-stop', stopId: 'STOP-A' })
 
     expect(focused.list).toBe('favourites')
     expect(focused.expandedStopIds).toEqual({ nearby: [], favourites: ['STOP-A'] })
     expect(focused.favoriteStopIds).toEqual(['STOP-A', 'missing'])
 
-    const reconciled = mobileStopViewReducer(focused, {
+    const reconciled = stopsViewReducer(focused, {
       type: 'reconcile-stops',
       stopIds: new Set(['STOP-A']),
     })
     expect(reconciled.favoriteStopIds).toEqual(['STOP-A'])
     expect(reconciled.expandedStopIds).toEqual({ nearby: [], favourites: ['STOP-A'] })
     expect(reconciled.focusedStopId).toBe('STOP-A')
-    expect(mobileStopViewReducer(reconciled, { type: 'toggle-expanded', stopId: 'STOP-A' })
+    expect(stopsViewReducer(reconciled, { type: 'toggle-expanded', stopId: 'STOP-A' })
       .expandedStopIds).toEqual({ nearby: [], favourites: [] })
   })
 
   it('starts timings closed and replaces Nearby expansion without expanding Favourites', () => {
-    const initial = createInitialMobileStopViewState()
+    const initial = createInitialStopsViewState()
 
     expect(initial.expandedStopIds).toEqual({ nearby: [], favourites: [] })
 
-    const nearbyExpanded = mobileStopViewReducer(initial, {
+    const nearbyExpanded = stopsViewReducer(initial, {
       type: 'set-nearby-expanded',
       stopIds: ['STOP-A', 'STOP-B'],
     })
@@ -435,7 +435,7 @@ describe('mobile stop view state', () => {
       favourites: [],
     })
 
-    const nearbyReplaced = mobileStopViewReducer(nearbyExpanded, {
+    const nearbyReplaced = stopsViewReducer(nearbyExpanded, {
       type: 'set-nearby-expanded',
       stopIds: ['STOP-B'],
     })
@@ -445,8 +445,8 @@ describe('mobile stop view state', () => {
       favourites: [],
     })
 
-    const favouritesExpanded = mobileStopViewReducer(
-      mobileStopViewReducer(nearbyReplaced, { type: 'select-list', list: 'favourites' }),
+    const favouritesExpanded = stopsViewReducer(
+      stopsViewReducer(nearbyReplaced, { type: 'select-list', list: 'favourites' }),
       { type: 'toggle-expanded', stopId: 'STOP-A' },
     )
 
@@ -455,7 +455,7 @@ describe('mobile stop view state', () => {
       favourites: ['STOP-A'],
     })
 
-    const locationExpanded = mobileStopViewReducer(favouritesExpanded, {
+    const locationExpanded = stopsViewReducer(favouritesExpanded, {
       type: 'set-nearby-expanded',
       stopIds: ['STOP-B'],
     })

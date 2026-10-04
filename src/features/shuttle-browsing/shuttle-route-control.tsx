@@ -131,6 +131,7 @@ export function ShuttleRouteControl({
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType === 'touch') return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     const routeList = routeListRef.current
     if (!routeList) return
@@ -170,12 +171,16 @@ export function ShuttleRouteControl({
   }
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
-    if (event.deltaX === 0 && event.deltaY === 0) return
+    if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return
     event.preventDefault()
     const routeList = routeListRef.current
     if (!routeList) return
 
-    setRouteScrollLeft(routeList, routeList.scrollLeft + event.deltaX + event.deltaY)
+    if (typeof routeList.scrollBy === 'function') {
+      routeList.scrollBy({ left: event.deltaY, behavior: 'smooth' })
+      return
+    }
+    setRouteScrollLeft(routeList, routeList.scrollLeft + event.deltaY)
     updateRouteScrollState()
   }
 

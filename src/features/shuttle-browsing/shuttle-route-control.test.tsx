@@ -211,7 +211,7 @@ describe('ShuttleRouteControl', () => {
     expect(routeScroller.getAttribute('data-can-scroll-right')).toBeNull()
   })
 
-  it('maps vertical wheel and drag movement onto horizontal scrolling', () => {
+  it('smoothly maps vertical wheel movement while leaving horizontal trackpad scrolling native', () => {
     const network = createEightRouteNetwork()
     render(
       <ShuttleRouteControl
@@ -224,17 +224,42 @@ describe('ShuttleRouteControl', () => {
 
     const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
     setRouteListMetrics(routeList, 200, 600)
+    const scrollBy = vi.fn()
+    Object.defineProperty(routeList, 'scrollBy', { configurable: true, value: scrollBy })
 
     fireEvent.wheel(routeList, { deltaY: 80 })
-    expect(routeList.scrollLeft).toBe(80)
+    expect(scrollBy).toHaveBeenCalledWith({ left: 80, behavior: 'smooth' })
 
-    fireEvent.pointerDown(routeList, { button: 0, clientX: 200, pointerId: 1, pointerType: 'mouse' })
-    fireEvent.pointerMove(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
-    fireEvent.pointerUp(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
-    expect(routeList.scrollLeft).toBe(160)
+    fireEvent.wheel(routeList, { deltaX: 40 })
+    expect(scrollBy).toHaveBeenCalledTimes(1)
 
     setRouteListMetrics(routeList, 200, 600, 400)
     fireEvent.wheel(routeList, { deltaY: 80 })
-    expect(routeList.scrollLeft).toBe(400)
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 80, behavior: 'smooth' })
+  })
+
+  it('supports mouse dragging without replacing native touch dragging', () => {
+    const network = createEightRouteNetwork()
+    render(
+      <ShuttleRouteControl
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId={null}
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const routeList = screen.getByRole('group', { name: 'Shuttle routes' })
+    setRouteListMetrics(routeList, 200, 600)
+    fireEvent.pointerDown(routeList, { button: 0, clientX: 200, pointerId: 1, pointerType: 'mouse' })
+    fireEvent.pointerMove(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
+    fireEvent.pointerUp(routeList, { clientX: 120, pointerId: 1, pointerType: 'mouse' })
+    expect(routeList.scrollLeft).toBe(80)
+
+    setRouteListMetrics(routeList, 200, 600)
+    fireEvent.pointerDown(routeList, { clientX: 200, pointerId: 2, pointerType: 'touch' })
+    fireEvent.pointerMove(routeList, { clientX: 120, pointerId: 2, pointerType: 'touch' })
+    fireEvent.pointerUp(routeList, { clientX: 120, pointerId: 2, pointerType: 'touch' })
+    expect(routeList.scrollLeft).toBe(0)
   })
 })

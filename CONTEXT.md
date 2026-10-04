@@ -9,7 +9,8 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 - **Journey**: A complete, continuous ordered sequence of journey legs from an origin to a destination.
 - **Journey leg**: One part of a journey using one travel mode, such as walking or an internal shuttle.
 - **Recommended journey**: The best valid journey under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable.
-- **Trip endpoint**: A resolved journey origin or destination, identified by a stable venue or shuttle-stop reference and its coordinates.
+- **Trip endpoint**: A resolved journey origin or destination, identified by a stable venue or shuttle-stop reference, or by frozen coordinates for Current location.
+- **Current location**: A trip endpoint that snapshots the coordinates of an active valid device-location fix. It keeps those coordinates after the device location moves and has no venue or stop identifier.
 - **Walking connection**: A directed, validated walking path between two trip endpoints or shuttle stops, with travel distance and duration. A connection used as a journey leg also has route geometry.
 - **Transfer**: A change from one shuttle boarding to another within a journey. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 

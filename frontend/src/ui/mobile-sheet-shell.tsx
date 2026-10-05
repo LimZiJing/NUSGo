@@ -73,7 +73,7 @@ export function MobileSheetShell({
   return (
     <section
       {...sectionProps}
-      className={className}
+      className={`mobile-sheet ${className}`}
       data-mobile-sheet
       data-expanded={isExpanded}
       data-detent={detent}

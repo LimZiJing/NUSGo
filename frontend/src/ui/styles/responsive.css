@@ -90,7 +90,7 @@
 
   .trip-controls-body {
     min-height: 0;
-    max-height: max(0px, calc(var(--mobile-sheet-max-height) - 112px));
+    max-height: max(0px, calc(var(--mobile-sheet-max-height)));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;

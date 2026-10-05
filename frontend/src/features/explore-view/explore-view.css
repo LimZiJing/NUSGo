@@ -1,14 +1,12 @@
 .explore-view {
   display: grid;
   gap: 10px;
-  width: auto;
-  max-height: min(66vh, calc(100vh - 36px));
-  padding: 12px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
-  border-radius: var(--radius-panel);
   color: var(--text-primary);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
   pointer-events: auto;
@@ -474,17 +472,11 @@
 @media (max-width: 768px) {
   .explore-view {
     width: 100%;
+    height: 100%;
     min-height: 0;
     align-content: start;
     grid-auto-rows: max-content;
     gap: 14px;
-    padding: 8px max(16px, env(safe-area-inset-right))
-      16px
-      max(16px, env(safe-area-inset-left));
-    border: 1px solid var(--border-subtle);
-    border-bottom: 0;
-    background: var(--surface-overlay-strong);
-    box-shadow: var(--shadow-sheet);
   }
 
   .explore-view-header {
@@ -504,14 +496,10 @@
   .explore-view-shuttle {
     display: flex;
     flex-direction: column;
+    height: 100%;
     overflow: hidden;
   }
 
-  .mobile-sheet[data-detent='partial'] .explore-view-shuttle {
-    height: var(--mobile-sheet-max-height);
-  }
-
-  .explore-view-shuttle .mobile-sheet-handle-row,
   .explore-view-shuttle .explore-view-header,
   .explore-view-shuttle .route-chip-list,
   .explore-view-shuttle .route-timeline-count,
@@ -551,11 +539,6 @@
     max-height: none;
   }
 
-  [data-mobile-sheet-measuring='partial'] .explore-view-shuttle,
-  [data-mobile-sheet-measuring='full'] .explore-view-shuttle {
-    min-height: var(--mobile-sheet-max-height);
-  }
-
   [data-mobile-sheet-measuring='partial'] .explore-view-shuttle .explore-view-content,
   [data-mobile-sheet-measuring='full'] .explore-view-shuttle .explore-view-content,
   [data-mobile-sheet-dragging] .explore-view-shuttle .explore-view-content,
@@ -578,11 +561,6 @@
   [data-mobile-sheet-settling='partial'] .explore-view-shuttle .route-timeline-card,
   [data-mobile-sheet-settling='full'] .explore-view-shuttle .route-timeline-card {
     display: flex !important;
-  }
-
-  [data-mobile-sheet][data-mobile-sheet-dragging='true'].explore-view {
-    padding-right: max(16px, env(safe-area-inset-right)) !important;
-    padding-left: max(16px, env(safe-area-inset-left)) !important;
   }
 
   .explore-view-venue-detail .explore-view-header {
@@ -747,19 +725,16 @@
 
 @media (min-width: 769px) {
   .navigation-column .explore-view {
-    position: static;
-    inset: auto;
     display: grid;
     align-content: start;
     width: 100%;
     height: 100%;
-    max-height: none;
     min-height: 0;
-    overflow-y: auto;
-    padding: 16px;
+    overflow: visible;
+    padding: 0;
     border: 0;
     border-radius: 0;
-    background: var(--surface-raised);
+    background: transparent;
     box-shadow: none;
   }
 
@@ -846,6 +821,17 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    color: var(--text-muted);
+    font: 600 16px/1.3 system-ui, sans-serif;
+  }
+
+  .navigation-column .explore-view-search-prompt svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
   }
 
   .navigation-column .mobile-sheet-handle-row {

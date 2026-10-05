@@ -11,7 +11,6 @@ import {
 import {
   ExploreView,
 } from '../features/explore-view/explore-view'
-import { getExploreShellClassName } from '../features/explore-view/explore-view-shell'
 import {
   StopsView,
   type StopSheetSelection,
@@ -258,7 +257,7 @@ function App() {
     isMobileViewportRef.current = isMobileViewport
   }, [isMobileViewport, navigation])
 
-  const prepareSheetTransition = useCallback((viewChange = false): void => {
+  const prepareSheetTransition = useCallback((viewChange = activeSheetDetent === 'collapsed'): void => {
     if (!isMobileViewport) return
     sheetAnimationCleanupRef.current?.()
     sheetAnimationCleanupRef.current = null
@@ -268,7 +267,7 @@ function App() {
     pendingSheetTransitionRef.current = sheet
       ? { startHeight, startBottom: Number.isFinite(startBottom) ? startBottom : 0, viewChange }
       : null
-  }, [getActiveMobileSheet, isMobileViewport])
+  }, [activeSheetDetent, getActiveMobileSheet, isMobileViewport])
 
   useLayoutEffect(() => {
     prepareSheetTransitionRef.current = () => prepareSheetTransition()
@@ -751,7 +750,7 @@ function App() {
         <div className="navigation-view-stack">
         <NavigationViewShell id="plan-panel" active={navigation.activeView === 'plan'}>
           <MobileSheetShell
-            className="plan-view"
+            className="plan-sheet"
             label="Plan trip panel"
             controlsId="plan-view-content"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
@@ -791,7 +790,7 @@ function App() {
         </NavigationViewShell>
         <NavigationViewShell id="explore-panel" active={navigation.activeView === 'explore'}>
           <MobileSheetShell
-            className={getExploreShellClassName(state.exploreView)}
+            className="explore-sheet"
             label="Explore panel"
             controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
@@ -878,7 +877,7 @@ function App() {
         </NavigationViewShell>
         <NavigationViewShell id="stops-panel" active={navigation.activeView === 'stops'}>
           <MobileSheetShell
-            className="stops-view"
+            className="stops-sheet"
             label="Stops panel"
             controlsId="stops-view-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}

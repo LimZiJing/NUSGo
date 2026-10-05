@@ -25,6 +25,7 @@ import { getRouteContrastTextColor } from '../../ui/route-color'
 import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
+import { getExploreShellClassName } from './explore-view-shell'
 
 interface FocusTarget {
   readonly element: HTMLElement | null
@@ -433,11 +434,12 @@ export function ExploreView({
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
 
   return (
-    <div
-      className="explore-view-focus-scope"
-      onFocusCapture={handlePanelFocusCapture}
-      onBlurCapture={handlePanelBlurCapture}
-    >
+    <div className={getExploreShellClassName(state)}>
+      <div
+        className="explore-view-focus-scope"
+        onFocusCapture={handlePanelFocusCapture}
+        onBlurCapture={handlePanelBlurCapture}
+      >
       <div className="explore-view-header">
         {exploreSegments && (
           <div
@@ -534,7 +536,17 @@ export function ExploreView({
               </ScrollArea>
             ) : (
               <div className="explore-view-search-prompt">
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  viewBox="0 0 32 32"
+                >
                   <circle cx="14" cy="14" r="8" />
                   <path d="m20 20 7 7" />
                 </svg>
@@ -670,6 +682,7 @@ export function ExploreView({
           {panelAnnouncement}
         </p>
       )}
+      </div>
     </div>
   )
 }

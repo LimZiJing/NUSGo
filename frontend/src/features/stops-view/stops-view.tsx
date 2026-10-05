@@ -68,11 +68,12 @@ export function StopsView({
   const oppositeStop = selectedStop?.oppositeStop ?? null
 
   return (
-    <div
-      id="stops-view-content"
-      className="mobile-sheet-content stops-view-content"
-      data-view={selectedStop ? 'selected' : 'overview'}
-    >
+    <div className="stops-view">
+      <div
+        id="stops-view-content"
+        className="mobile-sheet-content stops-view-content"
+        data-view={selectedStop ? 'selected' : 'overview'}
+      >
         {selectedStop ? (
           <div className="stop-selection" data-testid="stop-detail">
             <GhostBackButton label="Back to stops" onClick={onBackToStops} />
@@ -176,6 +177,7 @@ export function StopsView({
         ) : (
           <p>Tap a shuttle stop on the map to view its details and route actions.</p>
         )}
+      </div>
     </div>
   )
 }

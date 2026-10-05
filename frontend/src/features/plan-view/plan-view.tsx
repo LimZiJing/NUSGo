@@ -106,7 +106,7 @@ export function PlanView({
   }, [tripRequest])
 
   return (
-    <>
+    <div className="plan-view">
       <div className="plan-view-heading">
         <div className="plan-view-title">
           <h2>Plan trip</h2>
@@ -199,6 +199,6 @@ export function PlanView({
           referenceTimeMs={simulatedAtMs ?? journeyReferenceTimeMs}
         />
       </div>
-    </>
+    </div>
   )
 }

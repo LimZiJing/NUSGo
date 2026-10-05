@@ -1,4 +1,7 @@
 .stops-view {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   box-sizing: border-box;
 }
 
@@ -450,22 +453,14 @@
   .stops-view {
     display: flex;
     flex-direction: column;
+    height: 100%;
     gap: 14px;
     overflow: hidden;
     scrollbar-gutter: auto;
-    border: 1px solid var(--border-subtle);
-    border-bottom: 0;
     color: var(--text-primary);
-    background: var(--surface-overlay-panel);
-    box-shadow: var(--shadow-md);
     font: 14px/1.2 system-ui, sans-serif;
     box-sizing: border-box;
     pointer-events: auto;
-  }
-
-  .stops-view .mobile-sheet-handle-row {
-    flex-basis: 5px;
-    min-height: 0;
   }
 
   .stops-view .mobile-sheet-content {
@@ -478,32 +473,20 @@
     overflow: hidden;
   }
 
-  .mobile-sheet[data-detent='partial'] .stops-view {
-    height: var(--mobile-sheet-max-height);
-  }
-
-  /* Keep the Stops panel at its partial detent while the content list is short. */
-  [data-mobile-sheet-measuring='partial'] .stops-view,
-  [data-mobile-sheet-measuring='full'] .stops-view {
-    min-height: var(--mobile-sheet-max-height);
-  }
-
 }
 
 @media (min-width: 769px) {
   .navigation-column .stops-view {
-    position: static;
-    inset: auto;
     display: flex;
     width: 100%;
     height: 100%;
     max-height: none;
     min-height: 0;
     overflow: hidden;
-    padding: 16px;
+    padding: 0;
     border: 0;
     border-radius: 0;
-    background: var(--surface-raised);
+    background: transparent;
     box-shadow: none;
   }
 }

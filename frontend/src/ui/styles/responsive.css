@@ -75,19 +75,6 @@
     outline-offset: 2px;
   }
 
-  .trip-controls {
-    position: absolute;
-    z-index: 11;
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: var(--mobile-tab-bar-height);
-    width: auto;
-    max-height: var(--mobile-sheet-max-height);
-    overflow: hidden;
-    padding: 6px 8px 8px;
-  }
-
   .trip-controls-heading {
     min-height: var(--control-height-sm);
   }
@@ -119,6 +106,7 @@
     display: none;
   }
 
+  .trip-controls,
   .contextual-panel,
   .stops-view {
     position: absolute;

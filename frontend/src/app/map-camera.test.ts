@@ -14,9 +14,9 @@ function measurements(overrides: Partial<MapOverlayMeasurements> = {}): MapOverl
     viewportWidth: 390,
     viewportHeight: 844,
     tripCardHeight: 76,
-    contextualSheetHeight: 184,
+    activeSheetHeight: 184,
     tripCardVisible: true,
-    contextualSheetVisible: true,
+    activeSheetVisible: true,
     desktopNavigationWidth: 0,
     ...overrides,
   }
@@ -60,7 +60,7 @@ describe('map camera application seams', () => {
       viewportWidth: 568,
       viewportHeight: 320,
       tripCardHeight: 72,
-      contextualSheetHeight: 150,
+      activeSheetHeight: 150,
     }))).toEqual({
       top: 84,
       right: 12,

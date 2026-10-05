@@ -1,25 +1,25 @@
 import type { VenueSearchResult } from '../../domain/venue/search'
 
-export type ContextualPanelMode =
+export type ExploreViewMode =
   | 'neutral'
   | 'venue-search'
   | 'venue-detail'
   | 'shuttle'
 
-export interface ContextualPanelState {
-  readonly mode: ContextualPanelMode
+export interface ExploreViewState {
+  readonly mode: ExploreViewMode
   readonly query: string
   readonly selectedVenue: VenueSearchResult | null
-  readonly history: readonly ContextualPanelSnapshot[]
+  readonly history: readonly ExploreViewSnapshot[]
 }
 
-export interface ContextualPanelSnapshot {
-  readonly mode: ContextualPanelMode
+export interface ExploreViewSnapshot {
+  readonly mode: ExploreViewMode
   readonly query: string
   readonly selectedVenue: VenueSearchResult | null
 }
 
-export type ContextualPanelAction =
+export type ExploreViewAction =
   | { type: 'set-query'; query: string }
   | { type: 'select-venue'; result: VenueSearchResult }
   | { type: 'open-shuttle' }
@@ -28,7 +28,7 @@ export type ContextualPanelAction =
   | { type: 'close-to-root' }
   | { type: 'map-click' }
 
-export function createInitialContextualPanelState(): ContextualPanelState {
+export function createInitialExploreViewState(): ExploreViewState {
   return {
     mode: 'neutral',
     query: '',
@@ -37,7 +37,7 @@ export function createInitialContextualPanelState(): ContextualPanelState {
   }
 }
 
-function createSnapshot(state: ContextualPanelState): ContextualPanelSnapshot {
+function createSnapshot(state: ExploreViewState): ExploreViewSnapshot {
   return {
     mode: state.mode,
     query: state.query,
@@ -46,16 +46,16 @@ function createSnapshot(state: ContextualPanelState): ContextualPanelSnapshot {
 }
 
 function pushCurrentState(
-  state: ContextualPanelState,
-  next: ContextualPanelSnapshot,
-): ContextualPanelState {
+  state: ExploreViewState,
+  next: ExploreViewSnapshot,
+): ExploreViewState {
   return {
     ...next,
     history: [...state.history, createSnapshot(state)],
   }
 }
 
-function closePanel(state: ContextualPanelState): ContextualPanelState {
+function closePanel(state: ExploreViewState): ExploreViewState {
   return {
     mode: 'neutral',
     query: state.query,
@@ -64,7 +64,7 @@ function closePanel(state: ContextualPanelState): ContextualPanelState {
   }
 }
 
-function goBack(state: ContextualPanelState): ContextualPanelState {
+function goBack(state: ExploreViewState): ExploreViewState {
   const previous = state.history.at(-1)
   if (!previous) return closePanel(state)
 
@@ -74,10 +74,10 @@ function goBack(state: ContextualPanelState): ContextualPanelState {
   }
 }
 
-export function contextualPanelReducer(
-  state: ContextualPanelState,
-  action: ContextualPanelAction,
-): ContextualPanelState {
+export function exploreViewReducer(
+  state: ExploreViewState,
+  action: ExploreViewAction,
+): ExploreViewState {
   switch (action.type) {
     case 'set-query':
       return { ...state, query: action.query }

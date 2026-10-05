@@ -1,4 +1,4 @@
-import type { ContextualPanelSnapshot, ContextualPanelState } from '../features/contextual-panel/state'
+import type { ExploreViewSnapshot, ExploreViewState } from '../features/explore-view/state'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'
@@ -14,7 +14,7 @@ function snapshotVenueResult(result: VenueSearchResult | null): VenueSearchResul
   return result === null ? null : freeze({ code: result.code, venue: result.venue })
 }
 
-function snapshotPanelSnapshot(snapshot: ContextualPanelSnapshot): ContextualPanelSnapshot {
+function snapshotPanelSnapshot(snapshot: ExploreViewSnapshot): ExploreViewSnapshot {
   return freeze({
     mode: snapshot.mode,
     query: snapshot.query,
@@ -22,7 +22,7 @@ function snapshotPanelSnapshot(snapshot: ContextualPanelSnapshot): ContextualPan
   })
 }
 
-function snapshotContextualPanel(panel: ContextualPanelState): ContextualPanelState {
+function snapshotExploreView(panel: ExploreViewState): ExploreViewState {
   return freeze({
     mode: panel.mode,
     query: panel.query,
@@ -117,7 +117,7 @@ function snapshotStartupFailure(
 export function freezeNavigationSessionSnapshot(state: NavigationSessionState): NavigationSessionState {
   return freeze({
     ...state,
-    contextualPanel: snapshotContextualPanel(state.contextualPanel),
+    exploreView: snapshotExploreView(state.exploreView),
     tripRequest: snapshotTripRequest(state.tripRequest),
     journey: snapshotJourneyState(state.journey),
     location: snapshotLocationState(state.location),

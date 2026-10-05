@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ExploreView } from './explore-view'
-import { createInitialContextualPanelState } from './state'
+import { createInitialExploreViewState } from './state'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -13,7 +13,7 @@ const venues: VenueLocationMap = {
 }
 
 function renderPanel(
-  state = createInitialContextualPanelState(),
+  state = createInitialExploreViewState(),
   venueData: VenueLocationMap | null = venues,
   mobileSheet = true,
 ) {
@@ -33,18 +33,18 @@ function renderPanel(
   )
 }
 
-describe('ContextualPanel', () => {
+describe('ExploreView', () => {
   it('starts on the mobile Find venue segment', () => {
     const markup = renderPanel()
 
     expect(markup).toContain('Find venue</button>')
     expect(markup).toContain('>Shuttle routes</button>')
-    expect(markup).toContain('id="contextual-venue-search-input"')
+    expect(markup).toContain('id="explore-venue-search-input"')
     expect(markup).not.toContain('Browse shuttle routes')
   })
 
   it('uses the shared Explore segments on desktop', () => {
-    const markup = renderPanel(createInitialContextualPanelState(), venues, false)
+    const markup = renderPanel(createInitialExploreViewState(), venues, false)
 
     expect(markup).toContain('explore-segments')
     expect(markup).toContain('Find venue</button>')
@@ -53,11 +53,11 @@ describe('ContextualPanel', () => {
   })
 
   it('shows venue search without a route shortcut', () => {
-    const markup = renderPanel({ ...createInitialContextualPanelState(), mode: 'venue-search' })
+    const markup = renderPanel({ ...createInitialExploreViewState(), mode: 'venue-search' })
 
-    expect(markup).toContain('id="contextual-venue-search-input"')
+    expect(markup).toContain('id="explore-venue-search-input"')
     expect(markup).toContain('>Find a venue</h2>')
-    expect(markup).toContain('aria-labelledby="contextual-panel-heading"')
+    expect(markup).toContain('aria-labelledby="explore-view-heading"')
     expect(markup).toContain('Search for a venue')
     expect(markup).toContain('>Shuttle routes</button>')
     expect(markup).not.toContain('ghost-back-button')
@@ -66,7 +66,7 @@ describe('ContextualPanel', () => {
 
   it('shows venue details without rendering a map popup', () => {
     const state = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'venue-detail' as const,
       selectedVenue: {
         code: 'COM1-0210',
@@ -75,7 +75,7 @@ describe('ContextualPanel', () => {
     }
     const markup = renderPanel(state)
 
-    expect(markup).toContain('id="contextual-venue-detail-heading"')
+    expect(markup).toContain('id="explore-venue-detail-heading"')
     expect(markup).toContain('>COM1-0210</h3>')
     expect(markup).toContain('<p class="venue-detail-name">Computing 1, Level 2</p>')
     expect(markup).toContain('Floor 2 · Computing 1')
@@ -92,7 +92,7 @@ describe('ContextualPanel', () => {
 
   it('labels the detail return control from its previous context', () => {
     const state = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'venue-detail' as const,
       selectedVenue: {
         code: 'COM1-0210',
@@ -112,7 +112,7 @@ describe('ContextualPanel', () => {
 
   it('uses shared venue detail navigation actions', () => {
     const state = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'venue-detail' as const,
       selectedVenue: {
         code: 'COM1-0210',
@@ -130,7 +130,7 @@ describe('ContextualPanel', () => {
   })
 
   it('keeps shuttle mode available when venue data fails', () => {
-    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const state = { ...createInitialExploreViewState(), mode: 'shuttle' as const }
     const markup = renderPanel(state, null)
 
     expect(markup).toContain('Shuttle routes')
@@ -138,7 +138,7 @@ describe('ContextualPanel', () => {
   })
 
   it('leaves shuttle route announcements to the route control', () => {
-    const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+    const state = { ...createInitialExploreViewState(), mode: 'shuttle' as const }
     const markup = renderPanel(state)
 
     expect(markup).not.toContain('Shuttle routes opened.')
@@ -147,7 +147,7 @@ describe('ContextualPanel', () => {
 
   it('keeps the panel available when venue search throws', () => {
     const malformedVenues = { broken: null } as unknown as typeof venues
-    const state = { ...createInitialContextualPanelState(), mode: 'venue-search' as const, query: 'broken' }
+    const state = { ...createInitialExploreViewState(), mode: 'venue-search' as const, query: 'broken' }
 
     expect(() => renderPanel(state, malformedVenues)).not.toThrow()
     expect(renderPanel(state, malformedVenues)).toContain(

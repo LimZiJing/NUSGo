@@ -1,7 +1,7 @@
-import type { PanelStatus } from '../features/contextual-panel/status'
+import type { PanelStatus } from '../features/explore-view/status'
 import type { ResourceStatusState } from './resource-status'
 
-export function deriveContextualPanelStatus(
+export function deriveExploreViewStatus(
   resourceStatus: ResourceStatusState,
   mapError: string | null,
   startupFailure: { readonly message: string } | null,

@@ -11,7 +11,7 @@ export function createVenueMarker(
 ): VenueMarker | null {
   if (!venue.location) return null
 
-  // The contextual panel is the canonical venue detail surface, so this marker
+  // The explore panel is the canonical venue detail surface, so this marker
   // deliberately has no popup that could duplicate the panel.
   const marker = new Marker({ color: '#64748b' })
     // Venue data stores x/y as longitude/latitude.

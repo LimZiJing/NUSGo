@@ -141,6 +141,11 @@
   stroke-width: 1.8;
 }
 
+.location-control-icon circle:last-of-type {
+  fill: var(--text-secondary);
+  stroke: none;
+}
+
 .location-control-chip-searching {
   cursor: wait;
   animation: location-control-pulse 1.4s ease-in-out infinite;

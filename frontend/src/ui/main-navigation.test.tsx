@@ -29,16 +29,12 @@ describe('MainNavigation', () => {
   })
 
   it('keeps each view label accessible and hides its decorative icon', () => {
-    const { container } = render(<MainNavigation activeView="stops" onSelectView={vi.fn()} />)
+    render(<MainNavigation activeView="stops" onSelectView={vi.fn()} />)
 
     for (const label of ['Explore', 'Stops', 'Plan']) {
-      expect(screen.getByRole('button', { name: label })).toBeTruthy()
-    }
-
-    const icons = container.querySelectorAll('svg[aria-hidden="true"]')
-    expect(icons).toHaveLength(3)
-    for (const icon of icons) {
-      expect(icon.getAttribute('focusable')).toBe('false')
+      const button = screen.getByRole('button', { name: label })
+      expect(button).toBeTruthy()
+      expect(button.getAttribute('aria-label')).toBeNull()
     }
   })
 

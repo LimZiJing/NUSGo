@@ -45,14 +45,13 @@ export function MobileSheetShell({
   const handleRef = useRef<HTMLButtonElement>(null)
   const previousDetentRef = useRef(detent)
   const previousEnabledRef = useRef(enabled)
-  const isExpanded = detent !== 'collapsed'
 
   useEffect(() => {
     const wasExpanded = previousDetentRef.current !== 'collapsed'
     previousDetentRef.current = detent
     if (!enabled || !wasExpanded || detent !== 'collapsed') return
 
-    const content = internalShellRef.current?.querySelector('[data-mobile-sheet-content]')
+    const content = internalShellRef.current?.querySelector('.mobile-sheet-content')
     if (content?.contains(document.activeElement)) handleRef.current?.focus()
   }, [detent, enabled])
 
@@ -61,7 +60,7 @@ export function MobileSheetShell({
     previousEnabledRef.current = enabled
     if (!wasEnabled || enabled || document.activeElement !== handleRef.current) return
 
-    const content = internalShellRef.current?.querySelector('[data-mobile-sheet-content]')
+    const content = internalShellRef.current?.querySelector('.mobile-sheet-content')
     const target = content?.querySelector<HTMLElement>(
       'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])',
     )
@@ -75,7 +74,6 @@ export function MobileSheetShell({
       {...sectionProps}
       className={`mobile-sheet ${className}`}
       data-mobile-sheet
-      data-expanded={isExpanded}
       data-detent={detent}
       ref={internalShellRef}
     >

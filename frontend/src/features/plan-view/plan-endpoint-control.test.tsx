@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { TripEndpointControl, PlanView } from './plan-view'
+import { PlanView } from './plan-view'
+import { PlanEndpointControl } from './plan-endpoint-control'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '../../domain/transit/types'
@@ -29,10 +30,10 @@ const transitNetwork = createValidTransitNetwork()
 transitNetwork.stops = [stops[0], transitNetwork.stops[1]]
 const networkIndex = createTransitIndex(transitNetwork)
 
-describe('TripEndpointControl', () => {
+describe('PlanEndpointControl', () => {
   it('shows the selected endpoint and a stable ID for a destination', () => {
     const markup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="destination"
         endpoint={{ kind: 'stop', id: 'STOP-A' }}
         venues={venues}
@@ -52,7 +53,7 @@ describe('TripEndpointControl', () => {
 
   it('shows Current location without fabricating an endpoint identifier', () => {
     const markup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="origin"
         endpoint={{
           kind: 'current-location',
@@ -74,7 +75,7 @@ describe('TripEndpointControl', () => {
 
   it('uses the shared location search model and shows stable venue and stop IDs', () => {
     const venueMarkup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="origin"
         endpoint={null}
         venues={venues}
@@ -86,7 +87,7 @@ describe('TripEndpointControl', () => {
       />,
     )
     const stopMarkup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="origin"
         endpoint={null}
         venues={venues}
@@ -105,7 +106,7 @@ describe('TripEndpointControl', () => {
 
   it('announces that location data is still loading when search data is unavailable', () => {
     const markup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="origin"
         endpoint={null}
         venues={null}
@@ -122,7 +123,7 @@ describe('TripEndpointControl', () => {
 
   it('searches stops and resolves a stop label when venue data is unavailable', () => {
     const markup = renderToStaticMarkup(
-      <TripEndpointControl
+      <PlanEndpointControl
         role="origin"
         endpoint={{ kind: 'stop', id: 'STOP-A' }}
         venues={null}
@@ -141,7 +142,7 @@ describe('TripEndpointControl', () => {
   })
 })
 
-describe('TripEndpointControls Journey result', () => {
+describe('Plan view Journey result', () => {
   it('shows the selected Journey inside the existing Plan trip experience', () => {
     const journey: Journey = {
       origin: { kind: 'venue', id: 'COM1-0210' },

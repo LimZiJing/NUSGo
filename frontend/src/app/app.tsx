@@ -11,27 +11,26 @@ import {
 import {
   ExploreView,
 } from '../features/explore-view/explore-view'
-import { getExploreShellClassName } from '../features/explore-view/explore-view-shell'
 import {
   StopsView,
   type StopSheetSelection,
-} from '../features/shuttle-browsing/stops-view'
-import { getStopSheetSelection } from '../features/shuttle-browsing/stops-view-state'
+} from '../features/stops-view/stops-view'
+import { getStopSheetSelection } from '../features/stops-view/stops-view-state'
 import {
   getStopsOverview,
   getStopsWithinNearbyRadius,
-} from '../features/shuttle-browsing/stops-overview'
-import { useStopsView } from '../features/shuttle-browsing/use-stops-view'
-import { useStopsArrivals } from '../features/shuttle-browsing/use-stops-arrivals'
+} from '../features/stops-view/stops-overview'
+import { useStopsView } from '../features/stops-view/use-stops-view'
+import { useStopsArrivals } from '../features/stops-view/use-stops-arrivals'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MainNavigation } from '../ui/main-navigation'
-import { DesktopColumnShell } from '../ui/desktop-column-shell'
+import { NavigationViewShell } from '../ui/navigation-view-shell'
 import { MobileSheetShell } from '../ui/mobile-sheet-shell'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { getMobileSheetHeights, getMobileTabBarInset } from '../ui/mobile-sheet-layout'
-import { PlanView } from '../features/trip-endpoints/plan-view'
-import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
+import { PlanView } from '../features/plan-view/plan-view'
+import { ExploreRouteBrowser } from '../features/explore-view/explore-route-browser'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,
@@ -61,7 +60,7 @@ import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-servi
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { LocationTrackingState } from '../domain/location/types'
-import { useStopsServiceWindows } from '../features/shuttle-browsing/use-stops-service-windows'
+import { useStopsServiceWindows } from '../features/stops-view/use-stops-service-windows'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
 import { JourneyTestTimeControl } from '../ui/journey-test-time-control'
@@ -258,7 +257,7 @@ function App() {
     isMobileViewportRef.current = isMobileViewport
   }, [isMobileViewport, navigation])
 
-  const prepareSheetTransition = useCallback((viewChange = false): void => {
+  const prepareSheetTransition = useCallback((viewChange = activeSheetDetent === 'collapsed'): void => {
     if (!isMobileViewport) return
     sheetAnimationCleanupRef.current?.()
     sheetAnimationCleanupRef.current = null
@@ -268,7 +267,7 @@ function App() {
     pendingSheetTransitionRef.current = sheet
       ? { startHeight, startBottom: Number.isFinite(startBottom) ? startBottom : 0, viewChange }
       : null
-  }, [getActiveMobileSheet, isMobileViewport])
+  }, [activeSheetDetent, getActiveMobileSheet, isMobileViewport])
 
   useLayoutEffect(() => {
     prepareSheetTransitionRef.current = () => prepareSheetTransition()
@@ -472,7 +471,7 @@ function App() {
     if (!focusTripControlAfterOverlayRef.current) return
     focusTripControlAfterOverlayRef.current = false
     const focusTarget = tripControlsRef.current?.querySelector<HTMLElement>(
-      '.trip-controls-body input:not([disabled]), .trip-controls-body select:not([disabled]), .trip-controls-body textarea:not([disabled]), .mobile-sheet-handle',
+      '.plan-view-content input:not([disabled]), .plan-view-content select:not([disabled]), .plan-view-content textarea:not([disabled]), .mobile-sheet-handle',
     )
     focusTarget?.focus()
   }, [isMobileViewport, navigation.sheets.plan.detent])
@@ -749,11 +748,11 @@ function App() {
         ref={navigationColumnRef}
       >
         <div className="navigation-view-stack">
-        <DesktopColumnShell id="plan-panel" active={navigation.activeView === 'plan'}>
+        <NavigationViewShell id="plan-panel" active={navigation.activeView === 'plan'}>
           <MobileSheetShell
-            className={`trip-controls${!isMobileViewport || navigation.sheets.plan.detent !== 'collapsed' ? ' trip-controls-expanded' : ' trip-controls-collapsed'}`}
+            className="plan-sheet"
             label="Plan trip panel"
-            controlsId="trip-controls-panel-content"
+            controlsId="plan-view-content"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.plan.lastNonCollapsedDetent}
             enabled={isMobileViewport}
@@ -771,7 +770,6 @@ function App() {
               tripRequest={state.tripRequest}
               venues={state.venues}
               networkIndex={state.transitIndex}
-              expanded={!isMobileViewport || navigation.sheets.plan.detent !== 'collapsed'}
               onSwap={commands.swapTripEndpoints}
               onSelectOriginEndpoint={commands.selectOriginEndpoint}
               onClearOriginEndpoint={commands.clearOriginEndpoint}
@@ -789,13 +787,10 @@ function App() {
               onSearchResult={() => selectMobileSearchResult('plan')}
             />
           </MobileSheetShell>
-        </DesktopColumnShell>
-        <DesktopColumnShell id="explore-panel" active={navigation.activeView === 'explore'}>
+        </NavigationViewShell>
+        <NavigationViewShell id="explore-panel" active={navigation.activeView === 'explore'}>
           <MobileSheetShell
-            className={getExploreShellClassName(
-              state.exploreView,
-              isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
-            )}
+            className="explore-sheet"
             label="Explore panel"
             controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
@@ -810,7 +805,6 @@ function App() {
             })}
             sectionProps={{
               'aria-labelledby': 'explore-view-heading',
-              'data-minimized': isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
             }}
             shellRef={exploreViewRef}
           >
@@ -820,7 +814,7 @@ function App() {
               transitIndex={state.transitIndex}
               shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
               renderShuttleRoutes={(options) => (
-                <ShuttleRouteControl
+                <ExploreRouteBrowser
                   network={state.transitIndex?.network ?? null}
                   networkIndex={state.transitIndex}
                   selectedRouteId={state.selectedRouteId}
@@ -830,7 +824,7 @@ function App() {
                 />
               )}
               selectedRouteId={state.selectedRouteId}
-              minimized={isMobileViewport && navigation.sheets.explore.detent === 'collapsed'}
+              sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
               mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
               onRestore={() => dispatchNavigation({
@@ -880,10 +874,10 @@ function App() {
               onDismissMapPopup={commands.dismissMapPopup}
             />
           </MobileSheetShell>
-        </DesktopColumnShell>
-        <DesktopColumnShell id="stops-panel" active={navigation.activeView === 'stops'}>
+        </NavigationViewShell>
+        <NavigationViewShell id="stops-panel" active={navigation.activeView === 'stops'}>
           <MobileSheetShell
-            className="stops-view"
+            className="stops-sheet"
             label="Stops panel"
             controlsId="stops-view-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
@@ -900,7 +894,6 @@ function App() {
             shellRef={stopsSheetRef}
           >
             <StopsView
-              expanded={!isMobileViewport || navigation.sheets.stops.detent !== 'collapsed'}
               selectedStop={stopSelection}
               overviewStops={overviewStops}
               overviewLoading={!transitIndex || (stopsView.list === 'nearby' && !mapCenter)}
@@ -941,7 +934,7 @@ function App() {
               }}
             />
           </MobileSheetShell>
-        </DesktopColumnShell>
+        </NavigationViewShell>
         </div>
         <MainNavigation
           activeView={navigation.activeView}

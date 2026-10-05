@@ -4,7 +4,7 @@ import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { Journey } from '../../domain/trip/journey'
 import { getJourneyTimelineEntries } from './journey-result-presentation'
-import { TripJourneyResult } from './trip-journey-result'
+import { JourneyResult } from './journey-result'
 
 const network = createValidTransitNetwork()
 network.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B']
@@ -74,7 +74,7 @@ function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
   }
 
   return renderToStaticMarkup(
-    <TripJourneyResult
+    <JourneyResult
       state={{
         status: 'ready',
         journey: {
@@ -97,10 +97,10 @@ function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
   )
 }
 
-describe('TripJourneyResult', () => {
+describe('JourneyResult', () => {
   it('shows the estimated Journey totals and ordered walking and shuttle details', () => {
     const markup = renderToStaticMarkup(
-      <TripJourneyResult
+      <JourneyResult
         state={{ status: 'ready', journey, error: null }}
         venues={venues}
         networkIndex={networkIndex}
@@ -114,12 +114,12 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('2.6 km')
     expect(markup).toContain('Arrive 08:10')
     expect(markup).toContain('Walk')
-    expect(markup).toContain('trip-journey-walking-icon')
+    expect(markup).toContain('journey-walking-icon')
     expect(markup).toContain(`>${route.name}<`)
-    expect(markup).toContain('trip-journey-bus-icon')
-    expect(markup).toContain('trip-journey-disclosure-chevron')
+    expect(markup).toContain('journey-bus-icon')
+    expect(markup).toContain('journey-disclosure-chevron')
     expect(markup).toContain(`aria-label="${route.name}, show bus stops"`)
-    expect(markup).toContain('trip-journey-stop-marker')
+    expect(markup).toContain('journey-stop-marker')
     expect(markup).toContain('>MID</span>')
     expect(markup).not.toContain('Middle Stop')
     expect(markup).toContain(`--journey-route-color:${route.color}`)
@@ -157,7 +157,7 @@ describe('TripJourneyResult', () => {
 
   it('explains when the Journey was selected within a search budget', () => {
     const markup = renderToStaticMarkup(
-      <TripJourneyResult
+      <JourneyResult
         state={{
           status: 'ready',
           journey: { ...journey, planningQuality: 'bounded' },
@@ -174,7 +174,7 @@ describe('TripJourneyResult', () => {
 
   it('leaves the detailed simulation notice to PlanView', () => {
     const markup = renderToStaticMarkup(
-      <TripJourneyResult
+      <JourneyResult
         state={{ status: 'ready', journey, error: null }}
         venues={venues}
         networkIndex={networkIndex}
@@ -203,7 +203,7 @@ describe('TripJourneyResult', () => {
     ['failed', 'Journey calculation is unavailable right now'],
   ] as const)('announces the %s state', (status, message) => {
     const markup = renderToStaticMarkup(
-      <TripJourneyResult
+      <JourneyResult
         state={{ status, journey: null, error: status === 'failed' ? 'Unable to plan journey' : null }}
         venues={venues}
         networkIndex={networkIndex}

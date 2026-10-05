@@ -27,7 +27,7 @@ const venues: VenueLocationMap = {
   },
 }
 
-function TestShuttleRouteControl({
+function TestExploreRouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
@@ -123,16 +123,15 @@ function PanelHarness({
 
   return (
     <section
-      className={getExploreShellClassName(state, minimized)}
+      className={getExploreShellClassName(state)}
       aria-labelledby="explore-view-heading"
-      data-minimized={minimized}
     >
       <ExploreView
         state={state}
         venues={venues}
         shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
         renderShuttleRoutes={(options) => (
-          <TestShuttleRouteControl
+          <TestExploreRouteBrowser
             network={network}
             networkIndex={networkIndex}
             selectedRouteId={selectedRouteId}
@@ -142,7 +141,7 @@ function PanelHarness({
           />
         )}
         mobileSheet={mobileSheet}
-        minimized={minimized}
+        sheetDetent={minimized ? 'collapsed' : 'partial'}
         active={active}
         status={status}
         onQueryChange={(query) => dispatch({ type: 'set-query', query })}
@@ -222,7 +221,7 @@ describe('ExploreView accessibility workflows', () => {
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
     const exploreView = screen.getByRole('group', { name: 'Explore view' })
     expect(exploreView).toBeTruthy()
-    expect(exploreView.hasAttribute('data-mobile-sheet-content')).toBe(true)
+    expect(screen.getByRole('region', { name: 'Find a venue' }).querySelector('.mobile-sheet-content')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()

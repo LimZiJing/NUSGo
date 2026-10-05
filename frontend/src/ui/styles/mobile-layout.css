@@ -1,0 +1,117 @@
+.main-navigation,
+.stops-view {
+  display: none;
+}
+@media (max-width: 768px) {
+  .map-shell {
+    position: fixed;
+    top: var(--mobile-viewport-offset-top, 0px);
+    left: 0;
+    width: 100%;
+    height: var(--mobile-viewport-height, 100dvh);
+    min-height: var(--mobile-viewport-height, 100svh);
+    overflow: hidden;
+    --mobile-tab-bar-pill-height: 56px;
+    --mobile-tab-bar-height: calc(
+      var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
+    );
+    --mobile-sheet-collapsed-height: 44px;
+    --mobile-sheet-max-height: max(0px, calc(60% - var(--mobile-tab-bar-height)));
+    --mobile-sheet-min-height: min(200px, var(--mobile-sheet-max-height));
+  }
+
+  .map-shell::after {
+    position: absolute;
+    z-index: 13;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: var(--mobile-tab-bar-height);
+    background: var(--surface-raised);
+    content: '';
+    pointer-events: none;
+  }
+
+  .map-overlay-right {
+    display: contents;
+    pointer-events: none;
+  }
+
+  .map-overlay-right > * {
+    pointer-events: auto;
+  }
+
+  .map-overlay-right > [hidden] {
+    display: none !important;
+  }
+
+  .map-control-stack {
+    display: contents;
+  }
+
+  .map-legend {
+    display: none;
+  }
+
+  .location-control {
+    position: absolute;
+    z-index: 13;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px));
+    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+    pointer-events: auto;
+  }
+
+  .location-control-chip {
+    min-height: var(--control-height-lg);
+  }
+
+  .location-control-chip:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .main-navigation {
+    position: absolute;
+    z-index: 16;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: max(16px, env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    height: var(--mobile-tab-bar-pill-height);
+    padding: 6px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-lg);
+    box-sizing: border-box;
+  }
+
+  .main-navigation button {
+    min-height: var(--control-height-sm);
+  }
+
+  .map .maplibregl-ctrl-top-right,
+  .map .maplibregl-ctrl-bottom-right,
+  .map .maplibregl-ctrl-bottom-left {
+    z-index: 9;
+  }
+
+  .map .maplibregl-ctrl-top-right {
+    display: none;
+  }
+
+  .map .maplibregl-ctrl-bottom-right,
+  .map .maplibregl-ctrl-bottom-left {
+    bottom: max(12px, var(--map-overlay-bottom-inset, 0px));
+  }
+
+  .map .maplibregl-ctrl-bottom-right {
+    bottom: max(2px, var(--map-overlay-bottom-inset, 0px));
+    right: max(12px, env(safe-area-inset-right));
+  }
+
+  .map .maplibregl-ctrl-bottom-left {
+    left: max(12px, env(safe-area-inset-left));
+  }
+}

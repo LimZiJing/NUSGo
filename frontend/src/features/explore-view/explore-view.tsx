@@ -22,8 +22,10 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
+import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
+import { getExploreShellClassName } from './explore-view-shell'
 
 interface FocusTarget {
   readonly element: HTMLElement | null
@@ -54,7 +56,7 @@ interface ExploreViewProps {
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
   renderShuttleRoutes: (options: ShuttleRouteRenderOptions) => ReactNode
-  minimized?: boolean
+  sheetDetent?: MobileSheetDetent
   mobileSheet?: boolean
   active?: boolean
   onRestore?: () => void
@@ -83,8 +85,8 @@ function getPanelHeading(state: ExploreViewState): string {
 }
 
 function findFocusTarget(key: string): HTMLElement | undefined {
-  return Array.from(document.querySelectorAll<HTMLElement>('[data-explore-focus-id]'))
-    .find((element) => element.dataset.exploreFocusId === key)
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-focus-id]'))
+    .find((element) => element.dataset.focusId === key)
 }
 
 function getPanelAnnouncement(state: ExploreViewState): string | null {
@@ -110,7 +112,7 @@ export function ExploreView({
   transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
-  minimized = false,
+  sheetDetent = 'partial',
   mobileSheet = true,
   active = true,
   onRestore,
@@ -130,6 +132,7 @@ export function ExploreView({
   onSearchCancel,
   onSearchResult,
 }: ExploreViewProps) {
+  const minimized = sheetDetent === 'collapsed'
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -348,7 +351,7 @@ export function ExploreView({
   ): void => {
     focusHistoryRef.current.push({
       element: event.currentTarget,
-      key: event.currentTarget.dataset.exploreFocusId ?? null,
+      key: event.currentTarget.dataset.focusId ?? null,
       fallbackKey,
     })
   }
@@ -431,22 +434,22 @@ export function ExploreView({
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
 
   return (
-    <div
-      className="explore-view-focus-scope"
-      onFocusCapture={handlePanelFocusCapture}
-      onBlurCapture={handlePanelBlurCapture}
-    >
+    <div className={getExploreShellClassName(state)}>
+      <div
+        className="explore-view-focus-scope"
+        onFocusCapture={handlePanelFocusCapture}
+        onBlurCapture={handlePanelBlurCapture}
+      >
       <div className="explore-view-header">
         {exploreSegments && (
           <div
             className="explore-segments"
             role="group"
             aria-label="Explore view"
-            data-mobile-sheet-content
           >
             <button
               type="button"
-              data-explore-focus-id="explore-venue-segment"
+              data-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
               onClick={handleSelectVenueSearch}
             >
@@ -454,7 +457,7 @@ export function ExploreView({
             </button>
             <button
               type="button"
-              data-explore-focus-id="explore-shuttle-segment"
+              data-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectShuttle}
             >
@@ -507,7 +510,7 @@ export function ExploreView({
               </button>
             )}
           </div>
-          <div className="explore-view-search-body" data-mobile-sheet-content>
+          <div className="mobile-sheet-content explore-view-search-body">
             {venues === null || searchState.failed ? (
               <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
@@ -518,7 +521,7 @@ export function ExploreView({
                   searchState.results.map((result) => (
                     <button
                       className="explore-view-result"
-                      data-explore-focus-id={`venue-result-${result.code}`}
+                      data-focus-id={`venue-result-${result.code}`}
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
@@ -533,7 +536,17 @@ export function ExploreView({
               </ScrollArea>
             ) : (
               <div className="explore-view-search-prompt">
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  viewBox="0 0 32 32"
+                >
                   <circle cx="14" cy="14" r="8" />
                   <path d="m20 20 7 7" />
                 </svg>
@@ -547,8 +560,7 @@ export function ExploreView({
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
           id="explore-view-content"
-          className="explore-view-content explore-view-detail"
-          data-mobile-sheet-content
+          className="mobile-sheet-content explore-view-content explore-view-detail"
         >
           <div className="venue-detail-identity">
             <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
@@ -638,8 +650,7 @@ export function ExploreView({
       {state.mode === 'shuttle' && (
         <div
           id="explore-view-content"
-          className="explore-view-content"
-          data-mobile-sheet-content
+          className="mobile-sheet-content explore-view-content"
         >
           {renderShuttleRoutes({
             firstRouteCardRef,
@@ -649,8 +660,7 @@ export function ExploreView({
       )}
       {panelStatus && (
         <p
-          className={`explore-view-status explore-view-status-${panelStatus.kind}`}
-          data-mobile-sheet-content={mobileSheet && panelStatus.kind === 'success' ? '' : undefined}
+          className={`mobile-sheet-content explore-view-status explore-view-status-${panelStatus.kind}`}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"
@@ -672,6 +682,7 @@ export function ExploreView({
           {panelAnnouncement}
         </p>
       )}
+      </div>
     </div>
   )
 }

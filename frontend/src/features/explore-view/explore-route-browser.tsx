@@ -14,7 +14,7 @@ import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
 
-interface ShuttleRouteControlProps {
+interface ExploreRouteBrowserProps {
   network: TransitNetwork | null
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
@@ -49,14 +49,14 @@ function getRouteStops(
   )
 }
 
-export function ShuttleRouteControl({
+export function ExploreRouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
   onRouteSelect,
   firstRouteCardRef,
   onFocusStop,
-}: ShuttleRouteControlProps) {
+}: ExploreRouteBrowserProps) {
   const selectedChipRef = useRef<HTMLButtonElement>(null)
   const routeListRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{
@@ -299,7 +299,7 @@ export function ShuttleRouteControl({
         </div>
       )}
       {selectedRoute ? (
-        <div className="route-timeline-card" data-mobile-sheet-content style={{ '--route-color': selectedRoute.color } as CSSProperties}>
+        <div className="mobile-sheet-content route-timeline-card" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
           <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
           <ScrollArea className="route-timeline-scroll">
             <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>

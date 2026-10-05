@@ -6,8 +6,8 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session.
 - `frontend/src/domain` owns pure transit, venue, location, and trip types, validation, lookup indexes, and domain transformations.
-- `frontend/src/features` owns user workflows such as the Explore view, shuttle browsing, and trip endpoints, including their workflow state and intent commands.
-- `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and desktop/mobile presentation seams.
+- `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
+- `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
 
 `frontend/public/data` remains the canonical checked-in data source. Infrastructure loaders parse external data as `unknown`, validate it, and return only validated domain data.
@@ -45,7 +45,7 @@ The diagram describes allowed ownership and dependency direction; it does not re
 
 - Feature modules own workflow state such as search queries, selections, and commands. UI modules may own only transient presentation state that has no domain meaning.
 - UI callbacks express user intent and are passed down from the owning feature or app controller. UI components do not perform network, MapLibre, DOM, or controller side effects directly.
-- Keep the domain model, feature state, and commands shared across desktop and mobile. Use separate UI seams only when layout, focus management, scrolling, or interaction order changes materially; keep viewport-specific presentation and responsive styles in `frontend/src/ui`.
+- Keep the domain model, feature state, and commands shared across desktop and mobile. Use separate UI seams only when layout, focus management, scrolling, or interaction order changes materially. Keep feature-specific responsive rules beside the owning feature; keep reusable navigation, sheet, and layout rules in `frontend/src/ui/styles`.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
 ## Migration map and order
@@ -56,7 +56,11 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: pure transit
 | --- | --- |
 | Pure transit types, validation, and geometry in `frontend/src/types` and `frontend/src/transit/`, including `frontend/src/transit/overlap.ts` and pure validation embedded in `frontend/src/transit/render.ts`, plus `frontend/src/venue`, `frontend/src/location`, `frontend/src/trip`, and pure Explore view state | `frontend/src/domain` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
+| Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
+| Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops-view` |
+| Trip endpoints and Journey presentation | `frontend/src/features/plan-view` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
+| Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |
 | `frontend/src/app/app.tsx` and composition in `frontend/src/main.tsx` | `frontend/src/app` |
 

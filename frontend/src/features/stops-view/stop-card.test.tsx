@@ -3,7 +3,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BusStopCard } from './bus-stop-card'
+import { StopCard } from './stop-card'
 
 afterEach(cleanup)
 
@@ -23,13 +23,13 @@ const cardProps = {
   ],
 }
 
-describe('BusStopCard', () => {
+describe('StopCard', () => {
   it('exposes separate title-bar, favourite, and route actions', async () => {
     const user = userEvent.setup()
     const onToggleExpanded = vi.fn()
     const onToggleFavorite = vi.fn()
     const onSelectRoute = vi.fn()
-    render(<BusStopCard
+    render(<StopCard
       {...cardProps}
       onToggleExpanded={onToggleExpanded}
       onToggleFavorite={onToggleFavorite}
@@ -53,7 +53,7 @@ describe('BusStopCard', () => {
   })
 
   it('keeps closed route controls inert and hides the LIVE pill', () => {
-    const { container } = render(<BusStopCard
+    const { container } = render(<StopCard
       {...cardProps}
       expanded={false}
       favorite
@@ -67,14 +67,14 @@ describe('BusStopCard', () => {
       .toBe('false')
     expect(screen.getByRole('button', { name: 'Remove Central Library from favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
-    expect(container.querySelector('.bus-stop-card-timings')?.hasAttribute('inert')).toBe(true)
+    expect(container.querySelector('.stop-card-timings')?.hasAttribute('inert')).toBe(true)
     expect(screen.queryByText('LIVE')).toBeNull()
     expect(screen.queryByText('320m')).toBeNull()
     expect(screen.queryByRole('button', { name: 'View A1 route details' })).toBeNull()
   })
 
   it('hides the LIVE pill when live arrivals are unavailable', () => {
-    render(<BusStopCard
+    render(<StopCard
       {...cardProps}
       expanded
       live={false}

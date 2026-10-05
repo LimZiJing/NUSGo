@@ -26,7 +26,6 @@ describe('StopsView', () => {
   it('orders stop identity, destination action, routes, public services and departures', () => {
     const { container } = render(
       <StopsView
-        expanded
         selectedStop={selectedStop}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
@@ -62,7 +61,6 @@ describe('StopsView', () => {
     const onNavigateToStop = vi.fn()
     render(
       <StopsView
-        expanded
         selectedStop={selectedStop}
         onBackToStops={onBackToStops}
         onSelectOppositeStop={onSelectOppositeStop}

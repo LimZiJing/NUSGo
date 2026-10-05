@@ -1,18 +1,18 @@
-import { PublicServiceChip, RouteChip } from './route-chip'
-import { FavoriteStarIcon } from './favorite-star-icon'
+import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
+import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
 
-export interface BusStopFavoriteDestination {
+export interface StopFavoriteDestination {
   readonly id: string
   readonly name: string
   readonly isOpposite: boolean
 }
 
-export interface BusStopDeparture {
+export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
-  readonly reachableFavoriteStops?: readonly BusStopFavoriteDestination[]
+  readonly reachableFavoriteStops?: readonly StopFavoriteDestination[]
 }
 
 export interface PublicServiceTiming {
@@ -21,7 +21,7 @@ export interface PublicServiceTiming {
   readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
 }
 
-export interface BusStopScheduledDeparture {
+export interface StopScheduledDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
@@ -57,15 +57,15 @@ function publicTimingMessage(status: PublicServiceTiming['status']): string {
   }
 }
 
-export function BusStopTimings({
+export function StopTimings({
   departures,
   scheduledDepartures = [],
   liveArrivalMessage = null,
   publicServices,
   onSelectRoute,
 }: {
-  readonly departures: readonly BusStopDeparture[]
-  readonly scheduledDepartures?: readonly BusStopScheduledDeparture[]
+  readonly departures: readonly StopDeparture[]
+  readonly scheduledDepartures?: readonly StopScheduledDeparture[]
   readonly liveArrivalMessage?: string | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void

@@ -60,7 +60,7 @@ function renderHandle(
   render(
     <>
       <section aria-label="Stops panel" data-mobile-sheet data-detent={detent}>
-        <div id="stops-content" data-mobile-sheet-content hidden={detent === 'collapsed'}>
+        <div id="stops-content" className="mobile-sheet-content" hidden={detent === 'collapsed'}>
           Stops content
         </div>
         <div className="mobile-sheet-handle-row">
@@ -101,7 +101,7 @@ describe('MobileSheetHandle', () => {
       const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
       return (
         <section aria-label="Stops panel" data-mobile-sheet data-detent={detent}>
-          <div id="stops-content" data-mobile-sheet-content hidden={detent === 'collapsed'}>
+          <div id="stops-content" className="mobile-sheet-content" hidden={detent === 'collapsed'}>
             Stops content
           </div>
           <div className="mobile-sheet-handle-row">
@@ -142,7 +142,7 @@ describe('MobileSheetHandle', () => {
       const [detent, setDetent] = useState<MobileSheetDetent>('partial')
       return (
         <section aria-label="Stops panel" data-mobile-sheet data-detent={detent}>
-          <div id="stops-content" data-mobile-sheet-content hidden={detent === 'collapsed'}>
+          <div id="stops-content" className="mobile-sheet-content" hidden={detent === 'collapsed'}>
             Stops content
           </div>
           <div className="mobile-sheet-handle-row">
@@ -192,7 +192,7 @@ describe('MobileSheetHandle', () => {
 
   it('restores hidden content and sizing constraints when a collapsed drag is cancelled', () => {
     const { button, panel } = renderHandle('collapsed')
-    const content = panel.querySelector<HTMLElement>('[data-mobile-sheet-content]')
+    const content = panel.querySelector<HTMLElement>('.mobile-sheet-content')
 
     firePointer(button, 'pointerdown', { pointerId: 5, clientY: 300 })
     expect(content?.hasAttribute('hidden')).toBe(false)
@@ -213,9 +213,9 @@ describe('MobileSheetHandle', () => {
       const [detent, setDetent] = useState<MobileSheetDetent>('partial')
       return (
         <section aria-label={`${label} panel`} data-mobile-sheet data-detent={detent}>
-          <div id={`${label}-content`} data-mobile-sheet-content>
+          <div id={`${label}-content`} className="mobile-sheet-content">
             {label} content
-            <div data-mobile-sheet-content hidden data-testid="independently-hidden-content">
+            <div className="mobile-sheet-content" hidden data-testid="independently-hidden-content">
               Hidden nested content
             </div>
           </div>
@@ -233,7 +233,7 @@ describe('MobileSheetHandle', () => {
 
     render(<Harness />)
     const panel = screen.getByRole('region', { name: `${label} panel` })
-    const content = panel.querySelector<HTMLElement>('[data-mobile-sheet-content]')
+    const content = panel.querySelector<HTMLElement>('.mobile-sheet-content')
     const independentlyHidden = screen.getByTestId('independently-hidden-content')
     const button = screen.getByRole('button', { name: `Expand ${label} panel` })
     vi.spyOn(panel, 'getBoundingClientRect').mockImplementation(() => {

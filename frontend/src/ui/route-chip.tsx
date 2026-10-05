@@ -34,7 +34,7 @@ export function RouteChip({
       className="route-chip"
       type="button"
       data-route-id={routeId}
-      data-explore-focus-id={focusId}
+      data-focus-id={focusId}
       data-active={active ? 'true' : undefined}
       data-size={size}
       style={{

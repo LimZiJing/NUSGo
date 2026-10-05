@@ -1,42 +1,38 @@
-.trip-controls {
+.plan-view {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   gap: 8px;
-  max-height: min(66vh, calc(100vh - 36px));
-  padding: 10px;
-  overflow-y: auto;
-  border-radius: var(--radius-panel);
   color: var(--text-primary);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-panel);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
 }
-
-.trip-controls-heading,
-.trip-endpoint-heading {
+.plan-view-heading,
+.plan-endpoint-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.trip-controls-title {
+.plan-view-title {
   min-width: 0;
 }
 
-.trip-controls-body {
+.plan-view-content {
   display: grid;
   gap: 8px;
 }
 
-.trip-controls-heading h2 {
+.plan-view-heading h2 {
   margin: 0;
   color: var(--text-primary);
   font: 600 18px/1.2 system-ui, sans-serif;
 }
 
-.trip-controls-heading button,
-.trip-clear-both {
+.plan-view-heading button,
+.plan-view-clear-all {
   padding: 5px 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
@@ -46,12 +42,12 @@
   cursor: pointer;
 }
 
-.trip-controls button:disabled {
+.plan-view button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.trip-controls-swap {
+.plan-view-swap {
   display: grid;
   width: var(--control-height-sm);
   height: var(--control-height-sm);
@@ -59,7 +55,7 @@
   place-items: center;
 }
 
-.trip-controls-swap svg {
+.plan-view-swap svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -69,7 +65,7 @@
   stroke-width: 2;
 }
 
-.trip-endpoint-picker {
+.plan-endpoint-picker {
   position: relative;
   display: grid;
   gap: 6px;
@@ -80,7 +76,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.trip-endpoint-picker::before {
+.plan-endpoint-picker::before {
   position: absolute;
   top: 26px;
   bottom: 26px;
@@ -89,7 +85,7 @@
   content: '';
 }
 
-.trip-endpoint-control {
+.plan-endpoint-control {
   position: relative;
   z-index: 1;
   display: grid;
@@ -102,7 +98,7 @@
   background: transparent;
 }
 
-.trip-endpoint-marker {
+.plan-endpoint-marker {
   width: 12px;
   height: 12px;
   margin: 14px 6px 0;
@@ -112,27 +108,27 @@
   box-sizing: border-box;
 }
 
-.trip-endpoint-control-origin .trip-endpoint-marker {
+.plan-endpoint-control-origin .plan-endpoint-marker {
   background: var(--status-marker-origin);
 }
 
-.trip-endpoint-control-destination .trip-endpoint-marker {
+.plan-endpoint-control-destination .plan-endpoint-marker {
   background: var(--status-marker-destination);
 }
 
-.trip-endpoint-field {
+.plan-endpoint-field {
   min-width: 0;
 }
 
-.trip-endpoint-input-row {
+.plan-endpoint-input-row {
   position: relative;
 }
 
-.trip-endpoint-control .search-field-icon {
+.plan-endpoint-control .search-field-icon {
   display: none;
 }
 
-.trip-endpoint-control .search-field input {
+.plan-endpoint-control .search-field input {
   min-height: var(--control-height-md);
   padding: 8px 86px 8px 10px;
   border: 1px solid var(--border-subtle);
@@ -142,17 +138,17 @@
   font: inherit;
 }
 
-.trip-endpoint-control .search-field input:focus {
+.plan-endpoint-control .search-field input:focus {
   border-color: var(--border-focus);
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
 }
 
-.trip-endpoint-control .search-field input::placeholder {
+.plan-endpoint-control .search-field input::placeholder {
   color: var(--text-muted);
 }
 
-.trip-endpoint-actions {
+.plan-endpoint-actions {
   position: absolute;
   top: 50%;
   right: 6px;
@@ -162,8 +158,8 @@
   transform: translateY(-50%);
 }
 
-.trip-endpoint-location,
-.trip-endpoint-clear {
+.plan-endpoint-location,
+.plan-endpoint-clear {
   display: grid;
   width: var(--control-height-sm);
   height: var(--control-height-sm);
@@ -176,16 +172,16 @@
   cursor: pointer;
 }
 
-.trip-endpoint-location:hover,
-.trip-endpoint-location:focus-visible,
-.trip-endpoint-clear:hover,
-.trip-endpoint-clear:focus-visible {
+.plan-endpoint-location:hover,
+.plan-endpoint-location:focus-visible,
+.plan-endpoint-clear:hover,
+.plan-endpoint-clear:focus-visible {
   color: var(--text-primary);
   background: var(--surface-control);
 }
 
-.trip-endpoint-location svg,
-.trip-endpoint-clear svg {
+.plan-endpoint-location svg,
+.plan-endpoint-clear svg {
   width: 15px;
   height: 15px;
   fill: none;
@@ -194,19 +190,19 @@
   stroke-width: 2;
 }
 
-.trip-endpoint-location-status {
+.plan-endpoint-location-status {
   margin: 4px 0 0;
   color: var(--text-warning);
   font-size: 12px;
   line-height: 1.25;
 }
 
-.trip-endpoint-search-status,
-.trip-validation {
+.plan-endpoint-search-status,
+.plan-validation {
   margin: 0;
 }
 
-.trip-controls-footer {
+.plan-view-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -214,7 +210,7 @@
   min-height: var(--control-height-sm);
 }
 
-.trip-controls-actions {
+.plan-view-actions {
   /* Keep the actions at the right edge even when no validation message is present. */
   grid-column: 2;
   display: flex;
@@ -222,7 +218,7 @@
   gap: 6px;
 }
 
-.trip-plan-submit {
+.plan-view-submit {
   min-height: var(--control-height-sm);
   padding: 5px 10px;
   border: 1px solid var(--accent);
@@ -233,12 +229,12 @@
   cursor: pointer;
 }
 
-.trip-plan-submit:not(:disabled):hover,
-.trip-plan-submit:not(:disabled):focus-visible {
+.plan-view-submit:not(:disabled):hover,
+.plan-view-submit:not(:disabled):focus-visible {
   background: var(--accent-hover);
 }
 
-.trip-endpoint-results {
+.plan-endpoint-results {
   display: grid;
   gap: 4px;
   max-height: 180px;
@@ -250,7 +246,7 @@
   box-shadow: var(--shadow-results);
 }
 
-.trip-endpoint-result {
+.plan-endpoint-result {
   display: grid;
   gap: 2px;
   padding: 8px;
@@ -263,26 +259,26 @@
   cursor: pointer;
 }
 
-.trip-endpoint-result:focus-visible {
+.plan-endpoint-result:focus-visible {
   background: var(--surface-muted);
 }
 
-.trip-endpoint-result:hover {
+.plan-endpoint-result:hover {
   border-color: var(--border-focus);
 }
 
-.trip-endpoint-result span {
+.plan-endpoint-result span {
   color: var(--text-secondary);
   font-size: 13px;
 }
 
-.trip-endpoint-empty {
+.plan-endpoint-empty {
   margin: 4px 0;
   padding: 4px;
   color: var(--text-secondary);
 }
 
-.trip-clear-both {
+.plan-view-clear-all {
   flex: 0 0 auto;
   min-height: var(--control-height-sm);
   border-color: transparent;
@@ -290,13 +286,13 @@
   background: transparent;
 }
 
-.trip-clear-both:not(:disabled):hover,
-.trip-clear-both:not(:disabled):focus-visible {
+.plan-view-clear-all:not(:disabled):hover,
+.plan-view-clear-all:not(:disabled):focus-visible {
   border-color: var(--border-control);
   background: var(--surface-muted);
 }
 
-.trip-validation {
+.plan-validation {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -306,7 +302,7 @@
   line-height: 1.25;
 }
 
-.trip-validation::before {
+.plan-validation::before {
   display: grid;
   width: 16px;
   height: 16px;
@@ -319,7 +315,7 @@
   font-weight: 700;
 }
 
-.trip-journey-status {
+.journey-status {
   margin: 0;
   padding: 8px;
   border: 1px solid var(--border-control);
@@ -328,7 +324,7 @@
   background: var(--surface-muted);
 }
 
-.trip-journey-result {
+.journey-result {
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -337,7 +333,7 @@
   background: var(--surface-raised);
 }
 
-.trip-journey-result-heading {
+.journey-result-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: start;
@@ -345,7 +341,7 @@
   gap: 8px;
 }
 
-.trip-journey-result-title {
+.journey-result-title {
   display: grid;
   gap: 2px;
   justify-items: start;
@@ -353,7 +349,7 @@
   text-align: left;
 }
 
-.trip-journey-result h3 {
+.journey-result h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 15px;
@@ -362,38 +358,38 @@
   line-height: 1.2;
 }
 
-.trip-journey-metrics {
+.journey-metrics {
   display: grid;
   flex: 0 0 auto;
   gap: 2px;
   text-align: right;
 }
 
-.trip-journey-metrics strong {
+.journey-metrics strong {
   color: var(--accent);
   font-size: 18px;
   font-weight: 750;
 }
 
-.trip-journey-metrics span,
-.trip-journey-notice {
+.journey-metrics span,
+.journey-notice {
   color: var(--text-secondary);
   font-size: 12px;
 }
 
-.trip-journey-arrival {
+.journey-arrival {
   color: var(--status-success-strong) !important;
   font-weight: 650;
 }
 
-.trip-journey-notice {
+.journey-notice {
   margin: 0;
   padding: 6px 8px;
   border-left: 3px solid var(--status-warning-strong);
   background: var(--surface-warning);
 }
 
-.trip-journey-timeline {
+.journey-timeline {
   position: relative;
   display: grid;
   gap: 0;
@@ -403,7 +399,7 @@
 }
 
 /* One shared rail keeps the journey continuous while markers vary by entry type. */
-.trip-journey-timeline::before {
+.journey-timeline::before {
   position: absolute;
   top: 10px;
   bottom: 10px;
@@ -413,7 +409,7 @@
   content: '';
 }
 
-.trip-journey-timeline-item {
+.journey-timeline-item {
   position: relative;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
@@ -423,7 +419,7 @@
   padding: 4px 0;
 }
 
-.trip-journey-timeline-marker {
+.journey-timeline-marker {
   z-index: 1;
   display: block;
   width: 14px;
@@ -437,7 +433,7 @@
   box-shadow: 0 0 0 1px var(--border-control);
 }
 
-.trip-journey-timeline-content {
+.journey-timeline-content {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -446,28 +442,28 @@
   min-width: 0;
 }
 
-.trip-journey-timeline-location strong,
-.trip-journey-timeline-content strong {
+.journey-timeline-location strong,
+.journey-timeline-content strong {
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 650;
   line-height: 1.35;
 }
 
-.trip-journey-timeline-location strong {
+.journey-timeline-location strong {
   justify-self: start;
   max-width: 100%;
   text-align: left;
 }
 
-.trip-journey-timeline-content span {
+.journey-timeline-content span {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
-.trip-journey-timeline-leg .trip-journey-timeline-marker {
+.journey-timeline-leg .journey-timeline-marker {
   width: 10px;
   height: 10px;
   margin-left: 4px;
@@ -475,31 +471,31 @@
   background: var(--surface-muted);
 }
 
-.trip-journey-timeline-shuttle {
+.journey-timeline-shuttle {
   align-items: start;
 }
 
-.trip-journey-timeline-shuttle .trip-journey-timeline-marker {
+.journey-timeline-shuttle .journey-timeline-marker {
   margin-top: 5px;
 }
 
 /* The app shell centers text by default; keep the expanded route anchored to the rail. */
-.trip-journey-shuttle-content {
+.journey-shuttle-content {
   text-align: left;
 }
 
 /* The stop dots replace the parent shuttle dot while the route details are open. */
-.trip-journey-timeline-shuttle:has(.trip-journey-stop-disclosure[open]) > .trip-journey-timeline-marker {
+.journey-timeline-shuttle:has(.journey-stop-disclosure[open]) > .journey-timeline-marker {
   visibility: hidden;
 }
 
-.trip-journey-timeline-walking .trip-journey-timeline-marker {
+.journey-timeline-walking .journey-timeline-marker {
   /* Keep the shared rail visually continuous through the walking leg marker. */
   background: var(--border-control);
   box-shadow: none;
 }
 
-.trip-journey-timeline-content .trip-journey-mode-label {
+.journey-timeline-content .journey-mode-label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -508,26 +504,26 @@
   font-weight: 650;
 }
 
-.trip-journey-shuttle-content {
+.journey-shuttle-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 4px 10px;
 }
 
-.trip-journey-walking-content {
+.journey-walking-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 4px 10px;
 }
 
-.trip-journey-walking-content > .trip-journey-mode-label {
+.journey-walking-content > .journey-mode-label {
   grid-column: 1;
   justify-self: start;
 }
 
-.trip-journey-walking-content > .trip-journey-leg-summary {
+.journey-walking-content > .journey-leg-summary {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
@@ -536,18 +532,18 @@
   white-space: nowrap;
 }
 
-.trip-journey-shuttle-content > .trip-journey-route-chip,
-.trip-journey-shuttle-content > .trip-journey-stop-disclosure {
+.journey-shuttle-content > .journey-route-chip,
+.journey-shuttle-content > .journey-stop-disclosure {
   grid-column: 1;
   justify-self: start;
   min-width: 0;
 }
 
-.trip-journey-shuttle-content > .trip-journey-stop-disclosure[open] {
+.journey-shuttle-content > .journey-stop-disclosure[open] {
   width: 100%;
 }
 
-.trip-journey-shuttle-content > .trip-journey-leg-summary {
+.journey-shuttle-content > .journey-leg-summary {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
@@ -556,7 +552,7 @@
   white-space: nowrap;
 }
 
-.trip-journey-mode-icon {
+.journey-mode-icon {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
@@ -567,16 +563,16 @@
   stroke-width: 1.8;
 }
 
-.trip-journey-walking-icon {
+.journey-walking-icon {
   fill: currentColor;
   stroke: none;
 }
 
-.trip-journey-timeline-shuttle .trip-journey-timeline-marker {
+.journey-timeline-shuttle .journey-timeline-marker {
   background: var(--journey-route-color, var(--status-info));
 }
 
-.trip-journey-route-chip {
+.journey-route-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -589,25 +585,25 @@
   letter-spacing: 0.01em;
 }
 
-.trip-journey-stop-disclosure {
+.journey-stop-disclosure {
   min-width: 0;
 }
 
-.trip-journey-stop-disclosure summary {
+.journey-stop-disclosure summary {
   cursor: pointer;
   list-style: none;
 }
 
-.trip-journey-stop-disclosure summary::-webkit-details-marker {
+.journey-stop-disclosure summary::-webkit-details-marker {
   display: none;
 }
 
-.trip-journey-stop-disclosure summary:focus-visible {
+.journey-stop-disclosure summary:focus-visible {
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 2px;
 }
 
-.trip-journey-disclosure-chevron {
+.journey-disclosure-chevron {
   width: 6px;
   height: 6px;
   margin-left: 2px;
@@ -617,11 +613,11 @@
   transition: transform 120ms ease-out;
 }
 
-.trip-journey-stop-disclosure[open] .trip-journey-disclosure-chevron {
+.journey-stop-disclosure[open] .journey-disclosure-chevron {
   transform: rotate(225deg) translate(-1px, -1px);
 }
 
-.trip-journey-stop-list {
+.journey-stop-list {
   display: grid;
   gap: 0;
   /* Pull the nested list back over the content column so its dots sit on the rail. */
@@ -631,7 +627,7 @@
   text-align: left;
 }
 
-.trip-journey-stop-list li {
+.journey-stop-list li {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
@@ -643,7 +639,7 @@
   line-height: 1.3;
 }
 
-.trip-journey-stop-marker {
+.journey-stop-marker {
   width: 10px;
   height: 10px;
   margin-left: 4px;
@@ -655,12 +651,80 @@
 }
 
 @media (max-width: 480px) {
-  .trip-journey-timeline-content:not(.trip-journey-shuttle-content):not(.trip-journey-walking-content) {
+  .journey-timeline-content:not(.journey-shuttle-content):not(.journey-walking-content) {
     display: grid;
     gap: 1px;
   }
 
-  .trip-journey-timeline-content span {
+  .journey-timeline-content span {
     font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .plan-view {
+    height: 100%;
+  }
+
+  .plan-view-heading {
+    min-height: var(--control-height-sm);
+  }
+
+  .plan-view-title {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .plan-view-title h2 {
+    font-size: 16px;
+  }
+
+  .plan-view-content {
+    min-height: 0;
+    max-height: var(--mobile-sheet-max-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .plan-view button,
+  .plan-view input,
+  .plan-view select {
+    min-height: var(--control-height-sm);
+  }
+
+  .mobile-sheet[data-detent='partial'] .plan-view,
+  .mobile-sheet[data-detent='full'] .plan-view {
+    align-content: start;
+  }
+
+  .mobile-sheet[data-detent='full'] .plan-view-content,
+  [data-mobile-sheet-measuring='full'] .plan-view-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+}
+
+@media (min-width: 769px) {
+  .navigation-column .plan-view {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .navigation-column .plan-view-content {
+    max-height: none;
+    overflow: visible;
   }
 }

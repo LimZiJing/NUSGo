@@ -36,7 +36,7 @@ The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 v
 
 ## Desktop — 1440 × 900
 
-- [ ] The map, trip endpoint controls, and contextual panel are visible without overlap.
+- [ ] The map, trip endpoint controls, and Explore view are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
 - [ ] Shuttle browsing, route selection, route clearing, stop popups, and camera fitting work.
@@ -108,7 +108,7 @@ Codex Chrome DevTools, local Vite app, mobile/touch emulation:
 - The Map views navigation exposed Explore, Stops, and Plan. Tab switching restored the collapsed Explore sheet and expanded Stops/Plan sheets. The Kent Ridge MRT marker stayed at (189, 344) across the switches.
 - Pressing Tab moved focus to Plan and showed the 3px visible focus outline while Stops remained the selected view.
 - At 390 × 500, used as a software-keyboard viewport approximation, the pill stayed 16px above the viewport bottom and the Plan origin field remained visible above it. The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised; a physical safe-area device and real software keyboard were unavailable.
-- At 769px, the mobile bar was hidden and the desktop contextual panel remained visible.
+- At 769px, the mobile bar was hidden and the desktop Explore view remained visible.
 
 ## Issue #151 navigation refinement — 2026-09-29
 
@@ -120,7 +120,7 @@ Codex Chrome DevTools, local Vite app, mobile/touch emulation:
 - Before the later handle-row revert, the compact Stops handle measured y=372–416px while the pill began at y=428px. The handle geometry was not remeasured after that revert.
 - Stable map insets matched the active sheet height plus the 72px navigation reservation and existing 12px margin. The map remained visible above the active sheet and did not show through the bottom band.
 - Keyboard Tab moved focus from Explore to Stops and displayed the 3px focus outline with a 2px offset. Enter activated the focused tab. Collapsing each sheet, switching away, and returning retained each tab’s compact state.
-- At 769px, the mobile bar and band were hidden, the desktop contextual panel remained visible, and the map bottom inset was 0px.
+- At 769px, the mobile bar and band were hidden, the desktop Explore view remained visible, and the map bottom inset was 0px.
 - The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised. The 390 × 500 viewport approximated reduced space but did not open a real software keyboard; a physical safe-area device was unavailable.
 
 ## Issue #117 targeted verification — 2026-09-25
@@ -130,7 +130,7 @@ This recorded pass predates the shared grab handle and documents the previous mo
 Codex In-App Browser (Chromium-based), local Vite app, mobile/touch emulation:
 
 - At 390 × 844, the shared map and persistent Explore / Stops / Plan tabs rendered. Explore and Stops started compact, Plan started expanded, and switching away from an expanded Stops sheet restored it when returning.
-- Stops and Plan sheets expanded/collapsed using visible controls. With a stop popup open over a compact Stops sheet, Escape closed the popup and left the sheet compact; with the sheet expanded, Escape closed the popup first and a second Escape compacted the sheet. In Plan, Escape first cleared endpoint search results. Explore root Escape compacted the sheet and restored focus to Show contextual panel.
+- Stops and Plan sheets expanded/collapsed using visible controls. With a stop popup open over a compact Stops sheet, Escape closed the popup and left the sheet compact; with the sheet expanded, Escape closed the popup first and a second Escape compacted the sheet. In Plan, Escape first cleared endpoint search results. Explore root Escape compacted the sheet and restored focus to Show Explore panel.
 - At 390 × 844, the Plan content scrolled independently to Clear both endpoints. A DOM hit test inside the sheet resolved to the sheet, while an uncovered point resolved to the map.
 - With origin COM1-0201 and destination KR-MRT selected in Plan, switching to Stops and back retained both endpoints. The Kent Ridge stop marker stayed at the same screen position (189, 344) across the tab switch, providing a direct camera-preservation check.
 - At widths 768px and 769px, the mobile tab bar changed from visible to hidden at the breakpoint. At 568 × 320 landscape, the Plan panel remained above the tab bar, its body scrolled independently to expose the origin input, and the document had no overflow.
@@ -143,7 +143,7 @@ Local Chromium, Vite app from the feature branch:
 
 - At 390 × 844, Explore and Stops started compact and Plan started expanded. Each handle measured 44 × 44px, each sheet toggled, and switching tabs restored the independent Explore, Stops, and Plan states.
 - Explore expanded by touch and snapped between compact and expanded when dragged up and down. Stops and Plan handles also toggled by touch in dedicated browser passes. Plan kept Swap visible; its body scrolled independently (290px viewport, 444px content) without being clipped by the sheet, and an uncovered map point remained hit-testable.
-- At 768px, mobile tabs and handles remained visible. At 769px, mobile tabs and handles were hidden and the desktop contextual panel returned to static positioning.
+- At 768px, mobile tabs and handles remained visible. At 769px, mobile tabs and handles were hidden and the desktop Explore view returned to static positioning.
 - The component tests cover Enter and Space activation, cancelled drag restoration, and ignoring pointer gestures that start in sheet content.
 
 ## Mobile sheet elastic overdrag targeted verification — 2026-09-26

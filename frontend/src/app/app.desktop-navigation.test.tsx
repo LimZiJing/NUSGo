@@ -112,7 +112,7 @@ describe('desktop shared navigation shell', () => {
       ...createInitialNavigationSessionState(),
       transitIndex: createTransitIndex(createValidTransitNetwork()),
       venues: { COM1: venue },
-      contextualPanel: {
+      exploreView: {
         mode: 'venue-detail',
         query: '',
         selectedVenue: { code: 'COM1', venue },

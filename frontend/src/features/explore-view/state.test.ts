@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  contextualPanelReducer,
-  createInitialContextualPanelState,
+  exploreViewReducer,
+  createInitialExploreViewState,
 } from './state'
 import type { VenueSearchResult } from '../../domain/venue/search'
 
@@ -15,12 +15,12 @@ const selectedVenue: VenueSearchResult = {
 }
 
 function createVenueSearchState() {
-  return { ...createInitialContextualPanelState(), mode: 'venue-search' as const }
+  return { ...createInitialExploreViewState(), mode: 'venue-search' as const }
 }
 
-describe('contextualPanelReducer', () => {
+describe('exploreViewReducer', () => {
   it('starts at the Explore root', () => {
-    expect(createInitialContextualPanelState()).toMatchObject({
+    expect(createInitialExploreViewState()).toMatchObject({
       mode: 'neutral',
       query: '',
       selectedVenue: null,
@@ -28,7 +28,7 @@ describe('contextualPanelReducer', () => {
   })
 
   it('keeps the venue query when opening a venue detail view and going back', () => {
-    const searchState = contextualPanelReducer(
+    const searchState = exploreViewReducer(
       { ...createVenueSearchState(), query: 'COM1' },
       { type: 'select-venue', result: selectedVenue },
     )
@@ -38,7 +38,7 @@ describe('contextualPanelReducer', () => {
       selectedVenue,
       query: 'COM1',
     })
-    expect(contextualPanelReducer(searchState, { type: 'back' })).toMatchObject({
+    expect(exploreViewReducer(searchState, { type: 'back' })).toMatchObject({
       mode: 'venue-search',
       selectedVenue: null,
       query: 'COM1',
@@ -46,26 +46,26 @@ describe('contextualPanelReducer', () => {
   })
 
   it('returns to the previous context when entering shuttle mode', () => {
-    const detailState = contextualPanelReducer(
+    const detailState = exploreViewReducer(
       createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
-    const shuttleState = contextualPanelReducer(detailState, { type: 'open-shuttle' })
+    const shuttleState = exploreViewReducer(detailState, { type: 'open-shuttle' })
 
     expect(shuttleState.mode).toBe('shuttle')
-    expect(contextualPanelReducer(shuttleState, { type: 'back' })).toMatchObject({
+    expect(exploreViewReducer(shuttleState, { type: 'back' })).toMatchObject({
       mode: 'venue-detail',
       selectedVenue,
     })
   })
 
   it('escapes through history before closing to the neutral state', () => {
-    const detailState = contextualPanelReducer(
+    const detailState = exploreViewReducer(
       createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
-    const searchState = contextualPanelReducer(detailState, { type: 'escape' })
-    const neutralState = contextualPanelReducer(searchState, { type: 'escape' })
+    const searchState = exploreViewReducer(detailState, { type: 'escape' })
+    const neutralState = exploreViewReducer(searchState, { type: 'escape' })
 
     expect(searchState.mode).toBe('venue-search')
     expect(neutralState).toMatchObject({
@@ -76,12 +76,12 @@ describe('contextualPanelReducer', () => {
   })
 
   it('returns directly to the neutral state with close-to-root', () => {
-    const detailState = contextualPanelReducer(
+    const detailState = exploreViewReducer(
       { ...createVenueSearchState(), query: 'COM1' },
       { type: 'select-venue', result: selectedVenue },
     )
 
-    expect(contextualPanelReducer(detailState, { type: 'close-to-root' })).toMatchObject({
+    expect(exploreViewReducer(detailState, { type: 'close-to-root' })).toMatchObject({
       mode: 'neutral',
       query: 'COM1',
       selectedVenue,
@@ -90,20 +90,20 @@ describe('contextualPanelReducer', () => {
   })
 
   it('closes venue detail on an empty map click', () => {
-    const detailState = contextualPanelReducer(
+    const detailState = exploreViewReducer(
       createVenueSearchState(),
       { type: 'select-venue', result: selectedVenue },
     )
 
-    expect(contextualPanelReducer(detailState, { type: 'map-click' })).toMatchObject({
+    expect(exploreViewReducer(detailState, { type: 'map-click' })).toMatchObject({
       mode: 'neutral',
       selectedVenue: null,
     })
   })
 
   it('keeps shuttle browsing available when venue data is unavailable', () => {
-    const neutralState = createInitialContextualPanelState()
+    const neutralState = createInitialExploreViewState()
 
-    expect(contextualPanelReducer(neutralState, { type: 'open-shuttle' }).mode).toBe('shuttle')
+    expect(exploreViewReducer(neutralState, { type: 'open-shuttle' }).mode).toBe('shuttle')
   })
 })

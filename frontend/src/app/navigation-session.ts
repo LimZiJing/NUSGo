@@ -1,4 +1,4 @@
-import { createInitialContextualPanelState, type ContextualPanelState } from '../features/contextual-panel/state'
+import { createInitialExploreViewState, type ExploreViewState } from '../features/explore-view/state'
 import type { TransitIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import {
@@ -56,7 +56,7 @@ export interface NavigationSessionState {
   readonly selectedRouteId: string | null
   readonly selectedRouteColor: string | null
   readonly rememberedMobileRouteId: string | null
-  readonly contextualPanel: ContextualPanelState
+  readonly exploreView: ExploreViewState
   readonly tripRequest: TripRequest
   readonly journey: JourneyState
   readonly location: LocationTrackingState
@@ -114,7 +114,7 @@ export interface NavigationSession {
   clearTrip(): void
   planJourney(): void
   replanJourney(): void
-  setContextualPanelQuery(query: string): void
+  setExploreViewQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   reportStartupFailure(): void
   back(): void
@@ -139,7 +139,7 @@ export function createInitialNavigationSessionState(
     selectedRouteId: null,
     selectedRouteColor: null,
     rememberedMobileRouteId: null,
-    contextualPanel: createInitialContextualPanelState(),
+    exploreView: createInitialExploreViewState(),
     tripRequest: createEmptyTripRequest(),
     journey: createInitialJourneyState(),
     location,
@@ -522,9 +522,9 @@ export function createNavigationSession(
   const panelTransitions = createNavigationSessionPanelTransitions({
     isDisposed: () => disposed,
     enqueue: enqueueTransition,
-    getContextualPanel: () => state.contextualPanel,
+    getExploreView: () => state.exploreView,
     getVenues: () => state.venues,
-    setContextualPanel: (contextualPanel) => updateState({ contextualPanel }),
+    setExploreView: (exploreView) => updateState({ exploreView }),
     selectVenue: (venue) => dependencies.map.selectVenue(venue),
     clearVenue: () => dependencies.map.clearVenue(),
   })
@@ -817,7 +817,7 @@ export function createNavigationSession(
       })
     },
 
-    setContextualPanelQuery: panelTransitions.setContextualPanelQuery,
+    setExploreViewQuery: panelTransitions.setExploreViewQuery,
     selectVenue: panelTransitions.selectVenue,
     back: panelTransitions.back,
     escape: panelTransitions.escape,
@@ -849,8 +849,8 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         dependencies.map.resetView(getResetTarget({
-          panelMode: state.contextualPanel.mode,
-          selectedVenue: state.contextualPanel.selectedVenue,
+          panelMode: state.exploreView.mode,
+          selectedVenue: state.exploreView.selectedVenue,
           selectedRouteId: state.selectedRouteId,
           tripRequest: state.tripRequest,
           venues: state.venues,

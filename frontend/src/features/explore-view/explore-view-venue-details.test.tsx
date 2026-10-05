@@ -4,7 +4,7 @@ import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitNetworkInput } from '../../domain/transit/types'
 import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
-import { contextualPanelReducer, createInitialContextualPanelState } from './state'
+import { exploreViewReducer, createInitialExploreViewState } from './state'
 import { ExploreView } from './explore-view'
 
 const venue: VenueLocation = {
@@ -49,7 +49,7 @@ function createNearbyTransitIndex() {
 }
 
 function createVenueDetailState(code: string, selectedVenue: VenueLocation) {
-  return contextualPanelReducer(createInitialContextualPanelState(), {
+  return exploreViewReducer(createInitialExploreViewState(), {
     type: 'select-venue',
     result: { code, venue: selectedVenue },
   })
@@ -87,13 +87,13 @@ function renderVenueDetails({
   )
 }
 
-describe('ContextualPanel venue details', () => {
+describe('ExploreView venue details', () => {
   it('shows code-first venue identity, building, actions, and nearby stops in order', () => {
     const markup = renderVenueDetails()
 
     expect(markup).toContain('Nearby bus stops within 500 m')
-    expect(markup).toContain('<h3 id="contextual-venue-detail-heading"')
-    expect(markup).toMatch(/<h2 id="contextual-panel-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
+    expect(markup).toContain('<h3 id="explore-venue-detail-heading"')
+    expect(markup).toMatch(/<h2 id="explore-view-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
     expect(markup).toContain('>COM1-0212</h3>')
     expect(markup).toContain('<p class="venue-detail-name">Seminar Room 3</p>')
     expect(markup).not.toContain('(COM1-0212)')
@@ -102,7 +102,7 @@ describe('ContextualPanel venue details', () => {
     expect(markup).not.toContain('venue-detail-coordinates')
     expect(markup).not.toContain('venue-detail-pin-icon')
     expect(markup).not.toContain('1.300000, 103.770000')
-    expect(markup.indexOf('contextual-venue-detail-heading'))
+    expect(markup.indexOf('explore-venue-detail-heading'))
       .toBeLessThan(markup.indexOf('venue-detail-name'))
     expect(markup.indexOf('venue-detail-name'))
       .toBeLessThan(markup.indexOf('venue-detail-location'))

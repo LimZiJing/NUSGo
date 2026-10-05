@@ -184,7 +184,7 @@ describe('navigation session', () => {
       selectedRouteId: null,
       selectedRouteColor: null,
       rememberedMobileRouteId: null,
-      contextualPanel: {
+      exploreView: {
         mode: 'neutral',
         query: '',
         selectedVenue: null,
@@ -211,11 +211,11 @@ describe('navigation session', () => {
     const listener = vi.fn()
     const cleanup = session.subscribe(listener)
 
-    session.setContextualPanelQuery('COM1')
+    session.setExploreViewQuery('COM1')
     expect(listener).toHaveBeenCalledOnce()
 
     cleanup()
-    session.setContextualPanelQuery('STOP')
+    session.setExploreViewQuery('STOP')
     expect(listener).toHaveBeenCalledOnce()
   })
 
@@ -617,7 +617,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: 'A1',
       rememberedMobileRouteId: 'A1',
-      contextualPanel: { mode: 'shuttle' },
+      exploreView: { mode: 'shuttle' },
     })
 
     session.selectMobileRoute('A1')
@@ -637,7 +637,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: null,
       rememberedMobileRouteId: 'A1',
-      contextualPanel: { mode: 'shuttle' },
+      exploreView: { mode: 'shuttle' },
     })
     expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
       route: null,
@@ -650,7 +650,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: null,
       rememberedMobileRouteId: 'A1',
-      contextualPanel: { mode: 'neutral' },
+      exploreView: { mode: 'neutral' },
     })
   })
 
@@ -725,8 +725,8 @@ describe('navigation session', () => {
     expect(loadedState.transitIndex).toBe(dependencies.transit.index)
     expect(Object.isFrozen(loadedState.transitIndex)).toBe(true)
     expect(Object.isFrozen(loadedState)).toBe(true)
-    expect(Object.isFrozen(loadedState.contextualPanel)).toBe(true)
-    expect(Object.isFrozen(loadedState.contextualPanel.history)).toBe(true)
+    expect(Object.isFrozen(loadedState.exploreView)).toBe(true)
+    expect(Object.isFrozen(loadedState.exploreView.history)).toBe(true)
     expect(Object.isFrozen(loadedState.tripRequest)).toBe(true)
     expect(Object.isFrozen(loadedState.resourceStatus)).toBe(true)
     expect(Object.isFrozen(loadedState.resourceStatus.venue)).toBe(true)
@@ -749,15 +749,15 @@ describe('navigation session', () => {
 
     session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
     session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
-    const selectedVenue = session.getState().contextualPanel.selectedVenue
+    const selectedVenue = session.getState().exploreView.selectedVenue
     expect(selectedVenue?.venue).toBe(canonicalVenues.COM1)
     expect(Object.isFrozen(selectedVenue)).toBe(true)
     expect(Object.isFrozen(selectedVenue?.venue)).toBe(true)
-    expect(Object.isFrozen(session.getState().contextualPanel.history)).toBe(true)
-    expect(session.getState().contextualPanel.history).toHaveLength(2)
-    expect(session.getState().contextualPanel.history.every((entry) => Object.isFrozen(entry))).toBe(true)
-    expect(Object.isFrozen(session.getState().contextualPanel.history[1]?.selectedVenue)).toBe(true)
-    expect(session.getState().contextualPanel.history[1]?.selectedVenue?.venue).toBe(canonicalVenues.COM1)
+    expect(Object.isFrozen(session.getState().exploreView.history)).toBe(true)
+    expect(session.getState().exploreView.history).toHaveLength(2)
+    expect(session.getState().exploreView.history.every((entry) => Object.isFrozen(entry))).toBe(true)
+    expect(Object.isFrozen(session.getState().exploreView.history[1]?.selectedVenue)).toBe(true)
+    expect(session.getState().exploreView.history[1]?.selectedVenue?.venue).toBe(canonicalVenues.COM1)
   })
 
   it('freezes pending and failed resource branches', async () => {
@@ -801,7 +801,7 @@ describe('navigation session', () => {
     expect(dependencies.map.selectVenue).not.toHaveBeenCalled()
 
     session.selectVenue(venueResult)
-    expect(session.getState().contextualPanel.selectedVenue).toEqual({
+    expect(session.getState().exploreView.selectedVenue).toEqual({
       code: 'COM1',
       venue: dependencies.venues.venues.COM1,
     })
@@ -823,13 +823,13 @@ describe('navigation session', () => {
       code: 'UNMAPPED',
       venue: { roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
     })
-    expect(unmappedSession.getState().contextualPanel.selectedVenue).toBeNull()
+    expect(unmappedSession.getState().exploreView.selectedVenue).toBeNull()
 
     unmappedSession.selectVenue({
       code: 'UNMAPPED',
       venue: unmappedData.venues.UNMAPPED,
     })
-    expect(unmappedSession.getState().contextualPanel.selectedVenue).toEqual({
+    expect(unmappedSession.getState().exploreView.selectedVenue).toEqual({
       code: 'UNMAPPED',
       venue: unmappedData.venues.UNMAPPED,
     })
@@ -856,25 +856,25 @@ describe('navigation session', () => {
     expect(events).toEqual(['map', 'notify'])
   })
 
-  it('owns contextual panel history, venue selection, and map-click dismissal', async () => {
+  it('owns explore panel history, venue selection, and map-click dismissal', async () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.setContextualPanelQuery('COM1')
+    session.setExploreViewQuery('COM1')
     session.selectVenue(venueResult)
-    expect(session.getState().contextualPanel).toMatchObject({
+    expect(session.getState().exploreView).toMatchObject({
       mode: 'venue-detail',
       query: 'COM1',
       selectedVenue: venueResult,
     })
     expect(dependencies.map.selectVenue).toHaveBeenCalledWith(venueResult.venue)
 
-    session.setContextualPanelQuery('COM1-0210')
-    expect(session.getState().contextualPanel.query).toBe('COM1-0210')
+    session.setExploreViewQuery('COM1-0210')
+    expect(session.getState().exploreView.query).toBe('COM1-0210')
 
     session.back()
-    expect(session.getState().contextualPanel).toMatchObject({
+    expect(session.getState().exploreView).toMatchObject({
       mode: 'neutral',
       query: 'COM1',
       selectedVenue: null,
@@ -882,13 +882,13 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.enterMobileRoutes()
-    expect(session.getState().contextualPanel.mode).toBe('shuttle')
+    expect(session.getState().exploreView.mode).toBe('shuttle')
     session.back()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
 
     session.selectVenue(venueResult)
     session.handleMapClick()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -898,18 +898,18 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
 
     session.selectVenue(venueResult)
-    const history = session.getState().contextualPanel.history
+    const history = session.getState().exploreView.history
 
     session.focusStop('STOP-A')
 
     expect(dependencies.map.focusStop).toHaveBeenCalledWith('STOP-A')
-    expect(session.getState().contextualPanel).toMatchObject({
+    expect(session.getState().exploreView).toMatchObject({
       mode: 'venue-detail',
       selectedVenue: venueResult,
       history,
     })
     session.back()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
   })
 
   it('clears the selected route when leaving mobile routes', async () => {
@@ -926,7 +926,7 @@ describe('navigation session', () => {
     session.leaveMobileRoutes()
 
     expect(session.getState()).toMatchObject({
-      contextualPanel: { mode: 'neutral' },
+      exploreView: { mode: 'neutral' },
       selectedRouteId: null,
       selectedRouteColor: null,
     })
@@ -949,7 +949,7 @@ describe('navigation session', () => {
     session.closeToRoot()
 
     expect(session.getState()).toMatchObject({
-      contextualPanel: {
+      exploreView: {
         mode: 'neutral',
         selectedVenue: venueResult,
         history: [],
@@ -974,17 +974,17 @@ describe('navigation session', () => {
 
     session.selectVenue(venueResult)
     session.escape()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.selectVenue(venueResult)
     session.enterMobileRoutes()
     session.escape()
-    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
+    expect(session.getState().exploreView.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.back()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -1030,11 +1030,11 @@ describe('navigation session', () => {
     session.selectVenue(venueResult)
     session.enterMobileRoutes()
     session.escape()
-    expect(session.getState().contextualPanel.mode).toBe('venue-detail')
+    expect(session.getState().exploreView.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.escape()
-    expect(session.getState().contextualPanel.mode).toBe('neutral')
+    expect(session.getState().exploreView.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -1265,19 +1265,19 @@ describe('navigation session', () => {
 
     session.subscribe(() => {
       events.push('first')
-      session.setContextualPanelQuery('queued')
+      session.setExploreViewQuery('queued')
       session.dispose()
     })
     session.subscribe(() => {
       events.push('second')
     })
 
-    session.setContextualPanelQuery('COM1')
+    session.setExploreViewQuery('COM1')
 
     expect(events).toEqual(['first'])
     expect(map.setTripRequest).not.toHaveBeenCalled()
     expect(map.dispose).toHaveBeenCalledOnce()
-    expect(session.getState().contextualPanel.query).toBe('COM1')
+    expect(session.getState().exploreView.query).toBe('COM1')
   })
 
   it('synchronizes loaded transit resources before a subscriber can dispose the session', async () => {
@@ -1563,7 +1563,7 @@ describe('navigation session', () => {
       throw new Error('subscriber failed')
     })
 
-    expect(() => session.setContextualPanelQuery('COM1')).toThrow('subscriber failed')
+    expect(() => session.setExploreViewQuery('COM1')).toThrow('subscriber failed')
     expect(session.getState().resourceStatus).toMatchObject({
       venue: { status: 'loaded' },
       transit: { status: 'loaded' },

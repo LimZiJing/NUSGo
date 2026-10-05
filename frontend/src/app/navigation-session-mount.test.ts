@@ -52,7 +52,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
     clearTrip: vi.fn(),
-    setContextualPanelQuery: vi.fn(),
+    setExploreViewQuery: vi.fn(),
     selectVenue: vi.fn(),
     enterMobileRoutes: vi.fn(),
     suspendMobileRoutes: vi.fn(),

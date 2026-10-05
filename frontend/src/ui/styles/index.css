@@ -5,7 +5,7 @@
 @import './themes/sakura.css';
 @import './layout.css';
 @import './map.css';
-@import './contextual-panel.css';
+@import './explore-view.css';
 @import './shuttle-browsing.css';
 @import './stops.css';
 @import './trip-endpoints.css';

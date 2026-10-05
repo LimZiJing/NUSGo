@@ -1,4 +1,4 @@
-.contextual-panel {
+.explore-view {
   display: grid;
   gap: 10px;
   width: auto;
@@ -14,26 +14,26 @@
   pointer-events: auto;
 }
 
-.contextual-panel-focus-scope {
+.explore-view-focus-scope {
   display: contents;
 }
 
-.contextual-panel-header,
-.contextual-panel-actions {
+.explore-view-header,
+.explore-view-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.contextual-panel-header h2 {
+.explore-view-header h2 {
   margin: 0;
   color: var(--text-primary);
   font: 600 18px/1.2 system-ui, sans-serif;
 }
 
-.contextual-panel-header button,
-.contextual-panel button {
+.explore-view-header button,
+.explore-view button {
   padding: 5px 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
@@ -43,30 +43,30 @@
   cursor: pointer;
 }
 
-.contextual-panel-content {
+.explore-view-content {
   display: grid;
   gap: 8px;
 }
 
-.contextual-panel-search-body {
+.explore-view-search-body {
   display: contents;
 }
 
-.contextual-panel-content p {
+.explore-view-content p {
   margin: 0;
 }
 
-.contextual-panel-content > label {
+.explore-view-content > label {
   font-weight: 600;
 }
 
-.contextual-panel-search-row {
+.explore-view-search-row {
   position: relative;
   display: flex;
   gap: 6px;
 }
 
-.contextual-panel-search-row input {
+.explore-view-search-row input {
   min-width: 0;
   flex: 1;
   padding: 8px 46px 8px 10px;
@@ -77,11 +77,11 @@
   font: inherit;
 }
 
-.contextual-panel-search-row input::-webkit-search-cancel-button {
+.explore-view-search-row input::-webkit-search-cancel-button {
   appearance: none;
 }
 
-.contextual-panel .contextual-panel-search-clear {
+.explore-view .explore-view-search-clear {
   position: absolute;
   top: 50%;
   right: 3px;
@@ -98,7 +98,7 @@
   background: transparent;
 }
 
-.contextual-panel-search-clear svg {
+.explore-view-search-clear svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -107,12 +107,12 @@
   stroke-linecap: round;
 }
 
-.contextual-panel-actions {
+.explore-view-actions {
   justify-content: flex-start;
   flex-wrap: wrap;
 }
 
-.contextual-panel-results {
+.explore-view-results {
   display: grid;
   grid-auto-rows: max-content;
   align-content: start;
@@ -120,38 +120,38 @@
   max-height: 300px;
 }
 
-.contextual-panel-result {
+.explore-view-result {
   display: grid;
   gap: 2px;
   text-align: left;
 }
 
-.contextual-panel-result span {
+.explore-view-result span {
   color: var(--text-secondary);
   font-size: 13px;
 }
 
-.contextual-panel-status {
+.explore-view-status {
   color: var(--text-secondary);
 }
 
-.contextual-panel-status-success {
+.explore-view-status-success {
   margin: 0;
   color: var(--text-muted);
   font-size: 12px;
 }
 
-.contextual-panel-status-loading {
+.explore-view-status-loading {
   margin: 0;
 }
 
-.contextual-panel-status-failure {
+.explore-view-status-failure {
   margin: 0;
   color: var(--status-error);
   font-weight: 600;
 }
 
-.contextual-panel-failure-indicator {
+.explore-view-failure-indicator {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -163,7 +163,7 @@
   font-weight: 700;
 }
 
-.contextual-panel-detail h3 {
+.explore-view-detail h3 {
   margin: 0;
   color: var(--text-primary);
   font: 600 20px/1.2 system-ui, sans-serif;
@@ -208,7 +208,7 @@
   gap: 8px;
 }
 
-.contextual-panel-detail .venue-detail-action {
+.explore-view-detail .venue-detail-action {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
@@ -227,7 +227,7 @@
   cursor: pointer;
 }
 
-.contextual-panel-detail .venue-detail-nusmods img {
+.explore-view-detail .venue-detail-nusmods img {
   display: block;
   width: 72px;
   height: auto;
@@ -263,7 +263,7 @@
   gap: 5px;
 }
 
-.contextual-panel-detail .nearby-stop-row {
+.explore-view-detail .nearby-stop-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -327,20 +327,20 @@
   stroke-width: 2;
 }
 
-.contextual-panel-detail strong {
+.explore-view-detail strong {
   color: var(--text-primary);
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):hover,
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):hover,
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
   border-color: var(--border-focus);
 }
 
-.contextual-panel button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):focus-visible {
   background: var(--surface-subtle);
 }
 
-.contextual-panel .ghost-back-button,
+.explore-view .ghost-back-button,
 .stops-view .ghost-back-button {
   display: inline-flex;
   align-items: center;
@@ -354,8 +354,8 @@
   cursor: pointer;
 }
 
-.contextual-panel .ghost-back-button:hover,
-.contextual-panel .ghost-back-button:focus-visible,
+.explore-view .ghost-back-button:hover,
+.explore-view .ghost-back-button:focus-visible,
 .stops-view .ghost-back-button:hover,
 .stops-view .ghost-back-button:focus-visible {
   border-color: transparent;

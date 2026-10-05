@@ -84,7 +84,7 @@ export interface NavigationSessionCommands {
   readonly clearDestinationEndpoint: () => void
   readonly clearTrip: () => void
   readonly planJourney: () => void
-  readonly setContextualPanelQuery: (query: string) => void
+  readonly setExploreViewQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
   readonly back: () => void
   readonly closeToRoot: () => void
@@ -122,7 +122,7 @@ function createNavigationSessionCommands(
     clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
     clearTrip: () => session?.clearTrip(),
     planJourney: () => session?.planJourney(),
-    setContextualPanelQuery: (query) => session?.setContextualPanelQuery(query),
+    setExploreViewQuery: (query) => session?.setExploreViewQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
     back: () => session?.back(),
     closeToRoot: () => session?.closeToRoot(),

@@ -134,7 +134,7 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   const previousMinimized = sheet.getAttribute('data-minimized')
   const previousTripExpanded = sheet.classList.contains('trip-controls-expanded')
   const previousTripCollapsed = sheet.classList.contains('trip-controls-collapsed')
-  const previousContextualMinimized = sheet.classList.contains('contextual-panel-minimized')
+  const previousExploreViewMinimized = sheet.classList.contains('explore-view-minimized')
   const hiddenContent = readHiddenSheetContent(sheet)
 
   sheet.dataset.mobileSheetMeasuring = detent
@@ -143,7 +143,7 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   sheet.dataset.minimized = String(detent === 'collapsed')
   sheet.classList.toggle('trip-controls-expanded', detent !== 'collapsed')
   sheet.classList.toggle('trip-controls-collapsed', detent === 'collapsed')
-  sheet.classList.toggle('contextual-panel-minimized', detent === 'collapsed')
+  sheet.classList.toggle('explore-view-minimized', detent === 'collapsed')
   if (detent !== 'collapsed') {
     for (const { element } of hiddenContent) element.removeAttribute('hidden')
   }
@@ -162,7 +162,7 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   else sheet.setAttribute('data-minimized', previousMinimized)
   sheet.classList.toggle('trip-controls-expanded', previousTripExpanded)
   sheet.classList.toggle('trip-controls-collapsed', previousTripCollapsed)
-  sheet.classList.toggle('contextual-panel-minimized', previousContextualMinimized)
+  sheet.classList.toggle('explore-view-minimized', previousExploreViewMinimized)
   restoreHiddenContent(hiddenContent)
   if (previousMeasurement === null) {
     sheet.removeAttribute('data-mobile-sheet-measuring')

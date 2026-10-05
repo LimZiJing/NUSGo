@@ -10,9 +10,9 @@ describe('map overlay measurement seam', () => {
         viewportWidth: 390,
         viewportHeight: 844,
         tripCardHeight: 92,
-        contextualSheetHeight: 196,
+        activeSheetHeight: 196,
         tripCardVisible: true,
-        contextualSheetVisible: true,
+        activeSheetVisible: true,
         desktopNavigationWidth: 0,
       },
     )
@@ -29,9 +29,9 @@ describe('map overlay measurement seam', () => {
         viewportWidth: 769,
         viewportHeight: 900,
         tripCardHeight: 320,
-        contextualSheetHeight: 280,
+        activeSheetHeight: 280,
         tripCardVisible: true,
-        contextualSheetVisible: true,
+        activeSheetVisible: true,
         desktopNavigationWidth: 360,
       },
     )

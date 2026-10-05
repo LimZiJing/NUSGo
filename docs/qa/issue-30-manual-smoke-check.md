@@ -4,8 +4,8 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 
 ## Desktop: 1440 × 900
 
-- [ ] The trip endpoint controls remain a compact card above the persistent contextual panel.
-- [ ] The contextual panel remains visible and usable while the map remains available for pan and zoom.
+- [ ] The trip endpoint controls remain a compact card above the persistent Explore view.
+- [ ] The Explore view remains visible and usable while the map remains available for pan and zoom.
 - [ ] Venue search, venue detail, shuttle route selection, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies the map to the venue and keeps its selected marker visible without a duplicate popup.
 - [ ] Route selection updates the map camera/content and the selected route details.
@@ -14,13 +14,13 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 
 ## Mobile: 390 × 844 (mobile layout through 768px)
 
-- [ ] The map fills the viewport beneath the separate trip card and contextual bottom sheet.
+- [ ] The map fills the viewport beneath the separate trip card and Explore bottom sheet.
 - [ ] Trip endpoints start as a collapsed Plan trip card with origin → destination or missing prompts.
 - [ ] Plan trip expands and collapses only through its explicit control; its accessible name keeps full endpoint names.
-- [ ] Expanding Plan trip minimizes the contextual sheet to an actionable labelled header.
-- [ ] Activating the contextual header restores the sheet, collapses Plan trip, and leaves focus on safe current content.
-- [ ] A map-triggered contextual change reveals the sheet without losing contextual state.
-- [ ] The contextual panel is a persistent, non-modal bottom sheet capped at about half the viewport and sized to its content.
+- [ ] Expanding Plan trip minimizes the Explore sheet to an actionable labelled header.
+- [ ] Activating the Explore header restores the sheet, collapses Plan trip, and leaves focus on safe current content.
+- [ ] A map-triggered Explore change reveals the sheet without losing Explore state.
+- [ ] The Explore view is a persistent, non-modal bottom sheet capped at about half the viewport and sized to its content.
 - [ ] The bottom sheet respects the safe-area inset, scrolls internally, and has no drag affordance or gesture requirement.
 - [ ] There is enough map space between the top card and bottom sheet for pan and zoom interaction.
 - [ ] Map navigation controls and attribution remain usable without overlapping either surface; the full legend is hidden.
@@ -54,10 +54,10 @@ The following facts were verified in Edge headless/device emulation at 320 × 56
 
 - The shell produced no outer horizontal overflow or secondary viewport scrollbar after the containing-block sizing fix.
 - Mobile map gaps remained usable, including a minimum 84px gap in short landscape; navigation controls and attribution stayed within the viewport.
-- The mobile legend was hidden; the collapsed Plan trip layout and content-sized contextual sheet rendered.
-- Expanding Plan trip minimized the contextual sheet; restoring it from its labelled header returned the sheet and focus.
+- The mobile legend was hidden; the collapsed Plan trip layout and content-sized Explore sheet rendered.
+- Expanding Plan trip minimized the Explore sheet; restoring it from its labelled header returned the sheet and focus.
 - The 768/769 breakpoint sizing and focus transition behavior passed.
-- The contextual venue input measured 44px in the mobile layout.
+- The Explore venue input measured 44px in the mobile layout.
 
 Chrome, a real software keyboard, and the full manual pointer/keyboard smoke remain unverified. External basemap and glyph loading was inconsistent in headless runs, so this evidence does not claim complete map-data QA.
 
@@ -69,7 +69,7 @@ The following additional facts were verified at 390 × 844, with the responsive 
 - A1 framing kept all 12 markers within the available map gap; a rapid A1 → D1 selection ended on D1.
 - Pan coordinates persisted exactly through Plan trip expansion/restoration while attribution moved with the measured inset.
 - Zoom in/out kept the popover open with focus on the activated action; Reset closed it and restored chip focus.
-- The first Escape closed only Map controls; a second Escape returned the contextual sheet to Explore.
+- The first Escape closed only Map controls; a second Escape returned the Explore sheet to its root.
 - Venue detail selection completed and attribution continued tracking the measured inset.
 - Map tiles loaded. OpenFreeMap glyph requests returned 404, the sprite was missing, and filter warnings remained; this is not complete map-data QA.
 

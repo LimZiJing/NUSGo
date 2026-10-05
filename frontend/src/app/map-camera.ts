@@ -1,4 +1,4 @@
-import type { ContextualPanelMode } from '../features/contextual-panel/state'
+import type { ExploreViewMode } from '../features/explore-view/state'
 import type { TransitIndex } from '../domain/transit'
 import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
@@ -37,16 +37,16 @@ export interface MapOverlayMeasurements {
   readonly viewportWidth: number
   readonly viewportHeight: number
   readonly tripCardHeight: number
-  readonly contextualSheetHeight: number
+  readonly activeSheetHeight: number
   readonly tripCardVisible: boolean
-  readonly contextualSheetVisible: boolean
+  readonly activeSheetVisible: boolean
   readonly desktopNavigationWidth: number
 }
 
 export type { MapCoordinate, MapResetTarget, MapViewportInsets } from './contracts/map'
 
 export interface ResetTargetContext {
-  readonly panelMode: ContextualPanelMode
+  readonly panelMode: ExploreViewMode
   readonly selectedVenue: VenueSearchResult | null
   readonly selectedRouteId: string | null
   readonly tripRequest: TripRequest
@@ -71,8 +71,8 @@ export function calculateMapOverlayInsets(
       ? Math.ceil(Math.max(0, measurements.tripCardHeight)) + MAP_OVERLAY_MARGIN
       : 0,
     right: MAP_OVERLAY_MARGIN,
-    bottom: measurements.contextualSheetVisible
-      ? Math.ceil(Math.max(0, measurements.contextualSheetHeight)) + MAP_OVERLAY_MARGIN
+    bottom: measurements.activeSheetVisible
+      ? Math.ceil(Math.max(0, measurements.activeSheetHeight)) + MAP_OVERLAY_MARGIN
       : 0,
     left: MAP_OVERLAY_MARGIN,
   }

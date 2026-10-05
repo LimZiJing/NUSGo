@@ -10,8 +10,8 @@ import {
 } from 'react'
 import {
   ExploreView,
-} from '../features/contextual-panel/explore-view'
-import { getExploreShellClassName } from '../features/contextual-panel/explore-view-shell'
+} from '../features/explore-view/explore-view'
+import { getExploreShellClassName } from '../features/explore-view/explore-view-shell'
 import {
   StopsView,
   type StopSheetSelection,
@@ -38,7 +38,7 @@ import {
   createNavigationSessionMount,
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
-import { deriveContextualPanelStatus } from './contextual-panel-status'
+import { deriveExploreViewStatus } from './explore-view-status'
 import {
   createInitialNavigationState,
   getIsMobileViewport,
@@ -81,7 +81,7 @@ function App() {
   const navigationColumnRef = useRef<HTMLElement>(null)
   const locationControlRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLElement>(null)
-  const contextualPanelRef = useRef<HTMLElement>(null)
+  const exploreViewRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
@@ -89,7 +89,7 @@ function App() {
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const state = useNavigationSession(session)
-  const panelStatus = deriveContextualPanelStatus(
+  const panelStatus = deriveExploreViewStatus(
     state.resourceStatus,
     state.mapError,
     state.startupFailure,
@@ -120,7 +120,7 @@ function App() {
     bottom: 0,
     left: 0,
   })
-  const previousContextualStateRef = useRef<typeof state.contextualPanel | null>(null)
+  const previousExploreViewStateRef = useRef<typeof state.exploreView | null>(null)
   const focusTripControlAfterOverlayRef = useRef(false)
   const pendingSheetTransitionRef = useRef<{
     startHeight: number
@@ -237,7 +237,7 @@ function App() {
     if (pendingViewFocusRef.current !== activeView) return
     pendingViewFocusRef.current = null
     const root = activeView === 'explore'
-      ? contextualPanelRef.current
+      ? exploreViewRef.current
       : activeView === 'stops'
         ? stopsSheetRef.current
         : tripControlsRef.current
@@ -250,7 +250,7 @@ function App() {
   const getActiveMobileSheet = useCallback((): HTMLElement | null => {
     if (navigation.activeView === 'plan') return tripControlsRef.current
     if (navigation.activeView === 'stops') return stopsSheetRef.current
-    return contextualPanelRef.current
+    return exploreViewRef.current
   }, [navigation.activeView])
 
   useLayoutEffect(() => {
@@ -330,11 +330,11 @@ function App() {
   ])
 
   useEffect(() => {
-    const previous = previousContextualStateRef.current
-    previousContextualStateRef.current = state.contextualPanel
+    const previous = previousExploreViewStateRef.current
+    previousExploreViewStateRef.current = state.exploreView
     if (!previous) return
-    const modeChanged = previous.mode !== state.contextualPanel.mode
-    const venueChanged = previous.selectedVenue?.code !== state.contextualPanel.selectedVenue?.code
+    const modeChanged = previous.mode !== state.exploreView.mode
+    const venueChanged = previous.selectedVenue?.code !== state.exploreView.selectedVenue?.code
     if (
       (modeChanged || venueChanged) &&
       isMobileViewport &&
@@ -347,7 +347,7 @@ function App() {
     isMobileViewport,
     navigation.activeView,
     navigation.sheets.explore.detent,
-    state.contextualPanel,
+    state.exploreView,
   ])
 
   useLayoutEffect(() => {
@@ -362,7 +362,7 @@ function App() {
         ? tripControlsRef.current?.getBoundingClientRect().height ?? 0
         : navigation.activeView === 'stops'
           ? stopsSheetRef.current?.getBoundingClientRect().height ?? 0
-          : contextualPanelRef.current?.getBoundingClientRect().height ?? 0
+          : exploreViewRef.current?.getBoundingClientRect().height ?? 0
       const tabBarRect = mainNavigationRef.current?.getBoundingClientRect()
       const mapShellBottom = mapShellRef.current?.getBoundingClientRect().bottom ?? viewportHeight
       const mapShell = mapShellRef.current
@@ -384,9 +384,9 @@ function App() {
         viewportWidth,
         viewportHeight,
         tripCardHeight: 0,
-        contextualSheetHeight: activeSheetHeight + tabBarInset,
+        activeSheetHeight: activeSheetHeight + tabBarInset,
         tripCardVisible: false,
-        contextualSheetVisible: isMobileViewport,
+        activeSheetVisible: isMobileViewport,
         desktopNavigationWidth: measuredNavigationWidth,
       })
       setMapInsets((current) => (
@@ -415,7 +415,7 @@ function App() {
       ? null
       : new ResizeObserver(updateInsets)
     if (tripControlsRef.current) resizeObserver?.observe(tripControlsRef.current)
-    if (contextualPanelRef.current) resizeObserver?.observe(contextualPanelRef.current)
+    if (exploreViewRef.current) resizeObserver?.observe(exploreViewRef.current)
     if (stopsSheetRef.current) resizeObserver?.observe(stopsSheetRef.current)
     if (mainNavigationRef.current) resizeObserver?.observe(mainNavigationRef.current)
     if (navigationColumnRef.current) resizeObserver?.observe(navigationColumnRef.current)
@@ -434,8 +434,8 @@ function App() {
     navigation.sheets.plan.detent,
     navigation.sheets.stops.detent,
     activeSheetDetent,
-    state.contextualPanel.mode,
-    state.contextualPanel.selectedVenue?.code,
+    state.exploreView.mode,
+    state.exploreView.selectedVenue?.code,
     state.selectedRouteId,
     stopFocusRequest,
   ])
@@ -465,7 +465,7 @@ function App() {
     navigation.sheets.explore.detent,
     navigation.sheets.plan.detent,
     navigation.sheets.stops.detent,
-    state.contextualPanel.mode,
+    state.exploreView.mode,
   ])
 
   useLayoutEffect(() => {
@@ -793,11 +793,11 @@ function App() {
         <DesktopColumnShell id="explore-panel" active={navigation.activeView === 'explore'}>
           <MobileSheetShell
             className={getExploreShellClassName(
-              state.contextualPanel,
+              state.exploreView,
               isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
             )}
             label="Explore panel"
-            controlsId="contextual-panel-content"
+            controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.explore.lastNonCollapsedDetent}
             enabled={isMobileViewport}
@@ -809,13 +809,13 @@ function App() {
               source: 'manual',
             })}
             sectionProps={{
-              'aria-labelledby': 'contextual-panel-heading',
+              'aria-labelledby': 'explore-view-heading',
               'data-minimized': isMobileViewport && navigation.sheets.explore.detent === 'collapsed',
             }}
-            shellRef={contextualPanelRef}
+            shellRef={exploreViewRef}
           >
             <ExploreView
-              state={state.contextualPanel}
+              state={state.exploreView}
               venues={state.venues}
               transitIndex={state.transitIndex}
               shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
@@ -845,7 +845,7 @@ function App() {
                 source: 'manual',
               })}
               status={panelStatus}
-              onQueryChange={commands.setContextualPanelQuery}
+              onQueryChange={commands.setExploreViewQuery}
               onVenueSelect={commands.selectVenue}
               onNavigateToVenue={(venueCode) => {
                 commands.navigateToEndpoint({ kind: 'venue', id: venueCode })
@@ -960,13 +960,13 @@ function App() {
               if (
                 switchingView &&
                 navigation.activeView === 'explore' &&
-                state.contextualPanel.mode === 'shuttle'
+                state.exploreView.mode === 'shuttle'
               ) {
                 commands.suspendMobileRoutes()
               } else if (
                 switchingView &&
                 view === 'explore' &&
-                state.contextualPanel.mode === 'shuttle'
+                state.exploreView.mode === 'shuttle'
               ) {
                 commands.enterMobileRoutes()
               }

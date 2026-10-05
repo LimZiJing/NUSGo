@@ -1,4 +1,4 @@
-import { contextualPanelReducer, type ContextualPanelAction, type ContextualPanelState } from '../features/contextual-panel/state'
+import { exploreViewReducer, type ExploreViewAction, type ExploreViewState } from '../features/explore-view/state'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
 import {
@@ -46,9 +46,9 @@ export function createNavigationSessionTransitionQueue(
 interface NavigationSessionPanelHost {
   readonly isDisposed: () => boolean
   readonly enqueue: (transition: () => void) => void
-  readonly getContextualPanel: () => ContextualPanelState
+  readonly getExploreView: () => ExploreViewState
   readonly getVenues: () => VenueLocationMap | null
-  readonly setContextualPanel: (panel: ContextualPanelState) => void
+  readonly setExploreView: (panel: ExploreViewState) => void
   readonly selectVenue: (venue: VenueLocation) => void
   readonly clearVenue: () => void
 }
@@ -56,13 +56,13 @@ interface NavigationSessionPanelHost {
 export function createNavigationSessionPanelTransitions(
   host: NavigationSessionPanelHost,
 ) {
-  const updatePanel = (action: ContextualPanelAction): void => {
+  const updatePanel = (action: ExploreViewAction): void => {
     if (host.isDisposed()) return
-    host.setContextualPanel(contextualPanelReducer(host.getContextualPanel(), action))
+    host.setExploreView(exploreViewReducer(host.getExploreView(), action))
   }
 
   return {
-    setContextualPanelQuery(query: string): void {
+    setExploreViewQuery(query: string): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
         updatePanel({ type: 'set-query', query })
@@ -93,7 +93,7 @@ export function createNavigationSessionPanelTransitions(
     back(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        const panel = host.getContextualPanel()
+        const panel = host.getExploreView()
         const previousState = panel.history.at(-1)
         if (panel.mode === 'venue-detail' && previousState?.mode !== 'venue-detail') {
           host.clearVenue()
@@ -105,7 +105,7 @@ export function createNavigationSessionPanelTransitions(
     escape(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        const panel = host.getContextualPanel()
+        const panel = host.getExploreView()
         const previousState = panel.history.at(-1)
         if (
           !previousState ||
@@ -127,7 +127,7 @@ export function createNavigationSessionPanelTransitions(
     handleMapClick(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        if (host.getContextualPanel().mode !== 'venue-detail') return
+        if (host.getExploreView().mode !== 'venue-detail') return
         host.clearVenue()
         updatePanel({ type: 'map-click' })
       })

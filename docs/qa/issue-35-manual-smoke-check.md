@@ -4,7 +4,7 @@ This checklist records the manual verification still needed after moving navigat
 
 ## Automated evidence
 
-- [x] `npm test` passes (173 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, startup-failure reporting with isolated listener errors, canonical trip endpoints, serialized route/trip reentry, contextual-panel history and venue marker rules, asynchronous shuttle focus fallback and restoration, native keyboard endpoint selection, endpoint swap/clear state, abort-before-deferred-loader execution, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and mount callback forwarding/cleanup.
+- [x] `npm test` passes (173 tests), including public controller defaults, subscriptions, mixed success/failure completion orderings, deterministic failure aggregation, map-readiness failure ordering, completion-time map/subscriber error propagation, startup-failure reporting with isolated listener errors, canonical trip endpoints, serialized route/trip reentry, Explore view history and venue marker rules, asynchronous shuttle focus fallback and restoration, native keyboard endpoint selection, endpoint swap/clear state, abort-before-deferred-loader execution, late completion, idempotent lifecycle behavior, immutable snapshot branches, loader-error isolation, and mount callback forwarding/cleanup.
 - [x] `npm run lint` passes.
 - [x] `npm run build` passes.
 - [x] `git diff --check` passes before each Issue #35 commit.
@@ -14,7 +14,7 @@ This checklist records the manual verification still needed after moving navigat
 
 - [ ] Start the local desktop app and confirm MapSession/controller installation occurs once per mount, map style readiness gates transit installation, map tile errors remain visible, and unmount cleanup is safe.
 - [ ] Allow venue and transit resources to complete in either order, including independent and combined failures, and confirm the visible status preserves each result.
-- [ ] Search for a venue, open details, select its marker, then exercise Back, Escape, Close, and empty-map click; confirm contextual history and marker clearing remain unchanged.
+- [ ] Search for a venue, open details, select its marker, then exercise Back, Escape, Close, and empty-map click; confirm Explore history and marker clearing remain unchanged.
 - [ ] Browse shuttle routes, select and clear routes, and confirm route colors, overlapping corridors, ordered stops, stop labels, and camera fitting remain unchanged.
 - [ ] Manually verify the stateful `TripEndpointControls` wrapper's interactive query/reset/swap/clear behavior for venue and shuttle-stop endpoints; confirm each search query clears only after selection, and confirm endpoint swapping, per-endpoint clearing, clear-both, endpoint markers, and popups remain correct.
 - [ ] Exercise keyboard operation and responsive desktop/mobile overlays at the supported viewport sizes, including shuttle loading fallback and later route availability.
@@ -23,4 +23,4 @@ The original Issue #35 manual desktop/map verification was pending; PR9 follow-u
 
 ## PR9 follow-up — 2026-09-21
 
-The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview navigation-session evidence, including keyboard venue activation, contextual dismissal, all route selections, popup endpoint actions, endpoint swapping, and clearing. Mobile, breakpoint, real Chrome/Edge, and resource-failure checks remain open.
+The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview navigation-session evidence, including keyboard venue activation, Explore dismissal, all route selections, popup endpoint actions, endpoint swapping, and clearing. Mobile, breakpoint, real Chrome/Edge, and resource-failure checks remain open.

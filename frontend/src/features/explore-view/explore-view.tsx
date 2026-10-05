@@ -22,7 +22,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
-import type { ContextualPanelMode, ContextualPanelState } from './state'
+import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
 
 interface FocusTarget {
@@ -37,19 +37,19 @@ interface ShuttleRouteRenderOptions {
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 const EXPLORE_LABELS = { venue: 'Find venue', shuttle: 'Shuttle routes' } as const
-const RETURN_LABELS: Readonly<Record<ContextualPanelMode, string>> = {
+const RETURN_LABELS: Readonly<Record<ExploreViewMode, string>> = {
   neutral: EXPLORE_LABELS.venue,
   'venue-search': EXPLORE_LABELS.venue,
   'venue-detail': 'Venue details',
   shuttle: EXPLORE_LABELS.shuttle,
 }
 
-function getVenueDetailReturnLabel(state: ContextualPanelState): string {
+function getVenueDetailReturnLabel(state: ExploreViewState): string {
   return RETURN_LABELS[state.history.at(-1)?.mode ?? 'venue-search']
 }
 
 interface ExploreViewProps {
-  state: ContextualPanelState
+  state: ExploreViewState
   venues: VenueLocationMap | null
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
@@ -75,7 +75,7 @@ interface ExploreViewProps {
   onSearchResult?: () => void
 }
 
-function getPanelHeading(state: ContextualPanelState): string {
+function getPanelHeading(state: ExploreViewState): string {
   if (state.mode === 'shuttle') return 'Shuttle routes'
   if (state.mode === 'venue-detail') return 'Venue details'
   if (state.mode === 'venue-search') return 'Find a venue'
@@ -83,11 +83,11 @@ function getPanelHeading(state: ContextualPanelState): string {
 }
 
 function findFocusTarget(key: string): HTMLElement | undefined {
-  return Array.from(document.querySelectorAll<HTMLElement>('[data-contextual-focus-id]'))
-    .find((element) => element.dataset.contextualFocusId === key)
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-explore-focus-id]'))
+    .find((element) => element.dataset.exploreFocusId === key)
 }
 
-function getPanelAnnouncement(state: ContextualPanelState): string | null {
+function getPanelAnnouncement(state: ExploreViewState): string | null {
   if (state.mode === 'shuttle') return null
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
@@ -136,7 +136,7 @@ export function ExploreView({
   const firstRouteCardRef = useRef<HTMLButtonElement>(null)
   const focusHistoryRef = useRef<FocusTarget[]>([])
   const pendingFocusRef = useRef<FocusTarget | null>(null)
-  const previousModeRef = useRef<ContextualPanelState['mode'] | null>(null)
+  const previousModeRef = useRef<ExploreViewState['mode'] | null>(null)
   const previousMinimizedRef = useRef(minimized)
   const previousMobileSheetRef = useRef(mobileSheet)
   const previousActiveRef = useRef(active)
@@ -348,7 +348,7 @@ export function ExploreView({
   ): void => {
     focusHistoryRef.current.push({
       element: event.currentTarget,
-      key: event.currentTarget.dataset.contextualFocusId ?? null,
+      key: event.currentTarget.dataset.exploreFocusId ?? null,
       fallbackKey,
     })
   }
@@ -432,11 +432,11 @@ export function ExploreView({
 
   return (
     <div
-      className="contextual-panel-focus-scope"
+      className="explore-view-focus-scope"
       onFocusCapture={handlePanelFocusCapture}
       onBlurCapture={handlePanelBlurCapture}
     >
-      <div className="contextual-panel-header">
+      <div className="explore-view-header">
         {exploreSegments && (
           <div
             className="explore-segments"
@@ -446,7 +446,7 @@ export function ExploreView({
           >
             <button
               type="button"
-              data-contextual-focus-id="explore-venue-segment"
+              data-explore-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
               onClick={handleSelectVenueSearch}
             >
@@ -454,7 +454,7 @@ export function ExploreView({
             </button>
             <button
               type="button"
-              data-contextual-focus-id="explore-shuttle-segment"
+              data-explore-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectShuttle}
             >
@@ -466,7 +466,7 @@ export function ExploreView({
           <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={handleBack} />
         )}
         <h2
-          id="contextual-panel-heading"
+          id="explore-view-heading"
           ref={panelHeadingRef}
           tabIndex={-1}
           className={exploreSegments || state.mode === 'venue-detail' ? 'visually-hidden' : undefined}
@@ -476,11 +476,11 @@ export function ExploreView({
       </div>
 
       {(state.mode === 'venue-search' || state.mode === 'neutral') && (
-        <div id="contextual-panel-content" className="contextual-panel-content">
-          <div className="contextual-panel-search-row">
+        <div id="explore-view-content" className="explore-view-content">
+          <div className="explore-view-search-row">
             <SearchField
-              id="contextual-venue-search-input"
-              aria-labelledby="contextual-panel-heading"
+              id="explore-venue-search-input"
+              aria-labelledby="explore-view-heading"
               placeholder="e.g. COM1-0210"
               value={state.query}
               inputRef={searchInputRef}
@@ -494,7 +494,7 @@ export function ExploreView({
             {state.query && (
               <button
                 type="button"
-                className="contextual-panel-search-clear"
+                className="explore-view-search-clear"
                 onClick={() => {
                   onQueryChange('')
                   searchInputRef.current?.focus()
@@ -507,18 +507,18 @@ export function ExploreView({
               </button>
             )}
           </div>
-          <div className="contextual-panel-search-body" data-mobile-sheet-content>
+          <div className="explore-view-search-body" data-mobile-sheet-content>
             {venues === null || searchState.failed ? (
-              <p className="contextual-panel-status" role="status" aria-live="polite">
+              <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
               </p>
             ) : state.query.trim() ? (
-              <ScrollArea className="contextual-panel-results" aria-label="Venue search results">
+              <ScrollArea className="explore-view-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
                   searchState.results.map((result) => (
                     <button
-                      className="contextual-panel-result"
-                      data-contextual-focus-id={`venue-result-${result.code}`}
+                      className="explore-view-result"
+                      data-explore-focus-id={`venue-result-${result.code}`}
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
@@ -528,11 +528,11 @@ export function ExploreView({
                     </button>
                   ))
                 ) : (
-                  <p className="contextual-panel-status" role="status" aria-live="polite">No matching venues.</p>
+                  <p className="explore-view-status" role="status" aria-live="polite">No matching venues.</p>
                 )}
               </ScrollArea>
             ) : (
-              <div className="contextual-panel-search-prompt">
+              <div className="explore-view-search-prompt">
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
                   <circle cx="14" cy="14" r="8" />
                   <path d="m20 20 7 7" />
@@ -546,12 +546,12 @@ export function ExploreView({
 
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
-          id="contextual-panel-content"
-          className="contextual-panel-content contextual-panel-detail"
+          id="explore-view-content"
+          className="explore-view-content explore-view-detail"
           data-mobile-sheet-content
         >
           <div className="venue-detail-identity">
-            <h3 id="contextual-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+            <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
@@ -637,8 +637,8 @@ export function ExploreView({
 
       {state.mode === 'shuttle' && (
         <div
-          id="contextual-panel-content"
-          className="contextual-panel-content"
+          id="explore-view-content"
+          className="explore-view-content"
           data-mobile-sheet-content
         >
           {renderShuttleRoutes({
@@ -649,7 +649,7 @@ export function ExploreView({
       )}
       {panelStatus && (
         <p
-          className={`contextual-panel-status contextual-panel-status-${panelStatus.kind}`}
+          className={`explore-view-status explore-view-status-${panelStatus.kind}`}
           data-mobile-sheet-content={mobileSheet && panelStatus.kind === 'success' ? '' : undefined}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
@@ -660,7 +660,7 @@ export function ExploreView({
       )}
       {minimized && panelStatus?.kind === 'failure' && (
         <span
-          className="contextual-panel-failure-indicator"
+          className="explore-view-failure-indicator"
           role="img"
           aria-label={`Map data unavailable: ${panelStatus.message}`}
         >

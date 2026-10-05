@@ -7,10 +7,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ExploreView } from './explore-view'
 import { getExploreShellClassName } from './explore-view-shell'
 import {
-  contextualPanelReducer,
-  createInitialContextualPanelState,
-  type ContextualPanelAction,
-  type ContextualPanelState,
+  exploreViewReducer,
+  createInitialExploreViewState,
+  type ExploreViewAction,
+  type ExploreViewState,
 } from './state'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
@@ -91,7 +91,7 @@ function TestShuttleRouteControl({
 }
 
 function PanelHarness({
-  initialState = createInitialContextualPanelState(),
+  initialState = createInitialExploreViewState(),
   network: networkOverride,
   networkIndex: networkIndexOverride,
   mobileSheet = true,
@@ -101,7 +101,7 @@ function PanelHarness({
   onDismissMapPopup,
   onNavigateToVenue,
 }: {
-  initialState?: ContextualPanelState
+  initialState?: ExploreViewState
   network?: TransitNetwork | null
   networkIndex?: TransitNetworkIndex | null
   mobileSheet?: boolean
@@ -117,14 +117,14 @@ function PanelHarness({
   const networkIndex = networkIndexOverride === undefined
     ? network ? createTransitIndex(network) : null
     : networkIndexOverride
-  const dispatch = (action: ContextualPanelAction): void => {
-    setState((current) => contextualPanelReducer(current, action))
+  const dispatch = (action: ExploreViewAction): void => {
+    setState((current) => exploreViewReducer(current, action))
   }
 
   return (
     <section
       className={getExploreShellClassName(state, minimized)}
-      aria-labelledby="contextual-panel-heading"
+      aria-labelledby="explore-view-heading"
       data-minimized={minimized}
     >
       <ExploreView
@@ -160,7 +160,7 @@ function PanelHarness({
 
 function StopPopupHarness() {
   const popupActionRef = useRef<HTMLButtonElement>(null)
-  const state = { ...createInitialContextualPanelState(), mode: 'shuttle' as const }
+  const state = { ...createInitialExploreViewState(), mode: 'shuttle' as const }
 
   return (
     <>
@@ -206,7 +206,7 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
   return (
     <>
       <button type="button">Map control</button>
-      <input aria-label="Contextual panel search outside" />
+      <input aria-label="Explore panel search outside" />
       <button type="button">Other visible control</button>
       {children}
     </>
@@ -215,9 +215,9 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
 
 afterEach(cleanup)
 
-describe('ContextualPanel accessibility workflows', () => {
+describe('ExploreView accessibility workflows', () => {
   it('opens mobile Explore on Find venue with a labelled segmented selector', () => {
-    render(<PanelHarness initialState={createInitialContextualPanelState()} />)
+    render(<PanelHarness initialState={createInitialExploreViewState()} />)
 
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
     const exploreView = screen.getByRole('group', { name: 'Explore view' })
@@ -242,7 +242,7 @@ describe('ContextualPanel accessibility workflows', () => {
     const user = userEvent.setup()
     const onDismissMapPopup = vi.fn(() => true)
     render(<PanelHarness
-      initialState={createInitialContextualPanelState()}
+      initialState={createInitialExploreViewState()}
       onDismissMapPopup={onDismissMapPopup}
     />)
 
@@ -262,14 +262,14 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
 
     const shuttleState = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'shuttle' as const,
     }
     rerender(<PanelHarness initialState={shuttleState} status={status} />)
     expect(screen.queryByText('42 venues · 33 shuttle stops · 8 shuttle routes loaded')).toBeNull()
 
     const detailState = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'venue-detail' as const,
       selectedVenue: {
         code: 'COM1-0210',
@@ -294,7 +294,7 @@ describe('ContextualPanel accessibility workflows', () => {
       message: 'Unable to load map tiles; Unable to load venue data',
     }
     const detailState = {
-      ...createInitialContextualPanelState(),
+      ...createInitialExploreViewState(),
       mode: 'venue-detail' as const,
       selectedVenue: {
         code: 'COM1-0210',
@@ -324,14 +324,14 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByLabelText(/Map data unavailable/)).toBeTruthy()
   })
 
-  it('preserves visible contextual, map, and other control focus when entering mobile', async () => {
+  it('preserves visible Explore, map, and other control focus when entering mobile', async () => {
     const { rerender } = render(
       <PanelWithOutsideControls>
         <PanelHarness mobileSheet={false} />
       </PanelWithOutsideControls>,
     )
     const mapControl = screen.getByRole('button', { name: 'Map control' })
-    const contextualSearch = screen.getByRole('searchbox', { name: 'Find a venue' })
+    const exploreSearch = screen.getByRole('searchbox', { name: 'Find a venue' })
     const otherControl = screen.getByRole('button', { name: 'Other visible control' })
 
     mapControl.focus()
@@ -342,7 +342,7 @@ describe('ContextualPanel accessibility workflows', () => {
     )
     await waitFor(() => expect(document.activeElement).toBe(mapControl))
 
-    contextualSearch.focus()
+    exploreSearch.focus()
     rerender(
       <PanelWithOutsideControls>
         <PanelHarness mobileSheet={false} />
@@ -353,7 +353,7 @@ describe('ContextualPanel accessibility workflows', () => {
         <PanelHarness mobileSheet />
       </PanelWithOutsideControls>,
     )
-    await waitFor(() => expect(document.activeElement).toBe(contextualSearch))
+    await waitFor(() => expect(document.activeElement).toBe(exploreSearch))
 
     otherControl.focus()
     rerender(
@@ -376,7 +376,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(search).toBeTruthy()
 
     const panel = screen.getByRole('region', { name: 'Find a venue' })
-    expect(panel.getAttribute('aria-labelledby')).toBe('contextual-panel-heading')
+    expect(panel.getAttribute('aria-labelledby')).toBe('explore-view-heading')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
     expect(screen.getByText('Search for a venue')).toBeTruthy()
@@ -401,7 +401,7 @@ describe('ContextualPanel accessibility workflows', () => {
     expect(screen.getByText('Venue details opened for COM1-0210.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Back to venue search' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Hide explore panel' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Shuttle routes' })).toBeNull()
 
@@ -430,7 +430,7 @@ describe('ContextualPanel accessibility workflows', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1')
     await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
     expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.queryByRole('button', { name: 'Hide contextual panel' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Hide explore panel' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Close map context' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
 
@@ -467,10 +467,10 @@ describe('ContextualPanel accessibility workflows', () => {
 
   it('keeps responsive presentation structure semantic without a modal role', () => {
     const { container } = render(<PanelHarness />)
-    const panel = container.querySelector('.contextual-panel')
+    const panel = container.querySelector('.explore-view')
 
     expect(panel).not.toBeNull()
-    expect(panel?.classList.contains('contextual-panel-venue-search')).toBe(true)
+    expect(panel?.classList.contains('explore-view-venue-search')).toBe(true)
     expect(container.querySelector('[aria-modal="true"]')).toBeNull()
   })
 })

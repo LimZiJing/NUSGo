@@ -6,7 +6,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session.
 - `frontend/src/domain` owns pure transit, venue, location, and trip types, validation, lookup indexes, and domain transformations.
-- `frontend/src/features` owns user workflows such as the contextual panel, shuttle browsing, and trip endpoints, including their workflow state and intent commands.
+- `frontend/src/features` owns user workflows such as the Explore view, shuttle browsing, and trip endpoints, including their workflow state and intent commands.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
 
@@ -54,7 +54,7 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: pure transit
 
 | Current area | Target owner |
 | --- | --- |
-| Pure transit types, validation, and geometry in `frontend/src/types` and `frontend/src/transit/`, including `frontend/src/transit/overlap.ts` and pure validation embedded in `frontend/src/transit/render.ts`, plus `frontend/src/venue`, `frontend/src/location`, `frontend/src/trip`, and pure contextual-panel state | `frontend/src/domain` |
+| Pure transit types, validation, and geometry in `frontend/src/types` and `frontend/src/transit/`, including `frontend/src/transit/overlap.ts` and pure validation embedded in `frontend/src/transit/render.ts`, plus `frontend/src/venue`, `frontend/src/location`, `frontend/src/trip`, and pure Explore view state | `frontend/src/domain` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |

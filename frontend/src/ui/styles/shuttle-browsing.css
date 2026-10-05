@@ -1,4 +1,4 @@
-.contextual-panel .route-control {
+.explore-view .route-control {
   max-height: none;
   padding: 0;
   overflow: visible;
@@ -90,7 +90,7 @@
   cursor: pointer;
 }
 
-.contextual-panel .route-scroll-arrow,
+.explore-view .route-scroll-arrow,
 .stops-view .route-scroll-arrow {
   min-width: 0;
   min-height: 0;
@@ -125,7 +125,7 @@
   right: 0;
 }
 
-.contextual-panel .route-chip,
+.explore-view .route-chip,
 .stops-view .route-chip {
   flex: 0 0 auto;
   min-width: 48px;
@@ -140,7 +140,7 @@
   scroll-snap-align: start;
 }
 
-.contextual-panel .route-chip[data-size='compact'],
+.explore-view .route-chip[data-size='compact'],
 .stops-view .route-chip[data-size='compact'] {
   min-width: 34px;
   min-height: 24px;
@@ -148,7 +148,7 @@
   font-size: 12px;
 }
 
-.contextual-panel .route-chip[data-active='true'],
+.explore-view .route-chip[data-active='true'],
 .stops-view .route-chip[data-active='true'] {
   border-color: var(--route-color);
   color: var(--route-text-color);
@@ -156,7 +156,7 @@
   box-shadow: var(--shadow-chip);
 }
 
-.contextual-panel .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
+.explore-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
 .stops-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
   color: #fff;
 }
@@ -208,7 +208,7 @@
   content: '';
 }
 
-.contextual-panel .route-timeline-stop {
+.explore-view .route-timeline-stop {
   position: relative;
   display: flex;
   align-items: center;
@@ -226,7 +226,7 @@
 }
 
 @media (hover: hover) {
-  .contextual-panel .route-timeline-stop:hover {
+  .explore-view .route-timeline-stop:hover {
     background-color: var(--surface-subtle);
   }
 }

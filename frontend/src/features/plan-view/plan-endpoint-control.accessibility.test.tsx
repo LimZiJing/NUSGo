@@ -172,7 +172,6 @@ describe('PlanView interactions', () => {
         }}
         venues={venues}
         networkIndex={createTransitIndex(createValidTransitNetwork())}
-        expanded={false}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}

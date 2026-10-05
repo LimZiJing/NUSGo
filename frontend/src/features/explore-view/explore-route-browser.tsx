@@ -299,7 +299,7 @@ export function ShuttleRouteControl({
         </div>
       )}
       {selectedRoute ? (
-        <div className="route-timeline-card" data-mobile-sheet-content style={{ '--route-color': selectedRoute.color } as CSSProperties}>
+        <div className="mobile-sheet-content route-timeline-card" data-mobile-sheet-content style={{ '--route-color': selectedRoute.color } as CSSProperties}>
           <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
           <ScrollArea className="route-timeline-scroll">
             <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>

@@ -1,13 +1,13 @@
 import {
-  BusStopTimings,
-  type BusStopDeparture,
-  type BusStopScheduledDeparture,
+  StopTimings,
+  type StopDeparture,
+  type StopScheduledDeparture,
   type PublicServiceTiming,
-} from './bus-stop-timings'
-import { FavoriteStarIcon } from './favorite-star-icon'
-import { InfoPill } from './info-pill'
+} from './stop-timings'
+import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
+import { InfoPill } from '../../ui/info-pill'
 
-export interface BusStopCardProps {
+export interface StopCardProps {
   readonly stopId: string
   readonly stopName: string
   readonly distanceMeters: number | null
@@ -15,8 +15,8 @@ export interface BusStopCardProps {
   readonly expanded: boolean
   readonly live?: boolean
   readonly liveArrivalMessage?: string | null
-  readonly departures: readonly BusStopDeparture[]
-  readonly scheduledDepartures?: readonly BusStopScheduledDeparture[]
+  readonly departures: readonly StopDeparture[]
+  readonly scheduledDepartures?: readonly StopScheduledDeparture[]
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
@@ -28,7 +28,7 @@ function formatDistance(distanceMeters: number): string {
   return `${Math.round(distanceMeters / 10) * 10}m`
 }
 
-export function BusStopCard({
+export function StopCard({
   stopId,
   stopName,
   distanceMeters,
@@ -42,35 +42,35 @@ export function BusStopCard({
   onToggleFavorite,
   onToggleExpanded,
   onSelectRoute,
-}: BusStopCardProps) {
-  const timingsId = `bus-stop-card-timings-${stopId}`
+}: StopCardProps) {
+  const timingsId = `stop-card-timings-${stopId}`
   return (
-    <article className="bus-stop-card">
-      <div className="bus-stop-card-header">
+    <article className="stop-card">
+      <div className="stop-card-header">
         <button
-          className="bus-stop-card-toggle"
+          className="stop-card-toggle"
           type="button"
           aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName} bus timings`}
           aria-expanded={expanded}
           aria-controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
         >
-          <span className="bus-stop-card-identity">
-            <span className="bus-stop-card-name">{stopName}</span>
+          <span className="stop-card-identity">
+            <span className="stop-card-name">{stopName}</span>
             {distanceMeters !== null && (
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
             )}
           </span>
           {expanded && live && (
-            <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" leadingDot />
+            <InfoPill text="LIVE" colorScheme="success" className="stop-card-live" leadingDot />
           )}
-          <span className="bus-stop-card-favorite-space" aria-hidden="true" />
+          <span className="stop-card-favorite-space" aria-hidden="true" />
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
             <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <button
-          className="bus-stop-card-favorite"
+          className="stop-card-favorite"
           type="button"
           aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName} ${favorite ? 'from' : 'to'} favourites`}
           aria-pressed={favorite}
@@ -81,13 +81,13 @@ export function BusStopCard({
       </div>
       <div
         id={timingsId}
-        className="bus-stop-card-timings"
-        data-expanded={expanded}
+        className="stop-card-timings"
+        data-open={expanded}
         aria-hidden={!expanded}
         inert={!expanded}
       >
-        <div className="bus-stop-card-timings-inner">
-          <BusStopTimings
+        <div className="stop-card-timings-inner">
+          <StopTimings
             departures={departures}
             scheduledDepartures={scheduledDepartures}
             liveArrivalMessage={liveArrivalMessage}

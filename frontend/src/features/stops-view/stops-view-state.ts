@@ -17,7 +17,7 @@ import {
 } from '../../domain/transit/service-hours'
 import type { TransitStop } from '../../domain/transit/types'
 import type { StopSheetSelection } from './stops-view'
-import type { PublicServiceTiming } from '../../ui/bus-stop-timings'
+import type { PublicServiceTiming } from './stop-timings'
 
 type StopList = 'nearby' | 'favourites'
 
@@ -39,14 +39,14 @@ export type StopsViewAction =
   | { readonly type: 'reconcile-stops'; readonly stopIds: ReadonlySet<string> }
   | { readonly type: 'dismiss-location-notice' }
 
-export interface StopDeparture {
+export interface StopRouteDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
 }
 
-export interface StopScheduledDeparture {
+export interface StopRouteScheduledDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
@@ -57,7 +57,7 @@ type StopsServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow
 
 interface StopRouteAvailability {
   readonly liveRouteIds: ReadonlySet<string>
-  readonly scheduledDepartures: readonly StopScheduledDeparture[]
+  readonly scheduledDepartures: readonly StopRouteScheduledDeparture[]
 }
 
 export function createInitialStopsViewState(favoriteStopIds: readonly string[] = []): StopsViewState {
@@ -193,7 +193,7 @@ function getLiveStopDepartures(
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
   liveRouteIds: ReadonlySet<string>,
-): readonly StopDeparture[] {
+): readonly StopRouteDeparture[] {
   if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
   const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
@@ -226,8 +226,8 @@ function getLiveArrivalMessage(
   snapshot: ShuttleArrivalSnapshot | null,
   stopId: string,
   nowMs: number,
-  departures: readonly StopDeparture[],
-  scheduledDepartures: readonly StopScheduledDeparture[],
+  departures: readonly StopRouteDeparture[],
+  scheduledDepartures: readonly StopRouteScheduledDeparture[],
   isRefreshing: boolean,
   publicArrivalSnapshot: PublicBusArrivalSnapshot | null,
 ): string | null {
@@ -255,7 +255,7 @@ function getRouteAvailability(
   }
 
   const liveRouteIds = new Set<string>()
-  const scheduledDepartures: StopScheduledDeparture[] = []
+  const scheduledDepartures: StopRouteScheduledDeparture[] = []
   for (const routeId of routeIds) {
     const route = index.routeById.get(routeId)
     const windows = serviceWindows[routeId]

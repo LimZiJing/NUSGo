@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
 
-interface DesktopColumnShellProps {
+interface NavigationViewShellProps {
   readonly id: string
   readonly active: boolean
   readonly children: ReactNode
 }
 
-export function DesktopColumnShell({
+export function NavigationViewShell({
   id,
   active,
   children,
-}: DesktopColumnShellProps) {
+}: NavigationViewShellProps) {
   return (
     <div
       id={id}

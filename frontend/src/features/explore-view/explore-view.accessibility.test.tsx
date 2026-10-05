@@ -123,9 +123,8 @@ function PanelHarness({
 
   return (
     <section
-      className={getExploreShellClassName(state, minimized)}
+      className={getExploreShellClassName(state)}
       aria-labelledby="explore-view-heading"
-      data-minimized={minimized}
     >
       <ExploreView
         state={state}
@@ -222,7 +221,7 @@ describe('ExploreView accessibility workflows', () => {
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
     const exploreView = screen.getByRole('group', { name: 'Explore view' })
     expect(exploreView).toBeTruthy()
-    expect(exploreView.hasAttribute('data-mobile-sheet-content')).toBe(true)
+    expect(screen.getByRole('region', { name: 'Find a venue' }).querySelector('.mobile-sheet-content')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()

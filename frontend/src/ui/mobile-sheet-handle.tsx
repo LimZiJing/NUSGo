@@ -10,13 +10,11 @@ import {
 interface MobileSheetHandleProps {
   readonly detent?: MobileSheetDetent
   readonly restoreDetent?: OpenMobileSheetDetent
-  readonly expanded?: boolean
   readonly label: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
   readonly onBeforeClick?: () => void
   readonly onDetentChange?: (detent: MobileSheetDetent) => void
-  readonly onExpandedChange?: (expanded: boolean) => void
 }
 
 interface InlineSheetStyles {
@@ -130,20 +128,10 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
   const styles = readInlineSheetStyles(sheet)
   const previousMeasurement = sheet.getAttribute('data-mobile-sheet-measuring')
   const previousDetent = sheet.getAttribute('data-detent')
-  const previousExpanded = sheet.getAttribute('data-expanded')
-  const previousMinimized = sheet.getAttribute('data-minimized')
-  const previousTripExpanded = sheet.classList.contains('trip-controls-expanded')
-  const previousTripCollapsed = sheet.classList.contains('trip-controls-collapsed')
-  const previousExploreViewMinimized = sheet.classList.contains('explore-view-minimized')
   const hiddenContent = readHiddenSheetContent(sheet)
 
   sheet.dataset.mobileSheetMeasuring = detent
   sheet.dataset.detent = detent
-  sheet.dataset.expanded = String(detent !== 'collapsed')
-  sheet.dataset.minimized = String(detent === 'collapsed')
-  sheet.classList.toggle('trip-controls-expanded', detent !== 'collapsed')
-  sheet.classList.toggle('trip-controls-collapsed', detent === 'collapsed')
-  sheet.classList.toggle('explore-view-minimized', detent === 'collapsed')
   if (detent !== 'collapsed') {
     for (const { element } of hiddenContent) element.removeAttribute('hidden')
   }
@@ -156,13 +144,6 @@ function measureSheetHeight(sheet: HTMLElement, detent: MobileSheetDetent): numb
 
   if (previousDetent === null) delete sheet.dataset.detent
   else sheet.setAttribute('data-detent', previousDetent)
-  if (previousExpanded === null) delete sheet.dataset.expanded
-  else sheet.setAttribute('data-expanded', previousExpanded)
-  if (previousMinimized === null) delete sheet.dataset.minimized
-  else sheet.setAttribute('data-minimized', previousMinimized)
-  sheet.classList.toggle('trip-controls-expanded', previousTripExpanded)
-  sheet.classList.toggle('trip-controls-collapsed', previousTripCollapsed)
-  sheet.classList.toggle('explore-view-minimized', previousExploreViewMinimized)
   restoreHiddenContent(hiddenContent)
   if (previousMeasurement === null) {
     sheet.removeAttribute('data-mobile-sheet-measuring')
@@ -256,23 +237,20 @@ function releasePointer(button: HTMLButtonElement, pointerId: number): void {
   }
 }
 
-function getInitialDetent(detent: MobileSheetDetent | undefined, expanded: boolean | undefined): MobileSheetDetent {
-  if (detent) return detent
-  return expanded === false ? 'collapsed' : 'partial'
+function getInitialDetent(detent: MobileSheetDetent | undefined): MobileSheetDetent {
+  return detent ?? 'partial'
 }
 
 export function MobileSheetHandle({
   detent: passedDetent,
   restoreDetent = 'partial',
-  expanded,
   label,
   controlsId,
   onButtonRef,
   onBeforeClick,
   onDetentChange,
-  onExpandedChange,
 }: MobileSheetHandleProps) {
-  const detent = getInitialDetent(passedDetent, expanded)
+  const detent = getInitialDetent(passedDetent)
   const dragRef = useRef<DragSession | null>(null)
   const settlingRef = useRef<DragSession | null>(null)
   const settleTimerRef = useRef<number | null>(null)
@@ -281,8 +259,7 @@ export function MobileSheetHandle({
 
   const changeDetent = useCallback((nextDetent: MobileSheetDetent): void => {
     if (onDetentChange) onDetentChange(nextDetent)
-    else onExpandedChange?.(isOpenMobileSheetDetent(nextDetent))
-  }, [onDetentChange, onExpandedChange])
+  }, [onDetentChange])
 
   const assignButtonRef = useCallback((button: HTMLButtonElement | null): void => {
     onButtonRef?.(button)

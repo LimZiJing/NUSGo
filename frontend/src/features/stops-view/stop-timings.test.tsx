@@ -2,14 +2,14 @@
 
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BusStopTimings } from './bus-stop-timings'
+import { StopTimings } from './stop-timings'
 
 afterEach(cleanup)
 
-describe('BusStopTimings', () => {
+describe('StopTimings', () => {
   it('marks the empty timing state for muted card styling', () => {
     render(
-      <BusStopTimings
+      <StopTimings
         departures={[]}
         publicServices={[]}
         onSelectRoute={vi.fn()}
@@ -21,7 +21,7 @@ describe('BusStopTimings', () => {
 
   it('shows reachable favourite stop nicknames beside an internal route', () => {
     render(
-      <BusStopTimings
+      <StopTimings
         departures={[{
           routeId: 'A2',
           routeName: 'A2',
@@ -53,7 +53,7 @@ describe('BusStopTimings', () => {
 
   it('uses the same status row for scheduled routes and public services', () => {
     render(
-      <BusStopTimings
+      <StopTimings
         departures={[]}
         scheduledDepartures={[{
           routeId: 'A2',
@@ -73,7 +73,7 @@ describe('BusStopTimings', () => {
 
   it('explains normalized public timing states', () => {
     render(
-      <BusStopTimings
+      <StopTimings
         departures={[]}
         publicServices={[
           { serviceNumber: '95', timings: null, status: 'no-estimate' },

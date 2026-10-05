@@ -1,16 +1,16 @@
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
-import { BusStopCard } from '../../ui/bus-stop-card'
 import {
-  BusStopTimings,
-  type BusStopDeparture,
-  type BusStopScheduledDeparture,
+  StopTimings,
+  type StopDeparture,
+  type StopScheduledDeparture,
   type PublicServiceTiming,
-} from '../../ui/bus-stop-timings'
+} from './stop-timings'
+import { StopCard } from './stop-card'
 import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
-import { type StopDeparture } from './stops-view-state'
+import { type StopRouteDeparture } from './stops-view-state'
 
-type StopSheetDeparture = StopDeparture & BusStopDeparture
+type StopSheetDeparture = StopRouteDeparture & StopDeparture
 
 export interface StopSheetSelection {
   readonly id: string
@@ -18,7 +18,7 @@ export interface StopSheetSelection {
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly departures: readonly StopSheetDeparture[]
-  readonly scheduledDepartures: readonly BusStopScheduledDeparture[]
+  readonly scheduledDepartures: readonly StopScheduledDeparture[]
   readonly live: boolean
   readonly liveArrivalMessage: string | null
 }
@@ -31,7 +31,6 @@ export interface StopOverviewSelection {
 }
 
 interface StopsViewProps {
-  readonly expanded?: boolean
   readonly selectedStop: StopSheetSelection | null
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
@@ -50,7 +49,6 @@ interface StopsViewProps {
 }
 
 export function StopsView({
-  expanded = true,
   selectedStop,
   onBackToStops,
   onSelectOppositeStop,
@@ -68,14 +66,13 @@ export function StopsView({
   onDismissLocationNotice,
 }: StopsViewProps) {
   const oppositeStop = selectedStop?.oppositeStop ?? null
-  const isExpanded = expanded
 
   return (
     <div
       id="stops-view-content"
+      className="mobile-sheet-content stops-view-content"
       data-mobile-sheet-content
       data-view={selectedStop ? 'selected' : 'overview'}
-      hidden={!isExpanded}
     >
         {selectedStop ? (
           <div className="stop-selection" data-testid="stop-detail">
@@ -120,7 +117,7 @@ export function StopsView({
               </p>
             )}
             <div className="stop-departures">
-              <BusStopTimings
+              <StopTimings
                 departures={selectedStop.departures}
                 scheduledDepartures={selectedStop.scheduledDepartures}
                 liveArrivalMessage={selectedStop.liveArrivalMessage}
@@ -149,7 +146,7 @@ export function StopsView({
             {overviewStops.length ? (
               <div className="stops-card-list">
                 {overviewStops.map(({ stop, distanceMeters, favorite, expanded }) => (
-                  <BusStopCard
+                  <StopCard
                     key={stop.id}
                     stopId={stop.id}
                     stopName={stop.longName}

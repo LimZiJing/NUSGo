@@ -83,8 +83,8 @@ function getPanelHeading(state: ExploreViewState): string {
 }
 
 function findFocusTarget(key: string): HTMLElement | undefined {
-  return Array.from(document.querySelectorAll<HTMLElement>('[data-explore-focus-id]'))
-    .find((element) => element.dataset.exploreFocusId === key)
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-focus-id]'))
+    .find((element) => element.dataset.focusId === key)
 }
 
 function getPanelAnnouncement(state: ExploreViewState): string | null {
@@ -348,7 +348,7 @@ export function ExploreView({
   ): void => {
     focusHistoryRef.current.push({
       element: event.currentTarget,
-      key: event.currentTarget.dataset.exploreFocusId ?? null,
+      key: event.currentTarget.dataset.focusId ?? null,
       fallbackKey,
     })
   }
@@ -442,11 +442,10 @@ export function ExploreView({
             className="explore-segments"
             role="group"
             aria-label="Explore view"
-            data-mobile-sheet-content
           >
             <button
               type="button"
-              data-explore-focus-id="explore-venue-segment"
+              data-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
               onClick={handleSelectVenueSearch}
             >
@@ -454,7 +453,7 @@ export function ExploreView({
             </button>
             <button
               type="button"
-              data-explore-focus-id="explore-shuttle-segment"
+              data-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectShuttle}
             >
@@ -507,7 +506,7 @@ export function ExploreView({
               </button>
             )}
           </div>
-          <div className="explore-view-search-body" data-mobile-sheet-content>
+          <div className="mobile-sheet-content explore-view-search-body" data-mobile-sheet-content>
             {venues === null || searchState.failed ? (
               <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
@@ -518,7 +517,7 @@ export function ExploreView({
                   searchState.results.map((result) => (
                     <button
                       className="explore-view-result"
-                      data-explore-focus-id={`venue-result-${result.code}`}
+                      data-focus-id={`venue-result-${result.code}`}
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
@@ -547,7 +546,7 @@ export function ExploreView({
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
           id="explore-view-content"
-          className="explore-view-content explore-view-detail"
+          className="mobile-sheet-content explore-view-content explore-view-detail"
           data-mobile-sheet-content
         >
           <div className="venue-detail-identity">
@@ -638,7 +637,7 @@ export function ExploreView({
       {state.mode === 'shuttle' && (
         <div
           id="explore-view-content"
-          className="explore-view-content"
+          className="mobile-sheet-content explore-view-content"
           data-mobile-sheet-content
         >
           {renderShuttleRoutes({
@@ -649,8 +648,7 @@ export function ExploreView({
       )}
       {panelStatus && (
         <p
-          className={`explore-view-status explore-view-status-${panelStatus.kind}`}
-          data-mobile-sheet-content={mobileSheet && panelStatus.kind === 'success' ? '' : undefined}
+          className={`mobile-sheet-content explore-view-status explore-view-status-${panelStatus.kind}`}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"

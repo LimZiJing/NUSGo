@@ -11,6 +11,7 @@ import type { VenueLocationMap } from '../../domain/venue/types'
 import { PlanEndpointControl, type OriginVenueAutofillState } from './plan-endpoint-control'
 import { JourneyResult, type JourneyResultState } from './journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
+import { ArrowDownUpIcon } from '../../ui/icons'
 
 interface PlanViewProps {
   tripRequest: TripRequest
@@ -118,9 +119,7 @@ export function PlanView({
           disabled={!tripRequest.origin || !tripRequest.destination}
           aria-label="Swap origin and destination"
         >
-          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-            <path d="M7 5v14m0 0-4-4m4 4 4-4M17 19V5m0 0-4 4m4-4 4 4" />
-          </svg>
+          <ArrowDownUpIcon />
         </button>
       </div>
       <div

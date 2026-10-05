@@ -4,8 +4,8 @@ import {
   type StopScheduledDeparture,
   type PublicServiceTiming,
 } from './stop-timings'
-import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
 import { InfoPill } from '../../ui/info-pill'
+import { ChevronDownIcon, FavoriteIcon } from '../../ui/icons'
 
 export interface StopCardProps {
   readonly stopId: string
@@ -65,9 +65,7 @@ export function StopCard({
             <InfoPill text="LIVE" colorScheme="success" className="stop-card-live" leadingDot />
           )}
           <span className="stop-card-favorite-space" aria-hidden="true" />
-          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
-            <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ChevronDownIcon />
         </button>
         <button
           className="stop-card-favorite"
@@ -76,7 +74,7 @@ export function StopCard({
           aria-pressed={favorite}
           onClick={() => onToggleFavorite(stopId)}
         >
-          <FavoriteStarIcon filled={favorite} />
+          <FavoriteIcon filled={favorite} />
         </button>
       </div>
       <div

@@ -1,3 +1,5 @@
+import { NavigationIcon } from './icons'
+
 interface NavigateButtonProps {
   readonly onClick: () => void
   readonly disabled?: boolean
@@ -13,9 +15,7 @@ export function NavigateButton({ onClick, disabled, ariaLabel }: NavigateButtonP
       aria-label={ariaLabel}
       onClick={onClick}
     >
-      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-        <path d="m4 20 7-17 3 8 8 3-18 6Z" />
-      </svg>
+      <NavigationIcon />
       <span>Navigate</span>
     </button>
   )

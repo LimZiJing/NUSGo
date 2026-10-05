@@ -7,7 +7,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { StopCard } from './stop-card'
-import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
+import { FavoriteIcon } from '../../ui/icons'
 import { type StopRouteDeparture } from './stops-view-state'
 
 type StopSheetDeparture = StopRouteDeparture & StopDeparture
@@ -91,7 +91,7 @@ export function StopsView({
                 aria-pressed={selectedStopFavorite}
                 onClick={() => onToggleFavorite?.(selectedStop.id)}
               >
-                <FavoriteStarIcon filled={selectedStopFavorite} />
+                <FavoriteIcon filled={selectedStopFavorite} />
               </button>
             </div>
             <div className="stop-actions">

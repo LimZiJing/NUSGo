@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { LocateIcon } from './icons'
 
 export interface LocationControlProps {
   readonly visible?: boolean
@@ -32,11 +33,7 @@ export function LocationControl({
         disabled={searching}
         onClick={onLocate}
       >
-        <svg className="location-control-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="6" />
-          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-          <circle className="location-control-icon-center" cx="12" cy="12" r="2" />
-        </svg>
+        <LocateIcon className="location-control-icon" />
         {searching && <span className="location-control-spinner" aria-hidden="true" />}
       </button>
       {searching && (

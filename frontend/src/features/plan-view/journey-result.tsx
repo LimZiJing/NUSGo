@@ -3,6 +3,7 @@ import type { TransitIndex } from '../../domain/transit'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import { BusIcon, FootprintsIcon } from '../../ui/icons'
 import {
   formatDistance,
   formatDuration,
@@ -26,28 +27,10 @@ interface JourneyResultProps {
   readonly referenceTimeMs?: number | null
 }
 
-function WalkingIcon() {
-  return (
-    <svg className="journey-mode-icon journey-walking-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M5.4 17.6c-1.3-1.3-.7-3.7.9-5.2 1.7-1.5 3.9-1.7 4.8-.6 1 1.1.4 3.3-1.2 4.9-1.6 1.5-3.3 2.2-4.5.9Zm9.2-6.7c-1.3-1.3-.7-3.7.9-5.2 1.7-1.5 3.9-1.7 4.8-.6 1 1.1.4 3.3-1.2 4.9-1.6 1.5-3.3 2.2-4.5.9Z" />
-    </svg>
-  )
-}
-
-function BusIcon() {
-  return (
-    <svg className="journey-mode-icon journey-bus-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M6 17V7c0-1.2 1.8-2 6-2s6 .8 6 2v10M6 12h12M8 18l-1 2m9-2 1 2M7 17h10" />
-      <circle cx="9" cy="15" r="1" />
-      <circle cx="15" cy="15" r="1" />
-    </svg>
-  )
-}
-
 function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttle' }>) {
   const label = (
     <>
-      <BusIcon />
+      <BusIcon className="journey-mode-icon journey-bus-icon" />
       <span>{entry.routeLabel}</span>
     </>
   )
@@ -89,7 +72,7 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
       <li className="journey-timeline-item journey-timeline-leg journey-timeline-walking" key={entry.id}>
         <span className="journey-timeline-marker" aria-hidden="true" />
         <div className="journey-timeline-content journey-walking-content">
-          <strong className="journey-mode-label"><WalkingIcon />Walk</strong>
+          <strong className="journey-mode-label"><FootprintsIcon className="journey-mode-icon journey-walking-icon" />Walk</strong>
           <span className="journey-leg-summary">{entry.durationLabel} · {entry.distanceLabel}</span>
         </div>
       </li>

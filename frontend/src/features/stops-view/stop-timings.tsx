@@ -1,5 +1,5 @@
 import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
-import { FavoriteStarIcon } from '../../ui/favorite-star-icon'
+import { FavoriteIcon } from '../../ui/icons'
 
 export interface StopFavoriteDestination {
   readonly id: string
@@ -105,7 +105,7 @@ export function StopTimings({
                     className="stop-reachable-favorite"
                     data-opposite={isOpposite ? 'true' : undefined}
                   >
-                    <FavoriteStarIcon filled />
+                    <FavoriteIcon filled />
                     <span>{name}</span>
                   </span>
                 ))}

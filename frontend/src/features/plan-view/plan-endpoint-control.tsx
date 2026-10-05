@@ -10,6 +10,7 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
+import { CloseIcon, LocateIcon } from '../../ui/icons'
 
 export interface OriginVenueAutofillState {
   readonly status: 'idle' | 'requesting' | 'error'
@@ -167,10 +168,7 @@ export function PlanEndpointControl({
                 aria-busy={isFindingNearestVenue}
                 title={locationActionLabel}
               >
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
-                  <circle cx="12" cy="12" r="5" />
-                </svg>
+                <LocateIcon />
               </button>
             )}
             {(endpoint || searchQuery) && (
@@ -180,9 +178,7 @@ export function PlanEndpointControl({
                 onClick={clearEndpoint}
                 aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
               >
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="m6 6 12 12M18 6 6 18" />
-                </svg>
+                <CloseIcon />
               </button>
             )}
           </div>

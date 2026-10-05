@@ -113,10 +113,8 @@ function setInlineSheetHeight(sheet: HTMLElement, height: number): void {
 }
 
 function readHiddenSheetContent(sheet: HTMLElement): HiddenSheetContent[] {
-  return Array.from(sheet.children)
-    .filter((element): element is HTMLElement => (
-      element instanceof HTMLElement && element.matches('.mobile-sheet-content[hidden]')
-    ))
+  return Array.from(sheet.querySelectorAll<HTMLElement>('.mobile-sheet-content[hidden]'))
+    .filter((element) => !element.parentElement?.closest('.mobile-sheet-content'))
     .map((element) => ({ element, value: element.getAttribute('hidden') ?? '' }))
 }
 

@@ -1,0 +1,56 @@
+.navigation-column,
+.navigation-view-stack {
+  display: contents;
+}
+.navigation-view[hidden] {
+  display: none !important;
+}
+
+.main-navigation button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: var(--control-height-lg);
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary-strong);
+  background: transparent;
+  font: 500 12px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.main-navigation button[aria-current='page'] {
+  color: var(--text-contrast);
+  font-weight: 600;
+}
+
+.main-navigation button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.navigation-tab-icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.navigation-tab-icon svg {
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.navigation-tab-label {
+  white-space: nowrap;
+}

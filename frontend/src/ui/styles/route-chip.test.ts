@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
-const styles = readFileSync(resolve(stylesDirectory, 'shuttle-browsing.css'), 'utf8')
+const styles = readFileSync(resolve(stylesDirectory, 'route-chip.css'), 'utf8')
 
 describe('shuttle route scrolling styles', () => {
   it('hides the native scrollbar while preserving smooth native scrolling', () => {

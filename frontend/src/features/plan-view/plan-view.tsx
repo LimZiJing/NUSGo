@@ -126,7 +126,6 @@ export function PlanView({
       <div
         id={PLAN_VIEW_CONTENT_ID}
         className="mobile-sheet-content plan-view-content"
-        data-mobile-sheet-content
       >
         <div className="plan-endpoint-picker">
           <PlanEndpointControl

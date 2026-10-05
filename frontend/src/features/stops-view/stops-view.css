@@ -210,7 +210,7 @@
     transition: grid-template-rows 180ms ease, opacity 150ms ease;
   }
 
-  .stop-card-timings[data-open='true'] {
+  .stop-card-timings[data-expanded='true'] {
     grid-template-rows: 1fr;
     opacity: 1;
   }
@@ -468,13 +468,13 @@
     min-height: 0;
   }
 
-  .stops-view [data-mobile-sheet-content] {
+  .stops-view .mobile-sheet-content {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
   }
 
-  .stops-view [data-mobile-sheet-content][data-view='overview'] {
+  .stops-view .mobile-sheet-content[data-view='overview'] {
     overflow: hidden;
   }
 

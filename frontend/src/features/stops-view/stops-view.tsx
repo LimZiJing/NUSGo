@@ -71,7 +71,6 @@ export function StopsView({
     <div
       id="stops-view-content"
       className="mobile-sheet-content stops-view-content"
-      data-mobile-sheet-content
       data-view={selectedStop ? 'selected' : 'overview'}
     >
         {selectedStop ? (

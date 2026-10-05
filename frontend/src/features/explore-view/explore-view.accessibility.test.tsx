@@ -141,7 +141,7 @@ function PanelHarness({
           />
         )}
         mobileSheet={mobileSheet}
-        minimized={minimized}
+        sheetDetent={minimized ? 'collapsed' : 'partial'}
         active={active}
         status={status}
         onQueryChange={(query) => dispatch({ type: 'set-query', query })}

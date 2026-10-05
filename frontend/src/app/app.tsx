@@ -31,7 +31,7 @@ import { MobileSheetShell } from '../ui/mobile-sheet-shell'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { getMobileSheetHeights, getMobileTabBarInset } from '../ui/mobile-sheet-layout'
 import { PlanView } from '../features/plan-view/plan-view'
-import { ShuttleRouteControl } from '../features/explore-view/explore-route-browser'
+import { ExploreRouteBrowser } from '../features/explore-view/explore-route-browser'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,
@@ -815,7 +815,7 @@ function App() {
               transitIndex={state.transitIndex}
               shuttleRoutesAvailable={(state.transitIndex?.routes.length ?? 0) > 0}
               renderShuttleRoutes={(options) => (
-                <ShuttleRouteControl
+                <ExploreRouteBrowser
                   network={state.transitIndex?.network ?? null}
                   networkIndex={state.transitIndex}
                   selectedRouteId={state.selectedRouteId}
@@ -825,7 +825,7 @@ function App() {
                 />
               )}
               selectedRouteId={state.selectedRouteId}
-              minimized={isMobileViewport && navigation.sheets.explore.detent === 'collapsed'}
+              sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
               mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
               onRestore={() => dispatchNavigation({

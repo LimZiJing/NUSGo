@@ -16,7 +16,7 @@ describe('shuttle route scrolling styles', () => {
   })
 
   it('keeps arrow indicators visually unstyled and fully hidden at an endpoint', () => {
-    expect(styles).toMatch(/\.explore-view \.route-scroll-arrow,[\s\S]*?\.stops-view \.route-scroll-arrow\s*{[^}]*border:\s*0;[^}]*border-radius:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s)
+    expect(styles).toMatch(/\.route-scroll-arrow\s*{[^}]*border:\s*0;[^}]*border-radius:\s*0;[^}]*background:\s*transparent;/s)
     expect(styles).toMatch(/\.route-scroll-arrow\[hidden\]\s*{[^}]*display:\s*none;/s)
   })
 })

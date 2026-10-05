@@ -82,7 +82,7 @@ export function StopCard({
       <div
         id={timingsId}
         className="stop-card-timings"
-        data-open={expanded}
+        data-expanded={expanded}
         aria-hidden={!expanded}
         inert={!expanded}
       >

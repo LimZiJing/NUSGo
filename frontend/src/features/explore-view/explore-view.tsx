@@ -22,6 +22,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
+import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
 
@@ -54,7 +55,7 @@ interface ExploreViewProps {
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
   renderShuttleRoutes: (options: ShuttleRouteRenderOptions) => ReactNode
-  minimized?: boolean
+  sheetDetent?: MobileSheetDetent
   mobileSheet?: boolean
   active?: boolean
   onRestore?: () => void
@@ -110,7 +111,7 @@ export function ExploreView({
   transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
-  minimized = false,
+  sheetDetent = 'partial',
   mobileSheet = true,
   active = true,
   onRestore,
@@ -130,6 +131,7 @@ export function ExploreView({
   onSearchCancel,
   onSearchResult,
 }: ExploreViewProps) {
+  const minimized = sheetDetent === 'collapsed'
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -506,7 +508,7 @@ export function ExploreView({
               </button>
             )}
           </div>
-          <div className="mobile-sheet-content explore-view-search-body" data-mobile-sheet-content>
+          <div className="mobile-sheet-content explore-view-search-body">
             {venues === null || searchState.failed ? (
               <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
@@ -547,7 +549,6 @@ export function ExploreView({
         <div
           id="explore-view-content"
           className="mobile-sheet-content explore-view-content explore-view-detail"
-          data-mobile-sheet-content
         >
           <div className="venue-detail-identity">
             <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
@@ -638,7 +639,6 @@ export function ExploreView({
         <div
           id="explore-view-content"
           className="mobile-sheet-content explore-view-content"
-          data-mobile-sheet-content
         >
           {renderShuttleRoutes({
             firstRouteCardRef,

@@ -27,7 +27,7 @@ const venues: VenueLocationMap = {
   },
 }
 
-function TestShuttleRouteControl({
+function TestExploreRouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
@@ -131,7 +131,7 @@ function PanelHarness({
         venues={venues}
         shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
         renderShuttleRoutes={(options) => (
-          <TestShuttleRouteControl
+          <TestExploreRouteBrowser
             network={network}
             networkIndex={networkIndex}
             selectedRouteId={selectedRouteId}

@@ -163,62 +163,7 @@ describe('PlanView interactions', () => {
     expect(screen.queryByRole('button', { name: /COM1-0210/ })).toBeNull()
   })
 
-  it('keeps full endpoint names available while visually truncating a complete summary', () => {
-    const longVenue = {
-      ...venues,
-      'COM1-0210': {
-        roomName: 'A very long venue name used to verify accessible endpoint summaries',
-        location: { x: 103.77, y: 1.3 },
-      },
-    }
-    const networkIndex = createTransitIndex(createValidTransitNetwork())
-    render(
-      <PlanView
-        tripRequest={{
-          origin: { kind: 'venue', id: 'COM1-0210' },
-          destination: { kind: 'stop', id: 'STOP-A' },
-        }}
-        venues={longVenue}
-        networkIndex={networkIndex}
-        expanded={false}
-        onSwap={() => undefined}
-        onSelectOriginEndpoint={() => undefined}
-        onClearOriginEndpoint={() => undefined}
-        onSelectDestinationEndpoint={() => undefined}
-        onClearDestinationEndpoint={() => undefined}
-        onClearTrip={() => undefined}
-        onPlanJourney={() => undefined}
-      />,
-    )
-
-    const summary = screen.getByText(/A very long venue name/, { selector: '.trip-controls-summary' })
-    expect(summary.getAttribute('title')).toContain(
-      'A very long venue name used to verify accessible endpoint summaries',
-    )
-    expect(summary.getAttribute('title')).toContain('Stop A')
-  })
-
-  it('labels a partial summary with the selected origin and a destination prompt', () => {
-    render(
-      <PlanView
-        tripRequest={{ origin: { kind: 'venue', id: 'COM1-0210' }, destination: null }}
-        venues={venues}
-        networkIndex={createTransitIndex(createValidTransitNetwork())}
-        expanded={false}
-        onSwap={() => undefined}
-        onSelectOriginEndpoint={() => undefined}
-        onClearOriginEndpoint={() => undefined}
-        onSelectDestinationEndpoint={() => undefined}
-        onClearDestinationEndpoint={() => undefined}
-        onClearTrip={() => undefined}
-        onPlanJourney={() => undefined}
-      />,
-    )
-
-    expect(screen.getByText('Computing 1, Level 2 → Choose destination')).toBeTruthy()
-  })
-
-  it('labels a complete summary with both selected endpoint names', () => {
+  it('keeps the Plan trip heading compact after endpoints are selected', () => {
     render(
       <PlanView
         tripRequest={{
@@ -238,7 +183,8 @@ describe('PlanView interactions', () => {
       />,
     )
 
-    expect(screen.getByText('Computing 1, Level 2 → Stop A')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Plan trip' })).toBeTruthy()
+    expect(screen.queryByText('Computing 1, Level 2 to Stop A')).toBeNull()
   })
 
   it('keeps empty endpoint results in a labelled group with native semantics', async () => {

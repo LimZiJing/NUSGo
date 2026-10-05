@@ -3,9 +3,21 @@ import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { Journey } from '../../domain/trip/journey'
+import { getJourneyTimelineEntries } from './journey-result-presentation'
 import { TripJourneyResult } from './trip-journey-result'
 
-const networkIndex = createTransitIndex(createValidTransitNetwork())
+const network = createValidTransitNetwork()
+network.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B']
+network.stops.push({
+  id: 'STOP-MID',
+  longName: 'Middle Stop',
+  shortName: 'MID',
+  latitude: 1.05,
+  longitude: 103.05,
+  services: ['A1'],
+  opposite: null,
+})
+const networkIndex = createTransitIndex(network)
 const route = networkIndex.routes[0]
 const boardingStopId = route.stopIds[0]
 const alightingStopId = route.stopIds[2]
@@ -35,9 +47,17 @@ const journey: Journey = {
       waitingSeconds: 0,
       rideSeconds: 300,
     },
+    {
+      mode: 'walking',
+      from: { kind: 'stop', id: alightingStopId },
+      to: { kind: 'venue', id: 'DESTINATION' },
+      durationSeconds: 180,
+      distanceMeters: 250,
+      geometry: { type: 'LineString', coordinates: [[103.1, 1.1], [103.2, 1.2]] },
+    },
   ],
-  totalDurationSeconds: 390,
-  totalDistanceMeters: 2320,
+  totalDurationSeconds: 570,
+  totalDistanceMeters: 2570,
   estimateStatus: 'estimated',
   planningQuality: 'exact',
 }
@@ -84,21 +104,55 @@ describe('TripJourneyResult', () => {
         state={{ status: 'ready', journey, error: null }}
         venues={venues}
         networkIndex={networkIndex}
+        referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
       />,
     )
 
-    expect(markup).toContain('Recommended estimated Journey')
-    expect(markup).toContain('7 min')
-    expect(markup).toContain('2.3 km')
+    expect(markup).toContain('Recommended')
+    expect(markup).not.toContain('Recommended Journey')
+    expect(markup).toContain('10 min')
+    expect(markup).toContain('2.6 km')
+    expect(markup).toContain('Arrive 08:10')
     expect(markup).toContain('Walk')
-    expect(markup).toContain(`Shuttle ${route.name}`)
-    expect(markup).toContain('Wait')
+    expect(markup).toContain('trip-journey-walking-icon')
+    expect(markup).toContain(`>${route.name}<`)
+    expect(markup).toContain('trip-journey-bus-icon')
+    expect(markup).toContain('trip-journey-disclosure-chevron')
+    expect(markup).toContain(`aria-label="${route.name}, show bus stops"`)
+    expect(markup).toContain('trip-journey-stop-marker')
+    expect(markup).toContain('>MID</span>')
+    expect(markup).not.toContain('Middle Stop')
+    expect(markup).toContain(`--journey-route-color:${route.color}`)
+    expect(markup).toContain('Wait Arriving now')
     expect(markup).toContain('Arriving now')
     expect(markup).toContain('Ride')
-    expect(markup).toContain('Board')
-    expect(markup).toContain('Alight')
-    expect(markup).toContain('Stops:')
+    expect(markup).toContain('Origin venue')
+    expect(markup).toContain('Destination venue')
+    expect(markup).toContain('aria-label="Journey details"')
+    expect(markup).not.toContain('Board')
+    expect(markup).not.toContain('Alight')
+    expect(markup).not.toContain('Stops:')
+    expect(markup).not.toContain('→')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
+  })
+
+  it('flattens each Journey into one ordered timeline without repeating locations', () => {
+    const entries = getJourneyTimelineEntries(journey, venues, networkIndex)
+
+    expect(entries.map((entry) => entry.kind)).toEqual([
+      'location',
+      'walking',
+      'location',
+      'shuttle',
+      'location',
+      'walking',
+      'location',
+    ])
+    expect(entries.filter((entry) => entry.kind === 'location')).toHaveLength(4)
+    expect(entries.find((entry) => entry.kind === 'shuttle')).toMatchObject({
+      routeColor: route.color,
+      stopLabels: ['MID'],
+    })
   })
 
   it('explains when the Journey was selected within a search budget', () => {
@@ -118,6 +172,20 @@ describe('TripJourneyResult', () => {
     expect(markup).not.toContain('Fastest estimated Journey')
   })
 
+  it('leaves the detailed simulation notice to PlanView', () => {
+    const markup = renderToStaticMarkup(
+      <TripJourneyResult
+        state={{ status: 'ready', journey, error: null }}
+        venues={venues}
+        networkIndex={networkIndex}
+        simulated
+      />,
+    )
+
+    expect(markup).not.toContain('simulated route')
+    expect(markup).toContain('Recommended')
+  })
+
   it.each([
     [0, 'Arriving now'],
     [29, 'Arriving soon'],
@@ -126,7 +194,7 @@ describe('TripJourneyResult', () => {
   ])('uses threshold wording for a %s-second wait', (waitingSeconds, expected) => {
     const markup = renderJourneyWithWaitingSeconds(waitingSeconds)
 
-    expect(markup).toContain(`<dt>Wait</dt><dd>${expected}</dd>`)
+    expect(markup).toContain(`Wait ${expected}`)
   })
 
   it.each([

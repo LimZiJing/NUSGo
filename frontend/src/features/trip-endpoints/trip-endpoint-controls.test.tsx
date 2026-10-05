@@ -179,7 +179,7 @@ describe('TripEndpointControls Journey result', () => {
       />,
     )
 
-    expect(markup).toContain('Recommended estimated Journey')
+    expect(markup).toContain('Recommended')
     expect(markup).toContain('Walk')
   })
 })

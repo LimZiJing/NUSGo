@@ -24,16 +24,6 @@
   min-width: 0;
 }
 
-.trip-controls-summary {
-  display: none;
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .trip-controls-body {
   display: grid;
   gap: 8px;
@@ -225,6 +215,8 @@
 }
 
 .trip-controls-actions {
+  /* Keep the actions at the right edge even when no validation message is present. */
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -339,8 +331,10 @@
 .trip-journey-result {
   display: grid;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-control);
+  padding: 10px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-status);
+  background: var(--surface-raised);
 }
 
 .trip-journey-result-heading {
@@ -351,19 +345,20 @@
   gap: 8px;
 }
 
-.trip-journey-kicker {
-  margin: 0 0 1px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.trip-journey-result-title {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-width: 0;
+  text-align: left;
 }
 
 .trip-journey-result h3 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
@@ -375,15 +370,20 @@
 }
 
 .trip-journey-metrics strong {
-  color: var(--text-primary);
+  color: var(--accent);
   font-size: 18px;
+  font-weight: 750;
 }
 
 .trip-journey-metrics span,
-.trip-journey-notice,
-.trip-journey-leg p {
+.trip-journey-notice {
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.trip-journey-arrival {
+  color: var(--status-success-strong) !important;
+  font-weight: 650;
 }
 
 .trip-journey-notice {
@@ -393,84 +393,274 @@
   background: var(--surface-warning);
 }
 
-.trip-journey-legs {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: journey-leg;
-}
-
-.trip-journey-leg {
+.trip-journey-timeline {
   position: relative;
   display: grid;
-  gap: 3px;
-  padding: 8px 8px 8px 30px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-status);
-  background: var(--surface-raised);
-  counter-increment: journey-leg;
-}
-
-.trip-journey-leg::before {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  display: grid;
-  width: 16px;
-  height: 16px;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--text-inverse);
-  background: var(--surface-journey-step);
-  content: counter(journey-leg);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.trip-journey-leg-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--text-primary);
-}
-
-.trip-journey-leg-heading span {
-  flex: 0 0 auto;
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.trip-journey-leg p {
+  gap: 0;
   margin: 0;
+  padding: 2px 0;
+  list-style: none;
 }
 
-.trip-journey-leg-detail {
+/* One shared rail keeps the journey continuous while markers vary by entry type. */
+.trip-journey-timeline::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 2px;
+  background: var(--border-control);
+  content: '';
+}
+
+.trip-journey-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  padding: 4px 0;
+}
+
+.trip-journey-timeline-marker {
+  z-index: 1;
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  border: 3px solid var(--surface-raised);
+  border-radius: 50%;
+  /* Match the marker's outer diameter to the rail's grid geometry. */
+  box-sizing: border-box;
+  background: var(--surface-journey-step);
+  box-shadow: 0 0 0 1px var(--border-control);
+}
+
+.trip-journey-timeline-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.trip-journey-timeline-location strong,
+.trip-journey-timeline-content strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.trip-journey-timeline-location strong {
+  justify-self: start;
+  max-width: 100%;
+  text-align: left;
+}
+
+.trip-journey-timeline-content span {
+  color: var(--text-secondary);
+  font-size: 12px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
-.trip-journey-leg-details {
-  display: grid;
-  gap: 2px;
-  margin: 0;
+.trip-journey-timeline-leg .trip-journey-timeline-marker {
+  width: 10px;
+  height: 10px;
+  margin-left: 4px;
+  border-width: 2px;
+  background: var(--surface-muted);
+}
+
+.trip-journey-timeline-shuttle {
+  align-items: start;
+}
+
+.trip-journey-timeline-shuttle .trip-journey-timeline-marker {
+  margin-top: 5px;
+}
+
+/* The app shell centers text by default; keep the expanded route anchored to the rail. */
+.trip-journey-shuttle-content {
+  text-align: left;
+}
+
+/* The stop dots replace the parent shuttle dot while the route details are open. */
+.trip-journey-timeline-shuttle:has(.trip-journey-stop-disclosure[open]) > .trip-journey-timeline-marker {
+  visibility: hidden;
+}
+
+.trip-journey-timeline-walking .trip-journey-timeline-marker {
+  /* Keep the shared rail visually continuous through the walking leg marker. */
+  background: var(--border-control);
+  box-shadow: none;
+}
+
+.trip-journey-timeline-content .trip-journey-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--text-secondary);
   font-size: 12px;
+  font-weight: 650;
 }
 
-.trip-journey-leg-details div {
+.trip-journey-shuttle-content {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 10px;
 }
 
-.trip-journey-leg-details dt {
-  font-weight: 600;
+.trip-journey-walking-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 10px;
 }
 
-.trip-journey-leg-details dd {
+.trip-journey-walking-content > .trip-journey-mode-label {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.trip-journey-walking-content > .trip-journey-leg-summary {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-width: max-content;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.trip-journey-shuttle-content > .trip-journey-route-chip,
+.trip-journey-shuttle-content > .trip-journey-stop-disclosure {
+  grid-column: 1;
+  justify-self: start;
   min-width: 0;
-  margin: 0;
-  overflow-wrap: anywhere;
+}
+
+.trip-journey-shuttle-content > .trip-journey-stop-disclosure[open] {
+  width: 100%;
+}
+
+.trip-journey-shuttle-content > .trip-journey-leg-summary {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-width: max-content;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.trip-journey-mode-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.trip-journey-walking-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.trip-journey-timeline-shuttle .trip-journey-timeline-marker {
+  background: var(--journey-route-color, var(--status-info));
+}
+
+.trip-journey-route-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  color: var(--journey-route-color, var(--status-info)) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.01em;
+}
+
+.trip-journey-stop-disclosure {
+  min-width: 0;
+}
+
+.trip-journey-stop-disclosure summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.trip-journey-stop-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.trip-journey-stop-disclosure summary:focus-visible {
+  outline: 2px solid var(--focus-ring-neutral);
+  outline-offset: 2px;
+}
+
+.trip-journey-disclosure-chevron {
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transition: transform 120ms ease-out;
+}
+
+.trip-journey-stop-disclosure[open] .trip-journey-disclosure-chevron {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.trip-journey-stop-list {
+  display: grid;
+  gap: 0;
+  /* Pull the nested list back over the content column so its dots sit on the rail. */
+  margin: 4px 0 0 -28px;
+  padding: 4px 0 0;
+  list-style: none;
+  text-align: left;
+}
+
+.trip-journey-stop-list li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.trip-journey-stop-marker {
+  width: 10px;
+  height: 10px;
+  margin-left: 4px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: var(--journey-route-color, var(--status-info));
+  box-shadow: 0 0 0 1px var(--journey-route-color, var(--status-info));
+}
+
+@media (max-width: 480px) {
+  .trip-journey-timeline-content:not(.trip-journey-shuttle-content):not(.trip-journey-walking-content) {
+    display: grid;
+    gap: 1px;
+  }
+
+  .trip-journey-timeline-content span {
+    font-size: 11px;
+  }
 }

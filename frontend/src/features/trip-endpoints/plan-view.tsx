@@ -12,7 +12,6 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { getTripPlanSummary } from './trip-summary'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
@@ -106,6 +105,7 @@ export function PlanView({
     origin: '',
     destination: '',
   })
+  const [journeyReferenceTimeMs, setJourneyReferenceTimeMs] = useState<number | null>(null)
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
     if (role === 'origin') onCancelOriginVenueAutofill?.()
@@ -118,7 +118,12 @@ export function PlanView({
   }
   const clearTrip = (): void => {
     setSearchQueries({ origin: '', destination: '' })
+    setJourneyReferenceTimeMs(null)
     onClearTrip()
+  }
+  const planJourney = (): void => {
+    setJourneyReferenceTimeMs(Date.now())
+    onPlanJourney()
   }
 
   const previousTripRequest = useRef(tripRequest)
@@ -127,8 +132,6 @@ export function PlanView({
     skipEndpointReset.current = true
     onSwap()
   }
-
-  const tripSummary = getTripPlanSummary(tripRequest, venues, networkIndex)
 
   useEffect(() => {
     const previous = previousTripRequest.current
@@ -153,9 +156,6 @@ export function PlanView({
       <div className="trip-controls-heading">
         <div className="trip-controls-title">
           <h2>Plan trip</h2>
-          <span className="trip-controls-summary" title={tripSummary.visible}>
-            {tripSummary.visible}
-          </span>
         </div>
         <button
           type="button"
@@ -226,7 +226,7 @@ export function PlanView({
             <button
               type="button"
               className="trip-plan-submit"
-              onClick={onPlanJourney}
+              onClick={planJourney}
               disabled={tripValidation !== null || journey.status === 'loading'}
             >
               Get route
@@ -244,6 +244,7 @@ export function PlanView({
           venues={venues}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
+          referenceTimeMs={simulatedAtMs ?? journeyReferenceTimeMs}
         />
       </div>
     </>

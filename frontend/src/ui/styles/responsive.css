@@ -79,8 +79,8 @@
     position: absolute;
     z-index: 11;
     top: auto;
-    left: max(12px, env(safe-area-inset-left));
-    right: max(12px, env(safe-area-inset-right));
+    left: 0;
+    right: 0;
     bottom: var(--mobile-tab-bar-height);
     width: auto;
     max-height: var(--mobile-sheet-max-height);

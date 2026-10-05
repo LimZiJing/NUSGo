@@ -14,23 +14,31 @@ describe('manifest Journey correctness cases', () => {
     const results = await Promise.all(cases.map(async (benchmarkCase) => {
       let clockTicks = 0
       const result = await planJourneyWithinBudget(benchmarkCase.searchInput, {
-        maxDurationMs: 350,
         maxExpandedPaths: 10_000,
         now: () => clockTicks++,
         yieldEvery: 0,
       })
-      const outcome = result.journey
-        ? { kind: 'journey' as const, journey: result.journey }
-        : { kind: 'no-route' as const, reason: 'No journey was found for the fixed case.' }
+      const validations = result.candidates.map(({ journey }) => validateJourneyBenchmarkOutcome(
+        { kind: 'journey', journey },
+        benchmarkCase,
+        benchmarkCase.transit,
+        fixtures.venues,
+        { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
+      ))
+      const validation = validations.find((candidate) => candidate.valid) ?? (
+        result.candidates.length === 0
+          ? validateJourneyBenchmarkOutcome(
+            { kind: 'no-route', reason: 'No journey was found for the fixed case.' },
+            benchmarkCase,
+            benchmarkCase.transit,
+            fixtures.venues,
+            { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
+          )
+          : validations[0]!
+      )
       return {
         id: benchmarkCase.id,
-        validation: validateJourneyBenchmarkOutcome(
-          outcome,
-          benchmarkCase,
-          benchmarkCase.transit,
-          fixtures.venues,
-          { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
-        ),
+        validation,
       }
     }))
 

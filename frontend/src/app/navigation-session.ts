@@ -32,7 +32,12 @@ import {
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import { findNearestVenue } from '../domain/venue/nearest'
-import { NoJourneyAvailableError, type JourneyPlanningService } from './journey-planning'
+import type { Journey } from '../domain/trip/journey'
+import {
+  NoJourneyAvailableError,
+  type JourneyPlanningService,
+  type JourneyPlanningServiceResult,
+} from './journey-planning'
 import { createInitialJourneyState, type JourneyState } from './journey-state'
 import { getLocationControlTarget, getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
@@ -45,6 +50,18 @@ import {
 
 const STARTUP_FAILURE_STATUS = 'Unable to start map navigation'
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
+
+function getPrimaryJourney(result: JourneyPlanningServiceResult): Journey {
+  return {
+    origin: result.origin,
+    destination: result.destination,
+    legs: result.legs,
+    totalDurationSeconds: result.totalDurationSeconds,
+    totalDistanceMeters: result.totalDistanceMeters,
+    estimateStatus: result.estimateStatus,
+    planningQuality: result.planningQuality,
+  }
+}
 
 export interface NavigationSessionStartupFailure {
   readonly message: string
@@ -342,20 +359,21 @@ export function createNavigationSession(
     }
     dependencies.map.setJourney(null)
     updateState({
-      journey: { status: 'loading', journey: null, error: null },
+      journey: { status: 'loading', journey: null, candidates: [], error: null },
     })
 
     void journeyPlanner(request).then(
-      (journey) => {
+      (planningResult) => {
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
+        const journey = planningResult === null ? null : getPrimaryJourney(planningResult)
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
           dependencies.map.setJourney(journey)
           updateState({
             journey: journey
-              ? { status: 'ready', journey, error: null }
-              : { status: 'no-route', journey: null, error: null },
+              ? { status: 'ready', journey, candidates: planningResult!.candidates, error: null }
+              : { status: 'no-route', journey: null, candidates: [], error: null },
           })
         })
       },
@@ -370,6 +388,7 @@ export function createNavigationSession(
               journey: {
                 status: 'no-route',
                 journey: null,
+                candidates: [],
                 error: error.message,
               },
             })
@@ -379,6 +398,7 @@ export function createNavigationSession(
             journey: {
               status: 'failed',
               journey: null,
+              candidates: [],
               error: 'Unable to plan journey',
             },
           })
@@ -804,7 +824,7 @@ export function createNavigationSession(
       journeyPlanningRequested = true
       enqueueTransition(() => {
         if (disposed) return
-        updateState({ journey: { status: 'loading', journey: null, error: null } })
+        updateState({ journey: { status: 'loading', journey: null, candidates: [], error: null } })
         requestJourneyPlanning()
       })
     },

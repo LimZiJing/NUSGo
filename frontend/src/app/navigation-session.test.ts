@@ -3,6 +3,7 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex, generateShuttleTimingData } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { Journey } from '../domain/trip/journey'
+import type { JourneyPlanningServiceResult } from './journey-planning'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '../domain/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -163,6 +164,32 @@ function createJourney(destination: TripEndpoint): Journey {
   }
 }
 
+function createPlanningResult(journey: Journey): JourneyPlanningServiceResult {
+  return {
+    ...journey,
+    candidates: [{
+      candidateKey: 'test-candidate',
+      journey,
+      adjustedDurationSeconds: journey.totalDurationSeconds,
+      score: 1 / Math.max(1, journey.totalDurationSeconds),
+    }],
+    status: 'complete',
+    expandedPathCount: 1,
+    indexBuildDurationMs: 0,
+    candidateResolutionDurationMs: 0,
+    candidateEnumerationStepCount: 1,
+    searchDurationMs: 0,
+    searchYieldWaitMs: 0,
+    searchCpuMs: 0,
+    maxSearchChunkDurationMs: 0,
+    geometrySliceCount: 0,
+    geometrySliceDurationMs: 0,
+    geometryCandidateChecks: 1,
+    geometryRouteRequests: 1,
+    geometryRouteCacheHits: 0,
+  }
+}
+
 function endpointTestLabel(endpoint: TripEndpoint | null): string {
   if (endpoint === null) return 'none'
   return endpoint.kind === 'current-location' ? 'Current location' : endpoint.id
@@ -191,7 +218,7 @@ describe('navigation session', () => {
         history: [],
       },
       tripRequest: { origin: null, destination: null },
-      journey: { status: 'idle', journey: null, error: null },
+      journey: { status: 'idle', journey: null, candidates: [], error: null },
       location: { status: 'disabled', latestFix: null },
       originVenueAutofill: { status: 'idle', error: null },
       locationMarkerVisible: true,
@@ -258,7 +285,7 @@ describe('navigation session', () => {
   })
 
   it('does not plan when endpoints are selected until the user submits the trip', async () => {
-    const planning = createDeferred<Journey | null>()
+    const planning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn(() => planning.promise)
     const dependencies = createDependencies({ journeyPlanner })
     const session = createNavigationSession(dependencies)
@@ -271,6 +298,7 @@ describe('navigation session', () => {
     expect(session.getState().journey).toEqual({
       status: 'idle',
       journey: null,
+      candidates: [],
       error: null,
     })
 
@@ -278,10 +306,11 @@ describe('navigation session', () => {
     expect(session.getState().journey).toEqual({
       status: 'loading',
       journey: null,
+      candidates: [],
       error: null,
     })
     const journey = createJourney({ kind: 'stop', id: 'STOP-A' })
-    planning.resolve(journey)
+    planning.resolve(createPlanningResult(journey))
     await waitForState(session, (state) => state.journey.status === 'ready')
 
     expect(session.getState().journey).toMatchObject({
@@ -295,7 +324,7 @@ describe('navigation session', () => {
   })
 
   it('does not duplicate an in-flight Journey when submitted again', async () => {
-    const firstPlanning = createDeferred<Journey | null>()
+    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn(() => firstPlanning.promise)
     const session = createNavigationSession(createDependencies({ journeyPlanner }))
     await session.start(new AbortController().signal)
@@ -306,13 +335,13 @@ describe('navigation session', () => {
     session.planJourney()
     expect(journeyPlanner).toHaveBeenCalledOnce()
 
-    firstPlanning.resolve(createJourney({ kind: 'stop', id: 'STOP-A' }))
+    firstPlanning.resolve(createPlanningResult(createJourney({ kind: 'stop', id: 'STOP-A' })))
     await waitForState(session, (state) => state.journey.status === 'ready')
   })
 
   it('cancels an in-flight Journey and replans when test time changes', async () => {
-    const firstPlanning = createDeferred<Journey | null>()
-    const secondPlanning = createDeferred<Journey | null>()
+    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
+    const secondPlanning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)
@@ -327,7 +356,7 @@ describe('navigation session', () => {
     expect(firstSignal.aborted).toBe(true)
     expect(journeyPlanner).toHaveBeenCalledTimes(2)
     const updated = createJourney({ kind: 'stop', id: 'STOP-A' })
-    secondPlanning.resolve(updated)
+    secondPlanning.resolve(createPlanningResult(updated))
     await waitForState(session, (state) => state.journey.status === 'ready')
     firstPlanning.resolve(null)
     await Promise.resolve()
@@ -335,7 +364,7 @@ describe('navigation session', () => {
   })
 
   it('cancels an in-flight Journey and clears it when an endpoint changes', async () => {
-    const planning = createDeferred<Journey | null>()
+    const planning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn(() => planning.promise)
     const dependencies = createDependencies({ journeyPlanner })
     const session = createNavigationSession(dependencies)
@@ -352,6 +381,7 @@ describe('navigation session', () => {
     expect(session.getState().journey).toEqual({
       status: 'idle',
       journey: null,
+      candidates: [],
       error: null,
     })
     expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
@@ -374,13 +404,14 @@ describe('navigation session', () => {
     expect(session.getState().journey).toEqual({
       status: 'failed',
       journey: null,
+      candidates: [],
       error: 'Unable to plan journey',
     })
   })
 
   it('requires a new submission after an endpoint is changed', async () => {
-    const firstPlanning = createDeferred<Journey | null>()
-    const secondPlanning = createDeferred<Journey | null>()
+    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
+    const secondPlanning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)
@@ -400,9 +431,9 @@ describe('navigation session', () => {
     expect(journeyPlanner).toHaveBeenCalledTimes(2)
 
     const secondJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
-    secondPlanning.resolve(secondJourney)
+    secondPlanning.resolve(createPlanningResult(secondJourney))
     await waitForState(session, (state) => state.journey.status === 'ready')
-    firstPlanning.resolve(createJourney({ kind: 'stop', id: 'STOP-A' }))
+    firstPlanning.resolve(createPlanningResult(createJourney({ kind: 'stop', id: 'STOP-A' })))
     await Promise.resolve()
 
     expect(session.getState().journey.journey?.destination).toEqual({ kind: 'stop', id: 'STOP-B' })
@@ -410,6 +441,7 @@ describe('navigation session', () => {
     expect(session.getState().journey).toEqual({
       status: 'idle',
       journey: null,
+      candidates: [],
       error: null,
     })
     expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)

@@ -139,6 +139,95 @@ function createInput(
   }
 }
 
+function createParallelRouteInput(): PlanJourneyInput {
+  const routeIds = ['B1', 'A1']
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: routeIds.map((id) => ({ id, name: id, color: '#123456', stopIds: ['STOP-A', 'STOP-B'] })),
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: routeIds },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: routeIds },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: routeIds.map((routeId) => ({
+      type: 'Feature' as const,
+      properties: { routeId, name: routeId, color: '#123456' },
+      geometry: { type: 'LineString' as const, coordinates: [[103, 1], [103.001, 1]] },
+    })),
+  })
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.002, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(origin, stopA, 10),
+      walking(stopB, destination, 10),
+      walking(origin, destination, 1_000),
+    ],
+    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+  }
+}
+
+function createOneTransferInput(
+  getShuttleWaitingSeconds: PlanJourneyInput['getShuttleWaitingSeconds'],
+): PlanJourneyInput {
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [
+      { id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B'] },
+      { id: 'B1', name: 'B1', color: '#234567', stopIds: ['STOP-C', 'STOP-D'] },
+    ],
+    stops: [
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
+      { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['B1'] },
+      { id: 'STOP-D', longName: 'Stop D', shortName: 'D', latitude: 1, longitude: 103.003, services: ['B1'] },
+    ],
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] } },
+      { type: 'Feature', properties: { routeId: 'B1', name: 'B1', color: '#234567' }, geometry: { type: 'LineString', coordinates: [[103.002, 1], [103.003, 1]] } },
+    ],
+  })
+
+  return {
+    origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
+    destination: { endpoint: destination, coordinate: { longitude: 103.004, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
+    walkingConnections: [
+      walking(origin, stopA, 80),
+      walking(stopB, stopC, 30),
+      walking({ kind: 'stop', id: 'STOP-D' }, destination, 80),
+      walking(origin, destination, 2_000),
+    ],
+    getShuttleWaitingSeconds,
+  }
+}
+
 function createFiveStopConnectorInput(
   walkingConnections: readonly WalkingJourneyConnection[],
   rideSecondsByPair: ReadonlyMap<string, number>,
@@ -483,7 +572,7 @@ function createCompleteAlternativeInput(): PlanJourneyInput {
 }
 
 describe('planJourney', () => {
-  it('caps venue-origin connectors to the three shortest walking durations', () => {
+  it('caps venue-origin connectors to the five shortest walking durations', () => {
     const input = createFiveStopConnectorInput([
       walking(origin, stopA, 1),
       walking(origin, stopB, 2),
@@ -501,12 +590,12 @@ describe('planJourney', () => {
     const journey = planJourney(input)
 
     expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
-      boardingStopId: 'STOP-C',
+      boardingStopId: 'STOP-D',
       alightingStopId: 'STOP-E',
     })
   })
 
-  it('caps venue-destination connectors to the three shortest walking durations', () => {
+  it('caps venue-destination connectors to the five shortest walking durations', () => {
     const input = createFiveStopConnectorInput([
       walking(origin, stopA, 1),
       walking({ kind: 'stop', id: 'STOP-B' }, destination, 1),
@@ -525,8 +614,120 @@ describe('planJourney', () => {
 
     expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       boardingStopId: 'STOP-A',
-      alightingStopId: 'STOP-D',
+      alightingStopId: 'STOP-E',
     })
+  })
+
+  it('returns the walking-only Journey and up to three distinct scored shuttle Journeys', async () => {
+    const input = createFiveStopConnectorInput([
+      walking(origin, stopA, 10),
+      walking(origin, { kind: 'stop', id: 'STOP-B' }, 20),
+      walking({ kind: 'stop', id: 'STOP-E' }, destination, 10),
+      walking(origin, destination, 1_000),
+    ], new Map())
+    const result = await planJourneyWithinBudget(input)
+    const busCandidates = result.candidates.filter(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle')
+    ))
+    const walkingCandidates = result.candidates.filter(({ journey }) => (
+      journey.legs.every((leg) => leg.mode === 'walking')
+    ))
+
+    expect(busCandidates.map(({ journey }) => journey.legs
+      .filter((leg) => leg.mode === 'shuttle')
+      .map((leg) => `${leg.routeId}:${leg.boardingStopId}>${leg.alightingStopId}`)))
+      .toEqual([['A1:STOP-B>STOP-E'], ['A1:STOP-A>STOP-E']])
+    expect(walkingCandidates).toHaveLength(1)
+    expect(result.candidates).toHaveLength(3)
+    expect(busCandidates[0]?.score).toBe(1 / busCandidates[0]!.adjustedDurationSeconds)
+    expect(result.status).toBe('complete')
+  })
+
+  it('orders equal-score candidates deterministically by shuttle route sequence', async () => {
+    const input = createParallelRouteInput()
+    const firstSearch = await planJourneyWithinBudget(input)
+    const secondSearch = await planJourneyWithinBudget(input)
+    const firstBusCandidates = firstSearch.candidates.filter(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle')
+    ))
+    const secondBusCandidates = secondSearch.candidates.filter(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle')
+    ))
+
+    expect(firstBusCandidates.map(({ journey }) => (
+      journey.legs.find((leg) => leg.mode === 'shuttle')?.routeId
+    ))).toEqual(['A1', 'B1'])
+    expect(firstBusCandidates[0]?.adjustedDurationSeconds)
+      .toBe(firstBusCandidates[1]?.adjustedDurationSeconds)
+    expect(firstBusCandidates.map(({ candidateKey }) => candidateKey))
+      .toEqual(secondBusCandidates.map(({ candidateKey }) => candidateKey))
+  })
+
+  it('scores each walk and discounts only shuttle legs boarded after a transfer', async () => {
+    const input = createOneTransferInput((record) => record.routeId === 'A1' ? 10 : 20)
+    const result = await planJourneyWithinBudget(input)
+    const candidate = result.candidates.find(({ journey }) => (
+      journey.legs.filter((leg) => leg.mode === 'shuttle').length === 2
+    ))
+    const firstRide = input.shuttleTiming.records.find((record) => (
+      record.routeId === 'A1' && record.fromStopId === 'STOP-A' && record.toStopId === 'STOP-B'
+    ))?.rideSeconds
+    const secondRide = input.shuttleTiming.records.find((record) => (
+      record.routeId === 'B1' && record.fromStopId === 'STOP-C' && record.toStopId === 'STOP-D'
+    ))?.rideSeconds
+
+    expect(firstRide).not.toBeNull()
+    expect(secondRide).not.toBeNull()
+    expect(candidate?.journey.legs.map((leg) => leg.mode)).toEqual([
+      'walking', 'shuttle', 'walking', 'shuttle', 'walking',
+    ])
+    expect(candidate?.journey.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
+      leg.mode === 'shuttle' ? leg.routeId : null
+    ))).toEqual(['A1', 'B1'])
+    expect(candidate?.adjustedDurationSeconds).toBeCloseTo(
+      80 / 0.8 + 10 + firstRide! + 30 / 0.8 + (20 + secondRide!) / 0.9 + 80 / 0.8,
+      8,
+    )
+    expect(candidate?.score).toBeCloseTo(1 / candidate!.adjustedDurationSeconds, 12)
+  })
+
+  it('deduplicates bus Journeys that differ only by walking approaches', async () => {
+    const input = createInput([
+      walking(origin, stopA, 120),
+      walking(origin, stopA, 90),
+      walking(stopB, destination, 100),
+    ])
+    const result = await planJourneyWithinBudget(input)
+    const busCandidates = result.candidates.filter(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle')
+    ))
+
+    expect(busCandidates).toHaveLength(1)
+    expect(busCandidates[0]?.journey.legs[0]).toMatchObject({ durationSeconds: 90 })
+  })
+
+  it('rejects incomplete walking geometry while keeping other complete candidates', async () => {
+    const invalidGeometry = { type: 'LineString', coordinates: [[103, 1]] } as const
+    const input = createInput([
+      { ...walking(origin, stopA, 100), geometry: invalidGeometry },
+      walking(stopB, destination, 100),
+      walking(origin, destination, 500),
+    ])
+    const result = await planJourneyWithinBudget(input)
+
+    expect(result.candidates.map(({ journey }) => journey.legs.map((leg) => leg.mode)))
+      .toEqual([['walking']])
+  })
+
+  it('returns a valid one-transfer Journey between different routes', async () => {
+    const result = await planJourneyWithinBudget(createOneTransferInput(() => 5))
+    const candidate = result.candidates.find(({ journey }) => (
+      journey.legs.filter((leg) => leg.mode === 'shuttle').length === 2
+    ))
+
+    expect(candidate?.journey.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
+      leg.mode === 'shuttle' ? leg.routeId : null
+    ))).toEqual(['A1', 'B1'])
   })
 
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
@@ -765,6 +966,86 @@ describe('planJourney', () => {
     expect(result.status).toBe('budget-exceeded')
     expect(result.journey?.planningQuality).toBe('bounded')
     expect(result.journey?.totalDurationSeconds).toBe(rideSeconds + 2)
+  })
+
+  it('enforces the deadline while building the bounded search index', async () => {
+    const input = createInput([])
+    const timingRecord = input.shuttleTiming.records[0]
+    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    let nowMs = 0
+    let yieldCount = 0
+
+    const result = await planJourneyWithinBudget({
+      ...input,
+      shuttleTiming: {
+        ...input.shuttleTiming,
+        records: Array.from({ length: 128 }, () => timingRecord),
+      },
+    }, {
+      deadlineAtMs: 5,
+      yieldEvery: 1,
+      yieldControl: async () => {
+        yieldCount += 1
+        nowMs = 10
+      },
+      now: () => nowMs,
+    })
+
+    expect(yieldCount).toBe(1)
+    expect(result.status).toBe('budget-exceeded')
+    expect(result.expandedPathCount).toBe(0)
+    expect(result.indexBuildDurationMs).toBe(10)
+  })
+
+  it('checks cancellation while building the bounded search index', async () => {
+    const input = createInput([])
+    const timingRecord = input.shuttleTiming.records[0]
+    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    const abortController = new AbortController()
+    let yieldCount = 0
+
+    const result = await planJourneyWithinBudget({
+      ...input,
+      shuttleTiming: {
+        ...input.shuttleTiming,
+        records: Array.from({ length: 128 }, () => timingRecord),
+      },
+    }, {
+      shouldCancel: () => abortController.signal.aborted,
+      yieldEvery: 1,
+      yieldControl: async () => {
+        yieldCount += 1
+        abortController.abort()
+      },
+      now: () => 0,
+    })
+
+    expect(yieldCount).toBe(1)
+    expect(result.status).toBe('cancelled')
+    expect(result.expandedPathCount).toBe(0)
+  })
+
+  it('keeps explicit zero yieldEvery disabled during index construction', async () => {
+    const input = createInput([])
+    const timingRecord = input.shuttleTiming.records[0]
+    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    let yieldCount = 0
+
+    const result = await planJourneyWithinBudget({
+      ...input,
+      shuttleTiming: {
+        ...input.shuttleTiming,
+        records: Array.from({ length: 128 }, () => timingRecord),
+      },
+    }, {
+      yieldEvery: 0,
+      yieldControl: async () => {
+        yieldCount += 1
+      },
+    })
+
+    expect(result.status).toBe('complete')
+    expect(yieldCount).toBe(0)
   })
 
   it('stops before expanding a path when cancelled', async () => {

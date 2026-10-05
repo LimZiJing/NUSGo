@@ -217,7 +217,14 @@ async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, mo
     valhallaRequestCounts: routeEngine.requestCounts,
   })
   const result = { elapsedMs, validation }
-  if (mode === 'local') result.valhallaMs = routeEngine.elapsedMs
+  if (mode === 'local') {
+    const requestCounts = routeEngine.requestCounts
+    result.valhallaMs = routeEngine.elapsedMs
+    result.valhallaMatrixMs = routeEngine.matrixElapsedMs
+    result.valhallaRouteMs = routeEngine.routeElapsedMs
+    result.valhallaMatrixRequests = requestCounts.matrix
+    result.valhallaRouteRequests = requestCounts.route
+  }
   return result
 }
 
@@ -369,6 +376,15 @@ function formatStatistics(statistics) {
   return `mean ${statistics.meanMs} ms, median ${statistics.medianMs} ms, p95 ${statistics.p95Ms} ms, n=${statistics.sampleCount}`
 }
 
+function formatCountStatistics(statistics) {
+  if (!statistics) return 'unavailable'
+  return `mean ${statistics.mean}, median ${statistics.median}, p95 ${statistics.p95}, n=${statistics.sampleCount}`
+}
+
+function formatNetworkPhases(report) {
+  return `matrix wait ${formatStatistics(report.valhallaMatrixMs)} (${formatCountStatistics(report.valhallaMatrixRequests)} requests); routed geometry wait ${formatStatistics(report.valhallaRouteMs)} (${formatCountStatistics(report.valhallaRouteRequests)} requests)`
+}
+
 function formatQuality(quality) {
   return `journeys ${quality.journeys} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
 }
@@ -383,19 +399,36 @@ function formatMode(name, modeReport, local = false) {
     const result = benchmarkCase.planning?.kind ?? 'invalid'
     const boardings = benchmarkCase.planning?.shuttleBoardings
     lines.push(`    ${benchmarkCase.id} [${benchmarkCase.group}/${benchmarkCase.scenario}]: ${formatStatistics(benchmarkCase.statistics)}; ${result}${boardings === undefined ? '' : `, ${boardings} shuttle boardings`}; ${formatQuality(benchmarkCase.resultQuality)}; validation ${benchmarkCase.validation.status}`)
-    if (local) lines.push(`      Valhalla: ${formatStatistics(benchmarkCase.valhalla)}`)
+    const work = benchmarkCase.planningWork
+    if (work.expandedPathCount || work.budgetHitSamples > 0) {
+      const paths = work.expandedPathCount
+      const indexBuild = work.indexBuildDurationMs
+      const search = work.searchDurationMs
+      const searchCpu = work.searchCpuMs
+      const yieldWait = work.searchYieldWaitMs
+      const maxChunk = work.maxSearchChunkDurationMs
+      const resolution = work.candidateResolutionDurationMs
+      lines.push(`      Planner work: search median ${search?.median ?? 'unavailable'} ms, CPU ${searchCpu?.median ?? 'unavailable'} ms, yield wait ${yieldWait?.median ?? 'unavailable'} ms, max sync chunk ${maxChunk?.p95 ?? 'unavailable'} ms p95 / ${maxChunk?.max ?? 'unavailable'} ms max; index build ${indexBuild?.median ?? 'unavailable'} ms median, candidate resolution ${resolution?.median ?? 'unavailable'} ms median; expanded paths ${paths?.median ?? 'unavailable'} median, p95 ${paths?.p95 ?? 'unavailable'}; budget-hit samples ${work.budgetHitSamples}/${work.sampleCount}.`)
+    }
+    if (local) {
+      lines.push(`      Valhalla total: ${formatStatistics(benchmarkCase.valhalla)}`)
+      lines.push(`      Network phases: ${formatNetworkPhases(benchmarkCase)}`)
+    }
     if (benchmarkCase.validation.errors.length) lines.push(`      validation: ${benchmarkCase.validation.errors.join('; ')}`)
   }
   for (const [category, aggregate] of Object.entries(modeReport.categories)) {
     lines.push(`    ${category}: ${formatStatistics(aggregate.statistics)}; Valhalla ${formatStatistics(aggregate.valhalla)}; ${formatQuality(aggregate.resultQuality)}; validation ${aggregate.validation.status}; cases ${aggregate.caseCount}; samples ${aggregate.sampleCount}`)
+    if (local) lines.push(`      Network phases: ${formatNetworkPhases(aggregate)}`)
   }
   lines.push(`    overall (equal weight per case): ${formatStatistics(modeReport.overall.statistics)}; Valhalla ${formatStatistics(modeReport.overall.valhalla)}; ${formatQuality(modeReport.overall.resultQuality)}; validation ${modeReport.overall.validation.status}; cases ${modeReport.overall.caseCount}; samples ${modeReport.overall.sampleCount}`)
+  if (local) lines.push(`      Network phases: ${formatNetworkPhases(modeReport.overall)}`)
   return lines
 }
 
 function printReport(report) {
   const lines = [
     `NavUS Journey benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
+    `Runtime: Node ${report.configuration.runtime.node}; ${report.configuration.runtime.platform}/${report.configuration.runtime.architecture}.`,
     `Cases: ${report.configuration.caseCount}; ${report.configuration.samplesPerCase} samples and ${report.configuration.warmupsPerCase} warmups per case; fixed clock ${report.configuration.fixedNow}.`,
   ]
   for (const adapter of report.adapters) {
@@ -436,6 +469,11 @@ async function main() {
     baseline: getGitIdentity(),
     configuration: {
       mode: options.mode,
+      runtime: {
+        node: process.version,
+        platform: process.platform,
+        architecture: process.arch,
+      },
       samplesPerCase: options.samples,
       warmupsPerCase: options.warmups,
       adapterPaths: options.adapterPaths,

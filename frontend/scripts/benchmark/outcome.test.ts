@@ -256,9 +256,11 @@ describe('validateJourneyBenchmarkOutcome', () => {
     const result = validate(journey, benchmarkCase, {
       mode: 'local',
       matrixRequests: [{ request, connections: [matrixConnection] }],
+      valhallaRequestCounts: { matrix: 1, route: 2 },
     })
 
     expect(result.valid).toBe(true)
+    expect(result.result).toMatchObject({ valhallaRequests: { matrix: 1, route: 2 } })
   })
 
   it('checks local stop-to-stop walking metrics against the canonical walking graph', () => {

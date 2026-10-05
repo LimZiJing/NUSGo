@@ -26,6 +26,10 @@ function run(
       routeIds: [routeId],
       planningQuality,
       totalDurationSeconds: 100,
+      searchDurationMs: 10,
+      searchYieldWaitMs: 3,
+      searchCpuMs: 7,
+      maxSearchChunkDurationMs: 2,
     },
   }
   return {
@@ -58,9 +62,50 @@ describe('Journey benchmark report aggregation', () => {
     expect(report.overall.valhalla).toMatchObject({ meanMs: 17.5, sampleCount: 2 })
     expect(report.overall.sampleCount).toBe(4)
     expect(report.overall.resultQuality).toMatchObject({ journeys: 4, exact: 2, bounded: 2, invalid: 0 })
+    expect(report.cases[0].planningWork).toMatchObject({
+      searchDurationMs: { mean: 10 },
+      searchYieldWaitMs: { mean: 3 },
+      searchCpuMs: { mean: 7 },
+      maxSearchChunkDurationMs: { mean: 2, max: 2 },
+    })
     expect(report.overall.validation.status).toBe('valid')
     expect(report.categories.normal.caseCount).toBe(1)
     expect(report.categories.fallback.caseCount).toBe(1)
+  })
+
+  it('reports matrix and routed geometry time and request counts separately', () => {
+    const sample = run('local', 'Local', 80, 40).samples[0]
+    const report = createJourneyBenchmarkModeReport([{
+      benchmarkCase: {
+        id: 'local',
+        label: 'Local',
+        group: 'normal',
+        scenario: 'route-pair',
+        expected: { outcome: 'journey' },
+      },
+      samples: [{
+        ...sample,
+        valhallaMatrixMs: 15,
+        valhallaRouteMs: 25,
+        valhallaMatrixRequests: 2,
+        valhallaRouteRequests: 3,
+      }],
+    }], 1)
+
+    expect(report.cases[0]).toMatchObject({
+      valhallaMatrixMs: { meanMs: 15 },
+      valhallaRouteMs: { meanMs: 25 },
+      valhallaMatrixRequests: { mean: 2, median: 2, p95: 2, sampleCount: 1 },
+      valhallaRouteRequests: { mean: 3, median: 3, p95: 3, sampleCount: 1 },
+    })
+    expect(report.cases[0].valhallaMatrixRequests).not.toHaveProperty('meanMs')
+    expect(report.overall.valhallaMatrixRequests).toEqual({
+      mean: 2,
+      median: 2,
+      p95: 2,
+      sampleCount: 1,
+    })
+    expect(report.overall.valhallaRouteMs).toMatchObject({ meanMs: 25 })
   })
 
   it('marks any invalid or incomplete case as partial', () => {

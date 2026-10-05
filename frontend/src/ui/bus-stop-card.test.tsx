@@ -24,6 +24,23 @@ const cardProps = {
 }
 
 describe('BusStopCard', () => {
+  it('identifies the shuttle stop in its name and accessible card actions', () => {
+    const { container } = render(<BusStopCard
+      {...cardProps}
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    expect(screen.getByRole('button', { name: 'Collapse Central Library, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add Central Library, shuttle stop to favourites' })).toBeTruthy()
+    const busIcon = container.querySelector('.location-identity-icon--stop[aria-hidden="true"]')
+    const chevron = container.querySelector('.bus-stop-card-chevron')
+    expect(busIcon).toBeTruthy()
+    expect(chevron).toBeTruthy()
+    expect(busIcon).not.toBe(chevron)
+  })
+
   it('exposes separate title-bar, favourite, and route actions', async () => {
     const user = userEvent.setup()
     const onToggleExpanded = vi.fn()
@@ -36,8 +53,8 @@ describe('BusStopCard', () => {
       onSelectRoute={onSelectRoute}
     />)
 
-    const titleBar = screen.getByRole('button', { name: 'Collapse Central Library bus timings' })
-    const star = screen.getByRole('button', { name: 'Add Central Library to favourites' })
+    const titleBar = screen.getByRole('button', { name: 'Collapse Central Library, shuttle stop bus timings' })
+    const star = screen.getByRole('button', { name: 'Add Central Library, shuttle stop to favourites' })
     expect(titleBar.getAttribute('aria-expanded')).toBe('true')
     expect(star.getAttribute('aria-pressed')).toBe('false')
     expect(within(titleBar).getByText('320m')).toBeTruthy()
@@ -63,9 +80,9 @@ describe('BusStopCard', () => {
       onSelectRoute={vi.fn()}
     />)
 
-    expect(screen.getByRole('button', { name: 'Expand Central Library bus timings' }).getAttribute('aria-expanded'))
+    expect(screen.getByRole('button', { name: 'Expand Central Library, shuttle stop bus timings' }).getAttribute('aria-expanded'))
       .toBe('false')
-    expect(screen.getByRole('button', { name: 'Remove Central Library from favourites' }).getAttribute('aria-pressed'))
+    expect(screen.getByRole('button', { name: 'Remove Central Library, shuttle stop from favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
     expect(container.querySelector('.bus-stop-card-timings')?.hasAttribute('inert')).toBe(true)
     expect(screen.queryByText('LIVE')).toBeNull()

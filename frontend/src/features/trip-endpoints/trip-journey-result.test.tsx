@@ -128,6 +128,11 @@ describe('TripJourneyResult', () => {
     expect(markup).toContain('Ride')
     expect(markup).toContain('Origin venue')
     expect(markup).toContain('Destination venue')
+    expect(markup).toContain('location-identity-icon--venue')
+    expect(markup).toContain('location-identity-icon--stop')
+    expect(markup).toContain('aria-label="Origin venue, venue"')
+    expect(markup).toContain('aria-label="Stop A, shuttle stop"')
+    expect(markup).toContain('aria-label="MID, shuttle stop, code STOP-MID"')
     expect(markup).toContain('aria-label="Journey details"')
     expect(markup).not.toContain('Board')
     expect(markup).not.toContain('Alight')
@@ -149,10 +154,35 @@ describe('TripJourneyResult', () => {
       'location',
     ])
     expect(entries.filter((entry) => entry.kind === 'location')).toHaveLength(4)
+    expect(entries.filter((entry) => entry.kind === 'location').map((entry) => entry.locationKind))
+      .toEqual(['venue', 'stop', 'stop', 'venue'])
     expect(entries.find((entry) => entry.kind === 'shuttle')).toMatchObject({
       routeColor: route.color,
-      stopLabels: ['MID'],
+      intermediateStops: [{ id: 'STOP-MID', label: 'MID' }],
     })
+  })
+
+  it('keeps a venue and shuttle stop distinct when their journey names match', () => {
+    const collidingVenues = {
+      ...venues,
+      ORIGIN: { ...venues.ORIGIN, roomName: 'COM 3' },
+    }
+    const collidingNetwork = createValidTransitNetwork()
+    collidingNetwork.stops[0] = {
+      ...collidingNetwork.stops[0],
+      longName: 'COM 3',
+      shortName: 'COM 3',
+    }
+    const markup = renderToStaticMarkup(
+      <TripJourneyResult
+        state={{ status: 'ready', journey, error: null }}
+        venues={collidingVenues}
+        networkIndex={createTransitIndex(collidingNetwork)}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="COM 3, venue"')
+    expect(markup).toContain('aria-label="COM 3, shuttle stop"')
   })
 
   it('explains when the Journey was selected within a search budget', () => {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BusStopTimings } from './bus-stop-timings'
 
@@ -37,7 +37,9 @@ describe('BusStopTimings', () => {
       />,
     )
 
-    expect(screen.getByLabelText('Reachable favourite stops: Library, Hall')).toBeTruthy()
+    const destinations = screen.getByRole('list', { name: 'Reachable favourite shuttle stops' })
+    expect(within(destinations).getByRole('listitem', { name: 'Library, shuttle stop, STOP-LIBRARY' })).toBeTruthy()
+    expect(within(destinations).getByRole('listitem', { name: 'Hall, shuttle stop, STOP-HALL' })).toBeTruthy()
     expect(screen.getByText('→')).toBeTruthy()
     expect(screen.getByText('Library')).toBeTruthy()
     expect(screen.getByText('Hall')).toBeTruthy()
@@ -45,10 +47,11 @@ describe('BusStopTimings', () => {
     expect(screen.getByText('11m')).toBeTruthy()
     expect(screen.getByText('13m')).toBeTruthy()
 
-    const destinations = document.querySelectorAll('.stop-reachable-favorite')
-    expect(destinations).toHaveLength(2)
-    expect(destinations[0]?.getAttribute('data-opposite')).toBeNull()
-    expect(destinations[1]?.getAttribute('data-opposite')).toBe('true')
+    const destinationBadges = document.querySelectorAll('.stop-reachable-favorite')
+    expect(destinationBadges).toHaveLength(2)
+    expect(destinationBadges[0]?.getAttribute('data-opposite')).toBeNull()
+    expect(destinationBadges[1]?.getAttribute('data-opposite')).toBe('true')
+    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
   })
 
   it('uses the same status row for scheduled routes and public services', () => {

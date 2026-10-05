@@ -11,6 +11,7 @@ import {
 } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
+import { LocationIdentityIcon } from '../../ui/location-identity-icon'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
 
@@ -311,12 +312,15 @@ export function ShuttleRouteControl({
                       type="button"
                       className="route-timeline-stop"
                       data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                      aria-label={`${stop?.longName ?? stopId}, shuttle stop, code ${stopId}. Focus on map`}
                       onClick={() => onFocusStop?.(stopId)}
                     >
                       <span className="route-timeline-node" aria-hidden="true" />
                       <span className="route-timeline-text">
-                        <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                        <span className="route-timeline-name">
+                          <LocationIdentityIcon kind="stop" />
+                          <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                        </span>
                         <small>{stopId}</small>
                       </span>
                       <span className="route-timeline-chevron" aria-hidden="true">›</span>

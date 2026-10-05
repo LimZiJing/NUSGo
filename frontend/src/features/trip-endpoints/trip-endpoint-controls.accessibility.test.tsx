@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PlanView } from './plan-view'
+import { PlanView, TripEndpointControl } from './plan-view'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import {
@@ -49,6 +49,86 @@ function TripEndpointHarness() {
 afterEach(cleanup)
 
 describe('PlanView interactions', () => {
+  it.each([
+    { displayName: 'COM 3', stopIndex: 0, stopId: 'STOP-A' },
+    { displayName: 'BIZ 2', stopIndex: 1, stopId: 'STOP-B' },
+  ])('distinguishes a $displayName venue and shuttle stop with the same displayed name', async ({
+    displayName,
+    stopIndex,
+    stopId,
+  }) => {
+    const user = userEvent.setup()
+    const collidingVenue: VenueLocationMap = {
+      [displayName]: {
+        roomName: displayName,
+        location: { x: 103.77, y: 1.3 },
+      },
+    }
+    const network = createValidTransitNetwork()
+    network.stops[stopIndex] = { ...network.stops[stopIndex], longName: displayName, shortName: displayName }
+    const networkIndex = createTransitIndex(network)
+    const onSelect = vi.fn()
+    render(
+      <TripEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={collidingVenue}
+        networkIndex={networkIndex}
+        searchQuery={displayName}
+        onSearchQueryChange={() => undefined}
+        onSelect={onSelect}
+        onClear={() => undefined}
+      />,
+    )
+
+    const venueResult = screen.getByRole('button', { name: `Set origin to ${displayName}, venue` })
+    const stopResult = screen.getByRole('button', { name: `Set origin to ${displayName}, shuttle stop, ${stopId}` })
+    expect(venueResult.querySelector('.location-identity-icon--venue[aria-hidden="true"]')).toBeTruthy()
+    expect(stopResult.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
+    await user.click(stopResult)
+    await user.click(venueResult)
+    expect(onSelect).toHaveBeenNthCalledWith(1, { kind: 'stop', id: stopId })
+    expect(onSelect).toHaveBeenNthCalledWith(2, { kind: 'venue', id: displayName })
+
+    cleanup()
+    const selectedStop = { kind: 'stop', id: stopId } as const
+    const { container: selectedContainer } = render(
+      <TripEndpointControl
+        role="origin"
+        endpoint={selectedStop}
+        venues={collidingVenue}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe(displayName)
+    expect(screen.getByRole('status').textContent).toBe(`Origin set to ${displayName}, shuttle stop (${stopId}).`)
+    expect(selectedContainer.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
+
+    cleanup()
+    const selectedVenue = { kind: 'venue', id: displayName } as const
+    const { container: venueContainer } = render(
+      <TripEndpointControl
+        role="destination"
+        endpoint={selectedVenue}
+        venues={collidingVenue}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value).toBe(displayName)
+    expect(screen.getByRole('status').textContent).toBe(`Destination set to ${displayName}, venue (${displayName}).`)
+    expect(venueContainer.querySelector('.location-identity-icon--venue[aria-hidden="true"]')).toBeTruthy()
+  })
+
   it('only shows endpoint validation when the request needs attention', () => {
     const networkIndex = createTransitIndex(createValidTransitNetwork())
     const controls = {
@@ -207,7 +287,7 @@ describe('PlanView interactions', () => {
     await user.type(originSearch, 'COM1')
     expect(screen.queryByRole('listbox')).toBeNull()
     expect(screen.getByRole('group', { name: 'Origin search results' })).toBeTruthy()
-    const originResult = screen.getByRole('button', { name: 'Set origin to COM1-0210' })
+    const originResult = screen.getByRole('button', { name: 'Set origin to COM1-0210, venue' })
     await user.tab()
     await user.tab()
     expect(document.activeElement).toBe(originResult)
@@ -218,7 +298,7 @@ describe('PlanView interactions', () => {
 
     const destinationSearch = screen.getByRole('searchbox', { name: 'Destination' })
     await user.type(destinationSearch, 'STOP-A')
-    const destinationResult = screen.getByRole('button', { name: 'Set destination to STOP-A' })
+    const destinationResult = screen.getByRole('button', { name: 'Set destination to Stop A, shuttle stop, STOP-A' })
     await user.tab()
     await user.tab()
     expect(document.activeElement).toBe(destinationResult)
@@ -251,7 +331,7 @@ describe('PlanView interactions', () => {
 
     const originSearch = screen.getByRole('searchbox', { name: 'Origin' })
     await user.type(originSearch, 'COM1')
-    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210' }))
+    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210, venue' }))
 
     expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value)
       .toBe('Computing 1, Level 2')

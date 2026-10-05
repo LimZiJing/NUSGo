@@ -126,6 +126,12 @@
   text-align: left;
 }
 
+.explore-view-result-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .explore-view-result span {
   color: var(--text-secondary);
   font-size: 13px;
@@ -164,6 +170,9 @@
 }
 
 .explore-view-detail h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   color: var(--text-primary);
   font: 600 20px/1.2 system-ui, sans-serif;
@@ -289,6 +298,19 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.nearby-stop-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.nearby-stop-name .location-identity-icon {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
 }
 
 .nearby-stop-identity small {

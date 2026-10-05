@@ -3,6 +3,7 @@ import type { TransitIndex } from '../../domain/transit'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import type { Journey } from '../../domain/trip/journey'
 import type { VenueLocationMap } from '../../domain/venue/types'
+import { LocationIdentityIcon } from '../../ui/location-identity-icon'
 import {
   formatDistance,
   formatDuration,
@@ -52,7 +53,7 @@ function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttl
     </>
   )
 
-  if (entry.stopLabels.length === 0) {
+  if (entry.intermediateStops.length === 0) {
     return <span className="trip-journey-route-chip">{label}</span>
   }
 
@@ -63,10 +64,16 @@ function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttl
         <span className="trip-journey-disclosure-chevron" aria-hidden="true" />
       </summary>
       <ol className="trip-journey-stop-list" aria-label={`${entry.routeLabel} bus stops`}>
-        {entry.stopLabels.map((stopLabel, stopIndex) => (
-          <li key={`${entry.id}-stop-${stopIndex}`}>
+        {entry.intermediateStops.map((stop) => (
+          <li
+            key={`${entry.id}-stop-${stop.id}`}
+            aria-label={`${stop.label}, shuttle stop, code ${stop.id}`}
+          >
             <span className="trip-journey-stop-marker" aria-hidden="true" />
-            <span>{stopLabel}</span>
+            <span className="trip-journey-stop-name">
+              <LocationIdentityIcon kind="stop" />
+              <span>{stop.label}</span>
+            </span>
           </li>
         ))}
       </ol>
@@ -76,10 +83,19 @@ function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttl
 
 function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
   if (entry.kind === 'location') {
+    const identityKind = entry.locationKind === 'current-location' ? null : entry.locationKind
+    const identityLabel = identityKind === 'venue'
+      ? `${entry.label}, venue`
+      : identityKind === 'stop'
+        ? `${entry.label}, shuttle stop`
+        : entry.label
     return (
       <li className="trip-journey-timeline-item trip-journey-timeline-location" key={entry.id}>
         <span className="trip-journey-timeline-marker" aria-hidden="true" />
-        <strong>{entry.label}</strong>
+        <span className="trip-journey-location-name">
+          {identityKind && <LocationIdentityIcon kind={identityKind} />}
+          <strong aria-label={identityLabel}>{entry.label}</strong>
+        </span>
       </li>
     )
   }

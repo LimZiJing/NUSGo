@@ -6,6 +6,7 @@ import {
 } from './bus-stop-timings'
 import { FavoriteStarIcon } from './favorite-star-icon'
 import { InfoPill } from './info-pill'
+import { LocationIdentityIcon } from './location-identity-icon'
 
 export interface BusStopCardProps {
   readonly stopId: string
@@ -50,12 +51,13 @@ export function BusStopCard({
         <button
           className="bus-stop-card-toggle"
           type="button"
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName} bus timings`}
+          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, shuttle stop bus timings`}
           aria-expanded={expanded}
           aria-controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
         >
           <span className="bus-stop-card-identity">
+            <LocationIdentityIcon kind="stop" />
             <span className="bus-stop-card-name">{stopName}</span>
             {distanceMeters !== null && (
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
@@ -65,14 +67,14 @@ export function BusStopCard({
             <InfoPill text="LIVE" colorScheme="success" className="bus-stop-card-live" leadingDot />
           )}
           <span className="bus-stop-card-favorite-space" aria-hidden="true" />
-          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
+          <svg className="bus-stop-card-chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
             <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <button
           className="bus-stop-card-favorite"
           type="button"
-          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName} ${favorite ? 'from' : 'to'} favourites`}
+          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
           aria-pressed={favorite}
           onClick={() => onToggleFavorite(stopId)}
         >

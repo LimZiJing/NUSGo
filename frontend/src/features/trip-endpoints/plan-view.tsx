@@ -12,6 +12,7 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
+import { LocationIdentityIcon } from '../../ui/location-identity-icon'
 import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
@@ -75,6 +76,19 @@ function getResultLabel(result: TripLocationSearchResult): string {
   return result.endpoint.kind === 'current-location'
     ? result.label
     : result.endpoint.id
+}
+
+function getEndpointKindLabel(endpoint: TripEndpoint): string | null {
+  if (endpoint.kind === 'venue') return 'venue'
+  if (endpoint.kind === 'stop') return 'shuttle stop'
+  return null
+}
+
+function getResultIdentityLabel(result: TripLocationSearchResult): string {
+  if (result.endpoint.kind === 'current-location') return 'Current location'
+  const kindLabel = getEndpointKindLabel(result.endpoint)
+  const stableId = result.endpoint.kind === 'stop' ? `, ${result.endpoint.id}` : ''
+  return `${result.label}, ${kindLabel}${stableId}`
 }
 
 const TRIP_CONTROLS_CONTENT_ID = 'trip-controls-panel-content'
@@ -286,6 +300,7 @@ export function TripEndpointControl({
     : originVenueAutofill.error
       ? 'Retry nearest venue'
       : 'Use current location'
+  const endpointKindLabel = endpoint ? getEndpointKindLabel(endpoint) : null
   const searchStatus = !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : showResults
@@ -293,8 +308,11 @@ export function TripEndpointControl({
       : endpoint
         ? endpoint.kind === 'current-location'
           ? `${roleLabel} set to ${endpointLabel}.`
-          : `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
+          : `${roleLabel} set to ${endpointLabel}, ${endpointKindLabel} (${endpoint.id}).`
         : ''
+  const endpointIconKind = !editing && endpoint && endpoint.kind !== 'current-location'
+    ? endpoint.kind
+    : null
 
   const clearEndpoint = (): void => {
     onCancelOriginVenueAutofill?.()
@@ -305,13 +323,19 @@ export function TripEndpointControl({
 
   return (
     <section
-      className={`trip-endpoint-control trip-endpoint-control-${role}`}
+      className={`trip-endpoint-control trip-endpoint-control-${role}${endpointIconKind ? ' trip-endpoint-control-has-identity' : ''}`}
       aria-labelledby={`${inputId}-label`}
     >
       <span className="trip-endpoint-marker" aria-hidden="true" />
       <div className="trip-endpoint-field">
         <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
         <div className="trip-endpoint-input-row">
+          {endpointIconKind && (
+            <LocationIdentityIcon
+              className="trip-endpoint-selected-icon"
+              kind={endpointIconKind}
+            />
+          )}
           <SearchField
             id={inputId}
             value={inputValue}
@@ -409,9 +433,14 @@ export function TripEndpointControl({
                     onSearchResult?.()
                     onSelect(result.endpoint)
                   }}
-                  aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}
+                  aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultIdentityLabel(result)}`}
                 >
-                  <strong>{getResultLabel(result)}</strong>
+                  {result.endpoint.kind !== 'current-location' && (
+                    <div className="trip-endpoint-result-identity">
+                      <LocationIdentityIcon kind={result.endpoint.kind} />
+                      <strong>{getResultLabel(result)}</strong>
+                    </div>
+                  )}
                   <span>{result.label}</span>
                   <span>{result.detail}</span>
                 </button>

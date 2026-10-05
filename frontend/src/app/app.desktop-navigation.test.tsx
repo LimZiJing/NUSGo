@@ -180,7 +180,7 @@ describe('desktop shared navigation shell', () => {
       appHarness.onStopSelected?.('STOP-A')
     })
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A' })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -194,7 +194,7 @@ describe('desktop shared navigation shell', () => {
     })
 
     await waitFor(() => expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy())
-    expect(screen.getByRole('heading', { name: 'Stop A' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
   })
 

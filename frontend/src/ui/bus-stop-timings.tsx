@@ -1,5 +1,6 @@
 import { PublicServiceChip, RouteChip } from './route-chip'
 import { FavoriteStarIcon } from './favorite-star-icon'
+import { LocationIdentityIcon } from './location-identity-icon'
 
 export interface BusStopFavoriteDestination {
   readonly id: string
@@ -95,17 +96,21 @@ export function BusStopTimings({
             />
             {departure.reachableFavoriteStops?.length ? (
               <span
+                role="list"
+                aria-label="Reachable favourite shuttle stops"
                 className="stop-reachable-favorites"
-                aria-label={`Reachable favourite stops: ${departure.reachableFavoriteStops.map(({ name }) => name).join(', ')}`}
               >
                 <span className="stop-reachable-favorites-arrow" aria-hidden="true">→</span>
                 {departure.reachableFavoriteStops.map(({ id, name, isOpposite }) => (
                   <span
+                    role="listitem"
                     key={id}
                     className="stop-reachable-favorite"
                     data-opposite={isOpposite ? 'true' : undefined}
+                    aria-label={`${name}, shuttle stop, ${id}`}
                   >
                     <FavoriteStarIcon filled />
+                    <LocationIdentityIcon kind="stop" />
                     <span>{name}</span>
                   </span>
                 ))}

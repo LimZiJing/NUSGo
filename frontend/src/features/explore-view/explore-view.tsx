@@ -22,6 +22,7 @@ import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
+import { LocationIdentityIcon } from '../../ui/location-identity-icon'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
 
@@ -522,8 +523,12 @@ export function ExploreView({
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
+                      aria-label={`${result.code}, venue, ${result.venue.roomName}`}
                     >
-                      <strong>{result.code}</strong>
+                      <span className="explore-view-result-identity">
+                        <LocationIdentityIcon kind="venue" />
+                        <strong>{result.code}</strong>
+                      </span>
                       <span>{result.venue.roomName}</span>
                     </button>
                   ))
@@ -551,7 +556,13 @@ export function ExploreView({
           data-mobile-sheet-content
         >
           <div className="venue-detail-identity">
-            <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+            <h3
+              id="explore-venue-detail-heading"
+              ref={detailHeadingRef}
+              tabIndex={-1}
+              aria-label={`${state.selectedVenue.code}, venue`}
+            >
+              <LocationIdentityIcon kind="venue" />
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
@@ -601,11 +612,14 @@ export function ExploreView({
                       className="nearby-stop-row"
                       type="button"
                       data-stop-id={stop.id}
-                      aria-label={`Nearby stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+                      aria-label={`Nearby shuttle stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
                       onClick={() => handleFocusStop(stop.id)}
                     >
                       <span className="nearby-stop-identity">
-                        <strong>{stop.longName}</strong>
+                        <span className="nearby-stop-name">
+                          <LocationIdentityIcon kind="stop" />
+                          <strong>{stop.longName}</strong>
+                        </span>
                         <small>{stop.id}</small>
                       </span>
                       <span className="nearby-stop-services" aria-hidden="true">

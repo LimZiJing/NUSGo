@@ -4,7 +4,7 @@ import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { Journey } from '../../domain/trip/journey'
 import { getJourneyTimelineEntries } from './journey-result-presentation'
-import { TripJourneyResult } from './trip-journey-result'
+import { TripJourneyResult } from './journey-result'
 
 const network = createValidTransitNetwork()
 network.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B']

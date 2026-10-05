@@ -12,7 +12,7 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { TripJourneyResult, type TripJourneyState } from './trip-journey-result'
+import { TripJourneyResult, type TripJourneyState } from './journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 
 interface PlanViewProps {

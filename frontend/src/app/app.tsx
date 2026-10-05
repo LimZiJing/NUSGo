@@ -15,14 +15,14 @@ import { getExploreShellClassName } from '../features/explore-view/explore-view-
 import {
   StopsView,
   type StopSheetSelection,
-} from '../features/shuttle-browsing/stops-view'
-import { getStopSheetSelection } from '../features/shuttle-browsing/stops-view-state'
+} from '../features/stops-view/stops-view'
+import { getStopSheetSelection } from '../features/stops-view/stops-view-state'
 import {
   getStopsOverview,
   getStopsWithinNearbyRadius,
-} from '../features/shuttle-browsing/stops-overview'
-import { useStopsView } from '../features/shuttle-browsing/use-stops-view'
-import { useStopsArrivals } from '../features/shuttle-browsing/use-stops-arrivals'
+} from '../features/stops-view/stops-overview'
+import { useStopsView } from '../features/stops-view/use-stops-view'
+import { useStopsArrivals } from '../features/stops-view/use-stops-arrivals'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { MainNavigation } from '../ui/main-navigation'
@@ -30,8 +30,8 @@ import { DesktopColumnShell } from '../ui/desktop-column-shell'
 import { MobileSheetShell } from '../ui/mobile-sheet-shell'
 import { animateMobileSheet } from '../ui/animate-mobile-sheet'
 import { getMobileSheetHeights, getMobileTabBarInset } from '../ui/mobile-sheet-layout'
-import { PlanView } from '../features/trip-endpoints/plan-view'
-import { ShuttleRouteControl } from '../features/shuttle-browsing/shuttle-route-control'
+import { PlanView } from '../features/plan-view/plan-view'
+import { ShuttleRouteControl } from '../features/explore-view/explore-route-browser'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,
@@ -61,7 +61,7 @@ import { createShuttleServiceHoursClient } from '../infrastructure/shuttle-servi
 import { createBrowserLocationTracker } from '../infrastructure/location/browser'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { LocationTrackingState } from '../domain/location/types'
-import { useStopsServiceWindows } from '../features/shuttle-browsing/use-stops-service-windows'
+import { useStopsServiceWindows } from '../features/stops-view/use-stops-service-windows'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
 import { JourneyTestTimeControl } from '../ui/journey-test-time-control'

@@ -4,7 +4,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 ## Ownership
 
-- `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session.
+- `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
 - `frontend/src/domain` owns pure transit, venue, location, and trip types, validation, lookup indexes, and domain transformations.
 - `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
@@ -33,7 +33,8 @@ The intended direction is:
 - Domain modules must not import React, MapLibre, browser DOM APIs, network clients, or other infrastructure.
 - The app composition root may runtime-import feature entry points, UI entry points, and infrastructure adapters to wire the application.
 - Infrastructure may depend on domain types and implement framework-free app contracts. It may use `import type` from `frontend/src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
-- Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns all MapLibre, network, DOM, listener, timer, and asynchronous effects.
+- Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns MapLibre, network/data-adapter, and integration-level DOM, listener, timer, and asynchronous effects.
+- Application controllers may use browser measurements, observers, or listeners only to coordinate app-owned responsive layout or cross-feature keyboard navigation. Keep these effects in the owning app controller and clean them up with its lifecycle.
 - Features depend only on domain values and UI contracts or primitives. They must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
 - Cross-feature coordination is performed by app composition through passed state and callbacks rather than direct feature-to-feature or feature-to-app-contract imports.
 - The app composition root passes application state and callbacks into feature entry points; features translate user intent through their UI contracts.

@@ -1,0 +1,258 @@
+import { useCallback, useMemo, useRef, useEffect } from 'react'
+import type { DeviceLocationFix, LocationTrackingState } from '../../domain/location/types'
+import { isValidLocationCoordinates } from '../../domain/location/coordinates'
+import type { TransitIndex } from '../../domain/transit'
+import {
+  isOlderPublicBusArrivalSnapshot,
+  type PublicBusArrivalSnapshot,
+} from '../../domain/transit/public-bus-arrivals'
+import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import { getStopSheetSelection } from './stops-view-state'
+import { getStopsOverview, getStopsWithinNearbyRadius } from './stops-overview'
+import type { StopSheetSelection, StopOverviewSelection } from './stops-view'
+import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
+import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
+import { useStopsView } from './use-stops-view'
+import type { StopsViewState } from './stops-view-state'
+
+type Coordinate = { readonly longitude: number; readonly latitude: number }
+
+export interface StopsViewModelOptions {
+  readonly transitIndex: TransitIndex | null
+  readonly mapCenter: Coordinate | null
+  readonly location: LocationTrackingState
+  readonly active: boolean
+  readonly loadArrivals: StopsArrivalLoader<ShuttleArrivalSnapshot>
+  readonly loadPublicArrivals: StopsArrivalLoader<PublicBusArrivalSnapshot>
+  readonly loadServiceWindows: StopsServiceWindowsLoader
+  readonly requestLocation: (() => void) | null
+  readonly locateFromControl: () => void
+  readonly enableLocationTracking: () => void
+}
+
+export interface StopsViewModel {
+  readonly state: StopsViewState
+  readonly selectedStop: StopSheetSelection | null
+  readonly overviewStops: readonly StopOverviewSelection[]
+  readonly overviewLoading: boolean
+  readonly selectedStopFavorite: boolean
+  readonly locationNotice: string | null
+  readonly liveArrivalMessage: string | null
+  readonly focusStop: (stopId: string) => void
+  readonly selectList: (list: 'nearby' | 'favourites') => void
+  readonly toggleFavorite: (stopId: string) => void
+  readonly toggleExpanded: (stopId: string) => void
+  readonly dismissLocationNotice: () => void
+  readonly backToStops: () => void
+  readonly requestLocationWithNearbyExpansion: () => void
+  readonly locateFromControl: () => void
+}
+
+function hasSuccessfulLocation(location: LocationTrackingState): boolean {
+  const fix = location.latestFix
+  return location.status === 'tracking' && fix !== null && isValidLocationCoordinates(
+    fix.longitude,
+    fix.latitude,
+  )
+}
+
+function hasLocationError(location: LocationTrackingState): boolean {
+  return ['denied', 'unavailable', 'timeout', 'invalid'].includes(location.status)
+}
+
+export function useStopsViewModel({
+  transitIndex,
+  mapCenter,
+  location,
+  active,
+  loadArrivals,
+  loadPublicArrivals,
+  loadServiceWindows,
+  requestLocation,
+  locateFromControl,
+  enableLocationTracking,
+}: StopsViewModelOptions): StopsViewModel {
+  const [state, dispatch] = useStopsView(transitIndex)
+  const initialNearbyLocationRequestedRef = useRef(false)
+  const pendingNearbyTimingExpansionRef = useRef(false)
+  const locationError = hasLocationError(location)
+  const locationFix: DeviceLocationFix | null = locationError ? null : location.latestFix
+
+  const focusedStop = state.focusedStopId === null
+    ? undefined
+    : transitIndex?.stopById.get(state.focusedStopId)
+  const nearbyEntries = useMemo(() => transitIndex ? getStopsOverview(
+    transitIndex,
+    'nearby',
+    mapCenter,
+    locationFix,
+    state.favoriteStopIds,
+  ) : [], [locationFix, mapCenter, state.favoriteStopIds, transitIndex])
+  const locationNearbyEntries = useMemo(() => {
+    if (!transitIndex || !locationFix) return null
+    return getStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
+  }, [locationFix, transitIndex])
+  const overviewEntries = useMemo(() => state.list === 'nearby'
+    ? nearbyEntries
+    : transitIndex ? getStopsOverview(
+      transitIndex,
+      'favourites',
+      mapCenter,
+      locationFix,
+      state.favoriteStopIds,
+    ) : [], [locationFix, mapCenter, nearbyEntries, state.favoriteStopIds, state.list, transitIndex])
+
+  const arrivalRequests = useMemo(() => {
+    const requests = new Map<string, { readonly stopId: string; readonly stopName: string }>()
+    for (const { stop } of overviewEntries) {
+      requests.set(stop.id, { stopId: stop.id, stopName: stop.longName })
+    }
+    if (focusedStop) {
+      requests.set(focusedStop.id, { stopId: focusedStop.id, stopName: focusedStop.longName })
+    }
+    return [...requests.values()]
+  }, [focusedStop, overviewEntries])
+  const stopArrivals = useStopsArrivals(loadArrivals, active, arrivalRequests)
+  const publicArrivalRequests = useMemo(() => arrivalRequests.filter(({ stopId }) => (
+    transitIndex?.stopById.get(stopId)?.services.some((service) => service.startsWith('PUB:')) ?? false
+  )), [arrivalRequests, transitIndex])
+  const publicStopArrivals = useStopsArrivals(
+    loadPublicArrivals,
+    active,
+    publicArrivalRequests,
+    isOlderPublicBusArrivalSnapshot,
+  )
+  const serviceRouteIds = useMemo(() => {
+    const routeIds = new Set<string>()
+    for (const { stopId } of arrivalRequests) {
+      for (const routeId of transitIndex?.routeIdsByStopId.get(stopId) ?? []) routeIds.add(routeId)
+    }
+    return [...routeIds].sort()
+  }, [arrivalRequests, transitIndex])
+  const stopServiceWindows = useStopsServiceWindows(loadServiceWindows, active, serviceRouteIds)
+  const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
+  const publicArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
+
+  const selectedStop = focusedStop && transitIndex
+    ? getStopSheetSelection(
+      focusedStop,
+      transitIndex,
+      state.favoriteStopIds,
+      stopArrivals.snapshot,
+      stopArrivals.nowMs,
+      stopServiceWindows.windows,
+      stopArrivalsUpdating,
+      publicStopArrivals.snapshot,
+      publicArrivalsUpdating,
+    )
+    : null
+  const overviewStops: readonly StopOverviewSelection[] = transitIndex
+    ? overviewEntries.map(({ stop, distanceMeters }) => ({
+      stop: getStopSheetSelection(
+        stop,
+        transitIndex,
+        state.favoriteStopIds,
+        stopArrivals.snapshot,
+        stopArrivals.nowMs,
+        stopServiceWindows.windows,
+        stopArrivalsUpdating,
+        publicStopArrivals.snapshot,
+        publicArrivalsUpdating,
+      ),
+      distanceMeters,
+      favorite: state.favoriteStopIds.includes(stop.id),
+      expanded: state.expandedStopIds[state.list].includes(stop.id),
+    }))
+    : []
+
+  const expandNearbyTimings = useCallback((): boolean => {
+    if (locationNearbyEntries === null) return false
+    dispatch({
+      type: 'set-nearby-expanded',
+      stopIds: locationNearbyEntries.map(({ stop }) => stop.id),
+    })
+    return true
+  }, [dispatch, locationNearbyEntries])
+  const tryExpandNearbyTimings = useCallback((): boolean => {
+    if (!hasSuccessfulLocation(location) || !expandNearbyTimings()) return false
+    pendingNearbyTimingExpansionRef.current = false
+    return true
+  }, [expandNearbyTimings, location])
+  const requestLocationWithNearbyExpansion = useCallback((): void => {
+    pendingNearbyTimingExpansionRef.current = true
+    tryExpandNearbyTimings()
+    requestLocation?.()
+  }, [requestLocation, tryExpandNearbyTimings])
+  const locateFromControlWithNearbyExpansion = useCallback((): void => {
+    pendingNearbyTimingExpansionRef.current = true
+    tryExpandNearbyTimings()
+    locateFromControl()
+  }, [locateFromControl, tryExpandNearbyTimings])
+
+  useEffect(() => {
+    if (!pendingNearbyTimingExpansionRef.current) return
+    if (hasLocationError(location)) {
+      pendingNearbyTimingExpansionRef.current = false
+      return
+    }
+    tryExpandNearbyTimings()
+  }, [location, tryExpandNearbyTimings])
+
+  useEffect(() => {
+    if (
+      !requestLocation || !active || state.list !== 'nearby' ||
+      location.status !== 'disabled' || initialNearbyLocationRequestedRef.current
+    ) return
+    initialNearbyLocationRequestedRef.current = true
+    requestLocationWithNearbyExpansion()
+  }, [active, location.status, requestLocation, requestLocationWithNearbyExpansion, state.list])
+
+  const focusStop = useCallback((stopId: string): void => {
+    dispatch({ type: 'focus-stop', stopId })
+  }, [dispatch])
+  const selectList = useCallback((list: 'nearby' | 'favourites'): void => {
+    if (list === 'nearby' && location.status === 'disabled') enableLocationTracking()
+    dispatch({ type: 'select-list', list })
+  }, [dispatch, enableLocationTracking, location.status])
+  const toggleFavorite = useCallback((stopId: string): void => {
+    dispatch({ type: 'toggle-favorite', stopId })
+  }, [dispatch])
+  const toggleExpanded = useCallback((stopId: string): void => {
+    dispatch({ type: 'toggle-expanded', stopId })
+  }, [dispatch])
+  const dismissLocationNotice = useCallback((): void => {
+    dispatch({ type: 'dismiss-location-notice' })
+  }, [dispatch])
+  const backToStops = useCallback((): void => {
+    dispatch({ type: 'back-to-stops' })
+  }, [dispatch])
+
+  const locationNotice = locationError && !state.locationNoticeDismissed
+    ? 'Location is unavailable. Showing stops near the map centre without distances.'
+    : null
+  const liveArrivalMessage = stopArrivals.snapshot || publicStopArrivals.snapshot
+    ? null
+    : stopArrivals.status === 'loading'
+      ? 'Updating…'
+      : stopArrivals.status === 'error'
+        ? 'No live data'
+        : null
+
+  return {
+    state,
+    selectedStop,
+    overviewStops,
+    overviewLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
+    selectedStopFavorite: focusedStop ? state.favoriteStopIds.includes(focusedStop.id) : false,
+    locationNotice,
+    liveArrivalMessage,
+    focusStop,
+    selectList,
+    toggleFavorite,
+    toggleExpanded,
+    dismissLocationNotice,
+    backToStops,
+    requestLocationWithNearbyExpansion,
+    locateFromControl: locateFromControlWithNearbyExpansion,
+  }
+}

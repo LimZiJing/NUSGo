@@ -96,8 +96,7 @@
   }
 
   .mobile-sheet-handle:focus-visible {
-    outline: 3px solid var(--focus-ring-strong);
-    outline-offset: 2px;
+    outline: none;
   }
 
   .mobile-sheet-grabber {

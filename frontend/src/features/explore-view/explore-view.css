@@ -808,6 +808,11 @@
     background: var(--surface-muted);
   }
 
+  .navigation-column .explore-view-results {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
   .navigation-column .explore-view-venue-search .explore-view-search-body {
     display: flex;
     flex: 1 1 auto;

@@ -122,7 +122,7 @@
   position: absolute;
   top: 27px;
   bottom: 27px;
-  left: 18px;
+  left: 17px;
   border-left: 2px dotted var(--text-muted);
   opacity: 0.75;
   content: '';

@@ -8,7 +8,7 @@ import type {
   TripRequest,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '../../domain/venue/types'
-import { PlanEndpointControl, type OriginVenueAutofillState } from './plan-endpoint-control'
+import { PlanEndpointControl, type OriginLocationRequestState } from './plan-endpoint-control'
 import { JourneyResult, type JourneyResultState } from './journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import { ArrowDownUpIcon } from '../../ui/icons'
@@ -27,9 +27,9 @@ interface PlanViewProps {
   onClearDestinationEndpoint: () => void
   onClearTrip: () => void
   onPlanJourney: () => void
-  originVenueAutofill?: OriginVenueAutofillState
+  originLocationRequest?: OriginLocationRequestState
   onUseCurrentLocationForOrigin?: () => void
-  onCancelOriginVenueAutofill?: () => void
+  onCancelOriginLocationRequest?: () => void
   journey?: JourneyResultState
   simulatedAtMs?: number | null
 }
@@ -50,9 +50,9 @@ export function PlanView({
   onClearDestinationEndpoint,
   onClearTrip,
   onPlanJourney,
-  originVenueAutofill = { status: 'idle', error: null },
+  originLocationRequest = { status: 'idle', error: null },
   onUseCurrentLocationForOrigin,
-  onCancelOriginVenueAutofill,
+  onCancelOriginLocationRequest,
   journey = { status: 'idle', journey: null, error: null },
   simulatedAtMs = null,
 }: PlanViewProps) {
@@ -63,7 +63,7 @@ export function PlanView({
   const [journeyReferenceTimeMs, setJourneyReferenceTimeMs] = useState<number | null>(null)
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
-    if (role === 'origin') onCancelOriginVenueAutofill?.()
+    if (role === 'origin') onCancelOriginLocationRequest?.()
     setSearchQueries((current) => ({ ...current, [role]: query }))
   }
   const selectEndpoint = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
@@ -140,9 +140,9 @@ export function PlanView({
             onSearchResult={onSearchResult}
             onSelect={(endpoint) => selectEndpoint('origin', endpoint)}
             onClear={onClearOriginEndpoint}
-            originVenueAutofill={originVenueAutofill}
+            originLocationRequest={originLocationRequest}
             onUseCurrentLocation={onUseCurrentLocationForOrigin}
-            onCancelOriginVenueAutofill={onCancelOriginVenueAutofill}
+            onCancelOriginLocationRequest={onCancelOriginLocationRequest}
           />
           <PlanEndpointControl
             key={`destination:${tripRequest.destination ? getTripEndpointKey(tripRequest.destination) : 'none'}`}

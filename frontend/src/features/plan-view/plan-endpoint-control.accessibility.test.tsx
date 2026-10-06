@@ -111,7 +111,7 @@ describe('PlanView interactions', () => {
     expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('offers a retryable nearest-venue location action for the origin', async () => {
+  it('offers a retryable current-location action for the origin', async () => {
     const user = userEvent.setup()
     const onUseCurrentLocationForOrigin = vi.fn()
     const controls = {
@@ -134,19 +134,32 @@ describe('PlanView interactions', () => {
 
     rerender(<PlanView
       {...controls}
-      originVenueAutofill={{ status: 'requesting', error: null }}
+      originLocationRequest={{ status: 'requesting', error: null }}
     />)
-    expect((screen.getByRole('button', { name: 'Finding nearest venue' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Getting current location' }) as HTMLButtonElement).disabled).toBe(true)
 
     rerender(<PlanView
       {...controls}
-      originVenueAutofill={{
+      originLocationRequest={{
         status: 'error',
         error: 'Device location is unavailable. Please try again.',
       }}
     />)
     expect(screen.getByText('Device location is unavailable. Please try again.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Retry nearest venue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry current location' })).toBeTruthy()
+
+    rerender(<PlanView
+      {...controls}
+      tripRequest={{
+        origin: {
+          kind: 'current-location',
+          coordinate: { longitude: 103.12345, latitude: 1.23456 },
+        },
+        destination: null,
+      }}
+    />)
+    expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value)
+      .toBe('Current location')
   })
 
   it('uses Escape to dismiss endpoint search results before collapsing the plan sheet', async () => {

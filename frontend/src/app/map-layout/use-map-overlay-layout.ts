@@ -1,0 +1,178 @@
+import { useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import type { NavigationSessionCommands } from '../navigation-session-mount'
+import type { NavigationState, NavigationView } from '../navigation/navigation-state'
+import type { MapViewportInsets } from '../map-camera'
+import { applyMapOverlayMeasurements } from './map-insets-controller'
+import { getMobileSheetHeights, getMobileTabBarInset } from '../../ui/mobile-sheet-layout'
+
+export interface UseMapOverlayLayoutOptions {
+  readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets'>
+  readonly isMobileViewport: boolean
+  readonly navigation: NavigationState
+  readonly mapShellRef: RefObject<HTMLElement | null>
+  readonly tripControlsRef: RefObject<HTMLElement | null>
+  readonly exploreViewRef: RefObject<HTMLElement | null>
+  readonly stopsSheetRef: RefObject<HTMLElement | null>
+  readonly mainNavigationRef: RefObject<HTMLElement | null>
+  readonly navigationColumnRef: RefObject<HTMLElement | null>
+  readonly onMeasurementsApplied?: () => void
+}
+
+export interface MapOverlayLayout {
+  readonly mapInsets: MapViewportInsets
+  readonly navigationColumnWidth: number
+}
+
+export function useMapOverlayLayout({
+  commands,
+  isMobileViewport,
+  navigation,
+  mapShellRef,
+  tripControlsRef,
+  exploreViewRef,
+  stopsSheetRef,
+  mainNavigationRef,
+  navigationColumnRef,
+  onMeasurementsApplied,
+}: UseMapOverlayLayoutOptions): MapOverlayLayout {
+  const refs = useMemo(() => ({
+    mapShell: mapShellRef,
+    tripControls: tripControlsRef,
+    exploreView: exploreViewRef,
+    stopsSheet: stopsSheetRef,
+    mainNavigation: mainNavigationRef,
+    navigationColumn: navigationColumnRef,
+  }), [
+    exploreViewRef,
+    mainNavigationRef,
+    mapShellRef,
+    navigationColumnRef,
+    stopsSheetRef,
+    tripControlsRef,
+  ])
+  const [navigationColumnWidth, setNavigationColumnWidth] = useState(0)
+  const [mapInsets, setMapInsets] = useState<MapViewportInsets>({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  })
+
+  useLayoutEffect(() => {
+    const shell = refs.mapShell.current
+    if (!shell || !isMobileViewport) return
+
+    const updateVisualViewport = (): void => {
+      const viewport = window.visualViewport
+      const viewportHeight = viewport?.height ?? window.innerHeight
+      const tabBarRect = refs.mainNavigation.current?.getBoundingClientRect()
+      const shellBottom = shell.getBoundingClientRect().bottom
+      const cssTabBarInset = Number.parseFloat(getComputedStyle(shell, '::after').height)
+      const tabBarInset = getMobileTabBarInset(
+        shellBottom,
+        tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
+        cssTabBarInset,
+      )
+      const sheetHeights = getMobileSheetHeights(viewportHeight, tabBarInset)
+      shell.style.setProperty('--mobile-viewport-height', `${sheetHeights.viewportHeight}px`)
+      shell.style.setProperty('--mobile-sheet-max-height', `${sheetHeights.partialMaxHeight}px`)
+      shell.style.setProperty('--mobile-sheet-min-height', `${sheetHeights.partialMinHeight}px`)
+      if (tabBarInset > 0) shell.style.setProperty('--mobile-tab-bar-height', `${tabBarInset}px`)
+      shell.style.setProperty('--mobile-viewport-offset-top', `${viewport?.offsetTop ?? 0}px`)
+    }
+
+    updateVisualViewport()
+    window.addEventListener('resize', updateVisualViewport)
+    window.visualViewport?.addEventListener('resize', updateVisualViewport)
+    window.visualViewport?.addEventListener('scroll', updateVisualViewport)
+    return () => {
+      window.removeEventListener('resize', updateVisualViewport)
+      window.visualViewport?.removeEventListener('resize', updateVisualViewport)
+      window.visualViewport?.removeEventListener('scroll', updateVisualViewport)
+      shell.style.removeProperty('--mobile-viewport-height')
+      shell.style.removeProperty('--mobile-sheet-max-height')
+      shell.style.removeProperty('--mobile-sheet-min-height')
+      shell.style.removeProperty('--mobile-tab-bar-height')
+      shell.style.removeProperty('--mobile-viewport-offset-top')
+    }
+  }, [isMobileViewport, refs])
+
+  useLayoutEffect(() => {
+    const updateInsets = (): void => {
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+      const activeView: NavigationView = navigation.activeView
+      const activeSheetHeight = activeView === 'plan'
+        ? refs.tripControls.current?.getBoundingClientRect().height ?? 0
+        : activeView === 'stops'
+          ? refs.stopsSheet.current?.getBoundingClientRect().height ?? 0
+          : refs.exploreView.current?.getBoundingClientRect().height ?? 0
+      const tabBarRect = refs.mainNavigation.current?.getBoundingClientRect()
+      const mapShellBottom = refs.mapShell.current?.getBoundingClientRect().bottom ?? viewportHeight
+      const mapShellElement = refs.mapShell.current
+      const measuredNavigationWidth = isMobileViewport
+        ? 0
+        : refs.navigationColumn.current?.getBoundingClientRect().width ?? 0
+      setNavigationColumnWidth((current) => (
+        current === measuredNavigationWidth ? current : measuredNavigationWidth
+      ))
+      const cssTabBarInset = mapShellElement
+        ? Number.parseFloat(getComputedStyle(mapShellElement, '::after').height)
+        : 0
+      const tabBarInset = getMobileTabBarInset(
+        mapShellBottom,
+        tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
+        cssTabBarInset,
+      )
+      const nextInsets = applyMapOverlayMeasurements(commands, {
+        viewportWidth,
+        viewportHeight,
+        tripCardHeight: 0,
+        activeSheetHeight: activeSheetHeight + tabBarInset,
+        tripCardVisible: false,
+        activeSheetVisible: isMobileViewport,
+        desktopNavigationWidth: measuredNavigationWidth,
+      })
+      setMapInsets((current) => (
+        current.top === nextInsets.top &&
+        current.right === nextInsets.right &&
+        current.bottom === nextInsets.bottom &&
+        current.left === nextInsets.left
+          ? current
+          : nextInsets
+      ))
+      onMeasurementsApplied?.()
+    }
+
+    updateInsets()
+    window.addEventListener('resize', updateInsets)
+    window.visualViewport?.addEventListener('resize', updateInsets)
+    window.visualViewport?.addEventListener('scroll', updateInsets)
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(updateInsets)
+    if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current)
+    if (refs.exploreView.current) resizeObserver?.observe(refs.exploreView.current)
+    if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current)
+    if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current)
+    if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current)
+
+    return () => {
+      window.removeEventListener('resize', updateInsets)
+      window.visualViewport?.removeEventListener('resize', updateInsets)
+      window.visualViewport?.removeEventListener('scroll', updateInsets)
+      resizeObserver?.disconnect()
+    }
+  }, [
+    commands,
+    isMobileViewport,
+    navigation.activeView,
+    navigation.sheets.explore.detent,
+    navigation.sheets.plan.detent,
+    navigation.sheets.stops.detent,
+    refs,
+    onMeasurementsApplied,
+  ])
+
+  return { mapInsets, navigationColumnWidth }
+}

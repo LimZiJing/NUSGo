@@ -1,8 +1,8 @@
 import {
   calculateMapOverlayInsets,
   type MapOverlayMeasurements,
-} from './map-camera'
-import type { MapViewportInsets } from './contracts/map'
+} from '../map-camera'
+import type { MapViewportInsets } from '../contracts/map'
 
 export interface MapViewportInsetsSink {
   setViewportInsets(insets: MapViewportInsets): void

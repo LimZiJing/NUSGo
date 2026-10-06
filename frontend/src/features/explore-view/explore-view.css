@@ -582,16 +582,44 @@
   }
 
   .explore-view-venue-search {
-    grid-template-rows: max-content max-content minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
   }
 
   .explore-view-venue-search .explore-view-content {
-    grid-template-rows: max-content minmax(0, 1fr);
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .explore-view-venue-search .explore-view-search-body {
-    display: grid;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
     min-height: 0;
+  }
+
+  [data-mobile-sheet-measuring='partial'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-dragging] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-settling='partial'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-search-body {
+    display: flex !important;
+  }
+
+  .explore-view-venue-search .explore-view-search-prompt {
+    flex: 1 1 auto;
+  }
+
+  .explore-view-venue-search .explore-view-results {
+    flex: 1 1 0;
+  }
+
+  [data-mobile-sheet][data-detent='full'] .explore-view-venue-search .explore-view-results,
+  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-results,
+  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-results {
+    max-height: none;
   }
 
   .explore-segments {

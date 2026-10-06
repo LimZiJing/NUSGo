@@ -22,7 +22,7 @@
 
 .plan-view-content {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .plan-view-heading h2 {
@@ -110,7 +110,7 @@
   display: grid;
   gap: 6px;
   /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   padding: 6px 48px 6px 6px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -120,10 +120,15 @@
 
 .plan-endpoint-picker::before {
   position: absolute;
-  top: 26px;
-  bottom: 26px;
+  top: 27px;
+  bottom: 27px;
   left: 19px;
-  border-left: 2px dotted var(--border-control);
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border-control) 0 2px,
+    transparent 2px 6px
+  );
   content: '';
 }
 
@@ -280,8 +285,8 @@
 .plan-view-footer {
   display: flex;
   align-items: center;
-  min-height: var(--control-height-sm);
-  padding-right: 44px;
+  min-height: 16px;
+  padding: 0 44px 0 6px;
 }
 
 .plan-view-submit {
@@ -364,11 +369,11 @@
 .plan-validation {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
   color: var(--text-warning);
   font-size: 12px;
-  line-height: 1.25;
+  line-height: 16px;
 }
 
 .plan-validation::before {

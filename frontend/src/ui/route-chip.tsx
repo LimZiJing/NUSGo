@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { getRouteChipTextColor } from './route-color'
+import { getRouteChipTextColor } from '../domain/transit/route-color'
 
 type RouteChipSize = 'default' | 'compact'
 

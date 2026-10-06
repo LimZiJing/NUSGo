@@ -5,7 +5,7 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   color: var(--text-primary);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
@@ -73,6 +73,10 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+}
+
+.explore-view .search-field input:focus-visible {
+  outline: none;
 }
 
 .explore-view-search-row input::-webkit-search-cancel-button {
@@ -166,6 +170,10 @@
   color: var(--text-primary);
   font: 600 20px/1.2 system-ui, sans-serif;
   text-align: left;
+}
+
+.venue-detail-identity > h3:focus {
+  outline: none;
 }
 
 .venue-detail-identity {
@@ -569,17 +577,49 @@
     gap: 4px;
   }
 
-  .explore-view-venue-search {
-    grid-template-rows: max-content max-content minmax(0, 1fr);
-  }
-
-  .explore-view-venue-search .explore-view-content {
+  .explore-view-venue-detail {
     grid-template-rows: max-content minmax(0, 1fr);
   }
 
-  .explore-view-venue-search .explore-view-search-body {
-    display: grid;
+  .explore-view-venue-search {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .explore-view-venue-search .explore-view-content {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
     min-height: 0;
+  }
+
+  .explore-view-venue-search .explore-view-search-body {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  [data-mobile-sheet-measuring='partial'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-dragging] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-settling='partial'] .explore-view-venue-search .explore-view-search-body,
+  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-search-body {
+    display: flex !important;
+  }
+
+  .explore-view-venue-search .explore-view-search-prompt {
+    flex: 1 1 auto;
+  }
+
+  .explore-view-venue-search .explore-view-results {
+    flex: 1 1 0;
+  }
+
+  [data-mobile-sheet][data-detent='full'] .explore-view-venue-search .explore-view-results,
+  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-results,
+  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-results {
+    max-height: none;
   }
 
   .explore-segments {
@@ -806,6 +846,11 @@
     border-color: var(--border-muted);
     border-radius: var(--radius-lg);
     background: var(--surface-muted);
+  }
+
+  .navigation-column .explore-view-results {
+    flex: 1 1 auto;
+    width: 100%;
   }
 
   .navigation-column .explore-view-venue-search .explore-view-search-body {

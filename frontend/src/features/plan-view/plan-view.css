@@ -774,7 +774,7 @@
 
   .plan-view-content {
     min-height: 0;
-    max-height: none;
+    max-height: var(--mobile-sheet-max-height);
     overflow: visible;
     overscroll-behavior: contain;
     scrollbar-gutter: auto;

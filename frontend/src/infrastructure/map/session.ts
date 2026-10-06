@@ -232,11 +232,13 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentTransitIndex = data.index
       if (stopsPinStopId && !data.index.stopById.has(stopsPinStopId)) stopsPinStopId = null
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
+      const routeColors = new Map(data.index.routes.map(({ id, color }) => [id, color] as const))
       shuttleStopMarkers = createShuttleStopMarkers(
         map,
         data.index.stops,
         onSetEndpoint,
         options.onStopSelected,
+        routeColors,
       )
       if (!shuttleStopMarkers.setStopsPin(stopsPinStopId, stopsPinVisible)) {
         stopsPinStopId = null

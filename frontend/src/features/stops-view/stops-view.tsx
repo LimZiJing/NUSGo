@@ -71,7 +71,7 @@ export function StopsView({
     <div className="stops-view">
       <div
         id="stops-view-content"
-        className="mobile-sheet-content stops-view-content"
+        className={`mobile-sheet-content stops-view-content${selectedStop ? ' mobile-sheet-scroll-content' : ''}`}
         data-view={selectedStop ? 'selected' : 'overview'}
       >
         {selectedStop ? (
@@ -144,7 +144,7 @@ export function StopsView({
               </div>
             )}
             {overviewStops.length ? (
-              <div className="stops-card-list">
+              <div className="mobile-sheet-scroll-content stops-card-list">
                 {overviewStops.map(({ stop, distanceMeters, favorite, expanded }) => (
                   <StopCard
                     key={stop.id}

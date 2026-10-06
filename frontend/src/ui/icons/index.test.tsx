@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import {
   ArrowDownUpIcon,
+  ArrowRightIcon,
   ArrowLeftIcon,
   BuildingIcon,
   BusIcon,
@@ -9,6 +10,7 @@ import {
   ChevronRightIcon,
   CloseIcon,
   CompassIcon,
+  EllipsisVerticalIcon,
   FavoriteIcon,
   FootprintsIcon,
   LocateIcon,
@@ -19,6 +21,7 @@ import {
 
 const icons = [
   ArrowDownUpIcon,
+  ArrowRightIcon,
   ArrowLeftIcon,
   BuildingIcon,
   BusIcon,
@@ -26,6 +29,7 @@ const icons = [
   ChevronRightIcon,
   CloseIcon,
   CompassIcon,
+  EllipsisVerticalIcon,
   FootprintsIcon,
   LocateIcon,
   NavigationIcon,

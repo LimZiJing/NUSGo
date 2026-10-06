@@ -77,9 +77,8 @@ describe('PlanView interactions', () => {
     rerender(<PlanView {...controls} tripRequest={{ origin: null, destination: null }} />)
     const validation = screen.getByText('Origin is required.')
     expect(validation).toBeTruthy()
-    expect(within(validation.parentElement as HTMLElement)
-      .getByRole('button', { name: 'Clear all' }))
-      .toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Trip actions' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
   })
 
   it('uses Get route as the explicit planning action', async () => {
@@ -236,6 +235,10 @@ describe('PlanView interactions', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Origin' }), 'STOP')
     await user.type(screen.getByRole('searchbox', { name: 'Destination' }), 'COM1')
 
+    const actions = screen.getByRole('button', { name: 'Trip actions' })
+    actions.focus()
+    await user.keyboard('{Enter}')
+    expect(actions.getAttribute('aria-expanded')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
     expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value).toBe('')

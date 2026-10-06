@@ -556,7 +556,7 @@ export function ExploreView({
           className="mobile-sheet-content explore-view-content explore-view-detail"
         >
           <div className="venue-detail-identity">
-            <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} >
+            <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>

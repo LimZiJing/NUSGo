@@ -110,6 +110,18 @@ describe('PlanView interactions', () => {
     expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('dismisses trip actions when focus moves outside the popover', async () => {
+    const user = userEvent.setup()
+    render(<TripEndpointHarness />)
+
+    const actions = screen.getByRole('button', { name: 'Trip actions' })
+    await user.click(actions)
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeTruthy()
+
+    await user.click(screen.getByRole('heading', { name: 'Plan trip' }))
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
+  })
+
   it('offers a retryable nearest-venue location action for the origin', async () => {
     const user = userEvent.setup()
     const onUseCurrentLocationForOrigin = vi.fn()

@@ -66,6 +66,7 @@ export function PlanView({
   })
   const [tripActionsOpen, setTripActionsOpen] = useState(false)
   const [journeyReferenceTimeMs, setJourneyReferenceTimeMs] = useState<number | null>(null)
+  const tripActionsRef = useRef<HTMLDivElement>(null)
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
     if (role === 'origin') onCancelOriginVenueAutofill?.()
@@ -112,13 +113,31 @@ export function PlanView({
     }))
   }, [tripRequest])
 
+  useEffect(() => {
+    if (!tripActionsOpen) return
+    const closeTripActions = (event: PointerEvent | KeyboardEvent): void => {
+      if (event instanceof KeyboardEvent && event.key !== 'Escape') return
+      if (event instanceof PointerEvent) {
+        const target = event.target
+        if (target instanceof Node && tripActionsRef.current?.contains(target)) return
+      }
+      setTripActionsOpen(false)
+    }
+    document.addEventListener('pointerdown', closeTripActions)
+    document.addEventListener('keydown', closeTripActions)
+    return () => {
+      document.removeEventListener('pointerdown', closeTripActions)
+      document.removeEventListener('keydown', closeTripActions)
+    }
+  }, [tripActionsOpen])
+
   return (
     <div className="plan-view">
       <div className="plan-view-heading">
         <div className="plan-view-title">
           <h2>Plan trip</h2>
         </div>
-        <div className="plan-view-menu">
+        <div className="plan-view-menu" ref={tripActionsRef}>
           <button
             type="button"
             className="plan-view-menu-trigger"

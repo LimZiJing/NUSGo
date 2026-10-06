@@ -37,7 +37,6 @@
 
 .plan-view-menu-trigger,
 .plan-view-menu-item {
-  border: 1px solid var(--border-control);
   color: var(--text-primary);
   background: var(--surface-muted);
   font: inherit;
@@ -48,8 +47,10 @@
   display: grid;
   width: var(--control-height-sm);
   height: var(--control-height-sm);
-  padding: 5px 8px;
-  border-radius: var(--radius-sm);
+  padding: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   place-items: center;
 }
 
@@ -108,7 +109,7 @@
 .plan-endpoint-picker {
   position: relative;
   display: grid;
-  gap: 6px;
+  gap: 0;
   /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
   margin-bottom: 12px;
   padding: 6px 48px 6px 6px;
@@ -139,6 +140,16 @@
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+.plan-endpoint-control-destination::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 32px;
+  border-top: 1px solid var(--border-control);
+  content: '';
+  opacity: 0.65;
 }
 
 .plan-endpoint-marker {
@@ -178,10 +189,10 @@
   height: var(--control-height-sm);
   padding: 0;
   place-items: center;
-  border: 1px solid var(--border-control);
+  border: 0;
   border-radius: 50%;
   color: var(--text-primary);
-  background: var(--surface-muted);
+  background: transparent;
   cursor: pointer;
   transform: translateY(-50%);
 }
@@ -216,15 +227,14 @@
 .plan-endpoint-control .search-field input {
   min-height: var(--control-height-md);
   padding: 8px 86px 8px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: 0;
   color: var(--text-primary);
-  background: var(--surface-muted);
+  background: transparent;
   font: inherit;
 }
 
 .plan-endpoint-control .search-field input:focus {
-  border-color: var(--border-focus);
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
 }

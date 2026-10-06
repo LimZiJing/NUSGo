@@ -8,6 +8,8 @@ import type { JourneyBenchmarkMatrixResult } from './outcome.js'
 
 export interface MeasuredWalkingRouteEngine extends WalkingRouteEngine {
   readonly elapsedMs: number
+  readonly matrixElapsedMs: number
+  readonly routeElapsedMs: number
   readonly matrixRequests: readonly JourneyBenchmarkMatrixResult[]
   readonly requestCounts: { readonly matrix: number; readonly route: number }
   reset(): void
@@ -17,6 +19,8 @@ export function createMeasuredRouteEngine(
   routeEngine: WalkingRouteEngine,
 ): MeasuredWalkingRouteEngine {
   let elapsedMs = 0
+  let matrixElapsedMs = 0
+  let routeElapsedMs = 0
   let matrixRequestCount = 0
   let routeRequestCount = 0
   const matrixRequests: JourneyBenchmarkMatrixResult[] = []
@@ -24,12 +28,20 @@ export function createMeasuredRouteEngine(
   return {
     reset() {
       elapsedMs = 0
+      matrixElapsedMs = 0
+      routeElapsedMs = 0
       matrixRequestCount = 0
       routeRequestCount = 0
       matrixRequests.length = 0
     },
     get elapsedMs() {
       return elapsedMs
+    },
+    get matrixElapsedMs() {
+      return matrixElapsedMs
+    },
+    get routeElapsedMs() {
+      return routeElapsedMs
     },
     get matrixRequests() {
       return [...matrixRequests]
@@ -43,7 +55,9 @@ export function createMeasuredRouteEngine(
       try {
         return await routeEngine.routeWalking(request, signal)
       } finally {
-        elapsedMs += performance.now() - startedAt
+        const requestDurationMs = performance.now() - startedAt
+        elapsedMs += requestDurationMs
+        routeElapsedMs += requestDurationMs
       }
     },
     async matrixWalking(request: WalkingMatrixRequest, signal: AbortSignal): Promise<readonly WalkingMatrixConnection[]> {
@@ -61,7 +75,9 @@ export function createMeasuredRouteEngine(
         })
         return connections
       } finally {
-        elapsedMs += performance.now() - startedAt
+        const requestDurationMs = performance.now() - startedAt
+        elapsedMs += requestDurationMs
+        matrixElapsedMs += requestDurationMs
       }
     },
   }

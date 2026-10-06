@@ -35,6 +35,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function outcomeDiagnostics(value: unknown): Readonly<Record<string, number | string | boolean>> {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, number | string | boolean] => (
+    typeof entry[1] === 'string' ||
+    typeof entry[1] === 'boolean' ||
+    (typeof entry[1] === 'number' && Number.isFinite(entry[1]))
+  )))
+}
+
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0
 }
@@ -557,7 +566,11 @@ export function validateJourneyBenchmarkOutcome(
     if (benchmarkCase.expected.outcome !== 'no-route') {
       errors.push(`expected ${benchmarkCase.expected.outcome}; got no-route`)
     }
-    result = { kind: 'no-route', reason: typeof input.reason === 'string' ? input.reason : '' }
+    result = {
+      kind: 'no-route',
+      reason: typeof input.reason === 'string' ? input.reason : '',
+      ...outcomeDiagnostics(input.diagnostics),
+    }
   } else if (input.kind === 'journey') {
     if (benchmarkCase.expected.outcome !== 'journey') errors.push('expected no-route; got journey')
     const journey = validateJourney(input.journey, benchmarkCase, transit, venues, evidence, errors)
@@ -572,16 +585,17 @@ export function validateJourneyBenchmarkOutcome(
         totalDurationSeconds: journey.totalDurationSeconds,
         totalDistanceMeters: journey.totalDistanceMeters,
         planningQuality: journey.planningQuality,
+        ...outcomeDiagnostics(input.diagnostics),
       }
     }
   } else {
     errors.push('benchmark outcome kind must be journey or no-route')
   }
 
-  if (evidence?.mode === 'offline' && evidence.valhallaRequestCounts) {
+  if (evidence?.valhallaRequestCounts) {
     const { matrix, route } = evidence.valhallaRequestCounts
     result = { ...result, valhallaRequests: { matrix, route } }
-    if (matrix !== 0 || route !== 0) {
+    if (evidence.mode === 'offline' && (matrix !== 0 || route !== 0)) {
       errors.push(`offline benchmark made ${matrix} Valhalla matrix and ${route} route requests`)
     }
   }

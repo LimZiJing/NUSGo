@@ -61,28 +61,33 @@ function snapshotTripRequest(request: TripRequest): TripRequest {
 }
 
 function snapshotJourneyState(state: JourneyState): JourneyState {
-  if (state.journey === null) return freeze({ ...state })
-
-  const journey = state.journey
-  const legs = journey.legs.map((leg) => freeze({
-    ...leg,
-    from: freeze({ ...leg.from }),
-    to: freeze({ ...leg.to }),
-    geometry: freeze({
-      ...leg.geometry,
-      coordinates: freeze(leg.geometry.coordinates.map((coordinate) => (
-        freeze([coordinate[0], coordinate[1]] as const)
-      ))),
-    }),
-  }))
-  return freeze({
-    ...state,
-    journey: freeze({
+  const snapshotJourney = (journey: JourneyState['journey']): JourneyState['journey'] => {
+    if (journey === null) return null
+    const legs = journey.legs.map((leg) => freeze({
+      ...leg,
+      from: freeze({ ...leg.from }),
+      to: freeze({ ...leg.to }),
+      geometry: freeze({
+        ...leg.geometry,
+        coordinates: freeze(leg.geometry.coordinates.map((coordinate) => (
+          freeze([coordinate[0], coordinate[1]] as const)
+        ))),
+      }),
+    }))
+    return freeze({
       ...journey,
       origin: freeze({ ...journey.origin }),
       destination: freeze({ ...journey.destination }),
       legs: freeze(legs),
-    }),
+    })
+  }
+  return freeze({
+    ...state,
+    journey: snapshotJourney(state.journey),
+    candidates: freeze(state.candidates.map((candidate) => freeze({
+      ...candidate,
+      journey: snapshotJourney(candidate.journey)!,
+    }))),
   })
 }
 

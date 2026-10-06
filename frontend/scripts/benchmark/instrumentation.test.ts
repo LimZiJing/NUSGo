@@ -34,6 +34,9 @@ describe('createMeasuredRouteEngine', () => {
       request,
       connections: [{ fromIndex: 0, toIndex: 0, distanceMeters: 12, durationSeconds: 9 }],
     }])
+    expect(measured.matrixElapsedMs).toBeGreaterThanOrEqual(0)
+    expect(measured.routeElapsedMs).toBeGreaterThanOrEqual(0)
+    expect(measured.elapsedMs).toBe(measured.matrixElapsedMs + measured.routeElapsedMs)
   })
 
   it('counts a failed matrix request so swallowed adapter errors remain visible', async () => {
@@ -58,5 +61,7 @@ describe('createMeasuredRouteEngine', () => {
 
     expect(measured.requestCounts).toEqual({ matrix: 0, route: 0 })
     expect(measured.matrixRequests).toEqual([])
+    expect(measured.matrixElapsedMs).toBe(0)
+    expect(measured.routeElapsedMs).toBe(0)
   })
 })

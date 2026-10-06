@@ -13,7 +13,7 @@
     max-height: var(--mobile-sheet-max-height);
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 8px max(12px, env(safe-area-inset-right))
       12px
       max(12px, env(safe-area-inset-left));

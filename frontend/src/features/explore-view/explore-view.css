@@ -5,7 +5,7 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   color: var(--text-primary);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
@@ -571,6 +571,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .explore-view-venue-detail {
+    grid-template-rows: max-content minmax(0, 1fr);
   }
 
   .explore-view-venue-search {

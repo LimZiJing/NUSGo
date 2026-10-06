@@ -8,8 +8,10 @@ import {
   ChevronDown,
   ChevronRight,
   Compass,
+  CircleDot,
   EllipsisVertical,
   Footprints,
+  MapPin,
   LocateFixed,
   Navigation,
   Route,
@@ -57,6 +59,10 @@ export function CompassIcon(props: IconProps) {
   return renderDecorativeIcon(Compass, props)
 }
 
+export function CircleDotIcon(props: IconProps) {
+  return renderDecorativeIcon(CircleDot, props)
+}
+
 export function EllipsisVerticalIcon(props: IconProps) {
   return renderDecorativeIcon(EllipsisVertical, props)
 }
@@ -67,6 +73,10 @@ export function FootprintsIcon(props: IconProps) {
 
 export function LocateIcon(props: IconProps) {
   return renderDecorativeIcon(LocateFixed, props)
+}
+
+export function MapPinIcon(props: IconProps) {
+  return renderDecorativeIcon(MapPin, props)
 }
 
 export function NavigationIcon(props: IconProps) {

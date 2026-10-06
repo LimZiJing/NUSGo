@@ -122,7 +122,7 @@
   position: absolute;
   top: 27px;
   bottom: 27px;
-  left: 19px;
+  left: 18px;
   border-left: 2px dotted var(--text-muted);
   opacity: 0.75;
   content: '';
@@ -142,21 +142,30 @@
 }
 
 .plan-endpoint-marker {
-  width: 12px;
-  height: 12px;
-  margin: 14px 6px 0;
-  border: 2px solid var(--surface-raised);
-  border-radius: 50%;
-  box-shadow: var(--shadow-marker);
+  display: grid;
+  width: 20px;
+  height: 20px;
+  margin: 8px 2px 0;
+  place-items: center;
   box-sizing: border-box;
 }
 
 .plan-endpoint-control-origin .plan-endpoint-marker {
-  background: var(--status-marker-origin);
+  color: var(--status-marker-origin);
 }
 
 .plan-endpoint-control-destination .plan-endpoint-marker {
-  background: var(--status-marker-destination);
+  color: var(--status-marker-destination);
+}
+
+.plan-endpoint-marker svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
 }
 
 .plan-endpoint-swap {
@@ -732,6 +741,10 @@
 }
 
 @media (max-width: 768px) {
+  .mobile-sheet.plan-sheet {
+    overflow: hidden;
+  }
+
   .plan-view {
     height: 100%;
   }
@@ -751,10 +764,10 @@
 
   .plan-view-content {
     min-height: 0;
-    max-height: var(--mobile-sheet-max-height);
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: auto;
   }
 
   .plan-view button,
@@ -773,7 +786,7 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    overflow-y: auto;
+    overflow: visible;
   }
 
 }

@@ -10,7 +10,7 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { CloseIcon, LocateIcon } from '../../ui/icons'
+import { CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon } from '../../ui/icons'
 
 export interface OriginVenueAutofillState {
   readonly status: 'idle' | 'requesting' | 'error'
@@ -109,7 +109,9 @@ export function PlanEndpointControl({
       className={`plan-endpoint-control plan-endpoint-control-${role}`}
       aria-labelledby={`${inputId}-label`}
     >
-      <span className="plan-endpoint-marker" aria-hidden="true" />
+      <span className="plan-endpoint-marker" aria-hidden="true">
+        {role === 'origin' ? <CircleDotIcon /> : <MapPinIcon />}
+      </span>
       <div className="plan-endpoint-field">
         <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
         <div className="plan-endpoint-input-row">

@@ -109,7 +109,12 @@
 }
 
 .explore-view .route-chip,
-.stops-view .route-chip {
+.stops-view .route-chip,
+.map .route-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   flex: 0 0 auto;
   min-width: 48px;
   min-height: var(--control-height-lg);
@@ -123,8 +128,13 @@
   scroll-snap-align: start;
 }
 
+.map .route-chip {
+  cursor: default;
+}
+
 .explore-view .route-chip[data-size='compact'],
-.stops-view .route-chip[data-size='compact'] {
+.stops-view .route-chip[data-size='compact'],
+.map .route-chip[data-size='compact'] {
   min-width: 34px;
   min-height: 24px;
   padding: 2px 6px;
@@ -132,7 +142,8 @@
 }
 
 .explore-view .route-chip[data-active='true'],
-.stops-view .route-chip[data-active='true'] {
+.stops-view .route-chip[data-active='true'],
+.map .route-chip[data-active='true'] {
   border-color: var(--route-color);
   color: var(--route-text-color);
   background: var(--route-color);
@@ -140,8 +151,15 @@
 }
 
 .explore-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
-.stops-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
+.stops-view .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']),
+.map .route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
   color: #fff;
+}
+
+.map .route-chip-public {
+  color: var(--text-strong);
+  background: var(--surface-raised);
+  box-shadow: none;
 }
 
 .route-chip:focus-visible {

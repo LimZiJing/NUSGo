@@ -5,7 +5,7 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   color: var(--text-primary);
   font: 14px/1.2 system-ui, sans-serif;
   box-sizing: border-box;
@@ -73,6 +73,10 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+}
+
+.explore-view .search-field input:focus-visible {
+  outline: none;
 }
 
 .explore-view-search-row input::-webkit-search-cancel-button {
@@ -166,6 +170,10 @@
   color: var(--text-primary);
   font: 600 20px/1.2 system-ui, sans-serif;
   text-align: left;
+}
+
+.venue-detail-identity > h3:focus {
+  outline: none;
 }
 
 .venue-detail-identity {
@@ -569,6 +577,10 @@
     gap: 4px;
   }
 
+  .explore-view-venue-detail {
+    grid-template-rows: max-content minmax(0, 1fr);
+  }
+
   .explore-view-venue-search {
     grid-template-rows: max-content max-content minmax(0, 1fr);
   }
@@ -806,6 +818,11 @@
     border-color: var(--border-muted);
     border-radius: var(--radius-lg);
     background: var(--surface-muted);
+  }
+
+  .navigation-column .explore-view-results {
+    flex: 1 1 auto;
+    width: 100%;
   }
 
   .navigation-column .explore-view-venue-search .explore-view-search-body {

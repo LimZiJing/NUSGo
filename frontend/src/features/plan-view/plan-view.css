@@ -123,12 +123,7 @@
   top: 27px;
   bottom: 27px;
   left: 19px;
-  width: 2px;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--text-muted) 0 2px,
-    transparent 2px 6px
-  );
+  border-left: 2px dotted var(--text-muted);
   opacity: 0.75;
   content: '';
 }

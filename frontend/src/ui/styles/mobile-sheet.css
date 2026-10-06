@@ -50,6 +50,15 @@
     min-height: 0;
   }
 
+  .mobile-sheet .mobile-sheet-scroll-content {
+    box-sizing: border-box;
+    margin-inline-end: var(--space-1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: var(--space-2);
+    scrollbar-gutter: stable;
+  }
+
   [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row),
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'] > :not(.mobile-sheet-handle-row) {
     animation: mobile-sheet-content-enter 180ms ease-out both;

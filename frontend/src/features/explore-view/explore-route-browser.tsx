@@ -301,7 +301,7 @@ export function ExploreRouteBrowser({
       {selectedRoute ? (
         <div className="mobile-sheet-content route-timeline-card" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
           <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
-          <ScrollArea className="route-timeline-scroll">
+          <ScrollArea className="mobile-sheet-scroll-content route-timeline-scroll">
             <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
               {selectedRoute.stopIds.map((stopId, index) => {
                 const stop = stopsById.get(stopId)

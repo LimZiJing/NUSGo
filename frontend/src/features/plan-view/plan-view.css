@@ -680,11 +680,13 @@
   }
 
   .plan-view-content {
+    box-sizing: border-box;
     min-height: 0;
     max-height: var(--mobile-sheet-max-height);
     margin-inline-end: var(--space-1);
     overflow-y: auto;
     overscroll-behavior: contain;
+    padding-inline-end: var(--space-2);
     scrollbar-gutter: stable;
   }
 

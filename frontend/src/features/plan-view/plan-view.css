@@ -22,7 +22,7 @@
 
 .plan-view-content {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .plan-view-heading h2 {
@@ -31,31 +31,30 @@
   font: 600 18px/1.2 system-ui, sans-serif;
 }
 
-.plan-view-heading button,
-.plan-view-clear-all {
-  padding: 5px 8px;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
+.plan-view-menu {
+  position: relative;
+}
+
+.plan-view-menu-trigger,
+.plan-view-menu-item {
   color: var(--text-primary);
   background: var(--surface-muted);
   font: inherit;
   cursor: pointer;
 }
 
-.plan-view button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.plan-view-swap {
+.plan-view-menu-trigger {
   display: grid;
   width: var(--control-height-sm);
   height: var(--control-height-sm);
-  padding: 0 !important;
+  padding: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   place-items: center;
 }
 
-.plan-view-swap svg {
+.plan-view-menu-trigger svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -65,11 +64,55 @@
   stroke-width: 2;
 }
 
+.plan-view-menu-trigger:hover,
+.plan-view-menu-trigger:focus-visible {
+  background: var(--surface-control);
+}
+
+.plan-view-menu-trigger[aria-expanded='true'] {
+  background: var(--surface-control);
+}
+
+.plan-view-menu-panel {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 104px;
+  padding: 4px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay-panel);
+  box-shadow: var(--shadow-results);
+}
+
+.plan-view-menu-item {
+  width: 100%;
+  padding: 8px 10px;
+  border-color: transparent;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.plan-view-menu-item:not(:disabled):hover,
+.plan-view-menu-item:not(:disabled):focus-visible {
+  border-color: var(--border-control);
+  background: var(--surface-control);
+}
+
+.plan-view button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .plan-endpoint-picker {
   position: relative;
   display: grid;
-  gap: 6px;
-  padding: 6px;
+  gap: 0;
+  /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
+  margin-bottom: 18px;
+  padding: 6px 48px 6px 6px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
@@ -78,10 +121,11 @@
 
 .plan-endpoint-picker::before {
   position: absolute;
-  top: 26px;
-  bottom: 26px;
-  left: 19px;
-  border-left: 2px dotted var(--border-control);
+  top: 27px;
+  bottom: 27px;
+  left: 17px;
+  border-left: 2px dotted var(--text-muted);
+  opacity: 0.75;
   content: '';
 }
 
@@ -98,25 +142,82 @@
   background: transparent;
 }
 
+.plan-endpoint-control:has(.plan-endpoint-results) {
+  z-index: 4;
+}
+
+.plan-endpoint-control-destination::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 32px;
+  border-top: 1px solid var(--border-control);
+  content: '';
+  opacity: 0.65;
+}
+
 .plan-endpoint-marker {
-  width: 12px;
-  height: 12px;
-  margin: 14px 6px 0;
-  border: 2px solid var(--surface-raised);
-  border-radius: 50%;
-  box-shadow: var(--shadow-marker);
+  display: grid;
+  width: 20px;
+  height: 20px;
+  margin: 8px 2px 0;
+  place-items: center;
   box-sizing: border-box;
 }
 
 .plan-endpoint-control-origin .plan-endpoint-marker {
-  background: var(--status-marker-origin);
+  color: var(--status-marker-origin);
 }
 
 .plan-endpoint-control-destination .plan-endpoint-marker {
-  background: var(--status-marker-destination);
+  color: var(--status-marker-destination);
+}
+
+.plan-endpoint-marker svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.plan-endpoint-swap {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.plan-endpoint-swap:hover:not(:disabled),
+.plan-endpoint-swap:focus-visible:not(:disabled) {
+  background: var(--surface-control);
+}
+
+.plan-endpoint-swap svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .plan-endpoint-field {
+  position: relative;
   min-width: 0;
 }
 
@@ -131,15 +232,14 @@
 .plan-endpoint-control .search-field input {
   min-height: var(--control-height-md);
   padding: 8px 86px 8px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: 0;
   color: var(--text-primary);
-  background: var(--surface-muted);
+  background: transparent;
   font: inherit;
 }
 
 .plan-endpoint-control .search-field input:focus {
-  border-color: var(--border-focus);
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
 }
@@ -203,30 +303,38 @@
 }
 
 .plan-view-footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--control-height-sm);
-}
-
-.plan-view-actions {
-  /* Keep the actions at the right edge even when no validation message is present. */
-  grid-column: 2;
   display: flex;
   align-items: center;
-  gap: 6px;
+  min-height: 16px;
+  padding: 0 44px 0 9px;
 }
 
 .plan-view-submit {
-  min-height: var(--control-height-sm);
-  padding: 5px 10px;
+  position: absolute;
+  right: 8px;
+  bottom: -18px;
+  z-index: 3;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
   border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
   color: var(--accent-contrast);
   background: var(--accent);
-  font: inherit;
+  box-shadow: var(--shadow-lg);
   cursor: pointer;
+}
+
+.plan-view-submit svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
 }
 
 .plan-view-submit:not(:disabled):hover,
@@ -235,10 +343,14 @@
 }
 
 .plan-endpoint-results {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
   display: grid;
   gap: 4px;
   max-height: 180px;
-  margin-top: 4px;
   padding: 4px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -278,28 +390,14 @@
   color: var(--text-secondary);
 }
 
-.plan-view-clear-all {
-  flex: 0 0 auto;
-  min-height: var(--control-height-sm);
-  border-color: transparent;
-  color: var(--text-secondary);
-  background: transparent;
-}
-
-.plan-view-clear-all:not(:disabled):hover,
-.plan-view-clear-all:not(:disabled):focus-visible {
-  border-color: var(--border-control);
-  background: var(--surface-muted);
-}
-
 .plan-validation {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
   color: var(--text-warning);
   font-size: 12px;
-  line-height: 1.25;
+  line-height: 16px;
 }
 
 .plan-validation::before {
@@ -662,6 +760,10 @@
 }
 
 @media (max-width: 768px) {
+  .mobile-sheet.plan-sheet {
+    overflow: hidden;
+  }
+
   .plan-view {
     height: 100%;
   }
@@ -682,6 +784,9 @@
   .plan-view-content {
     min-height: 0;
     max-height: var(--mobile-sheet-max-height);
+    overflow: visible;
+    overscroll-behavior: contain;
+    scrollbar-gutter: auto;
   }
 
   .plan-view button,
@@ -700,7 +805,7 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    overflow-y: auto;
+    overflow: visible;
   }
 
 }

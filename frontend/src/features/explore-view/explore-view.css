@@ -75,6 +75,10 @@
   font: inherit;
 }
 
+.explore-view .search-field input:focus-visible {
+  outline: none;
+}
+
 .explore-view-search-row input::-webkit-search-cancel-button {
   appearance: none;
 }

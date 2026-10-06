@@ -168,6 +168,10 @@
   text-align: left;
 }
 
+.venue-detail-identity > h3:focus {
+  outline: none;
+}
+
 .venue-detail-identity {
   display: grid;
   gap: 2px;

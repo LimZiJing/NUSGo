@@ -22,7 +22,7 @@ import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { getRouteContrastTextColor } from '../../ui/route-color'
+import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import {
   BuildingIcon,
   BusIcon,

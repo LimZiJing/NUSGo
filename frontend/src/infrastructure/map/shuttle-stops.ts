@@ -318,6 +318,7 @@ export function createShuttleStopMarkers(
   busStops: readonly TransitStop[],
   onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
   onStopSelected?: (stopId: string) => boolean,
+  routeColors: ReadonlyMap<string, string> = new globalThis.Map(),
 ): ShuttleStopMarkers {
   const markers: Marker[] = []
   const markerDetails: BusStopMarker[] = []
@@ -360,8 +361,8 @@ export function createShuttleStopMarkers(
     const element = marker.getElement()
     element.dataset.stopId = stop.id
     element.dataset.stopName = stop.longName
-    const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
-    const popup = new Popup({ offset: 24 }).setDOMContent(popupContent.element)
+    const popupContent = createBusStopPopupContent(stop, onSetEndpoint, routeColors)
+    const popup = new Popup({ closeButton: false, offset: 24 }).setDOMContent(popupContent.element)
     const unregisterPopup = popupCoordinator.register(popup)
     const handleMarkerClick = (event: MouseEvent): void => {
       if (!onStopSelected?.(stop.id)) return

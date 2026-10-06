@@ -17,11 +17,19 @@ import {
   hasVenueCoordinates,
 } from '../../domain/venue/details'
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
+import nusmodsLogoUrl from '../../ui/brand-assets/nusmods-logo.svg'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { getRouteContrastTextColor } from '../../ui/route-color'
+import {
+  BuildingIcon,
+  BusIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  SearchIcon,
+} from '../../ui/icons'
 import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
@@ -504,9 +512,7 @@ export function ExploreView({
                 }}
                 aria-label="Clear venue search"
               >
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="M6 6 18 18M18 6 6 18" />
-                </svg>
+                <CloseIcon />
               </button>
             )}
           </div>
@@ -536,20 +542,7 @@ export function ExploreView({
               </ScrollArea>
             ) : (
               <div className="explore-view-search-prompt">
-                <svg
-                  aria-hidden="true"
-                  focusable="false"
-                  width="32"
-                  height="32"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  viewBox="0 0 32 32"
-                >
-                  <circle cx="14" cy="14" r="8" />
-                  <path d="m20 20 7 7" />
-                </svg>
+                <SearchIcon />
                 <p>Search for a venue</p>
               </div>
             )}
@@ -570,9 +563,7 @@ export function ExploreView({
           </div>
           {venueFloorAndBuilding && (
             <p className="venue-detail-location">
-              <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
-                <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
-              </svg>
+              <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
               <span>{venueFloorAndBuilding}</span>
             </p>
           )}
@@ -590,15 +581,13 @@ export function ExploreView({
               rel="noreferrer"
             >
               <span>View in</span>
-              <img src={`${import.meta.env.BASE_URL}nusmods-logo.svg`} alt="NUSMods" />
+              <img src={nusmodsLogoUrl} alt="NUSMods" />
             </a>
           </div>
           {venueHasCoordinates && (
             <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
               <h4 id="venue-nearby-stops-heading">
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="M6 3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1l1.5 2h-2.4L14 19h-4l-1.1 2H6.5L8 19H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v6h12V6H6Zm1 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
-                </svg>
+                <BusIcon />
                 Nearby bus stops within 500 m
               </h4>
               {transitIndex === null ? (
@@ -635,9 +624,7 @@ export function ExploreView({
                           </span>
                         ))}
                       </span>
-                      <svg aria-hidden="true" focusable="false" className="nearby-stop-arrow" viewBox="0 0 24 24">
-                        <path d="m9 5 7 7-7 7" />
-                      </svg>
+                      <ChevronRightIcon className="nearby-stop-arrow" />
                     </button>
                   ))}
                 </div>

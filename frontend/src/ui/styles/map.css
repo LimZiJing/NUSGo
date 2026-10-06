@@ -141,7 +141,7 @@
   stroke-width: 1.8;
 }
 
-.location-control-icon-center {
+.location-control-icon circle:last-of-type {
   fill: var(--text-secondary);
   stroke: none;
 }

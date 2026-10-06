@@ -148,7 +148,7 @@ describe('ExploreView venue details', () => {
     expect(markup).toContain('target="_blank"')
     expect(markup).toContain('rel="noreferrer"')
     expect(markup).toContain('<span>View in</span>')
-    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
+    expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
   })
 
   it('renders nearby buttons with internal route badges and excludes public services', () => {
@@ -175,7 +175,7 @@ describe('ExploreView venue details', () => {
     expect(markup).toContain('class="venue-detail-actions"')
     expect(markup).toContain('<span>Navigate</span>')
     expect(markup).toContain('<span>View in</span>')
-    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
+    expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
     expect(markup).toContain('Nearby bus stops')
     expect(markup).not.toContain('Browse shuttle routes')
   })

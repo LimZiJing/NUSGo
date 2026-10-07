@@ -59,7 +59,7 @@
   content: '';
 }
 
-.explore-route-browser-stop {
+.explore-view .explore-route-browser-stop {
   position: relative;
   display: flex;
   align-items: center;

@@ -5,7 +5,7 @@
   box-sizing: border-box;
 }
 
-.stops-view button {
+.stops-view button:not(.route-chip) {
   min-width: 44px;
   min-height: var(--control-height-lg);
   padding: 8px 10px;

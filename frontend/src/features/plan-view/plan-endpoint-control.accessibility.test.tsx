@@ -77,9 +77,8 @@ describe('PlanView interactions', () => {
     rerender(<PlanView {...controls} tripRequest={{ origin: null, destination: null }} />)
     const validation = screen.getByText('Origin is required.')
     expect(validation).toBeTruthy()
-    expect(within(validation.parentElement as HTMLElement)
-      .getByRole('button', { name: 'Clear all' }))
-      .toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Trip actions' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
   })
 
   it('uses Get route as the explicit planning action', async () => {
@@ -109,6 +108,18 @@ describe('PlanView interactions', () => {
 
     rerender(<PlanView {...controls} journey={{ status: 'loading', journey: null, error: null }} />)
     expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('dismisses trip actions when focus moves outside the popover', async () => {
+    const user = userEvent.setup()
+    render(<TripEndpointHarness />)
+
+    const actions = screen.getByRole('button', { name: 'Trip actions' })
+    await user.click(actions)
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeTruthy()
+
+    await user.click(screen.getByRole('heading', { name: 'Plan trip' }))
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
   })
 
   it('offers a retryable current-location action for the origin', async () => {
@@ -249,6 +260,10 @@ describe('PlanView interactions', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Origin' }), 'STOP')
     await user.type(screen.getByRole('searchbox', { name: 'Destination' }), 'COM1')
 
+    const actions = screen.getByRole('button', { name: 'Trip actions' })
+    actions.focus()
+    await user.keyboard('{Enter}')
+    expect(actions.getAttribute('aria-expanded')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect((screen.getByRole('searchbox', { name: 'Origin' }) as HTMLInputElement).value).toBe('')
     expect((screen.getByRole('searchbox', { name: 'Destination' }) as HTMLInputElement).value).toBe('')

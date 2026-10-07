@@ -1,13 +1,17 @@
 import type { ComponentProps } from 'react'
 import {
   ArrowDownUp,
+  ArrowRight,
   ArrowLeft,
   Building2,
   BusFront,
   ChevronDown,
   ChevronRight,
   Compass,
+  CircleDot,
+  EllipsisVertical,
   Footprints,
+  MapPin,
   LocateFixed,
   Navigation,
   Route,
@@ -25,6 +29,10 @@ function renderDecorativeIcon(Icon: LucideIcon, props: IconProps) {
 
 export function ArrowDownUpIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowDownUp, props)
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return renderDecorativeIcon(ArrowRight, props)
 }
 
 export function ArrowLeftIcon(props: IconProps) {
@@ -51,12 +59,24 @@ export function CompassIcon(props: IconProps) {
   return renderDecorativeIcon(Compass, props)
 }
 
+export function CircleDotIcon(props: IconProps) {
+  return renderDecorativeIcon(CircleDot, props)
+}
+
+export function EllipsisVerticalIcon(props: IconProps) {
+  return renderDecorativeIcon(EllipsisVertical, props)
+}
+
 export function FootprintsIcon(props: IconProps) {
   return renderDecorativeIcon(Footprints, props)
 }
 
 export function LocateIcon(props: IconProps) {
   return renderDecorativeIcon(LocateFixed, props)
+}
+
+export function MapPinIcon(props: IconProps) {
+  return renderDecorativeIcon(MapPin, props)
 }
 
 export function NavigationIcon(props: IconProps) {

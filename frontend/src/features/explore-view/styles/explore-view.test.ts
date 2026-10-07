@@ -11,4 +11,8 @@ describe('Explore search styles', () => {
     expect(styles).toMatch(/\.explore-view-search-row input\s*{[^}]*padding:\s*8px 46px 8px 40px;/s)
     expect(styles).toMatch(/\.explore-view-search-row input\s*{[^}]*padding:\s*10px 54px 10px 40px;/s)
   })
+
+  it('uses the mobile venue result card treatment at every viewport size', () => {
+    expect(styles).toMatch(/\.explore-view-result\s*{[^}]*min-height:\s*3\.5rem;[^}]*padding:\s*10px 12px;[^}]*border-radius:\s*var\(--radius-lg\);[^}]*background:\s*var\(--surface-raised\);/s)
+  })
 })

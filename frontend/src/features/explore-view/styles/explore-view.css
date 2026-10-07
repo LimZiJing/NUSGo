@@ -118,13 +118,19 @@
   display: grid;
   grid-auto-rows: max-content;
   align-content: start;
-  gap: 4px;
+  gap: 8px;
   max-height: 300px;
 }
 
 .explore-view-result {
   display: grid;
   gap: 2px;
+  box-sizing: border-box;
+  min-height: 3.5rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
   text-align: left;
 }
 
@@ -605,16 +611,6 @@
 
   .explore-view-results {
     max-height: 28dvh;
-    gap: 8px;
-  }
-
-  .explore-view .explore-view-result {
-    box-sizing: border-box;
-    min-height: 3.5rem;
-    padding: 10px 12px;
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    background: var(--surface-raised);
   }
 
   .explore-view-detail h3 {

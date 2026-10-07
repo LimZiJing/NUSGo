@@ -18,7 +18,7 @@
       max(12px, env(safe-area-inset-left));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     background: var(--surface-overlay);
-    box-shadow: var(--shadow-panel);
+    box-shadow: var(--shadow-sheet);
   }
 
   .navigation-panel:focus-within {

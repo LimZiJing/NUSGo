@@ -30,8 +30,8 @@
   font: 600 18px/1.2 system-ui, sans-serif;
 }
 
-.explore-view-header button:not(.route-chip):not(.explore-route-browser-stop),
-.explore-view button:not(.route-chip):not(.explore-route-browser-stop) {
+.explore-view-header button:where(:not(.route-chip):not(.explore-route-browser-stop)),
+.explore-view button:where(:not(.route-chip):not(.explore-route-browser-stop)) {
   padding: 5px 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
@@ -341,12 +341,12 @@
   color: var(--text-primary);
 }
 
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.explore-route-browser-stop):hover,
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.explore-route-browser-stop):focus-visible {
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):where(:not(.explore-route-browser-stop)):hover,
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):where(:not(.explore-route-browser-stop)):focus-visible {
   border-color: var(--border-focus);
 }
 
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.explore-route-browser-stop):focus-visible {
+.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):where(:not(.explore-route-browser-stop)):focus-visible {
   background: var(--surface-subtle);
 }
 
@@ -589,8 +589,8 @@
     font-size: 24px;
   }
 
-  .explore-view-header button:not(.route-chip):not(.explore-route-browser-stop),
-  .explore-view button:not(.route-chip):not(.explore-route-browser-stop) {
+  .explore-view-header button:where(:not(.route-chip):not(.explore-route-browser-stop)),
+  .explore-view button:where(:not(.route-chip):not(.explore-route-browser-stop)) {
     border-radius: var(--radius-card);
   }
 

@@ -1,10 +1,10 @@
 import type { ComponentProps, Ref } from 'react'
-import { ExploreRouteBrowser } from '../../features/explore-view/explore-route-browser'
+import { RouteBrowser } from '../../features/explore-view/route-browser'
 import { ExploreView } from '../../features/explore-view/explore-view'
 import { PlanView } from '../../features/plan-view/plan-view'
 import { StopsView } from '../../features/stops-view/stops-view'
 import { MainNavigation } from '../../ui/main-navigation'
-import { MobileSheetShell } from '../../ui/mobile-sheet-shell'
+import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
 
@@ -34,7 +34,7 @@ export interface AppViewsProps {
     readonly plan: ComponentProps<typeof PlanView>
     readonly explore: ExploreViewProps
     readonly exploreRoutes: Pick<
-      ComponentProps<typeof ExploreRouteBrowser>,
+      ComponentProps<typeof RouteBrowser>,
       'onRouteSelect'
     >
     readonly stops: ComponentProps<typeof StopsView>
@@ -73,7 +73,7 @@ export function AppViews({
     >
       <div className="navigation-view-stack">
         <NavigationViewShell id="plan-panel" active={navigation.activeView === 'plan'}>
-          <MobileSheetShell
+          <NavigationPanelShell
             className="plan-sheet"
             label="Plan trip panel"
             controlsId="plan-view-content"
@@ -86,10 +86,10 @@ export function AppViews({
             shellRef={planSheetRef}
           >
             <PlanView {...views.plan} />
-          </MobileSheetShell>
+          </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="explore-panel" active={navigation.activeView === 'explore'}>
-          <MobileSheetShell
+          <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
             controlsId="explore-view-content"
@@ -107,7 +107,7 @@ export function AppViews({
               mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
               renderShuttleRoutes={(options) => (
-                <ExploreRouteBrowser
+                <RouteBrowser
                   network={views.explore.transitIndex?.network ?? null}
                   networkIndex={views.explore.transitIndex ?? null}
                   selectedRouteId={views.explore.selectedRouteId ?? null}
@@ -117,10 +117,10 @@ export function AppViews({
                 />
               )}
             />
-          </MobileSheetShell>
+          </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="stops-panel" active={navigation.activeView === 'stops'}>
-          <MobileSheetShell
+          <NavigationPanelShell
             className="stops-sheet"
             label="Stops panel"
             controlsId="stops-view-content"
@@ -133,7 +133,7 @@ export function AppViews({
             shellRef={stopsSheetRef}
           >
             <StopsView {...views.stops} />
-          </MobileSheetShell>
+          </NavigationPanelShell>
         </NavigationViewShell>
       </div>
       <MainNavigation

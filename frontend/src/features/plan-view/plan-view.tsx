@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
   EllipsisVerticalIcon,
 } from '../../ui/icons'
+import './styles/plan-view.css'
 
 interface PlanViewProps {
   tripRequest: TripRequest
@@ -165,7 +166,7 @@ export function PlanView({
       </div>
       <div
         id={PLAN_VIEW_CONTENT_ID}
-        className="mobile-sheet-content mobile-sheet-scroll-content plan-view-content"
+        className="navigation-panel-content navigation-panel-scroll-content plan-view-content"
       >
         <div className="plan-endpoint-picker">
           <PlanEndpointControl

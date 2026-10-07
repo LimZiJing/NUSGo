@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ExploreRouteBrowser } from './explore-route-browser'
+import { RouteBrowser } from './route-browser'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
@@ -71,11 +71,11 @@ function setRouteListMetrics(routeList: HTMLElement, clientWidth: number, scroll
   })
 }
 
-describe('ExploreRouteBrowser', () => {
+describe('RouteBrowser', () => {
   it('shows route cards in network order with their canonical ids and colors', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -99,7 +99,7 @@ describe('ExploreRouteBrowser', () => {
     const network = createEightRouteNetwork()
     const onRouteSelect = vi.fn()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -118,7 +118,7 @@ describe('ExploreRouteBrowser', () => {
     const network = createEightRouteNetwork()
     const onFocusStop = vi.fn()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="A1"
@@ -135,7 +135,7 @@ describe('ExploreRouteBrowser', () => {
   it('renders every D2 stop in canonical order, including the terminal return', () => {
     const network = createD2Network()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
@@ -145,7 +145,7 @@ describe('ExploreRouteBrowser', () => {
 
     const stopLabels = Array.from(
       screen.getByRole('list', { name: 'Route D2 ordered stops' }).children,
-      (stop) => stop.querySelector('.route-timeline-text')?.textContent,
+      (stop) => stop.querySelector('.explore-route-browser-stop-text')?.textContent,
     )
     expect(stopLabels).toEqual([
       'COM3COM3', 'TCOMS-OPPTCOMS-OPP', 'PGPPGP', 'KR-MRTKR-MRT',
@@ -160,7 +160,7 @@ describe('ExploreRouteBrowser', () => {
   it('keeps the selected route visible as a pressed chip', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="D2"
@@ -182,7 +182,7 @@ describe('ExploreRouteBrowser', () => {
     })
 
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId="A1"
@@ -201,7 +201,7 @@ describe('ExploreRouteBrowser', () => {
   it('shows directional controls and edge fades only when the row overflows', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -240,7 +240,7 @@ describe('ExploreRouteBrowser', () => {
   it('smoothly maps vertical wheel movement while leaving horizontal trackpad scrolling native', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -267,7 +267,7 @@ describe('ExploreRouteBrowser', () => {
   it('supports mouse dragging without replacing native touch dragging', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -292,7 +292,7 @@ describe('ExploreRouteBrowser', () => {
   it('can drag from the visible left indicator all the way to the start', () => {
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}
@@ -321,7 +321,7 @@ describe('ExploreRouteBrowser', () => {
     const user = userEvent.setup()
     const network = createEightRouteNetwork()
     render(
-      <ExploreRouteBrowser
+      <RouteBrowser
         network={network}
         networkIndex={createTransitIndex(network)}
         selectedRouteId={null}

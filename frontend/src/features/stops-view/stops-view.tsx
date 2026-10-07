@@ -9,6 +9,7 @@ import {
 import { StopCard } from './stop-card'
 import { FavoriteIcon } from '../../ui/icons'
 import { type StopRouteDeparture } from './stops-view-state'
+import './styles/stops-view.css'
 
 type StopSheetDeparture = StopRouteDeparture & StopDeparture
 
@@ -71,7 +72,7 @@ export function StopsView({
     <div className="stops-view">
       <div
         id="stops-view-content"
-        className={`mobile-sheet-content stops-view-content${selectedStop ? ' mobile-sheet-scroll-content' : ''}`}
+        className={`navigation-panel-content stops-view-content${selectedStop ? ' navigation-panel-scroll-content' : ''}`}
         data-view={selectedStop ? 'selected' : 'overview'}
       >
         {selectedStop ? (
@@ -144,7 +145,7 @@ export function StopsView({
               </div>
             )}
             {overviewStops.length ? (
-              <div className="mobile-sheet-scroll-content stops-card-list">
+              <div className="navigation-panel-scroll-content stops-card-list">
                 {overviewStops.map(({ stop, distanceMeters, favorite, expanded }) => (
                   <StopCard
                     key={stop.id}

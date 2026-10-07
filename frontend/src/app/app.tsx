@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
-import { animateMobileSheet } from '../ui/animate-mobile-sheet'
+import { animateMobileSheet } from '../ui/mobile/mobile-sheet/animate-mobile-sheet'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,

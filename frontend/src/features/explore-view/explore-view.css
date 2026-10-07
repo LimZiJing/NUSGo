@@ -128,6 +128,12 @@
   text-align: left;
 }
 
+.explore-view-result-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .explore-view-result span {
   color: var(--text-secondary);
   font-size: 13px;
@@ -166,10 +172,25 @@
 }
 
 .explore-view-detail h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   color: var(--text-primary);
   font: 600 20px/1.2 system-ui, sans-serif;
   text-align: left;
+}
+
+.location-identity-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: var(--text-secondary);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
 }
 
 .venue-detail-identity > h3:focus {
@@ -286,6 +307,19 @@
   flex: 1 1 auto;
   min-width: 0;
   gap: 2px;
+}
+
+.nearby-stop-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.nearby-stop-name .location-identity-icon {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
 }
 
 .nearby-stop-identity strong {
@@ -458,6 +492,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.route-timeline-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.route-timeline-name .location-identity-icon {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
 }
 
 .route-timeline-text small {

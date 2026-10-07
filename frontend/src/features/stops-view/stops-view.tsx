@@ -7,7 +7,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { StopCard } from './stop-card'
-import { FavoriteIcon } from '../../ui/icons'
+import { BusIcon, FavoriteIcon } from '../../ui/icons'
 import { type StopRouteDeparture } from './stops-view-state'
 
 type StopSheetDeparture = StopRouteDeparture & StopDeparture
@@ -79,15 +79,20 @@ export function StopsView({
             <GhostBackButton label="Back to stops" onClick={onBackToStops} />
             <div className="stop-identity">
               <div className="stop-identity-copy">
-                <h2 id="stops-view-heading" className="stop-selection-name">
-                  {selectedStop.longName}
+                <h2
+                  id="stops-view-heading"
+                  className="stop-selection-name"
+                  aria-label={`${selectedStop.longName}, shuttle stop`}
+                >
+                  <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                  <span>{selectedStop.longName}</span>
                 </h2>
                 <span className="stop-id">{selectedStop.id}</span>
               </div>
               <button
                 className="stop-favorite"
                 type="button"
-                aria-label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName} ${selectedStopFavorite ? 'from' : 'to'} favourites`}
+                aria-label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName}, shuttle stop ${selectedStopFavorite ? 'from' : 'to'} favourites`}
                 aria-pressed={selectedStopFavorite}
                 onClick={() => onToggleFavorite?.(selectedStop.id)}
               >
@@ -103,8 +108,8 @@ export function StopsView({
                 <button
                   className="stop-opposite"
                   type="button"
-                  aria-label={`Opposite stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
-                  title={`${oppositeStop.longName} (${oppositeStop.id})`}
+                  aria-label={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
+                  title={`Opposite shuttle stop: ${oppositeStop.longName} (${oppositeStop.id})`}
                   onClick={() => onSelectOppositeStop(oppositeStop.id)}
                 >
                   Opposite stop <span aria-hidden="true">›</span>

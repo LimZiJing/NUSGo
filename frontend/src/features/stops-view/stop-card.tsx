@@ -5,7 +5,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { InfoPill } from '../../ui/info-pill'
-import { ChevronDownIcon, FavoriteIcon } from '../../ui/icons'
+import { BusIcon, ChevronDownIcon, FavoriteIcon } from '../../ui/icons'
 
 export interface StopCardProps {
   readonly stopId: string
@@ -50,12 +50,13 @@ export function StopCard({
         <button
           className="stop-card-toggle"
           type="button"
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName} bus timings`}
+          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, shuttle stop bus timings`}
           aria-expanded={expanded}
           aria-controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
         >
           <span className="stop-card-identity">
+            <BusIcon className="location-identity-icon location-identity-icon--stop" />
             <span className="stop-card-name">{stopName}</span>
             {distanceMeters !== null && (
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
@@ -65,12 +66,12 @@ export function StopCard({
             <InfoPill text="LIVE" colorScheme="success" className="stop-card-live" leadingDot />
           )}
           <span className="stop-card-favorite-space" aria-hidden="true" />
-          <ChevronDownIcon />
+          <ChevronDownIcon className="stop-card-chevron" />
         </button>
         <button
           className="stop-card-favorite"
           type="button"
-          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName} ${favorite ? 'from' : 'to'} favourites`}
+          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
           aria-pressed={favorite}
           onClick={() => onToggleFavorite(stopId)}
         >

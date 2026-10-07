@@ -392,6 +392,8 @@ describe('ExploreView accessibility workflows', () => {
     await user.tab()
     await user.tab()
     const result = screen.getByRole('button', { name: /COM1-0210/ })
+    expect(result.getAttribute('aria-label')).toBe('COM1-0210, venue, Computing 1, Level 2')
+    expect(result.querySelector('.location-identity-icon--venue[aria-hidden="true"]')).toBeTruthy()
     expect(document.activeElement).toBe(result)
 
     await user.keyboard('{Enter}')

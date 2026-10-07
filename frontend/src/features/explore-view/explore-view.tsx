@@ -531,8 +531,12 @@ export function ExploreView({
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
+                      aria-label={`${result.code}, venue, ${result.venue.roomName}`}
                     >
-                      <strong>{result.code}</strong>
+                      <span className="explore-view-result-identity">
+                        <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                        <strong>{result.code}</strong>
+                      </span>
                       <span>{result.venue.roomName}</span>
                     </button>
                   ))
@@ -560,7 +564,9 @@ export function ExploreView({
               id="explore-venue-detail-heading"
               ref={detailHeadingRef}
               tabIndex={-1}
+              aria-label={`${state.selectedVenue.code}, venue`}
             >
+              <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
@@ -606,11 +612,14 @@ export function ExploreView({
                       className="nearby-stop-row"
                       type="button"
                       data-stop-id={stop.id}
-                      aria-label={`Nearby stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+                      aria-label={`Nearby shuttle stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
                       onClick={() => handleFocusStop(stop.id)}
                     >
                       <span className="nearby-stop-identity">
-                        <strong>{stop.longName}</strong>
+                        <span className="nearby-stop-name">
+                          <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                          <strong>{stop.longName}</strong>
+                        </span>
                         <small>{stop.id}</small>
                       </span>
                       <span className="nearby-stop-services" aria-hidden="true">

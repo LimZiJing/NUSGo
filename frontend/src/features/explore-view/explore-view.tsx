@@ -22,7 +22,7 @@ import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { getRouteContrastTextColor } from '../../ui/route-color'
+import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import {
   BuildingIcon,
   BusIcon,
@@ -522,7 +522,7 @@ export function ExploreView({
                 Venue search is unavailable right now. Shuttle browsing is still available.
               </p>
             ) : state.query.trim() ? (
-              <ScrollArea className="explore-view-results" aria-label="Venue search results">
+              <ScrollArea className="mobile-sheet-scroll-content explore-view-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
                   searchState.results.map((result) => (
                     <button
@@ -553,10 +553,14 @@ export function ExploreView({
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
           id="explore-view-content"
-          className="mobile-sheet-content explore-view-content explore-view-detail"
+          className="mobile-sheet-content mobile-sheet-scroll-content explore-view-content explore-view-detail"
         >
           <div className="venue-detail-identity">
-            <h3 id="explore-venue-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+            <h3
+              id="explore-venue-detail-heading"
+              ref={detailHeadingRef}
+              tabIndex={-1}
+            >
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>

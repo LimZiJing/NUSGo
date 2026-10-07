@@ -203,6 +203,8 @@ class FakeElement {
   }
   dataset: Record<string, string> = {}
   textContent = ''
+  private html = ''
+  firstElementChild: FakeElement | null = null
   type = ''
   tagName: string
   disabled = false
@@ -210,6 +212,18 @@ class FakeElement {
 
   constructor(tagName: string) {
     this.tagName = tagName.toUpperCase()
+  }
+
+  set innerHTML(value: string) {
+    this.html = value
+    if (this.tagName !== 'SPAN' || !value.includes('<svg')) return
+    const icon = new FakeElement('svg')
+    if (value.includes('aria-hidden="true"')) icon.attributes.set('aria-hidden', 'true')
+    this.firstElementChild = icon
+  }
+
+  get innerHTML() {
+    return this.html
   }
 
   append(...children: FakeElement[]) {
@@ -268,7 +282,7 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
     )
   })
 
-  it('exposes safe text actions for assigning a shuttle stop to either endpoint', () => {
+  it('exposes a safe action for assigning a shuttle stop as the destination', () => {
     const documentStub = {
       createElement: (tagName: string) => new FakeElement(tagName),
     }
@@ -280,33 +294,51 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
       shortName: 'Library',
       latitude: 1.3,
       longitude: 103.77,
-      services: ['A1'],
+      services: ['A1', 'R1', 'D1', 'K', '95'],
     }
 
-    const popupContent = createBusStopPopupContent(stop, onSetEndpoint)
+    const popupContent = createBusStopPopupContent(
+      stop,
+      onSetEndpoint,
+      new Map([['A1', '#123456']]),
+    )
     const content = popupContent.element as unknown as FakeElement
-    const buttons = content.children.filter((child) => child.tagName === 'BUTTON')
+    const header = content.children.find((child) => child.className === 'bus-stop-popup-header')
+    const buttons = header?.children.filter((child) => child.tagName === 'BUTTON') ?? []
+    const services = content.children.find((child) => child.className === 'bus-stop-popup-services')
 
-    expect(content.children[0].textContent).toBe('<Central Library>')
-    expect(buttons.map((button) => button.textContent)).toEqual([
-      'Set as origin',
-      'Set as destination',
-    ])
+    expect(header?.children[0].textContent).toBe('Library')
+    expect(services?.children).toHaveLength(2)
+    expect(services?.children[0].className).toBe('bus-stop-popup-service-row')
+    expect(services?.children[0].children).toHaveLength(3)
+    expect(services?.children[1].children).toHaveLength(2)
+    expect(services?.children[0].children[0].className).toContain('route-chip')
+    expect(services?.children[0].children[0].dataset.routeId).toBe('A1')
+    expect(services?.children[0].children[0].style.setProperty).toHaveBeenCalledWith(
+      '--route-color',
+      '#123456',
+    )
+    expect(services?.children[0].children[0].style.setProperty).toHaveBeenCalledWith(
+      '--route-text-color',
+      '#fff',
+    )
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0].className).toContain('bus-stop-popup-navigation-action')
+    expect(buttons[0].attributes.get('aria-label')).toBe('Set destination')
+    expect(buttons[0].attributes.get('title')).toBe('Set destination')
+    expect(buttons[0].children[0].tagName).toBe('SVG')
+    expect(buttons[0].children[0].attributes.get('aria-hidden')).toBe('true')
 
     buttons[0].click()
-    buttons[1].click()
-    expect(onSetEndpoint).toHaveBeenNthCalledWith(1, 'origin', {
-      kind: 'stop',
-      id: 'STOP-A',
-    })
-    expect(onSetEndpoint).toHaveBeenNthCalledWith(2, 'destination', {
+    expect(onSetEndpoint).toHaveBeenCalledOnce()
+    expect(onSetEndpoint).toHaveBeenCalledWith('destination', {
       kind: 'stop',
       id: 'STOP-A',
     })
 
     popupContent.dispose()
     buttons[0].click()
-    expect(onSetEndpoint).toHaveBeenCalledTimes(2)
+    expect(onSetEndpoint).toHaveBeenCalledOnce()
 
     vi.unstubAllGlobals()
   })

@@ -12,7 +12,7 @@ import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import { CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon } from '../../ui/icons'
 
-export interface OriginVenueAutofillState {
+export interface OriginLocationRequestState {
   readonly status: 'idle' | 'requesting' | 'error'
   readonly error: string | null
 }
@@ -29,9 +29,9 @@ interface PlanEndpointControlProps {
   onSearchResult?: () => void
   onSelect: (endpoint: TripEndpoint) => void
   onClear: () => void
-  originVenueAutofill?: OriginVenueAutofillState
+  originLocationRequest?: OriginLocationRequestState
   onUseCurrentLocation?: () => void
-  onCancelOriginVenueAutofill?: () => void
+  onCancelOriginLocationRequest?: () => void
 }
 
 function getRoleLabel(role: TripEndpointRole): string {
@@ -64,9 +64,9 @@ export function PlanEndpointControl({
   onSearchResult,
   onSelect,
   onClear,
-  originVenueAutofill = { status: 'idle', error: null },
+  originLocationRequest = { status: 'idle', error: null },
   onUseCurrentLocation,
-  onCancelOriginVenueAutofill,
+  onCancelOriginLocationRequest,
 }: PlanEndpointControlProps) {
   const roleLabel = getRoleLabel(role)
   const inputId = `trip-${role}-search`
@@ -81,11 +81,11 @@ export function PlanEndpointControl({
   const showResults = searchQuery.trim().length > 0
   const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex) : ''
   const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
-  const isFindingNearestVenue = originVenueAutofill.status === 'requesting'
-  const locationActionLabel = isFindingNearestVenue
-    ? 'Finding nearest venue'
-    : originVenueAutofill.error
-      ? 'Retry nearest venue'
+  const isGettingCurrentLocation = originLocationRequest.status === 'requesting'
+  const locationActionLabel = isGettingCurrentLocation
+    ? 'Getting current location'
+    : originLocationRequest.error
+      ? 'Retry current location'
       : 'Use current location'
   const searchStatus = !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
@@ -98,7 +98,7 @@ export function PlanEndpointControl({
         : ''
 
   const clearEndpoint = (): void => {
-    onCancelOriginVenueAutofill?.()
+    onCancelOriginLocationRequest?.()
     if (searchQuery.trim()) onSearchCancel?.()
     onSearchQueryChange('')
     if (endpoint) onClear()
@@ -120,7 +120,7 @@ export function PlanEndpointControl({
             value={inputValue}
             placeholder={role === 'origin' ? 'Choose starting point' : 'Choose destination'}
             onFocus={() => {
-              onCancelOriginVenueAutofill?.()
+              onCancelOriginLocationRequest?.()
               if (endpoint && !editing) {
                 setEditing(true)
                 onSearchQueryChange('')
@@ -131,7 +131,7 @@ export function PlanEndpointControl({
               if (endpoint && !searchQuery) setEditing(false)
             }}
             onChange={(event) => {
-              onCancelOriginVenueAutofill?.()
+              onCancelOriginLocationRequest?.()
               setEditing(true)
               onSearchQueryChange(event.target.value)
             }}
@@ -157,7 +157,7 @@ export function PlanEndpointControl({
               onSearchQueryChange('')
             }}
             autoComplete="off"
-            aria-describedby={originVenueAutofill.error ? `${statusId} ${locationStatusId}` : statusId}
+            aria-describedby={originLocationRequest.error ? `${statusId} ${locationStatusId}` : statusId}
           />
           <div className="plan-endpoint-actions">
             {role === 'origin' && onUseCurrentLocation && (
@@ -165,9 +165,9 @@ export function PlanEndpointControl({
                 type="button"
                 className="plan-endpoint-location"
                 onClick={onUseCurrentLocation}
-                disabled={isFindingNearestVenue}
+                disabled={isGettingCurrentLocation}
                 aria-label={locationActionLabel}
-                aria-busy={isFindingNearestVenue}
+                aria-busy={isGettingCurrentLocation}
                 title={locationActionLabel}
               >
                 <LocateIcon />
@@ -189,9 +189,9 @@ export function PlanEndpointControl({
           {searchStatus}
         </p>
 
-        {role === 'origin' && originVenueAutofill.error && (
+        {role === 'origin' && originLocationRequest.error && (
           <p id={locationStatusId} className="plan-endpoint-location-status" role="status" aria-live="polite">
-            {originVenueAutofill.error}
+            {originLocationRequest.error}
           </p>
         )}
 

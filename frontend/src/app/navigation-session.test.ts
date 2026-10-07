@@ -220,7 +220,7 @@ describe('navigation session', () => {
       tripRequest: { origin: null, destination: null },
       journey: { status: 'idle', journey: null, candidates: [], error: null },
       location: { status: 'disabled', latestFix: null },
-      originVenueAutofill: { status: 'idle', error: null },
+      originLocationRequest: { status: 'idle', error: null },
       locationMarkerVisible: true,
       resourceStatus: {
         venue: { status: 'pending' },
@@ -1959,25 +1959,37 @@ describe('navigation session', () => {
     expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true)
   })
 
-  it('uses an active location fix to select the nearest venue for the origin', async () => {
+  it('uses an active device fix as the frozen Current location origin without venue data', async () => {
     const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-    await session.start(new AbortController().signal)
     const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    const activeFix = { longitude: 103.0001, latitude: 1.0001, accuracy: 10, timestamp: 1_000 }
     locationTracker.emit({
       status: 'tracking',
-      latestFix: { longitude: 103.0001, latitude: 1.0001, accuracy: 10, timestamp: 1_000 },
+      latestFix: activeFix,
     })
+    const session = createNavigationSession(dependencies)
 
     session.useCurrentLocationForOrigin()
     await Promise.resolve()
 
     expect(dependencies.locationTracker.requestCurrentLocation).not.toHaveBeenCalled()
-    expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
-    expect(session.getState().originVenueAutofill).toEqual({ status: 'idle', error: null })
+    const origin = session.getState().tripRequest.origin
+    expect(origin).toEqual({
+      kind: 'current-location',
+      coordinate: { longitude: 103.0001, latitude: 1.0001 },
+    })
+    expect(Object.isFrozen(origin)).toBe(true)
+    expect(origin?.kind === 'current-location' && Object.isFrozen(origin.coordinate)).toBe(true)
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { ...activeFix, longitude: 103.2, timestamp: 2_000 },
+    })
+    expect(session.getState().tripRequest.origin).toBe(origin)
   })
 
-  it('keeps the existing origin until a requested fix finds a venue', async () => {
+  it('keeps the existing origin while requesting a fix, then uses its exact coordinates', async () => {
     const locationRequest = createDeferred<{
       readonly longitude: number
       readonly latitude: number
@@ -1992,13 +2004,16 @@ describe('navigation session', () => {
 
     session.useCurrentLocationForOrigin()
 
-    expect(session.getState().originVenueAutofill).toEqual({ status: 'requesting', error: null })
+    expect(session.getState().originLocationRequest).toEqual({ status: 'requesting', error: null })
     expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
 
-    locationRequest.resolve({ longitude: 103, latitude: 1, accuracy: 20, timestamp: 2_000 })
-    await waitForState(session, (state) => state.originVenueAutofill.status === 'idle')
+    locationRequest.resolve({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
+    await waitForState(session, (state) => state.originLocationRequest.status === 'idle')
 
-    expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
+    expect(session.getState().tripRequest.origin).toEqual({
+      kind: 'current-location',
+      coordinate: { longitude: 103.12345, latitude: 1.23456 },
+    })
   })
 
   it('shows a retryable error and preserves the origin when location fails', async () => {
@@ -2010,17 +2025,21 @@ describe('navigation session', () => {
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
 
     session.useCurrentLocationForOrigin()
-    await waitForState(session, (state) => state.originVenueAutofill.status === 'error')
+    await waitForState(session, (state) => state.originLocationRequest.status === 'error')
 
-    expect(session.getState().originVenueAutofill.error)
+    expect(session.getState().originLocationRequest.error)
       .toBe('Location permission was denied. Please allow location access and try again.')
     expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
 
-    request.mockResolvedValueOnce({ longitude: 103, latitude: 1, accuracy: 20, timestamp: 2_000 })
+    request.mockResolvedValueOnce({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
     session.useCurrentLocationForOrigin()
-    await waitForState(session, (state) => state.originVenueAutofill.status === 'idle')
+    await waitForState(session, (state) => state.originLocationRequest.status === 'idle')
 
     expect(request).toHaveBeenCalledTimes(2)
+    expect(session.getState().tripRequest.origin).toEqual({
+      kind: 'current-location',
+      coordinate: { longitude: 103.12345, latitude: 1.23456 },
+    })
   })
 
   it('ignores a late location result after the origin workflow is cancelled', async () => {
@@ -2036,12 +2055,12 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
 
     session.useCurrentLocationForOrigin()
-    session.cancelOriginVenueAutofill()
+    session.cancelOriginLocationRequest()
     locationRequest.resolve({ longitude: 103, latitude: 1, accuracy: 20, timestamp: 2_000 })
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(session.getState().originVenueAutofill).toEqual({ status: 'idle', error: null })
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
     expect(session.getState().tripRequest.origin).toBeNull()
   })
 

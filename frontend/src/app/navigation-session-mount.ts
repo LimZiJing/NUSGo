@@ -99,7 +99,7 @@ export interface NavigationSessionCommands {
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
   readonly useCurrentLocationForOrigin: () => void
-  readonly cancelOriginVenueAutofill: () => void
+  readonly cancelOriginLocationRequest: () => void
   readonly disableLocationTracking: () => void
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
@@ -137,7 +137,7 @@ function createNavigationSessionCommands(
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),
     useCurrentLocationForOrigin: () => session?.useCurrentLocationForOrigin(),
-    cancelOriginVenueAutofill: () => session?.cancelOriginVenueAutofill(),
+    cancelOriginLocationRequest: () => session?.cancelOriginLocationRequest(),
     disableLocationTracking: () => session?.disableLocationTracking(),
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),

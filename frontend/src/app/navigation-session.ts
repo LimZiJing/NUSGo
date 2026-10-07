@@ -31,7 +31,6 @@ import {
   type LocationTrackingState,
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
-import { findNearestVenue } from '../domain/venue/nearest'
 import type { Journey } from '../domain/trip/journey'
 import {
   NoJourneyAvailableError,
@@ -77,7 +76,7 @@ export interface NavigationSessionState {
   readonly tripRequest: TripRequest
   readonly journey: JourneyState
   readonly location: LocationTrackingState
-  readonly originVenueAutofill: OriginVenueAutofillState
+  readonly originLocationRequest: OriginLocationRequestState
   readonly locationMarkerVisible: boolean
   readonly resourceStatus: ResourceStatusState
   readonly mapError: string | null
@@ -85,12 +84,12 @@ export interface NavigationSessionState {
   readonly status: string
 }
 
-export interface OriginVenueAutofillState {
+export interface OriginLocationRequestState {
   readonly status: 'idle' | 'requesting' | 'error'
   readonly error: string | null
 }
 
-const INITIAL_ORIGIN_VENUE_AUTOFILL_STATE: OriginVenueAutofillState = Object.freeze({
+const INITIAL_ORIGIN_LOCATION_REQUEST_STATE: OriginLocationRequestState = Object.freeze({
   status: 'idle',
   error: null,
 })
@@ -120,7 +119,7 @@ export interface NavigationSession {
   enableLocationTracking(): void
   locateUser(): void
   useCurrentLocationForOrigin(): void
-  cancelOriginVenueAutofill(): void
+  cancelOriginLocationRequest(): void
   disableLocationTracking(): void
   hideLocationMarker(): void
   showLocationMarker(): void
@@ -160,7 +159,7 @@ export function createInitialNavigationSessionState(
     tripRequest: createEmptyTripRequest(),
     journey: createInitialJourneyState(),
     location,
-    originVenueAutofill: INITIAL_ORIGIN_VENUE_AUTOFILL_STATE,
+    originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE,
     locationMarkerVisible: true,
     resourceStatus: createInitialResourceStatus(),
     mapError: null,
@@ -196,7 +195,7 @@ export function createNavigationSession(
   let journeyPlanningAbortController: AbortController | null = null
   let journeyPlanningRequestId = 0
   let journeyPlanningRequested = false
-  let originVenueAutofillRequestId = 0
+  let originLocationRequestId = 0
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
@@ -275,21 +274,21 @@ export function createNavigationSession(
     }
   }
 
-  const invalidateOriginVenueAutofill = (): void => {
-    originVenueAutofillRequestId += 1
+  const invalidateOriginLocationRequest = (): void => {
+    originLocationRequestId += 1
   }
 
-  const cancelOriginVenueAutofill = (): void => {
-    invalidateOriginVenueAutofill()
+  const cancelOriginLocationRequest = (): void => {
+    invalidateOriginLocationRequest()
     if (
-      state.originVenueAutofill.status !== 'idle' ||
-      state.originVenueAutofill.error !== null
+      state.originLocationRequest.status !== 'idle' ||
+      state.originLocationRequest.error !== null
     ) {
-      updateState({ originVenueAutofill: INITIAL_ORIGIN_VENUE_AUTOFILL_STATE })
+      updateState({ originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE })
     }
   }
 
-  const getOriginVenueAutofillError = (error: unknown): string => {
+  const getOriginLocationRequestError = (error: unknown): string => {
     const status = isLocationRequestFailure(error) ? error.status : 'unavailable'
     switch (status) {
       case 'denied':
@@ -303,34 +302,32 @@ export function createNavigationSession(
     }
   }
 
-  const setOriginVenueAutofillError = (requestId: number, error: unknown): void => {
-    if (disposed || requestId !== originVenueAutofillRequestId) return
+  const setOriginLocationRequestError = (requestId: number, error: unknown): void => {
+    if (disposed || requestId !== originLocationRequestId) return
     updateState({
-      originVenueAutofill: {
+      originLocationRequest: {
         status: 'error',
-        error: getOriginVenueAutofillError(error),
+        error: getOriginLocationRequestError(error),
       },
     })
   }
 
-  const applyNearestVenueForOrigin = (requestId: number, fix: LocationTrackingState['latestFix']): void => {
-    if (
-      disposed ||
-      requestId !== originVenueAutofillRequestId ||
-      fix === null ||
-      !isValidLocationCoordinates(fix.longitude, fix.latitude)
-    ) return
+  const applyCurrentLocationOrigin = (
+    requestId: number,
+    fix: LocationTrackingState['latestFix'],
+  ): void => {
+    if (disposed || requestId !== originLocationRequestId) return
 
-    const nearestVenue = state.venues === null ? null : findNearestVenue(state.venues, fix)
-    if (nearestVenue === null) {
-      setOriginVenueAutofillError(requestId, { status: 'unavailable' })
+    const origin = fix === null ? null : createCurrentLocationTripEndpoint(fix)
+    if (origin === null) {
+      setOriginLocationRequestError(requestId, { status: 'invalid' })
       return
     }
 
     updateTripRequest(setTripEndpoint(
       state.tripRequest,
       'origin',
-      { kind: 'venue', id: nearestVenue.code },
+      origin,
     ))
   }
 
@@ -425,7 +422,7 @@ export function createNavigationSession(
     patch: Partial<NavigationSessionState> = {},
   ): void => {
     if (disposed) return
-    invalidateOriginVenueAutofill()
+    invalidateOriginLocationRequest()
     journeyPlanningRequested = false
     cancelJourneyPlanning()
     dependencies.map.setJourney(null)
@@ -434,7 +431,7 @@ export function createNavigationSession(
       ...patch,
       tripRequest: request,
       journey: createInitialJourneyState(),
-      originVenueAutofill: INITIAL_ORIGIN_VENUE_AUTOFILL_STATE,
+      originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE,
     })
     syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
     publishSnapshot(nextState)
@@ -699,20 +696,10 @@ export function createNavigationSession(
     useCurrentLocationForOrigin() {
       if (
         disposed ||
-        state.originVenueAutofill.status === 'requesting'
+        state.originLocationRequest.status === 'requesting'
       ) return
 
-      if (state.venues === null) {
-        updateState({
-          originVenueAutofill: {
-            status: 'error',
-            error: 'Venue data is still loading. Please try again.',
-          },
-        })
-        return
-      }
-
-      const requestId = ++originVenueAutofillRequestId
+      const requestId = ++originLocationRequestId
       const currentLocation = state.location
       const hasActiveLocationFix = currentLocation.status === 'tracking' &&
         currentLocation.latestFix !== null &&
@@ -722,16 +709,16 @@ export function createNavigationSession(
         )
 
       if (hasActiveLocationFix) {
-        enqueueTransition(() => applyNearestVenueForOrigin(requestId, currentLocation.latestFix))
+        enqueueTransition(() => applyCurrentLocationOrigin(requestId, currentLocation.latestFix))
         return
       }
 
       updateState({
-        originVenueAutofill: { status: 'requesting', error: null },
+        originLocationRequest: { status: 'requesting', error: null },
       })
       const requestLocation = dependencies.locationTracker.requestCurrentLocation
       if (!requestLocation) {
-        setOriginVenueAutofillError(requestId, { status: 'unavailable' })
+        setOriginLocationRequestError(requestId, { status: 'unavailable' })
         return
       }
 
@@ -739,19 +726,19 @@ export function createNavigationSession(
       try {
         request = requestLocation()
       } catch (error) {
-        setOriginVenueAutofillError(requestId, error)
+        setOriginLocationRequestError(requestId, error)
         return
       }
 
       void request.then(
-        (fix) => enqueueTransition(() => applyNearestVenueForOrigin(requestId, fix)),
-        (error: unknown) => enqueueTransition(() => setOriginVenueAutofillError(requestId, error)),
+        (fix) => enqueueTransition(() => applyCurrentLocationOrigin(requestId, fix)),
+        (error: unknown) => enqueueTransition(() => setOriginLocationRequestError(requestId, error)),
       )
     },
 
-    cancelOriginVenueAutofill() {
+    cancelOriginLocationRequest() {
       if (disposed) return
-      cancelOriginVenueAutofill()
+      cancelOriginLocationRequest()
     },
 
     disableLocationTracking() {
@@ -813,7 +800,7 @@ export function createNavigationSession(
     },
 
     planJourney() {
-      cancelOriginVenueAutofill()
+      cancelOriginLocationRequest()
       if (
         disposed ||
         journeyPlanningAbortController ||
@@ -901,7 +888,7 @@ export function createNavigationSession(
       transitionQueue.clear()
       startup.dispose()
       cancelJourneyPlanning()
-      invalidateOriginVenueAutofill()
+      invalidateOriginLocationRequest()
       unsubscribeLocation()
       dependencies.locationTracker.dispose()
       listeners.clear()

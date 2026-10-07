@@ -20,8 +20,9 @@ describe('shuttle route scrolling styles', () => {
     expect(styles).toMatch(/\.route-scroll-arrow\[hidden\]\s*{[^}]*display:\s*none;/s)
   })
 
-  it('keeps map popup route chips filled and vertically centered', () => {
-    expect(styles).toMatch(/\.map \.route-chip\s*{[^}]*display:\s*inline-flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/s)
-    expect(styles).toMatch(/\.map \.route-chip\[data-active='true'\][^}]*{[^}]*color:\s*var\(--route-text-color\);[^}]*background:\s*var\(--route-color\);/s)
+  it('keeps shared route chips filled and vertically centered', () => {
+    expect(styles).toMatch(/\.route-chip\s*{[^}]*display:\s*inline-flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/s)
+    expect(styles).toMatch(/\.route-chip\[data-active='true'\]\s*{[^}]*color:\s*var\(--route-text-color\);[^}]*background:\s*var\(--route-color\);/s)
+    expect(styles).toMatch(/\.map \.route-chip\s*{[^}]*cursor:\s*default;/s)
   })
 })

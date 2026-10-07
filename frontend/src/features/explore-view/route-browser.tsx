@@ -11,6 +11,7 @@ import {
 } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
+import { BusIcon } from '../../ui/icons'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
 import './styles/route-browser.css'
@@ -313,12 +314,15 @@ export function RouteBrowser({
                       className="explore-route-browser-stop"
                       data-hover-filter="none"
                       data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
+                      aria-label={`${stop?.longName ?? stopId}, shuttle stop, code ${stopId}. Focus on map`}
                       onClick={() => onFocusStop?.(stopId)}
                     >
                       <span className="explore-route-browser-node" aria-hidden="true" />
                       <span className="explore-route-browser-stop-text">
-                        <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                        <span className="explore-route-browser-stop-name">
+                          <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                          <strong>{stop?.shortName || stop?.longName || stopId}</strong>
+                        </span>
                         <small>{stopId}</small>
                       </span>
                       <span className="explore-route-browser-chevron" aria-hidden="true">›</span>

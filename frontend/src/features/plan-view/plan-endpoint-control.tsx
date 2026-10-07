@@ -10,7 +10,14 @@ import type {
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon } from '../../ui/icons'
+import {
+  BuildingIcon,
+  BusIcon,
+  CircleDotIcon,
+  CloseIcon,
+  LocateIcon,
+  MapPinIcon,
+} from '../../ui/icons'
 
 export interface OriginLocationRequestState {
   readonly status: 'idle' | 'requesting' | 'error'
@@ -52,6 +59,19 @@ function getResultLabel(result: TripLocationSearchResult): string {
     : result.endpoint.id
 }
 
+function getEndpointKindLabel(endpoint: TripEndpoint): string | null {
+  if (endpoint.kind === 'venue') return 'venue'
+  if (endpoint.kind === 'stop') return 'shuttle stop'
+  return null
+}
+
+function getResultIdentityLabel(result: TripLocationSearchResult): string {
+  if (result.endpoint.kind === 'current-location') return 'Current location'
+  const kindLabel = getEndpointKindLabel(result.endpoint)
+  const stableId = result.endpoint.kind === 'stop' ? `, ${result.endpoint.id}` : ''
+  return `${result.label}, ${kindLabel}${stableId}`
+}
+
 export function PlanEndpointControl({
   role,
   endpoint,
@@ -80,6 +100,10 @@ export function PlanEndpointControl({
   )
   const showResults = searchQuery.trim().length > 0
   const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex) : ''
+  const endpointKindLabel = endpoint ? getEndpointKindLabel(endpoint) : null
+  const endpointIdentityKind = endpoint?.kind === 'venue' || endpoint?.kind === 'stop'
+    ? endpoint.kind
+    : null
   const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
   const isGettingCurrentLocation = originLocationRequest.status === 'requesting'
   const locationActionLabel = isGettingCurrentLocation
@@ -90,11 +114,11 @@ export function PlanEndpointControl({
   const searchStatus = !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : showResults
-      ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`
+        ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`
       : endpoint
         ? endpoint.kind === 'current-location'
           ? `${roleLabel} set to ${endpointLabel}.`
-          : `${roleLabel} set to ${endpointLabel} (${endpoint.id}).`
+          : `${roleLabel} set to ${endpointLabel}, ${endpointKindLabel} (${endpoint.id}).`
         : ''
 
   const clearEndpoint = (): void => {
@@ -106,7 +130,7 @@ export function PlanEndpointControl({
 
   return (
     <section
-      className={`plan-endpoint-control plan-endpoint-control-${role}`}
+      className={`plan-endpoint-control plan-endpoint-control-${role}${endpointIdentityKind ? ' plan-endpoint-control-has-identity' : ''}`}
       aria-labelledby={`${inputId}-label`}
     >
       <span className="plan-endpoint-marker" aria-hidden="true">
@@ -115,6 +139,12 @@ export function PlanEndpointControl({
       <div className="plan-endpoint-field">
         <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
         <div className="plan-endpoint-input-row">
+          {endpointIdentityKind === 'venue' && (
+            <BuildingIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--venue" />
+          )}
+          {endpointIdentityKind === 'stop' && (
+            <BusIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--stop" />
+          )}
           <SearchField
             id={inputId}
             value={inputValue}
@@ -207,9 +237,19 @@ export function PlanEndpointControl({
                     onSearchResult?.()
                     onSelect(result.endpoint)
                   }}
-                  aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultLabel(result)}`}
+                  aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultIdentityLabel(result)}`}
                 >
-                  <strong>{getResultLabel(result)}</strong>
+                  {result.endpoint.kind !== 'current-location' && (
+                    <span className="plan-endpoint-result-identity">
+                      {result.endpoint.kind === 'venue' && (
+                        <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                      )}
+                      {result.endpoint.kind === 'stop' && (
+                        <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                      )}
+                      <strong>{getResultLabel(result)}</strong>
+                    </span>
+                  )}
                   <span>{result.label}</span>
                   <span>{result.detail}</span>
                 </button>

@@ -9,6 +9,7 @@ export type JourneyTimelineEntry =
       readonly kind: 'location'
       readonly id: string
       readonly label: string
+      readonly locationKind: JourneyLeg['from']['kind']
     }
   | {
       readonly kind: 'walking'
@@ -21,7 +22,7 @@ export type JourneyTimelineEntry =
       readonly id: string
       readonly routeLabel: string
       readonly routeColor: string | null
-      readonly stopLabels: readonly string[]
+      readonly intermediateStops: readonly { readonly id: string; readonly label: string }[]
       readonly waitLabel: string
       readonly rideLabel: string
     }
@@ -58,10 +59,10 @@ export function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1).replace('.0', '')} km`
 }
 
-function getShuttleStopLabels(
+function getShuttleIntermediateStops(
   leg: ShuttleJourneyLeg,
   networkIndex: TransitIndex | null,
-): readonly string[] {
+): readonly { readonly id: string; readonly label: string }[] {
   if (!networkIndex) return []
   const route = networkIndex.routeById.get(leg.routeId)
   if (!route) return []
@@ -76,7 +77,10 @@ function getShuttleStopLabels(
 
   return stopIds
     .slice(1, -1)
-    .map((stopId) => networkIndex.stopById.get(stopId)?.shortName ?? stopId)
+    .map((stopId) => ({
+      id: stopId,
+      label: networkIndex.stopById.get(stopId)?.shortName ?? stopId,
+    }))
 }
 
 function getLegEntry(
@@ -101,7 +105,7 @@ function getLegEntry(
     routeLabel: route?.name ?? getRouteName(shuttleLeg.routeId, networkIndex),
     // Route colors come from the validated transit index so the journey uses the same palette as the map.
     routeColor: route?.color ?? null,
-    stopLabels: getShuttleStopLabels(shuttleLeg, networkIndex),
+    intermediateStops: getShuttleIntermediateStops(shuttleLeg, networkIndex),
     waitLabel: `Wait ${formatWaitDuration(shuttleLeg.waitingSeconds)}`,
     rideLabel: `Ride ${formatDuration(shuttleLeg.rideSeconds)}`,
   }
@@ -109,6 +113,20 @@ function getLegEntry(
 
 function sameEndpoint(left: JourneyLeg['from'], right: JourneyLeg['from']): boolean {
   return getTripEndpointKey(left) === getTripEndpointKey(right)
+}
+
+function getLocationEntry(
+  endpoint: JourneyLeg['from'],
+  id: string,
+  venues: VenueLocationMap | null,
+  networkIndex: TransitIndex | null,
+): Extract<JourneyTimelineEntry, { kind: 'location' }> {
+  return {
+    kind: 'location',
+    id,
+    label: getEndpointLabel(endpoint, venues, networkIndex),
+    locationKind: endpoint.kind,
+  }
 }
 
 /*
@@ -121,29 +139,17 @@ export function getJourneyTimelineEntries(
   networkIndex: TransitIndex | null,
 ): readonly JourneyTimelineEntry[] {
   const entries: JourneyTimelineEntry[] = [
-    {
-      kind: 'location',
-      id: 'origin',
-      label: getEndpointLabel(journey.origin, venues, networkIndex),
-    },
+    getLocationEntry(journey.origin, 'origin', venues, networkIndex),
   ]
 
   journey.legs.forEach((leg, legIndex) => {
     entries.push(getLegEntry(leg, legIndex, networkIndex))
-    entries.push({
-      kind: 'location',
-      id: `location-${legIndex}`,
-      label: getEndpointLabel(leg.to, venues, networkIndex),
-    })
+    entries.push(getLocationEntry(leg.to, `location-${legIndex}`, venues, networkIndex))
   })
 
   const lastLeg = journey.legs[journey.legs.length - 1]
   if (!lastLeg || !sameEndpoint(lastLeg.to, journey.destination)) {
-    entries.push({
-      kind: 'location',
-      id: 'destination',
-      label: getEndpointLabel(journey.destination, venues, networkIndex),
-    })
+    entries.push(getLocationEntry(journey.destination, 'destination', venues, networkIndex))
   }
 
   return entries

@@ -127,7 +127,9 @@ describe('RouteBrowser', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: /Stop A, stop STOP-A/ }))
+    const stopRow = screen.getByRole('button', { name: 'Stop A, shuttle stop, code STOP-A. Focus on map' })
+    expect(stopRow.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
+    await user.click(stopRow)
 
     expect(onFocusStop).toHaveBeenCalledWith('STOP-A')
   })
@@ -154,7 +156,7 @@ describe('RouteBrowser', () => {
       'KR-MRT-OPPKR-MRT-OPP', 'PGPRPGPR', 'TCOMSTCOMS', 'COM3COM3',
     ])
     expect(screen.getByText('16 stops')).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: /COM 3, stop COM3/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /COM 3, shuttle stop, code COM3/ })).toHaveLength(2)
   })
 
   it('keeps the selected route visible as a pressed chip', () => {

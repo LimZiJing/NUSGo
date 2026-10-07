@@ -93,6 +93,8 @@ describe('ExploreView venue details', () => {
 
     expect(markup).toContain('Nearby bus stops within 500 m')
     expect(markup).toContain('<h3 id="explore-venue-detail-heading"')
+    expect(markup).toContain('aria-label="COM1-0212, venue"')
+    expect(markup).toContain('location-identity-icon--venue')
     expect(markup).toMatch(/<h2 id="explore-view-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
     expect(markup).toContain('>COM1-0212</h3>')
     expect(markup).toContain('<p class="venue-detail-name">Seminar Room 3</p>')
@@ -154,7 +156,8 @@ describe('ExploreView venue details', () => {
   it('renders nearby buttons with internal route badges and excludes public services', () => {
     const markup = renderVenueDetails()
 
-    expect(markup).toContain('aria-label="Nearby stop Central Library Bus Stop, code STOP-A, services A1. View stop details"')
+    expect(markup).toContain('aria-label="Nearby shuttle stop Central Library Bus Stop, code STOP-A, services A1. View stop details"')
+    expect(markup).toContain('location-identity-icon--stop')
     expect(markup).toContain('data-stop-id="STOP-A"')
     expect(markup).toContain('data-service-id="A1"')
     expect(markup).toContain('background-color:#123456;color:#ffffff')

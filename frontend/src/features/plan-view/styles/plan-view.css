@@ -239,6 +239,19 @@
   font: inherit;
 }
 
+.plan-endpoint-control-has-identity .search-field input {
+  padding-left: 36px;
+}
+
+.plan-endpoint-control .plan-endpoint-selected-icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  z-index: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .plan-endpoint-control .search-field input:focus {
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
@@ -377,6 +390,12 @@
 
 .plan-endpoint-result:hover {
   border-color: var(--border-focus);
+}
+
+.plan-endpoint-result-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .plan-endpoint-result span {
@@ -552,6 +571,19 @@
   justify-self: start;
   max-width: 100%;
   text-align: left;
+}
+
+.journey-location-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.journey-location-name .location-identity-icon {
+  width: 15px;
+  height: 15px;
+  flex-basis: 15px;
 }
 
 .journey-timeline-content span {
@@ -735,6 +767,20 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.3;
+}
+
+.journey-stop-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.journey-stop-name .location-identity-icon {
+  width: 12px;
+  height: 12px;
+  flex-basis: 12px;
+  color: currentColor;
 }
 
 .journey-stop-marker {

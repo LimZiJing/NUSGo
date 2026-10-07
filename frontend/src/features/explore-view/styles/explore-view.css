@@ -45,6 +45,9 @@
   display: grid;
   gap: 8px;
 }
+.explore-view-detail {
+  align-content: start;
+}
 
 .explore-view-search-body {
   display: contents;

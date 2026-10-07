@@ -3,7 +3,7 @@ import type { NavigationSessionCommands } from '../navigation-session-mount'
 import type { NavigationState, NavigationView } from '../navigation/navigation-state'
 import type { MapViewportInsets } from '../map-camera'
 import { applyMapOverlayMeasurements } from './map-insets-controller'
-import { getMobileSheetHeights, getMobileTabBarInset } from '../../ui/mobile-sheet-layout'
+import { getMobileSheetHeights, getMobileTabBarInset } from '../../ui/mobile/mobile-sheet/mobile-sheet-layout'
 
 export interface UseMapOverlayLayoutOptions {
   readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets'>

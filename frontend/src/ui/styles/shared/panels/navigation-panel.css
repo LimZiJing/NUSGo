@@ -1,0 +1,19 @@
+/* The panel is shared by mobile sheets and the persistent desktop navigation column. */
+.navigation-panel {
+  box-sizing: border-box;
+  color: var(--text-primary);
+  font: 14px/1.2 system-ui, sans-serif;
+}
+
+.navigation-panel-content {
+  min-height: 0;
+}
+
+.navigation-panel .navigation-panel-scroll-content {
+  box-sizing: border-box;
+  margin-inline-end: var(--space-1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: var(--space-2);
+  scrollbar-gutter: stable;
+}

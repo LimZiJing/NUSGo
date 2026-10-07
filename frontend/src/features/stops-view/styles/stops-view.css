@@ -5,7 +5,7 @@
   box-sizing: border-box;
 }
 
-.stops-view button {
+.stops-view button:where(:not(.route-chip)) {
   min-width: 44px;
   min-height: var(--control-height-lg);
   padding: 8px 10px;
@@ -468,6 +468,17 @@
   }
 
 @media (max-width: 768px) {
+  .navigation-panel.stops-sheet {
+    border: 1px solid var(--border-subtle);
+    border-bottom: 0;
+    background: var(--surface-overlay-panel);
+    box-shadow: var(--shadow-md);
+  }
+
+  .navigation-panel .stops-list-selector {
+    margin-top: 8px;
+  }
+
   .stops-view {
     display: flex;
     flex-direction: column;
@@ -481,13 +492,13 @@
     pointer-events: auto;
   }
 
-  .stops-view .mobile-sheet-content {
+  .stops-view .navigation-panel-content {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
   }
 
-  .stops-view .mobile-sheet-content[data-view='overview'] {
+  .stops-view .navigation-panel-content[data-view='overview'] {
     overflow: hidden;
   }
 

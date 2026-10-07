@@ -1,10 +1,10 @@
 import type {
   MobileSheetDetent,
   OpenMobileSheetDetent,
-} from '../../ui/mobile-sheet-detent'
+} from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 import type { NavigationView } from '../../ui/navigation-view'
 
-export type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
+export type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 export type { NavigationView } from '../../ui/navigation-view'
 
 interface NavigationSheetSearchState {

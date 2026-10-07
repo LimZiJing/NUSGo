@@ -14,8 +14,9 @@ import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
 import { BusIcon } from '../../ui/icons'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
+import './styles/route-browser.css'
 
-interface ExploreRouteBrowserProps {
+interface RouteBrowserProps {
   network: TransitNetwork | null
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
@@ -50,14 +51,14 @@ function getRouteStops(
   )
 }
 
-export function ExploreRouteBrowser({
+export function RouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
   onRouteSelect,
   firstRouteCardRef,
   onFocusStop,
-}: ExploreRouteBrowserProps) {
+}: RouteBrowserProps) {
   const selectedChipRef = useRef<HTMLButtonElement>(null)
   const routeListRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{
@@ -228,7 +229,7 @@ export function ExploreRouteBrowser({
   }
 
   return (
-    <section className="route-control" aria-label="Shuttle route selection">
+    <section className="explore-route-browser" aria-label="Shuttle route selection">
       <h3 className="visually-hidden">Choose a shuttle route</h3>
       {routes.length > 0 && (
         <div
@@ -300,30 +301,31 @@ export function ExploreRouteBrowser({
         </div>
       )}
       {selectedRoute ? (
-        <div className="mobile-sheet-content route-timeline-card" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
-          <p className="route-timeline-count">{selectedRoute.stopIds.length} stops</p>
-          <ScrollArea className="mobile-sheet-scroll-content route-timeline-scroll">
-            <ol className="route-timeline" aria-label={`Route ${selectedRoute.id} ordered stops`}>
+        <div className="navigation-panel-content explore-route-browser-timeline" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
+          <p className="explore-route-browser-timeline-count">{selectedRoute.stopIds.length} stops</p>
+          <ScrollArea className="navigation-panel-scroll-content explore-route-browser-scroll">
+            <ol className="explore-route-browser-stop-list" aria-label={`Route ${selectedRoute.id} ordered stops`}>
               {selectedRoute.stopIds.map((stopId, index) => {
                 const stop = stopsById.get(stopId)
                 return (
                   <li key={`${stopId}-${index}`}>
                     <button
                       type="button"
-                      className="route-timeline-stop"
+                      className="explore-route-browser-stop"
+                      data-hover-filter="none"
                       data-route-stop-id={stopId}
                       aria-label={`${stop?.longName ?? stopId}, shuttle stop, code ${stopId}. Focus on map`}
                       onClick={() => onFocusStop?.(stopId)}
                     >
-                      <span className="route-timeline-node" aria-hidden="true" />
-                      <span className="route-timeline-text">
-                        <span className="route-timeline-name">
+                      <span className="explore-route-browser-node" aria-hidden="true" />
+                      <span className="explore-route-browser-stop-text">
+                        <span className="explore-route-browser-stop-name">
                           <BusIcon className="location-identity-icon location-identity-icon--stop" />
                           <strong>{stop?.shortName || stop?.longName || stopId}</strong>
                         </span>
                         <small>{stopId}</small>
                       </span>
-                      <span className="route-timeline-chevron" aria-hidden="true">›</span>
+                      <span className="explore-route-browser-chevron" aria-hidden="true">›</span>
                     </button>
                   </li>
                 )
@@ -332,7 +334,7 @@ export function ExploreRouteBrowser({
           </ScrollArea>
         </div>
       ) : (
-        <p className="route-selection-status" role="status" aria-live="polite">
+        <p className="explore-route-browser-selection-status" role="status" aria-live="polite">
           {!network ? 'Loading shuttle routes…' : 'Shuttle route data is unavailable.'}
         </p>
       )}

@@ -30,10 +30,11 @@ import {
   CloseIcon,
   SearchIcon,
 } from '../../ui/icons'
-import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
+import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
 import { getExploreShellClassName } from './explore-view-shell'
+import './styles/explore-view.css'
 
 interface FocusTarget {
   readonly element: HTMLElement | null
@@ -516,13 +517,13 @@ export function ExploreView({
               </button>
             )}
           </div>
-          <div className="mobile-sheet-content explore-view-search-body">
+          <div className="navigation-panel-content explore-view-search-body">
             {venues === null || searchState.failed ? (
               <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
               </p>
             ) : state.query.trim() ? (
-              <ScrollArea className="mobile-sheet-scroll-content explore-view-results" aria-label="Venue search results">
+              <ScrollArea className="navigation-panel-scroll-content explore-view-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
                   searchState.results.map((result) => (
                     <button
@@ -557,7 +558,7 @@ export function ExploreView({
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
           id="explore-view-content"
-          className="mobile-sheet-content mobile-sheet-scroll-content explore-view-content explore-view-detail"
+          className="navigation-panel-content navigation-panel-scroll-content explore-view-content explore-view-detail"
         >
           <div className="venue-detail-identity">
             <h3
@@ -650,7 +651,7 @@ export function ExploreView({
       {state.mode === 'shuttle' && (
         <div
           id="explore-view-content"
-          className="mobile-sheet-content explore-view-content"
+          className="navigation-panel-content explore-view-content"
         >
           {renderShuttleRoutes({
             firstRouteCardRef,
@@ -660,7 +661,7 @@ export function ExploreView({
       )}
       {panelStatus && (
         <p
-          className={`mobile-sheet-content explore-view-status explore-view-status-${panelStatus.kind}`}
+          className={`navigation-panel-content explore-view-status explore-view-status-${panelStatus.kind}`}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"

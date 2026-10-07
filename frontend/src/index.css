@@ -1,1 +1,3 @@
 @import './ui/styles/index.css';
+@import './ui/mobile/styles/index.css';
+@import './ui/desktop/styles/index.css';

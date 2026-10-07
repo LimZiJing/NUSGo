@@ -806,7 +806,7 @@
 }
 
 @media (max-width: 768px) {
-  .mobile-sheet.plan-sheet {
+  .navigation-panel.plan-sheet {
     overflow: hidden;
   }
 
@@ -841,12 +841,12 @@
     min-height: var(--control-height-sm);
   }
 
-  .mobile-sheet[data-detent='partial'] .plan-view,
-  .mobile-sheet[data-detent='full'] .plan-view {
+  .navigation-panel[data-detent='partial'] .plan-view,
+  .navigation-panel[data-detent='full'] .plan-view {
     align-content: start;
   }
 
-  .mobile-sheet[data-detent='full'] .plan-view-content,
+  .navigation-panel[data-detent='full'] .plan-view-content,
   [data-mobile-sheet-measuring='full'] .plan-view-content {
     flex: 1 1 auto;
     min-height: 0;

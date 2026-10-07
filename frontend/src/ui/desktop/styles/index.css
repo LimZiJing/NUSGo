@@ -1,0 +1,2 @@
+/* Desktop-only layout and map-inset rules are loaded by the application entrypoint. */
+@import './layout.css';

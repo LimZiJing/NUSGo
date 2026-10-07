@@ -1,0 +1,3 @@
+/* Mobile-only layout and sheet mechanics are loaded by the application entrypoint. */
+@import './layout.css';
+@import './sheet.css';

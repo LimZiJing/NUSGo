@@ -6,10 +6,10 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { MobileSheetHandle } from './mobile-sheet-handle'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
+import { MobileSheetHandle } from './mobile/mobile-sheet/mobile-sheet-handle'
+import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
 
-interface MobileSheetShellProps {
+interface NavigationPanelShellProps {
   readonly className: string
   readonly label: string
   readonly controlsId: string
@@ -28,7 +28,7 @@ interface MobileSheetShellProps {
   readonly children: ReactNode
 }
 
-export function MobileSheetShell({
+export function NavigationPanelShell({
   className,
   label,
   controlsId,
@@ -40,7 +40,7 @@ export function MobileSheetShell({
   shellRef,
   sectionProps,
   children,
-}: MobileSheetShellProps) {
+}: NavigationPanelShellProps) {
   const internalShellRef = useRef<HTMLElement>(null)
   const handleRef = useRef<HTMLButtonElement>(null)
   const previousDetentRef = useRef(detent)
@@ -51,7 +51,7 @@ export function MobileSheetShell({
     previousDetentRef.current = detent
     if (!enabled || !wasExpanded || detent !== 'collapsed') return
 
-    const content = internalShellRef.current?.querySelector('.mobile-sheet-content')
+    const content = internalShellRef.current?.querySelector('.navigation-panel-content')
     if (content?.contains(document.activeElement)) handleRef.current?.focus()
   }, [detent, enabled])
 
@@ -60,7 +60,7 @@ export function MobileSheetShell({
     previousEnabledRef.current = enabled
     if (!wasEnabled || enabled || document.activeElement !== handleRef.current) return
 
-    const content = internalShellRef.current?.querySelector('.mobile-sheet-content')
+    const content = internalShellRef.current?.querySelector('.navigation-panel-content')
     const target = content?.querySelector<HTMLElement>(
       'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])',
     )
@@ -72,7 +72,7 @@ export function MobileSheetShell({
   return (
     <section
       {...sectionProps}
-      className={`mobile-sheet ${className}`}
+      className={`navigation-panel ${className}`}
       data-mobile-sheet
       data-detent={detent}
       ref={internalShellRef}

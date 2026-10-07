@@ -27,7 +27,7 @@ const venues: VenueLocationMap = {
   },
 }
 
-function TestExploreRouteBrowser({
+function TestRouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
@@ -131,7 +131,7 @@ function PanelHarness({
         venues={venues}
         shuttleRoutesAvailable={(networkIndex?.routes ?? network?.routes ?? []).length > 0}
         renderShuttleRoutes={(options) => (
-          <TestExploreRouteBrowser
+          <TestRouteBrowser
             network={network}
             networkIndex={networkIndex}
             selectedRouteId={selectedRouteId}
@@ -221,7 +221,7 @@ describe('ExploreView accessibility workflows', () => {
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
     const exploreView = screen.getByRole('group', { name: 'Explore view' })
     expect(exploreView).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Find a venue' }).querySelector('.mobile-sheet-content')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Find a venue' }).querySelector('.navigation-panel-content')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Shuttle routes' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()

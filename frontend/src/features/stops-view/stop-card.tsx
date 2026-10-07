@@ -50,6 +50,7 @@ export function StopCard({
         <button
           className="stop-card-toggle"
           type="button"
+          data-hover-filter="none"
           aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, shuttle stop bus timings`}
           aria-expanded={expanded}
           aria-controls={timingsId}

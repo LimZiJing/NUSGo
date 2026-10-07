@@ -17,14 +17,23 @@ import {
   hasVenueCoordinates,
 } from '../../domain/venue/details'
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
+import nusmodsLogoUrl from '../../ui/brand-assets/nusmods-logo.svg'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
-import { getRouteContrastTextColor } from '../../ui/route-color'
-import { LocationIdentityIcon } from '../../ui/location-identity-icon'
+import { getRouteContrastTextColor } from '../../domain/transit/route-color'
+import {
+  BuildingIcon,
+  BusIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  SearchIcon,
+} from '../../ui/icons'
+import type { MobileSheetDetent } from '../../ui/mobile-sheet-detent'
 import type { ExploreViewMode, ExploreViewState } from './state'
 import type { PanelStatus } from './status'
+import { getExploreShellClassName } from './explore-view-shell'
 
 interface FocusTarget {
   readonly element: HTMLElement | null
@@ -55,7 +64,7 @@ interface ExploreViewProps {
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
   renderShuttleRoutes: (options: ShuttleRouteRenderOptions) => ReactNode
-  minimized?: boolean
+  sheetDetent?: MobileSheetDetent
   mobileSheet?: boolean
   active?: boolean
   onRestore?: () => void
@@ -84,8 +93,8 @@ function getPanelHeading(state: ExploreViewState): string {
 }
 
 function findFocusTarget(key: string): HTMLElement | undefined {
-  return Array.from(document.querySelectorAll<HTMLElement>('[data-explore-focus-id]'))
-    .find((element) => element.dataset.exploreFocusId === key)
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-focus-id]'))
+    .find((element) => element.dataset.focusId === key)
 }
 
 function getPanelAnnouncement(state: ExploreViewState): string | null {
@@ -111,7 +120,7 @@ export function ExploreView({
   transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
-  minimized = false,
+  sheetDetent = 'partial',
   mobileSheet = true,
   active = true,
   onRestore,
@@ -131,6 +140,7 @@ export function ExploreView({
   onSearchCancel,
   onSearchResult,
 }: ExploreViewProps) {
+  const minimized = sheetDetent === 'collapsed'
   const panelHeadingRef = useRef<HTMLHeadingElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const detailHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -349,7 +359,7 @@ export function ExploreView({
   ): void => {
     focusHistoryRef.current.push({
       element: event.currentTarget,
-      key: event.currentTarget.dataset.exploreFocusId ?? null,
+      key: event.currentTarget.dataset.focusId ?? null,
       fallbackKey,
     })
   }
@@ -432,22 +442,22 @@ export function ExploreView({
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
 
   return (
-    <div
-      className="explore-view-focus-scope"
-      onFocusCapture={handlePanelFocusCapture}
-      onBlurCapture={handlePanelBlurCapture}
-    >
+    <div className={getExploreShellClassName(state)}>
+      <div
+        className="explore-view-focus-scope"
+        onFocusCapture={handlePanelFocusCapture}
+        onBlurCapture={handlePanelBlurCapture}
+      >
       <div className="explore-view-header">
         {exploreSegments && (
           <div
             className="explore-segments"
             role="group"
             aria-label="Explore view"
-            data-mobile-sheet-content
           >
             <button
               type="button"
-              data-explore-focus-id="explore-venue-segment"
+              data-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
               onClick={handleSelectVenueSearch}
             >
@@ -455,7 +465,7 @@ export function ExploreView({
             </button>
             <button
               type="button"
-              data-explore-focus-id="explore-shuttle-segment"
+              data-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectShuttle}
             >
@@ -502,31 +512,29 @@ export function ExploreView({
                 }}
                 aria-label="Clear venue search"
               >
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="M6 6 18 18M18 6 6 18" />
-                </svg>
+                <CloseIcon />
               </button>
             )}
           </div>
-          <div className="explore-view-search-body" data-mobile-sheet-content>
+          <div className="mobile-sheet-content explore-view-search-body">
             {venues === null || searchState.failed ? (
               <p className="explore-view-status" role="status" aria-live="polite">
                 Venue search is unavailable right now. Shuttle browsing is still available.
               </p>
             ) : state.query.trim() ? (
-              <ScrollArea className="explore-view-results" aria-label="Venue search results">
+              <ScrollArea className="mobile-sheet-scroll-content explore-view-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
                   searchState.results.map((result) => (
                     <button
                       className="explore-view-result"
-                      data-explore-focus-id={`venue-result-${result.code}`}
+                      data-focus-id={`venue-result-${result.code}`}
                       type="button"
                       key={result.code}
                       onClick={(event) => handleVenueSelect(result, event)}
                       aria-label={`${result.code}, venue, ${result.venue.roomName}`}
                     >
                       <span className="explore-view-result-identity">
-                        <LocationIdentityIcon kind="venue" />
+                        <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
                         <strong>{result.code}</strong>
                       </span>
                       <span>{result.venue.roomName}</span>
@@ -538,10 +546,7 @@ export function ExploreView({
               </ScrollArea>
             ) : (
               <div className="explore-view-search-prompt">
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 32 32">
-                  <circle cx="14" cy="14" r="8" />
-                  <path d="m20 20 7 7" />
-                </svg>
+                <SearchIcon />
                 <p>Search for a venue</p>
               </div>
             )}
@@ -552,8 +557,7 @@ export function ExploreView({
       {state.mode === 'venue-detail' && state.selectedVenue && (
         <div
           id="explore-view-content"
-          className="explore-view-content explore-view-detail"
-          data-mobile-sheet-content
+          className="mobile-sheet-content mobile-sheet-scroll-content explore-view-content explore-view-detail"
         >
           <div className="venue-detail-identity">
             <h3
@@ -562,16 +566,14 @@ export function ExploreView({
               tabIndex={-1}
               aria-label={`${state.selectedVenue.code}, venue`}
             >
-              <LocationIdentityIcon kind="venue" />
+              <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
               {state.selectedVenue.code}
             </h3>
             <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
           </div>
           {venueFloorAndBuilding && (
             <p className="venue-detail-location">
-              <svg aria-hidden="true" focusable="false" className="venue-detail-icon venue-detail-building-icon" viewBox="0 0 24 24">
-                <path d="M4 21h16M6 21V4h8v17m0-11h4v11M9 8h2m-2 4h2m-2 4h2m4-2h2m-2 4h2" />
-              </svg>
+              <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
               <span>{venueFloorAndBuilding}</span>
             </p>
           )}
@@ -589,15 +591,13 @@ export function ExploreView({
               rel="noreferrer"
             >
               <span>View in</span>
-              <img src={`${import.meta.env.BASE_URL}nusmods-logo.svg`} alt="NUSMods" />
+              <img src={nusmodsLogoUrl} alt="NUSMods" />
             </a>
           </div>
           {venueHasCoordinates && (
             <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
               <h4 id="venue-nearby-stops-heading">
-                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-                  <path d="M6 3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1l1.5 2h-2.4L14 19h-4l-1.1 2H6.5L8 19H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v6h12V6H6Zm1 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
-                </svg>
+                <BusIcon />
                 Nearby bus stops within 500 m
               </h4>
               {transitIndex === null ? (
@@ -617,7 +617,7 @@ export function ExploreView({
                     >
                       <span className="nearby-stop-identity">
                         <span className="nearby-stop-name">
-                          <LocationIdentityIcon kind="stop" />
+                          <BusIcon className="location-identity-icon location-identity-icon--stop" />
                           <strong>{stop.longName}</strong>
                         </span>
                         <small>{stop.id}</small>
@@ -637,9 +637,7 @@ export function ExploreView({
                           </span>
                         ))}
                       </span>
-                      <svg aria-hidden="true" focusable="false" className="nearby-stop-arrow" viewBox="0 0 24 24">
-                        <path d="m9 5 7 7-7 7" />
-                      </svg>
+                      <ChevronRightIcon className="nearby-stop-arrow" />
                     </button>
                   ))}
                 </div>
@@ -652,8 +650,7 @@ export function ExploreView({
       {state.mode === 'shuttle' && (
         <div
           id="explore-view-content"
-          className="explore-view-content"
-          data-mobile-sheet-content
+          className="mobile-sheet-content explore-view-content"
         >
           {renderShuttleRoutes({
             firstRouteCardRef,
@@ -663,8 +660,7 @@ export function ExploreView({
       )}
       {panelStatus && (
         <p
-          className={`explore-view-status explore-view-status-${panelStatus.kind}`}
-          data-mobile-sheet-content={mobileSheet && panelStatus.kind === 'success' ? '' : undefined}
+          className={`mobile-sheet-content explore-view-status explore-view-status-${panelStatus.kind}`}
           role="status"
           aria-live={panelStatus.kind === 'failure' ? 'assertive' : 'polite'}
           aria-atomic="true"
@@ -686,6 +682,7 @@ export function ExploreView({
           {panelAnnouncement}
         </p>
       )}
+      </div>
     </div>
   )
 }

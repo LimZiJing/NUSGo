@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { getRouteChipTextColor } from './route-color'
+import { getRouteChipTextColor } from '../domain/transit/route-color'
 
 type RouteChipSize = 'default' | 'compact'
 
@@ -34,7 +34,7 @@ export function RouteChip({
       className="route-chip"
       type="button"
       data-route-id={routeId}
-      data-explore-focus-id={focusId}
+      data-focus-id={focusId}
       data-active={active ? 'true' : undefined}
       data-size={size}
       style={{

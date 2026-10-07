@@ -4,6 +4,10 @@ import type { JourneyBenchmarkValidation } from './outcome.js'
 export interface JourneyBenchmarkSample {
   readonly elapsedMs: number
   readonly valhallaMs?: number
+  readonly valhallaMatrixMs?: number
+  readonly valhallaRouteMs?: number
+  readonly valhallaMatrixRequests?: number
+  readonly valhallaRouteRequests?: number
   readonly validation: JourneyBenchmarkValidation
 }
 
@@ -43,9 +47,14 @@ export interface JourneyBenchmarkCaseReport {
   readonly status: 'available' | 'failed'
   readonly statistics: JourneyBenchmarkStatistics | null
   readonly valhalla: JourneyBenchmarkStatistics | null
+  readonly valhallaMatrixMs: JourneyBenchmarkStatistics | null
+  readonly valhallaRouteMs: JourneyBenchmarkStatistics | null
+  readonly valhallaMatrixRequests: JourneyBenchmarkCountStatistics | null
+  readonly valhallaRouteRequests: JourneyBenchmarkCountStatistics | null
   readonly resultQuality: JourneyBenchmarkQualityCounts
   readonly validation: JourneyBenchmarkValidationSummary
   readonly planning: Readonly<Record<string, unknown>> | null
+  readonly planningWork: Readonly<Record<string, unknown>>
   readonly resultStableAcrossSamples: boolean
   readonly error?: string
 }
@@ -56,6 +65,10 @@ export interface JourneyBenchmarkAggregateReport {
   readonly sampleCount: number
   readonly statistics: JourneyBenchmarkStatistics | null
   readonly valhalla: JourneyBenchmarkStatistics | null
+  readonly valhallaMatrixMs: JourneyBenchmarkStatistics | null
+  readonly valhallaRouteMs: JourneyBenchmarkStatistics | null
+  readonly valhallaMatrixRequests: JourneyBenchmarkCountStatistics | null
+  readonly valhallaRouteRequests: JourneyBenchmarkCountStatistics | null
   readonly resultQuality: JourneyBenchmarkQualityCounts
   readonly validation: JourneyBenchmarkValidationSummary
 }
@@ -81,6 +94,36 @@ function summarizeStatistics(values: readonly number[]): JourneyBenchmarkStatist
     medianMs: round(median),
     p95Ms: round(p95),
     sampleCount: values.length,
+  }
+}
+
+function summarizeCountStatistics(values: readonly number[]): JourneyBenchmarkCountStatistics | null {
+  const statistics = summarizeStatistics(values)
+  if (!statistics) return null
+  return {
+    mean: statistics.meanMs,
+    median: statistics.medianMs,
+    p95: statistics.p95Ms,
+    sampleCount: statistics.sampleCount,
+  }
+}
+
+export interface JourneyBenchmarkCountStatistics {
+  readonly mean: number
+  readonly median: number
+  readonly p95: number
+  readonly sampleCount: number
+}
+
+function summarizePlanningMetric(values: readonly number[]) {
+  const statistics = summarizeStatistics(values)
+  if (!statistics) return null
+  return {
+    mean: statistics.meanMs,
+    median: statistics.medianMs,
+    p95: statistics.p95Ms,
+    max: Number(Math.max(...values).toFixed(3)),
+    sampleCount: statistics.sampleCount,
   }
 }
 
@@ -138,8 +181,28 @@ function createCaseReport(
   const valhalla = summarizeStatistics(
     samples.flatMap(({ valhallaMs }) => valhallaMs === undefined ? [] : [valhallaMs]),
   )
+  const valhallaMatrixMs = summarizeStatistics(
+    samples.flatMap(({ valhallaMatrixMs: value }) => value === undefined ? [] : [value]),
+  )
+  const valhallaRouteMs = summarizeStatistics(
+    samples.flatMap(({ valhallaRouteMs: value }) => value === undefined ? [] : [value]),
+  )
+  const valhallaMatrixRequests = summarizeCountStatistics(
+    samples.flatMap(({ valhallaMatrixRequests: value }) => value === undefined ? [] : [value]),
+  )
+  const valhallaRouteRequests = summarizeCountStatistics(
+    samples.flatMap(({ valhallaRouteRequests: value }) => value === undefined ? [] : [value]),
+  )
   const lastSample = samples.at(-1)
   const stableResults = new Set(samples.map(({ validation: result }) => JSON.stringify(result.result)))
+  const planningRecords = samples.map(({ validation: result }) => result.result)
+  const numericPlanningMetric = (key: string) => summarizePlanningMetric(planningRecords.flatMap((record) => {
+    const value = record[key]
+    return typeof value === 'number' && Number.isFinite(value) ? [value] : []
+  }))
+  const planningStatuses = planningRecords.flatMap((record) => (
+    typeof record.planningStatus === 'string' ? [record.planningStatus] : []
+  ))
   const failed = validation.status !== 'valid'
   return {
     id: benchmarkCase.id,
@@ -149,9 +212,32 @@ function createCaseReport(
     status: failed ? 'failed' : 'available',
     statistics: timing,
     valhalla,
+    valhallaMatrixMs,
+    valhallaRouteMs,
+    valhallaMatrixRequests,
+    valhallaRouteRequests,
     resultQuality: countQuality(samples),
     validation,
     planning: lastSample?.validation.result ?? null,
+    planningWork: {
+      expandedPathCount: numericPlanningMetric('expandedPathCount'),
+      indexBuildDurationMs: numericPlanningMetric('indexBuildDurationMs'),
+      candidateResolutionDurationMs: numericPlanningMetric('candidateResolutionDurationMs'),
+      candidateEnumerationStepCount: numericPlanningMetric('candidateEnumerationStepCount'),
+      searchDurationMs: numericPlanningMetric('searchDurationMs'),
+      searchYieldWaitMs: numericPlanningMetric('searchYieldWaitMs'),
+      searchCpuMs: numericPlanningMetric('searchCpuMs'),
+      maxSearchChunkDurationMs: numericPlanningMetric('maxSearchChunkDurationMs'),
+      geometrySliceCount: numericPlanningMetric('geometrySliceCount'),
+      geometrySliceDurationMs: numericPlanningMetric('geometrySliceDurationMs'),
+      candidatePoolSize: numericPlanningMetric('candidatePoolSize'),
+      geometryCandidateChecks: numericPlanningMetric('geometryCandidateChecks'),
+      geometryRouteRequests: numericPlanningMetric('geometryRouteRequests'),
+      geometryRouteCacheHits: numericPlanningMetric('geometryRouteCacheHits'),
+      budgetHitSamples: planningStatuses.filter((status) => status === 'budget-exceeded').length,
+      planningStatus: planningStatuses.at(-1) ?? null,
+      sampleCount: planningStatuses.length,
+    },
     resultStableAcrossSamples: stableResults.size <= 1,
     ...(setupError ? { error: setupError } : {}),
   }
@@ -183,12 +269,28 @@ function aggregateValidation(reports: readonly JourneyBenchmarkCaseReport[]): Jo
 function createAggregate(reports: readonly JourneyBenchmarkCaseReport[]): JourneyBenchmarkAggregateReport {
   const timedCases = reports.flatMap((report) => report.statistics ? [report.statistics.meanMs] : [])
   const valhallaCases = reports.flatMap((report) => report.valhalla ? [report.valhalla.meanMs] : [])
+  const matrixTimeCases = reports.flatMap((report) => (
+    report.valhallaMatrixMs ? [report.valhallaMatrixMs.meanMs] : []
+  ))
+  const routeTimeCases = reports.flatMap((report) => (
+    report.valhallaRouteMs ? [report.valhallaRouteMs.meanMs] : []
+  ))
+  const matrixRequestCases = reports.flatMap((report) => (
+    report.valhallaMatrixRequests ? [report.valhallaMatrixRequests.mean] : []
+  ))
+  const routeRequestCases = reports.flatMap((report) => (
+    report.valhallaRouteRequests ? [report.valhallaRouteRequests.mean] : []
+  ))
   return {
     caseCount: reports.length,
     measuredCaseCount: timedCases.length,
     sampleCount: reports.reduce((sum, report) => sum + (report.statistics?.sampleCount ?? 0), 0),
     statistics: summarizeStatistics(timedCases),
     valhalla: summarizeStatistics(valhallaCases),
+    valhallaMatrixMs: summarizeStatistics(matrixTimeCases),
+    valhallaRouteMs: summarizeStatistics(routeTimeCases),
+    valhallaMatrixRequests: summarizeCountStatistics(matrixRequestCases),
+    valhallaRouteRequests: summarizeCountStatistics(routeRequestCases),
     resultQuality: sumQualityCounts(reports),
     validation: aggregateValidation(reports),
   }

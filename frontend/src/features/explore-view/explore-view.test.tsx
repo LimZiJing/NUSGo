@@ -83,7 +83,7 @@ describe('ExploreView', () => {
     expect(markup).not.toContain('1.300000, 103.770000')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')
-    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
+    expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
     expect(markup).toContain('Find venue</button>')
     expect(markup).not.toContain('Browse shuttle routes')
     expect(markup).not.toContain('>Back</button>')
@@ -105,8 +105,8 @@ describe('ExploreView', () => {
 
     expect(markup).toContain('Shuttle routes</button>')
     expect(markup).toContain('class="ghost-back-button"')
-    expect(markup).toContain('<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">')
-    expect(markup).toContain('M19 12H5m7-7-7 7 7 7')
+    expect(markup).toContain('aria-hidden="true"')
+    expect(markup).not.toContain('M19 12H5m7-7-7 7 7 7')
     expect(markup).not.toContain('←')
   })
 
@@ -125,7 +125,7 @@ describe('ExploreView', () => {
     expect(markup).not.toContain('Close map context')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')
-    expect(markup).toContain('<img src="/nusmods-logo.svg" alt="NUSMods"/>')
+    expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
     expect(markup).not.toContain('Browse shuttle routes')
   })
 

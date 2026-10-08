@@ -1,6 +1,7 @@
 import type { Drawer } from '@base-ui/react/drawer'
 import type { MobileSheetDetent } from './mobile-sheet-detent'
-import { getMobileSheetHeights } from './mobile-sheet-layout'
+
+const PARTIAL_VIEWPORT_RATIO = 0.5
 
 export type BaseUiMobileSheetSnapPoints = readonly [
   collapsed: string,
@@ -26,7 +27,7 @@ export function createBaseUiMobileSheetSnapPoints(
     collapsed,
     Math.min(
       maximumHeight,
-      getMobileSheetHeights(visibleHeight, 0).partialMaxHeight + visibleTabBarInset,
+      visibleHeight * PARTIAL_VIEWPORT_RATIO + visibleTabBarInset,
     ),
   )
 

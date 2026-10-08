@@ -5,7 +5,7 @@
   min-height: 0;
   gap: 8px;
   color: var(--text-primary);
-  font: 14px/1.2 system-ui, sans-serif;
+  font: 14px/1.2 var(--sans);
   box-sizing: border-box;
 }
 .plan-view-heading,
@@ -18,6 +18,7 @@
 
 .plan-view-title {
   min-width: 0;
+  text-align: left;
 }
 
 .plan-view-content {
@@ -28,7 +29,7 @@
 .plan-view-heading h2 {
   margin: 0;
   color: var(--text-primary);
-  font: 600 18px/1.2 system-ui, sans-serif;
+  font: 600 18px/1.2 var(--heading);
 }
 
 .plan-view-menu {
@@ -117,6 +118,7 @@
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .plan-endpoint-picker::before {
@@ -237,6 +239,7 @@
   color: var(--text-primary);
   background: transparent;
   font: inherit;
+  text-align: left;
 }
 
 .plan-endpoint-control-has-identity .search-field input {
@@ -483,6 +486,7 @@
   border-radius: 0;
   color: var(--text-primary);
   background: transparent;
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -498,6 +502,7 @@
 }
 
 .journey-option-summary-topline,
+.journey-option-summary-bottomline,
 .journey-option-estimate,
 .journey-option-modes,
 .journey-option-walking,
@@ -521,17 +526,13 @@
 }
 
 .journey-option-estimate {
-  display: grid;
-  grid-template-columns: auto 16px;
-  grid-template-rows: auto auto;
+  display: flex;
   align-items: center;
-  justify-items: end;
-  gap: 0 4px;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .journey-option-duration {
-  grid-column: 1;
-  grid-row: 1;
   color: var(--accent);
   font-size: 17px;
   font-weight: 750;
@@ -539,25 +540,31 @@
 }
 
 .journey-option-estimate .disclosure-chevron {
-  grid-column: 2;
-  grid-row: 1;
   color: var(--text-muted);
 }
 
+.journey-option-summary-bottomline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .journey-option-walking-total {
-  grid-column: 1;
-  grid-row: 2;
+  align-self: center;
   justify-self: end;
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 550;
   line-height: 1.3;
+  text-align: right;
   white-space: nowrap;
 }
 
 .journey-option-modes {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 5px;
 }
@@ -581,6 +588,7 @@
   display: grid;
   gap: 8px;
   padding: 0 12px 11px;
+  text-align: left;
 }
 
 .journey-result-details[hidden] {
@@ -964,6 +972,12 @@
     overflow: visible;
     overscroll-behavior: contain;
     scrollbar-gutter: auto;
+  }
+
+  .plan-endpoint-picker {
+    /* Reclaim the scroll viewport's 8px padding and 4px end margin, then center in the sheet inset. */
+    width: calc(100% + var(--space-3));
+    margin-inline: var(--space-2) calc(-1 * (var(--space-3) + var(--space-2)));
   }
 
   .plan-view button,

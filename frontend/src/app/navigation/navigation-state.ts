@@ -27,6 +27,7 @@ export const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 768px)'
 
 export type NavigationAction =
   | { readonly type: 'select-view'; readonly view: NavigationView }
+  | { readonly type: 'activate-plan-from-map' }
   | { readonly type: 'open-plan' }
   | {
       readonly type: 'set-sheet-detent'
@@ -142,6 +143,14 @@ export function navigationReducer(
       if (state.activeView !== action.view) return { ...state, activeView: action.view }
       if (state.sheets[action.view].detent !== 'collapsed') return state
       return setSheetDetent(state, action.view, state.sheets[action.view].lastNonCollapsedDetent)
+    case 'activate-plan-from-map': {
+      if (state.activeView === 'plan') return state
+      const planActive = { ...state, activeView: 'plan' as const }
+      const planSheet = state.sheets.plan
+      return planSheet.detent === 'collapsed'
+        ? setSheetDetent(planActive, 'plan', planSheet.lastNonCollapsedDetent)
+        : planActive
+    }
     case 'open-plan':
       return setSheetDetent({ ...state, activeView: 'plan' }, 'plan', 'partial')
     case 'set-sheet-detent':

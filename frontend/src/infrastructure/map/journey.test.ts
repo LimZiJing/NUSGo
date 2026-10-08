@@ -68,6 +68,8 @@ function createFakeMap(failingLayerId?: string): {
   readonly removedLayers: string[]
   readonly filters: Array<{ id: string; filter: unknown }>
   readonly paintProperties: Array<{ id: string; name: string; value: unknown }>
+  readonly eventHandlers: globalThis.Map<string, Set<(event: unknown) => void>>
+  readonly setRenderedFeatures: (features: readonly unknown[]) => void
   readonly sourceData: globalThis.Map<string, {
     data: unknown
     setData: ReturnType<typeof vi.fn>
@@ -81,6 +83,8 @@ function createFakeMap(failingLayerId?: string): {
   const removedLayers: string[] = []
   const filters: Array<{ id: string; filter: unknown }> = []
   const paintProperties: Array<{ id: string; name: string; value: unknown }> = []
+  const eventHandlers = new globalThis.Map<string, Set<(event: unknown) => void>>()
+  let renderedFeatures: readonly unknown[] = []
   const sourceData = new globalThis.Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>()
   const map = {
     getSource: vi.fn((id: string) => sources.get(id)),
@@ -116,6 +120,15 @@ function createFakeMap(failingLayerId?: string): {
       paintProperties.push({ id, name, value })
     )),
     setLayoutProperty: vi.fn(),
+    on: vi.fn((type: string, handler: (event: unknown) => void) => {
+      const handlers = eventHandlers.get(type) ?? new Set()
+      handlers.add(handler)
+      eventHandlers.set(type, handlers)
+    }),
+    off: vi.fn((type: string, handler: (event: unknown) => void) => {
+      eventHandlers.get(type)?.delete(handler)
+    }),
+    queryRenderedFeatures: vi.fn(() => renderedFeatures),
   } as unknown as Map
 
   return {
@@ -128,6 +141,8 @@ function createFakeMap(failingLayerId?: string): {
     removedLayers,
     filters,
     paintProperties,
+    eventHandlers,
+    setRenderedFeatures: (features) => { renderedFeatures = features },
     sourceData,
   }
 }
@@ -238,14 +253,20 @@ describe('journey route layer adapter', () => {
     expect(labelMarkers.map(({ element }) => element.textContent)).toEqual([
       '3 min', '3 min', '3 min', '3 min',
     ])
+    expect(labelMarkers.map(({ element }) => element.getAttribute('aria-label'))).toEqual([
+      'Select journey option 1, 3 min',
+      'Select journey option 2, 3 min',
+      'Select journey option 3, 3 min',
+      'Select journey option 4, 3 min',
+    ])
     expect(labelMarkers.map(({ offset }) => offset)).toEqual([
       [0, -48], [0, -16], [0, 16], [0, 48],
     ])
     expect(labelMarkers.map(({ element }) => element.style.zIndex)).toEqual(['4', '4', '4', '4'])
-    expect(labelMarkers.every(({ element }) => element.style.pointerEvents === 'none')).toBe(true)
+    expect(labelMarkers.every(({ element }) => element.tagName === 'BUTTON')).toBe(true)
     expect(labelMarkers[1]?.element.classList.contains('journey-duration-marker-selected')).toBe(true)
     expect(labelMarkers[0]?.element.classList.contains('journey-duration-marker-alternative')).toBe(true)
-    expect(labelMarkers[0]?.element.getAttribute('aria-hidden')).toBe('true')
+    expect(labelMarkers[0]?.element.getAttribute('aria-pressed')).toBe('false')
     expect(JSON.stringify(
       state.filters.find(({ id }) => id === JOURNEY_SELECTED_SHUTTLE_LAYER_ID)?.filter,
     )).toContain('"option-2"')
@@ -281,9 +302,45 @@ describe('journey route layer adapter', () => {
 
     layers.dispose()
     layers.dispose()
+    markerState.markers[4]?.element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     layers.setJourneyOptions(options, 'option-1')
     expect(state.addedSources).toHaveLength(1)
     expect(state.removedSources).toEqual([JOURNEY_ROUTE_SOURCE_ID])
+    expect(state.eventHandlers.get('click')?.size).toBe(0)
+  })
+
+  it('selects duration labels and resolves shared route hits to selected or highest-ranked options', () => {
+    const state = createFakeMap()
+    const onJourneyOptionSelected = vi.fn()
+    const layers = createJourneyRouteLayers(state.map, null, onJourneyOptionSelected)
+    const options = [
+      { candidateKey: 'option-1', journey: createJourney('A1') },
+      { candidateKey: 'option-2', journey: createJourney('B1') },
+      { candidateKey: 'option-3', journey: createJourney('A1') },
+    ]
+    layers.setJourneyOptions(options, 'option-2')
+
+    markerState.markers[2]?.element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(onJourneyOptionSelected).toHaveBeenLastCalledWith('option-3')
+
+    state.setRenderedFeatures([
+      { properties: { candidateKey: 'option-3' } },
+      { properties: { candidateKey: 'option-1' } },
+    ])
+    for (const handler of state.eventHandlers.get('click') ?? []) {
+      handler({ point: { x: 1, y: 1 }, originalEvent: new MouseEvent('click') })
+    }
+    expect(onJourneyOptionSelected).toHaveBeenLastCalledWith('option-1')
+
+    layers.setJourneyOptions(options, 'option-3')
+    for (const handler of state.eventHandlers.get('click') ?? []) {
+      handler({ point: { x: 1, y: 1 }, originalEvent: new MouseEvent('click') })
+    }
+    expect(onJourneyOptionSelected).toHaveBeenLastCalledWith('option-3')
+    layers.dispose()
+    markerState.markers[2]?.element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(onJourneyOptionSelected).toHaveBeenCalledTimes(3)
+    expect(state.eventHandlers.get('click')?.size).toBe(0)
   })
 
   it('uses each canonical route color for shuttle legs in a Journey', () => {

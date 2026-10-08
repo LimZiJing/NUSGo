@@ -58,6 +58,8 @@ function App() {
   )
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
   const navigationState = useAppNavigationState()
+  const [mapJourneySelectionRevision, setMapJourneySelectionRevision] = useState(0)
+  const pendingMapJourneySelectionRef = useRef<string | null>(null)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
   const prepareSheetTransitionRef = useRef<((viewChange?: boolean) => void) | null>(null)
   const focusTripControlAfterOverlayRef = useRef(false)
@@ -109,6 +111,12 @@ function App() {
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
   const activeSheetDetent = appNavigation.activeSheetDetent
+  const navigationRef = useRef(navigation)
+  const isMobileViewportRef = useRef(isMobileViewport)
+  const commandsRef = useRef(commands)
+  const dispatchNavigationRef = useRef(appNavigation.dispatch)
+  const exploreViewModeRef = useRef(state.exploreView.mode)
+  const displayedCandidatesRef = useRef(state.journey.displayedCandidates)
   const { mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
@@ -121,6 +129,22 @@ function App() {
     navigationColumnRef,
     onMeasurementsApplied: appNavigation.focusStopAfterMapLayout,
   })
+
+  useLayoutEffect(() => {
+    navigationRef.current = navigation
+    isMobileViewportRef.current = isMobileViewport
+    commandsRef.current = commands
+    dispatchNavigationRef.current = appNavigation.dispatch
+    exploreViewModeRef.current = state.exploreView.mode
+    displayedCandidatesRef.current = state.journey.displayedCandidates
+  }, [
+    appNavigation.dispatch,
+    commands,
+    isMobileViewport,
+    navigation,
+    state.journey.displayedCandidates,
+    state.exploreView.mode,
+  ])
 
   useEffect(() => {
     const updateViewport = (): void => {
@@ -209,6 +233,60 @@ function App() {
     focusTarget?.focus()
   }, [isMobileViewport, navigation.sheets.plan.detent])
 
+  const handleMapJourneyOptionSelected = useCallback((candidateKey: string): void => {
+    if (!displayedCandidatesRef.current.some(({ candidateKey: key }) => key === candidateKey)) return
+
+    const currentNavigation = navigationRef.current
+    if (currentNavigation.activeView !== 'plan') {
+      if (
+        currentNavigation.activeView === 'explore' &&
+        exploreViewModeRef.current === 'shuttle'
+      ) {
+        commandsRef.current.suspendMobileRoutes()
+      }
+      // Map selection reveals Plan without the normal navigation focus jump.
+      dispatchNavigationRef.current({ type: 'activate-plan-from-map' })
+    }
+    if (isMobileViewportRef.current) {
+      pendingMapJourneySelectionRef.current = candidateKey
+      setMapJourneySelectionRevision((revision) => revision + 1)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    const candidateKey = pendingMapJourneySelectionRef.current
+    if (!candidateKey) return
+    if (!isMobileViewport || navigation.activeView !== 'plan') {
+      pendingMapJourneySelectionRef.current = null
+      return
+    }
+    if (!state.journey.displayedCandidates.some(({ candidateKey: key }) => key === candidateKey)) {
+      pendingMapJourneySelectionRef.current = null
+      return
+    }
+    if (state.journey.selectedCandidateKey !== candidateKey) return
+
+    const content = tripControlsRef.current?.querySelector<HTMLElement>('.plan-view-content')
+    const summary = Array.from(content?.querySelectorAll<HTMLElement>('.journey-option-summary') ?? [])
+      .find((element) => element.dataset.candidateKey === candidateKey)
+    if (content && summary) {
+      const contentBounds = content.getBoundingClientRect()
+      const summaryBounds = summary.getBoundingClientRect()
+      if (summaryBounds.top < contentBounds.top) {
+        content.scrollTop += summaryBounds.top - contentBounds.top
+      } else if (summaryBounds.bottom > contentBounds.bottom) {
+        content.scrollTop += summaryBounds.bottom - contentBounds.bottom
+      }
+    }
+    pendingMapJourneySelectionRef.current = null
+  }, [
+    isMobileViewport,
+    mapJourneySelectionRevision,
+    navigation.activeView,
+    state.journey.displayedCandidates,
+    state.journey.selectedCandidateKey,
+  ])
+
   useEffect(() => {
     if (!mapContainer.current) return
 
@@ -221,6 +299,7 @@ function App() {
       locationTracker: services.createLocationTracker(),
       onStopSelected: appNavigation.handleStopSelected,
       onMapStopInteraction: appNavigation.handleMapStopInteraction,
+      onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
     })
     setSession(mount.session)
@@ -228,7 +307,12 @@ function App() {
     return () => {
       mount.dispose()
     }
-  }, [appNavigation.handleMapStopInteraction, appNavigation.handleStopSelected, services])
+  }, [
+    appNavigation.handleMapStopInteraction,
+    appNavigation.handleStopSelected,
+    handleMapJourneyOptionSelected,
+    services,
+  ])
 
   const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
   const toggleTheme = useCallback((): void => {

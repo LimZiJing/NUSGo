@@ -208,7 +208,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
   const installJourneyRouteLayers = (): void => {
     if (currentJourneyOptions.length === 0 || journeyRouteLayers) return
-    const nextJourneyRouteLayers = createJourneyRouteLayers(map, currentTransitIndex)
+    const nextJourneyRouteLayers = createJourneyRouteLayers(
+      map,
+      currentTransitIndex,
+      options.onJourneyOptionSelected,
+    )
     nextJourneyRouteLayers.setJourneyOptions(currentJourneyOptions, selectedJourneyCandidateKey)
     journeyRouteLayers = nextJourneyRouteLayers
   }

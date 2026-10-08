@@ -682,6 +682,41 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('forwards rendered Journey route clicks through the MapSession callback', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('Element', class {})
+    const onJourneyOptionSelected = vi.fn()
+    const onEmptyMapClick = vi.fn()
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick,
+      onJourneyOptionSelected,
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      handlers: globalThis.Map<string, Set<(...args: never[]) => void>>
+      queryRenderedFeatures: ReturnType<typeof vi.fn>
+    }
+    await session.ready
+    session.setJourneyOptions([
+      { candidateKey: 'option-a', journey: createJourney() },
+      { candidateKey: 'option-b', journey: createJourney() },
+    ], 'option-a')
+    map.queryRenderedFeatures.mockReturnValue([{ properties: { candidateKey: 'option-b' } }])
+
+    for (const handler of map.handlers.get('click') ?? []) {
+      handler({
+        point: { x: 1, y: 1 },
+        originalEvent: { target: null, stopPropagation: vi.fn() },
+      } as never)
+    }
+
+    expect(onJourneyOptionSelected).toHaveBeenCalledWith('option-b')
+    expect(onEmptyMapClick).not.toHaveBeenCalled()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('waits for initial overlay measurements before fitting a new result', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({

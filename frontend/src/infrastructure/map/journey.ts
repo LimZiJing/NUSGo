@@ -3,6 +3,7 @@ import type {
   GeoJSONSource,
   LineLayerSpecification,
   Map,
+  MapMouseEvent,
 } from 'maplibre-gl'
 import type { MapJourneyOption } from '../../app/contracts/map'
 import type { Journey } from '../../domain/trip/journey'
@@ -236,14 +237,65 @@ export interface JourneyRouteLayers {
 export function createJourneyRouteLayers(
   map: Map,
   transitIndex: TransitIndex | null,
+  onJourneyOptionSelected?: (candidateKey: string) => void,
 ): JourneyRouteLayers {
-  const durationMarkers: JourneyDurationMarkers = createJourneyDurationMarkers(map)
+  const durationMarkers: JourneyDurationMarkers = createJourneyDurationMarkers(
+    map,
+    onJourneyOptionSelected,
+  )
   let disposed = false
   let installed = false
+  let routeClickListenerInstalled = false
   let currentOptions: readonly MapJourneyOption[] = []
   let currentSelectedCandidateKey: string | null = null
 
+  const routeInteractionLayerIds = [
+    JOURNEY_ALTERNATIVE_CASING_LAYER_ID,
+    JOURNEY_ALTERNATIVE_WALKING_LAYER_ID,
+    JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
+    JOURNEY_SELECTED_CASING_LAYER_ID,
+    JOURNEY_SELECTED_WALKING_LAYER_ID,
+    JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
+  ]
+
+  const handleRouteClick = (event: MapMouseEvent): void => {
+    if (disposed || !installed || currentOptions.length === 0) return
+    const target = event.originalEvent.target
+    if (typeof Element !== 'undefined' && target instanceof Element && target.closest(
+      '.maplibregl-marker, .maplibregl-popup, .maplibregl-ctrl',
+    )) {
+      return
+    }
+
+    const matchingKeys = new Set(
+      map.queryRenderedFeatures(event.point, { layers: routeInteractionLayerIds })
+        .map(({ properties }) => properties?.candidateKey)
+        .filter((key): key is string => typeof key === 'string'),
+    )
+    const candidateKey = currentSelectedCandidateKey !== null
+      && matchingKeys.has(currentSelectedCandidateKey)
+      ? currentSelectedCandidateKey
+      : currentOptions.find(({ candidateKey: key }) => matchingKeys.has(key))?.candidateKey
+    if (candidateKey) {
+      event.originalEvent.stopPropagation()
+      onJourneyOptionSelected?.(candidateKey)
+    }
+  }
+
+  const attachRouteClickListener = (): void => {
+    if (routeClickListenerInstalled) return
+    map.on('click', handleRouteClick)
+    routeClickListenerInstalled = true
+  }
+
+  const detachRouteClickListener = (): void => {
+    if (!routeClickListenerInstalled) return
+    map.off('click', handleRouteClick)
+    routeClickListenerInstalled = false
+  }
+
   const clearInstalledJourney = (): void => {
+    detachRouteClickListener()
     const layerIds = [
       JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
       JOURNEY_SELECTED_WALKING_LAYER_ID,
@@ -302,6 +354,7 @@ export function createJourneyRouteLayers(
     }
     durationMarkers.setJourneyOptions(options, selectedCandidateKey)
     installed = true
+    attachRouteClickListener()
   }
 
   return {

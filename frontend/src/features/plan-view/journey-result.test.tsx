@@ -176,6 +176,35 @@ describe('JourneyResult', () => {
     expect(markup).not.toContain('Stops:')
     expect(markup).not.toContain('journey-option-endpoint-arrow')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
+    expect(markup).not.toContain('not guaranteed arrival times')
+  })
+
+  it('does not show a walking-only travel-time disclaimer', () => {
+    const walkingJourney: Journey = {
+      origin: journey.origin,
+      destination: journey.destination,
+      legs: [{
+        mode: 'walking',
+        from: journey.origin,
+        to: journey.destination,
+        durationSeconds: 600,
+        distanceMeters: 4200,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
+      }],
+      totalDurationSeconds: 600,
+      totalDistanceMeters: 4200,
+      estimateStatus: 'estimated',
+      planningQuality: 'exact',
+    }
+    const markup = renderToStaticMarkup(
+      <JourneyResult
+        state={{ status: 'ready', journey: walkingJourney, candidates: [scoreJourney(walkingJourney)], error: null }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+
+    expect(markup).not.toContain('Travel times are estimates, not guaranteed arrival times.')
   })
 
   it('renders every Journey chosen from the candidate pool as an ordered Plan option', () => {
@@ -269,6 +298,9 @@ describe('JourneyResult', () => {
     expect(firstOptionButton.textContent).not.toContain('Destination venue')
     expect(firstOptionButton.textContent).toContain('10 min')
     expect(firstOptionButton.textContent).toContain('Walk 5 min')
+    const summaryBottomRow = firstOptionButton.querySelector('.journey-option-summary-bottomline')
+    expect(summaryBottomRow?.children[0]?.classList.contains('journey-option-modes')).toBe(true)
+    expect(summaryBottomRow?.children[1]?.classList.contains('journey-option-walking-total')).toBe(true)
     expect(firstOptionButton.getAttribute('aria-current')).toBe('true')
     expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(secondOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')

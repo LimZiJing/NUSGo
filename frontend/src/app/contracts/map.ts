@@ -14,6 +14,8 @@ export interface MapSessionOptions {
   readonly onEmptyMapClick: () => void
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
+  /** Selects a displayed Journey option from a map route or duration label. */
+  readonly onJourneyOptionSelected?: (candidateKey: string) => void
   /** Centre of the map area left visible by the current overlays. */
   readonly onMapCenterChange?: (center: MapCoordinate) => void
 }

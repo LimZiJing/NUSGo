@@ -262,12 +262,19 @@
   background: var(--surface-overlay);
   box-shadow: var(--shadow-md);
   font: 600 12px/1 var(--sans);
+  cursor: pointer;
+  appearance: none;
   white-space: nowrap;
 }
 
 .journey-duration-marker-selected {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.journey-duration-marker:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .bus-stop-marker-journey {

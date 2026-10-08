@@ -150,6 +150,39 @@ describe('navigation session application seam', () => {
     expect(session.dispose).toHaveBeenCalledOnce()
   })
 
+  it('routes map option selection through the shared session and reports its source', () => {
+    const map = createMapDouble()
+    const state = createInitialNavigationSessionState()
+    const session = createSessionDouble({
+      getState: vi.fn(() => ({
+        ...state,
+        journey: {
+          ...state.journey,
+          displayedCandidates: [{ candidateKey: 'option-b' }] as never,
+        },
+      })),
+    })
+    const onMapJourneyOptionSelected = vi.fn()
+    const dependencies = createMountDependencies(map, session)
+    const mount = createNavigationSessionMount({} as HTMLElement, {
+      ...dependencies,
+      onMapJourneyOptionSelected,
+    })
+    const mapOptions = dependencies.getMapOptions()
+
+    mapOptions?.onJourneyOptionSelected?.('option-b')
+
+    expect(session.selectJourneyOption).toHaveBeenCalledWith('option-b')
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledWith('option-b')
+    mapOptions?.onJourneyOptionSelected?.('stale-option')
+    expect(session.selectJourneyOption).toHaveBeenCalledOnce()
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledOnce()
+    mount.dispose()
+    mapOptions?.onJourneyOptionSelected?.('option-c')
+    expect(session.selectJourneyOption).toHaveBeenCalledOnce()
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledOnce()
+  })
+
   it('surfaces a safe startup failure after a non-abort rejection', async () => {
     const startupError = new Error('map effect failed')
     let state = createInitialNavigationSessionState()

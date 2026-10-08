@@ -9,7 +9,8 @@ const JOURNEY_DURATION_MARKER_SPACING = 32
 interface JourneyDurationMarker {
   readonly candidateKey: string
   readonly marker: Marker
-  readonly element: HTMLElement
+  readonly element: HTMLButtonElement
+  readonly onClick: (event: MouseEvent) => void
 }
 
 function haveOptionsChanged(
@@ -65,13 +66,17 @@ function getJourneyLabelPoint(journey: Journey): [number, number] | null {
   return lastSegment ? [lastSegment.to[0], lastSegment.to[1]] : null
 }
 
-function createDurationLabelElement(durationLabel: string, candidateKey: string): HTMLElement {
-  const element = document.createElement('div')
+function createDurationLabelElement(
+  durationLabel: string,
+  candidateKey: string,
+  optionNumber: number,
+): HTMLButtonElement {
+  const element = document.createElement('button')
+  element.type = 'button'
   element.className = 'journey-duration-marker'
   element.textContent = durationLabel
   element.dataset.candidateKey = candidateKey
-  element.setAttribute('aria-hidden', 'true')
-  element.style.pointerEvents = 'none'
+  element.setAttribute('aria-label', `Select journey option ${optionNumber}, ${durationLabel}`)
   element.style.zIndex = String(JOURNEY_DURATION_MARKER_Z_INDEX)
   return element
 }
@@ -84,12 +89,14 @@ function updateMarkerSelection(
     const selected = candidateKey === selectedCandidateKey
     element.classList.toggle('journey-duration-marker-selected', selected)
     element.classList.toggle('journey-duration-marker-alternative', !selected)
+    element.setAttribute('aria-pressed', String(selected))
   }
 }
 
 function createMarkers(
   map: Map,
   options: readonly MapJourneyOption[],
+  onJourneyOptionSelected?: (candidateKey: string) => void,
 ): JourneyDurationMarker[] {
   const markers: JourneyDurationMarker[] = []
   try {
@@ -100,20 +107,29 @@ function createMarkers(
       const element = createDurationLabelElement(
         formatDuration(journey.totalDurationSeconds),
         candidateKey,
+        candidateIndex + 1,
       )
       const verticalOffset = (
         candidateIndex - (options.length - 1) / 2
       ) * JOURNEY_DURATION_MARKER_SPACING
+      const onClick = (event: MouseEvent): void => {
+        event.stopPropagation()
+        onJourneyOptionSelected?.(candidateKey)
+      }
+      element.addEventListener('click', onClick)
       const marker = new Marker({
         anchor: 'center',
         element,
         offset: [0, verticalOffset],
       }).setLngLat(coordinate)
-      markers.push({ candidateKey, marker, element })
+      markers.push({ candidateKey, marker, element, onClick })
       marker.addTo(map)
     })
   } catch (error) {
-    markers.forEach(({ marker }) => marker.remove())
+    markers.forEach(({ marker, element, onClick }) => {
+      element.removeEventListener('click', onClick)
+      marker.remove()
+    })
     throw error
   }
   return markers
@@ -124,13 +140,19 @@ export interface JourneyDurationMarkers {
   dispose(): void
 }
 
-export function createJourneyDurationMarkers(map: Map): JourneyDurationMarkers {
+export function createJourneyDurationMarkers(
+  map: Map,
+  onJourneyOptionSelected?: (candidateKey: string) => void,
+): JourneyDurationMarkers {
   let disposed = false
   let currentOptions: readonly MapJourneyOption[] = []
   let markers: JourneyDurationMarker[] = []
 
   const clearMarkers = (): void => {
-    markers.forEach(({ marker }) => marker.remove())
+    markers.forEach(({ marker, element, onClick }) => {
+      element.removeEventListener('click', onClick)
+      marker.remove()
+    })
     markers = []
     currentOptions = []
   }
@@ -140,7 +162,7 @@ export function createJourneyDurationMarkers(map: Map): JourneyDurationMarkers {
       if (disposed) return
       if (haveOptionsChanged(currentOptions, options)) {
         clearMarkers()
-        markers = createMarkers(map, options)
+        markers = createMarkers(map, options, onJourneyOptionSelected)
         currentOptions = [...options]
       }
       updateMarkerSelection(markers, selectedCandidateKey)

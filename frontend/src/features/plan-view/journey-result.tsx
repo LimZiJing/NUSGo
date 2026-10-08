@@ -212,12 +212,10 @@ export function JourneyResult({
           ? 'This is a valid route found within a short search budget. A faster route may exist.'
           : null
         // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
-        const timingNotice = simulated
-          ? null
-          : hasShuttleLeg
-            ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
-            : 'Travel times are estimates, not guaranteed arrival times.'
-        const journeyNotice = [planningNotice, timingNotice].filter(Boolean).join(' ')
+        const liveArrivalNotice = !simulated && hasShuttleLeg
+          ? 'Live shuttle arrivals may be used when available.'
+          : null
+        const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
         // Keep the timestamp tied to the planning reference instead of recalculating it from each render.
         const departureTime = formatSingaporeDateTime(journeyReferenceTimeMs).slice(11)
         const arrivalTime = formatSingaporeDateTime(
@@ -238,6 +236,7 @@ export function JourneyResult({
                   id={titleId}
                   type="button"
                   className="journey-option-summary"
+                  data-candidate-key={candidateKey}
                   aria-expanded={selected}
                   aria-current={selected ? 'true' : undefined}
                   aria-controls={detailsId}
@@ -248,10 +247,12 @@ export function JourneyResult({
                     <span className="journey-option-estimate">
                       <span className="journey-option-duration">{formatDuration(journey.totalDurationSeconds)}</span>
                       <DisclosureChevron expanded={selected} />
-                      <span className="journey-option-walking-total">Walk {summary.walkingDurationLabel}</span>
                     </span>
                   </span>
-                  {renderJourneyModeSummary(summary)}
+                  <span className="journey-option-summary-bottomline">
+                    {renderJourneyModeSummary(summary)}
+                    <span className="journey-option-walking-total">Walk {summary.walkingDurationLabel}</span>
+                  </span>
                 </button>
               </h3>
               <div

@@ -187,7 +187,8 @@ describe('Plan view Journey result', () => {
       />,
     )
 
-    expect(markup).not.toContain('Recommended')
+    expect(markup).toContain('Recommended')
+    expect(markup).not.toMatch(/\b\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}\b/)
     expect(markup).toContain('Walk')
   })
 })

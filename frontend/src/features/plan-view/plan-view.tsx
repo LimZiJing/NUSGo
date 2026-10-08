@@ -68,7 +68,6 @@ export function PlanView({
     destination: '',
   })
   const [tripActionsOpen, setTripActionsOpen] = useState(false)
-  const [journeyReferenceTimeMs, setJourneyReferenceTimeMs] = useState<number | null>(null)
   const tripActionsRef = useRef<HTMLDivElement>(null)
   const tripValidation = validateTripRequest(tripRequest)
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
@@ -82,15 +81,9 @@ export function PlanView({
   }
   const clearTrip = (): void => {
     setSearchQueries({ origin: '', destination: '' })
-    setJourneyReferenceTimeMs(null)
     setTripActionsOpen(false)
     onClearTrip()
   }
-  const planJourney = (): void => {
-    setJourneyReferenceTimeMs(Date.now())
-    onPlanJourney()
-  }
-
   const previousTripRequest = useRef(tripRequest)
   const skipEndpointReset = useRef(false)
   const swapTripEndpoints = (): void => {
@@ -214,7 +207,7 @@ export function PlanView({
           <button
             type="button"
             className="plan-view-submit"
-            onClick={planJourney}
+            onClick={onPlanJourney}
             disabled={tripValidation !== null || journey.status === 'loading'}
             aria-label="Get route"
             title="Get route"
@@ -240,7 +233,6 @@ export function PlanView({
           venues={venues}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
-          referenceTimeMs={simulatedAtMs ?? journeyReferenceTimeMs}
           onSelectCandidate={onSelectJourneyOption}
         />
       </div>

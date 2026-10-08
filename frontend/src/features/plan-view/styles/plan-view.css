@@ -517,11 +517,31 @@
   gap: 8px;
 }
 
-.journey-option-times {
-  align-self: start;
-  color: var(--text-primary);
+.journey-option-heading-labels {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.journey-option-heading-recommended {
+  color: var(--status-success-strong);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.journey-option-heading-neutral {
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.25;
+}
+
+.journey-option-heading-qualifier {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.25;
 }
 
@@ -616,7 +636,11 @@
     padding: 10px;
   }
 
-  .journey-option-times {
+  .journey-option-heading-recommended {
+    font-size: 18px;
+  }
+
+  .journey-option-heading-neutral {
     font-size: 13px;
   }
 
@@ -966,18 +990,25 @@
     font-size: 16px;
   }
 
-  .plan-view-content {
+  .navigation-panel .plan-view-content {
     min-height: 0;
     max-height: var(--mobile-sheet-max-height);
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: auto;
   }
 
+  .navigation-panel .plan-view-content .journey-results {
+    /* The 32px offset plus the 12px sheet inset leaves symmetric 44px viewport gutters. */
+    width: calc(100vw - 88px);
+    margin-inline-start: 32px;
+    box-sizing: border-box;
+  }
+
   .plan-endpoint-picker {
-    /* Reclaim the scroll viewport's 8px padding and 4px end margin, then center in the sheet inset. */
-    width: calc(100% + var(--space-3));
-    margin-inline: var(--space-2) calc(-1 * (var(--space-3) + var(--space-2)));
+    width: 100%;
+    margin-inline: var(--space-2) 0;
   }
 
   .plan-view button,

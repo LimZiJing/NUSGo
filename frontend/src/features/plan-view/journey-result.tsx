@@ -1,7 +1,6 @@
-import { useState, type CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import { formatDuration } from '../../domain/trip/duration-format'
-import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '../../domain/venue/types'
@@ -10,6 +9,7 @@ import { DisclosureChevron } from '../../ui/disclosure-chevron'
 import {
   formatDistance,
   getJourneyCompactSummary,
+  getJourneyOptionHeader,
   getJourneyTimelineEntries,
   type JourneyCompactSummary,
   type JourneyTimelineEntry,
@@ -32,7 +32,6 @@ interface JourneyResultProps {
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
   readonly simulated?: boolean
-  readonly referenceTimeMs?: number | null
   readonly onSelectCandidate?: (candidateKey: string) => void
 }
 
@@ -66,6 +65,22 @@ function renderJourneyModeSummary(summary: JourneyCompactSummary) {
             <span>{segment.routeLabel}</span>
           </span>
         ))}
+    </span>
+  )
+}
+
+function renderJourneyOptionHeader(journey: Journey, optionIndex: number) {
+  const header = getJourneyOptionHeader(journey, optionIndex)
+  const headingClass = header.kind === 'recommended'
+    ? 'journey-option-heading-recommended'
+    : 'journey-option-heading-neutral'
+
+  return (
+    <span className="journey-option-heading-labels">
+      <strong className={headingClass}>{header.label}</strong>
+      {header.qualifier && (
+        <span className="journey-option-heading-qualifier">{header.qualifier}</span>
+      )}
     </span>
   )
 }
@@ -179,10 +194,8 @@ export function JourneyResult({
   networkIndex,
   venues,
   simulated = false,
-  referenceTimeMs = null,
   onSelectCandidate,
 }: JourneyResultProps) {
-  const [fallbackReferenceTimeMs] = useState(() => Date.now())
   if (state.status !== 'ready' || state.journey === null) {
     return renderJourneyStatus(state)
   }
@@ -201,8 +214,6 @@ export function JourneyResult({
   ))
     ? state.selectedCandidateKey!
     : candidates[0]!.candidateKey
-  const journeyReferenceTimeMs = referenceTimeMs ?? fallbackReferenceTimeMs
-
   return (
     <ol className="journey-results" aria-label="Journey options" aria-live="polite">
       {candidates.map(({ candidateKey, journey }, index) => {
@@ -216,11 +227,6 @@ export function JourneyResult({
           ? 'Live shuttle arrivals may be used when available.'
           : null
         const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
-        // Keep the timestamp tied to the planning reference instead of recalculating it from each render.
-        const departureTime = formatSingaporeDateTime(journeyReferenceTimeMs).slice(11)
-        const arrivalTime = formatSingaporeDateTime(
-          Math.ceil((journeyReferenceTimeMs + journey.totalDurationSeconds * 1000) / 60000) * 60000,
-        ).slice(11)
         const titleId = `journey-option-summary-${index + 1}`
         const detailsId = `journey-option-details-${index + 1}`
         const summary = getJourneyCompactSummary(journey, networkIndex)
@@ -243,7 +249,7 @@ export function JourneyResult({
                   onClick={() => onSelectCandidate?.(candidateKey)}
                 >
                   <span className="journey-option-summary-topline">
-                    <span className="journey-option-times">{departureTime} – {arrivalTime}</span>
+                    {renderJourneyOptionHeader(journey, index)}
                     <span className="journey-option-estimate">
                       <span className="journey-option-duration">{formatDuration(journey.totalDurationSeconds)}</span>
                       <DisclosureChevron expanded={selected} />

@@ -141,15 +141,14 @@ describe('JourneyResult', () => {
         state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
-        referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
       />,
     )
 
-    expect(markup).not.toContain('Recommended')
+    expect(markup).toContain('Recommended')
     expect(markup).not.toContain('Alternative 2')
     expect(markup).toContain('10 min')
     expect(markup).toContain('2.6 km')
-    expect(markup).toContain('08:00 – 08:10')
+    expect(markup).not.toMatch(/\b\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}\b/)
     expect(markup).toContain('Walk')
     expect(markup).toContain('journey-walking-icon')
     expect(markup).toContain(`>${route.name}<`)
@@ -241,10 +240,84 @@ describe('JourneyResult', () => {
     )
 
     expect(markup).toContain('aria-label="Journey options"')
-    expect(markup).not.toContain('Recommended')
+    expect(markup).toContain('Recommended')
     expect(markup).not.toContain('Alternative 2')
     expect(markup.match(/class="journey-option-summary"/g)).toHaveLength(2)
     expect(markup.match(/class="journey-result(?: journey-result-selected)?"/g)).toHaveLength(2)
+  })
+
+  it('renders recommendation and mode headers for each option without departure-arrival ranges', () => {
+    const walkingJourney: Journey = {
+      ...journey,
+      legs: [{
+        mode: 'walking',
+        from: journey.origin,
+        to: journey.destination,
+        durationSeconds: 600,
+        distanceMeters: 4200,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
+      }],
+      totalDurationSeconds: 600,
+      totalDistanceMeters: 4200,
+    }
+    const shuttleLeg = journey.legs.find((leg) => leg.mode === 'shuttle')
+    if (!shuttleLeg || shuttleLeg.mode !== 'shuttle') {
+      throw new Error('Test journey is missing its shuttle leg')
+    }
+    const transferJourney: Journey = {
+      ...journey,
+      legs: [
+        shuttleLeg,
+        {
+          ...shuttleLeg,
+          from: shuttleLeg.to,
+          to: shuttleLeg.from,
+          boardingStopId: shuttleLeg.alightingStopId,
+          alightingStopId: shuttleLeg.boardingStopId,
+        },
+      ],
+      totalDurationSeconds: shuttleLeg.durationSeconds * 2,
+      totalDistanceMeters: shuttleLeg.distanceMeters * 2,
+    }
+    const options = [
+      scoreJourney(walkingJourney, 'walking-recommendation'),
+      scoreJourney(journey, 'direct-shuttle'),
+      scoreJourney(transferJourney, 'one-transfer'),
+      scoreJourney(walkingJourney, 'walking-alternative'),
+    ]
+    const markup = renderToStaticMarkup(
+      <JourneyResult
+        state={{
+          status: 'ready',
+          journey: walkingJourney,
+          candidates: options,
+          displayedCandidates: options,
+          selectedCandidateKey: 'walking-alternative',
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+
+    const parsed = new DOMParser().parseFromString(markup, 'text/html')
+    const [recommended, direct, transfer, walking] = Array.from(
+      parsed.querySelectorAll('.journey-option-summary'),
+    )
+    expect(recommended?.querySelector('.journey-option-heading-recommended')?.textContent).toBe('Recommended')
+    expect(recommended?.querySelector('.journey-option-heading-qualifier')?.textContent).toBe('Walking')
+    expect(direct?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('Direct shuttle')
+    expect(transfer?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('1 transfer')
+    expect(walking?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('Walking')
+    expect(recommended?.getAttribute('aria-expanded')).toBe('false')
+    expect(walking?.getAttribute('aria-expanded')).toBe('true')
+    for (const option of [recommended, direct, transfer, walking]) {
+      expect(option?.querySelector('.journey-option-times')).toBeNull()
+      expect(option?.textContent).not.toMatch(/\b\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}\b/)
+      expect(option?.querySelector('.journey-option-duration')).toBeTruthy()
+      expect(option?.querySelector('.disclosure-chevron')).toBeTruthy()
+      expect(option?.querySelector('.journey-option-summary-bottomline')).toBeTruthy()
+    }
   })
 
   it('shows one accessible expanded option and keeps the first-ranked option in recommendation position', async () => {
@@ -282,7 +355,6 @@ describe('JourneyResult', () => {
         }}
         venues={venues}
         networkIndex={networkIndex}
-        referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
         onSelectCandidate={onSelectCandidate}
       />,
     )
@@ -291,7 +363,8 @@ describe('JourneyResult', () => {
     expect(firstOptionButton.getAttribute('aria-expanded')).toBe('true')
     expect(secondOptionButton.getAttribute('aria-expanded')).toBe('false')
     expect(secondOptionButton.getAttribute('aria-controls')).toBe('journey-option-details-2')
-    expect(firstOptionButton.textContent).toContain('08:00 – 08:10')
+    expect(firstOptionButton.textContent).toContain('Recommended')
+    expect(firstOptionButton.textContent).not.toMatch(/\b\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}\b/)
     expect(firstOptionButton.textContent).not.toContain('Depart')
     expect(firstOptionButton.textContent).not.toContain('Arrive')
     expect(firstOptionButton.textContent).not.toContain('Origin venue')
@@ -305,7 +378,8 @@ describe('JourneyResult', () => {
     expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(secondOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
     expect(screen.getByRole('img', { name: /Journey modes: Walk, .* shuttle, Walk/ })).toBeTruthy()
-    expect(screen.queryByText('Recommended')).toBeNull()
+    expect(screen.getByText('Recommended')).toBeTruthy()
+    expect(screen.getByText('Walking')).toBeTruthy()
     expect(screen.queryByText('Alternative 2')).toBeNull()
     expect(screen.queryByText('A faster route may exist')).toBeNull()
 

@@ -41,6 +41,12 @@ export interface JourneyCompactSummary {
   readonly modeSegments: readonly JourneyModeSummarySegment[]
 }
 
+export interface JourneyOptionHeader {
+  readonly kind: 'recommended' | 'neutral'
+  readonly label: string
+  readonly qualifier?: string
+}
+
 interface JourneyRoutePresentation {
   readonly routeLabel: string
   readonly routeColor: string | null
@@ -153,6 +159,29 @@ export function getJourneyCompactSummary(
   return {
     walkingDurationLabel: formatDuration(walkingDurationSeconds),
     modeSegments,
+  }
+}
+
+export function getJourneyOptionHeader(
+  journey: Journey,
+  optionIndex: number,
+): JourneyOptionHeader {
+  const shuttleLegCount = journey.legs.filter((leg) => leg.mode === 'shuttle').length
+  if (optionIndex === 0) {
+    return {
+      kind: 'recommended',
+      label: 'Recommended',
+      ...(shuttleLegCount === 0 ? { qualifier: 'Walking' } : {}),
+    }
+  }
+  if (shuttleLegCount === 0) return { kind: 'neutral', label: 'Walking' }
+
+  const transferCount = shuttleLegCount - 1
+  return {
+    kind: 'neutral',
+    label: transferCount === 0
+      ? 'Direct shuttle'
+      : `${transferCount} transfer${transferCount === 1 ? '' : 's'}`,
   }
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type MouseEvent, type PointerEvent } from 'react'
+import { useCallback, useEffect, useRef, type MouseEvent } from 'react'
 import { interruptMobileSheetAnimation } from './animate-mobile-sheet'
 import { getMobileTabBarInset } from './mobile-sheet-layout'
 import {
@@ -48,6 +48,7 @@ interface HiddenSheetContent {
 interface DragSession {
   readonly button: HTMLButtonElement
   readonly sheet: HTMLElement
+  readonly captureTarget: HTMLElement | null
   readonly pointerId: number
   readonly startDetent: MobileSheetDetent
   readonly startY: number
@@ -64,6 +65,11 @@ const DRAG_THRESHOLD = 6
 const DETENT_CHANGE_THRESHOLD = 24
 const SETTLE_DURATION = 220
 const SETTLE_EASING = 'cubic-bezier(0.2, 1.15, 0.3, 1)'
+
+function provideSheetSnapFeedback(): void {
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
+  navigator.vibrate(10)
+}
 
 function readInlineSheetStyles(sheet: HTMLElement): InlineSheetStyles {
   return {
@@ -223,13 +229,14 @@ function updateDragHeight(session: DragSession, clientY: number): void {
   session.sheet.style.bottom = `${session.currentBottom}px`
 }
 
-function releasePointer(button: HTMLButtonElement, pointerId: number): void {
+function releasePointer(target: HTMLElement | null, pointerId: number): void {
+  if (!target) return
   try {
     if (
-      typeof button.hasPointerCapture === 'function' &&
-      typeof button.releasePointerCapture === 'function' &&
-      button.hasPointerCapture(pointerId)
-    ) button.releasePointerCapture(pointerId)
+      typeof target.hasPointerCapture === 'function' &&
+      typeof target.releasePointerCapture === 'function' &&
+      target.hasPointerCapture(pointerId)
+    ) target.releasePointerCapture(pointerId)
   } catch {
     // The pointer may already have been released by the browser.
   }
@@ -237,6 +244,79 @@ function releasePointer(button: HTMLButtonElement, pointerId: number): void {
 
 function getInitialDetent(detent: MobileSheetDetent | undefined): MobileSheetDetent {
   return detent ?? 'partial'
+}
+
+const NON_DRAG_SHEET_TARGETS = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="tab"]',
+  '[role="menuitem"]',
+  '[role="checkbox"]',
+  '[role="switch"]',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[data-mobile-sheet-no-drag]',
+].join(',')
+
+function isPointOnText(
+  sheet: HTMLElement,
+  clientX: number,
+  clientY: number,
+  fallbackTarget: Element,
+): boolean {
+  const doc = sheet.ownerDocument as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null
+    caretRangeFromPoint?: (x: number, y: number) => Range | null
+  }
+  if (!doc.caretPositionFromPoint && !doc.caretRangeFromPoint) {
+    return Boolean(fallbackTarget.textContent?.trim())
+  }
+  const caret = doc.caretPositionFromPoint?.(clientX, clientY)
+  const range = caret ? null : doc.caretRangeFromPoint?.(clientX, clientY)
+  const node = caret?.offsetNode ?? range?.startContainer
+  const offset = caret?.offset ?? range?.startOffset
+  if (!node || offset === undefined || node.nodeType !== Node.TEXT_NODE || !sheet.contains(node)) return false
+
+  const text = node.textContent ?? ''
+  if (!text.trim()) return false
+  const characterIndex = Math.min(Math.max(offset, 0), text.length - 1)
+  if (!text[characterIndex]?.trim()) return false
+
+  const characterRange = doc.createRange()
+  characterRange.setStart(node, characterIndex)
+  characterRange.setEnd(node, characterIndex + 1)
+  return Array.from(characterRange.getClientRects()).some((rect) => (
+    rect.width > 0 && rect.height > 0 &&
+    clientX >= rect.left && clientX <= rect.right &&
+    clientY >= rect.top && clientY <= rect.bottom
+  ))
+}
+
+function isWhitespaceSheetTarget(
+  sheet: HTMLElement,
+  eventTarget: EventTarget | null,
+  clientX: number,
+  clientY: number,
+): boolean {
+  const target = eventTarget instanceof Element ? eventTarget : null
+  if (!target || target.closest('[data-mobile-sheet-handle], .navigation-panel-scroll-content')) return false
+  if (target.closest(NON_DRAG_SHEET_TARGETS)) return false
+
+  for (let element: Element | null = target; element && element !== sheet; element = element.parentElement) {
+    if (!(element instanceof HTMLElement)) continue
+    const style = window.getComputedStyle(element)
+    if (/^(auto|scroll|overlay)$/.test(style.overflowY) || /^(auto|scroll|overlay)$/.test(style.overflowX)) {
+      return false
+    }
+  }
+
+  return !isPointOnText(sheet, clientX, clientY, target)
 }
 
 export function MobileSheetHandle({
@@ -249,6 +329,7 @@ export function MobileSheetHandle({
   onDetentChange,
 }: MobileSheetHandleProps) {
   const detent = getInitialDetent(passedDetent)
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
   const dragRef = useRef<DragSession | null>(null)
   const settlingRef = useRef<DragSession | null>(null)
   const settleTimerRef = useRef<number | null>(null)
@@ -260,6 +341,7 @@ export function MobileSheetHandle({
   }, [onDetentChange])
 
   const assignButtonRef = useCallback((button: HTMLButtonElement | null): void => {
+    buttonRef.current = button
     onButtonRef?.(button)
   }, [onButtonRef])
 
@@ -278,7 +360,7 @@ export function MobileSheetHandle({
     const session = dragRef.current
     if (!session) return
     dragRef.current = null
-    releasePointer(session.button, session.pointerId)
+    releasePointer(session.captureTarget, session.pointerId)
     restoreSheet(session.sheet, session.styles)
     restoreHiddenContent(session.hiddenContent)
   }, [])
@@ -291,13 +373,15 @@ export function MobileSheetHandle({
     }
   }, [cancelDrag, clearSettling])
 
-  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>): void => {
-    if (event.button !== 0 || event.isPrimary === false) return
+  const beginDrag = useCallback((
+    pointerId: number,
+    clientY: number,
+    sheet: HTMLElement,
+    button: HTMLButtonElement,
+    captureTarget: HTMLElement | null,
+    focusButton: boolean,
+  ): void => {
     clearSettling()
-
-    const sheet = event.currentTarget.closest<HTMLElement>('[data-mobile-sheet]')
-    if (!sheet) return
-
     const animationPosition = interruptMobileSheetAnimation(sheet)
     const startHeight = animationPosition?.height ?? sheet.getBoundingClientRect().height
     const partialHeight = measureSheetHeight(sheet, 'partial')
@@ -312,13 +396,14 @@ export function MobileSheetHandle({
       { detent: 'full', height: fullHeight, bottom: tabBarInset },
     ]
 
-    event.currentTarget.focus()
+    if (focusButton) button.focus()
     const session: DragSession = {
-      button: event.currentTarget,
+      button,
       sheet,
-      pointerId: event.pointerId,
+      captureTarget,
+      pointerId,
       startDetent: detent,
-      startY: event.clientY,
+      startY: clientY,
       startHeight,
       stops,
       styles: readInlineSheetStyles(sheet),
@@ -339,26 +424,32 @@ export function MobileSheetHandle({
     sheet.style.setProperty('top', 'auto', 'important')
     sheet.style.bottom = `${session.currentBottom}px`
 
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId)
-    } catch {
-      // Pointer capture is unavailable in some test and embedded browsers.
+    if (captureTarget) {
+      try {
+        captureTarget.setPointerCapture(pointerId)
+      } catch {
+        // Pointer capture is unavailable in some test and embedded browsers.
+      }
     }
-  }
+  }, [clearSettling, detent])
 
-  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>): void => {
+  const moveDrag = useCallback((
+    pointerId: number,
+    clientY: number,
+    preventDefault: () => void,
+  ): void => {
     const session = dragRef.current
-    if (!session || session.pointerId !== event.pointerId) return
-    updateDragHeight(session, event.clientY)
-    if (session.moved) event.preventDefault()
-  }
+    if (!session || session.pointerId !== pointerId) return
+    updateDragHeight(session, clientY)
+    if (session.moved) preventDefault()
+  }, [])
 
-  const handlePointerUp = (event: PointerEvent<HTMLButtonElement>): void => {
+  const finishDrag = useCallback((pointerId: number, clientY: number): void => {
     const session = dragRef.current
-    if (!session || session.pointerId !== event.pointerId) return
-    updateDragHeight(session, event.clientY)
+    if (!session || session.pointerId !== pointerId) return
+    updateDragHeight(session, clientY)
     dragRef.current = null
-    releasePointer(session.button, session.pointerId)
+    releasePointer(session.captureTarget, session.pointerId)
 
     if (!session.moved) {
       restoreSheet(session.sheet, session.styles)
@@ -376,6 +467,7 @@ export function MobileSheetHandle({
     }, 0)
 
     const target = stopForDragRelease(session)
+    if (target.detent !== session.startDetent) provideSheetSnapFeedback()
     if (target.detent === 'collapsed') {
       session.sheet.removeAttribute('data-mobile-sheet-dragging')
       restoreHiddenContent(session.hiddenContent)
@@ -399,13 +491,98 @@ export function MobileSheetHandle({
     settleTimerRef.current = window.setTimeout(() => {
       clearSettling()
     }, duration + 40)
-  }
+  }, [changeDetent, clearSettling])
 
-  const handlePointerCancel = (event: PointerEvent<HTMLButtonElement>): void => {
-    const session = dragRef.current
-    if (!session || session.pointerId !== event.pointerId) return
-    cancelDrag()
-  }
+  useEffect(() => {
+    const button = buttonRef.current
+    const sheet = button?.closest<HTMLElement>('[data-mobile-sheet]')
+    if (!button || !sheet) return
+
+    const handleSheetPointerDown = (event: globalThis.PointerEvent): void => {
+      if (event.button !== 0 || event.isPrimary === false) return
+      const startedOnHandle = event.target instanceof Node && button.contains(event.target)
+      if (event.pointerType === 'touch' && !startedOnHandle) return
+      if (!startedOnHandle && !isWhitespaceSheetTarget(sheet, event.target, event.clientX, event.clientY)) return
+      beginDrag(
+        event.pointerId,
+        event.clientY,
+        sheet,
+        button,
+        startedOnHandle ? button : sheet,
+        startedOnHandle,
+      )
+    }
+    const handleSheetPointerMove = (event: globalThis.PointerEvent): void => {
+      if (event.pointerType === 'touch' && dragRef.current?.captureTarget === null) return
+      if (dragRef.current?.sheet !== sheet) return
+      moveDrag(event.pointerId, event.clientY, () => event.preventDefault())
+    }
+    const handleSheetPointerUp = (event: globalThis.PointerEvent): void => {
+      if (event.pointerType === 'touch' && dragRef.current?.captureTarget === null) return
+      if (dragRef.current?.sheet !== sheet) return
+      finishDrag(event.pointerId, event.clientY)
+    }
+    const handleSheetPointerCancel = (event: globalThis.PointerEvent): void => {
+      const session = dragRef.current
+      if (event.pointerType === 'touch' && session?.captureTarget === null) return
+      if (session?.sheet !== sheet || session.pointerId !== event.pointerId) return
+      cancelDrag()
+    }
+
+    sheet.addEventListener('pointerdown', handleSheetPointerDown)
+    sheet.addEventListener('pointermove', handleSheetPointerMove)
+    sheet.addEventListener('pointerup', handleSheetPointerUp)
+    sheet.addEventListener('pointercancel', handleSheetPointerCancel)
+
+    let touchPointerId: number | null = null
+    const handleSheetTouchStart = (event: TouchEvent): void => {
+      if (event.touches.length > 1) {
+        if (touchPointerId !== null) {
+          touchPointerId = null
+          cancelDrag()
+        }
+        return
+      }
+      if (touchPointerId !== null || event.touches.length !== 1) return
+      const touch = event.changedTouches[0]
+      if (!touch || !isWhitespaceSheetTarget(sheet, event.target, touch.clientX, touch.clientY)) return
+      touchPointerId = touch.identifier
+      beginDrag(touch.identifier, touch.clientY, sheet, button, null, false)
+    }
+    const handleSheetTouchMove = (event: TouchEvent): void => {
+      if (touchPointerId === null) return
+      const touch = Array.from(event.changedTouches).find(({ identifier }) => identifier === touchPointerId)
+      if (!touch) return
+      moveDrag(touchPointerId, touch.clientY, () => event.preventDefault())
+    }
+    const handleSheetTouchEnd = (event: TouchEvent): void => {
+      if (touchPointerId === null) return
+      const touch = Array.from(event.changedTouches).find(({ identifier }) => identifier === touchPointerId)
+      if (!touch) return
+      finishDrag(touchPointerId, touch.clientY)
+      touchPointerId = null
+    }
+    const handleSheetTouchCancel = (): void => {
+      if (touchPointerId === null) return
+      touchPointerId = null
+      cancelDrag()
+    }
+
+    sheet.addEventListener('touchstart', handleSheetTouchStart, { passive: true })
+    sheet.addEventListener('touchmove', handleSheetTouchMove, { passive: false })
+    sheet.addEventListener('touchend', handleSheetTouchEnd)
+    sheet.addEventListener('touchcancel', handleSheetTouchCancel)
+    return () => {
+      sheet.removeEventListener('pointerdown', handleSheetPointerDown)
+      sheet.removeEventListener('pointermove', handleSheetPointerMove)
+      sheet.removeEventListener('pointerup', handleSheetPointerUp)
+      sheet.removeEventListener('pointercancel', handleSheetPointerCancel)
+      sheet.removeEventListener('touchstart', handleSheetTouchStart)
+      sheet.removeEventListener('touchmove', handleSheetTouchMove)
+      sheet.removeEventListener('touchend', handleSheetTouchEnd)
+      sheet.removeEventListener('touchcancel', handleSheetTouchCancel)
+    }
+  }, [beginDrag, cancelDrag, finishDrag, moveDrag])
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     if (suppressClickRef.current) {
@@ -426,6 +603,7 @@ export function MobileSheetHandle({
     if (nextDetent === 'collapsed' && content?.contains(document.activeElement)) {
       event.currentTarget.focus()
     }
+    if (nextDetent !== detent) provideSheetSnapFeedback()
     onBeforeClick?.()
     changeDetent(nextDetent)
   }
@@ -443,10 +621,6 @@ export function MobileSheetHandle({
       aria-description={detent === 'partial' ? 'Opens the full-height sheet.' : undefined}
       data-mobile-sheet-handle
       data-mobile-sheet-restore-detent={restoreDetent}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
       onClick={handleClick}
     >
       <span aria-hidden="true" className="mobile-sheet-grabber" />

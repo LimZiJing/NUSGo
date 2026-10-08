@@ -1,5 +1,5 @@
 import { Drawer } from '@base-ui/react/drawer'
-import { useCallback, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react'
 import { MobileSheetHandle } from './mobile-sheet-handle'
 import { getMobileTabBarInset } from './mobile-sheet-layout'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
@@ -45,12 +45,10 @@ export function BaseUiMobileSheet({
   panelProps,
   children,
 }: BaseUiMobileSheetProps) {
-  const viewportRef = useRef<HTMLDivElement>(null)
   const [snapPoints, setSnapPoints] = useState<BaseUiMobileSheetSnapPoints>(INITIAL_SNAP_POINTS)
   const updateSnapPoints = useCallback((): void => {
-    const viewport = viewportRef.current
-    const mapShell = viewport?.closest<HTMLElement>('.map-shell')
-    if (!viewport || !mapShell) return
+    const mapShell = portalContainer
+    if (!mapShell) return
 
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight
     const tabBar = mapShell.querySelector<HTMLElement>('.main-navigation')
@@ -85,13 +83,14 @@ export function BaseUiMobileSheet({
     setSnapPoints((current) => current.every((point, index) => point === nextSnapPoints[index])
       ? current
       : nextSnapPoints)
-  }, [])
+  }, [portalContainer])
 
   useLayoutEffect(() => {
-    const viewport = viewportRef.current
-    const mapShell = viewport?.closest<HTMLElement>('.map-shell')
-    if (!viewport || !mapShell) return
+    const mapShell = portalContainer
+    if (!mapShell) return
 
+    // Sync measured points before paint so the opening frame never uses fallback heights.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Required to prevent a first-frame detent jump.
     updateSnapPoints()
     window.addEventListener('resize', updateSnapPoints)
     window.visualViewport?.addEventListener('resize', updateSnapPoints)
@@ -132,7 +131,6 @@ export function BaseUiMobileSheet({
           <Drawer.Viewport
             className="base-ui-mobile-sheet-viewport"
             data-detent={detent}
-            ref={viewportRef}
           >
             <Drawer.Popup
               {...panelProps}

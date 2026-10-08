@@ -199,7 +199,7 @@
 
   .base-ui-mobile-sheet-viewport {
     position: absolute;
-    z-index: 14;
+    z-index: 20;
     inset: 0;
     overflow: hidden;
     clip-path: inset(0 0 var(--mobile-tab-bar-height) 0);
@@ -232,6 +232,11 @@
     transition: transform var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: auto;
     will-change: transform;
+  }
+
+  .base-ui-mobile-sheet-viewport[data-starting-style],
+  .base-ui-mobile-sheet-popup[data-starting-style] {
+    transition: none;
   }
 
   .base-ui-mobile-sheet-viewport,

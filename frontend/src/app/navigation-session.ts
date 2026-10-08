@@ -32,8 +32,6 @@ import {
   type LocationTrackingState,
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
-import { findNearestVenue } from '../domain/venue/nearest'
-import type { Journey } from '../domain/trip/journey'
 import {
   NoJourneyAvailableError,
   type JourneyPlanningService,

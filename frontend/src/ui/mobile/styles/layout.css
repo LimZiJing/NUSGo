@@ -15,7 +15,12 @@
     --mobile-tab-bar-height: calc(
       var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
     );
-    --mobile-sheet-collapsed-height: 44px;
+    --mobile-sheet-handle-row-height: 36px;
+    --mobile-sheet-handle-target-extension: 8px;
+    --mobile-sheet-grabber-offset: -4px;
+    --mobile-sheet-collapsed-height: calc(
+      var(--mobile-sheet-handle-row-height) + var(--mobile-sheet-handle-target-extension)
+    );
     --mobile-sheet-max-height: max(0px, calc(60% - var(--mobile-tab-bar-height)));
     --mobile-sheet-min-height: min(200px, var(--mobile-sheet-max-height));
   }

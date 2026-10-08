@@ -18,7 +18,7 @@
       max(12px, env(safe-area-inset-left));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     background: var(--surface-overlay);
-    box-shadow: var(--shadow-panel);
+    box-shadow: var(--shadow-sheet);
   }
 
   .navigation-panel:focus-within {
@@ -27,7 +27,7 @@
 
   [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row),
   [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'] > :not(.mobile-sheet-handle-row) {
-    animation: mobile-sheet-content-enter 180ms ease-out both;
+    animation: mobile-sheet-content-enter var(--motion-duration-standard) var(--motion-ease-standard) both;
   }
 
   @keyframes mobile-sheet-content-enter {

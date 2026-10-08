@@ -62,7 +62,7 @@ describe('selectJourneysForDisplay', () => {
     const walking = candidate('walk', 'walking', 160)
 
     expect(selectJourneysForDisplay([busA, walking, busB, busC]))
-      .toEqual([busA, busB, busC])
+      .toEqual([busA, busB, busC, walking])
   })
 
   it('uses a strict adjusted-duration 20% boundary', () => {
@@ -73,18 +73,19 @@ describe('selectJourneysForDisplay', () => {
     const fasterWalk = candidate('faster', 'walking', 159.9)
 
     expect(selectJourneysForDisplay([boundaryWalk, busC, busA, busB]))
-      .toEqual([busA, busB, busC])
+      .toEqual([busA, busB, busC, boundaryWalk])
     expect(selectJourneysForDisplay([fasterWalk, busC, busA, busB]))
-      .toEqual([fasterWalk, busA, busB])
+      .toEqual([fasterWalk, busA, busB, busC])
   })
 
-  it('includes walking only when fewer than three buses are available', () => {
+  it('includes walking after all three bus candidates when it does not meet the strict threshold', () => {
     const busA = candidate('A1', 'shuttle', 200)
     const busB = candidate('B1', 'shuttle', 240)
-    const walking = candidate('walk', 'walking', 180)
+    const busC = candidate('C1', 'shuttle', 280)
+    const walking = candidate('walk', 'walking', 170)
 
-    expect(selectJourneysForDisplay([walking, busB, busA]))
-      .toEqual([busA, busB, walking])
+    expect(selectJourneysForDisplay([walking, busB, busA, busC]))
+      .toEqual([busA, busB, busC, walking])
   })
 
   it('shows the fastest walking Journey alone when no bus candidate exists', () => {
@@ -129,7 +130,7 @@ describe('selectJourneysForDisplay', () => {
     expect(selectJourneysForDisplay([incomplete, invalid, complete])).toEqual([complete])
   })
 
-  it('displays no more than three distinct Journeys', () => {
+  it('displays up to three distinct bus Journeys plus one walking Journey', () => {
     const buses = [
       candidate('A1', 'shuttle', 200),
       candidate('B1', 'shuttle', 210),
@@ -139,6 +140,6 @@ describe('selectJourneysForDisplay', () => {
     const walking = candidate('walk', 'walking', 180)
 
     expect(selectJourneysForDisplay([...buses, walking]))
-      .toEqual(buses.slice(0, 3))
+      .toEqual([...buses.slice(0, 3), walking])
   })
 })

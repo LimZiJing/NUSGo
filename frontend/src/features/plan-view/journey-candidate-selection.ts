@@ -169,13 +169,13 @@ export function selectJourneysForDisplay(
     walkingCandidate &&
     walkingCandidate.adjustedDurationSeconds < busCandidates[0]!.adjustedDurationSeconds * WALKING_FIRST_RATIO
   ) {
-    return [walkingCandidate, ...busCandidates.slice(0, MAX_DISPLAYED_JOURNEYS - 1)]
+    return [walkingCandidate, ...busCandidates]
   }
 
   return [
     ...busCandidates,
-    ...(busCandidates.length < MAX_DISPLAYED_JOURNEYS && walkingCandidate
+    ...(walkingCandidate
       ? [walkingCandidate]
       : []),
-  ].slice(0, MAX_DISPLAYED_JOURNEYS)
+  ]
 }

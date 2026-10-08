@@ -19,6 +19,7 @@ export interface JourneyResultState {
   readonly status: JourneyStatus
   readonly journey: Journey | null
   readonly candidates: readonly ScoredJourneyCandidate[]
+  readonly displayedCandidates?: readonly ScoredJourneyCandidate[]
   readonly error: string | null
 }
 
@@ -146,7 +147,7 @@ export function JourneyResult({
     return renderJourneyStatus(state)
   }
 
-  const candidates = selectJourneysForDisplay(state.candidates)
+  const candidates = state.displayedCandidates ?? selectJourneysForDisplay(state.candidates)
   if (candidates.length === 0) {
     return renderJourneyStatus({
       status: 'no-route',

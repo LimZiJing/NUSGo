@@ -3,6 +3,7 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex, generateShuttleTimingData } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { Journey } from '../domain/trip/journey'
+import type { ScoredJourneyCandidate } from '../domain/trip/planner'
 import type { JourneyPlanningServiceResult } from './journey-planning'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '../domain/venue/validation'
@@ -164,15 +165,69 @@ function createJourney(destination: TripEndpoint): Journey {
   }
 }
 
-function createPlanningResult(journey: Journey): JourneyPlanningServiceResult {
+function createShuttleJourney(): Journey {
+  const origin = { kind: 'venue', id: 'COM1' } as const
+  const boarding = { kind: 'stop', id: 'STOP-A' } as const
+  const destination = { kind: 'stop', id: 'STOP-B' } as const
+  return {
+    origin,
+    destination,
+    legs: [
+      {
+        mode: 'walking',
+        from: origin,
+        to: boarding,
+        durationSeconds: 30,
+        distanceMeters: 35,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1.001]] },
+      },
+      {
+        mode: 'shuttle',
+        from: boarding,
+        to: destination,
+        durationSeconds: 300,
+        distanceMeters: 2500,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.1, 1.1]] },
+        routeId: 'A1',
+        boardingStopId: boarding.id,
+        alightingStopId: destination.id,
+        waitingSeconds: 0,
+        rideSeconds: 300,
+      },
+    ],
+    totalDurationSeconds: 330,
+    totalDistanceMeters: 2535,
+    estimateStatus: 'estimated',
+    planningQuality: 'exact',
+  }
+}
+
+function scoreCandidate(candidateKey: string, journey: Journey): ScoredJourneyCandidate {
+  let shuttleBoardings = 0
+  let adjustedDurationSeconds = 0
+  for (const leg of journey.legs) {
+    if (leg.mode === 'walking') {
+      adjustedDurationSeconds += leg.durationSeconds / 0.8
+    } else {
+      adjustedDurationSeconds += leg.durationSeconds / (shuttleBoardings > 0 ? 0.9 : 1)
+      shuttleBoardings += 1
+    }
+  }
+  return {
+    candidateKey,
+    journey,
+    adjustedDurationSeconds,
+    score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
+  }
+}
+
+function createPlanningResult(
+  journey: Journey,
+  candidates: readonly ScoredJourneyCandidate[] = [scoreCandidate('test-candidate', journey)],
+): JourneyPlanningServiceResult {
   return {
     ...journey,
-    candidates: [{
-      candidateKey: 'test-candidate',
-      journey,
-      adjustedDurationSeconds: journey.totalDurationSeconds,
-      score: 1 / Math.max(1, journey.totalDurationSeconds),
-    }],
+    candidates,
     status: 'complete',
     expandedPathCount: 1,
     indexBuildDurationMs: 0,
@@ -218,7 +273,14 @@ describe('navigation session', () => {
         history: [],
       },
       tripRequest: { origin: null, destination: null },
-      journey: { status: 'idle', journey: null, candidates: [], error: null },
+      journey: {
+        status: 'idle',
+        journey: null,
+        candidates: [],
+        displayedCandidates: [],
+        selectedCandidateKey: null,
+        error: null,
+      },
       location: { status: 'disabled', latestFix: null },
       originLocationRequest: { status: 'idle', error: null },
       locationMarkerVisible: true,
@@ -299,6 +361,8 @@ describe('navigation session', () => {
       status: 'idle',
       journey: null,
       candidates: [],
+      displayedCandidates: [],
+      selectedCandidateKey: null,
       error: null,
     })
 
@@ -307,6 +371,8 @@ describe('navigation session', () => {
       status: 'loading',
       journey: null,
       candidates: [],
+      displayedCandidates: [],
+      selectedCandidateKey: null,
       error: null,
     })
     const journey = createJourney({ kind: 'stop', id: 'STOP-A' })
@@ -337,6 +403,73 @@ describe('navigation session', () => {
 
     firstPlanning.resolve(createPlanningResult(createJourney({ kind: 'stop', id: 'STOP-A' })))
     await waitForState(session, (state) => state.journey.status === 'ready')
+  })
+
+  it('defaults to the Recommended display option and updates selection without replanning', async () => {
+    const busJourney = createShuttleJourney()
+    const walkingJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    const result = createPlanningResult(busJourney, [
+      scoreCandidate('bus-option', busJourney),
+      scoreCandidate('walking-option', walkingJourney),
+    ])
+    const journeyPlanner = vi.fn(async () => result)
+    const dependencies = createDependencies({ journeyPlanner })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+
+    session.planJourney()
+    await waitForState(session, (state) => state.journey.status === 'ready')
+
+    expect(session.getState().journey.displayedCandidates.map(({ candidateKey }) => candidateKey))
+      .toEqual(['walking-option', 'bus-option'])
+    expect(session.getState().journey.selectedCandidateKey).toBe('walking-option')
+    expect(session.getState().journey.journey).toEqual(walkingJourney)
+    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(walkingJourney)
+
+    session.selectJourneyOption('bus-option')
+
+    expect(session.getState().journey.selectedCandidateKey).toBe('bus-option')
+    expect(session.getState().journey.journey).toEqual(busJourney)
+    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(busJourney)
+    expect(journeyPlanner).toHaveBeenCalledOnce()
+  })
+
+  it('resets an alternative selection to Recommended when a new calculation starts', async () => {
+    const busJourney = createShuttleJourney()
+    const walkingJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    const result = createPlanningResult(busJourney, [
+      scoreCandidate('bus-option', busJourney),
+      scoreCandidate('walking-option', walkingJourney),
+    ])
+    const nextPlanning = createDeferred<JourneyPlanningServiceResult | null>()
+    const journeyPlanner = vi.fn()
+      .mockResolvedValueOnce(result)
+      .mockImplementationOnce(() => nextPlanning.promise)
+    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    await session.start(new AbortController().signal)
+    session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
+
+    session.planJourney()
+    await waitForState(session, (state) => state.journey.status === 'ready')
+    session.selectJourneyOption('bus-option')
+    expect(session.getState().journey.selectedCandidateKey).toBe('bus-option')
+
+    session.replanJourney()
+
+    expect(session.getState().journey).toMatchObject({
+      status: 'loading',
+      selectedCandidateKey: null,
+      displayedCandidates: [],
+    })
+    nextPlanning.resolve(result)
+    await waitForState(session, (state) => (
+      state.journey.status === 'ready' && state.journey.selectedCandidateKey === 'walking-option'
+    ))
+    expect(session.getState().journey.journey).toEqual(walkingJourney)
+    expect(journeyPlanner).toHaveBeenCalledTimes(2)
   })
 
   it('cancels an in-flight Journey and replans when test time changes', async () => {
@@ -382,6 +515,8 @@ describe('navigation session', () => {
       status: 'idle',
       journey: null,
       candidates: [],
+      displayedCandidates: [],
+      selectedCandidateKey: null,
       error: null,
     })
     expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
@@ -405,6 +540,8 @@ describe('navigation session', () => {
       status: 'failed',
       journey: null,
       candidates: [],
+      displayedCandidates: [],
+      selectedCandidateKey: null,
       error: 'Unable to plan journey',
     })
   })
@@ -442,6 +579,8 @@ describe('navigation session', () => {
       status: 'idle',
       journey: null,
       candidates: [],
+      displayedCandidates: [],
+      selectedCandidateKey: null,
       error: null,
     })
     expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)

@@ -1,4 +1,5 @@
 import { createInitialExploreViewState, type ExploreViewState } from '../features/explore-view/state'
+import { selectJourneysForDisplay } from '../features/plan-view/journey-candidate-selection'
 import type { TransitIndex } from '../domain/transit'
 import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
 import {
@@ -31,13 +32,17 @@ import {
   type LocationTrackingState,
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
+import { findNearestVenue } from '../domain/venue/nearest'
 import type { Journey } from '../domain/trip/journey'
 import {
   NoJourneyAvailableError,
   type JourneyPlanningService,
-  type JourneyPlanningServiceResult,
 } from './journey-planning'
-import { createInitialJourneyState, type JourneyState } from './journey-state'
+import {
+  createInitialJourneyState,
+  createJourneyStateWithStatus,
+  type JourneyState,
+} from './journey-state'
 import { getLocationControlTarget, getResetTarget } from './map-camera'
 import { createNavigationSessionResourceLoading } from './navigation-session-loading'
 import { canonicalizeTripEndpoint, isTripEndpointRole } from './navigation-session-validation'
@@ -49,18 +54,6 @@ import {
 
 const STARTUP_FAILURE_STATUS = 'Unable to start map navigation'
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
-
-function getPrimaryJourney(result: JourneyPlanningServiceResult): Journey {
-  return {
-    origin: result.origin,
-    destination: result.destination,
-    legs: result.legs,
-    totalDurationSeconds: result.totalDurationSeconds,
-    totalDistanceMeters: result.totalDistanceMeters,
-    estimateStatus: result.estimateStatus,
-    planningQuality: result.planningQuality,
-  }
-}
 
 export interface NavigationSessionStartupFailure {
   readonly message: string
@@ -130,6 +123,7 @@ export interface NavigationSession {
   clearTrip(): void
   planJourney(): void
   replanJourney(): void
+  selectJourneyOption(candidateKey: string): void
   setExploreViewQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   reportStartupFailure(): void
@@ -269,7 +263,12 @@ export function createNavigationSession(
   const resetJourney = (): void => {
     cancelJourneyPlanning()
     dependencies.map.setJourney(null)
-    if (state.journey.status !== 'idle' || state.journey.journey !== null || state.journey.error !== null) {
+    if (
+      state.journey.status !== 'idle' ||
+      state.journey.journey !== null ||
+      state.journey.selectedCandidateKey !== null ||
+      state.journey.error !== null
+    ) {
       updateState({ journey: createInitialJourneyState() })
     }
   }
@@ -356,21 +355,31 @@ export function createNavigationSession(
     }
     dependencies.map.setJourney(null)
     updateState({
-      journey: { status: 'loading', journey: null, candidates: [], error: null },
+      journey: createJourneyStateWithStatus('loading'),
     })
 
     void journeyPlanner(request).then(
       (planningResult) => {
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
-        const journey = planningResult === null ? null : getPrimaryJourney(planningResult)
+        const displayedCandidates = planningResult === null
+          ? []
+          : selectJourneysForDisplay(planningResult.candidates)
+        const recommended = displayedCandidates[0] ?? null
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
-          dependencies.map.setJourney(journey)
+          dependencies.map.setJourney(recommended?.journey ?? null)
           updateState({
-            journey: journey
-              ? { status: 'ready', journey, candidates: planningResult!.candidates, error: null }
-              : { status: 'no-route', journey: null, candidates: [], error: null },
+            journey: recommended && planningResult
+              ? {
+                  status: 'ready',
+                  journey: recommended.journey,
+                  candidates: planningResult.candidates,
+                  displayedCandidates,
+                  selectedCandidateKey: recommended.candidateKey,
+                  error: null,
+                }
+              : createJourneyStateWithStatus('no-route'),
           })
         })
       },
@@ -386,6 +395,8 @@ export function createNavigationSession(
                 status: 'no-route',
                 journey: null,
                 candidates: [],
+                displayedCandidates: [],
+                selectedCandidateKey: null,
                 error: error.message,
               },
             })
@@ -396,6 +407,8 @@ export function createNavigationSession(
               status: 'failed',
               journey: null,
               candidates: [],
+              displayedCandidates: [],
+              selectedCandidateKey: null,
               error: 'Unable to plan journey',
             },
           })
@@ -811,7 +824,7 @@ export function createNavigationSession(
       journeyPlanningRequested = true
       enqueueTransition(() => {
         if (disposed) return
-        updateState({ journey: { status: 'loading', journey: null, candidates: [], error: null } })
+        updateState({ journey: createJourneyStateWithStatus('loading') })
         requestJourneyPlanning()
       })
     },
@@ -821,6 +834,22 @@ export function createNavigationSession(
       cancelJourneyPlanning()
       enqueueTransition(() => {
         if (!disposed) requestJourneyPlanning()
+      })
+    },
+
+    selectJourneyOption(candidateKey) {
+      if (disposed || state.journey.status !== 'ready') return
+      const candidate = state.journey.displayedCandidates.find(({ candidateKey: key }) => (
+        key === candidateKey
+      ))
+      if (!candidate || state.journey.selectedCandidateKey === candidateKey) return
+      dependencies.map.setJourney(candidate.journey)
+      updateState({
+        journey: {
+          ...state.journey,
+          journey: candidate.journey,
+          selectedCandidateKey: candidate.candidateKey,
+        },
       })
     },
 

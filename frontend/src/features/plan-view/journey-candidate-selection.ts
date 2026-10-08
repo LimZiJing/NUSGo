@@ -120,13 +120,6 @@ function compareText(first: string, second: string): number {
   return 0
 }
 
-function getJourneySequenceKey(journey: Journey): string {
-  return journey.legs.map((leg) => leg.mode === 'shuttle'
-    ? `shuttle:${leg.routeId}:${leg.boardingStopId}>${leg.alightingStopId}`
-    : `walking:${getTripEndpointKey(leg.from)}>${getTripEndpointKey(leg.to)}`)
-    .join('|')
-}
-
 function compareCandidates(
   first: ScoredJourneyCandidate,
   second: ScoredJourneyCandidate,
@@ -144,7 +137,7 @@ function compareCandidates(
     getBoardings(first.journey) - getBoardings(second.journey) ||
     getWalkingDistance(first.journey) - getWalkingDistance(second.journey) ||
     first.journey.legs.length - second.journey.legs.length ||
-    compareText(getJourneySequenceKey(first.journey), getJourneySequenceKey(second.journey))
+    compareText(first.candidateKey, second.candidateKey)
 }
 
 /**

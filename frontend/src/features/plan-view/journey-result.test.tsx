@@ -214,6 +214,35 @@ describe('JourneyResult', () => {
     expect(markup.match(/class="journey-result"/g)).toHaveLength(2)
   })
 
+  it('keeps the Recommended option aligned with the map Journey when candidate keys break a sequence tie', () => {
+    const withRouteId = (routeId: string): Journey => ({
+      ...journey,
+      legs: journey.legs.map((leg) => leg.mode === 'shuttle' ? { ...leg, routeId } : leg),
+    })
+    const mapJourney = withRouteId('ZZZ')
+    const sequenceFirst = scoreJourney(withRouteId('AAA'), 'z-candidate')
+    const mapCandidate = scoreJourney(mapJourney, 'a-candidate')
+    const markup = renderToStaticMarkup(
+      <JourneyResult
+        state={{
+          status: 'ready',
+          journey: mapJourney,
+          candidates: [sequenceFirst, mapCandidate],
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+    const firstOption = markup.indexOf('<li class="journey-results-item"')
+    const secondOption = markup.indexOf('<li class="journey-results-item"', firstOption + 1)
+    const recommendedMarkup = markup.slice(firstOption, secondOption)
+
+    expect(recommendedMarkup).toContain('<h3 id="journey-result-title-1">Recommended</h3>')
+    expect(recommendedMarkup).toContain('<span>ZZZ</span>')
+    expect(markup.slice(secondOption)).toContain('<span>AAA</span>')
+  })
+
   it('flattens each Journey into one ordered timeline without repeating locations', () => {
     const entries = getJourneyTimelineEntries(journey, venues, networkIndex)
 

@@ -101,6 +101,14 @@ describe('selectJourneysForDisplay', () => {
     expect(selectJourneysForDisplay([busB, busA])).toEqual([busA, busB])
   })
 
+  it('uses candidateKey for final ties when it differs from journey sequence order', () => {
+    const sequenceFirst = { ...candidate('A1', 'shuttle', 200), candidateKey: 'z-candidate' }
+    const candidateKeyFirst = { ...candidate('Z1', 'shuttle', 200), candidateKey: 'a-candidate' }
+
+    expect(selectJourneysForDisplay([sequenceFirst, candidateKeyFirst]))
+      .toEqual([candidateKeyFirst, sequenceFirst])
+  })
+
   it('filters incomplete or invalid candidates while keeping complete Journeys', () => {
     const complete = candidate('A1', 'shuttle', 200)
     const incomplete = {

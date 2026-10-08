@@ -8,6 +8,19 @@ export type BaseUiMobileSheetSnapPoints = readonly [
   full: string,
 ]
 
+export type BaseUiMobileSheetDetentHeights = readonly [
+  collapsed: number,
+  partial: number,
+  full: number,
+]
+
+export function createBaseUiMobileSheetSnapPointsFromHeights(
+  heights: BaseUiMobileSheetDetentHeights,
+): BaseUiMobileSheetSnapPoints {
+  const toSnapPoint = (height: number): string => `${Math.max(0, Number.isFinite(height) ? height : 0)}px`
+  return [toSnapPoint(heights[0]), toSnapPoint(heights[1]), toSnapPoint(heights[2])]
+}
+
 export function createBaseUiMobileSheetSnapPoints(
   viewportHeight: number,
   tabBarInset: number,
@@ -25,7 +38,7 @@ export function createBaseUiMobileSheetSnapPoints(
     Math.min(maximumHeight, getMobileSheetHeights(visibleHeight, visibleTabBarInset).partialMaxHeight),
   )
 
-  return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]
+  return createBaseUiMobileSheetSnapPointsFromHeights([collapsed, partial, maximumHeight])
 }
 
 export function getBaseUiMobileSheetSnapPoint(

@@ -108,6 +108,7 @@ export interface NavigationSessionCommands {
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
   readonly zoomOut: () => void
+  readonly fitJourneyRoutes: () => void
   readonly resetView: () => void
 }
 
@@ -147,6 +148,7 @@ function createNavigationSessionCommands(
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
+    fitJourneyRoutes: () => session?.fitJourneyRoutes(),
     resetView: () => session?.resetView(),
   }
 }

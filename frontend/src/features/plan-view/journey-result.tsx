@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import type { TransitIndex } from '../../domain/transit'
+import { formatDuration } from '../../domain/trip/duration-format'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
@@ -8,7 +9,6 @@ import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'
 import {
   formatDistance,
-  formatDuration,
   getJourneyCompactSummary,
   getJourneyTimelineEntries,
   type JourneyCompactSummary,

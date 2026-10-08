@@ -1,5 +1,6 @@
 import type { TransitIndex } from '../../domain/transit'
 import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/journey'
+import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
@@ -66,14 +67,6 @@ function getJourneyRoutePresentation(
     routeLabel: route?.name ?? getRouteName(routeId, networkIndex),
     routeColor: route?.color ?? null,
   }
-}
-
-export function formatDuration(seconds: number): string {
-  const minutes = Math.max(0, Math.ceil(seconds / 60))
-  if (minutes < 60) return `${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
-  return remainingMinutes === 0 ? `${hours} hr` : `${hours} hr ${remainingMinutes} min`
 }
 
 export function formatWaitDuration(seconds: number): string {

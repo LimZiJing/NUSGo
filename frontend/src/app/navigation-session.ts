@@ -25,7 +25,7 @@ import { reconcileRouteSelection } from './route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
-import type { MapSession, MapViewportInsets } from './contracts/map'
+import type { MapJourneyOption, MapSession, MapViewportInsets } from './contracts/map'
 import {
   INITIAL_LOCATION_TRACKING_STATE,
   isLocationRequestFailure,
@@ -135,6 +135,7 @@ export interface NavigationSession {
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
+  fitJourneyRoutes(): void
   resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
@@ -262,7 +263,7 @@ export function createNavigationSession(
 
   const resetJourney = (): void => {
     cancelJourneyPlanning()
-    dependencies.map.setJourney(null)
+    dependencies.map.setJourneyOptions([], null)
     if (
       state.journey.status !== 'idle' ||
       state.journey.journey !== null ||
@@ -353,7 +354,7 @@ export function createNavigationSession(
       transit: transitData,
       signal: controller.signal,
     }
-    dependencies.map.setJourney(null)
+    dependencies.map.setJourneyOptions([], null)
     updateState({
       journey: createJourneyStateWithStatus('loading'),
     })
@@ -368,7 +369,15 @@ export function createNavigationSession(
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
-          dependencies.map.setJourney(recommended?.journey ?? null)
+          const displayedOptions: readonly MapJourneyOption[] = displayedCandidates.map((candidate) => ({
+            candidateKey: candidate.candidateKey,
+            journey: candidate.journey,
+          }))
+          dependencies.map.setJourneyOptions(
+            displayedOptions,
+            recommended?.candidateKey ?? null,
+            recommended !== null,
+          )
           updateState({
             journey: recommended && planningResult
               ? {
@@ -388,7 +397,7 @@ export function createNavigationSession(
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
-          dependencies.map.setJourney(null)
+          dependencies.map.setJourneyOptions([], null)
           if (error instanceof NoJourneyAvailableError) {
             updateState({
               journey: {
@@ -438,7 +447,7 @@ export function createNavigationSession(
     invalidateOriginLocationRequest()
     journeyPlanningRequested = false
     cancelJourneyPlanning()
-    dependencies.map.setJourney(null)
+    dependencies.map.setJourneyOptions([], null)
     const nextState = freezeNavigationSessionSnapshot({
       ...state,
       ...patch,
@@ -843,7 +852,11 @@ export function createNavigationSession(
         key === candidateKey
       ))
       if (!candidate || state.journey.selectedCandidateKey === candidateKey) return
-      dependencies.map.setJourney(candidate.journey)
+      const options: readonly MapJourneyOption[] = state.journey.displayedCandidates.map((item) => ({
+        candidateKey: item.candidateKey,
+        journey: item.journey,
+      }))
+      dependencies.map.setJourneyOptions(options, candidate.candidateKey)
       updateState({
         journey: {
           ...state.journey,
@@ -879,6 +892,11 @@ export function createNavigationSession(
     zoomOut() {
       if (disposed) return
       dependencies.map.zoomOut()
+    },
+
+    fitJourneyRoutes() {
+      if (disposed) return
+      dependencies.map.fitJourneyRoutes()
     },
 
     resetView() {

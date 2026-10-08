@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import type { Journey } from '../domain/trip/journey'
+import type { ScoredJourneyCandidate } from '../domain/trip/planner'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 
@@ -105,6 +107,52 @@ afterEach(() => {
 })
 
 describe('desktop shared navigation shell', () => {
+  it('shows Fit routes only while Plan is active for a retained Journey', async () => {
+    const user = userEvent.setup()
+    const baseState = createInitialNavigationSessionState()
+    const journey: Journey = {
+      origin: { kind: 'venue', id: 'ORIGIN' },
+      destination: { kind: 'venue', id: 'DESTINATION' },
+      legs: [{
+        mode: 'walking',
+        from: { kind: 'venue', id: 'ORIGIN' },
+        to: { kind: 'venue', id: 'DESTINATION' },
+        durationSeconds: 60,
+        distanceMeters: 100,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.01, 1.01]] },
+      }],
+      totalDurationSeconds: 60,
+      totalDistanceMeters: 100,
+      estimateStatus: 'estimated',
+      planningQuality: 'exact',
+    }
+    const candidate: ScoredJourneyCandidate = {
+      candidateKey: 'retained-journey',
+      journey,
+      adjustedDurationSeconds: 60,
+      score: 1 / 60,
+    }
+    appHarness.state = {
+      ...baseState,
+      transitIndex: createTransitIndex(createValidTransitNetwork()),
+      journey: {
+        ...baseState.journey,
+        status: 'ready',
+        journey,
+        candidates: [candidate],
+        displayedCandidates: [candidate],
+        selectedCandidateKey: candidate.candidateKey,
+      },
+    }
+    render(<App />)
+
+    expect(screen.queryByRole('button', { name: 'Fit routes' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    expect(screen.getByRole('button', { name: 'Fit routes' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    expect(screen.queryByRole('button', { name: 'Fit routes' })).toBeNull()
+  })
+
   it('uses the shared Navigate command from venue details and opens Plan', async () => {
     const user = userEvent.setup()
     const venue = { roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } }

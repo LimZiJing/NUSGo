@@ -3,6 +3,7 @@ import type {
   MapRouteSelection,
   MapSession,
   MapSessionOptions,
+  MapJourneyOption,
   MapResetTarget,
   MapViewportInsets,
 } from '../../app/contracts/map'
@@ -33,6 +34,25 @@ const EMPTY_VIEWPORT_INSETS: MapViewportInsets = {
   bottom: 0,
   left: 0,
 }
+const JOURNEY_FIT_BREATHING_ROOM = 48
+const MIN_JOURNEY_FIT_VIEWPORT = 48
+
+function getJourneyFitInsets(
+  insets: MapViewportInsets,
+  width: number,
+  height: number,
+): MapViewportInsets {
+  const horizontalRoom = Math.max(0, (width - insets.left - insets.right - MIN_JOURNEY_FIT_VIEWPORT) / 2)
+  const verticalRoom = Math.max(0, (height - insets.top - insets.bottom - MIN_JOURNEY_FIT_VIEWPORT) / 2)
+  const horizontal = Math.min(JOURNEY_FIT_BREATHING_ROOM, horizontalRoom)
+  const vertical = Math.min(JOURNEY_FIT_BREATHING_ROOM, verticalRoom)
+  return {
+    top: insets.top + vertical,
+    right: insets.right + horizontal,
+    bottom: insets.bottom + vertical,
+    left: insets.left + horizontal,
+  }
+}
 
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
@@ -44,6 +64,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
   let currentJourney: Journey | null = null
+  let currentJourneyOptions: readonly MapJourneyOption[] = []
+  let selectedJourneyCandidateKey: string | null = null
+  let viewportInsetsReady = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
@@ -57,6 +80,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   } | {
     readonly kind: 'route'
     readonly routeId: string | null
+  } | {
+    readonly kind: 'journey'
   } | null = null
   let currentRouteSelection: MapRouteSelection = {
     route: null,
@@ -133,6 +158,36 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     })
   }
 
+  const fitJourneyOptions = (options: readonly MapJourneyOption[]): void => {
+    const coordinates = options.flatMap(({ journey }) => journey.legs.flatMap((leg) => (
+      leg.geometry.coordinates.filter(([longitude, latitude]) => (
+        Number.isFinite(longitude) && Number.isFinite(latitude)
+      ))
+    )))
+    if (coordinates.length === 0) return
+    if (coordinates.length === 1) {
+      map.flyTo({
+        center: [coordinates[0][0], coordinates[0][1]],
+        zoom: 17,
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
+      return
+    }
+    const longitudes = coordinates.map(([longitude]) => longitude)
+    const latitudes = coordinates.map(([, latitude]) => latitude)
+    const { clientWidth, clientHeight } = map.getContainer()
+    map.fitBounds([
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ], {
+      duration: 500,
+      maxZoom: 17,
+      padding: getJourneyFitInsets(viewportInsets, clientWidth, clientHeight),
+    })
+  }
+
   const clearEndpointMarkers = () => {
     endpointMarkers?.dispose()
     endpointMarkers = null
@@ -152,10 +207,22 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const installJourneyRouteLayers = (): void => {
-    if (currentJourney === null || journeyRouteLayers) return
+    if (currentJourneyOptions.length === 0 || journeyRouteLayers) return
     const nextJourneyRouteLayers = createJourneyRouteLayers(map, currentTransitIndex)
-    nextJourneyRouteLayers.setJourney(currentJourney)
+    nextJourneyRouteLayers.setJourneyOptions(currentJourneyOptions, selectedJourneyCandidateKey)
     journeyRouteLayers = nextJourneyRouteLayers
+  }
+
+  const applyJourneyRouteOptions = (): void => {
+    if (currentJourneyOptions.length === 0) {
+      clearJourneyRouteLayers()
+      return
+    }
+    if (!journeyRouteLayers) {
+      installJourneyRouteLayers()
+      return
+    }
+    journeyRouteLayers.setJourneyOptions(currentJourneyOptions, selectedJourneyCandidateKey)
   }
 
   const getJourneyStopRoutes = (): ReadonlyMap<string, readonly JourneyStopRoute[]> | null => {
@@ -322,20 +389,47 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       endpointMarkers = createTripEndpointMarkers(map, request, venues, transitIndex)
     },
 
-    setJourney(journey: Journey | null) {
+    setJourneyOptions(
+      journeyOptions: readonly MapJourneyOption[],
+      selectedCandidateKey: string | null,
+      fitOverview = false,
+    ) {
       if (disposed) return
-      currentJourney = journey
-      if (journey !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
-      clearJourneyRouteLayers()
+      currentJourneyOptions = [...journeyOptions]
+      selectedJourneyCandidateKey = currentJourneyOptions.some(({ candidateKey }) => (
+        candidateKey === selectedCandidateKey
+      )) ? selectedCandidateKey : null
+      currentJourney = currentJourneyOptions.find(({ candidateKey }) => (
+        candidateKey === selectedJourneyCandidateKey
+      ))?.journey ?? null
+      if (currentJourney !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
+      if (currentJourneyOptions.length === 0 && pendingCameraFit?.kind === 'journey') {
+        pendingCameraFit = null
+      }
       try {
         applyJourneyPresentation()
-        installJourneyRouteLayers()
+        applyJourneyRouteOptions()
+        if (fitOverview && currentJourneyOptions.length > 0) {
+          pendingCameraFit = { kind: 'journey' }
+          if (viewportInsetsReady) {
+            pendingCameraFit = null
+            fitJourneyOptions(currentJourneyOptions)
+          }
+        }
       } catch (error) {
+        currentJourneyOptions = []
+        selectedJourneyCandidateKey = null
         currentJourney = null
         clearJourneyRouteLayers()
         applyJourneyPresentation()
         options.onMapError(error)
       }
+    },
+
+    fitJourneyRoutes() {
+      if (disposed || currentJourneyOptions.length === 0) return
+      pendingCameraFit = null
+      fitJourneyOptions(currentJourneyOptions)
     },
 
     setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean) {
@@ -358,6 +452,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
       viewportInsets = { ...insets }
+      viewportInsetsReady = true
       lifecycle.setViewportInsets(viewportInsets)
       const pendingFit = pendingCameraFit
       pendingCameraFit = null
@@ -370,6 +465,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           pendingFit.routeId,
           viewportInsets,
         )
+      } else if (pendingFit?.kind === 'journey') {
+        fitJourneyOptions(currentJourneyOptions)
       }
     },
 

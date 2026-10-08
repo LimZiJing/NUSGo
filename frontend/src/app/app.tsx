@@ -23,6 +23,7 @@ import { createMapSession } from '../infrastructure/map/session'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
 import { JourneyTestTimeControl } from '../ui/journey-test-time-control'
+import { FitRoutesControl } from '../ui/fit-routes-control'
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
@@ -334,6 +335,11 @@ function App() {
         />
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          {navigation.activeView === 'plan' &&
+            state.journey.status === 'ready' &&
+            state.journey.displayedCandidates.length > 0 && (
+            <FitRoutesControl onFit={commands.fitJourneyRoutes} />
+          )}
           {import.meta.env.DEV && (
             <JourneyTestTimeControl
               simulatedAtMs={simulatedAtMs}

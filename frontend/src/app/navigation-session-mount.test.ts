@@ -22,7 +22,8 @@ function createMapDouble(): MapSession {
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
     setTripRequest: vi.fn(),
-    setJourney: vi.fn(),
+    setJourneyOptions: vi.fn(),
+    fitJourneyRoutes: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
@@ -44,6 +45,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setViewportInsets: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
+    fitJourneyRoutes: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     navigateTo: vi.fn(),
@@ -200,6 +202,8 @@ describe('navigation session application seam', () => {
     expect(session.planJourney).toHaveBeenCalledOnce()
     firstCommands.selectJourneyOption('option-a')
     expect(session.selectJourneyOption).toHaveBeenCalledWith('option-a')
+    firstCommands.fitJourneyRoutes()
+    expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
     firstCommands.focusStopInStopsTab('STOP-A')

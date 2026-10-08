@@ -38,6 +38,11 @@ export interface MapRouteSelection {
   readonly overlappingRouteIds: ReadonlySet<string>
 }
 
+export interface MapJourneyOption {
+  readonly candidateKey: string
+  readonly journey: Journey
+}
+
 /**
  * The application-facing map seam. Implementations own all MapLibre objects,
  * listeners, DOM nodes, and asynchronous map work behind this interface.
@@ -59,7 +64,12 @@ export interface MapSession {
     venues: VenueLocationMap,
     transitIndex: TransitIndex | null,
   ): void
-  setJourney(journey: Journey | null): void
+  setJourneyOptions(
+    options: readonly MapJourneyOption[],
+    selectedCandidateKey: string | null,
+    fitOverview?: boolean,
+  ): void
+  fitJourneyRoutes(): void
   setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean): void
   focusCurrentLocation(fix: DeviceLocationFix): void
   /**

@@ -44,7 +44,8 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
     setTripRequest: vi.fn(),
-    setJourney: vi.fn(),
+    setJourneyOptions: vi.fn(),
+    fitJourneyRoutes: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
@@ -384,7 +385,11 @@ describe('navigation session', () => {
       journey,
       error: null,
     })
-    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(journey)
+    expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
+      [{ candidateKey: 'test-candidate', journey }],
+      'test-candidate',
+      true,
+    )
     expect(Object.isFrozen(session.getState().journey.journey)).toBe(true)
     expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
   })
@@ -426,13 +431,26 @@ describe('navigation session', () => {
       .toEqual(['walking-option', 'bus-option'])
     expect(session.getState().journey.selectedCandidateKey).toBe('walking-option')
     expect(session.getState().journey.journey).toEqual(walkingJourney)
-    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(walkingJourney)
+    expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
+      [
+        { candidateKey: 'walking-option', journey: walkingJourney },
+        { candidateKey: 'bus-option', journey: busJourney },
+      ],
+      'walking-option',
+      true,
+    )
 
     session.selectJourneyOption('bus-option')
 
     expect(session.getState().journey.selectedCandidateKey).toBe('bus-option')
     expect(session.getState().journey.journey).toEqual(busJourney)
-    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(busJourney)
+    expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
+      [
+        { candidateKey: 'walking-option', journey: walkingJourney },
+        { candidateKey: 'bus-option', journey: busJourney },
+      ],
+      'bus-option',
+    )
     expect(journeyPlanner).toHaveBeenCalledOnce()
   })
 
@@ -519,7 +537,7 @@ describe('navigation session', () => {
       selectedCandidateKey: null,
       error: null,
     })
-    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
+    expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith([], null)
     expect(journeyPlanner).toHaveBeenCalledOnce()
   })
 
@@ -583,7 +601,7 @@ describe('navigation session', () => {
       selectedCandidateKey: null,
       error: null,
     })
-    expect(dependencies.map.setJourney).toHaveBeenLastCalledWith(null)
+    expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith([], null)
   })
 
   it('preserves venue-first and transit-first completion behavior', async () => {

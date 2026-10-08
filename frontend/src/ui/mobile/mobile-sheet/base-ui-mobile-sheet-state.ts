@@ -8,19 +8,6 @@ export type BaseUiMobileSheetSnapPoints = readonly [
   full: string,
 ]
 
-export type BaseUiMobileSheetDetentHeights = readonly [
-  collapsed: number,
-  partial: number,
-  full: number,
-]
-
-export function createBaseUiMobileSheetSnapPointsFromHeights(
-  heights: BaseUiMobileSheetDetentHeights,
-): BaseUiMobileSheetSnapPoints {
-  const toSnapPoint = (height: number): string => `${Math.max(0, Number.isFinite(height) ? height : 0)}px`
-  return [toSnapPoint(heights[0]), toSnapPoint(heights[1]), toSnapPoint(heights[2])]
-}
-
 export function createBaseUiMobileSheetSnapPoints(
   viewportHeight: number,
   tabBarInset: number,
@@ -28,17 +15,22 @@ export function createBaseUiMobileSheetSnapPoints(
 ): BaseUiMobileSheetSnapPoints {
   const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
   const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
-  const maximumHeight = Math.max(0, visibleHeight - visibleTabBarInset)
+  const maximumHeight = visibleHeight
+  // The viewport is clipped above the tab bar until the full detent is selected.
+  // Include that inset in the lower snap points to preserve their visible heights.
   const collapsed = Math.min(
     maximumHeight,
-    Number.isFinite(collapsedHeight) ? Math.max(0, collapsedHeight) : 0,
+    (Number.isFinite(collapsedHeight) ? Math.max(0, collapsedHeight) : 0) + visibleTabBarInset,
   )
   const partial = Math.max(
     collapsed,
-    Math.min(maximumHeight, getMobileSheetHeights(visibleHeight, visibleTabBarInset).partialMaxHeight),
+    Math.min(
+      maximumHeight,
+      getMobileSheetHeights(visibleHeight, 0).partialMaxHeight + visibleTabBarInset,
+    ),
   )
 
-  return createBaseUiMobileSheetSnapPointsFromHeights([collapsed, partial, maximumHeight])
+  return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]
 }
 
 export function getBaseUiMobileSheetSnapPoint(

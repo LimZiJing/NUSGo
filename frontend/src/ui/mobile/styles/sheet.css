@@ -199,20 +199,26 @@
 
   .base-ui-mobile-sheet-viewport {
     position: absolute;
-    z-index: 10;
+    z-index: 14;
     inset: 0;
     overflow: hidden;
+    clip-path: inset(0 0 var(--mobile-tab-bar-height) 0);
+    transition: clip-path var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: none;
+  }
+
+  .base-ui-mobile-sheet-viewport[data-detent='full'] {
+    clip-path: inset(0);
   }
 
   .navigation-panel.base-ui-mobile-sheet-popup {
     top: 0;
     right: 0;
-    bottom: var(--mobile-tab-bar-height);
+    bottom: 0;
     left: 0;
     display: flex;
     width: auto;
-    height: calc(var(--mobile-viewport-height) - var(--mobile-tab-bar-height)) !important;
+    height: var(--mobile-viewport-height) !important;
     min-height: 0 !important;
     max-height: none !important;
     flex-direction: column;

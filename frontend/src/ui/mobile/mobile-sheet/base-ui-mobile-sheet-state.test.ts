@@ -1,35 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import {
   createBaseUiMobileSheetSnapPoints,
-  createBaseUiMobileSheetSnapPointsFromHeights,
   getBaseUiMobileSheetDetent,
   getBaseUiMobileSheetSnapPoint,
 } from './base-ui-mobile-sheet-state'
 
 describe('Base UI mobile sheet snap points', () => {
-  it('preserves the original sheet detent heights when measured from its layout', () => {
-    const points = createBaseUiMobileSheetSnapPointsFromHeights([44, 286.5, 568])
-
-    expect(points).toEqual(['44px', '286.5px', '568px'])
-  })
-
-  it('uses the existing collapsed, partial, and full sheet heights', () => {
+  it('keeps the closed handle above the tab bar and gives partial 60% of the viewport', () => {
     const points = createBaseUiMobileSheetSnapPoints(1000, 80, 44)
 
-    expect(points).toEqual(['44px', '520px', '920px'])
+    expect(points).toEqual(['124px', '680px', '1000px'])
+    expect(Number.parseFloat(points[0]) - 80).toBe(44)
+    expect(Number.parseFloat(points[1]) - 80).toBe(600)
   })
 
-  it('keeps snap points within the visible height on short viewports', () => {
+  it('uses the whole short viewport for full expansion', () => {
     const points = createBaseUiMobileSheetSnapPoints(300, 80, 44)
 
-    expect(points).toEqual(['44px', '100px', '220px'])
+    expect(points).toEqual(['124px', '260px', '300px'])
   })
 
   it('maps Base UI snap point changes to navigation detents', () => {
     const points = createBaseUiMobileSheetSnapPoints(1000, 80, 44)
 
-    expect(getBaseUiMobileSheetSnapPoint('partial', points)).toBe('520px')
-    expect(getBaseUiMobileSheetDetent('920px', points)).toBe('full')
+    expect(getBaseUiMobileSheetSnapPoint('partial', points)).toBe('680px')
+    expect(getBaseUiMobileSheetDetent('1000px', points)).toBe('full')
     expect(getBaseUiMobileSheetDetent(null, points)).toBe('collapsed')
   })
 })

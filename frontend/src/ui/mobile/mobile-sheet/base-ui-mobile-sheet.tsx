@@ -5,10 +5,8 @@ import { getMobileTabBarInset } from './mobile-sheet-layout'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
 import {
   createBaseUiMobileSheetSnapPoints,
-  createBaseUiMobileSheetSnapPointsFromHeights,
   getBaseUiMobileSheetDetent,
   getBaseUiMobileSheetSnapPoint,
-  type BaseUiMobileSheetDetentHeights,
   type BaseUiMobileSheetSnapPoints,
 } from './base-ui-mobile-sheet-state'
 
@@ -31,37 +29,6 @@ interface BaseUiMobileSheetProps {
 }
 
 const INITIAL_SNAP_POINTS: BaseUiMobileSheetSnapPoints = ['44px', '200px', '640px']
-
-function measureOriginalMobileSheetDetents(
-  mapShell: HTMLElement,
-  className: string,
-): BaseUiMobileSheetDetentHeights | null {
-  const measurementSheet = document.createElement('div')
-  measurementSheet.className = `navigation-panel ${className}`
-  measurementSheet.setAttribute('data-mobile-sheet', '')
-  measurementSheet.setAttribute('aria-hidden', 'true')
-  measurementSheet.style.visibility = 'hidden'
-  measurementSheet.style.pointerEvents = 'none'
-  measurementSheet.style.transition = 'none'
-  measurementSheet.style.transform = 'none'
-  mapShell.append(measurementSheet)
-
-  try {
-    const measure = (detent: MobileSheetDetent): number => {
-      measurementSheet.setAttribute('data-mobile-sheet-measuring', detent)
-      return measurementSheet.getBoundingClientRect().height
-    }
-
-    const heights: BaseUiMobileSheetDetentHeights = [
-      measure('collapsed'),
-      measure('partial'),
-      measure('full'),
-    ]
-    return heights[2] > 0 ? heights : null
-  } finally {
-    measurementSheet.remove()
-  }
-}
 
 export function BaseUiMobileSheet({
   className,
@@ -109,15 +76,16 @@ export function BaseUiMobileSheet({
       ? collapsedHeightValue
       : (Number.isFinite(handleRowHeight) ? handleRowHeight : 0) +
         (Number.isFinite(handleExtension) ? handleExtension : 0)
-    const measuredDetents = measureOriginalMobileSheetDetents(mapShell, className)
-    const nextSnapPoints = measuredDetents
-      ? createBaseUiMobileSheetSnapPointsFromHeights(measuredDetents)
-      : createBaseUiMobileSheetSnapPoints(viewportHeight, tabBarInset, collapsedHeight)
+    const nextSnapPoints = createBaseUiMobileSheetSnapPoints(
+      viewportHeight,
+      tabBarInset,
+      collapsedHeight,
+    )
 
     setSnapPoints((current) => current.every((point, index) => point === nextSnapPoints[index])
       ? current
       : nextSnapPoints)
-  }, [className])
+  }, [])
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
@@ -163,6 +131,7 @@ export function BaseUiMobileSheet({
         <Drawer.Portal container={portalContainer}>
           <Drawer.Viewport
             className="base-ui-mobile-sheet-viewport"
+            data-detent={detent}
             ref={viewportRef}
           >
             <Drawer.Popup

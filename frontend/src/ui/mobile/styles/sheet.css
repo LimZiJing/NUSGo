@@ -114,11 +114,11 @@
     display: grid !important;
   }
 
-  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-animating='true'] > :not(.mobile-sheet-handle-row) {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'][data-mobile-sheet-animating='true'] > :not(.mobile-sheet-handle-row) {
     display: none !important;
   }
 
-  [data-mobile-sheet][data-detent='collapsed'] {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'] {
     display: flex !important;
     top: auto !important;
     bottom: var(--mobile-tab-bar-height);
@@ -133,12 +133,12 @@
     gap: 0 !important;
   }
 
-  [data-mobile-sheet][data-mobile-sheet-dragging='true'] {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-mobile-sheet-dragging='true'] {
     padding-right: 10px !important;
     padding-left: 10px !important;
   }
 
-  [data-mobile-sheet][data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
     display: none !important;
   }
 
@@ -147,12 +147,12 @@
     display: flex !important;
   }
 
-  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
     display: block !important;
     max-height: var(--mobile-viewport-height) !important;
   }
 
-  [data-mobile-sheet][data-detent='partial'] {
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='partial'] {
     top: auto;
     bottom: var(--mobile-tab-bar-height);
     height: var(--mobile-sheet-max-height) !important;
@@ -161,7 +161,7 @@
     overflow: hidden;
   }
 
-  [data-mobile-sheet][data-detent='full'],
+  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='full'],
   [data-mobile-sheet][data-mobile-sheet-measuring='full'] {
     z-index: 15;
     top: 0;
@@ -195,5 +195,74 @@
     height: var(--mobile-sheet-max-height) !important;
     min-height: var(--mobile-sheet-min-height) !important;
     max-height: var(--mobile-sheet-max-height);
+  }
+
+  .base-ui-mobile-sheet-viewport {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .navigation-panel.base-ui-mobile-sheet-popup {
+    top: 0;
+    right: 0;
+    bottom: var(--mobile-tab-bar-height);
+    left: 0;
+    display: flex;
+    width: auto;
+    height: calc(var(--mobile-viewport-height) - var(--mobile-tab-bar-height)) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0 max(12px, env(safe-area-inset-right)) 12px
+      max(12px, env(safe-area-inset-left));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(calc(
+      var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)
+    ));
+    transition: transform var(--motion-duration-panel) var(--motion-ease-standard);
+    pointer-events: auto;
+    will-change: transform;
+  }
+
+  .base-ui-mobile-sheet-viewport,
+  .base-ui-mobile-sheet-popup {
+    box-sizing: border-box;
+  }
+
+  .base-ui-mobile-sheet-content {
+    display: contents;
+  }
+
+  .base-ui-mobile-sheet-content > .plan-view,
+  .base-ui-mobile-sheet-content > .explore-view,
+  .base-ui-mobile-sheet-content > .stops-view {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .base-ui-mobile-sheet-popup[data-swiping] {
+    transition: none;
+  }
+
+  .base-ui-mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
+    opacity: 0.72;
+  }
+
+  .navigation-panel.base-ui-mobile-sheet-popup[data-detent='full'] {
+    z-index: 15;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+  }
+
+  .navigation-panel.base-ui-mobile-sheet-popup[data-detent='collapsed'] {
+    z-index: 10;
+    padding: 0;
+    border: 0;
   }
 }

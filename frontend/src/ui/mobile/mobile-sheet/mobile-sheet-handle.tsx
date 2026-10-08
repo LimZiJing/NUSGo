@@ -10,6 +10,7 @@ import {
 interface MobileSheetHandleProps {
   readonly detent?: MobileSheetDetent
   readonly restoreDetent?: OpenMobileSheetDetent
+  readonly dragEnabled?: boolean
   readonly label: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
@@ -322,6 +323,7 @@ function isWhitespaceSheetTarget(
 export function MobileSheetHandle({
   detent: passedDetent,
   restoreDetent = 'partial',
+  dragEnabled = true,
   label,
   controlsId,
   onButtonRef,
@@ -494,6 +496,7 @@ export function MobileSheetHandle({
   }, [changeDetent, clearSettling])
 
   useEffect(() => {
+    if (!dragEnabled) return
     const button = buttonRef.current
     const sheet = button?.closest<HTMLElement>('[data-mobile-sheet]')
     if (!button || !sheet) return
@@ -582,7 +585,7 @@ export function MobileSheetHandle({
       sheet.removeEventListener('touchend', handleSheetTouchEnd)
       sheet.removeEventListener('touchcancel', handleSheetTouchCancel)
     }
-  }, [beginDrag, cancelDrag, finishDrag, moveDrag])
+  }, [beginDrag, cancelDrag, dragEnabled, finishDrag, moveDrag])
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     if (suppressClickRef.current) {

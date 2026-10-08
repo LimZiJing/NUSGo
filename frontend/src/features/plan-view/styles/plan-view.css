@@ -441,6 +441,19 @@
   background: var(--surface-muted);
 }
 
+.journey-results {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-results-item {
+  min-width: 0;
+}
+
 .journey-result {
   display: grid;
   gap: 8px;

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { Journey } from '../../domain/trip/journey'
+import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
 import { getJourneyTimelineEntries } from './journey-result-presentation'
 import { JourneyResult } from './journey-result'
 
@@ -62,6 +63,25 @@ const journey: Journey = {
   planningQuality: 'exact',
 }
 
+function scoreJourney(candidateJourney: Journey, candidateKey = 'test-candidate'): ScoredJourneyCandidate {
+  let shuttleBoardings = 0
+  let adjustedDurationSeconds = 0
+  for (const leg of candidateJourney.legs) {
+    if (leg.mode === 'walking') {
+      adjustedDurationSeconds += leg.durationSeconds / 0.8
+    } else {
+      adjustedDurationSeconds += leg.durationSeconds / (shuttleBoardings > 0 ? 0.9 : 1)
+      shuttleBoardings += 1
+    }
+  }
+  return {
+    candidateKey,
+    journey: candidateJourney,
+    adjustedDurationSeconds,
+    score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
+  }
+}
+
 const venues = {
   ORIGIN: { roomName: 'Origin venue', location: { x: 103, y: 1 } },
   DESTINATION: { roomName: 'Destination venue', location: { x: 103.1, y: 1.1 } },
@@ -86,9 +106,23 @@ function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
               waitingSeconds,
               durationSeconds: waitingSeconds + shuttleLeg.rideSeconds,
             },
+            journey.legs[2],
           ],
           totalDurationSeconds: journey.totalDurationSeconds + waitingSeconds,
         },
+        candidates: [scoreJourney({
+          ...journey,
+          legs: [
+            journey.legs[0],
+            {
+              ...shuttleLeg,
+              waitingSeconds,
+              durationSeconds: waitingSeconds + shuttleLeg.rideSeconds,
+            },
+            journey.legs[2],
+          ],
+          totalDurationSeconds: journey.totalDurationSeconds + waitingSeconds,
+        })],
         error: null,
       }}
       venues={venues}
@@ -101,7 +135,7 @@ describe('JourneyResult', () => {
   it('shows the estimated Journey totals and ordered walking and shuttle details', () => {
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, error: null }}
+        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
         referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
@@ -139,6 +173,45 @@ describe('JourneyResult', () => {
     expect(markup).not.toContain('Stops:')
     expect(markup).not.toContain('→')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
+  })
+
+  it('renders every Journey chosen from the candidate pool as an ordered Plan option', () => {
+    const walkingAlternative: Journey = {
+      origin: journey.origin,
+      destination: journey.destination,
+      legs: [{
+        mode: 'walking',
+        from: journey.origin,
+        to: journey.destination,
+        durationSeconds: 600,
+        distanceMeters: 4200,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
+      }],
+      totalDurationSeconds: 600,
+      totalDistanceMeters: 4200,
+      estimateStatus: 'estimated',
+      planningQuality: 'exact',
+    }
+    const markup = renderToStaticMarkup(
+      <JourneyResult
+        state={{
+          status: 'ready',
+          journey,
+          candidates: [
+            scoreJourney(walkingAlternative, 'walking-alternative'),
+            scoreJourney(journey, 'bus-recommendation'),
+          ],
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Journey options"')
+    expect(markup).toContain('Recommended')
+    expect(markup).toContain('Alternative 2')
+    expect(markup.match(/class="journey-result"/g)).toHaveLength(2)
   })
 
   it('flattens each Journey into one ordered timeline without repeating locations', () => {
@@ -191,6 +264,7 @@ describe('JourneyResult', () => {
         state={{
           status: 'ready',
           journey: { ...journey, planningQuality: 'bounded' },
+          candidates: [scoreJourney({ ...journey, planningQuality: 'bounded' })],
           error: null,
         }}
         venues={venues}
@@ -205,7 +279,7 @@ describe('JourneyResult', () => {
   it('leaves the detailed simulation notice to PlanView', () => {
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, error: null }}
+        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
         simulated
@@ -234,7 +308,12 @@ describe('JourneyResult', () => {
   ] as const)('announces the %s state', (status, message) => {
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status, journey: null, error: status === 'failed' ? 'Unable to plan journey' : null }}
+        state={{
+          status,
+          journey: null,
+          candidates: [],
+          error: status === 'failed' ? 'Unable to plan journey' : null,
+        }}
         venues={venues}
         networkIndex={networkIndex}
       />,

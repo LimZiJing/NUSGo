@@ -58,7 +58,7 @@ export function PlanView({
   originLocationRequest = { status: 'idle', error: null },
   onUseCurrentLocationForOrigin,
   onCancelOriginLocationRequest,
-  journey = { status: 'idle', journey: null, error: null },
+  journey = { status: 'idle', journey: null, candidates: [], error: null },
   simulatedAtMs = null,
 }: PlanViewProps) {
   const [searchQueries, setSearchQueries] = useState({

@@ -6,6 +6,7 @@ import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '../../domain/transit/types'
 import type { Journey } from '../../domain/trip/journey'
+import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '../../domain/venue/types'
 
 const venues: VenueLocationMap = {
@@ -160,6 +161,12 @@ describe('Plan view Journey result', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
+    const candidate: ScoredJourneyCandidate = {
+      candidateKey: 'walking:COM1-0210>STOP-A',
+      journey,
+      adjustedDurationSeconds: 75,
+      score: 1 / 75,
+    }
 
     const markup = renderToStaticMarkup(
       <PlanView
@@ -169,7 +176,7 @@ describe('Plan view Journey result', () => {
         }}
         venues={venues}
         networkIndex={networkIndex}
-        journey={{ status: 'ready', journey, error: null }}
+        journey={{ status: 'ready', journey, candidates: [candidate], error: null }}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}

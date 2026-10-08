@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'
 import type { Journey } from '../../domain/trip/journey'
+import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
 import {
@@ -10,12 +11,14 @@ import {
   getJourneyTimelineEntries,
   type JourneyTimelineEntry,
 } from './journey-result-presentation'
+import { selectJourneysForDisplay } from './journey-candidate-selection'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 
 export interface JourneyResultState {
   readonly status: JourneyStatus
   readonly journey: Journey | null
+  readonly candidates: readonly ScoredJourneyCandidate[]
   readonly error: string | null
 }
 
@@ -143,46 +146,67 @@ export function JourneyResult({
     return renderJourneyStatus(state)
   }
 
-  const journey: Journey = state.journey
-  const hasShuttleLeg = journey.legs.some((leg) => leg.mode === 'shuttle')
-  const planningNotice = journey.planningQuality === 'bounded'
-    ? 'This is a valid route found within a short search budget. A faster route may exist.'
-    : null
-  // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
-  const timingNotice = simulated
-    ? null
-    : hasShuttleLeg
-      ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
-      : 'Travel times are estimates, not guaranteed arrival times.'
-  const journeyNotice = [planningNotice, timingNotice].filter(Boolean).join(' ')
-  // Keep the timestamp tied to the planning reference instead of recalculating it from each render.
-  const arrivalTime = formatSingaporeDateTime(
-    Math.ceil(((referenceTimeMs ?? fallbackReferenceTimeMs) + journey.totalDurationSeconds * 1000) / 60000) * 60000,
-  ).slice(11)
+  const candidates = selectJourneysForDisplay(state.candidates)
+  if (candidates.length === 0) {
+    return renderJourneyStatus({
+      status: 'no-route',
+      journey: null,
+      candidates: [],
+      error: null,
+    })
+  }
+
   return (
-    <section
-      className="journey-result"
-      aria-labelledby="journey-result-title"
-      aria-live="polite"
-    >
-      <div className="journey-result-heading">
-        <div className="journey-result-title">
-          <h3 id="journey-result-title">Recommended</h3>
-          <span className="journey-arrival">Arrive {arrivalTime}</span>
-        </div>
-        <div className="journey-metrics" aria-label="Journey estimate">
-          <strong>{formatDuration(journey.totalDurationSeconds)}</strong>
-          <span>{formatDistance(journey.totalDistanceMeters)}</span>
-        </div>
-      </div>
-      {journeyNotice && (
-        <p className="journey-notice" role="note">
-          {journeyNotice}
-        </p>
-      )}
-      <ol className="journey-timeline" aria-label="Journey details">
-        {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
-      </ol>
-    </section>
+    <ol className="journey-results" aria-label="Journey options" aria-live="polite">
+      {candidates.map(({ candidateKey, journey }, index) => {
+        const hasShuttleLeg = journey.legs.some((leg) => leg.mode === 'shuttle')
+        const planningNotice = journey.planningQuality === 'bounded'
+          ? 'This is a valid route found within a short search budget. A faster route may exist.'
+          : null
+        // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
+        const timingNotice = simulated
+          ? null
+          : hasShuttleLeg
+            ? 'Live shuttle arrivals may be used when available. Waiting and ride times are estimates, not guaranteed arrival times.'
+            : 'Travel times are estimates, not guaranteed arrival times.'
+        const journeyNotice = [planningNotice, timingNotice].filter(Boolean).join(' ')
+        // Keep the timestamp tied to the planning reference instead of recalculating it from each render.
+        const arrivalTime = formatSingaporeDateTime(
+          Math.ceil(((referenceTimeMs ?? fallbackReferenceTimeMs) + journey.totalDurationSeconds * 1000) / 60000) * 60000,
+        ).slice(11)
+        const titleId = `journey-result-title-${index + 1}`
+
+        return (
+          <li className="journey-results-item" key={candidateKey}>
+            <section
+              className="journey-result"
+              aria-labelledby={titleId}
+            >
+              <div className="journey-result-heading">
+                <div className="journey-result-title">
+                  <h3 id={titleId}>{index === 0 ? 'Recommended' : `Alternative ${index + 1}`}</h3>
+                  <span className="journey-arrival">Arrive {arrivalTime}</span>
+                </div>
+                <div className="journey-metrics" aria-label="Journey estimate">
+                  <strong>{formatDuration(journey.totalDurationSeconds)}</strong>
+                  <span>{formatDistance(journey.totalDistanceMeters)}</span>
+                </div>
+              </div>
+              {journeyNotice && (
+                <p className="journey-notice" role="note">
+                  {journeyNotice}
+                </p>
+              )}
+              <ol
+                className="journey-timeline"
+                aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
+              >
+                {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
+              </ol>
+            </section>
+          </li>
+        )
+      })}
+    </ol>
   )
 }

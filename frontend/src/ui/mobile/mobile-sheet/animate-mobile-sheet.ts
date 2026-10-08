@@ -1,5 +1,17 @@
 const SHEET_TRANSITION_DURATION = 220
+const SHEET_TRANSITION_EASING = 'ease-out'
 const activeAnimations = new WeakMap<HTMLElement, () => void>()
+
+function getSheetTransitionDuration(sheet: HTMLElement): number {
+  const token = window.getComputedStyle(sheet).getPropertyValue?.('--motion-duration-panel')
+  const duration = Number.parseFloat(token ?? '')
+  return Number.isFinite(duration) ? duration : SHEET_TRANSITION_DURATION
+}
+
+function getSheetTransitionEasing(sheet: HTMLElement): string {
+  const token = window.getComputedStyle(sheet).getPropertyValue?.('--motion-ease-standard').trim()
+  return token || SHEET_TRANSITION_EASING
+}
 
 export interface MobileSheetAnimationPosition {
   readonly height: number
@@ -93,13 +105,16 @@ export function animateMobileSheet(
   if (startBottom !== undefined) sheet.style.bottom = `${startBottom}px`
   void sheet.getBoundingClientRect().height
 
+  const duration = getSheetTransitionDuration(sheet)
+  const easing = getSheetTransitionEasing(sheet)
+
   sheet.addEventListener('transitionend', handleTransitionEnd)
   frame = window.requestAnimationFrame(() => {
-    sheet.style.transition = `height ${SHEET_TRANSITION_DURATION}ms ease-out, bottom ${SHEET_TRANSITION_DURATION}ms ease-out`
+    sheet.style.transition = `height ${duration}ms ${easing}, bottom ${duration}ms ${easing}`
     sheet.style.setProperty('height', `${targetHeight}px`, 'important')
     sheet.style.bottom = targetBottom
   })
-  timeout = window.setTimeout(finish, SHEET_TRANSITION_DURATION + 80)
+  timeout = window.setTimeout(finish, duration + 80)
   activeAnimations.set(sheet, finish)
   return finish
 }

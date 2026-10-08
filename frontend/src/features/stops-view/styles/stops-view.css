@@ -15,6 +15,13 @@
   background: var(--surface-muted);
   font: inherit;
   cursor: pointer;
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.stops-view button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .stops-view p {
@@ -213,11 +220,13 @@
     justify-self: center;
   }
 
+
   .stop-card-timings {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
-    transition: grid-template-rows 180ms ease, opacity 150ms ease;
+    transition: grid-template-rows var(--motion-duration-standard) var(--motion-ease-standard),
+      opacity var(--motion-duration-fast) var(--motion-ease-standard);
   }
 
   .stop-card-timings[data-expanded='true'] {
@@ -234,6 +243,10 @@
     .stop-card-timings,
     .stop-card-chevron {
       transition: none;
+    }
+
+    .stops-view button:active {
+      transform: none;
     }
   }
 
@@ -467,7 +480,6 @@
     border: 1px solid var(--border-subtle);
     border-bottom: 0;
     background: var(--surface-overlay-panel);
-    box-shadow: var(--shadow-md);
   }
 
   .navigation-panel .stops-list-selector {

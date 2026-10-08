@@ -45,6 +45,9 @@
   display: grid;
   gap: 8px;
 }
+.explore-view-detail {
+  align-content: start;
+}
 
 .explore-view-search-body {
   display: contents;
@@ -393,7 +396,6 @@
 @media (max-width: 768px) {
   .navigation-panel.explore-sheet {
     background: var(--surface-overlay-strong);
-    box-shadow: var(--shadow-sheet);
   }
 
   .navigation-panel .explore-segments {

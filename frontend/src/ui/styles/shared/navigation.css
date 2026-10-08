@@ -20,11 +20,19 @@
   background: transparent;
   font: 500 12px/1.2 system-ui, sans-serif;
   cursor: pointer;
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .main-navigation button[aria-current='page'] {
   color: var(--text-contrast);
+  background: var(--accent-soft);
   font-weight: 600;
+}
+
+.main-navigation button:active {
+  transform: scale(0.97);
 }
 
 .main-navigation button:focus-visible {
@@ -57,4 +65,10 @@
 
 .navigation-tab-label {
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-navigation button:active {
+    transform: none;
+  }
 }

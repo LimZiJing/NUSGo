@@ -38,6 +38,7 @@ function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const locationControlRef = useRef<HTMLDivElement>(null)
   const mapShellRef = useRef<HTMLElement>(null)
+  const [sheetPortalContainer, setSheetPortalContainer] = useState<HTMLElement | null>(null)
   const tripControlsRef = useRef<HTMLElement>(null)
   const exploreViewRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
@@ -47,6 +48,13 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [theme, setTheme] = useState<Theme>(getSystemTheme)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
+  const [mobileSheetImplementation] = useState<AppViewsProps['mobileSheetImplementation']>(() => (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('sheet') === 'base-ui'
+      ? 'base-ui'
+      : 'custom'
+  ))
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
   const state = useNavigationSession(session)
@@ -60,6 +68,10 @@ function App() {
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
   const prepareSheetTransitionRef = useRef<((viewChange?: boolean) => void) | null>(null)
   const focusTripControlAfterOverlayRef = useRef(false)
+  const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
+    mapShellRef.current = shell
+    setSheetPortalContainer(shell)
+  }, [])
   const pendingSheetTransitionRef = useRef<{
     startHeight: number
     startBottom: number
@@ -113,6 +125,7 @@ function App() {
     isMobileViewport,
     navigation,
     mapShellRef,
+    sheetPortalContainer,
     tripControlsRef,
     exploreViewRef,
     stopsSheetRef,
@@ -156,7 +169,7 @@ function App() {
   }, [navigation.activeView])
 
   const prepareSheetTransition = useCallback((viewChange = activeSheetDetent === 'collapsed'): void => {
-    if (!isMobileViewport) return
+    if (!isMobileViewport || mobileSheetImplementation === 'base-ui') return
     sheetAnimationCleanupRef.current?.()
     sheetAnimationCleanupRef.current = null
     const sheet = getActiveMobileSheet()
@@ -165,7 +178,7 @@ function App() {
     pendingSheetTransitionRef.current = sheet
       ? { startHeight, startBottom: Number.isFinite(startBottom) ? startBottom : 0, viewChange }
       : null
-  }, [activeSheetDetent, getActiveMobileSheet, isMobileViewport])
+  }, [activeSheetDetent, getActiveMobileSheet, isMobileViewport, mobileSheetImplementation])
 
   useLayoutEffect(() => {
     prepareSheetTransitionRef.current = (viewChange) => prepareSheetTransition(viewChange)
@@ -173,7 +186,7 @@ function App() {
 
   useLayoutEffect(() => {
     const pending = pendingSheetTransitionRef.current
-    if (!pending || !isMobileViewport) return
+    if (!pending || !isMobileViewport || mobileSheetImplementation === 'base-ui') return
     pendingSheetTransitionRef.current = null
     const sheet = getActiveMobileSheet()
     if (!sheet) return
@@ -191,6 +204,7 @@ function App() {
     }
   }, [
     isMobileViewport,
+    mobileSheetImplementation,
     getActiveMobileSheet,
     navigation.activeView,
     navigation.sheets.explore.detent,
@@ -322,7 +336,7 @@ function App() {
   return (
     <main
       className="map-shell"
-      ref={mapShellRef}
+      ref={assignMapShellRef}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
@@ -380,6 +394,8 @@ function App() {
       </div>
       <AppViews
         isMobileViewport={isMobileViewport}
+        mobileSheetImplementation={mobileSheetImplementation}
+        sheetPortalContainer={sheetPortalContainer}
         navigation={navigation}
         onSelectView={selectView}
         shells={{

@@ -10,6 +10,7 @@ export interface UseMapOverlayLayoutOptions {
   readonly isMobileViewport: boolean
   readonly navigation: NavigationState
   readonly mapShellRef: RefObject<HTMLElement | null>
+  readonly sheetPortalContainer?: HTMLElement | null
   readonly tripControlsRef: RefObject<HTMLElement | null>
   readonly exploreViewRef: RefObject<HTMLElement | null>
   readonly stopsSheetRef: RefObject<HTMLElement | null>
@@ -28,6 +29,7 @@ export function useMapOverlayLayout({
   isMobileViewport,
   navigation,
   mapShellRef,
+  sheetPortalContainer,
   tripControlsRef,
   exploreViewRef,
   stopsSheetRef,
@@ -102,11 +104,12 @@ export function useMapOverlayLayout({
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight
       const activeView: NavigationView = navigation.activeView
-      const activeSheetHeight = activeView === 'plan'
-        ? refs.tripControls.current?.getBoundingClientRect().height ?? 0
+      const activeSheet = activeView === 'plan'
+        ? refs.tripControls.current
         : activeView === 'stops'
-          ? refs.stopsSheet.current?.getBoundingClientRect().height ?? 0
-          : refs.exploreView.current?.getBoundingClientRect().height ?? 0
+          ? refs.stopsSheet.current
+          : refs.exploreView.current
+      const activeSheetBounds = activeSheet?.getBoundingClientRect()
       const tabBarRect = refs.mainNavigation.current?.getBoundingClientRect()
       const mapShellBottom = refs.mapShell.current?.getBoundingClientRect().bottom ?? viewportHeight
       const mapShellElement = refs.mapShell.current
@@ -124,6 +127,9 @@ export function useMapOverlayLayout({
         tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
         cssTabBarInset,
       )
+      const activeSheetHeight = activeSheet?.dataset.sheetImplementation === 'base-ui'
+        ? Math.max(0, mapShellBottom - tabBarInset - (activeSheetBounds?.top ?? mapShellBottom))
+        : activeSheetBounds?.height ?? 0
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
@@ -170,6 +176,7 @@ export function useMapOverlayLayout({
     navigation.sheets.explore.detent,
     navigation.sheets.plan.detent,
     navigation.sheets.stops.detent,
+    sheetPortalContainer,
     refs,
     onMeasurementsApplied,
   ])

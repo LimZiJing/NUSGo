@@ -18,9 +18,12 @@ selection remain separate steps.
 
 For each venue endpoint, select at most five reachable directed walking
 connectors by estimated duration. Keep direct endpoint-to-endpoint walking as
-an option. A user-selected shuttle stop remains fixed and is not replaced by a
-connector. Stop-to-stop walking links come from the validated directed walking
-graph.
+an option. A user-selected origin stop remains fixed for boarding. A
+user-selected destination stop remains the Journey endpoint and also allows up
+to five validated directed walking connectors from other stops; retain the
+exact selected stop as a zero-walk destination, for up to six destination
+connectors total. Stop-to-stop walking links come from the validated directed
+walking graph.
 
 The planner may generate journeys with zero, one, or two shuttle boardings. A
 two-boarding journey must transfer by walking to a different route. A journey

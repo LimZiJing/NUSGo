@@ -403,9 +403,8 @@ function* collectConnectorsSteps(
   shouldCheckpoint: () => boolean,
 ): Generator<void, readonly WalkingConnector[]> {
   if (endpoint.endpoint.kind === 'stop') {
-    return input.transitIndex.stopById.has(endpoint.endpoint.id)
-      ? [{ stopId: endpoint.endpoint.id, connection: null }]
-      : []
+    if (!input.transitIndex.stopById.has(endpoint.endpoint.id)) return []
+    if (isOrigin) return [{ stopId: endpoint.endpoint.id, connection: null }]
   }
 
   const selectedByStop = new Map<string, WalkingConnector>()
@@ -414,7 +413,10 @@ function* collectConnectorsSteps(
     if (!isValidWalkingConnection(connection)) continue
     const matchesEndpoint = isOrigin
       ? getTripEndpointKey(connection.from) === getTripEndpointKey(endpoint.endpoint) && connection.to.kind === 'stop'
-      : connection.from.kind === 'stop' && getTripEndpointKey(connection.to) === getTripEndpointKey(endpoint.endpoint)
+      : endpoint.endpoint.kind === 'stop'
+        ? connection.from.kind === 'stop' && connection.to.kind === 'stop' &&
+          connection.from.id !== endpoint.endpoint.id && connection.to.id === endpoint.endpoint.id
+        : connection.from.kind === 'stop' && getTripEndpointKey(connection.to) === getTripEndpointKey(endpoint.endpoint)
     if (!matchesEndpoint) continue
 
     const stopEndpoint = isOrigin ? connection.to : connection.from
@@ -436,6 +438,9 @@ function* collectConnectorsSteps(
     else topConnectors.splice(insertAt, 0, candidate)
     if (topConnectors.length > MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS) topConnectors.pop()
     if (shouldCheckpoint()) yield
+  }
+  if (!isOrigin && endpoint.endpoint.kind === 'stop') {
+    return [{ stopId: endpoint.endpoint.id, connection: null }, ...topConnectors]
   }
   return topConnectors
 }
@@ -778,6 +783,15 @@ function resolveCandidate(
   if (definition.kind === 'walking') {
     return createCandidate([createWalkingLeg(definition.connection)])
   }
+
+  const destinationStopId = input.destination.endpoint.kind === 'stop'
+    ? input.destination.endpoint.id
+    : null
+  if (
+    destinationStopId !== null &&
+    definition.destinationConnector.connection &&
+    definition.rides.some((ride) => ride.traversedStopIds.has(destinationStopId))
+  ) return null
 
   const legs: JourneyLeg[] = []
   let elapsedSeconds = 0

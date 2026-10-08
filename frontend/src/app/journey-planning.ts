@@ -182,6 +182,7 @@ function isCandidatePair(
   if (from.key === to.key) return false
   if (from.key === originKey && to.key === destinationKey) return true
   if (from.key === originKey && from.endpoint.kind !== 'stop' && to.endpoint.kind === 'stop') return true
+  if (to.key === destinationKey && from.endpoint.kind === 'stop') return true
   if (from.endpoint.kind === 'stop' && to.endpoint.kind === 'stop') {
     const fromRoutes = transit.index.routeIdsByStopId.get(from.endpoint.id)
     const toRoutes = transit.index.routeIdsByStopId.get(to.endpoint.id)
@@ -193,7 +194,7 @@ function isCandidatePair(
     }
     return false
   }
-  return to.key === destinationKey && to.endpoint.kind !== 'stop' && from.endpoint.kind === 'stop'
+  return false
 }
 
 function selectWalkingCandidates(

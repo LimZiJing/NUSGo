@@ -8,6 +8,7 @@ import { getTripEndpointKey } from './endpoints'
 import {
   planJourney,
   planJourneyWithinBudget,
+  searchJourneyCandidatesWithinBudget,
   zeroShuttleWaitingTime,
   type PlanJourneyInput,
   type WalkingJourneyConnection,
@@ -18,7 +19,11 @@ const destination: TripEndpoint = { kind: 'venue', id: 'DESTINATION' }
 const stopA: TripEndpoint = { kind: 'stop', id: 'STOP-A' }
 const stopB: TripEndpoint = { kind: 'stop', id: 'STOP-B' }
 const stopC: TripEndpoint = { kind: 'stop', id: 'STOP-C' }
+const stopD: TripEndpoint = { kind: 'stop', id: 'STOP-D' }
 const stopE: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
+const stopF: TripEndpoint = { kind: 'stop', id: 'STOP-F' }
+const stopG: TripEndpoint = { kind: 'stop', id: 'STOP-G' }
+const stopH: TripEndpoint = { kind: 'stop', id: 'STOP-H' }
 
 function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConnection['geometry'] {
   const coordinateByEndpoint = new Map([
@@ -28,6 +33,9 @@ function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConne
     [`stop:STOP-C`, [103.002, 1] as const],
     [`stop:STOP-D`, [103.003, 1] as const],
     [`stop:STOP-E`, [103.004, 1] as const],
+    [`stop:STOP-F`, [103.005, 1] as const],
+    [`stop:STOP-G`, [103.006, 1] as const],
+    [`stop:STOP-H`, [103.007, 1] as const],
     [`venue:DESTINATION`, [103.002, 1] as const],
   ])
   return {
@@ -283,6 +291,64 @@ function createFiveStopConnectorInput(
   return {
     origin: { endpoint: origin, coordinate: { longitude: 102.999, latitude: 1 } },
     destination: { endpoint: destination, coordinate: { longitude: 103.005, latitude: 1 } },
+    transitIndex: createTransitNetworkIndex(network),
+    routeGeometry,
+    shuttleTiming,
+    walkingConnections,
+    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+  }
+}
+
+function createEightStopDestinationInput(
+  walkingConnections: readonly WalkingJourneyConnection[],
+  rideSecondsByPair: ReadonlyMap<string, number>,
+): PlanJourneyInput {
+  const stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-D', 'STOP-E', 'STOP-F', 'STOP-G', 'STOP-H']
+  const network = validateTransitNetwork({
+    version: 1,
+    metadata: {
+      source: 'test',
+      routeStopOrder: 'test',
+      routeGeometry: 'test',
+      verifiedAt: '2026-09-22',
+      routeOrderSource: 'test',
+      coordinateSource: 'test',
+    },
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds }],
+    stops: stopIds.map((id, index) => ({
+      id,
+      longName: `Stop ${id.slice(-1)}`,
+      shortName: id.slice(-1),
+      latitude: 1,
+      longitude: 103 + index * 0.001,
+      services: ['A1'],
+    })),
+  })
+  const routeGeometry = validateTransitRouteGeometry(network, {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      geometry: {
+        type: 'LineString',
+        coordinates: stopIds.map((_, index) => [103 + index * 0.001, 1]),
+      },
+    }],
+  })
+  const generatedTiming = generateShuttleTimingData(network, routeGeometry, '2026-09-22')
+  const shuttleTiming = {
+    ...generatedTiming,
+    records: generatedTiming.records.map((record) => {
+      const rideSeconds = rideSecondsByPair.get(record.fromStopId + '>' + record.toStopId)
+      return rideSeconds === undefined
+        ? record
+        : { ...record, rideSeconds, rideSecondsLowerBound: rideSeconds, rideSecondsUpperBound: rideSeconds }
+    }),
+  }
+
+  return {
+    origin: { endpoint: stopA, coordinate: { longitude: 103, latitude: 1 } },
+    destination: { endpoint: stopH, coordinate: { longitude: 103.007, latitude: 1 } },
     transitIndex: createTransitNetworkIndex(network),
     routeGeometry,
     shuttleTiming,
@@ -616,6 +682,136 @@ describe('planJourney', () => {
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-E',
     })
+  })
+
+  it('allows a directed final walk from a same-route stop to a selected destination stop', async () => {
+    const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
+    const input = createFiveStopConnectorInput([
+      walking(origin, stopA, 10),
+      walking(stopD, selectedDestination, 20),
+      walking(origin, selectedDestination, 2_000),
+    ], new Map())
+    const result = await searchJourneyCandidatesWithinBudget({
+      ...input,
+      destination: {
+        endpoint: selectedDestination,
+        coordinate: { longitude: 103.004, latitude: 1 },
+      },
+    })
+
+    expect(result.rankedCandidates.some(({ journey }) => {
+      const lastLeg = journey.legs.at(-1)
+      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+        lastLeg?.mode === 'walking' &&
+        lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-D' &&
+        lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-E'
+    })).toBe(true)
+  })
+
+  it('keeps exact direct walking available for a selected destination stop', async () => {
+    const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
+    const input = createFiveStopConnectorInput([
+      walking(origin, selectedDestination, 100),
+    ], new Map())
+    const result = await searchJourneyCandidatesWithinBudget({
+      ...input,
+      destination: {
+        endpoint: selectedDestination,
+        coordinate: { longitude: 103.004, latitude: 1 },
+      },
+    })
+
+    expect(result.rankedCandidates.some(({ journey }) => (
+      journey.legs.length === 1 &&
+      journey.legs[0].mode === 'walking' &&
+      journey.legs[0].from.kind === 'venue' &&
+      journey.legs[0].to.kind === 'stop' &&
+      journey.legs[0].to.id === 'STOP-E'
+    ))).toBe(true)
+  })
+
+  it('does not reverse a walking connection when reaching a selected destination stop', async () => {
+    const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
+    const input = createFiveStopConnectorInput([
+      walking(origin, stopA, 10),
+      walking(selectedDestination, stopD, 20),
+      walking(origin, selectedDestination, 2_000),
+    ], new Map())
+    const result = await searchJourneyCandidatesWithinBudget({
+      ...input,
+      destination: {
+        endpoint: selectedDestination,
+        coordinate: { longitude: 103.004, latitude: 1 },
+      },
+    })
+
+    expect(result.rankedCandidates.some(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'walking' &&
+        leg.from.kind === 'stop' && leg.from.id === 'STOP-D' &&
+        leg.to.kind === 'stop' && leg.to.id === 'STOP-E')
+    ))).toBe(false)
+  })
+
+  it('keeps the exact destination plus at most five ranked egress connectors', async () => {
+    const input = createEightStopDestinationInput([
+      walking(stopB, stopH, 1),
+      walking(stopC, stopH, 2),
+      walking(stopD, stopH, 3),
+      walking(stopE, stopH, 4),
+      walking(stopF, stopH, 5),
+      walking(stopG, stopH, 6),
+      walking(stopA, stopH, 10_000),
+    ], new Map([
+      ['STOP-A>STOP-B', 200],
+      ['STOP-A>STOP-C', 200],
+      ['STOP-A>STOP-D', 200],
+      ['STOP-A>STOP-E', 200],
+      ['STOP-A>STOP-F', 200],
+      ['STOP-A>STOP-G', 10],
+      ['STOP-A>STOP-H', 500],
+    ]))
+    const result = await searchJourneyCandidatesWithinBudget(input)
+
+    expect(result.rankedCandidates.some(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-H')
+    ))).toBe(true)
+    expect(result.rankedCandidates.some(({ journey }) => {
+      const lastLeg = journey.legs.at(-1)
+      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+        lastLeg?.mode === 'walking' &&
+        lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-G' &&
+        lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-H'
+    })).toBe(false)
+  })
+
+  it('does not walk back to a selected stop already traversed by the shuttle leg', async () => {
+    const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-D' }
+    const input = createEightStopDestinationInput([
+      walking(stopG, selectedDestination, 5),
+      walking(stopA, selectedDestination, 5_000),
+    ], new Map([
+      ['STOP-A>STOP-D', 200],
+      ['STOP-A>STOP-G', 10],
+      ['STOP-A>STOP-H', 300],
+    ]))
+    const result = await searchJourneyCandidatesWithinBudget({
+      ...input,
+      destination: {
+        endpoint: selectedDestination,
+        coordinate: { longitude: 103.003, latitude: 1 },
+      },
+    })
+
+    expect(result.rankedCandidates.some(({ journey }) => {
+      const lastLeg = journey.legs.at(-1)
+      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+        lastLeg?.mode === 'walking' &&
+        lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-G' &&
+        lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-D'
+    })).toBe(false)
+    expect(result.rankedCandidates.some(({ journey }) => (
+      journey.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-D')
+    ))).toBe(true)
   })
 
   it('returns the walking-only Journey and up to three distinct scored shuttle Journeys', async () => {

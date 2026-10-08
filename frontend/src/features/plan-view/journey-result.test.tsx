@@ -1,10 +1,13 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
-import { getJourneyTimelineEntries } from './journey-result-presentation'
+import { getJourneyCompactSummary, getJourneyTimelineEntries } from './journey-result-presentation'
 import { JourneyResult } from './journey-result'
 
 const network = createValidTransitNetwork()
@@ -142,11 +145,11 @@ describe('JourneyResult', () => {
       />,
     )
 
-    expect(markup).toContain('Recommended')
-    expect(markup).not.toContain('Recommended Journey')
+    expect(markup).not.toContain('Recommended')
+    expect(markup).not.toContain('Alternative 2')
     expect(markup).toContain('10 min')
     expect(markup).toContain('2.6 km')
-    expect(markup).toContain('Arrive 08:10')
+    expect(markup).toContain('08:00 – 08:10')
     expect(markup).toContain('Walk')
     expect(markup).toContain('journey-walking-icon')
     expect(markup).toContain(`>${route.name}<`)
@@ -171,7 +174,7 @@ describe('JourneyResult', () => {
     expect(markup).not.toContain('Board')
     expect(markup).not.toContain('Alight')
     expect(markup).not.toContain('Stops:')
-    expect(markup).not.toContain('→')
+    expect(markup).not.toContain('journey-option-endpoint-arrow')
     expect(markup).toContain('Live shuttle arrivals may be used when available')
   })
 
@@ -209,12 +212,110 @@ describe('JourneyResult', () => {
     )
 
     expect(markup).toContain('aria-label="Journey options"')
-    expect(markup).toContain('Recommended')
-    expect(markup).toContain('Alternative 2')
-    expect(markup.match(/class="journey-result"/g)).toHaveLength(2)
+    expect(markup).not.toContain('Recommended')
+    expect(markup).not.toContain('Alternative 2')
+    expect(markup.match(/class="journey-option-summary"/g)).toHaveLength(2)
+    expect(markup.match(/class="journey-result(?: journey-result-selected)?"/g)).toHaveLength(2)
   })
 
-  it('keeps the Recommended option aligned with the map Journey when candidate keys break a sequence tie', () => {
+  it('shows one accessible expanded option and keeps the first-ranked option in recommendation position', async () => {
+    const walkingAlternative: Journey = {
+      origin: journey.origin,
+      destination: journey.destination,
+      legs: [{
+        mode: 'walking',
+        from: journey.origin,
+        to: journey.destination,
+        durationSeconds: 600,
+        distanceMeters: 4200,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
+      }],
+      totalDurationSeconds: 600,
+      totalDistanceMeters: 4200,
+      estimateStatus: 'estimated',
+      planningQuality: 'exact',
+    }
+    const options = [
+      scoreJourney(journey, 'bus-recommendation'),
+      scoreJourney(walkingAlternative, 'walking-alternative'),
+    ]
+    const onSelectCandidate = vi.fn()
+    const user = userEvent.setup()
+    const view = render(
+      <JourneyResult
+        state={{
+          status: 'ready',
+          journey,
+          candidates: options,
+          displayedCandidates: options,
+          selectedCandidateKey: 'bus-recommendation',
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        referenceTimeMs={Date.parse('2026-09-23T00:00:00Z')}
+        onSelectCandidate={onSelectCandidate}
+      />,
+    )
+
+    const [firstOptionButton, secondOptionButton] = screen.getAllByRole('button')
+    expect(firstOptionButton.getAttribute('aria-expanded')).toBe('true')
+    expect(secondOptionButton.getAttribute('aria-expanded')).toBe('false')
+    expect(secondOptionButton.getAttribute('aria-controls')).toBe('journey-option-details-2')
+    expect(firstOptionButton.textContent).toContain('08:00 – 08:10')
+    expect(firstOptionButton.textContent).not.toContain('Depart')
+    expect(firstOptionButton.textContent).not.toContain('Arrive')
+    expect(firstOptionButton.textContent).not.toContain('Origin venue')
+    expect(firstOptionButton.textContent).not.toContain('Destination venue')
+    expect(firstOptionButton.textContent).toContain('10 min')
+    expect(firstOptionButton.textContent).toContain('Walk 5 min')
+    expect(firstOptionButton.getAttribute('aria-current')).toBe('true')
+    expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
+    expect(secondOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
+    expect(screen.getByRole('img', { name: /Journey modes: Walk, .* shuttle, Walk/ })).toBeTruthy()
+    expect(screen.queryByText('Recommended')).toBeNull()
+    expect(screen.queryByText('Alternative 2')).toBeNull()
+    expect(screen.queryByText('A faster route may exist')).toBeNull()
+
+    await user.tab()
+    expect(document.activeElement).toBe(firstOptionButton)
+    await user.keyboard('{Enter}')
+    expect(onSelectCandidate).toHaveBeenCalledWith('bus-recommendation')
+    await user.tab()
+    // The expanded timeline's accessible stop disclosure comes before the next option.
+    await user.tab()
+    expect(document.activeElement).toBe(secondOptionButton)
+    await user.keyboard(' ')
+    expect(onSelectCandidate).toHaveBeenLastCalledWith('walking-alternative')
+    await user.click(secondOptionButton)
+    expect(onSelectCandidate).toHaveBeenLastCalledWith('walking-alternative')
+
+    view.rerender(
+      <JourneyResult
+        state={{
+          status: 'ready',
+          journey,
+          candidates: options,
+          displayedCandidates: options,
+          selectedCandidateKey: 'walking-alternative',
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        onSelectCandidate={onSelectCandidate}
+      />,
+    )
+
+    const [firstOptionButtonAfterSelection, selectedAlternative] = screen.getAllByRole('button')
+    expect(firstOptionButtonAfterSelection.getAttribute('aria-expanded')).toBe('false')
+    expect(selectedAlternative.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('list', { name: 'Journey 2 details' })).toBeTruthy()
+    await user.click(selectedAlternative)
+    expect(onSelectCandidate).toHaveBeenLastCalledWith('walking-alternative')
+    expect(selectedAlternative.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('keeps the first-ranked option aligned with the map Journey when candidate keys break a sequence tie', () => {
     const withRouteId = (routeId: string): Journey => ({
       ...journey,
       legs: journey.legs.map((leg) => leg.mode === 'shuttle' ? { ...leg, routeId } : leg),
@@ -236,10 +337,11 @@ describe('JourneyResult', () => {
     )
     const firstOption = markup.indexOf('<li class="journey-results-item"')
     const secondOption = markup.indexOf('<li class="journey-results-item"', firstOption + 1)
-    const recommendedMarkup = markup.slice(firstOption, secondOption)
+    const firstRankedMarkup = markup.slice(firstOption, secondOption)
 
-    expect(recommendedMarkup).toContain('<h3 id="journey-result-title-1">Recommended</h3>')
-    expect(recommendedMarkup).toContain('<span>ZZZ</span>')
+    expect(firstRankedMarkup).toContain('id="journey-option-summary-1" type="button"')
+    expect(firstRankedMarkup).toContain('aria-expanded="true" aria-current="true"')
+    expect(firstRankedMarkup).toContain('<span>ZZZ</span>')
     expect(markup.slice(secondOption)).toContain('<span>AAA</span>')
   })
 
@@ -277,7 +379,7 @@ describe('JourneyResult', () => {
     }
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, error: null }}
+        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
         venues={collidingVenues}
         networkIndex={createTransitIndex(collidingNetwork)}
       />,
@@ -285,6 +387,17 @@ describe('JourneyResult', () => {
 
     expect(markup).toContain('aria-label="COM 3, venue"')
     expect(markup).toContain('aria-label="COM 3, shuttle stop"')
+  })
+
+  it('summarizes ordered modes, canonical route labels, and total walking duration', () => {
+    expect(getJourneyCompactSummary(journey, networkIndex)).toEqual({
+      walkingDurationLabel: '5 min',
+      modeSegments: [
+        { kind: 'walking' },
+        { kind: 'shuttle', routeLabel: route.name, routeColor: route.color },
+        { kind: 'walking' },
+      ],
+    })
   })
 
   it('explains when the Journey was selected within a search budget', () => {
@@ -316,7 +429,7 @@ describe('JourneyResult', () => {
     )
 
     expect(markup).not.toContain('simulated route')
-    expect(markup).toContain('Recommended')
+    expect(markup).toContain('Journey options')
   })
 
   it.each([

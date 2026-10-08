@@ -5,7 +5,8 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { InfoPill } from '../../ui/info-pill'
-import { BusIcon, ChevronDownIcon, FavoriteIcon } from '../../ui/icons'
+import { BusIcon, FavoriteIcon } from '../../ui/icons'
+import { DisclosureChevron } from '../../ui/disclosure-chevron'
 
 export interface StopCardProps {
   readonly stopId: string
@@ -67,7 +68,7 @@ export function StopCard({
             <InfoPill text="LIVE" colorScheme="success" className="stop-card-live" leadingDot />
           )}
           <span className="stop-card-favorite-space" aria-hidden="true" />
-          <ChevronDownIcon className="stop-card-chevron" />
+          <DisclosureChevron expanded={expanded} className="stop-card-chevron" />
         </button>
         <button
           className="stop-card-favorite"

@@ -211,11 +211,6 @@
     width: 16px;
     height: 16px;
     justify-self: center;
-    transition: transform 150ms ease;
-  }
-
-  .stop-card-toggle[aria-expanded='true'] .stop-card-chevron {
-    transform: rotate(180deg);
   }
 
   .stop-card-timings {

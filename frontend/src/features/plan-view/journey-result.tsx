@@ -5,10 +5,13 @@ import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '../../domain/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
+import { DisclosureChevron } from '../../ui/disclosure-chevron'
 import {
   formatDistance,
   formatDuration,
+  getJourneyCompactSummary,
   getJourneyTimelineEntries,
+  type JourneyCompactSummary,
   type JourneyTimelineEntry,
 } from './journey-result-presentation'
 import { selectJourneysForDisplay } from './journey-candidate-selection'
@@ -20,6 +23,7 @@ export interface JourneyResultState {
   readonly journey: Journey | null
   readonly candidates: readonly ScoredJourneyCandidate[]
   readonly displayedCandidates?: readonly ScoredJourneyCandidate[]
+  readonly selectedCandidateKey?: string | null
   readonly error: string | null
 }
 
@@ -29,6 +33,41 @@ interface JourneyResultProps {
   readonly venues: VenueLocationMap | null
   readonly simulated?: boolean
   readonly referenceTimeMs?: number | null
+  readonly onSelectCandidate?: (candidateKey: string) => void
+}
+
+function renderJourneyModeSummary(summary: JourneyCompactSummary) {
+  const modeNames = summary.modeSegments.map((segment) => (
+    segment.kind === 'walking' ? 'Walk' : `${segment.routeLabel} shuttle`
+  ))
+
+  return (
+    <span
+      className="journey-option-modes"
+      role="img"
+      aria-label={`Journey modes: ${modeNames.join(', ')}`}
+    >
+      {summary.modeSegments.map((segment, index) => segment.kind === 'walking'
+        ? (
+          <span className="journey-option-walking" key={`walking-${index}`}>
+            <FootprintsIcon className="journey-mode-icon journey-walking-icon" aria-hidden="true" />
+            <span>Walk</span>
+          </span>
+        )
+        : (
+          <span
+            className="journey-option-shuttle"
+            key={`shuttle-${index}`}
+            style={segment.routeColor
+              ? { '--journey-route-color': segment.routeColor } as CSSProperties
+              : undefined}
+          >
+            <BusIcon className="journey-mode-icon journey-bus-icon" aria-hidden="true" />
+            <span>{segment.routeLabel}</span>
+          </span>
+        ))}
+    </span>
+  )
 }
 
 function renderShuttleLabel(entry: Extract<JourneyTimelineEntry, { kind: 'shuttle' }>) {
@@ -141,6 +180,7 @@ export function JourneyResult({
   venues,
   simulated = false,
   referenceTimeMs = null,
+  onSelectCandidate,
 }: JourneyResultProps) {
   const [fallbackReferenceTimeMs] = useState(() => Date.now())
   if (state.status !== 'ready' || state.journey === null) {
@@ -156,10 +196,17 @@ export function JourneyResult({
       error: null,
     })
   }
+  const selectedCandidateKey = candidates.some(({ candidateKey }) => (
+    candidateKey === state.selectedCandidateKey
+  ))
+    ? state.selectedCandidateKey!
+    : candidates[0]!.candidateKey
+  const journeyReferenceTimeMs = referenceTimeMs ?? fallbackReferenceTimeMs
 
   return (
     <ol className="journey-results" aria-label="Journey options" aria-live="polite">
       {candidates.map(({ candidateKey, journey }, index) => {
+        const selected = candidateKey === selectedCandidateKey
         const hasShuttleLeg = journey.legs.some((leg) => leg.mode === 'shuttle')
         const planningNotice = journey.planningQuality === 'bounded'
           ? 'This is a valid route found within a short search budget. A faster route may exist.'
@@ -172,38 +219,66 @@ export function JourneyResult({
             : 'Travel times are estimates, not guaranteed arrival times.'
         const journeyNotice = [planningNotice, timingNotice].filter(Boolean).join(' ')
         // Keep the timestamp tied to the planning reference instead of recalculating it from each render.
+        const departureTime = formatSingaporeDateTime(journeyReferenceTimeMs).slice(11)
         const arrivalTime = formatSingaporeDateTime(
-          Math.ceil(((referenceTimeMs ?? fallbackReferenceTimeMs) + journey.totalDurationSeconds * 1000) / 60000) * 60000,
+          Math.ceil((journeyReferenceTimeMs + journey.totalDurationSeconds * 1000) / 60000) * 60000,
         ).slice(11)
-        const titleId = `journey-result-title-${index + 1}`
+        const titleId = `journey-option-summary-${index + 1}`
+        const detailsId = `journey-option-details-${index + 1}`
+        const summary = getJourneyCompactSummary(journey, networkIndex)
 
         return (
           <li className="journey-results-item" key={candidateKey}>
             <section
-              className="journey-result"
+              className={`journey-result${selected ? ' journey-result-selected' : ''}`}
               aria-labelledby={titleId}
             >
-              <div className="journey-result-heading">
-                <div className="journey-result-title">
-                  <h3 id={titleId}>{index === 0 ? 'Recommended' : `Alternative ${index + 1}`}</h3>
-                  <span className="journey-arrival">Arrive {arrivalTime}</span>
-                </div>
-                <div className="journey-metrics" aria-label="Journey estimate">
-                  <strong>{formatDuration(journey.totalDurationSeconds)}</strong>
-                  <span>{formatDistance(journey.totalDistanceMeters)}</span>
-                </div>
-              </div>
-              {journeyNotice && (
-                <p className="journey-notice" role="note">
-                  {journeyNotice}
-                </p>
-              )}
-              <ol
-                className="journey-timeline"
-                aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
+              <h3 className="journey-result-heading">
+                <button
+                  id={titleId}
+                  type="button"
+                  className="journey-option-summary"
+                  aria-expanded={selected}
+                  aria-current={selected ? 'true' : undefined}
+                  aria-controls={detailsId}
+                  onClick={() => onSelectCandidate?.(candidateKey)}
+                >
+                  <span className="journey-option-summary-topline">
+                    <span className="journey-option-times">{departureTime} – {arrivalTime}</span>
+                    <span className="journey-option-estimate">
+                      <span className="journey-option-duration">{formatDuration(journey.totalDurationSeconds)}</span>
+                      <DisclosureChevron expanded={selected} />
+                      <span className="journey-option-walking-total">Walk {summary.walkingDurationLabel}</span>
+                    </span>
+                  </span>
+                  {renderJourneyModeSummary(summary)}
+                </button>
+              </h3>
+              <div
+                id={detailsId}
+                className="journey-result-details"
+                aria-labelledby={titleId}
+                hidden={!selected}
               >
-                {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
-              </ol>
+                {selected && (
+                  <>
+                    <span className="journey-detail-distance">
+                      Total distance {formatDistance(journey.totalDistanceMeters)}
+                    </span>
+                    {journeyNotice && (
+                      <p className="journey-notice" role="note">
+                        {journeyNotice}
+                      </p>
+                    )}
+                    <ol
+                      className="journey-timeline"
+                      aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
+                    >
+                      {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
+                    </ol>
+                  </>
+                )}
+              </div>
             </section>
           </li>
         )

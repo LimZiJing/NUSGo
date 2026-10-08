@@ -56,6 +56,7 @@ describe('StopCard', () => {
     const titleBar = screen.getByRole('button', { name: 'Collapse Central Library, shuttle stop bus timings' })
     const star = screen.getByRole('button', { name: 'Add Central Library, shuttle stop to favourites' })
     expect(titleBar.getAttribute('aria-expanded')).toBe('true')
+    expect(titleBar.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(star.getAttribute('aria-pressed')).toBe('false')
     expect(within(titleBar).getByText('320m')).toBeTruthy()
     expect(within(titleBar).getByText('LIVE')).toBeTruthy()
@@ -80,8 +81,9 @@ describe('StopCard', () => {
       onSelectRoute={vi.fn()}
     />)
 
-    expect(screen.getByRole('button', { name: 'Expand Central Library, shuttle stop bus timings' }).getAttribute('aria-expanded'))
-      .toBe('false')
+    const titleBar = screen.getByRole('button', { name: 'Expand Central Library, shuttle stop bus timings' })
+    expect(titleBar.getAttribute('aria-expanded')).toBe('false')
+    expect(titleBar.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
     expect(screen.getByRole('button', { name: 'Remove Central Library, shuttle stop from favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
     expect(container.querySelector('.stop-card-timings')?.hasAttribute('inert')).toBe(true)

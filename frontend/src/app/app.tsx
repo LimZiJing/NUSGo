@@ -250,6 +250,7 @@ function App() {
     onClearTrip: commands.clearTrip,
     onPlanJourney: commands.planJourney,
     originLocationRequest: state.originLocationRequest,
+    onSelectJourneyOption: commands.selectJourneyOption,
     onUseCurrentLocationForOrigin: commands.useCurrentLocationForOrigin,
     onCancelOriginLocationRequest: commands.cancelOriginLocationRequest,
     journey: state.journey,

@@ -33,6 +33,7 @@ interface PlanViewProps {
   onClearTrip: () => void
   onPlanJourney: () => void
   originLocationRequest?: OriginLocationRequestState
+  onSelectJourneyOption?: (candidateKey: string) => void
   onUseCurrentLocationForOrigin?: () => void
   onCancelOriginLocationRequest?: () => void
   journey?: JourneyResultState
@@ -56,6 +57,7 @@ export function PlanView({
   onClearTrip,
   onPlanJourney,
   originLocationRequest = { status: 'idle', error: null },
+  onSelectJourneyOption,
   onUseCurrentLocationForOrigin,
   onCancelOriginLocationRequest,
   journey = { status: 'idle', journey: null, candidates: [], error: null },
@@ -239,6 +241,7 @@ export function PlanView({
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
           referenceTimeMs={simulatedAtMs ?? journeyReferenceTimeMs}
+          onSelectCandidate={onSelectJourneyOption}
         />
       </div>
     </div>

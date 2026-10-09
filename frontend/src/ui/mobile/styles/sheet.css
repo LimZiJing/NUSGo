@@ -1,6 +1,7 @@
 .mobile-sheet-handle-row {
   display: none;
 }
+
 @media (max-width: 768px) {
   .navigation-panel {
     position: absolute;
@@ -9,14 +10,11 @@
     bottom: var(--mobile-tab-bar-height);
     left: 0;
     width: 100%;
-    max-height: var(--mobile-sheet-max-height);
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     overflow: hidden;
-    --mobile-sheet-handle-target-height: var(--mobile-sheet-collapsed-height);
     padding: 0 max(12px, env(safe-area-inset-right))
-      12px
-      max(12px, env(safe-area-inset-left));
+      12px max(12px, env(safe-area-inset-left));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     background: var(--surface-overlay);
     box-shadow: var(--shadow-sheet);
@@ -26,29 +24,14 @@
     z-index: 12;
   }
 
+  [data-mobile-sheet][data-detent='collapsed'] {
+    --mobile-sheet-handle-target-height: var(--mobile-sheet-collapsed-height);
+  }
+
   [data-mobile-sheet][data-detent='partial'],
-  [data-mobile-sheet][data-detent='full'],
-  [data-mobile-sheet][data-mobile-sheet-measuring='partial'],
-  [data-mobile-sheet][data-mobile-sheet-measuring='full'] {
+  [data-mobile-sheet][data-detent='full'] {
     --mobile-sheet-handle-target-extension: 0px;
     --mobile-sheet-handle-target-height: var(--mobile-sheet-handle-row-height);
-  }
-
-  [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row),
-  [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'] > :not(.mobile-sheet-handle-row) {
-    animation: mobile-sheet-content-enter var(--motion-duration-standard) var(--motion-ease-standard) both;
-  }
-
-  @keyframes mobile-sheet-content-enter {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-mobile-sheet-view-transition] > :not(.mobile-sheet-handle-row),
-    [data-mobile-sheet][data-detent='collapsed'][data-mobile-sheet-dragging='true'] > :not(.mobile-sheet-handle-row) {
-      animation: none;
-    }
   }
 
   .mobile-sheet-handle-row {
@@ -97,104 +80,8 @@
   }
 
   .mobile-sheet-handle:active .mobile-sheet-grabber,
-  [data-mobile-sheet][data-mobile-sheet-dragging='true'] .mobile-sheet-grabber {
+  .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
     opacity: 0.72;
-  }
-
-  [data-mobile-sheet-measuring='collapsed'] .navigation-panel-content,
-  [data-mobile-sheet-settling='collapsed'] .navigation-panel-content {
-    display: none !important;
-  }
-
-  [data-mobile-sheet-measuring='partial'] .navigation-panel-content,
-  [data-mobile-sheet-measuring='full'] .navigation-panel-content,
-  [data-mobile-sheet-dragging] .navigation-panel-content,
-  [data-mobile-sheet-settling='partial'] .navigation-panel-content,
-  [data-mobile-sheet-settling='full'] .navigation-panel-content {
-    display: grid !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'][data-mobile-sheet-animating='true'] > :not(.mobile-sheet-handle-row) {
-    display: none !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'] {
-    display: flex !important;
-    top: auto !important;
-    bottom: var(--mobile-tab-bar-height);
-    height: var(--mobile-sheet-collapsed-height) !important;
-    min-height: var(--mobile-sheet-collapsed-height) !important;
-    max-height: var(--mobile-sheet-collapsed-height) !important;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    gap: 0 !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-mobile-sheet-dragging='true'] {
-    padding-right: 10px !important;
-    padding-left: 10px !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
-    display: none !important;
-  }
-
-  [data-mobile-sheet][data-detent='collapsed'] > .mobile-sheet-handle-row,
-  [data-mobile-sheet-measuring='collapsed'] .mobile-sheet-handle-row {
-    display: flex !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
-    display: block !important;
-    max-height: var(--mobile-viewport-height) !important;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='partial'] {
-    top: auto;
-    bottom: var(--mobile-tab-bar-height);
-    height: var(--mobile-sheet-max-height) !important;
-    min-height: var(--mobile-sheet-min-height);
-    max-height: var(--mobile-sheet-max-height);
-    overflow: hidden;
-  }
-
-  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='full'],
-  [data-mobile-sheet][data-mobile-sheet-measuring='full'] {
-    z-index: 15;
-    top: 0;
-    right: 0;
-    bottom: var(--mobile-tab-bar-height);
-    left: 0;
-    width: auto;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none;
-    overflow: hidden;
-    padding-top: max(8px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    border-radius: 0;
-  }
-
-  [data-mobile-sheet-measuring='collapsed'] {
-    top: auto !important;
-    bottom: var(--mobile-tab-bar-height) !important;
-    height: var(--mobile-sheet-collapsed-height) !important;
-    min-height: var(--mobile-sheet-collapsed-height) !important;
-    max-height: var(--mobile-sheet-collapsed-height) !important;
-    gap: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-  }
-
-  [data-mobile-sheet-measuring='partial'] {
-    top: auto;
-    bottom: var(--mobile-tab-bar-height);
-    height: var(--mobile-sheet-max-height) !important;
-    min-height: var(--mobile-sheet-min-height) !important;
-    max-height: var(--mobile-sheet-max-height);
   }
 
   .mobile-sheet-viewport {
@@ -223,8 +110,8 @@
     max-height: none !important;
     flex-direction: column;
     overflow: hidden;
-    padding: 0 max(12px, env(safe-area-inset-right)) 12px
-      max(12px, env(safe-area-inset-left));
+    padding: 0 max(12px, env(safe-area-inset-right))
+      12px max(12px, env(safe-area-inset-left));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: translateY(calc(
       var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)
@@ -258,10 +145,6 @@
 
   .mobile-sheet-popup[data-swiping] {
     transition: none;
-  }
-
-  .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
-    opacity: 0.72;
   }
 
   .navigation-panel.mobile-sheet-popup[data-detent='full'] {

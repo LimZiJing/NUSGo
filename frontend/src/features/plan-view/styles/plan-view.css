@@ -864,8 +864,7 @@
     align-content: start;
   }
 
-  .navigation-panel[data-detent='full'] .plan-view-content,
-  [data-mobile-sheet-measuring='full'] .plan-view-content {
+  .navigation-panel[data-detent='full'] .plan-view-content {
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;

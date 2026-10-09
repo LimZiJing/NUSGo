@@ -78,7 +78,6 @@ export function useMapOverlayLayout({
       const sheetHeights = getMobileSheetHeights(viewportHeight, tabBarInset)
       shell.style.setProperty('--mobile-viewport-height', `${sheetHeights.viewportHeight}px`)
       shell.style.setProperty('--mobile-sheet-max-height', `${sheetHeights.partialMaxHeight}px`)
-      shell.style.setProperty('--mobile-sheet-min-height', `${sheetHeights.partialMinHeight}px`)
       if (tabBarInset > 0) shell.style.setProperty('--mobile-tab-bar-height', `${tabBarInset}px`)
       shell.style.setProperty('--mobile-viewport-offset-top', `${viewport?.offsetTop ?? 0}px`)
     }
@@ -93,7 +92,6 @@ export function useMapOverlayLayout({
       window.visualViewport?.removeEventListener('scroll', updateVisualViewport)
       shell.style.removeProperty('--mobile-viewport-height')
       shell.style.removeProperty('--mobile-sheet-max-height')
-      shell.style.removeProperty('--mobile-sheet-min-height')
       shell.style.removeProperty('--mobile-tab-bar-height')
       shell.style.removeProperty('--mobile-viewport-offset-top')
     }

@@ -29,7 +29,6 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
   const state = { ...createInitialNavigationState(), activeView }
   const dispatch = vi.fn<(action: NavigationAction) => void>()
   const commands = createCommands()
-  const prepareSheetTransition = vi.fn()
   const pendingViewFocusRef: { current: NavigationState['activeView'] | null } = { current: null }
 
   return {
@@ -39,7 +38,6 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
     isMobileViewport,
     exploreView: { mode: 'neutral' as const, selectedVenue: null },
     locationStatus: 'disabled' as const,
-    focusSheetTransitionRef: { current: prepareSheetTransition },
     pendingViewFocusRef,
     focusStop: vi.fn(),
   }
@@ -53,7 +51,6 @@ describe('useAppNavigation', () => {
     act(() => result.current.navigateToVenue('COM1'))
 
     expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'venue', id: 'COM1' })
-    expect(options.focusSheetTransitionRef.current).toHaveBeenCalledWith(true)
     expect(options.pendingViewFocusRef.current).toBe('plan')
     expect(options.dispatch).toHaveBeenCalledWith({ type: 'open-plan' })
   })
@@ -65,7 +62,6 @@ describe('useAppNavigation', () => {
     act(() => result.current.navigateToStop('STOP-A'))
 
     expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'stop', id: 'STOP-A' })
-    expect(options.focusSheetTransitionRef.current).toHaveBeenCalledWith(true)
     expect(options.pendingViewFocusRef.current).toBe('plan')
     expect(options.dispatch).toHaveBeenCalledWith({ type: 'select-view', view: 'plan' })
   })
@@ -76,7 +72,6 @@ describe('useAppNavigation', () => {
 
     act(() => result.current.selectRouteFromStops('ROUTE-A'))
 
-    expect(options.focusSheetTransitionRef.current).toHaveBeenCalledWith(true)
     expect(options.commands.enterMobileRoutes).toHaveBeenCalledOnce()
     expect(options.commands.selectMobileRoute).toHaveBeenCalledWith('ROUTE-A')
     expect(options.pendingViewFocusRef.current).toBe('explore')

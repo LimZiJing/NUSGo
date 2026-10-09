@@ -4,16 +4,12 @@ import { ExploreView } from '../../features/explore-view/explore-view'
 import { PlanView } from '../../features/plan-view/plan-view'
 import { StopsView } from '../../features/stops-view/stops-view'
 import { MainNavigation } from '../../ui/main-navigation'
-import {
-  NavigationPanelShell,
-  type MobileSheetImplementation,
-} from '../../ui/navigation-panel-shell'
+import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
 
 interface PanelShellBindings {
   readonly ref: Ref<HTMLElement>
-  readonly onBeforeToggle: () => void
   readonly onDetentChange: (detent: MobileSheetDetent) => void
 }
 
@@ -24,7 +20,6 @@ type ExploreViewProps = Omit<
 
 export interface AppViewsProps {
   readonly isMobileViewport: boolean
-  readonly mobileSheetImplementation: MobileSheetImplementation
   readonly sheetPortalContainer: HTMLElement | null
   readonly navigation: NavigationState
   readonly onSelectView: ComponentProps<typeof MainNavigation>['onSelectView']
@@ -48,7 +43,6 @@ export interface AppViewsProps {
 
 export function AppViews({
   isMobileViewport,
-  mobileSheetImplementation,
   sheetPortalContainer,
   navigation,
   onSelectView,
@@ -57,17 +51,14 @@ export function AppViews({
     mainNavigationRef,
     plan: {
       ref: planSheetRef,
-      onBeforeToggle: onBeforePlanToggle,
       onDetentChange: onPlanDetentChange,
     },
     explore: {
       ref: exploreSheetRef,
-      onBeforeToggle: onBeforeExploreToggle,
       onDetentChange: onExploreDetentChange,
     },
     stops: {
       ref: stopsSheetRef,
-      onBeforeToggle: onBeforeStopsToggle,
       onDetentChange: onStopsDetentChange,
     },
   },
@@ -88,9 +79,7 @@ export function AppViews({
             lastNonCollapsedDetent={navigation.sheets.plan.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'plan'}
-            implementation={mobileSheetImplementation}
             portalContainer={sheetPortalContainer}
-            onBeforeToggle={onBeforePlanToggle}
             onDetentChange={onPlanDetentChange}
             sectionProps={{ 'aria-label': 'Trip endpoints' }}
             shellRef={planSheetRef}
@@ -107,9 +96,7 @@ export function AppViews({
             lastNonCollapsedDetent={navigation.sheets.explore.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'explore'}
-            implementation={mobileSheetImplementation}
             portalContainer={sheetPortalContainer}
-            onBeforeToggle={onBeforeExploreToggle}
             onDetentChange={onExploreDetentChange}
             sectionProps={{ 'aria-labelledby': 'explore-view-heading' }}
             shellRef={exploreSheetRef}
@@ -141,9 +128,7 @@ export function AppViews({
             lastNonCollapsedDetent={navigation.sheets.stops.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'stops'}
-            implementation={mobileSheetImplementation}
             portalContainer={sheetPortalContainer}
-            onBeforeToggle={onBeforeStopsToggle}
             onDetentChange={onStopsDetentChange}
             sectionProps={{ 'aria-label': 'Stops' }}
             shellRef={stopsSheetRef}

@@ -9,7 +9,6 @@ import {
 } from 'react'
 import { LocationControl } from '../ui/location-control'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
-import { animateMobileSheet } from '../ui/mobile/mobile-sheet/animate-mobile-sheet'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
   createNavigationSessionCommandAdapter,
@@ -48,13 +47,6 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [theme, setTheme] = useState<Theme>(getSystemTheme)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
-  const [mobileSheetImplementation] = useState<AppViewsProps['mobileSheetImplementation']>(() => (
-    import.meta.env.DEV &&
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('sheet') === 'custom'
-      ? 'custom'
-      : 'base-ui'
-  ))
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
   const state = useNavigationSession(session)
@@ -66,18 +58,11 @@ function App() {
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
   const navigationState = useAppNavigationState()
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
-  const prepareSheetTransitionRef = useRef<((viewChange?: boolean) => void) | null>(null)
   const focusTripControlAfterOverlayRef = useRef(false)
   const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
     mapShellRef.current = shell
     setSheetPortalContainer(shell)
   }, [])
-  const pendingSheetTransitionRef = useRef<{
-    startHeight: number
-    startBottom: number
-    viewChange: boolean
-  } | null>(null)
-  const sheetAnimationCleanupRef = useRef<(() => void) | null>(null)
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
   const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
@@ -114,12 +99,10 @@ function App() {
     exploreView: state.exploreView,
     focusStop: stopsView.focusStop,
     locationStatus: state.location.status,
-    focusSheetTransitionRef: prepareSheetTransitionRef,
     pendingViewFocusRef,
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
-  const activeSheetDetent = appNavigation.activeSheetDetent
   const { mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
@@ -161,57 +144,6 @@ function App() {
     )
     target?.focus()
   }, [activeView])
-
-  const getActiveMobileSheet = useCallback((): HTMLElement | null => {
-    if (navigation.activeView === 'plan') return tripControlsRef.current
-    if (navigation.activeView === 'stops') return stopsSheetRef.current
-    return exploreViewRef.current
-  }, [navigation.activeView])
-
-  const prepareSheetTransition = useCallback((viewChange = activeSheetDetent === 'collapsed'): void => {
-    if (!isMobileViewport || mobileSheetImplementation === 'base-ui') return
-    sheetAnimationCleanupRef.current?.()
-    sheetAnimationCleanupRef.current = null
-    const sheet = getActiveMobileSheet()
-    const startHeight = sheet?.getBoundingClientRect().height ?? 0
-    const startBottom = sheet ? Number.parseFloat(window.getComputedStyle(sheet).bottom) : 0
-    pendingSheetTransitionRef.current = sheet
-      ? { startHeight, startBottom: Number.isFinite(startBottom) ? startBottom : 0, viewChange }
-      : null
-  }, [activeSheetDetent, getActiveMobileSheet, isMobileViewport, mobileSheetImplementation])
-
-  useLayoutEffect(() => {
-    prepareSheetTransitionRef.current = (viewChange) => prepareSheetTransition(viewChange)
-  }, [activeSheetDetent, prepareSheetTransition])
-
-  useLayoutEffect(() => {
-    const pending = pendingSheetTransitionRef.current
-    if (!pending || !isMobileViewport || mobileSheetImplementation === 'base-ui') return
-    pendingSheetTransitionRef.current = null
-    const sheet = getActiveMobileSheet()
-    if (!sheet) return
-
-    const cleanup = animateMobileSheet(
-      sheet,
-      pending.startHeight,
-      pending.viewChange,
-      pending.startBottom,
-    )
-    sheetAnimationCleanupRef.current = cleanup
-    return () => {
-      cleanup()
-      if (sheetAnimationCleanupRef.current === cleanup) sheetAnimationCleanupRef.current = null
-    }
-  }, [
-    isMobileViewport,
-    mobileSheetImplementation,
-    getActiveMobileSheet,
-    navigation.activeView,
-    navigation.sheets.explore.detent,
-    navigation.sheets.plan.detent,
-    navigation.sheets.stops.detent,
-    state.exploreView.mode,
-  ])
 
   useLayoutEffect(() => {
     if (!focusTripControlAfterOverlayRef.current) return
@@ -298,7 +230,6 @@ function App() {
     onSearchResult: () => appNavigation.selectMobileSearchResult('explore'),
     onOpenShuttle: () => {
       if (isMobileViewport) {
-        prepareSheetTransition(true)
         appNavigation.dismissMobileSearch('explore')
       }
       commands.enterMobileRoutes()
@@ -394,7 +325,6 @@ function App() {
       </div>
       <AppViews
         isMobileViewport={isMobileViewport}
-        mobileSheetImplementation={mobileSheetImplementation}
         sheetPortalContainer={sheetPortalContainer}
         navigation={navigation}
         onSelectView={selectView}
@@ -403,7 +333,6 @@ function App() {
           mainNavigationRef,
           plan: {
             ref: tripControlsRef,
-            onBeforeToggle: () => prepareSheetTransition(),
             onDetentChange: (detent) => {
               if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
                 focusTripControlAfterOverlayRef.current = true
@@ -418,7 +347,6 @@ function App() {
           },
           explore: {
             ref: exploreViewRef,
-            onBeforeToggle: () => prepareSheetTransition(),
             onDetentChange: (detent) => appNavigation.dispatch({
               type: 'set-sheet-detent',
               view: 'explore',
@@ -428,7 +356,6 @@ function App() {
           },
           stops: {
             ref: stopsSheetRef,
-            onBeforeToggle: () => prepareSheetTransition(),
             onDetentChange: (detent) => appNavigation.dispatch({
               type: 'set-sheet-detent',
               view: 'stops',

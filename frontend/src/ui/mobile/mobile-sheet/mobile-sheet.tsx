@@ -144,7 +144,6 @@ export function MobileSheet({
                 <MobileSheetHandle
                   detent={detent}
                   restoreDetent={lastNonCollapsedDetent}
-                  dragEnabled={false}
                   label={label}
                   controlsId={controlsId}
                   onButtonRef={onButtonRef}

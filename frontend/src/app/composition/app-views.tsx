@@ -64,8 +64,6 @@ export function AppViews({
   },
   views,
 }: AppViewsProps) {
-  const activeSheetDetent = navigation.sheets[navigation.activeView].detent
-
   return (
     <aside
       className="map-overlay-right navigation-column"
@@ -78,7 +76,6 @@ export function AppViews({
             label="Plan trip panel"
             controlsId="plan-view-content"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
-            activeDetent={activeSheetDetent}
             lastNonCollapsedDetent={navigation.sheets.plan.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'plan'}
@@ -96,7 +93,6 @@ export function AppViews({
             label="Explore panel"
             controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
-            activeDetent={activeSheetDetent}
             lastNonCollapsedDetent={navigation.sheets.explore.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'explore'}
@@ -129,7 +125,6 @@ export function AppViews({
             label="Stops panel"
             controlsId="stops-view-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
-            activeDetent={activeSheetDetent}
             lastNonCollapsedDetent={navigation.sheets.stops.lastNonCollapsedDetent}
             enabled={isMobileViewport}
             active={navigation.activeView === 'stops'}

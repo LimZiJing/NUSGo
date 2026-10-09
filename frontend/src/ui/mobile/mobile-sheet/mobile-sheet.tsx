@@ -16,7 +16,7 @@ interface MobileSheetProps {
   readonly controlsId: string
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
-  readonly activeDetent: MobileSheetDetent
+  readonly detent: MobileSheetDetent
   readonly lastNonCollapsedDetent: OpenMobileSheetDetent
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
@@ -35,7 +35,7 @@ export function MobileSheet({
   controlsId,
   active,
   portalContainer,
-  activeDetent,
+  detent,
   lastNonCollapsedDetent,
   onDetentChange,
   onButtonRef,
@@ -110,21 +110,26 @@ export function MobileSheet({
 
   return (
     <Drawer.Root
-      // Keep each tab's drawer open so switching tabs changes its snap point
-      // directly instead of replaying Base UI's opening transition from full.
+      // Keep each tab's drawer open at its own saved detent so showing it does
+      // not replay Base UI's opening transition or animate from another tab.
       open
       modal={false}
       disablePointerDismissal
       snapPoints={[...snapPoints]}
-      snapPoint={getMobileSheetSnapPoint(activeDetent, snapPoints)}
+      snapPoint={getMobileSheetSnapPoint(detent, snapPoints)}
       snapToSequentialPoints
-      onOpenChange={(open) => {
-        if (active && !open) onDetentChange('collapsed')
+      onOpenChange={(open, eventDetails) => {
+        if (open) return
+        // This sheet stays mounted at its collapsed snap point, even after a
+        // swipe that Base UI would otherwise turn into a drawer dismissal.
+        eventDetails.cancel()
+        if (active) onDetentChange('collapsed')
       }}
-      onSnapPointChange={(snapPoint) => {
+      onSnapPointChange={(snapPoint, eventDetails) => {
+        if (snapPoint === null) eventDetails.cancel()
         if (!active) return
         const nextDetent = getMobileSheetDetent(snapPoint, snapPoints)
-        if (nextDetent !== activeDetent) onDetentChange(nextDetent)
+        if (nextDetent !== null && nextDetent !== detent) onDetentChange(nextDetent)
       }}
     >
       {portalContainer && (
@@ -132,7 +137,7 @@ export function MobileSheet({
           <Drawer.Viewport
             className="mobile-sheet-viewport"
             data-active={active ? 'true' : 'false'}
-            data-detent={activeDetent}
+            data-detent={detent}
             aria-hidden={!active}
             inert={!active}
           >
@@ -141,14 +146,14 @@ export function MobileSheet({
               className={`navigation-panel ${className} mobile-sheet-popup`}
               role="region"
               data-mobile-sheet=""
-              data-detent={activeDetent}
+              data-detent={detent}
               initialFocus={false}
               finalFocus={false}
               ref={onPanelRef}
             >
               <div className="mobile-sheet-handle-row">
                 <MobileSheetHandle
-                  detent={activeDetent}
+                  detent={detent}
                   restoreDetent={lastNonCollapsedDetent}
                   label={label}
                   controlsId={controlsId}

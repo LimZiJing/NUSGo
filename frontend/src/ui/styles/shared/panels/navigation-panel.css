@@ -16,4 +16,5 @@
   overscroll-behavior: contain;
   padding-inline-end: var(--space-2);
   scrollbar-gutter: stable;
+  touch-action: auto;
 }

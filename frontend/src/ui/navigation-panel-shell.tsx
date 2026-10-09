@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { BaseUiMobileSheet } from './mobile/mobile-sheet/base-ui-mobile-sheet'
+import { MobileSheet } from './mobile/mobile-sheet/mobile-sheet'
 import { MobileSheetHandle } from './mobile/mobile-sheet/mobile-sheet-handle'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
 
@@ -43,7 +43,7 @@ export function NavigationPanelShell({
   lastNonCollapsedDetent = 'partial',
   enabled = true,
   active = true,
-  implementation = 'custom',
+  implementation = 'base-ui',
   portalContainer,
   onBeforeToggle,
   onDetentChange,
@@ -87,7 +87,7 @@ export function NavigationPanelShell({
 
   if (enabled && implementation === 'base-ui') {
     return (
-      <BaseUiMobileSheet
+      <MobileSheet
         className={className}
         label={label}
         controlsId={controlsId}
@@ -95,14 +95,13 @@ export function NavigationPanelShell({
         portalContainer={portalContainer ?? null}
         detent={detent}
         lastNonCollapsedDetent={lastNonCollapsedDetent}
-        onBeforeToggle={onBeforeToggle}
         onDetentChange={onDetentChange}
         onButtonRef={assignHandleRef}
         onPanelRef={assignPanelRef}
         panelProps={sectionProps}
       >
         {children}
-      </BaseUiMobileSheet>
+      </MobileSheet>
     )
   }
 

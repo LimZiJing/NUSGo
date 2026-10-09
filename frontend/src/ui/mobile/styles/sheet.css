@@ -114,11 +114,11 @@
     display: grid !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'][data-mobile-sheet-animating='true'] > :not(.mobile-sheet-handle-row) {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'][data-mobile-sheet-animating='true'] > :not(.mobile-sheet-handle-row) {
     display: none !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'] {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'] {
     display: flex !important;
     top: auto !important;
     bottom: var(--mobile-tab-bar-height);
@@ -133,12 +133,12 @@
     gap: 0 !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-mobile-sheet-dragging='true'] {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-mobile-sheet-dragging='true'] {
     padding-right: 10px !important;
     padding-left: 10px !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed']:not([data-mobile-sheet-dragging='true']) > :not(.mobile-sheet-handle-row) {
     display: none !important;
   }
 
@@ -147,12 +147,12 @@
     display: flex !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='collapsed'][data-mobile-sheet-settling='collapsed'] {
     display: block !important;
     max-height: var(--mobile-viewport-height) !important;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='partial'] {
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='partial'] {
     top: auto;
     bottom: var(--mobile-tab-bar-height);
     height: var(--mobile-sheet-max-height) !important;
@@ -161,7 +161,7 @@
     overflow: hidden;
   }
 
-  [data-mobile-sheet]:not([data-sheet-implementation='base-ui'])[data-detent='full'],
+  [data-mobile-sheet]:not(.mobile-sheet-popup)[data-detent='full'],
   [data-mobile-sheet][data-mobile-sheet-measuring='full'] {
     z-index: 15;
     top: 0;
@@ -197,7 +197,7 @@
     max-height: var(--mobile-sheet-max-height);
   }
 
-  .base-ui-mobile-sheet-viewport {
+  .mobile-sheet-viewport {
     position: absolute;
     z-index: 20;
     inset: 0;
@@ -207,11 +207,11 @@
     pointer-events: none;
   }
 
-  .base-ui-mobile-sheet-viewport[data-detent='full'] {
+  .mobile-sheet-viewport[data-detent='full'] {
     clip-path: inset(0);
   }
 
-  .navigation-panel.base-ui-mobile-sheet-popup {
+  .navigation-panel.mobile-sheet-popup {
     top: 0;
     right: 0;
     bottom: 0;
@@ -234,44 +234,44 @@
     will-change: transform;
   }
 
-  .base-ui-mobile-sheet-viewport[data-starting-style],
-  .base-ui-mobile-sheet-popup[data-starting-style] {
+  .mobile-sheet-viewport[data-starting-style],
+  .mobile-sheet-popup[data-starting-style] {
     transition: none;
   }
 
-  .base-ui-mobile-sheet-viewport,
-  .base-ui-mobile-sheet-popup {
+  .mobile-sheet-viewport,
+  .mobile-sheet-popup {
     box-sizing: border-box;
   }
 
-  .base-ui-mobile-sheet-content {
+  .mobile-sheet-content {
     display: contents;
   }
 
-  .base-ui-mobile-sheet-content > .plan-view,
-  .base-ui-mobile-sheet-content > .explore-view,
-  .base-ui-mobile-sheet-content > .stops-view {
+  .mobile-sheet-content > .plan-view,
+  .mobile-sheet-content > .explore-view,
+  .mobile-sheet-content > .stops-view {
     height: auto;
     min-height: 0;
     flex: 1 1 auto;
   }
 
-  .base-ui-mobile-sheet-popup[data-swiping] {
+  .mobile-sheet-popup[data-swiping] {
     transition: none;
   }
 
-  .base-ui-mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
+  .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
     opacity: 0.72;
   }
 
-  .navigation-panel.base-ui-mobile-sheet-popup[data-detent='full'] {
+  .navigation-panel.mobile-sheet-popup[data-detent='full'] {
     z-index: 15;
     padding-top: max(8px, env(safe-area-inset-top, 0px));
     padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     border-radius: 0;
   }
 
-  .navigation-panel.base-ui-mobile-sheet-popup[data-detent='collapsed'] {
+  .navigation-panel.mobile-sheet-popup[data-detent='collapsed'] {
     z-index: 10;
     padding: 0;
     border: 0;

@@ -51,9 +51,9 @@ function App() {
   const [mobileSheetImplementation] = useState<AppViewsProps['mobileSheetImplementation']>(() => (
     import.meta.env.DEV &&
     typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('sheet') === 'base-ui'
-      ? 'base-ui'
-      : 'custom'
+    new URLSearchParams(window.location.search).get('sheet') === 'custom'
+      ? 'custom'
+      : 'base-ui'
   ))
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))

@@ -3,17 +3,17 @@ import type { MobileSheetDetent } from './mobile-sheet-detent'
 
 const PARTIAL_VIEWPORT_RATIO = 0.5
 
-export type BaseUiMobileSheetSnapPoints = readonly [
+export type MobileSheetSnapPoints = readonly [
   collapsed: string,
   partial: string,
   full: string,
 ]
 
-export function createBaseUiMobileSheetSnapPoints(
+export function createMobileSheetSnapPoints(
   viewportHeight: number,
   tabBarInset: number,
   collapsedHeight: number,
-): BaseUiMobileSheetSnapPoints {
+): MobileSheetSnapPoints {
   const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
   const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
   const maximumHeight = visibleHeight
@@ -34,18 +34,18 @@ export function createBaseUiMobileSheetSnapPoints(
   return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]
 }
 
-export function getBaseUiMobileSheetSnapPoint(
+export function getMobileSheetSnapPoint(
   detent: MobileSheetDetent,
-  snapPoints: BaseUiMobileSheetSnapPoints,
+  snapPoints: MobileSheetSnapPoints,
 ): Drawer.Root.SnapPoint {
   if (detent === 'collapsed') return snapPoints[0]
   if (detent === 'partial') return snapPoints[1]
   return snapPoints[2]
 }
 
-export function getBaseUiMobileSheetDetent(
+export function getMobileSheetDetent(
   snapPoint: Drawer.Root.SnapPoint | null,
-  snapPoints: BaseUiMobileSheetSnapPoints,
+  snapPoints: MobileSheetSnapPoints,
 ): MobileSheetDetent {
   if (snapPoint === null || Object.is(snapPoint, snapPoints[0])) return 'collapsed'
   if (Object.is(snapPoint, snapPoints[1])) return 'partial'

@@ -4,13 +4,13 @@ import { MobileSheetHandle } from './mobile-sheet-handle'
 import { getMobileTabBarInset } from './mobile-sheet-layout'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
 import {
-  createBaseUiMobileSheetSnapPoints,
-  getBaseUiMobileSheetDetent,
-  getBaseUiMobileSheetSnapPoint,
-  type BaseUiMobileSheetSnapPoints,
-} from './base-ui-mobile-sheet-state'
+  createMobileSheetSnapPoints,
+  getMobileSheetDetent,
+  getMobileSheetSnapPoint,
+  type MobileSheetSnapPoints,
+} from './mobile-sheet-snap-points'
 
-interface BaseUiMobileSheetProps {
+interface MobileSheetProps {
   readonly className: string
   readonly label: string
   readonly controlsId: string
@@ -18,7 +18,6 @@ interface BaseUiMobileSheetProps {
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
   readonly lastNonCollapsedDetent: OpenMobileSheetDetent
-  readonly onBeforeToggle?: () => void
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
@@ -28,9 +27,9 @@ interface BaseUiMobileSheetProps {
   readonly children: ReactNode
 }
 
-const INITIAL_SNAP_POINTS: BaseUiMobileSheetSnapPoints = ['44px', '200px', '640px']
+const INITIAL_SNAP_POINTS: MobileSheetSnapPoints = ['44px', '200px', '640px']
 
-export function BaseUiMobileSheet({
+export function MobileSheet({
   className,
   label,
   controlsId,
@@ -38,14 +37,13 @@ export function BaseUiMobileSheet({
   portalContainer,
   detent,
   lastNonCollapsedDetent,
-  onBeforeToggle,
   onDetentChange,
   onButtonRef,
   onPanelRef,
   panelProps,
   children,
-}: BaseUiMobileSheetProps) {
-  const [snapPoints, setSnapPoints] = useState<BaseUiMobileSheetSnapPoints>(INITIAL_SNAP_POINTS)
+}: MobileSheetProps) {
+  const [snapPoints, setSnapPoints] = useState<MobileSheetSnapPoints>(INITIAL_SNAP_POINTS)
   const updateSnapPoints = useCallback((): void => {
     const mapShell = portalContainer
     if (!mapShell) return
@@ -74,7 +72,7 @@ export function BaseUiMobileSheet({
       ? collapsedHeightValue
       : (Number.isFinite(handleRowHeight) ? handleRowHeight : 0) +
         (Number.isFinite(handleExtension) ? handleExtension : 0)
-    const nextSnapPoints = createBaseUiMobileSheetSnapPoints(
+    const nextSnapPoints = createMobileSheetSnapPoints(
       viewportHeight,
       tabBarInset,
       collapsedHeight,
@@ -116,29 +114,28 @@ export function BaseUiMobileSheet({
       modal={false}
       disablePointerDismissal
       snapPoints={[...snapPoints]}
-      snapPoint={getBaseUiMobileSheetSnapPoint(detent, snapPoints)}
+      snapPoint={getMobileSheetSnapPoint(detent, snapPoints)}
       snapToSequentialPoints
       onOpenChange={(open) => {
         if (!open) onDetentChange('collapsed')
       }}
       onSnapPointChange={(snapPoint) => {
-        const nextDetent = getBaseUiMobileSheetDetent(snapPoint, snapPoints)
+        const nextDetent = getMobileSheetDetent(snapPoint, snapPoints)
         if (nextDetent !== detent) onDetentChange(nextDetent)
       }}
     >
       {portalContainer && (
         <Drawer.Portal container={portalContainer}>
           <Drawer.Viewport
-            className="base-ui-mobile-sheet-viewport"
+            className="mobile-sheet-viewport"
             data-detent={detent}
           >
             <Drawer.Popup
               {...panelProps}
-              className={`navigation-panel ${className} base-ui-mobile-sheet-popup`}
+              className={`navigation-panel ${className} mobile-sheet-popup`}
               role="region"
               data-mobile-sheet=""
               data-detent={detent}
-              data-sheet-implementation="base-ui"
               initialFocus={false}
               finalFocus={false}
               ref={onPanelRef}
@@ -151,11 +148,10 @@ export function BaseUiMobileSheet({
                   label={label}
                   controlsId={controlsId}
                   onButtonRef={onButtonRef}
-                  onBeforeClick={onBeforeToggle}
                   onDetentChange={onDetentChange}
                 />
               </div>
-              <Drawer.Content className="base-ui-mobile-sheet-content">
+              <Drawer.Content className="mobile-sheet-content">
                 {children}
               </Drawer.Content>
             </Drawer.Popup>

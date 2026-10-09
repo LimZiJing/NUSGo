@@ -127,7 +127,7 @@ export function useMapOverlayLayout({
         tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
         cssTabBarInset,
       )
-      const activeSheetHeight = activeSheet?.dataset.sheetImplementation === 'base-ui'
+      const activeSheetHeight = activeSheet?.classList.contains('mobile-sheet-popup')
         ? Math.max(0, mapShellBottom - tabBarInset - (activeSheetBounds?.top ?? mapShellBottom))
         : activeSheetBounds?.height ?? 0
       const nextInsets = applyMapOverlayMeasurements(commands, {

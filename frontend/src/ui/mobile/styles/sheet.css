@@ -94,6 +94,11 @@
     pointer-events: none;
   }
 
+  .mobile-sheet-viewport[data-active='false'] {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .mobile-sheet-viewport[data-detent='full'] {
     clip-path: inset(0);
   }

@@ -16,7 +16,7 @@ interface MobileSheetProps {
   readonly controlsId: string
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
-  readonly detent: MobileSheetDetent
+  readonly activeDetent: MobileSheetDetent
   readonly lastNonCollapsedDetent: OpenMobileSheetDetent
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
@@ -35,7 +35,7 @@ export function MobileSheet({
   controlsId,
   active,
   portalContainer,
-  detent,
+  activeDetent,
   lastNonCollapsedDetent,
   onDetentChange,
   onButtonRef,
@@ -110,39 +110,45 @@ export function MobileSheet({
 
   return (
     <Drawer.Root
-      open={active}
+      // Keep each tab's drawer open so switching tabs changes its snap point
+      // directly instead of replaying Base UI's opening transition from full.
+      open
       modal={false}
       disablePointerDismissal
       snapPoints={[...snapPoints]}
-      snapPoint={getMobileSheetSnapPoint(detent, snapPoints)}
+      snapPoint={getMobileSheetSnapPoint(activeDetent, snapPoints)}
       snapToSequentialPoints
       onOpenChange={(open) => {
-        if (!open) onDetentChange('collapsed')
+        if (active && !open) onDetentChange('collapsed')
       }}
       onSnapPointChange={(snapPoint) => {
+        if (!active) return
         const nextDetent = getMobileSheetDetent(snapPoint, snapPoints)
-        if (nextDetent !== detent) onDetentChange(nextDetent)
+        if (nextDetent !== activeDetent) onDetentChange(nextDetent)
       }}
     >
       {portalContainer && (
         <Drawer.Portal container={portalContainer} keepMounted>
           <Drawer.Viewport
             className="mobile-sheet-viewport"
-            data-detent={detent}
+            data-active={active ? 'true' : 'false'}
+            data-detent={activeDetent}
+            aria-hidden={!active}
+            inert={!active}
           >
             <Drawer.Popup
               {...panelProps}
               className={`navigation-panel ${className} mobile-sheet-popup`}
               role="region"
               data-mobile-sheet=""
-              data-detent={detent}
+              data-detent={activeDetent}
               initialFocus={false}
               finalFocus={false}
               ref={onPanelRef}
             >
               <div className="mobile-sheet-handle-row">
                 <MobileSheetHandle
-                  detent={detent}
+                  detent={activeDetent}
                   restoreDetent={lastNonCollapsedDetent}
                   label={label}
                   controlsId={controlsId}

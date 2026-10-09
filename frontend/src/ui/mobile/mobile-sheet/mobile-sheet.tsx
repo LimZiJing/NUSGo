@@ -125,7 +125,7 @@ export function MobileSheet({
       }}
     >
       {portalContainer && (
-        <Drawer.Portal container={portalContainer}>
+        <Drawer.Portal container={portalContainer} keepMounted>
           <Drawer.Viewport
             className="mobile-sheet-viewport"
             data-detent={detent}

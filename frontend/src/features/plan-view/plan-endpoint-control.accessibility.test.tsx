@@ -187,7 +187,12 @@ describe('PlanView interactions', () => {
     await user.click(submit)
     expect(onPlanJourney).toHaveBeenCalledOnce()
 
-    rerender(<PlanView {...controls} journey={{ status: 'loading', journey: null, error: null }} />)
+    rerender(<PlanView {...controls} journey={{
+      status: 'loading',
+      journey: null,
+      candidates: [],
+      error: null,
+    }} />)
     expect((screen.getByRole('button', { name: 'Get route' }) as HTMLButtonElement).disabled).toBe(true)
   })
 

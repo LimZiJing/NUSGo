@@ -49,12 +49,52 @@ describe('shared view navigation', () => {
 
   it('does not change any detent when only the active view changes', () => {
     const initial = createInitialNavigationState()
-    const next = navigationReducer(initial, {
+    const collapsedPlan = navigationReducer(initial, {
+      type: 'set-sheet-detent',
+      view: 'plan',
+      detent: 'collapsed',
+      source: 'manual',
+    })
+    const next = navigationReducer(collapsedPlan, {
       type: 'select-view',
       view: 'plan',
     })
 
-    expect(next.sheets).toEqual(initial.sheets)
+    expect(next.activeView).toBe('plan')
+    expect(next.sheets).toEqual(collapsedPlan.sheets)
+  })
+
+  it('restores a collapsed Plan sheet for map selection and preserves other Plan detents', () => {
+    const initiallyOpen = navigationReducer(createInitialNavigationState(), {
+      type: 'set-sheet-detent',
+      view: 'plan',
+      detent: 'full',
+      source: 'manual',
+    })
+    const collapsedPlan = navigationReducer(initiallyOpen, {
+      type: 'set-sheet-detent',
+      view: 'plan',
+      detent: 'collapsed',
+      source: 'manual',
+    })
+    const onStops = navigationReducer(collapsedPlan, { type: 'select-view', view: 'stops' })
+    const planFromMap = navigationReducer(onStops, { type: 'activate-plan-from-map' })
+
+    expect(planFromMap.activeView).toBe('plan')
+    expect(planFromMap.sheets.plan.detent).toBe('full')
+    expect(planFromMap.sheets.plan.lastNonCollapsedDetent).toBe('full')
+    const alreadyOnCollapsedPlan = { ...onStops, activeView: 'plan' as const }
+    expect(navigationReducer(alreadyOnCollapsedPlan, { type: 'activate-plan-from-map' }))
+      .toBe(alreadyOnCollapsedPlan)
+
+    const partialPlan = navigationReducer(createInitialNavigationState(), {
+      type: 'set-sheet-detent',
+      view: 'plan',
+      detent: 'partial',
+      source: 'manual',
+    })
+    expect(navigationReducer(partialPlan, { type: 'activate-plan-from-map' }).sheets.plan)
+      .toEqual(partialPlan.sheets.plan)
   })
 
   it('reopens a collapsed active view at its last non-collapsed detent', () => {

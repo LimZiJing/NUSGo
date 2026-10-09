@@ -559,6 +559,123 @@ describe('createJourneyPlanningService', () => {
     })
   })
 
+  it('enriches a same-route final walk to a selected destination stop while keeping the origin stop fixed', async () => {
+    const transit = createFourStopTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => []),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: 100,
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const walkingConnectionProvider = {
+      getWalkingConnections: vi.fn(async () => [
+        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 100, durationSeconds: 100 },
+        { fromKey: 'stop:STOP-D', toKey: 'stop:STOP-C', distanceMeters: 100, durationSeconds: 100 },
+        { fromKey: 'stop:STOP-A', toKey: 'stop:STOP-D', distanceMeters: 5_000, durationSeconds: 5_000 },
+      ]),
+    }
+
+    const journey = await createJourneyPlanningService(
+      routeEngine,
+      undefined,
+      undefined,
+      Date.now,
+      walkingConnectionProvider,
+    )({
+      tripRequest: {
+        origin: { kind: 'stop', id: 'STOP-A' },
+        destination: { kind: 'stop', id: 'STOP-D' },
+      },
+      venues: {},
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(journey?.candidates.some(({ journey: candidate }) => {
+      const firstLeg = candidate.legs[0]
+      const finalLeg = candidate.legs.at(-1)
+
+      return firstLeg?.mode === 'shuttle' &&
+        firstLeg.boardingStopId === 'STOP-A' &&
+        finalLeg?.mode === 'walking' &&
+        finalLeg.from.kind === 'stop' &&
+        finalLeg.from.id === 'STOP-C' &&
+        finalLeg.to.kind === 'stop' &&
+        finalLeg.to.id === 'STOP-D'
+    })).toBe(true)
+    expect(routeEngine.routeWalking).toHaveBeenCalledWith(
+      {
+        origin: { longitude: 103.002, latitude: 1 },
+        destination: { longitude: 103.003, latitude: 1 },
+      },
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('falls back to an exact-stop Journey when destination egress geometry is invalid', async () => {
+    const transit = createFourStopTransitData()
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => []),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: 100,
+        durationSeconds: 100,
+        geometry: origin.longitude === 103.002 && destination.longitude === 103.003
+          ? { type: 'LineString' as const, coordinates: [[103.002, 1] as const] }
+          : {
+              type: 'LineString' as const,
+              coordinates: [
+                [origin.longitude, origin.latitude] as const,
+                [destination.longitude, destination.latitude] as const,
+              ],
+            },
+      })),
+    }
+    const walkingConnectionProvider = {
+      getWalkingConnections: vi.fn(async () => [
+        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 100, durationSeconds: 100 },
+        { fromKey: 'stop:STOP-A', toKey: 'stop:STOP-D', distanceMeters: 5_000, durationSeconds: 5_000 },
+      ]),
+    }
+
+    const journey = await createJourneyPlanningService(
+      routeEngine,
+      undefined,
+      undefined,
+      Date.now,
+      walkingConnectionProvider,
+    )({
+      tripRequest: {
+        origin: { kind: 'stop', id: 'STOP-A' },
+        destination: { kind: 'stop', id: 'STOP-D' },
+      },
+      venues: {},
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    expect(routeEngine.routeWalking).toHaveBeenCalledWith(
+      {
+        origin: { longitude: 103.002, latitude: 1 },
+        destination: { longitude: 103.003, latitude: 1 },
+      },
+      expect.any(AbortSignal),
+    )
+    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['shuttle'])
+    expect(journey?.legs[0]).toMatchObject({
+      routeId: 'A1',
+      boardingStopId: 'STOP-A',
+      alightingStopId: 'STOP-D',
+    })
+  })
+
   it('does not hide aborted walking requests as no-route results', async () => {
     const transit = createTransitData()
     const controller = new AbortController()

@@ -92,6 +92,12 @@
     clip-path: inset(0 0 var(--mobile-tab-bar-height) 0);
     transition: clip-path var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: none;
+    touch-action: none;
+  }
+
+  .mobile-sheet-viewport[data-active='false'] {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .mobile-sheet-viewport[data-detent='full'] {
@@ -110,14 +116,23 @@
     max-height: none !important;
     flex-direction: column;
     overflow: hidden;
+    /* Keep scrollable content inside the visible part of a partial sheet. */
     padding: 0 max(12px, env(safe-area-inset-right))
-      12px max(12px, env(safe-area-inset-left));
+      max(12px, calc(
+        12px + var(--mobile-tab-bar-height) +
+        var(--drawer-snap-point-offset, 0px) +
+        var(--drawer-swipe-movement-y, 0px)
+      ))
+      max(12px, env(safe-area-inset-left));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: translateY(calc(
       var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)
     ));
-    transition: transform var(--motion-duration-panel) var(--motion-ease-standard);
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease-standard),
+      padding-bottom var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: auto;
+    touch-action: none;
     will-change: transform;
   }
 

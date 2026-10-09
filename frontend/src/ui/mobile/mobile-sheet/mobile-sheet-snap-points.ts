@@ -46,8 +46,9 @@ export function getMobileSheetSnapPoint(
 export function getMobileSheetDetent(
   snapPoint: Drawer.Root.SnapPoint | null,
   snapPoints: MobileSheetSnapPoints,
-): MobileSheetDetent {
+): MobileSheetDetent | null {
   if (snapPoint === null || Object.is(snapPoint, snapPoints[0])) return 'collapsed'
   if (Object.is(snapPoint, snapPoints[1])) return 'partial'
-  return 'full'
+  if (Object.is(snapPoint, snapPoints[2])) return 'full'
+  return null
 }

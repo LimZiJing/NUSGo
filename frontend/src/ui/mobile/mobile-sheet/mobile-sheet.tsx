@@ -110,25 +110,36 @@ export function MobileSheet({
 
   return (
     <Drawer.Root
-      open={active}
+      // Keep each tab's drawer open at its own saved detent so showing it does
+      // not replay Base UI's opening transition or animate from another tab.
+      open
       modal={false}
       disablePointerDismissal
       snapPoints={[...snapPoints]}
       snapPoint={getMobileSheetSnapPoint(detent, snapPoints)}
       snapToSequentialPoints
-      onOpenChange={(open) => {
-        if (!open) onDetentChange('collapsed')
+      onOpenChange={(open, eventDetails) => {
+        if (open) return
+        // This sheet stays mounted at its collapsed snap point, even after a
+        // swipe that Base UI would otherwise turn into a drawer dismissal.
+        eventDetails.cancel()
+        if (active) onDetentChange('collapsed')
       }}
-      onSnapPointChange={(snapPoint) => {
+      onSnapPointChange={(snapPoint, eventDetails) => {
+        if (snapPoint === null) eventDetails.cancel()
+        if (!active) return
         const nextDetent = getMobileSheetDetent(snapPoint, snapPoints)
-        if (nextDetent !== detent) onDetentChange(nextDetent)
+        if (nextDetent !== null && nextDetent !== detent) onDetentChange(nextDetent)
       }}
     >
       {portalContainer && (
         <Drawer.Portal container={portalContainer} keepMounted>
           <Drawer.Viewport
             className="mobile-sheet-viewport"
+            data-active={active ? 'true' : 'false'}
             data-detent={detent}
+            aria-hidden={!active}
+            inert={!active}
           >
             <Drawer.Popup
               {...panelProps}

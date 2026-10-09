@@ -26,5 +26,13 @@ describe('mobile sheet snap points', () => {
     expect(getMobileSheetSnapPoint('partial', points)).toBe('580px')
     expect(getMobileSheetDetent('1000px', points)).toBe('full')
     expect(getMobileSheetDetent(null, points)).toBe('collapsed')
+    expect(getMobileSheetDetent('580px', points)).toBe('partial')
+    expect(getMobileSheetDetent('124px', points)).toBe('collapsed')
+  })
+
+  it('does not mistake a snap point from an earlier viewport size for full', () => {
+    const points = createMobileSheetSnapPoints(844, 80, 44)
+
+    expect(getMobileSheetDetent('580px', points)).toBeNull()
   })
 })

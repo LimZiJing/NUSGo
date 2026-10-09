@@ -498,3 +498,38 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     focused.remove()
   })
 })
+
+describe('mobile drawer tab switches', () => {
+  it('keeps every drawer open at the destination tab detent and hides inactive panels', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
+    await user.click(screen.getByRole('button', { name: 'Collapse Stops panel' }))
+    expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    const viewports = Array.from(document.querySelectorAll<HTMLElement>('.mobile-sheet-viewport'))
+    expect(viewports).toHaveLength(3)
+    expect(viewports.every((viewport) => viewport.hasAttribute('data-open'))).toBe(true)
+    expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
+    expect(document.querySelector('.explore-sheet')?.getAttribute('data-detent')).toBe('partial')
+    expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('partial')
+    const exploreViewport = document.querySelector<HTMLElement>('.explore-sheet')
+      ?.closest<HTMLElement>('.mobile-sheet-viewport')
+    expect(exploreViewport?.dataset.active).toBe('true')
+    expect(viewports.filter((viewport) => viewport !== exploreViewport).every(
+      (viewport) => viewport.hasAttribute('inert') && viewport.getAttribute('aria-hidden') === 'true',
+    )).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    expect(document.querySelector('.plan-sheet')?.closest('.mobile-sheet-viewport')?.getAttribute('data-active'))
+      .toBe('true')
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
+    expect(document.querySelector('.explore-sheet')?.getAttribute('data-detent')).toBe('partial')
+    expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('partial')
+    expect(viewports.every((viewport) => viewport.hasAttribute('data-open'))).toBe(true)
+  })
+})

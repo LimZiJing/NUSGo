@@ -172,21 +172,6 @@
     max-height: none;
   }
 
-  [data-mobile-sheet-measuring='partial'] .explore-route-browser-timeline,
-  [data-mobile-sheet-measuring='full'] .explore-route-browser-timeline,
-  [data-mobile-sheet-dragging] .explore-route-browser-timeline,
-  [data-mobile-sheet-settling='partial'] .explore-route-browser-timeline,
-  [data-mobile-sheet-settling='full'] .explore-route-browser-timeline {
-    display: block !important;
-  }
-
-  [data-mobile-sheet-measuring='partial'] .explore-view-shuttle .explore-route-browser-timeline,
-  [data-mobile-sheet-measuring='full'] .explore-view-shuttle .explore-route-browser-timeline,
-  [data-mobile-sheet-dragging] .explore-view-shuttle .explore-route-browser-timeline,
-  [data-mobile-sheet-settling='partial'] .explore-view-shuttle .explore-route-browser-timeline,
-  [data-mobile-sheet-settling='full'] .explore-view-shuttle .explore-route-browser-timeline {
-    display: flex !important;
-  }
 }
 
 @media (min-width: 769px) {

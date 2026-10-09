@@ -444,14 +444,6 @@
     overflow: hidden;
   }
 
-  [data-mobile-sheet-measuring='partial'] .explore-view-shuttle .explore-view-content,
-  [data-mobile-sheet-measuring='full'] .explore-view-shuttle .explore-view-content,
-  [data-mobile-sheet-dragging] .explore-view-shuttle .explore-view-content,
-  [data-mobile-sheet-settling='partial'] .explore-view-shuttle .explore-view-content,
-  [data-mobile-sheet-settling='full'] .explore-view-shuttle .explore-view-content {
-    display: flex !important;
-  }
-
   .explore-view-venue-detail .explore-view-header {
     flex-direction: column;
     align-items: flex-start;
@@ -481,14 +473,6 @@
     min-height: 0;
   }
 
-  [data-mobile-sheet-measuring='partial'] .explore-view-venue-search .explore-view-search-body,
-  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-search-body,
-  [data-mobile-sheet-dragging] .explore-view-venue-search .explore-view-search-body,
-  [data-mobile-sheet-settling='partial'] .explore-view-venue-search .explore-view-search-body,
-  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-search-body {
-    display: flex !important;
-  }
-
   .explore-view-venue-search .explore-view-search-prompt {
     flex: 1 1 auto;
   }
@@ -497,9 +481,7 @@
     flex: 1 1 0;
   }
 
-  [data-mobile-sheet][data-detent='full'] .explore-view-venue-search .explore-view-results,
-  [data-mobile-sheet-measuring='full'] .explore-view-venue-search .explore-view-results,
-  [data-mobile-sheet-settling='full'] .explore-view-venue-search .explore-view-results {
+  [data-mobile-sheet][data-detent='full'] .explore-view-venue-search .explore-view-results {
     max-height: none;
   }
 

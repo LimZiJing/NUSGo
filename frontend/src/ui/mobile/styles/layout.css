@@ -22,7 +22,6 @@
       var(--mobile-sheet-handle-row-height) + var(--mobile-sheet-handle-target-extension)
     );
     --mobile-sheet-max-height: max(0px, calc(60% - var(--mobile-tab-bar-height)));
-    --mobile-sheet-min-height: min(200px, var(--mobile-sheet-max-height));
   }
 
   .map-shell::after {

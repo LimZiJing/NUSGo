@@ -83,15 +83,16 @@ The issue #140 and #141 screenshots document the pre-consolidation layout with s
 
 ## Mobile — 390 × 844
 
-- [ ] Explore, Stops, and Plan tabs remain visible over the shared map; desktop presentation is unchanged above 768px.
-- [ ] Explore starts expanded on Find venue with the Find venue / Shuttle routes selector; Stops starts compact; Plan opens with endpoint controls. Switching tabs restores each sheet state and preserves the map camera and trip endpoints.
-- [ ] The centered 44 × 44px handle toggles the active sheet by tap, Enter, or Space; dragging snaps to the nearer existing state, and a cancelled drag restores its starting state without a second toggle. Dragging beyond either stop shows resisted travel up to 32px and a 220ms return; releasing after moving back inside the allowed range uses the normal snap, and reduced-motion settings skip the rebound.
-- [ ] Dragging starts only on the handle; sheet content scrolls independently, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
+- [ ] Stops opens at the partial detent with a sheet occupying 50% of the visual viewport above the bottom navigation. Explore and Plan also start partial; desktop presentation is unchanged above 768px.
+- [ ] Explore, Stops, and Plan tabs remain visible while the sheet is partial or collapsed. Full reaches the top and bottom of the viewport and covers the tab bar; collapsed leaves the 44px handle above it.
+- [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
+- [ ] The handle works by tap, Enter, and Space. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
+- [ ] Scrollable sheet content scrolls natively, text and controls remain usable, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
-- [ ] The single mobile location button sits inside the top-left safe area, remains above mobile sheets, and is hidden while Plan is expanded. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
 
 ## Responsive boundary — 768 / 769px
 

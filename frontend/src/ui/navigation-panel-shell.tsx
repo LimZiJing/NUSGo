@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -6,7 +7,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { MobileSheetHandle } from './mobile/mobile-sheet/mobile-sheet-handle'
+import { MobileSheet } from './mobile/mobile-sheet/mobile-sheet'
 import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
 
 interface NavigationPanelShellProps {
@@ -16,7 +17,8 @@ interface NavigationPanelShellProps {
   readonly detent: MobileSheetDetent
   readonly lastNonCollapsedDetent?: OpenMobileSheetDetent
   readonly enabled?: boolean
-  readonly onBeforeToggle?: () => void
+  readonly active?: boolean
+  readonly portalContainer?: HTMLElement | null
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly shellRef?: Ref<HTMLElement>
   readonly sectionProps?: Omit<
@@ -35,7 +37,8 @@ export function NavigationPanelShell({
   detent,
   lastNonCollapsedDetent = 'partial',
   enabled = true,
-  onBeforeToggle,
+  active = true,
+  portalContainer,
   onDetentChange,
   shellRef,
   sectionProps,
@@ -45,6 +48,12 @@ export function NavigationPanelShell({
   const handleRef = useRef<HTMLButtonElement>(null)
   const previousDetentRef = useRef(detent)
   const previousEnabledRef = useRef(enabled)
+  const assignHandleRef = useCallback((button: HTMLButtonElement | null): void => {
+    handleRef.current = button
+  }, [])
+  const assignPanelRef = useCallback((panel: HTMLElement | null): void => {
+    internalShellRef.current = panel
+  }, [])
 
   useEffect(() => {
     const wasExpanded = previousDetentRef.current !== 'collapsed'
@@ -67,7 +76,27 @@ export function NavigationPanelShell({
     target?.focus()
   }, [enabled])
 
-  useImperativeHandle(shellRef, () => internalShellRef.current as HTMLElement, [])
+  useImperativeHandle(shellRef, () => internalShellRef.current as HTMLElement)
+
+  if (enabled) {
+    return (
+      <MobileSheet
+        className={className}
+        label={label}
+        controlsId={controlsId}
+        active={active}
+        portalContainer={portalContainer ?? null}
+        detent={detent}
+        lastNonCollapsedDetent={lastNonCollapsedDetent}
+        onDetentChange={onDetentChange}
+        onButtonRef={assignHandleRef}
+        onPanelRef={assignPanelRef}
+        panelProps={sectionProps}
+      >
+        {children}
+      </MobileSheet>
+    )
+  }
 
   return (
     <section
@@ -75,23 +104,8 @@ export function NavigationPanelShell({
       className={`navigation-panel ${className}`}
       data-mobile-sheet
       data-detent={detent}
-      ref={internalShellRef}
+      ref={assignPanelRef}
     >
-      {enabled && (
-        <div className="mobile-sheet-handle-row">
-          <MobileSheetHandle
-            detent={detent}
-            restoreDetent={lastNonCollapsedDetent}
-            label={label}
-            controlsId={controlsId}
-            onButtonRef={(button) => {
-              handleRef.current = button
-            }}
-            onBeforeClick={onBeforeToggle}
-            onDetentChange={onDetentChange}
-          />
-        </div>
-      )}
       {children}
     </section>
   )

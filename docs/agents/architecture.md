@@ -45,8 +45,9 @@ The diagram describes allowed ownership and dependency direction; it does not re
 ## State, callbacks, and seams
 
 - Feature modules own workflow state such as search queries, selections, and commands. UI modules may own only transient presentation state that has no domain meaning.
-- UI callbacks express user intent and are passed down from the owning feature or app controller. UI components do not perform network, MapLibre, DOM, or controller side effects directly.
+- UI callbacks express user intent and are passed down from the owning feature or app controller. UI components do not perform network, MapLibre, or controller side effects directly. A UI component may observe nearby layout geometry to render itself; app controllers own measurements that coordinate layout across components or features.
 - Keep the domain model, feature state, and commands shared across desktop and mobile. Use separate UI seams only when layout, focus management, scrolling, or interaction order changes materially. Keep feature-specific responsive rules beside the owning feature; keep reusable navigation, sheet, and layout rules in `frontend/src/ui/styles`.
+- `NavigationPanelShell` keeps the desktop/mobile presentation seam. The app-owned `MobileSheet` module under `frontend/src/ui/mobile/` contains the Base UI Drawer integration; application navigation owns detents, and feature views receive state and callbacks without importing the library.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
 ## Migration map and order

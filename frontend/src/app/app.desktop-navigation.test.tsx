@@ -473,8 +473,6 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     await user.click(screen.getByRole('button', { name: 'Collapse Plan trip panel' }))
     const sheet = document.querySelector<HTMLElement>('.plan-sheet')
     expect(sheet?.dataset.detent).toBe('collapsed')
-    expect(sheet?.querySelector<HTMLElement>('.mobile-sheet-handle')?.dataset.mobileSheetRestoreDetent)
-      .toBe('full')
     await user.click(screen.getByRole('button', { name: 'Stops' }))
 
     const focused = document.createElement('button')

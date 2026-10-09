@@ -1,0 +1,53 @@
+import type { Drawer } from '@base-ui/react/drawer'
+import type { MobileSheetDetent } from './mobile-sheet-detent'
+
+const PARTIAL_VIEWPORT_RATIO = 0.5
+
+export type MobileSheetSnapPoints = readonly [
+  collapsed: string,
+  partial: string,
+  full: string,
+]
+
+export function createMobileSheetSnapPoints(
+  viewportHeight: number,
+  tabBarInset: number,
+  collapsedHeight: number,
+): MobileSheetSnapPoints {
+  const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
+  const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
+  const maximumHeight = visibleHeight
+  // The viewport is clipped above the tab bar until the full detent is selected.
+  // Include that inset in the lower snap points to preserve their visible heights.
+  const collapsed = Math.min(
+    maximumHeight,
+    (Number.isFinite(collapsedHeight) ? Math.max(0, collapsedHeight) : 0) + visibleTabBarInset,
+  )
+  const partial = Math.max(
+    collapsed,
+    Math.min(
+      maximumHeight,
+      visibleHeight * PARTIAL_VIEWPORT_RATIO + visibleTabBarInset,
+    ),
+  )
+
+  return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]
+}
+
+export function getMobileSheetSnapPoint(
+  detent: MobileSheetDetent,
+  snapPoints: MobileSheetSnapPoints,
+): Drawer.Root.SnapPoint {
+  if (detent === 'collapsed') return snapPoints[0]
+  if (detent === 'partial') return snapPoints[1]
+  return snapPoints[2]
+}
+
+export function getMobileSheetDetent(
+  snapPoint: Drawer.Root.SnapPoint | null,
+  snapPoints: MobileSheetSnapPoints,
+): MobileSheetDetent {
+  if (snapPoint === null || Object.is(snapPoint, snapPoints[0])) return 'collapsed'
+  if (Object.is(snapPoint, snapPoints[1])) return 'partial'
+  return 'full'
+}

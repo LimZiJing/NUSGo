@@ -37,7 +37,6 @@ export interface UseAppNavigationOptions {
   readonly isMobileViewport: boolean
   readonly exploreView: Pick<ExploreViewState, 'mode' | 'selectedVenue'>
   readonly locationStatus: LocationTrackingStatus
-  readonly focusSheetTransitionRef: RefObject<((viewChange?: boolean) => void) | null>
   readonly pendingViewFocusRef: RefObject<NavigationView | null>
   readonly focusStop: (stopId: string) => void
 }
@@ -46,7 +45,6 @@ export interface AppNavigation {
   readonly state: NavigationState
   readonly dispatch: Dispatch<NavigationAction>
   readonly activeView: NavigationView
-  readonly activeSheetDetent: NavigationState['sheets'][NavigationView]['detent']
   readonly activeSheetExpanded: boolean
   readonly stopFocusRequest: { readonly stopId: string | null; readonly sequence: number }
   readonly focusStopAfterMapLayout: () => void
@@ -84,7 +82,6 @@ export function useAppNavigation({
   isMobileViewport,
   exploreView,
   locationStatus,
-  focusSheetTransitionRef,
   pendingViewFocusRef,
   focusStop,
 }: UseAppNavigationOptions): AppNavigation {
@@ -124,11 +121,10 @@ export function useAppNavigation({
       isMobileViewportRef.current &&
       currentNavigation.sheets.stops.detent === 'collapsed'
     ) {
-      focusSheetTransitionRef.current?.()
       dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
     }
     return true
-  }, [dispatch, focusSheetTransitionRef, openStopInStopsView])
+  }, [dispatch, openStopInStopsView])
 
   const handleMapStopInteraction = useCallback((stopId: string): void => {
     if (isMobileViewportRef.current) return
@@ -144,7 +140,6 @@ export function useAppNavigation({
     const switchingView = view !== currentNavigation.activeView
     const reopeningCollapsedView = !switchingView && activeSheetDetent === 'collapsed'
     if (isMobileViewport && (switchingView || reopeningCollapsedView)) {
-      focusSheetTransitionRef.current?.(reopeningCollapsedView)
       if (switchingView && currentNavigation.sheets[currentNavigation.activeView].search) {
         dispatch({ type: 'dismiss-search', view: currentNavigation.activeView })
       }
@@ -163,7 +158,6 @@ export function useAppNavigation({
     commands,
     dispatch,
     exploreView.mode,
-    focusSheetTransitionRef,
     isMobileViewport,
     locationStatus,
     state,
@@ -171,51 +165,44 @@ export function useAppNavigation({
 
   const navigateToEndpoint = useCallback((
     endpoint: Parameters<NavigationSessionCommands['navigateToEndpoint']>[0],
-    prepareTransitionOnDesktop = false,
   ): void => {
     commands.navigateToEndpoint(endpoint)
-    if (isMobileViewport || prepareTransitionOnDesktop) {
-      focusSheetTransitionRef.current?.(true)
-    }
     pendingViewFocusRef.current = 'plan'
     dispatch(isMobileViewport
       ? { type: 'open-plan' }
       : { type: 'select-view', view: 'plan' })
-  }, [commands, dispatch, focusSheetTransitionRef, isMobileViewport, pendingViewFocusRef])
+  }, [commands, dispatch, isMobileViewport, pendingViewFocusRef])
 
   const navigateToVenue = useCallback((venueCode: string): void => {
     navigateToEndpoint({ kind: 'venue', id: venueCode })
   }, [navigateToEndpoint])
 
   const navigateToStop = useCallback((stopId: string): void => {
-    navigateToEndpoint({ kind: 'stop', id: stopId }, true)
+    navigateToEndpoint({ kind: 'stop', id: stopId })
   }, [navigateToEndpoint])
 
   const selectRouteFromStops = useCallback((routeId: string): void => {
     if (isMobileViewport) {
-      focusSheetTransitionRef.current?.(true)
       dispatch({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
     }
     commands.enterMobileRoutes()
     commands.selectMobileRoute(routeId)
     pendingViewFocusRef.current = 'explore'
     dispatch({ type: 'select-view', view: 'explore' })
-  }, [commands, dispatch, focusSheetTransitionRef, isMobileViewport, pendingViewFocusRef])
+  }, [commands, dispatch, isMobileViewport, pendingViewFocusRef])
 
   const beginMobileSearch = useCallback((view: 'explore' | 'plan'): void => {
     if (!isMobileViewport) return
-    focusSheetTransitionRef.current?.(true)
     dispatch({ type: 'start-search', view })
-  }, [dispatch, focusSheetTransitionRef, isMobileViewport])
+  }, [dispatch, isMobileViewport])
 
   const dismissMobileSearch = useCallback((view: 'explore' | 'plan'): void => {
     dispatch({ type: 'dismiss-search', view })
   }, [dispatch])
 
   const selectMobileSearchResult = useCallback((view: 'explore' | 'plan'): void => {
-    if (isMobileViewport) focusSheetTransitionRef.current?.(true)
     dispatch({ type: 'select-search-result', view })
-  }, [dispatch, focusSheetTransitionRef, isMobileViewport])
+  }, [dispatch])
 
   const escapeExplore = useCallback((): void => {
     dismissMobileSearch('explore')
@@ -274,7 +261,6 @@ export function useAppNavigation({
     state,
     dispatch,
     activeView,
-    activeSheetDetent,
     activeSheetExpanded,
     stopFocusRequest,
     focusStopAfterMapLayout,

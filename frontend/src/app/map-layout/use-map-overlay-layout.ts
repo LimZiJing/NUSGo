@@ -10,6 +10,7 @@ export interface UseMapOverlayLayoutOptions {
   readonly isMobileViewport: boolean
   readonly navigation: NavigationState
   readonly mapShellRef: RefObject<HTMLElement | null>
+  readonly sheetPortalContainer?: HTMLElement | null
   readonly tripControlsRef: RefObject<HTMLElement | null>
   readonly exploreViewRef: RefObject<HTMLElement | null>
   readonly stopsSheetRef: RefObject<HTMLElement | null>
@@ -28,6 +29,7 @@ export function useMapOverlayLayout({
   isMobileViewport,
   navigation,
   mapShellRef,
+  sheetPortalContainer,
   tripControlsRef,
   exploreViewRef,
   stopsSheetRef,
@@ -76,7 +78,6 @@ export function useMapOverlayLayout({
       const sheetHeights = getMobileSheetHeights(viewportHeight, tabBarInset)
       shell.style.setProperty('--mobile-viewport-height', `${sheetHeights.viewportHeight}px`)
       shell.style.setProperty('--mobile-sheet-max-height', `${sheetHeights.partialMaxHeight}px`)
-      shell.style.setProperty('--mobile-sheet-min-height', `${sheetHeights.partialMinHeight}px`)
       if (tabBarInset > 0) shell.style.setProperty('--mobile-tab-bar-height', `${tabBarInset}px`)
       shell.style.setProperty('--mobile-viewport-offset-top', `${viewport?.offsetTop ?? 0}px`)
     }
@@ -91,7 +92,6 @@ export function useMapOverlayLayout({
       window.visualViewport?.removeEventListener('scroll', updateVisualViewport)
       shell.style.removeProperty('--mobile-viewport-height')
       shell.style.removeProperty('--mobile-sheet-max-height')
-      shell.style.removeProperty('--mobile-sheet-min-height')
       shell.style.removeProperty('--mobile-tab-bar-height')
       shell.style.removeProperty('--mobile-viewport-offset-top')
     }
@@ -102,11 +102,12 @@ export function useMapOverlayLayout({
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight
       const activeView: NavigationView = navigation.activeView
-      const activeSheetHeight = activeView === 'plan'
-        ? refs.tripControls.current?.getBoundingClientRect().height ?? 0
+      const activeSheet = activeView === 'plan'
+        ? refs.tripControls.current
         : activeView === 'stops'
-          ? refs.stopsSheet.current?.getBoundingClientRect().height ?? 0
-          : refs.exploreView.current?.getBoundingClientRect().height ?? 0
+          ? refs.stopsSheet.current
+          : refs.exploreView.current
+      const activeSheetBounds = activeSheet?.getBoundingClientRect()
       const tabBarRect = refs.mainNavigation.current?.getBoundingClientRect()
       const mapShellBottom = refs.mapShell.current?.getBoundingClientRect().bottom ?? viewportHeight
       const mapShellElement = refs.mapShell.current
@@ -124,6 +125,9 @@ export function useMapOverlayLayout({
         tabBarRect ? { top: tabBarRect.top, height: tabBarRect.height } : null,
         cssTabBarInset,
       )
+      const activeSheetHeight = activeSheet?.classList.contains('mobile-sheet-popup')
+        ? Math.max(0, mapShellBottom - tabBarInset - (activeSheetBounds?.top ?? mapShellBottom))
+        : activeSheetBounds?.height ?? 0
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
@@ -170,6 +174,7 @@ export function useMapOverlayLayout({
     navigation.sheets.explore.detent,
     navigation.sheets.plan.detent,
     navigation.sheets.stops.detent,
+    sheetPortalContainer,
     refs,
     onMeasurementsApplied,
   ])

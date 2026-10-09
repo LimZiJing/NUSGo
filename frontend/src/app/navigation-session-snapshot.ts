@@ -88,6 +88,10 @@ function snapshotJourneyState(state: JourneyState): JourneyState {
       ...candidate,
       journey: snapshotJourney(candidate.journey)!,
     }))),
+    displayedCandidates: freeze(state.displayedCandidates.map((candidate) => freeze({
+      ...candidate,
+      journey: snapshotJourney(candidate.journey)!,
+    }))),
   })
 }
 

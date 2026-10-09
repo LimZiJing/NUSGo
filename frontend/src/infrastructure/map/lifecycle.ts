@@ -12,9 +12,12 @@ import {
   TRANSIT_ROUTE_LAYER_ID,
 } from './transit'
 import {
-  JOURNEY_ROUTE_CASING_LAYER_ID,
-  JOURNEY_SHUTTLE_LAYER_ID,
-  JOURNEY_WALKING_LAYER_ID,
+  JOURNEY_ALTERNATIVE_CASING_LAYER_ID,
+  JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
+  JOURNEY_ALTERNATIVE_WALKING_LAYER_ID,
+  JOURNEY_SELECTED_CASING_LAYER_ID,
+  JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
+  JOURNEY_SELECTED_WALKING_LAYER_ID,
 } from './journey'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -116,16 +119,19 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     // and route-line clicks belong to their own interactions.
     const eventTarget = event.originalEvent.target
     if (eventTarget instanceof Element && eventTarget.closest(
-      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
+      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control, .fit-routes-control',
     )) return
 
     const routeLayerIds = [
       TRANSIT_ROUTE_CASING_LAYER_ID,
       TRANSIT_ROUTE_LAYER_ID,
       TRANSIT_ROUTE_DIRECTION_LAYER_ID,
-      JOURNEY_ROUTE_CASING_LAYER_ID,
-      JOURNEY_WALKING_LAYER_ID,
-      JOURNEY_SHUTTLE_LAYER_ID,
+      JOURNEY_ALTERNATIVE_CASING_LAYER_ID,
+      JOURNEY_ALTERNATIVE_WALKING_LAYER_ID,
+      JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
+      JOURNEY_SELECTED_CASING_LAYER_ID,
+      JOURNEY_SELECTED_WALKING_LAYER_ID,
+      JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
     ].filter((layerId) => map.getLayer(layerId))
     if (routeLayerIds.length > 0 && map.queryRenderedFeatures(
       event.point,

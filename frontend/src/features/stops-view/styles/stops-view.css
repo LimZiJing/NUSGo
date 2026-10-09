@@ -218,12 +218,8 @@
     width: 16px;
     height: 16px;
     justify-self: center;
-    transition: transform var(--motion-duration-fast) var(--motion-ease-standard);
   }
 
-  .stop-card-toggle[aria-expanded='true'] .stop-card-chevron {
-    transform: rotate(180deg);
-  }
 
   .stop-card-timings {
     display: grid;

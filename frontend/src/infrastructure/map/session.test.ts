@@ -13,6 +13,7 @@ import type { DeviceLocationFix } from '../../domain/location/types'
 const fakeMapState = vi.hoisted(() => ({
   maps: [] as unknown[],
   popups: [] as unknown[],
+  durationMarkers: [] as unknown[],
   popupCloseButton: null as { click: () => void } | null,
 }))
 
@@ -23,6 +24,7 @@ vi.mock('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url', () => ({
 vi.mock('maplibre-gl', () => {
   class FakeMap {
     readonly sources = new Set<string>()
+    readonly sourceData = new globalThis.Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>()
     readonly layers = new Set<string>()
     readonly handlers = new globalThis.Map<string, Set<(...args: never[]) => void>>()
     readonly removedSources: string[] = []
@@ -45,7 +47,16 @@ vi.mock('maplibre-gl', () => {
     readonly once = vi.fn((event: string, handler: (...args: never[]) => void) => this.on(event, handler))
     readonly addControl = vi.fn(() => this)
     readonly removeControl = vi.fn(() => this)
-    readonly addSource = vi.fn((id: string) => this.sources.add(id))
+    readonly addSource = vi.fn((id: string, source: { data?: unknown }) => {
+      this.sources.add(id)
+      this.sourceData.set(id, {
+        data: source.data,
+        setData: vi.fn((data: unknown) => {
+          const currentSource = this.sourceData.get(id)
+          if (currentSource) currentSource.data = data
+        }),
+      })
+    })
     readonly addLayer = vi.fn((layer: { id: string }) => {
       if (this.failingLayers.has(layer.id)) throw new Error(`Unable to add ${layer.id}`)
       this.layers.add(layer.id)
@@ -53,6 +64,7 @@ vi.mock('maplibre-gl', () => {
     readonly removeSource = vi.fn((id: string) => {
       this.removedSources.push(id)
       this.sources.delete(id)
+      this.sourceData.delete(id)
     })
     readonly removeLayer = vi.fn((id: string) => {
       this.removedLayers.push(id)
@@ -70,6 +82,7 @@ vi.mock('maplibre-gl', () => {
     })
     readonly getContainer = vi.fn(() => ({
       clientWidth: 1200,
+      clientHeight: 800,
       querySelector: (selector: string) => selector === '.maplibregl-popup-close-button'
         ? fakeMapState.popupCloseButton
         : null,
@@ -91,7 +104,7 @@ vi.mock('maplibre-gl', () => {
     }
 
     getSource(id: string) {
-      return this.sources.has(id) ? {} : undefined
+      return this.sourceData.get(id)
     }
 
     getLayer(id: string) {
@@ -143,7 +156,11 @@ vi.mock('maplibre-gl', () => {
     }
 
     addTo(map: FakeMap) {
-      map.addedMarkers.push(this)
+      if (this.element.className === 'journey-duration-marker') {
+        fakeMapState.durationMarkers.push(this)
+      } else {
+        map.addedMarkers.push(this)
+      }
       return this
     }
   }
@@ -285,6 +302,16 @@ function createJourney(): Journey {
     estimateStatus: 'estimated',
     planningQuality: 'exact',
   }
+}
+
+function setSingleJourney(
+  session: ReturnType<typeof createMapSession>,
+  journey: Journey | null,
+): void {
+  session.setJourneyOptions(
+    journey ? [{ candidateKey: 'selected', journey }] : [],
+    journey ? 'selected' : null,
+  )
 }
 
 function createTwoRouteTransitData() {
@@ -496,6 +523,7 @@ describe('MapSession', () => {
   beforeEach(() => {
     fakeMapState.maps.length = 0
     fakeMapState.popups.length = 0
+    fakeMapState.durationMarkers.length = 0
     fakeMapState.popupCloseButton = null
     vi.unstubAllGlobals()
   })
@@ -586,17 +614,162 @@ describe('MapSession', () => {
     }
 
     await session.ready
-    session.setJourney(createJourney())
+    setSingleJourney(session, createJourney())
     expect(map.layers).toEqual(new Set([
-      'journey-route-casing',
-      'journey-walking-lines',
-      'journey-shuttle-lines',
+      'journey-alternative-casing',
+      'journey-alternative-walking-lines',
+      'journey-alternative-shuttle-lines',
+      'journey-selected-casing',
+      'journey-selected-walking-lines',
+      'journey-selected-shuttle-lines',
     ]))
 
-    session.setJourney(null)
+    setSingleJourney(session, null)
     expect(map.layers).toEqual(new Set())
-    expect(map.removedLayers).toHaveLength(3)
+    expect(map.removedLayers).toHaveLength(6)
     expect(map.removedSources).toEqual(['journey-route-geometry'])
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('fits every option with overlay insets, keeps the camera on selection, and refits on command', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
+      layers: Set<string>
+      sourceData: globalThis.Map<string, { setData: ReturnType<typeof vi.fn> }>
+    }
+    const options = [
+      { candidateKey: 'bus', journey: createJourney() },
+      { candidateKey: 'walking', journey: createTransferJourney() },
+    ]
+    const insets = { top: 32, right: 12, bottom: 184, left: 20 }
+
+    await session.ready
+    session.setViewportInsets(insets)
+    session.setJourneyOptions(options, 'bus', true)
+
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.2, 1.2]],
+      { duration: 500, maxZoom: 17, padding: { top: 80, right: 60, bottom: 232, left: 68 } },
+    )
+    expect(map.layers.size).toBe(6)
+    const source = map.sourceData.get('journey-route-geometry')
+
+    session.setJourneyOptions(options, 'walking')
+
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    expect(map.flyTo).not.toHaveBeenCalled()
+    expect(source?.setData).not.toHaveBeenCalled()
+    expect(map.layers.size).toBe(6)
+
+    session.fitJourneyRoutes()
+    expect(map.fitBounds).toHaveBeenCalledTimes(2)
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.2, 1.2]],
+      { duration: 500, maxZoom: 17, padding: { top: 80, right: 60, bottom: 232, left: 68 } },
+    )
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('forwards rendered Journey route clicks through the MapSession callback', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('Element', class {})
+    const onJourneyOptionSelected = vi.fn()
+    const onEmptyMapClick = vi.fn()
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick,
+      onJourneyOptionSelected,
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      handlers: globalThis.Map<string, Set<(...args: never[]) => void>>
+      queryRenderedFeatures: ReturnType<typeof vi.fn>
+    }
+    await session.ready
+    session.setJourneyOptions([
+      { candidateKey: 'option-a', journey: createJourney() },
+      { candidateKey: 'option-b', journey: createJourney() },
+    ], 'option-a')
+    map.queryRenderedFeatures.mockReturnValue([{ properties: { candidateKey: 'option-b' } }])
+
+    for (const handler of map.handlers.get('click') ?? []) {
+      handler({
+        point: { x: 1, y: 1 },
+        originalEvent: { target: null, stopPropagation: vi.fn() },
+      } as never)
+    }
+
+    expect(onJourneyOptionSelected).toHaveBeenCalledWith('option-b')
+    expect(onEmptyMapClick).not.toHaveBeenCalled()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('waits for initial overlay measurements before fitting a new result', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { fitBounds: ReturnType<typeof vi.fn> }
+    const insets = { top: 28, right: 12, bottom: 172, left: 12 }
+
+    await session.ready
+    session.setJourneyOptions([
+      { candidateKey: 'bus', journey: createJourney() },
+      { candidateKey: 'walking', journey: createTransferJourney() },
+    ], 'bus', true)
+
+    expect(map.fitBounds).not.toHaveBeenCalled()
+    session.setViewportInsets(insets)
+
+    expect(map.fitBounds).toHaveBeenCalledOnce()
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.2, 1.2]],
+      { duration: 500, maxZoom: 17, padding: { top: 76, right: 60, bottom: 220, left: 60 } },
+    )
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('limits Journey fit breathing room on short mobile viewports', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      fitBounds: ReturnType<typeof vi.fn>
+      getContainer: ReturnType<typeof vi.fn>
+    }
+    map.getContainer.mockReturnValue({ clientWidth: 390, clientHeight: 320 })
+
+    await session.ready
+    session.setViewportInsets({ top: 84, right: 12, bottom: 162, left: 12 })
+    session.setJourneyOptions([
+      { candidateKey: 'bus', journey: createJourney() },
+      { candidateKey: 'walking', journey: createTransferJourney() },
+    ], 'bus', true)
+
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [[103, 1], [103.2, 1.2]],
+      { duration: 500, maxZoom: 17, padding: { top: 97, right: 60, bottom: 175, left: 60 } },
+    )
 
     session.dispose()
     vi.unstubAllGlobals()
@@ -621,7 +794,7 @@ describe('MapSession', () => {
       stopMarkers.map((marker) => [marker.element.dataset.stopId, marker.element]),
     )
 
-    session.setJourney(createTransferJourney())
+    setSingleJourney(session, createTransferJourney())
 
     expect(Array.from(markerByStopId.entries()).map(([stopId, marker]) => [
       stopId,
@@ -657,7 +830,7 @@ describe('MapSession', () => {
     )
     expect(markerByStopId.get('STOP-AFTER')?.attributes.get('title')).toBeUndefined()
 
-    session.setJourney(createSingleRouteJourney())
+    setSingleJourney(session, createSingleRouteJourney())
 
     expect(markerByStopId.get('STOP-A')?.classes.has('bus-stop-marker-selected')).toBe(false)
     expect(markerByStopId.get('STOP-MIDDLE')?.classes.has('bus-stop-marker-selected')).toBe(false)
@@ -669,7 +842,7 @@ describe('MapSession', () => {
       'Stop B shuttle stop on Journey Route B1',
     )
 
-    session.setJourney(null)
+    setSingleJourney(session, null)
 
     expect(markerByStopId.get('STOP-B')?.classes.has('bus-stop-marker-selected')).toBe(false)
     expect(markerByStopId.get('STOP-B')?.style.setProperty).toHaveBeenLastCalledWith(
@@ -717,7 +890,7 @@ describe('MapSession', () => {
     const stopCPopup = stopCMarker?.getPopup()
     stopCPopup?.show()
 
-    session.setJourney(createShuttleJourney())
+    setSingleJourney(session, createShuttleJourney())
     session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
 
     expect(map.fitBounds).not.toHaveBeenCalled()
@@ -729,7 +902,7 @@ describe('MapSession', () => {
     expect(stopCPopup?.isOpen()).toBe(false)
     expect(map.paintProperties.get('shuttle-stop-inactive-labels:text-color')).toBe('#64748b')
 
-    session.setJourney(null)
+    setSingleJourney(session, null)
 
     expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('visible')
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
@@ -766,11 +939,11 @@ describe('MapSession', () => {
       overlappingRouteIds: new Set(),
     })
     const stopMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
-    map.failingLayers.add('journey-walking-lines')
+    map.failingLayers.add('journey-selected-walking-lines')
 
-    session.setJourney(createShuttleJourney())
+    setSingleJourney(session, createShuttleJourney())
 
-    expect(onMapError).toHaveBeenCalledWith(new Error('Unable to add journey-walking-lines'))
+    expect(onMapError).toHaveBeenCalledWith(new Error('Unable to add journey-selected-walking-lines'))
     expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('visible')
     expect(map.paintProperties.get('shuttle-route-lines:line-color')).toEqual([
       'case', ['==', ['get', 'routeId'], 'B1'], ['get', 'color'], '#64748b',

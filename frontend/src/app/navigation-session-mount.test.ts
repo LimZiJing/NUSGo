@@ -22,7 +22,8 @@ function createMapDouble(): MapSession {
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
     setTripRequest: vi.fn(),
-    setJourney: vi.fn(),
+    setJourneyOptions: vi.fn(),
+    fitJourneyRoutes: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
@@ -44,11 +45,13 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setViewportInsets: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
+    fitJourneyRoutes: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     navigateTo: vi.fn(),
     replanJourney: vi.fn(),
     planJourney: vi.fn(),
+    selectJourneyOption: vi.fn(),
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
     clearTrip: vi.fn(),
@@ -147,6 +150,39 @@ describe('navigation session application seam', () => {
     expect(session.dispose).toHaveBeenCalledOnce()
   })
 
+  it('routes map option selection through the shared session and reports its source', () => {
+    const map = createMapDouble()
+    const state = createInitialNavigationSessionState()
+    const session = createSessionDouble({
+      getState: vi.fn(() => ({
+        ...state,
+        journey: {
+          ...state.journey,
+          displayedCandidates: [{ candidateKey: 'option-b' }] as never,
+        },
+      })),
+    })
+    const onMapJourneyOptionSelected = vi.fn()
+    const dependencies = createMountDependencies(map, session)
+    const mount = createNavigationSessionMount({} as HTMLElement, {
+      ...dependencies,
+      onMapJourneyOptionSelected,
+    })
+    const mapOptions = dependencies.getMapOptions()
+
+    mapOptions?.onJourneyOptionSelected?.('option-b')
+
+    expect(session.selectJourneyOption).toHaveBeenCalledWith('option-b')
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledWith('option-b')
+    mapOptions?.onJourneyOptionSelected?.('stale-option')
+    expect(session.selectJourneyOption).toHaveBeenCalledOnce()
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledOnce()
+    mount.dispose()
+    mapOptions?.onJourneyOptionSelected?.('option-c')
+    expect(session.selectJourneyOption).toHaveBeenCalledOnce()
+    expect(onMapJourneyOptionSelected).toHaveBeenCalledOnce()
+  })
+
   it('surfaces a safe startup failure after a non-abort rejection', async () => {
     const startupError = new Error('map effect failed')
     let state = createInitialNavigationSessionState()
@@ -197,6 +233,10 @@ describe('navigation session application seam', () => {
     expect(session.navigateTo).toHaveBeenCalledWith({ kind: 'stop', id: 'STOP-A' })
     firstCommands.planJourney()
     expect(session.planJourney).toHaveBeenCalledOnce()
+    firstCommands.selectJourneyOption('option-a')
+    expect(session.selectJourneyOption).toHaveBeenCalledWith('option-a')
+    firstCommands.fitJourneyRoutes()
+    expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
     firstCommands.focusStopInStopsTab('STOP-A')

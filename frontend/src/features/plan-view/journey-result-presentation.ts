@@ -1,5 +1,6 @@
 import type { TransitIndex } from '../../domain/transit'
 import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/journey'
+import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { VenueLocationMap } from '../../domain/venue/types'
@@ -27,6 +28,30 @@ export type JourneyTimelineEntry =
       readonly rideLabel: string
     }
 
+export type JourneyModeSummarySegment =
+  | { readonly kind: 'walking' }
+  | {
+      readonly kind: 'shuttle'
+      readonly routeLabel: string
+      readonly routeColor: string | null
+    }
+
+export interface JourneyCompactSummary {
+  readonly walkingDurationLabel: string
+  readonly modeSegments: readonly JourneyModeSummarySegment[]
+}
+
+export interface JourneyOptionHeader {
+  readonly kind: 'recommended' | 'neutral'
+  readonly label: string
+  readonly qualifier?: string
+}
+
+interface JourneyRoutePresentation {
+  readonly routeLabel: string
+  readonly routeColor: string | null
+}
+
 function getEndpointLabel(
   endpoint: JourneyLeg['from'],
   venues: VenueLocationMap | null,
@@ -39,12 +64,15 @@ function getRouteName(routeId: string, networkIndex: TransitIndex | null): strin
   return networkIndex?.routeById.get(routeId)?.name ?? routeId
 }
 
-export function formatDuration(seconds: number): string {
-  const minutes = Math.max(0, Math.ceil(seconds / 60))
-  if (minutes < 60) return `${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
-  return remainingMinutes === 0 ? `${hours} hr` : `${hours} hr ${remainingMinutes} min`
+function getJourneyRoutePresentation(
+  routeId: string,
+  networkIndex: TransitIndex | null,
+): JourneyRoutePresentation {
+  const route = networkIndex?.routeById.get(routeId)
+  return {
+    routeLabel: route?.name ?? getRouteName(routeId, networkIndex),
+    routeColor: route?.color ?? null,
+  }
 }
 
 export function formatWaitDuration(seconds: number): string {
@@ -98,16 +126,62 @@ function getLegEntry(
   }
 
   const shuttleLeg: ShuttleJourneyLeg = leg
-  const route = networkIndex?.routeById.get(shuttleLeg.routeId)
+  const routePresentation = getJourneyRoutePresentation(shuttleLeg.routeId, networkIndex)
   return {
     kind: 'shuttle',
     id: `shuttle-${legIndex}`,
-    routeLabel: route?.name ?? getRouteName(shuttleLeg.routeId, networkIndex),
+    routeLabel: routePresentation.routeLabel,
     // Route colors come from the validated transit index so the journey uses the same palette as the map.
-    routeColor: route?.color ?? null,
+    routeColor: routePresentation.routeColor,
     intermediateStops: getShuttleIntermediateStops(shuttleLeg, networkIndex),
     waitLabel: `Wait ${formatWaitDuration(shuttleLeg.waitingSeconds)}`,
     rideLabel: `Ride ${formatDuration(shuttleLeg.rideSeconds)}`,
+  }
+}
+
+export function getJourneyCompactSummary(
+  journey: Journey,
+  networkIndex: TransitIndex | null,
+): JourneyCompactSummary {
+  const walkingDurationSeconds = journey.legs.reduce((total, leg) => (
+    total + (leg.mode === 'walking' ? leg.durationSeconds : 0)
+  ), 0)
+  const modeSegments = journey.legs.map((leg): JourneyModeSummarySegment => {
+    if (leg.mode === 'walking') return { kind: 'walking' }
+    const routePresentation = getJourneyRoutePresentation(leg.routeId, networkIndex)
+    return {
+      kind: 'shuttle',
+      routeLabel: routePresentation.routeLabel,
+      routeColor: routePresentation.routeColor,
+    }
+  })
+
+  return {
+    walkingDurationLabel: formatDuration(walkingDurationSeconds),
+    modeSegments,
+  }
+}
+
+export function getJourneyOptionHeader(
+  journey: Journey,
+  optionIndex: number,
+): JourneyOptionHeader {
+  const shuttleLegCount = journey.legs.filter((leg) => leg.mode === 'shuttle').length
+  if (optionIndex === 0) {
+    return {
+      kind: 'recommended',
+      label: 'Recommended',
+      ...(shuttleLegCount === 0 ? { qualifier: 'Walking' } : {}),
+    }
+  }
+  if (shuttleLegCount === 0) return { kind: 'neutral', label: 'Walking' }
+
+  const transferCount = shuttleLegCount - 1
+  return {
+    kind: 'neutral',
+    label: transferCount === 0
+      ? 'Direct shuttle'
+      : `${transferCount} transfer${transferCount === 1 ? '' : 's'}`,
   }
 }
 

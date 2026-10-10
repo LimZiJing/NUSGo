@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createTransitNetworkIndex } from '../transit'
-import { validateTransitRouteGeometry } from '../transit/geometry'
-import { generateShuttleTimingData } from '../transit/timing'
-import { validateTransitNetwork } from '../transit/model'
+import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { validateTransitNetwork } from '@navus/shared/transit/model'
 import type { TripEndpoint } from './types'
 import { getTripEndpointKey } from './endpoints'
 import {

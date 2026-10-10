@@ -5,9 +5,9 @@ import type {
   WalkingMatrixConnection,
   WalkingRouteEngine,
 } from '../../app/contracts/routing'
+import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import {
   loadWalkingStopGraph,
-  type WalkingStopGraph,
   type WalkingStopGraphLoader,
 } from './walking-stop-graph'
 

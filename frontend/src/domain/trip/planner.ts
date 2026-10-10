@@ -2,11 +2,11 @@ import type { TransitIndex } from '../transit'
 import type {
   ShuttleTimingData,
   ShuttleTimingRecord,
-} from '../transit/timing'
+} from '@navus/shared/transit/timing'
 import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../transit/types'
+} from '@navus/shared/transit/types'
 import type { TripEndpoint } from './types'
 import { getTripEndpointKey } from './endpoints'
 import type {

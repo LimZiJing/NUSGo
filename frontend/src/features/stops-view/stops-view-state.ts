@@ -15,7 +15,7 @@ import {
   SHUTTLE_SERVICE_START_GRACE_MINUTES,
   type ShuttleServiceWindow,
 } from '../../domain/transit/service-hours'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { StopSheetSelection } from './stops-view'
 import type { PublicServiceTiming } from './stop-timings'
 

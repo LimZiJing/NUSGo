@@ -1,3 +1,6 @@
+import type { WalkingConnection } from '@navus/shared/routing/walking-connection'
+export type { WalkingConnection } from '@navus/shared/routing/walking-connection'
+
 export interface RoutingCoordinate {
   readonly longitude: number
   readonly latitude: number
@@ -41,12 +44,6 @@ export interface WalkingConnectionRequest {
   readonly stops: readonly WalkingConnectionLocation[]
 }
 
-export interface WalkingConnection {
-  readonly fromKey: string
-  readonly toKey: string
-  readonly distanceMeters: number
-  readonly durationSeconds: number
-}
 
 export interface WalkingConnectionProvider {
   getWalkingConnections(

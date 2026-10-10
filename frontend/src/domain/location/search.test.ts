@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getTripEndpointLabel, searchTripLocations } from './search'
-import type { TransitStop } from '../transit/types'
-import type { VenueLocationMap } from '../venue/types'
+import type { TransitStop } from '@navus/shared/transit/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   LT17: {

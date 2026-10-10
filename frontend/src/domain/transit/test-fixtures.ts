@@ -1,4 +1,4 @@
-import type { TransitNetworkInput } from './types'
+import type { TransitNetworkInput } from '@navus/shared/transit/types'
 
 export function createValidTransitNetwork(): TransitNetworkInput {
   return {

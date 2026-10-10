@@ -5,7 +5,7 @@ import type { Journey } from '../../src/domain/trip/journey'
 import type { WalkingJourneyConnection } from '../../src/domain/trip/planner'
 import { createLiveShuttleWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals'
-import type { ShuttleTimingRecord } from '../../src/domain/transit/timing'
+import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { JourneyBenchmarkCase } from './contract'
 import { validateJourneyBenchmarkOutcome } from './outcome'
 

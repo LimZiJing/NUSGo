@@ -21,11 +21,11 @@ npm install
 npm run dev
 ```
 
-The root development command starts Valhalla, regenerates shuttle timing data, and starts the frontend. Vite reads the ignored `.env` file from the repository root. Keep credentials and server-only settings there; values prefixed with `VITE_` are included in the browser build.
+Root `npm run dev` safely generates shuttle timing, starts local Valhalla, Express, and Vite, and stops the services it started when you exit. Vite reads the ignored root `.env` for the existing development providers. Copy `backend/.env.example` to the ignored `backend/.env` for API settings. Keep credentials server-side; values prefixed with `VITE_` are included in the browser build.
 
 ### Workspace commands
 
-The npm workspaces are `@navus/frontend`, `@navus/backend`, and `@navus/shared`. The backend and shared workspaces are minimal placeholders for the next migration steps.
+The npm workspaces are `@navus/frontend`, `@navus/backend`, and `@navus/shared`. Shared owns HTTP contracts and pure validation for canonical venue, transit, geometry, timing, and walking data. Backend provides the long-running Express health/readiness foundation; existing live providers move in later issues.
 
 Root commands:
 
@@ -47,9 +47,9 @@ npm --workspace @navus/frontend run build
 npm --workspace @navus/frontend run preview
 ```
 
-The targeted frontend development command starts Vite without starting Valhalla. The root command is the complete local stack. The backend and shared packages do not have runnable scripts yet.
+`npm run dev:frontend` starts Vite by itself. `npm run dev:backend` starts Express on `127.0.0.1:3001` and loads the canonical data set; it does not start Valhalla. The API reports process health at `/api/health` and canonical-data readiness at `/api/ready`. The full root command starts all three services.
 
-In preview worktrees, `frontend/public/data/shuttle-timing.json` may be linked to shared timing data. Root and frontend `dev` and `build` commands, along with timing-generation commands, regenerate that file. Remove the worktree link before running them so generation stays local; restore it only after removing the generated local file and confirming the shared source exists and the destination is absent. Never run `npm run dev` through the timing link.
+For preview worktrees, the ignored root `.env`, `backend/.env`, and `frontend/public/data/shuttle-timing.json` may be linked from the shared checkout only when each source exists and its destination is absent. Do not create these links in coding worktrees. Timing generation now refuses to write through a symlink. Remove the timing link before running root or frontend `dev`/`build` commands or any timing generator; restore it only after removing the generated local file and confirming the shared source still exists.
 
 ### Local Valhalla routing with Docker
 

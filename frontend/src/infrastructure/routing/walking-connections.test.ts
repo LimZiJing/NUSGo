@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { WalkingConnectionRequest, WalkingRouteEngine } from '../../app/contracts/routing'
 import { createWalkingConnectionProvider } from './walking-connections'
-import type { WalkingStopGraph } from './walking-stop-graph'
+import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 
 const origin = {
   key: 'venue:origin',

@@ -1,11 +1,11 @@
 import type { TransitIndex } from '../../domain/transit'
 import type {
   TransitRoute,
-} from '../../domain/transit/types'
+} from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Journey } from '../../domain/trip/journey'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import type { VenueLocation, VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import type { LoadedTransitData } from './data'
 
 export interface MapSessionOptions {

@@ -7,7 +7,7 @@ import type {
   TripEndpointRole,
   TripLocationSearchResult,
 } from '../../domain/trip/types'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import {

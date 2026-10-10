@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { VenueValidationError, validateVenueLocationMap } from './validation'
+import { VenueValidationError, validateVenueLocationMap } from '@navus/shared/venue/validation'
 
 describe('validateVenueLocationMap', () => {
   it('returns an immutable validated snapshot', () => {

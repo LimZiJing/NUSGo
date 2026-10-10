@@ -4,7 +4,7 @@ import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocationMap } from '../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type {
   MapCoordinate,
   MapResetTarget,

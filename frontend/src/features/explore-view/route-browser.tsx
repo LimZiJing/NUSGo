@@ -10,7 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
-import type { TransitNetwork, TransitRoute } from '../../domain/transit/types'
+import type { TransitNetwork, TransitRoute } from '@navus/shared/transit/types'
 import { BusIcon } from '../../ui/icons'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'

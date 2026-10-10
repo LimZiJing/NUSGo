@@ -4,10 +4,10 @@ import { PlanView } from './plan-view'
 import { PlanEndpointControl } from './plan-endpoint-control'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { TransitStopInput } from '../../domain/transit/types'
+import type { TransitStopInput } from '@navus/shared/transit/types'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

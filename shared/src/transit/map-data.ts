@@ -1,6 +1,6 @@
-import { validateTransitNetwork } from './model'
-import { validateTransitRouteGeometry } from './geometry'
-import type { TransitNetwork, TransitRouteGeometry } from './types'
+import { validateTransitNetwork } from './model.ts'
+import { validateTransitRouteGeometry } from './geometry.ts'
+import type { TransitNetwork, TransitRouteGeometry } from './types.ts'
 
 export interface ValidatedTransitMapData {
   network: TransitNetwork

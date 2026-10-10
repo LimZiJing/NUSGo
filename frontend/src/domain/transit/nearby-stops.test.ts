@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from './index'
 import { findNearbyShuttleStops } from './nearby-stops'
-import type { TransitNetworkInput } from './types'
+import type { TransitNetworkInput } from '@navus/shared/transit/types'
 
 const earthRadiusMeters = 6_371_008.8
 const latitudeOffsetForMeters = (distance: number): number => (

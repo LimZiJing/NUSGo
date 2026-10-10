@@ -7,7 +7,7 @@ import type {
   TripEndpointRole,
   TripRequest,
 } from '../../domain/trip/types'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { PlanEndpointControl, type OriginLocationRequestState } from './plan-endpoint-control'
 import { JourneyResult, type JourneyResultState } from './journey-result'
 import { formatSingaporeDateTime } from '../../domain/trip/journey-test-clock'

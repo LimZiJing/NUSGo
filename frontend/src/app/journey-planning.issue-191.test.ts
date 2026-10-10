@@ -1,14 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import {
-  createTransitNetworkIndex,
-  generateShuttleTimingData,
-  validateTransitNetwork,
-} from '../domain/transit'
-import { validateTransitRouteGeometry } from '../domain/transit/geometry'
-import { validateVenueLocationMap } from '../domain/venue/validation'
+import { createTransitNetworkIndex } from '../domain/transit'
+import { validateTransitNetwork } from '@navus/shared/transit/model'
+import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import { createJourneyPlanningService } from './journey-planning'
-import { validateWalkingStopGraph } from '../infrastructure/routing/walking-stop-graph'
+import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type { LoadedTransitData } from './contracts/data'
 
 function readJson(path: string): unknown {

@@ -1,6 +1,6 @@
 import type { ShuttleArrivalSnapshot, ShuttleRouteArrivalData } from '../../src/domain/transit/arrivals.js'
 import type { ShuttleServiceWindow } from '../../src/domain/transit/service-hours.js'
-import type { ShuttleTimingRecord } from '../../src/domain/transit/timing.js'
+import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { JourneyBenchmarkTimingProfile } from './manifest.js'
 
 export interface BenchmarkRouteStops {

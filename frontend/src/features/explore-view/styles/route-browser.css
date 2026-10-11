@@ -175,8 +175,23 @@
 }
 
 @media (min-width: 769px) {
-  .navigation-column .explore-route-browser-timeline,
-  .navigation-column .explore-route-browser-scroll {
-    max-height: none;
+  .navigation-column .explore-view-shuttle .explore-route-browser {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .navigation-column .explore-view-shuttle .explore-route-browser-timeline {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .navigation-column .explore-view-shuttle .explore-route-browser-scroll {
+    flex: 1 1 0;
+    min-height: 0;
   }
 }

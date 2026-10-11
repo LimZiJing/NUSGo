@@ -631,6 +631,25 @@
     box-shadow: none;
   }
 
+  .navigation-column .explore-view.explore-view-shuttle {
+    display: flex;
+    align-content: stretch;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .navigation-column .explore-view-shuttle .explore-view-header {
+    flex: 0 0 auto;
+  }
+
+  .navigation-column .explore-view-shuttle .explore-view-content {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .navigation-column .explore-segments {
     display: grid;
     width: 100%;

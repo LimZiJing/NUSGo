@@ -23,4 +23,11 @@ describe('route browser visual contracts', () => {
     expect(exploreStyles).toMatch(/\.explore-view-shuttle \.explore-view-header\s*{[^}]*flex:\s*0 0 auto;/s)
     expect(exploreStyles).toMatch(/\.explore-view-shuttle \.explore-view-content\s*{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;/s)
   })
+
+  it('bounds the desktop shuttle stop list inside the navigation panel', () => {
+    expect(exploreStyles).toMatch(/\.navigation-column \.explore-view\.explore-view-shuttle\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden;/s)
+    expect(exploreStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-view-content\s*{[^}]*flex:\s*1 1 0;[^}]*min-height:\s*0;[^}]*overflow:\s*hidden;/s)
+    expect(routeBrowserStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-route-browser-timeline\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*min-height:\s*0;/s)
+    expect(routeBrowserStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-route-browser-scroll\s*{[^}]*flex:\s*1 1 0;[^}]*min-height:\s*0;/s)
+  })
 })

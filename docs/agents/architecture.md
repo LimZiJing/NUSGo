@@ -5,16 +5,16 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 ## Ownership
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
-- `frontend/src/domain` owns pure transit, venue, location, and trip types, validation, lookup indexes, and domain transformations.
+- `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications. `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
 - `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
 
-`frontend/public/data` remains the canonical checked-in data source. Infrastructure loaders parse external data as `unknown`, validate it, and return only validated domain data.
+`frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.
 
 ## Contracts and dependency direction
 
-Application contracts must be small, framework-free interfaces in `frontend/src/app/contracts`. Define a contract there when it describes an effect the application needs, such as map presentation or data loading. Concrete MapLibre and network implementations belong in `frontend/src/infrastructure`; the app composition root wires those adapters and feature entry points together with runtime imports.
+Application contracts must be small, framework-free interfaces in `frontend/src/app/contracts`. Define a contract there when it describes an effect the application needs, such as map presentation or data loading. Concrete MapLibre and network implementations belong in `frontend/src/infrastructure`; the app composition root wires those adapters and feature entry points together with runtime imports. The frontend and backend may both depend on `shared/src`; shared modules must remain free of Node, browser, and provider dependencies.
 
 The intended direction is:
 
@@ -32,10 +32,10 @@ The intended direction is:
 
 - Domain modules must not import React, MapLibre, browser DOM APIs, network clients, or other infrastructure.
 - The app composition root may runtime-import feature entry points, UI entry points, and infrastructure adapters to wire the application.
-- Infrastructure may depend on domain types and implement framework-free app contracts. It may use `import type` from `frontend/src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
+- Infrastructure may depend on frontend domain and shared types and implement framework-free app contracts. It may use `import type` from `frontend/src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
 - Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns MapLibre, network/data-adapter, and integration-level DOM, listener, timer, and asynchronous effects.
 - Application controllers may use browser measurements, observers, or listeners only to coordinate app-owned responsive layout or cross-feature keyboard navigation. Keep these effects in the owning app controller and clean them up with its lifecycle.
-- Features depend only on domain values and UI contracts or primitives. They must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
+- Features depend only on frontend domain or shared values and UI contracts or primitives. They must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
 - Cross-feature coordination is performed by app composition through passed state and callbacks rather than direct feature-to-feature or feature-to-app-contract imports.
 - The app composition root passes application state and callbacks into feature entry points; features translate user intent through their UI contracts.
 - UI modules must not reach into application internals or infrastructure. They receive state and callbacks through props or small framework-free interfaces.
@@ -52,11 +52,12 @@ The diagram describes allowed ownership and dependency direction; it does not re
 
 ## Migration map and order
 
-Split `frontend/src/transit/render.ts` at its pure/effect boundary: pure transit validation, geometry, and types—including pure validation currently embedded there—belong in `frontend/src/domain`; only its remaining MapLibre rendering and effect responsibilities belong in `frontend/src/infrastructure`.
+Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable transit validation, geometry, and transport types belong in `shared/src`; frontend-only transformations remain in `frontend/src/domain`, and only MapLibre rendering and effect responsibilities belong in `frontend/src/infrastructure`.
 
 | Current area | Target owner |
 | --- | --- |
-| Pure transit types, validation, and geometry in `frontend/src/types` and `frontend/src/transit/`, including `frontend/src/transit/overlap.ts` and pure validation embedded in `frontend/src/transit/render.ts`, plus `frontend/src/venue`, `frontend/src/location`, `frontend/src/trip`, and pure Explore view state | `frontend/src/domain` |
+| Reusable transit and venue types and validation shared by the backend | `shared/src` |
+| Frontend-only transit indexes and transformations, plus location, trip, and pure Explore view state | `frontend/src/domain` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
 | Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops-view` |

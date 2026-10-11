@@ -2,7 +2,7 @@ import { Marker, Popup, type Map } from 'maplibre-gl'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripEndpoint, TripRequest } from '../../domain/trip/types'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import { createPopupContent } from './popup'
 

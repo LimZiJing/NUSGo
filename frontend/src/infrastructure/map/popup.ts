@@ -2,7 +2,7 @@ import type { Popup } from 'maplibre-gl'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { getRouteChipTextColor } from '../../domain/transit/route-color'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
 import { NavigationIcon } from '../../ui/icons'
 

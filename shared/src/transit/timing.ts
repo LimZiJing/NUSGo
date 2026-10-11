@@ -3,7 +3,7 @@ import type {
   TransitNetwork,
   TransitRoute,
   TransitRouteGeometry,
-} from './types'
+} from './types.ts'
 
 export const SHUTTLE_TIMING_DATA_VERSION = 1
 export const SHUTTLE_TIMING_METHOD_VERSION = 'geometry-effective-speed-v1'

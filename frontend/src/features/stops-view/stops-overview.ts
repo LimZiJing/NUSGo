@@ -1,5 +1,5 @@
 import { getDistanceMeters, type TransitIndex } from '../../domain/transit'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
 export const NEARBY_STOP_RADIUS_METERS = 200

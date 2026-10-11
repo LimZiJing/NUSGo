@@ -1,5 +1,5 @@
 import type { ShuttleArrivalSnapshot } from '../transit/arrivals'
-import type { ShuttleTimingRecord } from '../transit/timing'
+import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type {
   ShuttleWaitingTimeContext,
   ShuttleWaitingTimeProvider,

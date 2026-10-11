@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateWalkingStopGraph } from './walking-stop-graph'
+import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 
 const validGraph = {
   version: 1,

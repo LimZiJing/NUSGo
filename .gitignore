@@ -70,6 +70,9 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
 .env
 .env.*
 !.env.example

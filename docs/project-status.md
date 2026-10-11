@@ -4,7 +4,7 @@ This document records the shared implementation status and near-term engineering
 
 ## Stack
 
-- npm workspaces: `frontend`, `backend`, and `shared`; backend and shared are minimal placeholders.
+- npm workspaces: `frontend`, `backend`, and `shared`. `shared` owns HTTP contracts and pure canonical-data validation; `backend` provides the persistent Express API foundation.
 - MapLibre GL JS for map rendering
 - React 19, TypeScript, and Vite in `frontend`; static JSON data in `frontend/public/data`.
 - Base UI Drawer for mobile sheet gestures and snap points, styled with the project's CSS tokens.
@@ -13,6 +13,8 @@ This document records the shared implementation status and near-term engineering
 The accepted route architecture uses a self-hosted Valhalla pedestrian service behind a server-side boundary and a pure planner that composes walking connections with the canonical shuttle network. OSRM and other routing engines remain replaceable alternatives behind that boundary. Other potential future tools include `ngraph.graph`/`ngraph.path` for a client-side routing prototype, `@turf/turf` for spatial calculations, `ical.js` for calendar import, and PostgreSQL/PostGIS behind a future API.
 
 ## Current implementation
+
+- The Express foundation exposes process health and canonical-data readiness on loopback, applies exact-origin CORS and bounded JSON request parsing, and validates venue, transit, route geometry, walking graph, and generated timing inputs at startup. The root development command starts Express, Vite, and local Valhalla with shutdown cleanup. Existing Vite live-data handlers remain until #237; browser client cutovers remain in #232 and #233.
 
 - Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style, with bus POI labels suppressed and low-priority local POIs reduced while rail, airport, and major campus context remain visible.
 - Map attribution remains visible as a small, readable footer without the expanded disclosure control, preserving the OpenFreeMap and OpenStreetMap credits on mobile and desktop.
@@ -42,7 +44,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 - `frontend/src/app/navigation-session.ts` now owns application state and commands for loaded venue/transit data, Explore view history, route selection, trip endpoints, resource status, startup/map errors, and map coordination; endpoint search queries remain local to the trip-endpoint feature seam, and `frontend/src/app/app.tsx` is reduced to composition and the React external-store adapter.
 - JSON fetching and validated resource loaders are organized in `frontend/src/infrastructure/data/`.
 - The transit loader returns one immutable canonical network through `index.network`; network and route geometry fetches start in parallel and are validated deterministically.
-- Pure transit, venue, location, trip, and Explore view models are owned by `frontend/src/domain/`.
+- Shared transit, venue, and walking-graph types and validation live in `shared/src/`; frontend-only location, trip, and Explore view models remain in `frontend/src/domain/`.
 - Local browser location tracking starts from a one-tap target control and focuses the map on the first available fix. The map shows a distinct blue target marker. Valid browser fixes are accepted regardless of reported accuracy, and location fixes stay in browser memory rather than being sent to NavUS services. Navigate from venue or stop details captures an active valid fix as a frozen Current location origin; subsequent device updates move only the blue target marker, while Journey planning, the green origin marker, endpoint labels, and map reset use the captured coordinates.
 - Mobile location uses one accessible target button at the top-left safe area, stays above the mobile sheets, and is hidden while Plan is expanded. It keeps the location-control action, focusing the latest active fix or the first fix received after permission. When no active fix is available, it centers on Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates never move the camera on their own.
 - Issue #39 automated checks cover resource validation, immutable indexes, loader failure isolation, and the checked-in transit manifest. The canonical release smoke checklist is in `docs/qa/manual-smoke-check.md`; the 2026-09-21 browser pass is recorded as passed with limitations because exact release and mobile viewports were unavailable.

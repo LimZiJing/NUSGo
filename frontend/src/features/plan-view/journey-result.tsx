@@ -3,7 +3,7 @@ import type { TransitIndex } from '../../domain/transit'
 import { formatDuration } from '../../domain/trip/duration-format'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'
 import {

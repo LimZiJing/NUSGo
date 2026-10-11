@@ -1,4 +1,4 @@
-import type { TransitRoute } from '../transit/types'
+import type { TransitRoute } from '@navus/shared/transit/types'
 import type { ShuttleJourneyLeg } from './journey'
 
 export function getShuttleJourneyLegStopIds(

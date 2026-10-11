@@ -1,10 +1,10 @@
 import type { TransitIndex } from '../transit'
-import type { TransitStop } from '../transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type {
   TripEndpoint,
   TripLocationSearchResult,
 } from '../trip/types'
-import type { VenueLocationMap } from '../venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { getTripEndpointKey } from '../trip/endpoints'
 
 const MAX_RESULTS = 8

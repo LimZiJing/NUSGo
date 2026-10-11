@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { validateTransitNetwork } from '../frontend/src/domain/transit/model.ts'
+import { validateTransitNetwork } from '../shared/src/transit/model.ts'
 import { createValhallaRouteEngine } from '../frontend/src/infrastructure/routing/valhalla.ts'
 import { validateWalkingStopGraph } from '../frontend/src/infrastructure/routing/walking-stop-graph.ts'
 

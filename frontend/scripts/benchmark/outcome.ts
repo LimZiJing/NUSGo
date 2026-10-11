@@ -4,11 +4,11 @@ import type {
   WalkingMatrixRequest,
 } from '../../src/app/contracts/routing.js'
 import type { Journey, JourneyLineString } from '../../src/domain/trip/journey.js'
-import type { ShuttleTimingRecord } from '../../src/domain/transit/timing.js'
+import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
-import type { VenueLocationMap } from '../../src/domain/venue/types.js'
-import type { WalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type {
   JourneyBenchmarkCase,
 } from './contract.js'

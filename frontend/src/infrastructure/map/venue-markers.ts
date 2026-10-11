@@ -1,5 +1,5 @@
 import { Marker, type Map } from 'maplibre-gl'
-import type { VenueLocation } from '../../domain/venue/types'
+import type { VenueLocation } from '@navus/shared/venue/types'
 
 export interface VenueMarker {
   dispose(): void

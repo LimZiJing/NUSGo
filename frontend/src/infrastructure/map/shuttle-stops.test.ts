@@ -12,7 +12,7 @@ import {
   createShuttleStopMarkers,
 } from './shuttle-stops'
 import { getTripEndpointMarkerClass } from './endpoint-markers'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import { createBusStopPopupContent, createPopupCoordinator } from './popup'
 
 vi.mock('maplibre-gl', () => {

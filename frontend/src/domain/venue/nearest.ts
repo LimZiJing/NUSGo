@@ -2,7 +2,7 @@ import { getDistanceMeters } from '../location/coordinates'
 import type { DeviceLocationFix } from '../location/types'
 import { hasVenueCoordinates } from './details'
 import type { VenueSearchResult } from './search'
-import type { VenueLocationMap } from './types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export function findNearestVenue(
   venues: VenueLocationMap,

@@ -1,4 +1,4 @@
-import type { TransitNetwork, TransitRoute, TransitStop } from './types'
+import type { TransitNetwork, TransitRoute, TransitStop } from '@navus/shared/transit/types'
 
 export class TransitIndexPreconditionError extends Error {
   constructor(message: string) {
@@ -172,42 +172,13 @@ export function createTransitIndex(network: TransitNetwork): TransitIndex {
 export type TransitNetworkIndex = TransitIndex
 export const createTransitNetworkIndex = createTransitIndex
 
-export type {
-  TransitGeoJsonPosition,
-  TransitNetwork,
-  TransitNetworkMetadata,
-  TransitRoute,
-  TransitRouteGeometry,
-  TransitRouteGeometryFeature,
-  TransitRouteGeometryProperties,
-  TransitStop,
-  TransitVerificationManifest,
-} from './types'
-export { TransitValidationError, validateTransitNetwork, validateTransitVerificationManifest } from './model'
-export { validateTransitRouteGeometry } from './geometry'
-export { validateTransitMapData } from './map-data'
 export { deriveTransitRouteOverlapMap } from './overlap'
 export { findNearbyShuttleStops } from './nearby-stops'
 export { getDistanceMeters } from '../location/coordinates'
 export type { NearbyShuttleStop } from './nearby-stops'
 export { getReachableFavoriteStops } from './reachable-stops'
-export {
-  generateShuttleTimingData,
-  SHUTTLE_TIMING_DATA_VERSION,
-  SHUTTLE_TIMING_METHOD,
-  SHUTTLE_TIMING_METHOD_VERSION,
-  SHUTTLE_TIMING_SOURCE,
-  SHUTTLE_TIMING_WAITING_POLICY,
-  TransitTimingValidationError,
-  validateShuttleTimingData,
-} from './timing'
 export type {
   ShuttleArrivalSnapshot,
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from './arrivals'
-export type {
-  ShuttleTimingData,
-  ShuttleTimingMetadata,
-  ShuttleTimingRecord,
-} from './timing'

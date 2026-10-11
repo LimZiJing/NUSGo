@@ -10,7 +10,7 @@ import type { TransitIndex } from '../../domain/transit'
 import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from '../../domain/transit/types'
+} from '@navus/shared/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'

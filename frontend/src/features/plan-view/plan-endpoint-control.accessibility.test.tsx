@@ -15,7 +15,7 @@ import {
   swapTripEndpoints,
 } from '../../domain/trip/endpoints'
 import type { TripRequest } from '../../domain/trip/types'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

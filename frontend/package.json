@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@navus/shared": "0.0.0",
     "lucide-react": "^1.52.0",
     "maplibre-gl": "^6.8.0",
     "react": "^19.2.8",

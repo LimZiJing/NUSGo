@@ -1,6 +1,6 @@
 import { exploreViewReducer, type ExploreViewAction, type ExploreViewState } from '../features/explore-view/state'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createVenueSearchResultSnapshot,
   venuesMatch,

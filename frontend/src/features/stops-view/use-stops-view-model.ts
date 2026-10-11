@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react'
 import type { DeviceLocationFix, LocationTrackingState } from '../../domain/location/types'
-import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import type { TransitIndex } from '../../domain/transit'
 import {
   isOlderPublicBusArrivalSnapshot,
@@ -44,16 +43,7 @@ export interface StopsViewModel {
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
-  readonly requestLocationWithNearbyExpansion: () => void
   readonly locateFromControl: () => void
-}
-
-function hasSuccessfulLocation(location: LocationTrackingState): boolean {
-  const fix = location.latestFix
-  return location.status === 'tracking' && fix !== null && isValidLocationCoordinates(
-    fix.longitude,
-    fix.latitude,
-  )
 }
 
 function hasLocationError(location: LocationTrackingState): boolean {
@@ -74,7 +64,8 @@ export function useStopsViewModel({
 }: StopsViewModelOptions): StopsViewModel {
   const [state, dispatch] = useStopsView(transitIndex)
   const initialNearbyLocationRequestedRef = useRef(false)
-  const pendingNearbyTimingExpansionRef = useRef(false)
+  const lastMapCenterRef = useRef<Coordinate | null>(null)
+  const pendingNearbyExpansionRef = useRef(false)
   const locationError = hasLocationError(location)
   const locationFix: DeviceLocationFix | null = locationError ? null : location.latestFix
 
@@ -88,10 +79,6 @@ export function useStopsViewModel({
     locationFix,
     state.favoriteStopIds,
   ) : [], [locationFix, mapCenter, state.favoriteStopIds, transitIndex])
-  const locationNearbyEntries = useMemo(() => {
-    if (!transitIndex || !locationFix) return null
-    return getStopsWithinNearbyRadius(transitIndex, locationFix, locationFix)
-  }, [locationFix, transitIndex])
   const overviewEntries = useMemo(() => state.list === 'nearby'
     ? nearbyEntries
     : transitIndex ? getStopsOverview(
@@ -165,38 +152,31 @@ export function useStopsViewModel({
     }))
     : []
 
-  const expandNearbyTimings = useCallback((): boolean => {
-    if (locationNearbyEntries === null) return false
+  useEffect(() => {
+    if (mapCenter) {
+      const previousCenter = lastMapCenterRef.current
+      if (
+        previousCenter === null ||
+        previousCenter.longitude !== mapCenter.longitude ||
+        previousCenter.latitude !== mapCenter.latitude
+      ) {
+        pendingNearbyExpansionRef.current = true
+        lastMapCenterRef.current = mapCenter
+      }
+    }
+
+    if (
+      !pendingNearbyExpansionRef.current || !transitIndex || !active ||
+      state.list !== 'nearby' || !mapCenter
+    ) return
+
     dispatch({
       type: 'set-nearby-expanded',
-      stopIds: locationNearbyEntries.map(({ stop }) => stop.id),
+      stopIds: getStopsWithinNearbyRadius(transitIndex, mapCenter)
+        .map(({ stop }) => stop.id),
     })
-    return true
-  }, [dispatch, locationNearbyEntries])
-  const tryExpandNearbyTimings = useCallback((): boolean => {
-    if (!hasSuccessfulLocation(location) || !expandNearbyTimings()) return false
-    pendingNearbyTimingExpansionRef.current = false
-    return true
-  }, [expandNearbyTimings, location])
-  const requestLocationWithNearbyExpansion = useCallback((): void => {
-    pendingNearbyTimingExpansionRef.current = true
-    tryExpandNearbyTimings()
-    requestLocation?.()
-  }, [requestLocation, tryExpandNearbyTimings])
-  const locateFromControlWithNearbyExpansion = useCallback((): void => {
-    pendingNearbyTimingExpansionRef.current = true
-    tryExpandNearbyTimings()
-    locateFromControl()
-  }, [locateFromControl, tryExpandNearbyTimings])
-
-  useEffect(() => {
-    if (!pendingNearbyTimingExpansionRef.current) return
-    if (hasLocationError(location)) {
-      pendingNearbyTimingExpansionRef.current = false
-      return
-    }
-    tryExpandNearbyTimings()
-  }, [location, tryExpandNearbyTimings])
+    pendingNearbyExpansionRef.current = false
+  }, [active, dispatch, mapCenter, state.list, transitIndex])
 
   useEffect(() => {
     if (
@@ -204,8 +184,8 @@ export function useStopsViewModel({
       location.status !== 'disabled' || initialNearbyLocationRequestedRef.current
     ) return
     initialNearbyLocationRequestedRef.current = true
-    requestLocationWithNearbyExpansion()
-  }, [active, location.status, requestLocation, requestLocationWithNearbyExpansion, state.list])
+    requestLocation?.()
+  }, [active, location.status, requestLocation, state.list])
 
   const focusStop = useCallback((stopId: string): void => {
     dispatch({ type: 'focus-stop', stopId })
@@ -252,7 +232,6 @@ export function useStopsViewModel({
     toggleExpanded,
     dismissLocationNotice,
     backToStops,
-    requestLocationWithNearbyExpansion,
-    locateFromControl: locateFromControlWithNearbyExpansion,
+    locateFromControl,
   }
 }

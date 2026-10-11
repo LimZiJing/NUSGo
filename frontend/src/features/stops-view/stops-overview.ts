@@ -2,7 +2,7 @@ import { getDistanceMeters, type TransitIndex } from '../../domain/transit'
 import type { TransitStop } from '../../domain/transit/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
-export const NEARBY_STOP_RADIUS_METERS = 200
+export const NEARBY_STOP_RADIUS_METERS = 500
 
 export interface StopOverviewItem {
   readonly stop: TransitStop
@@ -36,9 +36,8 @@ export function getStopsOverview(
 export function getStopsWithinNearbyRadius(
   index: TransitIndex | null,
   center: Coordinate | null,
-  fix: DeviceLocationFix | null,
 ): readonly StopOverviewItem[] {
   if (!center) return []
-  return getStopsOverview(index, 'nearby', center, fix, [])
+  return getStopsOverview(index, 'nearby', center, null, [])
     .filter(({ stop }) => getDistanceMeters(center, stop) <= NEARBY_STOP_RADIUS_METERS)
 }

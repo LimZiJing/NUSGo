@@ -70,7 +70,7 @@
       "roomCodePrefixes": [
         "Frontier"
       ],
-      "$comment": "Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address)."
+      "$comment": "Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address). The NUSMods coordinate for the Frontier room is about 610 to 660 m from these records; the maintainer confirmed on 13/10/2026 that the NUSMods room coordinate is wrong, so the API building location stands. venues.json is not changed."
     },
     "141910336": {
       "entrance": {
@@ -334,7 +334,7 @@
         "y": 1.2963667,
         "osmNode": "11025586094"
       },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11025586094 tagged entrance=yes on the building outline (single-entrance). Unverified on site. Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address).",
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11025586094 tagged entrance=yes on the building outline (single-entrance). Unverified on site. Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address). The NUSMods coordinate for the Frontier room is about 610 to 660 m from these records; the maintainer confirmed on 13/10/2026 that the NUSMods room coordinate is wrong, so the API building location stands. venues.json is not changed.",
       "roomCodePrefixes": [
         "Frontier"
       ]

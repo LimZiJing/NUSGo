@@ -5,5 +5,5 @@
     "target": "ES2024",
     "lib": ["ES2024", "DOM"]
   },
-  "include": ["scripts/benchmark/**/*.ts"]
+  "include": ["scripts/benchmark/**/*.ts", "scripts/buildings/**/*.ts"]
 }

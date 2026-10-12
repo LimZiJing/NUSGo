@@ -9,6 +9,11 @@ import { getTripEndpointKey } from '../trip/endpoints'
 
 const MAX_RESULTS = 8
 
+// Venue data holds rooms only (no building records), so shuttle stops, which
+// are named after the main buildings they serve, rank ahead of rooms.
+const STOP_ORDER = 0
+const ROOM_ORDER = 1
+
 interface SearchCandidate {
   result: TripLocationSearchResult
   fields: string[]
@@ -96,7 +101,7 @@ export function searchTripLocations(
         detail: venue.roomName,
       },
       fields: [code, venue.roomName],
-      kindOrder: 0,
+      kindOrder: ROOM_ORDER,
     })
   }
 
@@ -108,7 +113,7 @@ export function searchTripLocations(
         detail: `${stop.shortName} (${stop.id})`,
       },
       fields: [stop.id, stop.longName, stop.shortName],
-      kindOrder: 1,
+      kindOrder: STOP_ORDER,
     })
   }
 
@@ -119,11 +124,11 @@ export function searchTripLocations(
     }))
     .filter((candidate): candidate is SearchCandidate & { priority: number } => candidate.priority !== null)
     .sort((first, second) => {
-      const priorityDifference = first.priority - second.priority
-      if (priorityDifference !== 0) return priorityDifference
-
       const kindDifference = first.kindOrder - second.kindOrder
       if (kindDifference !== 0) return kindDifference
+
+      const priorityDifference = first.priority - second.priority
+      if (priorityDifference !== 0) return priorityDifference
 
       return compareText(
         normalize(getTripEndpointKey(first.result.endpoint)),

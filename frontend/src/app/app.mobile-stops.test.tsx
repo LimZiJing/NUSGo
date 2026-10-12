@@ -18,6 +18,7 @@ const appHarness = vi.hoisted(() => {
   return {
     state: null as unknown,
     onStopSelected: null as ((stopId: string) => boolean) | null,
+    onMapStopDestinationSet: null as ((stopId: string) => void) | null,
     commands: new Proxy(commandStubs, {
       get: (target, property, receiver) => Reflect.get(target, property, receiver) ?? noop,
     }),
@@ -33,9 +34,13 @@ const appHarness = vi.hoisted(() => {
 vi.mock('./navigation-session-mount', () => ({
   createNavigationSessionMount: (
     _container: HTMLElement,
-    dependencies: { onStopSelected?: (stopId: string) => boolean },
+    dependencies: {
+      onStopSelected?: (stopId: string) => boolean
+      onMapStopDestinationSet?: (stopId: string) => void
+    },
   ) => {
     appHarness.onStopSelected = dependencies.onStopSelected ?? null
+    appHarness.onMapStopDestinationSet = dependencies.onMapStopDestinationSet ?? null
     return { session: null, dispose: () => undefined }
   },
   createNavigationSessionCommandAdapter: () => () => appHarness.commands,
@@ -102,6 +107,7 @@ afterEach(() => {
   appHarness.commands.locateUser.mockReset()
   appHarness.commands.enableLocationTracking.mockReset()
   appHarness.onStopSelected = null
+  appHarness.onMapStopDestinationSet = null
 })
 
 describe('mobile Stops tab state', () => {
@@ -178,6 +184,21 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
 
     expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
+  })
+
+  it('opens Plan after a shuttle-stop popup sets the destination', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    act(() => {
+      appHarness.onMapStopDestinationSet?.('STOP-A')
+    })
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current'))
+      .toBe('page'))
+    expect(appHarness.commands.locateUser).not.toHaveBeenCalled()
+    expect(appHarness.commands.enableLocationTracking).not.toHaveBeenCalled()
   })
 
   it('keeps mobile Explore popup behavior when a stop is selected', async () => {

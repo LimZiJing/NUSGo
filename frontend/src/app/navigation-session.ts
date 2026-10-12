@@ -92,6 +92,7 @@ export interface NavigationSessionDependencies {
   readonly journeyPlanner?: JourneyPlanningService
   readonly locationTracker: LocationTracker
   readonly onMapStopInteraction?: (stopId: string) => void
+  readonly onMapStopDestinationSet?: (stopId: string) => void
 }
 
 export type NavigationSessionListener = () => void
@@ -497,7 +498,12 @@ export function createNavigationSession(
         reconciledSelection,
         (role, endpoint) => {
           setTripEndpointCommand(role, endpoint)
-          if (endpoint.kind === 'stop') dependencies.onMapStopInteraction?.(endpoint.id)
+          if (endpoint.kind !== 'stop') return
+          if (role === 'destination') {
+            dependencies.onMapStopDestinationSet?.(endpoint.id)
+          } else {
+            dependencies.onMapStopInteraction?.(endpoint.id)
+          }
         },
       )
       syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)

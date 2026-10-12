@@ -347,6 +347,37 @@ describe('navigation session', () => {
     expect(onMapStopInteraction).toHaveBeenCalledWith('STOP-A')
   })
 
+  it.each([
+    { name: 'existing origin', origin: { kind: 'venue' as const, id: 'COM1' } },
+    { name: 'unset origin', origin: null },
+  ])('sets a popup destination and preserves the $name', async ({ origin }) => {
+    const onMapStopDestinationSet = vi.fn()
+    const onMapStopInteraction = vi.fn()
+    const journeyPlanner = vi.fn(async () => null)
+    const dependencies = createDependencies({
+      onMapStopDestinationSet,
+      onMapStopInteraction,
+      journeyPlanner,
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    if (origin) session.setTripEndpoint('origin', origin)
+
+    const setPopupEndpoint = vi.mocked(dependencies.map.loadTransitData).mock.calls[0]?.[2]
+    setPopupEndpoint?.('destination', { kind: 'stop', id: 'STOP-A' })
+
+    expect(session.getState().tripRequest).toEqual({
+      origin,
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+    expect(onMapStopDestinationSet).toHaveBeenCalledOnce()
+    expect(onMapStopDestinationSet).toHaveBeenCalledWith('STOP-A')
+    expect(onMapStopInteraction).not.toHaveBeenCalled()
+    expect(dependencies.locationTracker.requestCurrentLocation).not.toHaveBeenCalled()
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
+    expect(journeyPlanner).not.toHaveBeenCalled()
+  })
+
   it('does not plan when endpoints are selected until the user submits the trip', async () => {
     const planning = createDeferred<JourneyPlanningServiceResult | null>()
     const journeyPlanner = vi.fn(() => planning.promise)

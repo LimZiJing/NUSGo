@@ -245,6 +245,7 @@ function App() {
       locationTracker: services.createLocationTracker(),
       onStopSelected: appNavigation.handleStopSelected,
       onMapStopInteraction: appNavigation.handleMapStopInteraction,
+      onMapStopDestinationSet: appNavigation.openPlan,
       onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
     })
@@ -256,6 +257,7 @@ function App() {
   }, [
     appNavigation.handleMapStopInteraction,
     appNavigation.handleStopSelected,
+    appNavigation.openPlan,
     handleMapJourneyOptionSelected,
     services,
   ])

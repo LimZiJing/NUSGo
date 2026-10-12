@@ -1,4 +1,6 @@
-button.navigate-button {
+/* Stop detail's "Opposite stop" button shares this primary style so it matches Navigate. */
+button.navigate-button,
+button.stop-opposite {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
@@ -16,7 +18,8 @@ button.navigate-button {
   cursor: pointer;
 }
 
-button.navigate-button:disabled {
+button.navigate-button:disabled,
+button.stop-opposite:disabled {
   border-color: var(--border-control);
   color: var(--text-muted);
   background: var(--surface-control);

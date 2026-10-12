@@ -35,4 +35,22 @@ describe('mobile sheet snap points', () => {
 
     expect(getMobileSheetDetent('580px', points)).toBeNull()
   })
+
+  it('matches near-equal snap points that differ only by sub-pixel rounding', () => {
+    const points = createMobileSheetSnapPoints(844, 80, 44)
+
+    expect(getMobileSheetDetent('502.4px', points)).toBe('partial')
+    expect(getMobileSheetDetent('843.6px', points)).toBe('full')
+    expect(getMobileSheetDetent('124.0000001px', points)).toBe('collapsed')
+    expect(getMobileSheetDetent(502.3, points)).toBe('partial')
+  })
+
+  it('ignores unparseable or distant snap points', () => {
+    const points = createMobileSheetSnapPoints(844, 80, 44)
+
+    expect(getMobileSheetDetent('50%', points)).toBeNull()
+    expect(getMobileSheetDetent(Number.NaN, points)).toBeNull()
+    expect(getMobileSheetDetent('502.9px', points)).toBe('partial')
+    expect(getMobileSheetDetent('510px', points)).toBeNull()
+  })
 })

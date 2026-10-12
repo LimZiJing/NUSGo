@@ -168,9 +168,9 @@
     left: 0;
     display: flex;
     width: auto;
-    height: var(--mobile-viewport-height) !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    height: var(--mobile-viewport-height);
+    min-height: 0;
+    max-height: none;
     flex-direction: column;
     overflow: hidden;
     /* Keep scrollable content inside the visible part of a partial sheet. */

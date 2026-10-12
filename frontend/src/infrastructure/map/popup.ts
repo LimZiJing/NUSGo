@@ -168,6 +168,7 @@ export function createBusStopPopupContent(
 
 export interface PopupCoordinator {
   register(popup: Popup): () => void
+  dismiss(): boolean
   dispose(): void
 }
 
@@ -200,6 +201,12 @@ export function createPopupCoordinator(): PopupCoordinator {
         popup.off('close', handleClose)
         if (activePopup === popup) activePopup = null
       }
+    },
+
+    dismiss() {
+      if (!activePopup) return false
+      activePopup.remove()
+      return true
     },
 
     dispose() {

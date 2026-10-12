@@ -92,6 +92,7 @@ export interface NavigationSessionDependencies {
   readonly journeyPlanner?: JourneyPlanningService
   readonly locationTracker: LocationTracker
   readonly onMapStopInteraction?: (stopId: string) => void
+  readonly onMapStopDestinationSet?: (stopId: string) => void
 }
 
 export type NavigationSessionListener = () => void
@@ -130,6 +131,7 @@ export interface NavigationSession {
   closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
+  dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
@@ -497,7 +499,12 @@ export function createNavigationSession(
         reconciledSelection,
         (role, endpoint) => {
           setTripEndpointCommand(role, endpoint)
-          if (endpoint.kind === 'stop') dependencies.onMapStopInteraction?.(endpoint.id)
+          if (endpoint.kind !== 'stop') return
+          if (role === 'destination') {
+            dependencies.onMapStopDestinationSet?.(endpoint.id)
+          } else {
+            dependencies.onMapStopInteraction?.(endpoint.id)
+          }
         },
       )
       syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
@@ -629,7 +636,6 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         mobileRoutesActive = false
-        dependencies.map.dismissPopup()
         setActiveRoute(null, false, false)
         panelTransitions.closeToRoot()
       })
@@ -875,6 +881,11 @@ export function createNavigationSession(
       if (disposed) return
       viewportInsets = { ...insets }
       dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    dismissStopPopup() {
+      if (disposed) return false
+      return dependencies.map.dismissStopPopup()
     },
 
     dismissMapPopup() {

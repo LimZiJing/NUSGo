@@ -30,6 +30,7 @@ export interface UseAppNavigationOptions {
     | 'enableLocationTracking'
     | 'selectMobileRoute'
     | 'focusStopInStopsTab'
+    | 'dismissStopPopup'
     | 'dismissMapPopup'
     | 'setStopsPinVisible'
     | 'escape'
@@ -57,6 +58,7 @@ export interface AppNavigation {
   readonly selectView: (view: NavigationView, stopsList?: 'nearby' | 'favourites') => void
   readonly navigateToVenue: (venueCode: string) => void
   readonly navigateToStop: (stopId: string) => void
+  readonly openPlan: () => void
   readonly selectRouteFromStops: (routeId: string) => void
   readonly beginMobileSearch: (view: 'explore' | 'plan') => void
   readonly dismissMobileSearch: (view: 'explore' | 'plan') => void
@@ -100,6 +102,7 @@ export function useAppNavigation({
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
 
   const activeView = state.activeView
+  const previousActiveViewRef = useRef(activeView)
   const activeSheetDetent = state.sheets[activeView].detent
   const activeSheetExpanded = activeSheetDetent !== 'collapsed'
 
@@ -195,15 +198,19 @@ export function useAppNavigation({
     state,
   ])
 
-  const navigateToEndpoint = useCallback((
-    endpoint: Parameters<NavigationSessionCommands['navigateToEndpoint']>[0],
-  ): void => {
-    commands.navigateToEndpoint(endpoint)
+  const openPlan = useCallback((): void => {
     pendingViewFocusRef.current = 'plan'
     dispatch(isMobileViewport
       ? { type: 'open-plan' }
       : { type: 'select-view', view: 'plan' })
-  }, [commands, dispatch, isMobileViewport, pendingViewFocusRef])
+  }, [dispatch, isMobileViewport, pendingViewFocusRef])
+
+  const navigateToEndpoint = useCallback((
+    endpoint: Parameters<NavigationSessionCommands['navigateToEndpoint']>[0],
+  ): void => {
+    commands.navigateToEndpoint(endpoint)
+    openPlan()
+  }, [commands, openPlan])
 
   const navigateToVenue = useCallback((venueCode: string): void => {
     navigateToEndpoint({ kind: 'venue', id: venueCode })
@@ -286,7 +293,13 @@ export function useAppNavigation({
   }, [activeView, commands])
 
   useEffect(() => {
-    if (activeView === 'stops') commands.dismissMapPopup()
+    if (previousActiveViewRef.current === activeView) return
+    previousActiveViewRef.current = activeView
+    if (activeView === 'stops') {
+      commands.dismissMapPopup()
+      return
+    }
+    commands.dismissStopPopup()
   }, [activeView, commands])
 
   return {
@@ -304,6 +317,7 @@ export function useAppNavigation({
     selectView,
     navigateToVenue,
     navigateToStop,
+    openPlan,
     selectRouteFromStops,
     beginMobileSearch,
     dismissMobileSearch,

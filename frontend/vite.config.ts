@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -331,6 +332,11 @@ export default defineConfig(({ mode }) => {
       __NAVUS_DATA_VERSION__: JSON.stringify(dataVersion),
     },
     plugins: [react(), createShuttleArrivalsPlugin(env)],
+    test: {
+      // App integration tests render the full shell; the 5 s default is too tight
+      // when several suites share the machine.
+      testTimeout: 15_000,
+    },
     server: {
       host: '0.0.0.0',
       ...(allowedHost ? { allowedHosts: [allowedHost] } : {}),

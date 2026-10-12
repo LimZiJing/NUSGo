@@ -75,7 +75,7 @@ const TRANSIT_ROUTE_DIRECTION_LAYER: SymbolLayerSpecification = {
     'symbol-placement': 'line',
     'symbol-spacing': 80,
     'text-field': '▶',
-    'text-font': ['Open Sans Regular'],
+    'text-font': ['Noto Sans Regular'],
     'text-size': 12,
     'text-pitch-alignment': 'map',
     'text-rotation-alignment': 'map',

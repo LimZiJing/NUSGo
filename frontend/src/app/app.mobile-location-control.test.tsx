@@ -44,6 +44,10 @@ vi.mock('./use-navigation-session', () => ({
   useNavigationSession: () => appHarness.state,
 }))
 
+vi.mock('../infrastructure/map/session', () => ({
+  createMapSession: vi.fn(),
+}))
+
 beforeEach(() => {
   appHarness.state = createInitialNavigationSessionState()
 })

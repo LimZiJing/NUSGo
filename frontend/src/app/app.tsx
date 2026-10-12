@@ -45,6 +45,7 @@ function App() {
   const mainNavigationRef = useRef<HTMLElement>(null)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
+  const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [theme, setTheme] = useState<Theme>(getSystemTheme)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
@@ -103,6 +104,7 @@ function App() {
     focusStop: stopsView.focusStop,
     locationStatus: state.location.status,
     pendingViewFocusRef,
+    pendingExploreReturnFocusRef,
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
@@ -168,6 +170,13 @@ function App() {
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
+  }, [activeView])
+
+  useLayoutEffect(() => {
+    if (activeView !== 'explore') return
+    const target = pendingExploreReturnFocusRef.current
+    pendingExploreReturnFocusRef.current = null
+    if (target?.isConnected) target.focus({ preventScroll: true })
   }, [activeView])
 
   useLayoutEffect(() => {
@@ -324,7 +333,7 @@ function App() {
       if (isMobileViewport) appNavigation.beginMobileSearch('explore')
       commands.leaveMobileRoutes()
     },
-    onFocusStop: commands.focusStop,
+    onFocusStop: appNavigation.openStopFromExplore,
     onBack: commands.back,
     onEscape: appNavigation.escapeExplore,
     onDismissMapPopup: commands.dismissMapPopup,
@@ -337,7 +346,7 @@ function App() {
     selectedList: stopsView.state.list,
     selectedStopFavorite: stopsView.selectedStopFavorite,
     locationNotice: stopsView.locationNotice,
-    onBackToStops: stopsView.backToStops,
+    onBackToStops: () => appNavigation.backFromStopDetails(stopsView.backToStops),
     onSelectOppositeStop: appNavigation.handleStopSelected,
     onSelectRoute: appNavigation.selectRouteFromStops,
     onNavigateToStop: appNavigation.navigateToStop,

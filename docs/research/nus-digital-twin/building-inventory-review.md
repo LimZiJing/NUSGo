@@ -2,6 +2,8 @@
 
 Review date: 13/10/2026. Status: **candidate inventory for maintainer review. Not complete and not approved.** Every entry below is selectable on its API centroid only. No pedestrian entrance has been verified on the ground or from imagery; the OSM entrance evidence below is community-mapped and must be treated as unverified.
 
+**Update 13/10/2026:** the maintainer approved the 260 entries as selectable and accepted the 29 single OSM entrance candidates (11 main-tagged, 18 single) as provisional entrances. They are recorded in `scripts/data/building-overrides.json` and marked `provisional-entrance` in `buildings.json`; the other 231 stay on centroids. Gap dispositions, the ambiguous prefixes and the proposed categories were not decided and remain open.
+
 ## Sources and method
 
 - **Building list:** NUS Digital Twin `GET /buildings`, one request on 13/10/2026 (260 records), committed as `docs/research/nus-digital-twin/buildings-raw-2026-10-13.json`. Room links and the rest of the import are in `dedupe-report.md`.

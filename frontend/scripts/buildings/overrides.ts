@@ -6,13 +6,16 @@
  *   { "version": 1, "$comment"?: string, "overrides": { "<elementId>": BuildingOverride } }
  *
  * roomCodePrefixes replaces the computed links for that building; location replaces the API
- * centroid (and drops the centroid marker); aliases replaces the derived search aliases.
+ * centroid (and drops the centroid marker); entrance (x, y, osmNode) replaces it with a provisional
+ * OpenStreetMap entrance and cannot be combined with location; aliases replaces the derived search aliases.
  */
 export type BuildingOverride = {
   readonly name?: string
   readonly aliases?: readonly string[]
   readonly roomCodePrefixes?: readonly string[]
   readonly location?: { readonly x: number, readonly y: number }
+  /** Accepted but unverified OpenStreetMap entrance; replaces the centroid and records the node. */
+  readonly entrance?: { readonly x: number, readonly y: number, readonly osmNode: string }
   readonly groupKey?: string
 }
 
@@ -20,7 +23,7 @@ export type BuildingOverride = {
 export type BuildingOverrides = Readonly<Record<string, BuildingOverride>>
 
 const FILE_FIELDS = new Set(['version', '$comment', 'overrides'])
-const OVERRIDE_FIELDS = new Set(['name', 'aliases', 'roomCodePrefixes', 'location', 'groupKey', '$comment'])
+const OVERRIDE_FIELDS = new Set(['name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', '$comment'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -40,6 +43,12 @@ function isLocation(value: unknown): value is { x: number, y: number } {
     typeof value.y === 'number' && Number.isFinite(value.y) && Math.abs(value.y) <= 90
 }
 
+function isEntrance(value: unknown): value is { x: number, y: number, osmNode: string } {
+  if (!isLocation(value)) return false
+  const { osmNode } = value as { osmNode?: unknown }
+  return typeof osmNode === 'string' && /^\d+$/.test(osmNode)
+}
+
 function parseOverride(elementId: string, value: unknown, issues: string[]): BuildingOverride | undefined {
   if (!isRecord(value)) {
     issues.push(`Override ${elementId} must be an object`)
@@ -48,7 +57,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   for (const field of Object.keys(value)) {
     if (!OVERRIDE_FIELDS.has(field)) issues.push(`Override ${elementId} has unknown field ${field}`)
   }
-  const { name, aliases, roomCodePrefixes, location, groupKey } = value
+  const { name, aliases, roomCodePrefixes, location, entrance, groupKey } = value
   if (name !== undefined && !isNonEmptyString(name)) issues.push(`Override ${elementId} name must be a non-empty string`)
   if (aliases !== undefined && !isStringArray(aliases)) {
     issues.push(`Override ${elementId} aliases must be an array of non-empty strings`)
@@ -59,6 +68,12 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   if (location !== undefined && !isLocation(location)) {
     issues.push(`Override ${elementId} location must be { x: longitude, y: latitude } within range`)
   }
+  if (entrance !== undefined && !isEntrance(entrance)) {
+    issues.push(`Override ${elementId} entrance must be { x: longitude, y: latitude, osmNode: numeric OSM node id }`)
+  }
+  if (entrance !== undefined && location !== undefined) {
+    issues.push(`Override ${elementId} cannot set both entrance and location`)
+  }
   if (groupKey !== undefined && !isNonEmptyString(groupKey)) {
     issues.push(`Override ${elementId} groupKey must be a non-empty string`)
   }
@@ -67,6 +82,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
     ...(aliases === undefined ? {} : { aliases: [...aliases as string[]] }),
     ...(roomCodePrefixes === undefined ? {} : { roomCodePrefixes: [...roomCodePrefixes as string[]] }),
     ...(location === undefined ? {} : { location: { ...location as { x: number, y: number } } }),
+    ...(entrance === undefined ? {} : { entrance: { ...entrance as { x: number, y: number, osmNode: string } } }),
     ...(groupKey === undefined ? {} : { groupKey: groupKey as string }),
   }
 }

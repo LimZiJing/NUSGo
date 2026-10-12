@@ -15,7 +15,7 @@ const USAGE = 'Usage: npm run buildings:import [-- --fetch [--force]]'
 
 const SOURCE_NAME = 'Buildings: NUS Digital Twin (City Syntax Lab)'
 const LICENCE_NOTE = 'Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers ' +
-  '(per the NUS Digital Twin API documentation). Locations are API centroids, not verified entrances.'
+  '(per the NUS Digital Twin API documentation). Locations are API centroids, except buildings marked provisional-entrance, which use an unverified OpenStreetMap entrance.'
 
 export type CommandPaths = {
   readonly snapshotDirectory: string

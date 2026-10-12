@@ -4,7 +4,7 @@
     "name": "Buildings: NUS Digital Twin (City Syntax Lab)",
     "url": "https://www.nus-digital-twin.com/api/v1/buildings",
     "fetchedOn": "2026-10-13",
-    "licenceNote": "Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers (per the NUS Digital Twin API documentation). Locations are API centroids, not verified entrances."
+    "licenceNote": "Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers (per the NUS Digital Twin API documentation). Locations are API centroids, except buildings marked provisional-entrance, which use an unverified OpenStreetMap entrance."
   },
   "buildings": [
     {
@@ -137,10 +137,10 @@
       "address": "11 Computing Drive",
       "postal": "117416",
       "location": {
-        "x": 103.77322,
-        "y": 1.29557
+        "x": 103.7735602,
+        "y": 1.2953637
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "AS6"
       ],
@@ -148,6 +148,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "15347235"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10574167549"
         }
       ]
     },
@@ -163,10 +167,10 @@
       "address": "5 Arts Link",
       "postal": "117570",
       "location": {
-        "x": 103.77111,
-        "y": 1.29432
+        "x": 103.770923,
+        "y": 1.2941719
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "AS7"
       ],
@@ -174,6 +178,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "142079835"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10701211314"
         }
       ]
     },
@@ -450,10 +458,10 @@
       "address": "10 Architecture Drive",
       "postal": "117511",
       "location": {
-        "x": 103.77139,
-        "y": 1.29698
+        "x": 103.771613,
+        "y": 1.2971337
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "CELC"
       ],
@@ -461,6 +469,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "140084916"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11243901177"
         }
       ]
     },
@@ -516,15 +528,19 @@
       "address": "12 Kent Ridge Crescent",
       "postal": "119275",
       "location": {
-        "x": 103.77339,
-        "y": 1.29695
+        "x": 103.7731924,
+        "y": 1.2969426
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "140087374"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11224826735"
         }
       ]
     },
@@ -642,10 +658,10 @@
       "address": "13 Computing Drive",
       "postal": "117417",
       "location": {
-        "x": 103.77391,
-        "y": 1.29502
+        "x": 103.7736946,
+        "y": 1.2948072
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "COM1"
       ],
@@ -653,6 +669,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "54619721"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/5936493260"
         }
       ]
     },
@@ -714,10 +734,10 @@
       "address": "3A Research Link",
       "postal": "119392",
       "location": {
-        "x": 103.77538,
-        "y": 1.29513
+        "x": 103.7756091,
+        "y": 1.2950488
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "COM4"
       ],
@@ -725,6 +745,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "1084196072"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11252774947"
         }
       ]
     },
@@ -1375,15 +1399,19 @@
       "address": "12 Science Drive 2",
       "postal": "117549",
       "location": {
-        "x": 103.78033,
-        "y": 1.29645
+        "x": 103.7800815,
+        "y": 1.2963667
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "874067395"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11025586094"
         }
       ]
     },
@@ -1522,10 +1550,10 @@
       "address": "1 Hon Sui Sen Drive",
       "postal": "117588",
       "location": {
-        "x": 103.77444,
-        "y": 1.29302
+        "x": 103.7747466,
+        "y": 1.2931313
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "HSS"
       ],
@@ -1533,6 +1561,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "54619685"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10773610197"
         }
       ]
     },
@@ -1544,10 +1576,10 @@
       "address": "21 Heng Mui Keng Ter",
       "postal": "119613",
       "location": {
-        "x": 103.77571,
-        "y": 1.2925
+        "x": 103.7755061,
+        "y": 1.2922072
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "I3",
         "i3"
@@ -1556,6 +1588,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "54619687"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11137523179"
         }
       ]
     },
@@ -1607,15 +1643,19 @@
       "address": "3 Research Link",
       "postal": "117602",
       "location": {
-        "x": 103.77569,
-        "y": 1.29458
+        "x": 103.7758547,
+        "y": 1.2941643
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "54619703"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11252774960"
         }
       ]
     },
@@ -2419,10 +2459,10 @@
       "address": "13 Computing Drive",
       "postal": "117417",
       "location": {
-        "x": 103.77386,
-        "y": 1.29392
+        "x": 103.773801,
+        "y": 1.2940473
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "LT16"
       ],
@@ -2430,6 +2470,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "142082467"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/13760043544"
         }
       ]
     },
@@ -2491,10 +2535,10 @@
       "address": "Computing Drive",
       "postal": "119077",
       "location": {
-        "x": 103.77445,
-        "y": 1.29364
+        "x": 103.7743443,
+        "y": 1.2937939
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "LT19"
       ],
@@ -2502,6 +2546,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "142083509"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11243901183"
         }
       ]
     },
@@ -2635,10 +2683,10 @@
       "address": "2 Medical Drive",
       "postal": "117593",
       "location": {
-        "x": 103.78128,
-        "y": 1.29712
+        "x": 103.7812156,
+        "y": 1.2970127
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "LT29"
       ],
@@ -2646,6 +2694,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "141907010"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11153264937"
         }
       ]
     },
@@ -2925,10 +2977,10 @@
       "address": "10 Medical Drive",
       "postal": "117597",
       "location": {
-        "x": 103.78178,
-        "y": 1.29602
+        "x": 103.7819404,
+        "y": 1.2958909
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "MD11"
       ],
@@ -2936,6 +2988,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "141910336"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11020038671"
         }
       ]
     },
@@ -3063,10 +3119,10 @@
       "address": "15 Medical Drive",
       "postal": "117599",
       "location": {
-        "x": 103.78171,
-        "y": 1.29532
+        "x": 103.7820045,
+        "y": 1.2953223
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "MD6"
       ],
@@ -3074,6 +3130,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "141912974"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1553396926"
         }
       ]
     },
@@ -3133,15 +3193,19 @@
       "address": "11 Lower Kent Ridge Road",
       "postal": "119083",
       "location": {
-        "x": 103.78173,
-        "y": 1.29696
+        "x": 103.7816129,
+        "y": 1.2969695
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "141913116"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11153264936"
         }
       ]
     },
@@ -3445,15 +3509,19 @@
       "address": "31 Prince George's Park",
       "postal": "118427",
       "location": {
-        "x": 103.78133,
-        "y": 1.29048
+        "x": 103.7812616,
+        "y": 1.290337
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "241523920"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/5250150676"
         }
       ]
     },
@@ -4111,15 +4179,19 @@
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
-        "x": 103.77678,
-        "y": 1.29791
+        "x": 103.7768934,
+        "y": 1.2977527
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "427077072"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11503213901"
         }
       ]
     },
@@ -4131,15 +4203,19 @@
       "address": "17 Kent Ridge Crescent",
       "postal": "119277",
       "location": {
-        "x": 103.77375,
-        "y": 1.29919
+        "x": 103.7737201,
+        "y": 1.2989457
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "54619731"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10821049775"
         }
       ]
     },
@@ -4281,15 +4357,19 @@
       "address": "Science Drive 2",
       "postal": "117543",
       "location": {
-        "x": 103.78025,
-        "y": 1.29714
+        "x": 103.7804832,
+        "y": 1.2973481
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "141906507"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1554926664"
         }
       ]
     },
@@ -4301,10 +4381,10 @@
       "address": "Science Drive 2",
       "postal": "117543",
       "location": {
-        "x": 103.78039,
-        "y": 1.29687
+        "x": 103.7802176,
+        "y": 1.2965938
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "S16"
       ],
@@ -4312,6 +4392,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "141906506"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10686208841"
         }
       ]
     },
@@ -4323,10 +4407,10 @@
       "address": "Science Drive 2",
       "postal": "117543",
       "location": {
-        "x": 103.78055,
-        "y": 1.29772
+        "x": 103.7803913,
+        "y": 1.2975499
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "S17"
       ],
@@ -4334,6 +4418,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "142074912"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1554926665"
         }
       ]
     },
@@ -4928,15 +5016,19 @@
       "address": "5 Research Link",
       "postal": "117603",
       "location": {
-        "x": 103.77515,
-        "y": 1.29563
+        "x": 103.774913,
+        "y": 1.2957666
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "54619730"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11155921865"
         }
       ]
     },
@@ -5196,15 +5288,19 @@
       "address": "28 College Ave East",
       "postal": "138598",
       "location": {
-        "x": 103.7737,
-        "y": 1.30621
+        "x": 103.7737599,
+        "y": 1.3061041
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "124230878"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11411601592"
         }
       ]
     },
@@ -5440,15 +5536,19 @@
       "address": "36 College Ave East",
       "postal": "138600",
       "location": {
-        "x": 103.77379,
-        "y": 1.30538
+        "x": 103.7737952,
+        "y": 1.3052011
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "7765113"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/4366419790"
         }
       ]
     },
@@ -5460,15 +5560,19 @@
       "address": "36 College Ave East",
       "postal": "138600",
       "location": {
-        "x": 103.77395,
-        "y": 1.30488
+        "x": 103.7738538,
+        "y": 1.305033
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "7765114"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/4366419789"
         }
       ]
     },
@@ -5480,15 +5584,19 @@
       "address": "8 Kent Ridge Drive",
       "postal": "119246",
       "location": {
-        "x": 103.77022,
-        "y": 1.29529
+        "x": 103.7701913,
+        "y": 1.2950996
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "503403831"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11145614465"
         }
       ]
     },
@@ -5500,15 +5608,19 @@
       "address": "20 College Ave East",
       "postal": "138529",
       "location": {
-        "x": 103.77257,
-        "y": 1.30739
+        "x": 103.7727043,
+        "y": 1.3074026
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
           "elementId": "732229050"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11260211008"
         }
       ]
     },
@@ -5562,10 +5674,10 @@
       "address": "3 Conservatory Drive",
       "postal": "117376",
       "location": {
-        "x": 103.77265,
-        "y": 1.30218
+        "x": 103.772812,
+        "y": 1.3017569
       },
-      "locationKind": "centroid",
+      "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
         "YSTCM"
       ],
@@ -5573,6 +5685,10 @@
         {
           "source": "nus-digital-twin",
           "elementId": "111973157"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11018992675"
         }
       ]
     },

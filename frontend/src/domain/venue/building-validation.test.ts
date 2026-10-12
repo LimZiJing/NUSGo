@@ -80,6 +80,15 @@ describe('validateBuildingCatalogue', () => {
     ])
   })
 
+  it('accepts a centroid or provisional entrance marker and rejects anything else', () => {
+    expect(validateBuildingCatalogue(catalogue([building({ locationKind: 'centroid' })])).buildings).toHaveLength(1)
+    expect(validateBuildingCatalogue(catalogue([building({ locationKind: 'provisional-entrance' })])).buildings)
+      .toHaveLength(1)
+    expect(issuesFor(catalogue([building({ locationKind: 'entrance' })]))).toEqual([
+      'Building com1 locationKind must be "centroid" or "provisional-entrance" when provided',
+    ])
+  })
+
   it('accepts an empty building list and repeated names', () => {
     expect(validateBuildingCatalogue(catalogue([])).buildings).toEqual([])
     expect(validateBuildingCatalogue(catalogue([
@@ -93,7 +102,7 @@ describe('validateBuildingCatalogue', () => {
 
     expect(result.buildings[0].locationKind).toBe('centroid')
     expect(issuesFor(catalogue([building({ locationKind: 'entrance' })]))).toEqual([
-      'Building com1 locationKind must be "centroid" when provided',
+      'Building com1 locationKind must be "centroid" or "provisional-entrance" when provided',
     ])
   })
 

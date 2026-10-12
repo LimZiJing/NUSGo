@@ -31,6 +31,7 @@ describe('renderReport', () => {
     )
 
     expect(markdown).toContain('fetched on 13/10/2026')
+    expect(markdown).toContain('unverified OpenStreetMap entrance')
     expect(markdown).toContain('| API records | 2 |\n| Buildings written | 2 |\n| Rooms linked | 2 |\n| Rooms unlinked | 0 |')
     expect(markdown).toContain('| CLB | Central Library (`central-library`) | alias | 1 | Room name "Central Library Seminar Room". |')
     expect(markdown).toMatch(/## Needs review\n\nNothing needs review\.\n/)

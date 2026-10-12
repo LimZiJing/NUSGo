@@ -20,8 +20,12 @@ export type Building = {
     readonly x: number
     readonly y: number
   }
-  /** 'centroid' marks an imported API footprint centroid, so it is never mistaken for an entrance. */
-  readonly locationKind?: 'centroid'
+  /**
+   * 'centroid' marks an imported API footprint centroid, so it is never mistaken for an entrance.
+   * 'provisional-entrance' marks an accepted but unverified entrance (OpenStreetMap node), recorded
+   * in sourceRefs. A verified entrance will need its own kind.
+   */
+  readonly locationKind?: 'centroid' | 'provisional-entrance'
   /** Room-code building tokens that link venues to this building, for example "COM1". */
   readonly roomCodePrefixes: readonly string[]
   readonly sourceRefs: readonly BuildingSourceRef[]

@@ -29,12 +29,12 @@ The import exits without writing anything if the response is invalid or empty, o
 
 ## Corrections
 
-- `scripts/data/building-overrides.json` is hand-edited and committed. Entries are keyed by API `elementId` and win over the API data and our own data. It is merged at import time and is not shipped to the browser. Its allowed fields are described in the file.
+- `scripts/data/building-overrides.json` is hand-edited and committed. Entries are keyed by API `elementId` and win over the API data and our own data. It is merged at import time and is not shipped to the browser. Its allowed fields are described in the file; `entrance` records a provisional OpenStreetMap entrance and is how the 29 accepted entrances are stored.
 - The curated abbreviation table is `frontend/scripts/buildings/aliases.ts`. Add an entry only where the dedupe report and the data support it.
 - Proximity never links a room to a building; it only produces a warning.
 
 ## Limits
 
-- Locations are API centroids. A verified pedestrian entrance replaces a centroid only through the reviewed inventory in #260.
+- Locations are API centroids (`locationKind: "centroid"`), except 29 buildings whose location is an accepted but unverified OpenStreetMap entrance (`locationKind: "provisional-entrance"`, node recorded in `sourceRefs`). The maintainer accepted those on 13/10/2026; they come from `entrance` entries in the overrides file. No entrance is verified yet, and a verified entrance will need its own `locationKind`.
 - Building IDs are derived from names and `elementId` order. A future snapshot that adds a record with an existing name could renumber the `-1`/`-2` suffixes; an ID registry would be needed to prevent that.
 - The API is beta and may change; the committed snapshot and boundary validation contain the damage.

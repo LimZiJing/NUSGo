@@ -137,8 +137,12 @@ function validateBuilding(index: number, value: unknown, issues: string[]): void
     issues.push(`${label} postal must be a 6-digit string when provided`)
   }
   validateBuildingLocation(label, value.location, issues)
-  if (value.locationKind !== undefined && value.locationKind !== 'centroid') {
-    issues.push(`${label} locationKind must be "centroid" when provided`)
+  if (
+    value.locationKind !== undefined &&
+    value.locationKind !== 'centroid' &&
+    value.locationKind !== 'provisional-entrance'
+  ) {
+    issues.push(`${label} locationKind must be "centroid" or "provisional-entrance" when provided`)
   }
   if (!isStringArray(value.roomCodePrefixes)) {
     issues.push(`${label} roomCodePrefixes must be an array of non-empty strings`)

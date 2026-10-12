@@ -284,6 +284,24 @@ describe('buildCatalogue rule chain', () => {
     expect(result.findings.unlinkedPrefixes.map((entry) => entry.prefix)).toEqual(['COM1'])
   })
 
+  it('uses a provisional OSM entrance in place of the centroid and records its source', () => {
+    const result = build({
+      apiBuildings: [api('54619721', 'COM1', 1.29502, 103.77391)],
+      venues: {},
+      aliases: [],
+      overrides: { 54619721: { entrance: { x: 103.7741, y: 1.2951, osmNode: '12345' } } },
+    })
+
+    expect(result.catalogue.buildings[0]).toMatchObject({
+      location: { x: 103.7741, y: 1.2951 },
+      locationKind: 'provisional-entrance',
+      sourceRefs: [
+        { source: 'nus-digital-twin', elementId: '54619721' },
+        { source: 'openstreetmap', elementId: 'node/12345' },
+      ],
+    })
+  })
+
   it('produces identical output for the same input', () => {
     const input = {
       apiBuildings: [api('2', 'COM2', 1.29397, 103.77413), api('1', 'COM1', 1.29502, 103.77391)],

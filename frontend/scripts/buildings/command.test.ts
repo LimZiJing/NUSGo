@@ -53,7 +53,7 @@ describe('runBuildingsCommand', () => {
       name: 'Buildings: NUS Digital Twin (City Syntax Lab)',
       url: 'https://www.nus-digital-twin.com/api/v1/buildings',
       fetchedOn: '2026-10-13',
-      licenceNote: 'Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers (per the NUS Digital Twin API documentation). Locations are API centroids, not verified entrances.',
+      licenceNote: 'Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers (per the NUS Digital Twin API documentation). Locations are API centroids, except buildings marked provisional-entrance, which use an unverified OpenStreetMap entrance.',
     })
     expect(catalogue.buildings.map((building) => [building.id, building.roomCodePrefixes, building.locationKind])).toEqual([
       ['com1', ['COM1'], 'centroid'],

@@ -71,7 +71,7 @@ export function renderReport(result: BuildCatalogueResult, context: ReportContex
     '',
     'Each room-code prefix is linked by the first confident rule: override, exact code, alias, then a unique ' +
       `building name at the start of room names. Proximity never links; a match more than ${DISTANCE_WARNING_METRES} m ` +
-      'from the median of its rooms is flagged. Building locations are API centroids, not verified entrances.',
+      'from the median of its rooms is flagged. Building locations are API centroids, except buildings marked provisional-entrance, which use an unverified OpenStreetMap entrance.',
     '',
     ...section('Counts', table(['Measure', 'Count'], [
       ['API records', String(findings.counts.apiRecords)],

@@ -30,6 +30,24 @@ describe('parseOverrides', () => {
     expect(parseOverrides({ version: 1, overrides: {} }, KNOWN)).toEqual({})
   })
 
+  it('accepts a provisional OSM entrance and rejects malformed ones', () => {
+    const entrance = { x: 103.7741, y: 1.2951, osmNode: '12345' }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: { entrance } } }, KNOWN)['54619721'])
+      .toEqual({ entrance })
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: {
+        54619721: { entrance: { x: 200, y: 1.2951, osmNode: '12345' } },
+        140087398: { entrance: { x: 103.7741, y: 1.2951, osmNode: 'node/1' } },
+      },
+    }, KNOWN)).toThrow(/54619721 entrance.*140087398 entrance/)
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: { 54619721: { entrance, location: { x: 103.7739, y: 1.295 } } },
+    }, KNOWN)).toThrow('54619721 cannot set both entrance and location')
+  })
+
   it('fails on unknown elementIds, unknown fields and malformed values', () => {
     expect(() => parseOverrides({ version: 2, overrides: {} }, KNOWN)).toThrow('version must be 1')
     expect(() => parseOverrides({ version: 1, overrides: {}, extra: true }, KNOWN)).toThrow('unknown field extra')

@@ -194,7 +194,9 @@ function createDrafts(input: BuildCatalogueInput): Draft[] {
     normalisedName,
     groupKey: override?.groupKey ?? ((nameCounts.get(normalisedName) ?? 0) > 1 ? slugify(name) : undefined),
     codes: candidateCodes(name),
-    location: override?.location ?? { x: api.longitude, y: api.latitude },
+    location: override?.entrance
+      ? { x: override.entrance.x, y: override.entrance.y }
+      : override?.location ?? { x: api.longitude, y: api.latitude },
     prefixes: new Set(),
     linkedAliases: new Set(),
   }))
@@ -306,9 +308,17 @@ function toBuilding(draft: Draft): Building {
     ...(postal === undefined ? {} : { postal }),
     location: { x: draft.location.x, y: draft.location.y },
     // A hand-set override location is no longer the API centroid.
-    ...(override?.location === undefined ? { locationKind: 'centroid' as const } : {}),
+    ...(override?.entrance === undefined && override?.location === undefined
+      ? { locationKind: 'centroid' as const }
+      : {}),
+    ...(override?.entrance === undefined ? {} : { locationKind: 'provisional-entrance' as const }),
     roomCodePrefixes: uniqueSorted([...(override?.roomCodePrefixes ?? []), ...draft.prefixes]),
-    sourceRefs: [{ source: 'nus-digital-twin', elementId: api.elementId }],
+    sourceRefs: [
+      { source: 'nus-digital-twin', elementId: api.elementId },
+      ...(override?.entrance === undefined
+        ? []
+        : [{ source: 'openstreetmap', elementId: `node/${override.entrance.osmNode}` }]),
+    ],
   }
 }
 

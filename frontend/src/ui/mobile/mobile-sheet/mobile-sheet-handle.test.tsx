@@ -13,11 +13,27 @@ afterEach(() => {
 })
 
 describe('MobileSheetHandle', () => {
-  it('cycles through detents with an accessible button', async () => {
+  function renderHandle(detent: MobileSheetDetent) {
+    const onDetentChange = vi.fn()
+    render(
+      <>
+        <div id="stops-content"><input aria-label="Stop search" /></div>
+        <MobileSheetHandle
+          detent={detent}
+          label="Stops panel"
+          controlsId="stops-content"
+          onDetentChange={onDetentChange}
+        />
+      </>,
+    )
+    return onDetentChange
+  }
+
+  it('toggles between partial and full when tapped', async () => {
     const user = userEvent.setup()
 
     function Harness() {
-      const [detent, setDetent] = useState<MobileSheetDetent>('collapsed')
+      const [detent, setDetent] = useState<MobileSheetDetent>('partial')
       return (
         <section aria-label="Stops panel">
           <div id="stops-content">Stops content</div>
@@ -35,59 +51,55 @@ describe('MobileSheetHandle', () => {
     const handle = screen.getByRole('button', { name: 'Expand Stops panel' })
 
     expect(handle.getAttribute('aria-controls')).toBe('stops-content')
+    expect(handle.getAttribute('aria-expanded')).toBe('true')
+    await user.click(handle)
+    expect(screen.getByRole('button', { name: 'Reduce Stops panel' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    expect(screen.getByRole('button', { name: 'Expand Stops panel' })).toBeTruthy()
+  })
+
+  it('expands to partial from collapsed and never collapses on tap', async () => {
+    const user = userEvent.setup()
+    const onDetentChange = renderHandle('collapsed')
+    const handle = screen.getByRole('button', { name: 'Expand Stops panel' })
+
     expect(handle.getAttribute('aria-expanded')).toBe('false')
     await user.click(handle)
-    expect(screen.getByRole('button', { name: 'Expand Stops panel' }).getAttribute('aria-expanded'))
-      .toBe('true')
-    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
-    expect(screen.getByRole('button', { name: 'Collapse Stops panel' }).getAttribute('aria-expanded'))
-      .toBe('true')
-    await user.click(screen.getByRole('button', { name: 'Collapse Stops panel' }))
-    expect(screen.getByRole('button', { name: 'Expand Stops panel' }).getAttribute('aria-expanded'))
-      .toBe('false')
+
+    expect(onDetentChange).toHaveBeenCalledExactlyOnceWith('partial')
   })
 
-  it('restores the last open detent from collapsed', async () => {
+  it('operates with Enter and Space like a tap', async () => {
     const user = userEvent.setup()
-    const onDetentChange = vi.fn()
+    const onDetentChange = renderHandle('partial')
+    screen.getByRole('button', { name: 'Expand Stops panel' }).focus()
 
-    render(
-      <MobileSheetHandle
-        detent="collapsed"
-        restoreDetent="full"
-        label="Stops panel"
-        controlsId="stops-content"
-        onDetentChange={onDetentChange}
-      />,
-    )
+    await user.keyboard('{Enter}')
+    await user.keyboard(' ')
 
-    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
-
-    expect(onDetentChange).toHaveBeenCalledWith('full')
+    expect(onDetentChange.mock.calls).toEqual([['full'], ['full']])
   })
 
-  it('moves focus to the handle before collapsing focused content', async () => {
+  it('moves one detent per arrow key and stops at the ends', async () => {
     const user = userEvent.setup()
-    const onDetentChange = vi.fn()
+    const expectations: ReadonlyArray<[MobileSheetDetent, string, MobileSheetDetent | null]> = [
+      ['collapsed', '{ArrowUp}', 'partial'],
+      ['partial', '{ArrowUp}', 'full'],
+      ['full', '{ArrowUp}', null],
+      ['full', '{ArrowDown}', 'partial'],
+      ['partial', '{ArrowDown}', 'collapsed'],
+      ['collapsed', '{ArrowDown}', null],
+    ]
 
-    render(
-      <>
-        <div id="stops-content"><input aria-label="Stop search" /></div>
-        <MobileSheetHandle
-          detent="full"
-          label="Stops panel"
-          controlsId="stops-content"
-          onDetentChange={onDetentChange}
-        />
-      </>,
-    )
-    await user.click(screen.getByRole('textbox', { name: 'Stop search' }))
-    const handle = screen.getByRole('button', { name: 'Collapse Stops panel' })
+    for (const [detent, key, expected] of expectations) {
+      const onDetentChange = renderHandle(detent)
+      screen.getByRole('button', { name: /Stops panel/ }).focus()
 
-    await user.click(handle)
+      await user.keyboard(key)
 
-    expect(onDetentChange).toHaveBeenCalledWith('collapsed')
-    expect(document.activeElement).toBe(handle)
+      expect(onDetentChange.mock.calls).toEqual(expected ? [[expected]] : [])
+      cleanup()
+    }
   })
 
   it('shows the summary on the collapsed handle and includes it in the accessible name', () => {

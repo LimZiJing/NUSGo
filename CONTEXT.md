@@ -5,6 +5,7 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 ## Campus navigation
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
+- **Building**: A named NUS structure in the building catalogue, distinct from the rooms inside it and from shuttle stops, with its own stable identity. A Building is a kind of Venue. Its location is a centroid until a pedestrian entrance has been verified; a Building is never merged with a nearby shuttle stop.
 - **Transit network**: The set of shuttle routes, shuttle stops, and service associations available for campus travel.
 - **Journey**: A complete, continuous ordered sequence of journey legs from an origin to a destination.
 - **Journey leg**: One part of a journey using one travel mode, such as walking or an internal shuttle.

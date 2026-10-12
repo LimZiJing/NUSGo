@@ -59,6 +59,10 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the exi
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
+## Gallery
+
+Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light and Dark side by side. Each theme is its own embedded page (`/?gallery&frame=light` and `frame=dark`) so it uses the real `data-theme` mechanism. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.
+
 ## Migration checklist
 
 Each item is one small pull request. Screens keep their feature stylesheets until they migrate; those stylesheets still style bare `button` elements and are the reason the primitives raise specificity only where a compatibility file says so.

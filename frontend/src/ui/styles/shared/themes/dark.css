@@ -39,6 +39,7 @@
     --border-strong: #4b5563;
     --border-inverse: #cbd5e1;
     --border-control: #4b5563;
+    --control-border: color-mix(in srgb, var(--text-primary) 35%, var(--surface));
     --border-muted: #3a3d48;
     --border-faint: #363944;
     --border-success: #166534;

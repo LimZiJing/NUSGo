@@ -18,16 +18,18 @@ Props are platform-neutral. `className` is for layout only (alignment, flex sizi
 
 ### Variants
 
-- **Primary**: accent fill with inverse text. One per view for the main action.
-- **Secondary**: neutral surface with a control border. The default.
-- **Ghost**: no border or fill; text only, with a background tint on hover.
+- **Primary**: solid accent fill with inverse text. One per view for the main action.
+- **Secondary**: neutral `--surface-control` fill, primary text, and a 1px `--control-border`. The default, and the look of `IconButton`. It is deliberately not accent-tinted.
+- **Ghost**: no border or fill; accent-coloured label, with an `--accent-soft` background tint on hover and focus.
+
+`Chip` is pill-shaped: unselected it uses the secondary look (`--surface-control`, primary text, `--control-border`); selected it is a solid accent fill with inverse text. `Pill` uses `--surface-muted` with `--text-muted` at 12px, weight 500, and no border; its `success` tone keeps the success tokens. `RouteChip` stays route-coloured.
 
 ### Sizes
 
 | Size | Height | Font | Use |
 | --- | --- | --- | --- |
-| `sm` (default) | `--control-height-sm`, 36px | 14px | Everyday controls. 36px is the app-wide touch-target minimum. |
-| `lg` | `--control-height-lg`, 44px | 16px | Prominent or thumb-first actions. |
+| `sm` (default) | `--control-height-sm`, 36px | 14px, weight 500 | Everyday controls, radius 10px. 36px is the app-wide touch-target minimum. |
+| `lg` | `--control-height-lg`, 44px | 16px, weight 600 | Prominent or thumb-first actions, radius 12px. |
 
 `--control-height-md` (40px) stays in `tokens.css` for existing styles but is not a primitive size.
 
@@ -35,33 +37,38 @@ Props are platform-neutral. `className` is for layout only (alignment, flex sizi
 
 Every primitive supports: default, hover, active, focus-visible, disabled, and selected.
 
-- **Hover** darkens the control by 15% (`filter: brightness(0.85)`, the repo's existing treatment) only inside `@media (hover: hover)`, so touch devices never show a stuck hover. Ghost buttons and menu items tint their background instead.
+- **Hover** darkens the control by 15% (`filter: brightness(0.85)`, the repo's existing treatment) only inside `@media (hover: hover)`, so touch devices never show a stuck hover. Ghost buttons and menu items tint their background with `--accent-soft` instead (menu items also on focus-visible).
 - **Active** scales down slightly (not with reduced motion).
 - **Focus-visible** draws the shared 2px accent outline offset by 2px (`--focus-outline`, `--focus-ring-offset`). Menu items draw it inset.
-- **Disabled** uses `--text-muted` on `--surface-control` and does not react to hover or press.
-- **Selected** is expressed as `aria-pressed="true"`: accent border with `--accent-soft` fill for `Button`, and the chip tone (or accent) for `Chip`.
+- **Disabled** uses `--text-muted` on `--surface-control` at reduced opacity and does not react to hover or press. Disabled controls are exempt from WCAG contrast requirements, so they have no 3:1 rule.
+- **Selected** is expressed as `aria-pressed="true"`: accent border with `--accent-soft` fill for `Button`; for `Chip`, a solid accent fill with inverse text, or the chip tone (such as a route colour) when one is supplied.
 
 Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 
 ### Tokens
 
-Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the existing per-theme tokens, so Light and Dark need no extra work.
+Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per-theme tokens in the four theme files (Light, Dark, Matcha, Sakura). The one new colour token, `--control-border`, is defined in each theme file.
 
 | Token | Value | Purpose |
 | --- | --- | --- |
 | `--control-height-sm` / `--control-height-lg` | 36px / 44px | Control heights |
-| `--radius-control` | 8px (`--radius-md`) | Button and menu item corners |
+| `--radius-control` / `--radius-control-lg` | 10px / 12px (`--radius-lg`) | Button and menu item corners; the large size uses the second |
+| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, Matcha 57%, Sakura 55%) | Border of secondary buttons and unselected chips |
 | `--radius-pill` | 999px | Chips and pills |
 | `--font-size-control` / `--font-size-control-lg` | 14px / 16px | Control text by size |
 | `--font-size-label` | 12px | Pill text |
 | `--focus-ring-width`, `--focus-ring-offset`, `--focus-outline` | 2px, 2px, 2px solid accent | Focus outline |
 | `--sans` | system stack | The only font family for controls |
 
+### Why `--control-border` exists
+
+A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages above were chosen so it reaches at least 3:1 against `--surface` in all four themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
 ## Gallery
 
-Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light and Dark side by side. Each theme is its own embedded page (`/?gallery&frame=light` and `frame=dark`) so it uses the real `data-theme` mechanism. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.
+Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light, Dark, Matcha, and Sakura side by side. Each theme is its own embedded page (`/?gallery&frame=light`, `dark`, `matcha`, `sakura`) so it uses the real `data-theme` mechanism; the gallery sets `data-theme` directly because `ui/theme.ts` only models Light and Dark. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.
 
 ## Lint rule: no bare `button` selectors
 

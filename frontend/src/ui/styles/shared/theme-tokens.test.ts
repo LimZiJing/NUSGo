@@ -39,6 +39,28 @@ function parseHexColor(value: string): [number, number, number] {
   return [0, 1, 2].map((index) => Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16) / 255) as [number, number, number]
 }
 
+function toHexColor(channels: readonly number[]): string {
+  return `#${channels.map((channel) => Math.round(channel * 255).toString(16).padStart(2, '0')).join('')}`
+}
+
+/* Resolves a theme token to a hex colour, following the simple `color-mix(in srgb, var(--a) N%, var(--b))`
+   form used by --control-border. Mixing happens in sRGB, matching the CSS the browser evaluates. */
+function resolveColour(styles: string, token: string): string {
+  const value = readCustomPropertyValue(styles, token)
+  const mix = value.match(/^color-mix\(in srgb,\s*var\((--[\w-]+)\)\s+([\d.]+)%,\s*var\((--[\w-]+)\)\)$/)
+
+  if (!mix) {
+    return value
+  }
+
+  const [, foregroundToken, percentage, backgroundToken] = mix
+  const weight = Number(percentage) / 100
+  const foreground = parseHexColor(resolveColour(styles, foregroundToken))
+  const background = parseHexColor(resolveColour(styles, backgroundToken))
+
+  return toHexColor(foreground.map((channel, index) => channel * weight + background[index] * (1 - weight)))
+}
+
 function relativeLuminance(value: string): number {
   return parseHexColor(value)
     .map((channel) => channel <= 0.03928
@@ -112,5 +134,39 @@ describe('semantic theme tokens', () => {
 
       expect(ratio, `${foregroundToken} on ${backgroundToken}`).toBeGreaterThanOrEqual(4.5)
     }
+  })
+})
+
+describe('control token contrast', () => {
+  const themes = ['light', 'dark', 'matcha', 'sakura'] as const
+
+  it.each(themes)('keeps the soft tonal control colours accessible in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    const ratioOf = (foreground: string, background: string) => contrastRatio(
+      resolveColour(styles, foreground),
+      resolveColour(styles, background),
+    )
+
+    const checks = [
+      // Non-text boundary of secondary controls and chips (WCAG 1.4.11).
+      ['--control-border', '--surface', 3],
+      // Secondary label and unselected chip label on the neutral control fill.
+      ['--text-primary', '--surface-control', 4.5],
+      // Primary button and selected chip label on the accent fill.
+      ['--text-inverse', '--accent', 4.5],
+      // Primary fill boundary against the page surface.
+      ['--accent', '--surface', 3],
+      // Ghost button label on the page surface.
+      ['--accent', '--surface', 4.5],
+    ] as const
+
+    for (const [foreground, background, minimum] of checks) {
+      expect(ratioOf(foreground, background), `${themeName}: ${foreground} on ${background}`)
+        .toBeGreaterThanOrEqual(minimum)
+    }
+  })
+
+  it.each(themes)('defines --control-border in the %s theme', (themeName) => {
+    expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
   })
 })

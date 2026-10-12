@@ -7,10 +7,10 @@
   min-height: var(--control-height-sm);
   box-sizing: border-box;
   padding: 0 var(--space-3);
-  border: 1px solid var(--border-control);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-pill);
-  color: var(--text-strong);
-  background: var(--surface-muted);
+  color: var(--text-primary);
+  background: var(--surface-control);
   font: 700 var(--font-size-control)/1 var(--sans);
   cursor: pointer;
   transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
@@ -24,11 +24,11 @@
   min-height: var(--control-height-lg);
 }
 
-/* A tone (such as an official route colour) fills the selected chip; otherwise it uses the accent. */
+/* A tone (such as an official route colour) fills the selected chip; otherwise it is solid accent. */
 .chip[data-selected='true'] {
   border-color: var(--chip-tone, var(--accent));
-  color: var(--chip-tone-text, var(--text-primary));
-  background: var(--chip-tone, var(--accent-soft));
+  color: var(--chip-tone-text, var(--text-inverse));
+  background: var(--chip-tone, var(--accent));
   box-shadow: var(--shadow-chip);
 }
 
@@ -42,10 +42,11 @@
 }
 
 .chip:disabled {
-  border-color: var(--border-control);
+  border-color: var(--control-border);
   color: var(--text-muted);
   background: var(--surface-control);
   box-shadow: none;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 

@@ -20,7 +20,8 @@
   --radius-status: 5px;
   --radius-card: 10px;
   --radius-timeline: 14px;
-  --radius-control: var(--radius-md);
+  --radius-control: 10px;
+  --radius-control-lg: var(--radius-lg);
 
   /* --control-height-sm is the 36px touch-target minimum for interactive controls. */
   --control-height-sm: 36px;

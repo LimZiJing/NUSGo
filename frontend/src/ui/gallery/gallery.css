@@ -15,7 +15,7 @@
 
 .gallery-frames {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
   gap: var(--space-4);
 }
 
@@ -72,7 +72,7 @@
 }
 
 .gallery-sample[data-state='hover'] :is(.button[data-variant='ghost'], .menu-item) {
-  background: var(--surface-subtle);
+  background: var(--accent-soft);
 }
 
 .gallery-sample[data-state='active'] .button {
@@ -88,8 +88,12 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+.gallery-sample[data-state='focus-visible'] .button[data-variant='ghost'] {
+  background: var(--accent-soft);
+}
+
 .gallery-sample[data-state='focus-visible'] .menu-item {
   outline: var(--focus-outline);
   outline-offset: calc(-1 * var(--focus-ring-width));
-  background: var(--surface-subtle);
+  background: var(--accent-soft);
 }

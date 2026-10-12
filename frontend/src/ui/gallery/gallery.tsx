@@ -5,7 +5,6 @@ import { Chip } from '../chip'
 import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
 import { Pill } from '../pill'
-import { applyTheme, type Theme } from '../theme'
 import './gallery.css'
 
 const STATES = ['default', 'hover', 'active', 'focus-visible', 'disabled', 'selected'] as const
@@ -13,7 +12,16 @@ type SampleState = (typeof STATES)[number]
 
 const VARIANTS: readonly ButtonVariant[] = ['primary', 'secondary', 'ghost']
 const SIZES: readonly ControlSize[] = ['sm', 'lg']
-const THEMES: readonly Theme[] = ['light', 'dark']
+/* The app theme type covers Light and Dark only; Matcha and Sakura exist as data-theme values in
+   the shared theme stylesheets, so the gallery sets data-theme directly to review all four. */
+const THEMES = ['light', 'dark', 'matcha', 'sakura'] as const
+type GalleryTheme = (typeof THEMES)[number]
+const THEME_NAMES: Readonly<Record<GalleryTheme, string>> = {
+  light: 'Light',
+  dark: 'Dark',
+  matcha: 'Matcha',
+  sakura: 'Sakura',
+}
 const SAMPLE_ROUTE_COLOUR = '#fb0101'
 
 const noop = () => {}
@@ -55,14 +63,14 @@ const variantSizeRows = (render: (variant: ButtonVariant, size: ControlSize, sta
     render: (state: SampleState) => render(variant, size, state),
   })))
 
-export function GalleryPanel({ theme }: { readonly theme: Theme }) {
+export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
   useEffect(() => {
-    applyTheme(theme)
+    document.documentElement.dataset.theme = theme
   }, [theme])
 
   return (
     <main className="gallery" aria-label={`${theme} theme controls`}>
-      <h1>{theme === 'light' ? 'Light' : 'Dark'}</h1>
+      <h1>{THEME_NAMES[theme]}</h1>
       <StateGrid
         title="Button"
         rows={variantSizeRows((variant, size, state) => (

@@ -42,13 +42,22 @@ describe('controls gallery', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('renders a Light and a Dark frame side by side on the gallery page', () => {
+  it('renders a frame for each of the four themes on the gallery page', () => {
     const { container } = render(<Gallery />)
 
     expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src'))).toEqual([
       expect.stringContaining('frame=light'),
       expect.stringContaining('frame=dark'),
+      expect.stringContaining('frame=matcha'),
+      expect.stringContaining('frame=sakura'),
     ])
+  })
+
+  it.each(['matcha', 'sakura'] as const)('applies the %s theme through data-theme', (theme) => {
+    render(<GalleryPanel theme={theme} />)
+
+    expect(document.documentElement.dataset.theme).toBe(theme)
+    expect(screen.getByRole('main', { name: `${theme} theme controls` })).toBeTruthy()
   })
 
   it('renders a single themed panel when a frame is requested', () => {

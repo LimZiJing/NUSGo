@@ -14,6 +14,7 @@ const appHarness = vi.hoisted(() => {
   return {
     state: null as unknown,
     onMapCenterChange: null as ((center: readonly [number, number]) => void) | null,
+    initialMapCenter: [103, 1] as readonly [number, number],
     session: {
       locateUser: vi.fn(),
       enableLocationTracking: vi.fn(),
@@ -31,7 +32,7 @@ vi.mock('./navigation-session-mount', () => ({
     dependencies: { onMapCenterChange?: (center: readonly [number, number]) => void },
   ) => {
     appHarness.onMapCenterChange = dependencies.onMapCenterChange ?? null
-    dependencies.onMapCenterChange?.([103, 1])
+    dependencies.onMapCenterChange?.(appHarness.initialMapCenter)
     return {
       session: appHarness.session,
       dispose: () => undefined,
@@ -51,11 +52,17 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   appHarness.onMapCenterChange = null
+  appHarness.initialMapCenter = [103, 1]
   localStorage.clear()
   appHarness.commandLocateUser.mockClear()
   appHarness.session.locateUser.mockClear()
   appHarness.session.enableLocationTracking.mockClear()
 })
+
+// Nearby cards expand within 500 m of the map centre, so tests that assert the
+// closed-to-open transition start with the map away from the fixture stops.
+const FAR_MAP_CENTRE: readonly [number, number] = [103.5, 1.5]
+const STOP_A_MAP_CENTRE: readonly [number, number] = [103, 1]
 
 function mockMobileViewport(): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -121,6 +128,7 @@ describe('mobile location control integration', () => {
   it('opens Nearby timings after a successful automatic location fix without opening Favourites', async () => {
     const user = userEvent.setup()
     mockMobileViewport()
+    appHarness.initialMapCenter = FAR_MAP_CENTRE
     localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A']))
     const initialState = {
       ...createInitialNavigationSessionState(),
@@ -146,6 +154,9 @@ describe('mobile location control integration', () => {
       },
     }
     rerender(<App />)
+    await act(async () => {
+      appHarness.onMapCenterChange?.(STOP_A_MAP_CENTRE)
+    })
 
     await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy())
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
@@ -192,6 +203,7 @@ describe('mobile location control integration', () => {
   it('opens Nearby timings when the location button succeeds with an active fix', async () => {
     const user = userEvent.setup()
     mockMobileViewport()
+    appHarness.initialMapCenter = FAR_MAP_CENTRE
     appHarness.state = {
       ...createInitialNavigationSessionState({
         status: 'tracking',
@@ -209,6 +221,9 @@ describe('mobile location control integration', () => {
 
     expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Show my location' }))
+    await act(async () => {
+      appHarness.onMapCenterChange?.(STOP_A_MAP_CENTRE)
+    })
 
     expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy()
     expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
@@ -244,6 +259,7 @@ describe('mobile location control integration', () => {
 
   it('keeps Nearby timings closed when the automatic location request fails', async () => {
     mockMobileViewport()
+    appHarness.initialMapCenter = FAR_MAP_CENTRE
     const initialState = {
       ...createInitialNavigationSessionState(),
       transitIndex: createTransitIndex(createValidTransitNetwork()),

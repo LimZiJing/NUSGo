@@ -130,18 +130,19 @@ describe('PlanView interactions', () => {
     expect(venueContainer.querySelector('.location-identity-icon--venue[aria-hidden="true"]')).toBeTruthy()
   })
 
-  it('only shows endpoint validation when the request needs attention', () => {
-    const networkIndex = createTransitIndex(createValidTransitNetwork())
+  it('shows endpoint validation only after Get route is pressed', async () => {
+    const user = userEvent.setup()
+    const onPlanJourney = vi.fn()
     const controls = {
       venues,
-      networkIndex,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
       onSwap: () => undefined,
       onSelectOriginEndpoint: () => undefined,
       onClearOriginEndpoint: () => undefined,
       onSelectDestinationEndpoint: () => undefined,
       onClearDestinationEndpoint: () => undefined,
       onClearTrip: () => undefined,
-      onPlanJourney: () => undefined,
+      onPlanJourney,
     }
 
     const { rerender } = render(
@@ -156,10 +157,56 @@ describe('PlanView interactions', () => {
 
     expect(screen.queryByText('Origin and destination are set.')).toBeNull()
     rerender(<PlanView {...controls} tripRequest={{ origin: null, destination: null }} />)
-    const validation = screen.getByText('Origin is required.')
-    expect(validation).toBeTruthy()
+    expect(screen.queryByText('Origin is required.')).toBeNull()
     expect(screen.getByRole('button', { name: 'Trip actions' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
+
+    const submit = screen.getByRole('button', { name: 'Get route' })
+    await user.click(submit)
+    expect(onPlanJourney).not.toHaveBeenCalled()
+    const validation = screen.getByText('Origin is required.')
+    expect(validation.getAttribute('role')).toBe('status')
+    expect(validation.getAttribute('aria-live')).toBe('polite')
+  })
+
+  it('clears the Get route validation message once the missing endpoint is filled', async () => {
+    const user = userEvent.setup()
+    const controls = {
+      venues,
+      networkIndex: createTransitIndex(createValidTransitNetwork()),
+      onSwap: () => undefined,
+      onSelectOriginEndpoint: () => undefined,
+      onClearOriginEndpoint: () => undefined,
+      onSelectDestinationEndpoint: () => undefined,
+      onClearDestinationEndpoint: () => undefined,
+      onClearTrip: () => undefined,
+      onPlanJourney: () => undefined,
+    }
+
+    const { rerender } = render(
+      <PlanView {...controls} tripRequest={{ origin: null, destination: null }} />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Get route' }))
+    expect(screen.getByText('Origin is required.')).toBeTruthy()
+
+    rerender(
+      <PlanView
+        {...controls}
+        tripRequest={{ origin: { kind: 'venue', id: 'COM1-0210' }, destination: null }}
+      />,
+    )
+    expect(screen.getByText('Destination is required.')).toBeTruthy()
+
+    rerender(
+      <PlanView
+        {...controls}
+        tripRequest={{
+          origin: { kind: 'venue', id: 'COM1-0210' },
+          destination: { kind: 'stop', id: 'STOP-A' },
+        }}
+      />,
+    )
+    expect(screen.queryByText('Destination is required.')).toBeNull()
   })
 
   it('uses Get route as the explicit planning action', async () => {

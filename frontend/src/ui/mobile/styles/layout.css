@@ -21,7 +21,6 @@
     --mobile-sheet-collapsed-height: calc(
       var(--mobile-sheet-handle-row-height) + var(--mobile-sheet-handle-target-extension)
     );
-    --mobile-sheet-max-height: max(0px, calc(60% - var(--mobile-tab-bar-height)));
   }
 
   .map-shell::after {

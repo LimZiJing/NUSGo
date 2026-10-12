@@ -89,7 +89,7 @@ describe('useMapOverlayLayout', () => {
       disconnect = disconnect
     }
     vi.stubGlobal('ResizeObserver', MockResizeObserver)
-    vi.stubGlobal('getComputedStyle', () => ({ height: '0px' }))
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' }))
     const addEventListener = vi.spyOn(window, 'addEventListener')
     const removeEventListener = vi.spyOn(window, 'removeEventListener')
     const setViewportInsets = vi.fn()
@@ -105,9 +105,11 @@ describe('useMapOverlayLayout', () => {
 
     const shell = view.container.querySelector('.map-shell') as HTMLElement
     expect(shell.style.getPropertyValue('--mobile-viewport-height')).toBe(`${window.innerHeight}px`)
+    expect(shell.style.getPropertyValue('--mobile-tab-bar-height')).toBe('64px')
+    expect(shell.style.getPropertyValue('--mobile-sheet-max-height')).toBe('')
     expect(setViewportInsets).toHaveBeenCalled()
     expect(onMeasurementsApplied).toHaveBeenCalledOnce()
-    expect(observe).toHaveBeenCalledTimes(5)
+    expect(observe).toHaveBeenCalledTimes(7)
     expect(screen.getByTestId('navigation-width').textContent).toBe('0')
 
     const resizeHandlers = addEventListener.mock.calls
@@ -117,8 +119,9 @@ describe('useMapOverlayLayout', () => {
 
     act(() => view.unmount())
 
-    expect(disconnect).toHaveBeenCalledOnce()
+    expect(disconnect).toHaveBeenCalledTimes(2)
     expect(shell.style.getPropertyValue('--mobile-viewport-height')).toBe('')
+    expect(shell.style.getPropertyValue('--mobile-tab-bar-height')).toBe('')
     expect(removeEventListener.mock.calls.filter(([event]) => event === 'resize')).toEqual(
       expect.arrayContaining(resizeHandlers.map((handler) => ['resize', handler])),
     )

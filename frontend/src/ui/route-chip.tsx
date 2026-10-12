@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { getRouteChipTextColor } from '../domain/transit/route-color'
+import { getRouteContrastTextColor } from '../domain/transit/route-color'
 
 type RouteChipSize = 'default' | 'compact'
 
@@ -39,7 +39,7 @@ export function RouteChip({
       data-size={size}
       style={{
         '--route-color': routeColor,
-        '--route-text-color': getRouteChipTextColor(routeColor),
+        '--route-text-color': getRouteContrastTextColor(routeColor),
       } as CSSProperties}
       aria-label={ariaLabel}
       aria-pressed={pressed}

@@ -176,7 +176,6 @@
 
 .location-control-chip-searching {
   cursor: wait;
-  animation: location-control-pulse 1.4s ease-in-out infinite;
 }
 
 .location-control-chip-searching .location-control-icon {
@@ -197,13 +196,7 @@
   to { transform: rotate(360deg); }
 }
 
-@keyframes location-control-pulse {
-  0%, 100% { box-shadow: var(--shadow-md); }
-  50% { box-shadow: 0 0 0 4px var(--focus-ring-soft), var(--shadow-md); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .location-control-chip-searching,
   .location-control-spinner {
     animation: none;
   }

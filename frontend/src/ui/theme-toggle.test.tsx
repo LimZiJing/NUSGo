@@ -15,8 +15,23 @@ describe('ThemeToggle', () => {
     render(<ThemeToggle theme="light" onToggle={vi.fn()} />)
 
     const button = screen.getByRole('button', { name: 'Switch to dark theme' })
-    expect(button.textContent).toBe('Dark')
     expect(button.getAttribute('title')).toBe('Switch to dark theme')
+  })
+
+  it('shows only an icon, keeping the accessible name', () => {
+    render(<ThemeToggle theme="light" onToggle={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: 'Switch to dark theme' })
+    expect(button.textContent).toBe('')
+    expect(button.querySelector('svg')).toBeTruthy()
+  })
+
+  it('shows the icon of the active theme', () => {
+    const { rerender } = render(<ThemeToggle theme="light" onToggle={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' }).querySelector('.lucide-sun')).toBeTruthy()
+
+    rerender(<ThemeToggle theme="dark" onToggle={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Switch to light theme' }).querySelector('.lucide-moon')).toBeTruthy()
   })
 
   it('toggles with a click and keyboard activation', async () => {

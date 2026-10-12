@@ -78,7 +78,7 @@ function getJourneyRoutePresentation(
 export function formatWaitDuration(seconds: number): string {
   const nonNegativeSeconds = Math.max(0, seconds)
   if (nonNegativeSeconds === 0) return 'Arriving now'
-  if (nonNegativeSeconds < 60) return 'Arriving soon'
+  if (nonNegativeSeconds < 60) return 'Arriving now'
   return formatDuration(nonNegativeSeconds)
 }
 

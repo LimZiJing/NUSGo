@@ -26,6 +26,14 @@ describe('ThemeToggle', () => {
     expect(button.querySelector('svg')).toBeTruthy()
   })
 
+  it('shows the icon of the theme it will switch to', () => {
+    const { rerender } = render(<ThemeToggle theme="light" onToggle={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' }).querySelector('.lucide-moon')).toBeTruthy()
+
+    rerender(<ThemeToggle theme="dark" onToggle={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Switch to light theme' }).querySelector('.lucide-sun')).toBeTruthy()
+  })
+
   it('toggles with a click and keyboard activation', async () => {
     const user = userEvent.setup()
     const onToggle = vi.fn()

@@ -73,7 +73,7 @@ export function StopCard({
         </button>
         <IconButton
           className="stop-card-favorite"
-          variant="ghost"
+          variant="plain"
           label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
           icon={<FavoriteIcon filled={favorite} />}
           pressed={favorite}

@@ -8,7 +8,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { StopCard } from './stop-card'
-import { BusIcon, CloseIcon, FavoriteIcon } from '../../ui/icons'
+import { BusIcon, ChevronRightIcon, CloseIcon, FavoriteIcon } from '../../ui/icons'
 import { type StopRouteDeparture } from './stops-view-state'
 import './styles/stops-view.css'
 
@@ -93,7 +93,7 @@ export function StopsView({
               </div>
               <IconButton
                 className="stop-favorite"
-                variant="ghost"
+                variant="plain"
                 label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName}, shuttle stop ${selectedStopFavorite ? 'from' : 'to'} favourites`}
                 icon={<FavoriteIcon filled={selectedStopFavorite} />}
                 pressed={selectedStopFavorite}
@@ -110,6 +110,7 @@ export function StopsView({
                   className="stop-opposite"
                   variant="secondary"
                   label="Opposite stop"
+                  trailingIcon={<ChevronRightIcon />}
                   ariaLabel={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
                   onClick={() => onSelectOppositeStop(oppositeStop.id)}
                 />
@@ -145,7 +146,7 @@ export function StopsView({
               <div className="stops-location-notice" role="status">
                 <span>{locationNotice}</span>
                 <IconButton
-                  variant="ghost"
+                  variant="plain"
                   label="Dismiss location notice"
                   icon={<CloseIcon />}
                   onClick={() => onDismissLocationNotice?.()}

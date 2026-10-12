@@ -335,10 +335,7 @@ function App() {
       }
       commands.enterMobileRoutes()
     },
-    onLeaveMobileRoutes: () => {
-      if (isMobileViewport) appNavigation.beginMobileSearch('explore')
-      commands.leaveMobileRoutes()
-    },
+    onLeaveMobileRoutes: commands.leaveMobileRoutes,
     onFocusStop: appNavigation.openStopFromExplore,
     onBack: commands.back,
     onEscape: appNavigation.escapeExplore,

@@ -5,6 +5,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { InfoPill } from '../../ui/info-pill'
+import { IconButton } from '../../ui/button'
 import { BusIcon, FavoriteIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'
 
@@ -70,15 +71,14 @@ export function StopCard({
           <span className="stop-card-favorite-space" aria-hidden="true" />
           <DisclosureChevron expanded={expanded} className="stop-card-chevron" />
         </button>
-        <button
+        <IconButton
           className="stop-card-favorite"
-          type="button"
-          aria-label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
-          aria-pressed={favorite}
+          variant="ghost"
+          label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
+          icon={<FavoriteIcon filled={favorite} />}
+          pressed={favorite}
           onClick={() => onToggleFavorite(stopId)}
-        >
-          <FavoriteIcon filled={favorite} />
-        </button>
+        />
       </div>
       <div
         id={timingsId}

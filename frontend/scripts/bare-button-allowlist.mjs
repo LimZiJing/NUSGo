@@ -6,7 +6,6 @@
 // Keys are paths relative to the frontend directory.
 export const BARE_BUTTON_ALLOWLIST = {
   // Feature screens, removed by the Stops, Explore, and Plan migrations.
-  'src/features/stops-view/styles/stops-view.css': 7,
   'src/features/explore-view/styles/explore-view.css': 10,
   'src/features/plan-view/styles/plan-view.css': 5,
   // Mobile navigation bar and shared navigation (Sheet and Menus migrations).

@@ -10,7 +10,8 @@ const stopsStyles = readFileSync(resolve(stylesDirectory, '../../stops-view/styl
 
 describe('route browser visual contracts', () => {
   it('keeps feature button defaults from overriding shared route chips', () => {
-    expect(stopsStyles).toMatch(/\.stops-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{/s)
+    // The Stops screen no longer restyles buttons by element type, so it cannot override route chips.
+    expect(stopsStyles).not.toMatch(/\.stops-view button\b/)
     expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{[^}]*padding:\s*5px 8px;/s)
   })
 

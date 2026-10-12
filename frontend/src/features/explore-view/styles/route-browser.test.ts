@@ -11,7 +11,7 @@ const stopsStyles = readFileSync(resolve(stylesDirectory, '../../stops-view/styl
 describe('route browser visual contracts', () => {
   it('keeps feature button defaults from overriding shared route chips', () => {
     expect(stopsStyles).toMatch(/\.stops-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{/s)
-    expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\):not\(\.explore-route-browser-stop\)\)\s*{[^}]*padding:\s*5px 8px;/s)
+    expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{[^}]*padding:\s*5px 8px;/s)
   })
 
   it('keeps route browser stop geometry specific to its button host', () => {

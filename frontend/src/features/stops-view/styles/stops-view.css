@@ -127,10 +127,19 @@
     text-align: left;
   }
 
-  /* Mirrors the Explore "Search for a venue" prompt (explore-view-search-prompt). */
+  /*
+   * Mirrors the Explore "Search for a venue" prompt (explore-view-search-prompt).
+   * Fills the free space below the Nearby/Favourites selector so the prompt is
+   * centred in the list area. When space is short it shrinks and scrolls
+   * internally, staying top-aligned (safe centre) instead of overlapping.
+   */
   .stops-empty--favourites {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
     display: grid;
     align-content: center;
+    align-content: safe center;
     justify-items: center;
     gap: 10px;
     color: var(--text-muted);

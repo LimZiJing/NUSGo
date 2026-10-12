@@ -4,6 +4,7 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createInitialNavigationState,
+  navigationReducer,
   type NavigationAction,
   type NavigationState,
 } from './navigation-state'
@@ -30,6 +31,7 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
   const dispatch = vi.fn<(action: NavigationAction) => void>()
   const commands = createCommands()
   const pendingViewFocusRef: { current: NavigationState['activeView'] | null } = { current: null }
+  const pendingExploreReturnFocusRef: { current: HTMLElement | null } = { current: null }
 
   return {
     state,
@@ -39,6 +41,7 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
     exploreView: { mode: 'neutral' as const, selectedVenue: null },
     locationStatus: 'disabled' as const,
     pendingViewFocusRef,
+    pendingExploreReturnFocusRef,
     focusStop: vi.fn(),
   }
 }
@@ -64,6 +67,65 @@ describe('useAppNavigation', () => {
     expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'stop', id: 'STOP-A' })
     expect(options.pendingViewFocusRef.current).toBe('plan')
     expect(options.dispatch).toHaveBeenCalledWith({ type: 'select-view', view: 'plan' })
+  })
+
+  it('opens an Explore stop in Stops and returns to its prior control', () => {
+    const options = createOptions(true, 'explore')
+    options.state = navigationReducer(options.state, {
+      type: 'set-sheet-detent',
+      view: 'stops',
+      detent: 'collapsed',
+    })
+    const returnFocusTarget = document.createElement('button')
+    const backToStops = vi.fn()
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.openStopFromExplore('STOP-A', returnFocusTarget))
+
+    expect(options.focusStop).toHaveBeenCalledWith('STOP-A')
+    expect(options.pendingViewFocusRef.current).toBe('stops')
+    expect(options.dispatch).toHaveBeenNthCalledWith(1, {
+      type: 'set-sheet-detent',
+      view: 'stops',
+      detent: 'partial',
+    })
+    expect(options.dispatch).toHaveBeenNthCalledWith(2, { type: 'select-view', view: 'stops' })
+
+    act(() => result.current.backFromStopDetails(backToStops))
+
+    expect(backToStops).toHaveBeenCalledOnce()
+    expect(options.pendingViewFocusRef.current).toBe('explore')
+    expect(options.pendingExploreReturnFocusRef.current).toBe(returnFocusTarget)
+    expect(options.dispatch).toHaveBeenLastCalledWith({ type: 'select-view', view: 'explore' })
+  })
+
+  it('keeps direct Stops details on the Stops list when Back is selected', () => {
+    const options = createOptions(true, 'stops')
+    const backToStops = vi.fn()
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.backFromStopDetails(backToStops))
+
+    expect(backToStops).toHaveBeenCalledOnce()
+    expect(options.dispatch).not.toHaveBeenCalled()
+    expect(options.pendingExploreReturnFocusRef.current).toBeNull()
+  })
+
+  it('clears Explore return context when another stop is selected from Stops', () => {
+    const options = createOptions(true, 'explore')
+    const { result, rerender } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+    options.state = navigationReducer(options.state, { type: 'select-view', view: 'stops' })
+    rerender()
+
+    act(() => expect(result.current.handleStopSelected('STOP-B')).toBe(true))
+    const backToStops = vi.fn()
+    act(() => result.current.backFromStopDetails(backToStops))
+
+    expect(backToStops).toHaveBeenCalledOnce()
+    expect(options.dispatch).not.toHaveBeenCalledWith({ type: 'select-view', view: 'explore' })
+    expect(options.pendingExploreReturnFocusRef.current).toBeNull()
   })
 
   it('coordinates mobile route selection from Stops with Explore navigation', () => {

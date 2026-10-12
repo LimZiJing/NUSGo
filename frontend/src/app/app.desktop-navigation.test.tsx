@@ -64,6 +64,10 @@ vi.mock('./use-navigation-session', () => ({
   useNavigationSession: () => appHarness.state,
 }))
 
+vi.mock('../infrastructure/map/session', () => ({
+  createMapSession: vi.fn(),
+}))
+
 vi.mock('../infrastructure/shuttle-arrivals/client', () => ({
   createShuttleArrivalClient: () => appHarness.arrivalsClient,
 }))
@@ -334,17 +338,26 @@ describe('desktop shared navigation shell', () => {
     expect(appHarness.arrivalsClient.getArrivals).toHaveBeenCalledTimes(1)
   })
 
-  it('switches to Stops and opens the selected stop from a map stop interaction', async () => {
+  it('opens an Explore map stop in Stops and returns keyboard focus to its marker', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
+    const mapMarker = document.createElement('button')
+    document.body.append(mapMarker)
+    mapMarker.focus()
+
     act(() => {
-      appHarness.onStopSelected?.('STOP-A')
+      expect(appHarness.onStopSelected?.('STOP-A')).toBe(true)
     })
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await waitFor(() => expect(document.activeElement).toBe(mapMarker))
+    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
+    mapMarker.remove()
   })
 
   it('switches to Stops when a map popup endpoint action is used', async () => {

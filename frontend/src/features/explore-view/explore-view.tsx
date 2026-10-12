@@ -43,7 +43,7 @@ interface FocusTarget {
 }
 interface ShuttleRouteRenderOptions {
   readonly firstRouteCardRef: RefObject<HTMLButtonElement | null>
-  readonly onFocusStop: (stopId: string) => void
+  readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
@@ -77,7 +77,7 @@ interface ExploreViewProps {
   onNavigateToVenue?: (venueCode: string) => void
   onOpenShuttle: () => void
   onLeaveMobileRoutes?: () => void
-  onFocusStop?: (stopId: string) => void
+  onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
   onBack: () => void
   onEscape: () => void
   onDismissMapPopup?: () => boolean
@@ -406,11 +406,12 @@ export function ExploreView({
     onOpenShuttle()
   }
 
-  const handleFocusStop = (stopId: string): void => {
-    pendingStopRowFocusRef.current = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null
-    onFocusStop?.(stopId)
+  const handleFocusStop = (stopId: string, focusTarget?: HTMLElement): void => {
+    const returnFocusTarget = focusTarget ?? (
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    )
+    pendingStopRowFocusRef.current = returnFocusTarget
+    onFocusStop?.(stopId, returnFocusTarget ?? undefined)
   }
 
   const searchState = useMemo(() => {
@@ -614,7 +615,7 @@ export function ExploreView({
                       type="button"
                       data-stop-id={stop.id}
                       aria-label={`Nearby shuttle stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
-                      onClick={() => handleFocusStop(stop.id)}
+                      onClick={(event) => handleFocusStop(stop.id, event.currentTarget)}
                     >
                       <span className="nearby-stop-identity">
                         <span className="nearby-stop-name">

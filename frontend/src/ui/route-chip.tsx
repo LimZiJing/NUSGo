@@ -2,7 +2,7 @@ import type { Ref } from 'react'
 import { getRouteContrastTextColor } from '../domain/transit/route-color'
 import { Chip } from './chip'
 
-type RouteChipSize = 'default' | 'compact'
+type RouteChipSize = 'default' | 'small' | 'compact'
 
 interface RouteChipProps {
   readonly routeId: string
@@ -34,13 +34,17 @@ export function RouteChip({
       ref={buttonRef}
       className="route-chip"
       label={routeId}
-      size={size === 'compact' ? 'sm' : 'lg'}
+      size={size === 'default' ? 'lg' : 'sm'}
       selected={active}
       pressed={pressed}
       tone={{ fill: routeColor, text: getRouteContrastTextColor(routeColor) }}
       ariaLabel={ariaLabel}
       title={title}
-      dataAttributes={{ 'data-route-id': routeId, 'data-focus-id': focusId }}
+      dataAttributes={{
+        'data-route-id': routeId,
+        'data-focus-id': focusId,
+        'data-compact': size === 'compact' ? 'true' : undefined,
+      }}
       onClick={onClick}
     />
   )

@@ -1,4 +1,5 @@
-/* Stop detail's "Opposite stop" button shares this primary style so it matches Navigate. */
+/* Navigate and the stop detail's "Opposite stop" share this shape (the venue Navigate shape).
+   Navigate is the accent primary; Opposite stop is a neutral secondary so the two read apart. */
 button.navigate-button,
 button.stop-opposite {
   display: inline-flex;
@@ -9,17 +10,22 @@ button.stop-opposite {
   width: auto;
   min-height: var(--control-height-sm);
   box-sizing: border-box;
-  padding: 7px 10px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-panel);
-  color: var(--text-inverse);
-  background: var(--accent);
+  padding: 5px 8px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+  background: var(--surface-muted);
   font: 600 14px/1.2 system-ui, sans-serif;
   cursor: pointer;
 }
 
-button.navigate-button:disabled,
-button.stop-opposite:disabled {
+button.navigate-button {
+  border-color: var(--accent);
+  color: var(--text-inverse);
+  background: var(--accent);
+}
+
+button.navigate-button:disabled {
   border-color: var(--border-control);
   color: var(--text-muted);
   background: var(--surface-control);

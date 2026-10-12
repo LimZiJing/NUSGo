@@ -336,8 +336,7 @@
   .stop-actions .stop-opposite {
     flex: 0 1 auto;
     min-width: 0;
-    min-height: var(--control-height-lg);
-    align-self: stretch;
+    min-height: var(--control-height-sm);
   }
 
   .stop-selection h3 {

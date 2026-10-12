@@ -86,7 +86,7 @@ describe('searchTripLocations', () => {
       {
         endpoint: { kind: 'stop', id: 'UTOWN' },
         label: 'University Town',
-        detail: 'UTown (UTOWN)',
+        detail: '',
       },
     ])
   })

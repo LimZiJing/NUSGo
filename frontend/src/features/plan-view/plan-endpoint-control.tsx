@@ -59,6 +59,22 @@ function getResultLabel(result: TripLocationSearchResult): string {
     : result.endpoint.id
 }
 
+function isSameText(first: string, second: string): boolean {
+  return first.trim().toLocaleLowerCase() === second.trim().toLocaleLowerCase()
+}
+
+// Hides any subtitle text that only repeats the row title or label, such as a code shown twice.
+function getVisibleResultLabel(result: TripLocationSearchResult): string | null {
+  return isSameText(result.label, getResultLabel(result)) ? null : result.label
+}
+
+function getVisibleResultDetail(result: TripLocationSearchResult): string | null {
+  if (!result.detail) return null
+  const repeatsTitle = isSameText(result.detail, getResultLabel(result))
+  const repeatsLabel = isSameText(result.detail, result.label)
+  return repeatsTitle || repeatsLabel ? null : result.detail
+}
+
 function getEndpointKindLabel(endpoint: TripEndpoint): string | null {
   if (endpoint.kind === 'venue') return 'venue'
   if (endpoint.kind === 'stop') return 'shuttle stop'
@@ -228,7 +244,10 @@ export function PlanEndpointControl({
         {showResults && hasLocationData && (
           <ScrollArea className="plan-endpoint-results" role="group" aria-label={`${roleLabel} search results`}>
             {results.length > 0 ? (
-              results.map((result) => (
+              results.map((result) => {
+                const visibleLabel = getVisibleResultLabel(result)
+                const visibleDetail = getVisibleResultDetail(result)
+                return (
                 <button
                   className="plan-endpoint-result"
                   type="button"
@@ -250,10 +269,11 @@ export function PlanEndpointControl({
                       <strong>{getResultLabel(result)}</strong>
                     </span>
                   )}
-                  {result.label !== getResultLabel(result) && <span>{result.label}</span>}
-                  <span>{result.detail}</span>
+                  {visibleLabel && <span>{visibleLabel}</span>}
+                  {visibleDetail && <span>{visibleDetail}</span>}
                 </button>
-              ))
+                )
+              })
             ) : (
               <p className="plan-endpoint-empty">No matching venues or shuttle stops</p>
             )}

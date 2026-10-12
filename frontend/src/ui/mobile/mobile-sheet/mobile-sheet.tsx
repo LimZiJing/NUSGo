@@ -2,7 +2,7 @@ import { Drawer } from '@base-ui/react/drawer'
 import { useCallback, useLayoutEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react'
 import { MobileSheetHandle } from './mobile-sheet-handle'
 import { getMobileTabBarInset } from './mobile-sheet-layout'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
+import type { MobileSheetDetent } from './mobile-sheet-detent'
 import {
   createMobileSheetSnapPoints,
   getMobileSheetDetent,
@@ -17,7 +17,6 @@ interface MobileSheetProps {
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
-  readonly lastNonCollapsedDetent: OpenMobileSheetDetent
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
@@ -36,7 +35,6 @@ export function MobileSheet({
   active,
   portalContainer,
   detent,
-  lastNonCollapsedDetent,
   onDetentChange,
   onButtonRef,
   onPanelRef,
@@ -154,7 +152,6 @@ export function MobileSheet({
               <div className="mobile-sheet-handle-row">
                 <MobileSheetHandle
                   detent={detent}
-                  restoreDetent={lastNonCollapsedDetent}
                   label={label}
                   controlsId={controlsId}
                   onButtonRef={onButtonRef}

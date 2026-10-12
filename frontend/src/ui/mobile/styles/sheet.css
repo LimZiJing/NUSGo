@@ -66,8 +66,11 @@
     cursor: grabbing;
   }
 
+  /* Keyboard focus uses a tint plus a darker grabber instead of a ring (#301).
+     The focused grabber meets WCAG 1.4.11 3:1 against the sheet surface. */
   .mobile-sheet-handle:focus-visible {
     outline: none;
+    background: var(--surface-control);
   }
 
   .mobile-sheet-grabber {
@@ -77,6 +80,10 @@
     border-radius: var(--radius-pill);
     background: var(--surface-handle);
     transform: translateY(var(--mobile-sheet-grabber-offset));
+  }
+
+  .mobile-sheet-handle:focus-visible .mobile-sheet-grabber {
+    background: var(--text-secondary);
   }
 
   .mobile-sheet-handle:active .mobile-sheet-grabber,

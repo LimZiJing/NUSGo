@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getTripEndpointLabel, searchTripLocations } from './search'
-import type { TransitStop } from '../transit/types'
-import type { VenueLocationMap } from '../venue/types'
+import type { TransitStop } from '@navus/shared/transit/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   LT17: {
@@ -102,6 +102,28 @@ describe('searchTripLocations', () => {
     expect(searchTripLocations(venues, stops, 'central', 10).map((result) => result.endpoint)).toEqual([
       { kind: 'stop', id: 'STOP-A' },
       { kind: 'stop', id: 'STOP-B' },
+    ])
+  })
+})
+
+describe('searchTripLocations grouping', () => {
+  it('ranks stops ahead of rooms even when a room matches more closely', () => {
+    const roomVenues: VenueLocationMap = {
+      'CLB-04-01H': {
+        roomName: 'Central Library Seminar Room',
+        location: { x: 103.77, y: 1.3 },
+      },
+      CENTRAL: {
+        roomName: 'Exact Code Room',
+        location: { x: 103.77, y: 1.3 },
+      },
+    }
+
+    expect(searchTripLocations(roomVenues, stops, 'central').map((result) => result.endpoint)).toEqual([
+      { kind: 'stop', id: 'STOP-A' },
+      { kind: 'stop', id: 'STOP-B' },
+      { kind: 'venue', id: 'CENTRAL' },
+      { kind: 'venue', id: 'CLB-04-01H' },
     ])
   })
 })

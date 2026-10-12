@@ -91,7 +91,7 @@ describe('RouteBrowser', () => {
     expect((cards[0] as HTMLButtonElement).style.getPropertyValue('--route-color')).toBe('#fb0101')
     expect(cards[0].getAttribute('aria-pressed')).toBe('false')
     expect((cards[1] as HTMLButtonElement).style.getPropertyValue('--route-text-color'))
-      .toBe('#0f172a')
+      .toBe('#000000')
   })
 
   it('selects a route chip without opening a separate detail screen', async () => {

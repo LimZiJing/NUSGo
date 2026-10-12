@@ -5,8 +5,8 @@ import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.j
 import type { Journey } from '../../src/domain/trip/journey.js'
 import type { PlanJourneyInput } from '../../src/domain/trip/planner.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
-import type { VenueLocationMap } from '../../src/domain/venue/types.js'
-import type { WalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
 import type { JourneyBenchmarkGroup, JourneyBenchmarkScenario, JourneyBenchmarkTimingProfile } from './manifest.js'
 

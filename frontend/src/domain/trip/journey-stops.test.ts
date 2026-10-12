@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { TransitRoute } from '../transit/types'
+import type { TransitRoute } from '@navus/shared/transit/types'
 import type { ShuttleJourneyLeg } from './journey'
 import { getShuttleJourneyLegStopIds } from './journey-stops'
 

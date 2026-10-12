@@ -2,5 +2,18 @@
   "name": "@navus/shared",
   "private": true,
   "version": "0.0.0",
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./http/*": "./src/http/*.ts",
+    "./transit/*": "./src/transit/*.ts",
+    "./venue/*": "./src/venue/*.ts",
+    "./routing/*": "./src/routing/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
+  }
 }

@@ -4,7 +4,7 @@ import type {
   TransitRoute,
   TransitStop,
   TransitVerificationManifest,
-} from './types'
+} from './types.ts'
 
 export class TransitValidationError extends Error {
   readonly issues: readonly string[]

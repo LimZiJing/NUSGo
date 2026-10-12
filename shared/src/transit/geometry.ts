@@ -2,8 +2,8 @@ import type {
   TransitGeoJsonPosition,
   TransitNetwork,
   TransitRouteGeometry,
-} from './types'
-import { TransitValidationError } from './model'
+} from './types.ts'
+import { TransitValidationError } from './model.ts'
 
 const MAX_STOP_DISTANCE_METRES = 50
 const METRES_PER_LATITUDE_DEGREE = 110540

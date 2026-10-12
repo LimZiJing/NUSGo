@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ExploreView } from './explore-view'
 import { createInitialExploreViewState } from './state'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

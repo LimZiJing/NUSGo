@@ -455,14 +455,14 @@ describe('mobile stop view state', () => {
       favourites: ['STOP-A'],
     })
 
-    const locationExpanded = stopsViewReducer(favouritesExpanded, {
+    const nearbyAutoExpanded = stopsViewReducer(favouritesExpanded, {
       type: 'set-nearby-expanded',
       stopIds: ['STOP-B'],
     })
 
-    expect(locationExpanded.expandedStopIds).toEqual({
+    expect(nearbyAutoExpanded.expandedStopIds).toEqual({
       nearby: ['STOP-B'],
-      favourites: [],
+      favourites: ['STOP-A'],
     })
   })
 })

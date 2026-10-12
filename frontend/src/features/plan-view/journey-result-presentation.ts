@@ -3,7 +3,7 @@ import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/j
 import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export type JourneyTimelineEntry =
   | {

@@ -4,10 +4,11 @@ import {
   createTransferTransitNetwork,
   createValidTransitNetwork,
 } from '../../domain/transit/test-fixtures'
-import { createTransitIndex, generateShuttleTimingData } from '../../domain/transit'
-import type { TransitRouteGeometry } from '../../domain/transit/types'
+import { createTransitIndex } from '../../domain/transit'
+import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import type { TransitRouteGeometry } from '@navus/shared/transit/types'
 import type { Journey } from '../../domain/trip/journey'
-import type { VenueLocation } from '../../domain/venue/types'
+import type { VenueLocation } from '@navus/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
 const fakeMapState = vi.hoisted(() => ({

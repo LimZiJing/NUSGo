@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createLiveShuttleWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours'
-import type { ShuttleTimingRecord } from '../../src/domain/transit/timing'
+import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import { loadJourneyBenchmarkManifest } from './manifest'
 import {
   applyBenchmarkShuttleTimingProfile,

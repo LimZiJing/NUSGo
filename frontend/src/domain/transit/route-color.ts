@@ -16,9 +16,3 @@ export function getRouteContrastTextColor(color: string): '#000000' | '#ffffff' 
   const blackContrast = (luminance + 0.05) / 0.05
   return whiteContrast >= blackContrast ? '#ffffff' : '#000000'
 }
-
-export function getRouteChipTextColor(color: string): '#fff' | '#0f172a' {
-  const luminance = getRelativeLuminance(color)
-  if (luminance === null) return '#0f172a'
-  return (1.05 / (luminance + 0.05)) >= 4.5 ? '#fff' : '#0f172a'
-}

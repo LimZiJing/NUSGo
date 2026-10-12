@@ -9,10 +9,9 @@
     "shared"
   ],
   "scripts": {
-    "predev": "npm run valhalla:up",
-    "dev": "npm --workspace @navus/frontend run dev",
-    "build": "npm --workspace @navus/frontend run build",
-    "lint": "npm --workspace @navus/frontend run lint",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm --workspace @navus/shared run typecheck && npm --workspace @navus/backend run typecheck && npm --workspace @navus/frontend run build",
+    "lint": "eslint --config frontend/eslint.config.js frontend backend/src shared/src",
     "preview": "npm --workspace @navus/frontend run preview",
     "valhalla:up": "node scripts/start-valhalla.mjs",
     "walking:graph:generate": "node --experimental-strip-types scripts/generate-walking-stop-graph.mjs",
@@ -20,7 +19,9 @@
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
-    "test": "npm --workspace @navus/frontend run test",
-    "benchmark:journey": "npm --workspace @navus/frontend run benchmark:journey --"
+    "test": "npm --workspace @navus/frontend run test && npm --workspace @navus/backend run test",
+    "benchmark:journey": "npm --workspace @navus/frontend run benchmark:journey --",
+    "dev:frontend": "npm --workspace @navus/frontend run dev",
+    "dev:backend": "npm --workspace @navus/backend run dev"
   }
 }

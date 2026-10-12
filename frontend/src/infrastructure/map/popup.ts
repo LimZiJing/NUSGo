@@ -1,8 +1,8 @@
 import type { Popup } from 'maplibre-gl'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { getRouteChipTextColor } from '../../domain/transit/route-color'
-import type { TransitStop } from '../../domain/transit/types'
+import { getRouteContrastTextColor } from '../../domain/transit/route-color'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
 import { NavigationIcon } from '../../ui/icons'
 
@@ -114,7 +114,7 @@ function createServiceChip(
     const routeColor = routeColors.get(service)
     if (routeColor) {
       chip.style.setProperty('--route-color', routeColor)
-      chip.style.setProperty('--route-text-color', getRouteChipTextColor(routeColor))
+      chip.style.setProperty('--route-text-color', getRouteContrastTextColor(routeColor))
     }
   }
 

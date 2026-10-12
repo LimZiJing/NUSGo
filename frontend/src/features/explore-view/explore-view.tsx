@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   formatVenueFloorAndBuilding,
   getVenueBuildingName,

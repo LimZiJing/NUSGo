@@ -1,7 +1,7 @@
 import type { TransitIndex } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocation, VenueLocationMap } from '../domain/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
 
 type MappedVenue = VenueLocation & {

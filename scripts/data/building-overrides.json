@@ -2,77 +2,13 @@
   "version": 1,
   "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, and $comment for the reason. Unknown elementIds or fields fail the import.",
   "overrides": {
-    "7765113": {
+    "1084196072": {
       "entrance": {
-        "x": 103.7737952,
-        "y": 1.3052011,
-        "osmNode": "4366419790"
+        "x": 103.7756091,
+        "y": 1.2950488,
+        "osmNode": "11252774947"
       },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 4366419790 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "7765114": {
-      "entrance": {
-        "x": 103.7738538,
-        "y": 1.305033,
-        "osmNode": "4366419789"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 4366419789 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "15347235": {
-      "entrance": {
-        "x": 103.7735602,
-        "y": 1.2953637,
-        "osmNode": "10574167549"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10574167549 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
-    },
-    "54619685": {
-      "entrance": {
-        "x": 103.7747466,
-        "y": 1.2931313,
-        "osmNode": "10773610197"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10773610197 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
-    },
-    "54619687": {
-      "entrance": {
-        "x": 103.7755061,
-        "y": 1.2922072,
-        "osmNode": "11137523179"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11137523179 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "54619703": {
-      "entrance": {
-        "x": 103.7758547,
-        "y": 1.2941643,
-        "osmNode": "11252774960"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11252774960 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "54619721": {
-      "entrance": {
-        "x": 103.7736946,
-        "y": 1.2948072,
-        "osmNode": "5936493260"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 5936493260 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "54619730": {
-      "entrance": {
-        "x": 103.774913,
-        "y": 1.2957666,
-        "osmNode": "11155921865"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11155921865 tagged entrance=main on the building outline (main-tagged). Unverified on site."
-    },
-    "54619731": {
-      "entrance": {
-        "x": 103.7737201,
-        "y": 1.2989457,
-        "osmNode": "10821049775"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11252774947 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
     "111973157": {
       "entrance": {
@@ -130,6 +66,12 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11153264937 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "141910213": {
+      "roomCodePrefixes": [
+        "Frontier"
+      ],
+      "$comment": "Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address)."
+    },
     "141910336": {
       "entrance": {
         "x": 103.7819404,
@@ -186,6 +128,14 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11243901183 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "15347235": {
+      "entrance": {
+        "x": 103.7735602,
+        "y": 1.2953637,
+        "osmNode": "10574167549"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10574167549 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+    },
     "241523920": {
       "entrance": {
         "x": 103.7812616,
@@ -210,6 +160,114 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11145614465 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "54619685": {
+      "entrance": {
+        "x": 103.7747466,
+        "y": 1.2931313,
+        "osmNode": "10773610197"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10773610197 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+    },
+    "54619687": {
+      "entrance": {
+        "x": 103.7755061,
+        "y": 1.2922072,
+        "osmNode": "11137523179"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11137523179 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "54619703": {
+      "entrance": {
+        "x": 103.7758547,
+        "y": 1.2941643,
+        "osmNode": "11252774960"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11252774960 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "54619721": {
+      "entrance": {
+        "x": 103.7736946,
+        "y": 1.2948072,
+        "osmNode": "5936493260"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 5936493260 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "54619730": {
+      "entrance": {
+        "x": 103.774913,
+        "y": 1.2957666,
+        "osmNode": "11155921865"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11155921865 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "54619731": {
+      "entrance": {
+        "x": 103.7737201,
+        "y": 1.2989457,
+        "osmNode": "10821049775"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "732229037": {
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "$comment": "Room code prefix RC3 links to every part of Cendana College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Cendana\" and the rooms are within 30 m of the parts)."
+    },
+    "732229038": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229039": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229040": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229041": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229042": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229043": {
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "$comment": "Room code prefix RC2 links to every part of Elm College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Elm\" and the rooms are within 40 m of the parts)."
+    },
+    "732229045": {
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "$comment": "Room code prefix RC2 links to every part of Elm College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Elm\" and the rooms are within 40 m of the parts)."
+    },
+    "732229046": {
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "$comment": "Room code prefix RC1 links to every part of Saga College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Saga\" and the rooms are within 60 m of the parts)."
+    },
+    "732229048": {
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "$comment": "Room code prefix RC2 links to every part of Elm College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Elm\" and the rooms are within 40 m of the parts)."
+    },
     "732229050": {
       "entrance": {
         "x": 103.7727043,
@@ -218,21 +276,56 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11260211008 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "732229051": {
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "$comment": "Room code prefix RC3 links to every part of Cendana College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Cendana\" and the rooms are within 30 m of the parts)."
+    },
+    "732229052": {
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "$comment": "Room code prefix RC3 links to every part of Cendana College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Cendana\" and the rooms are within 30 m of the parts)."
+    },
+    "732229053": {
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "$comment": "Room code prefix RC3 links to every part of Cendana College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Cendana\" and the rooms are within 30 m of the parts)."
+    },
+    "732229054": {
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "$comment": "Room code prefix RC3 links to every part of Cendana College (maintainer confirmed on 13/10/2026 that it is a building; room names say \"Cendana\" and the rooms are within 30 m of the parts)."
+    },
+    "7765113": {
+      "entrance": {
+        "x": 103.7737952,
+        "y": 1.3052011,
+        "osmNode": "4366419790"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 4366419790 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "7765114": {
+      "entrance": {
+        "x": 103.7738538,
+        "y": 1.305033,
+        "osmNode": "4366419789"
+      },
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 4366419789 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
     "874067395": {
       "entrance": {
         "x": 103.7800815,
         "y": 1.2963667,
         "osmNode": "11025586094"
       },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11025586094 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
-    },
-    "1084196072": {
-      "entrance": {
-        "x": 103.7756091,
-        "y": 1.2950488,
-        "osmNode": "11252774947"
-      },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11252774947 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11025586094 tagged entrance=yes on the building outline (single-entrance). Unverified on site. Room code prefix Frontier links to every part of Frontier (maintainer confirmed on 13/10/2026 that it is a building; single room named Frontier; both API records share one address).",
+      "roomCodePrefixes": [
+        "Frontier"
+      ]
     }
   }
 }

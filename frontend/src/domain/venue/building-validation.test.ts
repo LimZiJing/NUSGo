@@ -80,6 +80,22 @@ describe('validateBuildingCatalogue', () => {
     ])
   })
 
+  it('lets parts of one group share a room code prefix but not unrelated buildings', () => {
+    const parts = catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga-college', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'saga-2', elementId: 'way/2', groupKey: 'saga-college', roomCodePrefixes: ['rc1'] }),
+    ])
+    expect(validateBuildingCatalogue(parts).buildings).toHaveLength(2)
+
+    expect(issuesFor(catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga-college', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'elm-1', elementId: 'way/2', groupKey: 'elm-college', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'other', elementId: 'way/3', roomCodePrefixes: ['RC1'] }),
+    ]))).toEqual([
+      'Room code prefix RC1 is claimed by more than one building (saga-1, elm-1, other)',
+    ])
+  })
+
   it('accepts a centroid or provisional entrance marker and rejects anything else', () => {
     expect(validateBuildingCatalogue(catalogue([building({ locationKind: 'centroid' })])).buildings).toHaveLength(1)
     expect(validateBuildingCatalogue(catalogue([building({ locationKind: 'provisional-entrance' })])).buildings)

@@ -160,7 +160,7 @@ function compactPrefix(prefix: string): string {
 function validateBuildingUniqueness(buildings: readonly unknown[], issues: string[]): void {
   const idCounts = new Map<string, number>()
   const elementIdCounts = new Map<string, number>()
-  const prefixOwners = new Map<string, { display: string, ids: string[] }>()
+  const prefixOwners = new Map<string, { display: string, ids: string[], groupKeys: (string | undefined)[] }>()
 
   for (const value of buildings) {
     if (!isRecord(value)) continue
@@ -171,8 +171,9 @@ function validateBuildingUniqueness(buildings: readonly unknown[], issues: strin
     if (!isStringArray(value.roomCodePrefixes)) continue
     const id = isNonEmptyString(value.id) ? value.id : '?'
     for (const prefix of new Set(value.roomCodePrefixes.map(compactPrefix))) {
-      const owner = prefixOwners.get(prefix) ?? { display: prefix.toUpperCase(), ids: [] }
+      const owner = prefixOwners.get(prefix) ?? { display: prefix.toUpperCase(), ids: [], groupKeys: [] }
       owner.ids.push(id)
+      owner.groupKeys.push(isNonEmptyString(value.groupKey) ? value.groupKey : undefined)
       prefixOwners.set(prefix, owner)
     }
   }
@@ -183,8 +184,10 @@ function validateBuildingUniqueness(buildings: readonly unknown[], issues: strin
   for (const [elementId, count] of elementIdCounts) {
     if (count > 1) issues.push(`Building elementId ${elementId} is used by more than one building`)
   }
-  for (const { display, ids } of prefixOwners.values()) {
-    if (ids.length > 1) {
+  for (const { display, ids, groupKeys } of prefixOwners.values()) {
+    // Parts of one group (for example the Saga College records) may share a prefix.
+    const oneGroup = groupKeys[0] !== undefined && groupKeys.every((key) => key === groupKeys[0])
+    if (ids.length > 1 && !oneGroup) {
       issues.push(`Room code prefix ${display} is claimed by more than one building (${ids.join(', ')})`)
     }
   }

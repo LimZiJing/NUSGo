@@ -292,7 +292,9 @@
         "y": 1.30812
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC3"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -313,7 +315,9 @@
         "y": 1.30791
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC3"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -334,7 +338,9 @@
         "y": 1.30775
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC3"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -355,7 +361,9 @@
         "y": 1.30814
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC3"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -376,7 +384,9 @@
         "y": 1.30783
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC3"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -1193,7 +1203,9 @@
         "y": 1.30654
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC2"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -1214,7 +1226,9 @@
         "y": 1.30624
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC2"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -1235,7 +1249,9 @@
         "y": 1.30646
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC2"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -1382,7 +1398,9 @@
         "y": 1.29647
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "Frontier"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -1403,7 +1421,9 @@
         "y": 1.2963667
       },
       "locationKind": "provisional-entrance",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "Frontier"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4633,7 +4653,9 @@
         "y": 1.30581
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4654,7 +4676,9 @@
         "y": 1.30554
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4675,7 +4699,9 @@
         "y": 1.30562
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4696,7 +4722,9 @@
         "y": 1.30561
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4717,7 +4745,9 @@
         "y": 1.30585
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4738,7 +4768,9 @@
         "y": 1.3059
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RC1"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",

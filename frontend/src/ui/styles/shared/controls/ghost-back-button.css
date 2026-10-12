@@ -1,34 +1,15 @@
-.ghost-back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* GhostBackButton is a ghost Button that keeps its compact back-link geometry rather than the
+   36px control box, so screens look as before. The extra class raises specificity above the
+   feature stylesheets' bare button rules; remove this file when Stops and Explore migrate. */
+.button.ghost-back-button {
   min-height: 0;
+  gap: 5px;
   padding: 3px;
   border: 0;
-  color: var(--text-strong);
-  background: transparent;
-  font: 600 14px/1.2 system-ui, sans-serif;
-  cursor: pointer;
 }
 
-.ghost-back-button:hover,
-.ghost-back-button:focus-visible {
-  border-color: transparent;
-  background: transparent;
-}
-
-.ghost-back-button:focus-visible {
-  outline: 3px solid var(--focus-ring-strong);
-  outline-offset: 2px;
-}
-
-.ghost-back-button svg {
-  flex: 0 0 17px;
+.button.ghost-back-button svg {
+  flex-basis: 17px;
   width: 17px;
   height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
 }

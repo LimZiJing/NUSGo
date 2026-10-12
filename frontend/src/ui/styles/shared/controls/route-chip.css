@@ -123,13 +123,15 @@ button.route-chip:active {
   transform: scale(0.96);
 }
 
-.route-chip[data-size='compact'] {
+/* Map popup chips set data-size='compact'; React RouteChips render the Chip primitive's 'sm' size. */
+.route-chip:is([data-size='compact'], [data-size='sm']) {
   min-width: 34px;
   min-height: 24px;
   padding: 2px 6px;
   font-size: 12px;
 }
 
+/* Map popup chips are plain elements; React RouteChips use the Chip primitive's selected tone. */
 .route-chip[data-active='true'] {
   border-color: var(--route-color);
   color: var(--route-text-color);

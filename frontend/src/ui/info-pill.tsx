@@ -1,4 +1,7 @@
-export type InfoPillColorScheme = 'neutral' | 'success'
+import { joinClassNames } from './class-names'
+import { Pill, type PillTone } from './pill'
+
+export type InfoPillColorScheme = PillTone
 
 interface InfoPillProps {
   readonly text: string
@@ -9,12 +12,11 @@ interface InfoPillProps {
 
 export function InfoPill({ text, colorScheme, className, leadingDot = false }: InfoPillProps) {
   return (
-    <span
-      className={['info-pill', className].filter(Boolean).join(' ')}
-      data-color-scheme={colorScheme}
-      data-leading-dot={leadingDot || undefined}
-    >
-      {text}
-    </span>
+    <Pill
+      className={joinClassNames('info-pill', className)}
+      label={text}
+      tone={colorScheme}
+      leadingDot={leadingDot}
+    />
   )
 }

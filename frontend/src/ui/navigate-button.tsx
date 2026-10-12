@@ -1,3 +1,4 @@
+import { Button } from './button'
 import { NavigationIcon } from './icons'
 
 interface NavigateButtonProps {
@@ -8,15 +9,14 @@ interface NavigateButtonProps {
 
 export function NavigateButton({ onClick, disabled, ariaLabel }: NavigateButtonProps) {
   return (
-    <button
+    <Button
       className="navigate-button"
-      type="button"
+      variant="primary"
+      icon={<NavigationIcon />}
+      label="Navigate"
       disabled={disabled}
-      aria-label={ariaLabel}
+      ariaLabel={ariaLabel}
       onClick={onClick}
-    >
-      <NavigationIcon />
-      <span>Navigate</span>
-    </button>
+    />
   )
 }

@@ -84,7 +84,7 @@ describe('ExploreView', () => {
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')
     expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
-    expect(markup).toContain('Find venue</button>')
+    expect(markup).toContain('Find venue</span></button>')
     expect(markup).not.toContain('Browse shuttle routes')
     expect(markup).not.toContain('>Back</button>')
     expect(markup).not.toContain('maplibregl-popup')
@@ -103,8 +103,8 @@ describe('ExploreView', () => {
 
     const markup = renderPanel(state)
 
-    expect(markup).toContain('Shuttle routes</button>')
-    expect(markup).toContain('class="ghost-back-button"')
+    expect(markup).toContain('Shuttle routes</span></button>')
+    expect(markup).toContain('class="button ghost-back-button"')
     expect(markup).toContain('aria-hidden="true"')
     expect(markup).not.toContain('M19 12H5m7-7-7 7 7 7')
     expect(markup).not.toContain('←')
@@ -121,7 +121,7 @@ describe('ExploreView', () => {
     }
     const markup = renderPanel(state, venues, false)
 
-    expect(markup).toContain('class="ghost-back-button"')
+    expect(markup).toContain('class="button ghost-back-button"')
     expect(markup).not.toContain('Close map context')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')

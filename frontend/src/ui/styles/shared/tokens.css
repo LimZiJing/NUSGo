@@ -20,10 +20,22 @@
   --radius-status: 5px;
   --radius-card: 10px;
   --radius-timeline: 14px;
+  --radius-control: var(--radius-md);
 
+  /* --control-height-sm is the 36px touch-target minimum for interactive controls. */
   --control-height-sm: 36px;
   --control-height-md: 40px;
   --control-height-lg: 44px;
+
+  --font-size-control: 14px;
+  --font-size-control-lg: 16px;
+  --font-size-label: 12px;
+
+  /* Shared control focus outline: a 2px accent ring. --focus-ring stays the per-theme colour
+     used by older controls. var(--accent) resolves per theme because themes also set :root. */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-outline: var(--focus-ring-width) solid var(--accent);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;

@@ -1,0 +1,137 @@
+/* Button, IconButton, and MenuItem primitives. See docs/ui/controls.md for the spec.
+   Primitives set data-hover-filter="none" to opt out of the global hover filter in base.css,
+   so their hover darkening applies only on devices that can hover. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: 5px var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  font: 600 var(--font-size-control)/1.2 var(--sans);
+  cursor: pointer;
+}
+
+.button[data-size='lg'] {
+  min-height: var(--control-height-lg);
+  padding-inline: var(--space-3);
+  font-size: var(--font-size-control-lg);
+}
+
+.button[data-variant='primary'] {
+  border-color: var(--accent);
+  color: var(--text-inverse);
+  background: var(--accent);
+}
+
+.button[data-variant='ghost'] {
+  border-color: transparent;
+  color: var(--text-strong);
+  background: transparent;
+}
+
+.button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.button svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.button[data-size='lg'] svg {
+  flex-basis: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.button.icon-button {
+  width: var(--control-height-sm);
+  padding: 0;
+}
+
+.button.icon-button[data-size='lg'] {
+  width: var(--control-height-lg);
+}
+
+.button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  border-color: var(--border-control);
+  color: var(--text-muted);
+  background: var(--surface-control);
+  cursor: not-allowed;
+}
+
+/* Ghost controls have no surface to darken, so hover and disabled keep them borderless. */
+.button[data-variant='ghost']:disabled {
+  border-color: transparent;
+  background: transparent;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: transparent;
+  font: 600 var(--font-size-control)/1.2 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-item:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  background: var(--surface-subtle);
+}
+
+.menu-item:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .button:not(:disabled):not([aria-pressed='true']):not([data-variant='ghost']):hover {
+    filter: brightness(0.85);
+  }
+
+  .button[data-variant='ghost']:not(:disabled):hover,
+  .menu-item:not(:disabled):hover {
+    background: var(--surface-subtle);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}

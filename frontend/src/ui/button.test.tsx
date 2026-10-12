@@ -69,7 +69,24 @@ describe('Button', () => {
   })
 })
 
+describe('Button trailing icon', () => {
+  it('renders the trailing icon after the label', () => {
+    render(<Button label="Opposite stop" trailingIcon={<svg data-testid="trail" />} onClick={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: 'Opposite stop' })
+    expect(button.lastElementChild?.getAttribute('data-testid')).toBe('trail')
+  })
+})
+
 describe('IconButton', () => {
+  it('supports a plain variant for icon toggles', () => {
+    render(<IconButton label="Favourite" icon={<svg />} variant="plain" pressed onClick={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: 'Favourite' })
+    expect(button.getAttribute('data-variant')).toBe('plain')
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('names the button from its required label', () => {
     render(<IconButton label="Clear search" icon={<svg />} onClick={vi.fn()} />)
 

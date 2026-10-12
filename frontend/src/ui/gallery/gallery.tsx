@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
-import { Button, IconButton, type ButtonVariant, type ControlSize } from '../button'
+import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
 import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
@@ -11,6 +11,7 @@ const STATES = ['default', 'hover', 'active', 'focus-visible', 'disabled', 'sele
 type SampleState = (typeof STATES)[number]
 
 const VARIANTS: readonly ButtonVariant[] = ['primary', 'secondary', 'ghost']
+const ICON_VARIANTS: readonly IconButtonVariant[] = [...VARIANTS, 'plain']
 const SIZES: readonly ControlSize[] = ['sm', 'lg']
 /* The app theme type covers Light and Dark only; Matcha and Sakura exist as data-theme values in
    the shared theme stylesheets, so the gallery sets data-theme directly to review all four. */
@@ -57,8 +58,11 @@ function StateGrid({ title, rows }: {
   )
 }
 
-const variantSizeRows = (render: (variant: ButtonVariant, size: ControlSize, state: SampleState) => ReactNode) =>
-  VARIANTS.flatMap((variant) => SIZES.map((size) => ({
+const variantSizeRows = <Variant extends IconButtonVariant = ButtonVariant>(
+  render: (variant: Variant, size: ControlSize, state: SampleState) => ReactNode,
+  variants: readonly Variant[] = VARIANTS as readonly Variant[],
+) =>
+  variants.flatMap((variant) => SIZES.map((size) => ({
     label: `${variant} / ${size}`,
     render: (state: SampleState) => render(variant, size, state),
   })))
@@ -97,7 +101,7 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
             pressed={state === 'selected' ? true : undefined}
             onClick={noop}
           />
-        ))}
+        ), ICON_VARIANTS)}
       />
       <StateGrid
         title="MenuItem"

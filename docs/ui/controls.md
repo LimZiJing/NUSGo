@@ -6,8 +6,8 @@ This is the spec for NavUS buttons, chips, and pills (issue #333). Vocabulary is
 
 | Component | Use for | Notes |
 | --- | --- | --- |
-| `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Optional leading `icon`. Always `type="button"`. |
-| `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. |
+| `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Optional leading `icon` and `trailingIcon`. Always `type="button"`. |
+| `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. Also accepts variant `plain`: no box at rest, on hover or when pressed (hover only dims the icon; focus keeps the ring), for icon toggles such as a favourite star and for dismiss icons. The caller changes the icon to show a pressed state. |
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
 | `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
 | `Pill` | A non-interactive status label | Tones `neutral` and `success`, optional leading dot. `InfoPill` is built on it. |

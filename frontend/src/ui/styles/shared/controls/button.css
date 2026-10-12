@@ -45,7 +45,8 @@
 
 /* A pressed ghost button is an icon toggle (such as a favourite star): the icon shows the state,
    so it draws no box. Hover and focus tints still apply. */
-.button[data-variant='ghost'][aria-pressed='true'] {
+.button[data-variant='ghost'][aria-pressed='true'],
+.button[data-variant='plain'] {
   border-color: transparent;
   color: var(--accent);
   background: transparent;
@@ -81,6 +82,15 @@
   background: var(--accent-soft);
 }
 
+/* Plain icon buttons never draw a box: hover only dims the icon, focus keeps the ring. */
+.button[data-variant='plain'] {
+  color: inherit;
+}
+
+.button[data-variant='plain'] svg {
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
 .button:active:not(:disabled) {
   transform: scale(0.98);
 }
@@ -94,7 +104,8 @@
 }
 
 /* Ghost controls have no surface to darken, so hover and disabled keep them borderless. */
-.button[data-variant='ghost']:disabled {
+.button[data-variant='ghost']:disabled,
+.button[data-variant='plain']:disabled {
   border-color: transparent;
   background: transparent;
 }
@@ -135,8 +146,12 @@
 }
 
 @media (hover: hover) {
-  .button:not(:disabled):not([aria-pressed='true']):not([data-variant='ghost']):hover {
+  .button:not(:disabled):not([aria-pressed='true']):not([data-variant='ghost']):not([data-variant='plain']):hover {
     filter: brightness(0.85);
+  }
+
+  .button[data-variant='plain']:not(:disabled):hover svg {
+    opacity: 0.7;
   }
 
   .button[data-variant='ghost']:not(:disabled):hover,

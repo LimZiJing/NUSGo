@@ -3,6 +3,8 @@ import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+/** `plain` is icon-only: no box at rest, hover or when pressed, for toggles such as a favourite star. */
+export type IconButtonVariant = ButtonVariant | 'plain'
 
 interface ButtonProps {
   readonly label: string
@@ -10,6 +12,7 @@ interface ButtonProps {
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
+  readonly trailingIcon?: ReactNode
   readonly disabled?: boolean
   readonly pressed?: boolean
   readonly ariaLabel?: string
@@ -22,7 +25,7 @@ interface IconButtonProps {
   readonly label: string
   readonly icon: ReactNode
   readonly onClick: () => void
-  readonly variant?: ButtonVariant
+  readonly variant?: IconButtonVariant
   readonly size?: ControlSize
   readonly disabled?: boolean
   readonly pressed?: boolean
@@ -37,6 +40,7 @@ export function Button({
   variant = 'secondary',
   size = 'sm',
   icon,
+  trailingIcon,
   disabled,
   pressed,
   ariaLabel,
@@ -58,6 +62,7 @@ export function Button({
     >
       {icon}
       <span>{label}</span>
+      {trailingIcon}
     </button>
   )
 }

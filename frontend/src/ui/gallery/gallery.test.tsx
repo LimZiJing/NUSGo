@@ -28,7 +28,7 @@ describe('controls gallery', () => {
     render(<GalleryPanel theme="dark" />)
 
     expect(within(screen.getByRole('region', { name: 'IconButton' })).getAllByRole('button', { name: 'Search' }))
-      .toHaveLength(3 * 2 * 6)
+      .toHaveLength(4 * 2 * 6)
     expect(within(screen.getByRole('region', { name: 'MenuItem' })).getAllByRole('button')).toHaveLength(6)
     expect(within(screen.getByRole('region', { name: 'Chip' })).getAllByRole('button')).toHaveLength(4 * 6)
     const pills = screen.getByRole('region', { name: 'Pill' })

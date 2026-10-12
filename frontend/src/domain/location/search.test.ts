@@ -106,6 +106,28 @@ describe('searchTripLocations', () => {
   })
 })
 
+describe('searchTripLocations grouping', () => {
+  it('ranks stops ahead of rooms even when a room matches more closely', () => {
+    const roomVenues: VenueLocationMap = {
+      'CLB-04-01H': {
+        roomName: 'Central Library Seminar Room',
+        location: { x: 103.77, y: 1.3 },
+      },
+      CENTRAL: {
+        roomName: 'Exact Code Room',
+        location: { x: 103.77, y: 1.3 },
+      },
+    }
+
+    expect(searchTripLocations(roomVenues, stops, 'central').map((result) => result.endpoint)).toEqual([
+      { kind: 'stop', id: 'STOP-A' },
+      { kind: 'stop', id: 'STOP-B' },
+      { kind: 'venue', id: 'CENTRAL' },
+      { kind: 'venue', id: 'CLB-04-01H' },
+    ])
+  })
+})
+
 describe('getTripEndpointLabel', () => {
   it('resolves known endpoints to readable labels', () => {
     expect(getTripEndpointLabel({ kind: 'venue', id: 'LT17' }, venues, stops)).toBe(

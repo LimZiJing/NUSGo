@@ -49,6 +49,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -307,6 +308,14 @@ describe('navigation session', () => {
     cleanup()
     session.setExploreViewQuery('STOP')
     expect(listener).toHaveBeenCalledOnce()
+  })
+
+  it('delegates stop-popup dismissal to the map session', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    expect(session.dismissStopPopup()).toBe(false)
+    expect(dependencies.map.dismissStopPopup).toHaveBeenCalledOnce()
   })
 
   it('loads immutable data, reconciles route selection once, and synchronizes the map', async () => {
@@ -1145,6 +1154,7 @@ describe('navigation session', () => {
 
     session.leaveMobileRoutes()
 
+    expect(dependencies.map.dismissPopup).not.toHaveBeenCalled()
     expect(session.getState()).toMatchObject({
       exploreView: { mode: 'neutral' },
       selectedRouteId: null,

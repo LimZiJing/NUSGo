@@ -131,6 +131,7 @@ export interface NavigationSession {
   closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
+  dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
@@ -635,7 +636,6 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         mobileRoutesActive = false
-        dependencies.map.dismissPopup()
         setActiveRoute(null, false, false)
         panelTransitions.closeToRoot()
       })
@@ -881,6 +881,11 @@ export function createNavigationSession(
       if (disposed) return
       viewportInsets = { ...insets }
       dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    dismissStopPopup() {
+      if (disposed) return false
+      return dependencies.map.dismissStopPopup()
     },
 
     dismissMapPopup() {

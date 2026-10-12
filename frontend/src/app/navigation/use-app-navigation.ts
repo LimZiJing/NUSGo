@@ -30,6 +30,7 @@ export interface UseAppNavigationOptions {
     | 'enableLocationTracking'
     | 'selectMobileRoute'
     | 'focusStopInStopsTab'
+    | 'dismissStopPopup'
     | 'dismissMapPopup'
     | 'setStopsPinVisible'
     | 'escape'
@@ -96,6 +97,7 @@ export function useAppNavigation({
   const previousExploreViewRef = useRef<Pick<ExploreViewState, 'mode' | 'selectedVenue'> | null>(null)
 
   const activeView = state.activeView
+  const previousActiveViewRef = useRef(activeView)
   const activeSheetDetent = state.sheets[activeView].detent
   const activeSheetExpanded = activeSheetDetent !== 'collapsed'
 
@@ -259,7 +261,13 @@ export function useAppNavigation({
   }, [activeView, commands])
 
   useEffect(() => {
-    if (activeView === 'stops') commands.dismissMapPopup()
+    if (previousActiveViewRef.current === activeView) return
+    previousActiveViewRef.current = activeView
+    if (activeView === 'stops') {
+      commands.dismissMapPopup()
+      return
+    }
+    commands.dismissStopPopup()
   }, [activeView, commands])
 
   return {

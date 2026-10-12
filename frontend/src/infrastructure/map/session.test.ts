@@ -547,6 +547,30 @@ describe('MapSession', () => {
     expect(session.dismissPopup()).toBe(false)
   })
 
+  it('dismisses only a shuttle-stop popup through the stop-specific command', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const closeEndpointPopup = vi.fn()
+    fakeMapState.popupCloseButton = { click: closeEndpointPopup }
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTransitData()
+
+    await session.ready
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    session.focusStop('STOP-A')
+
+    expect(session.dismissStopPopup()).toBe(true)
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
+    expect(closeEndpointPopup).not.toHaveBeenCalled()
+    expect(session.dismissStopPopup()).toBe(false)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('preserves a valid route presentation across transit reloads without refitting', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
@@ -1212,6 +1236,8 @@ describe('MapSession', () => {
       offset: [0, -256],
     }))
     expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(true)
+    expect(session.dismissStopPopup()).toBe(true)
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
     session.focusStop('unknown')
     expect(map.flyTo).toHaveBeenCalledOnce()
 

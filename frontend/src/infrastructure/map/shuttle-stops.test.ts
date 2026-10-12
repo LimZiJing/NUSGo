@@ -619,3 +619,16 @@ describe('bus-stop presentation', () => {
     expect(isBusStopVisible(BUS_STOP_MIN_ZOOM - 0.1, false, true)).toBe(true)
   })
 })
+
+describe('popup coordinator dismissal', () => {
+  it('closes the active popup and reports whether one was open', () => {
+    const popup = createFakePopup()
+    const coordinator = createPopupCoordinator()
+    coordinator.register(popup as unknown as Popup)
+    popup.emit('open')
+
+    expect(coordinator.dismiss()).toBe(true)
+    expect(popup.remove).toHaveBeenCalledOnce()
+    expect(coordinator.dismiss()).toBe(false)
+  })
+})

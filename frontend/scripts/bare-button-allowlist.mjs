@@ -5,8 +5,6 @@
 //
 // Keys are paths relative to the frontend directory.
 export const BARE_BUTTON_ALLOWLIST = {
-  // Feature screens, removed by the Plan migration.
-  'src/features/plan-view/styles/plan-view.css': 5,
   // Mobile navigation bar and shared navigation (Sheet and Menus migrations).
   'src/ui/mobile/styles/layout.css': 1,
   'src/ui/styles/shared/navigation.css': 4,

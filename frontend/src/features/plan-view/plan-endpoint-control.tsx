@@ -8,6 +8,7 @@ import type {
   TripLocationSearchResult,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { IconButton } from '../../ui/button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import {
@@ -220,14 +221,12 @@ export function PlanEndpointControl({
               </button>
             )}
             {(endpoint || searchQuery) && (
-              <button
-                type="button"
-                className="plan-endpoint-clear"
+              <IconButton
+                variant="plain"
+                label={`Clear ${roleLabel.toLocaleLowerCase()}`}
+                icon={<CloseIcon />}
                 onClick={clearEndpoint}
-                aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
-              >
-                <CloseIcon />
-              </button>
+              />
             )}
           </div>
         </div>

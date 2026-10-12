@@ -86,7 +86,7 @@ Each item is one small pull request, and each lowers the matching counts in the 
 
 - [ ] Stops (also remove `ghost-back-button.css` and the `.stop-opposite` rule in `navigate-button.css`)
 - [x] Explore
-- [ ] Plan
+- [x] Plan
 - [ ] Map controls
 - [ ] Sheet
 - [ ] Popovers

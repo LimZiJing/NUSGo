@@ -80,4 +80,48 @@ describe('StopsView', () => {
     expect(onNavigateToStop).toHaveBeenCalledWith('SR7')
     expect(onSelectOppositeStop).toHaveBeenCalledWith('SR8')
   })
+
+  it('shows the favourites empty state with a Browse stops action that switches to Nearby', async () => {
+    const user = userEvent.setup()
+    const onSelectList = vi.fn()
+    const { container } = render(
+      <StopsView
+        selectedStop={null}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
+        overviewStops={[]}
+        selectedList="favourites"
+        onSelectList={onSelectList}
+      />,
+    )
+
+    expect(screen.getByText('No favourites? Use the Star icon to favourite stops.')).toBeTruthy()
+    expect(container.querySelector('.stops-empty-icon')).toBeTruthy()
+    const browse = screen.getByRole('button', { name: 'Browse stops' })
+    expect(browse.getAttribute('type')).toBe('button')
+
+    await user.click(browse)
+
+    expect(onSelectList).toHaveBeenCalledOnce()
+    expect(onSelectList).toHaveBeenCalledWith('nearby')
+  })
+
+  it('keeps the plain nearby empty state without the favourites action', () => {
+    render(
+      <StopsView
+        selectedStop={null}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
+        overviewStops={[]}
+        selectedList="nearby"
+      />,
+    )
+
+    expect(screen.getByText('No stops available.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Browse stops' })).toBeNull()
+  })
 })

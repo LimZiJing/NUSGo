@@ -127,6 +127,29 @@
     text-align: left;
   }
 
+  .stops-empty--favourites {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .stops-empty-icon {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    color: var(--text-muted);
+  }
+
+  .stops-view .stops-empty-action {
+    min-height: var(--control-height-lg);
+    padding: 8px 14px;
+    border: 1px solid var(--accent);
+    color: var(--text-inverse);
+    background: var(--accent);
+    font: 600 14px/1.2 system-ui, sans-serif;
+  }
+
   .stop-card {
     overflow: hidden;
     border: 1px solid var(--border-card);

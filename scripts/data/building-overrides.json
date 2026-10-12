@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), groupKey, and $comment for the reason. Unknown elementIds or fields fail the import.",
+  "overrides": {}
+}

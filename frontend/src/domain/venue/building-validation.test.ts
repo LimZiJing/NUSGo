@@ -88,6 +88,15 @@ describe('validateBuildingCatalogue', () => {
     ])).buildings).toHaveLength(2)
   })
 
+  it('accepts locations marked as API centroids and rejects unknown location kinds', () => {
+    const result = validateBuildingCatalogue(catalogue([building({ locationKind: 'centroid' })]))
+
+    expect(result.buildings[0].locationKind).toBe('centroid')
+    expect(issuesFor(catalogue([building({ locationKind: 'entrance' })]))).toEqual([
+      'Building com1 locationKind must be "centroid" when provided',
+    ])
+  })
+
   it('rejects an unsupported version, missing source metadata and non-array buildings', () => {
     expect(issuesFor({ ...catalogue(), version: 2 })).toEqual([
       'Building catalogue version must be 1: 2',

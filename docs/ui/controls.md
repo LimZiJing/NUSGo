@@ -87,7 +87,7 @@ Each item is one small pull request, and each lowers the matching counts in the 
 - [ ] Stops (also remove `ghost-back-button.css` and the `.stop-opposite` rule in `navigate-button.css`)
 - [x] Explore
 - [x] Plan
-- [ ] Map controls
+- [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling from #343; only a dead `.location-control-popover button` rule was removed)
 - [ ] Sheet
 - [ ] Popovers
 - [ ] Menus (including the Plan trip-actions `Clear all` row, which becomes a `MenuItem`)

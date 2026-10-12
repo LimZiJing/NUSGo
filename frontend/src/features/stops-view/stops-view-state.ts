@@ -100,15 +100,13 @@ export function stopsViewReducer(
       const expandedStopIds = [...new Set(action.stopIds)]
       if (
         expandedStopIds.length === state.expandedStopIds.nearby.length &&
-        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index]) &&
-        state.expandedStopIds.favourites.length === 0
+        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index])
       ) return state
       return {
         ...state,
         expandedStopIds: {
           ...state.expandedStopIds,
           nearby: expandedStopIds,
-          favourites: [],
         },
       }
     }

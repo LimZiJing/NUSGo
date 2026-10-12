@@ -214,7 +214,7 @@ describe('mobile location control integration', () => {
     expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
   })
 
-  it('closes Favourites timings when the location button refreshes Nearby timings', async () => {
+  it('keeps Favourites timings expanded when the location button moves the map', async () => {
     const user = userEvent.setup()
     mockMobileViewport()
     localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A']))
@@ -239,7 +239,7 @@ describe('mobile location control integration', () => {
 
     await user.click(screen.getByRole('button', { name: 'Show my location' }))
 
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy()
   })
 
   it('keeps Nearby timings closed when the automatic location request fails', async () => {

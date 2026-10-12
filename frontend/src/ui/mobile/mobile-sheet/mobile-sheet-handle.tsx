@@ -9,6 +9,7 @@ interface MobileSheetHandleProps {
   readonly detent: MobileSheetDetent
   readonly restoreDetent?: OpenMobileSheetDetent
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
   readonly onDetentChange: (detent: MobileSheetDetent) => void
@@ -23,6 +24,7 @@ export function MobileSheetHandle({
   detent,
   restoreDetent = 'partial',
   label,
+  summary,
   controlsId,
   onButtonRef,
   onDetentChange,
@@ -40,6 +42,7 @@ export function MobileSheetHandle({
   }
 
   const handleAction = detent === 'full' ? 'Collapse' : 'Expand'
+  const collapsedSummary = detent === 'collapsed' ? summary : undefined
 
   return (
     <button
@@ -48,11 +51,14 @@ export function MobileSheetHandle({
       ref={onButtonRef}
       aria-controls={controlsId}
       aria-expanded={isOpenMobileSheetDetent(detent)}
-      aria-label={`${handleAction} ${label}`}
+      aria-label={collapsedSummary ? `${handleAction} ${label}, ${collapsedSummary}` : `${handleAction} ${label}`}
       aria-description={detent === 'partial' ? 'Opens the full-height sheet.' : undefined}
       onClick={handleClick}
     >
       <span aria-hidden="true" className="mobile-sheet-grabber" />
+      {collapsedSummary && (
+        <span aria-hidden="true" className="mobile-sheet-summary">{collapsedSummary}</span>
+      )}
     </button>
   )
 }

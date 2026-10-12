@@ -25,3 +25,13 @@ describe('mobile sheet handle focus styles', () => {
     }
   })
 })
+
+describe('collapsed sheet summary', () => {
+  it('truncates a long summary on one line instead of wrapping', () => {
+    const summary = styles.match(/\.mobile-sheet-summary\s*{([^}]*)}/s)?.[1] ?? ''
+
+    expect(summary).toMatch(/white-space:\s*nowrap/)
+    expect(summary).toMatch(/text-overflow:\s*ellipsis/)
+    expect(summary).toMatch(/overflow:\s*hidden/)
+  })
+})

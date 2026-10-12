@@ -13,6 +13,7 @@ import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile/mobile-s
 interface NavigationPanelShellProps {
   readonly className: string
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly detent: MobileSheetDetent
   readonly lastNonCollapsedDetent?: OpenMobileSheetDetent
@@ -33,6 +34,7 @@ interface NavigationPanelShellProps {
 export function NavigationPanelShell({
   className,
   label,
+  summary,
   controlsId,
   detent,
   lastNonCollapsedDetent = 'partial',
@@ -83,6 +85,7 @@ export function NavigationPanelShell({
       <MobileSheet
         className={className}
         label={label}
+        summary={summary}
         controlsId={controlsId}
         active={active}
         portalContainer={portalContainer ?? null}

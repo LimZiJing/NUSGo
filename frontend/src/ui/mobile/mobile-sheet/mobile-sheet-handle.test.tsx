@@ -89,4 +89,34 @@ describe('MobileSheetHandle', () => {
     expect(onDetentChange).toHaveBeenCalledWith('collapsed')
     expect(document.activeElement).toBe(handle)
   })
+
+  it('shows the summary on the collapsed handle and includes it in the accessible name', () => {
+    render(
+      <MobileSheetHandle
+        detent="collapsed"
+        label="Stops panel"
+        summary="Stops · 20 nearby"
+        controlsId="stops-content"
+        onDetentChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Expand Stops panel, Stops · 20 nearby' })).toBeTruthy()
+    expect(document.querySelector('.mobile-sheet-summary')?.textContent).toBe('Stops · 20 nearby')
+  })
+
+  it('hides the summary once the sheet is open', () => {
+    render(
+      <MobileSheetHandle
+        detent="partial"
+        label="Stops panel"
+        summary="Stops · 20 nearby"
+        controlsId="stops-content"
+        onDetentChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Expand Stops panel' })).toBeTruthy()
+    expect(document.querySelector('.mobile-sheet-summary')).toBeNull()
+  })
 })

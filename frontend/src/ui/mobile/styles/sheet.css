@@ -86,6 +86,29 @@
     background: var(--text-secondary);
   }
 
+  /* The collapsed strip stacks the grabber above a one-line summary of the sheet. */
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    row-gap: 4px;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-grabber {
+    transform: none;
+  }
+
+  .mobile-sheet-summary {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding-inline: 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .mobile-sheet-handle:active .mobile-sheet-grabber,
   .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
     opacity: 0.72;

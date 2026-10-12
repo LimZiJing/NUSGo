@@ -7,6 +7,11 @@ import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
+import {
+  getExploreSheetSummary,
+  getPlanSheetSummary,
+  getStopsSheetSummary,
+} from './mobile-sheet-summary'
 
 interface PanelShellBindings {
   readonly ref: Ref<HTMLElement>
@@ -64,6 +69,9 @@ export function AppViews({
   },
   views,
 }: AppViewsProps) {
+  const selectedRoute = views.explore.transitIndex?.routes
+    .find((route) => route.id === views.explore.selectedRouteId) ?? null
+
   return (
     <aside
       className="map-overlay-right navigation-column"
@@ -74,6 +82,7 @@ export function AppViews({
           <NavigationPanelShell
             className="plan-sheet"
             label="Plan trip panel"
+            summary={getPlanSheetSummary(views.plan.tripRequest, views.plan.journey)}
             controlsId="plan-view-content"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.plan.lastNonCollapsedDetent}
@@ -91,6 +100,7 @@ export function AppViews({
           <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
+            summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
             controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.explore.lastNonCollapsedDetent}
@@ -123,6 +133,7 @@ export function AppViews({
           <NavigationPanelShell
             className="stops-sheet"
             label="Stops panel"
+            summary={getStopsSheetSummary(views.stops)}
             controlsId="stops-view-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
             lastNonCollapsedDetent={navigation.sheets.stops.lastNonCollapsedDetent}

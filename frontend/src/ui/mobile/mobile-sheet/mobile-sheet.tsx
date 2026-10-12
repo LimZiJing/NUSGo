@@ -13,6 +13,7 @@ import {
 interface MobileSheetProps {
   readonly className: string
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
@@ -32,6 +33,7 @@ const INITIAL_SNAP_POINTS: MobileSheetSnapPoints = ['44px', '200px', '640px']
 export function MobileSheet({
   className,
   label,
+  summary,
   controlsId,
   active,
   portalContainer,
@@ -156,6 +158,7 @@ export function MobileSheet({
                   detent={detent}
                   restoreDetent={lastNonCollapsedDetent}
                   label={label}
+                  summary={summary}
                   controlsId={controlsId}
                   onButtonRef={onButtonRef}
                   onDetentChange={onDetentChange}

@@ -1,9 +1,10 @@
 import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
 import { validateTransitMapData } from '@navus/shared/transit/map-data'
-import { validateVenueLocationMap, getVenueCount } from '@navus/shared/venue/validation'
+import { validateBuildingCatalogue, validateVenueLocationMap, getVenueCount } from '@navus/shared/venue/validation'
 import { validateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { ShuttleTimingData } from '@navus/shared/transit/timing'
+import type { BuildingCatalogue } from '@navus/shared/venue/buildings'
 import type { TransitNetwork } from '@navus/shared/transit/types'
 import { fetchJson } from './json'
 
@@ -24,6 +25,15 @@ export async function loadVenueData(
     venues,
     venueCount: getVenueCount(venues),
   }
+}
+
+export async function loadBuildingCatalogue(
+  signal: AbortSignal,
+  fetcher: JsonFetcher = fetchJson,
+): Promise<BuildingCatalogue> {
+  return validateBuildingCatalogue(
+    await fetcher('data/buildings.json', signal, 'Building catalogue'),
+  )
 }
 
 export async function loadTransitMapData(

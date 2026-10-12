@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "source": {
+    "name": "Buildings: NUS Digital Twin (City Syntax Lab)",
+    "url": "https://www.nus-digital-twin.com/api/v1/buildings",
+    "fetchedOn": "2026-10-13",
+    "licenceNote": "Empty placeholder until the one-off import runs (npm run buildings:import). Data will be sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers."
+  },
+  "buildings": []
+}

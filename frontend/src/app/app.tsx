@@ -23,6 +23,7 @@ import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
+import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
 const JourneyTestTimeControl = import.meta.env.DEV
@@ -120,7 +121,7 @@ function App() {
   const dispatchNavigationRef = useRef(appNavigation.dispatch)
   const exploreViewModeRef = useRef(state.exploreView.mode)
   const displayedCandidatesRef = useRef(state.journey.displayedCandidates)
-  const { mapInsets, navigationColumnWidth } = useMapOverlayLayout({
+  const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
     navigation,
@@ -433,56 +434,58 @@ function App() {
           </aside>
         </div>
       </div>
-      <AppViews
-        isMobileViewport={isMobileViewport}
-        sheetPortalContainer={sheetPortalContainer}
-        navigation={navigation}
-        onSelectView={selectView}
-        shells={{
-          navigationColumnRef,
-          mainNavigationRef,
-          plan: {
-            ref: tripControlsRef,
-            onDetentChange: (detent) => {
-              if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
-                focusTripControlAfterOverlayRef.current = true
-              }
-              appNavigation.dispatch({
+      <MobileSheetMetricsContext.Provider value={mobileSheetMetrics}>
+        <AppViews
+          isMobileViewport={isMobileViewport}
+          sheetPortalContainer={sheetPortalContainer}
+          navigation={navigation}
+          onSelectView={selectView}
+          shells={{
+            navigationColumnRef,
+            mainNavigationRef,
+            plan: {
+              ref: tripControlsRef,
+              onDetentChange: (detent) => {
+                if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
+                  focusTripControlAfterOverlayRef.current = true
+                }
+                appNavigation.dispatch({
+                  type: 'set-sheet-detent',
+                  view: 'plan',
+                  detent,
+                  source: 'manual',
+                })
+              },
+            },
+            explore: {
+              ref: exploreViewRef,
+              onDetentChange: (detent) => appNavigation.dispatch({
                 type: 'set-sheet-detent',
-                view: 'plan',
+                view: 'explore',
                 detent,
                 source: 'manual',
-              })
+              }),
             },
-          },
-          explore: {
-            ref: exploreViewRef,
-            onDetentChange: (detent) => appNavigation.dispatch({
-              type: 'set-sheet-detent',
-              view: 'explore',
-              detent,
-              source: 'manual',
-            }),
-          },
-          stops: {
-            ref: stopsSheetRef,
-            onDetentChange: (detent) => appNavigation.dispatch({
-              type: 'set-sheet-detent',
-              view: 'stops',
-              detent,
-              source: 'manual',
-            }),
-          },
-        }}
-        views={{
-          plan: planViewProps,
-          explore: exploreViewProps,
-          exploreRoutes: {
-            onRouteSelect: commands.selectMobileRoute,
-          },
-          stops: stopsViewProps,
-        }}
-      />
+            stops: {
+              ref: stopsSheetRef,
+              onDetentChange: (detent) => appNavigation.dispatch({
+                type: 'set-sheet-detent',
+                view: 'stops',
+                detent,
+                source: 'manual',
+              }),
+            },
+          }}
+          views={{
+            plan: planViewProps,
+            explore: exploreViewProps,
+            exploreRoutes: {
+              onRouteSelect: commands.selectMobileRoute,
+            },
+            stops: stopsViewProps,
+          }}
+        />
+      </MobileSheetMetricsContext.Provider>
     </main>
   )
 }

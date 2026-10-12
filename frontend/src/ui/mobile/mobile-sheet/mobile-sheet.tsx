@@ -1,7 +1,7 @@
 import { Drawer } from '@base-ui/react/drawer'
-import { useCallback, useLayoutEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react'
+import { useContext, useMemo, type ComponentPropsWithoutRef, type ReactNode } from 'react'
 import { MobileSheetHandle } from './mobile-sheet-handle'
-import { getMobileTabBarInset } from './mobile-sheet-layout'
+import { MobileSheetMetricsContext } from './mobile-sheet-metrics'
 import type { MobileSheetDetent } from './mobile-sheet-detent'
 import {
   createMobileSheetSnapPoints,
@@ -41,70 +41,10 @@ export function MobileSheet({
   panelProps,
   children,
 }: MobileSheetProps) {
-  const [snapPoints, setSnapPoints] = useState<MobileSheetSnapPoints>(INITIAL_SNAP_POINTS)
-  const updateSnapPoints = useCallback((): void => {
-    const mapShell = portalContainer
-    if (!mapShell) return
-
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight
-    const tabBar = mapShell.querySelector<HTMLElement>('.main-navigation')
-    const tabBarBounds = tabBar?.getBoundingClientRect()
-    const shellBottom = mapShell.getBoundingClientRect().bottom
-    const cssTabBarInset = Number.parseFloat(getComputedStyle(mapShell, '::after').height)
-    const tabBarInset = getMobileTabBarInset(
-      shellBottom,
-      tabBarBounds ? { top: tabBarBounds.top, height: tabBarBounds.height } : null,
-      Number.isFinite(cssTabBarInset) ? cssTabBarInset : 0,
-    )
-    const shellStyles = getComputedStyle(mapShell)
-    const collapsedHeightValue = Number.parseFloat(
-      shellStyles.getPropertyValue('--mobile-sheet-collapsed-height'),
-    )
-    const handleRowHeight = Number.parseFloat(
-      shellStyles.getPropertyValue('--mobile-sheet-handle-row-height'),
-    )
-    const handleExtension = Number.parseFloat(
-      shellStyles.getPropertyValue('--mobile-sheet-handle-target-extension'),
-    )
-    const collapsedHeight = Number.isFinite(collapsedHeightValue)
-      ? collapsedHeightValue
-      : (Number.isFinite(handleRowHeight) ? handleRowHeight : 0) +
-        (Number.isFinite(handleExtension) ? handleExtension : 0)
-    const nextSnapPoints = createMobileSheetSnapPoints(
-      viewportHeight,
-      tabBarInset,
-      collapsedHeight,
-    )
-
-    setSnapPoints((current) => current.every((point, index) => point === nextSnapPoints[index])
-      ? current
-      : nextSnapPoints)
-  }, [portalContainer])
-
-  useLayoutEffect(() => {
-    const mapShell = portalContainer
-    if (!mapShell) return
-
-    // Sync measured points before paint so the opening frame never uses fallback heights.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Required to prevent a first-frame detent jump.
-    updateSnapPoints()
-    window.addEventListener('resize', updateSnapPoints)
-    window.visualViewport?.addEventListener('resize', updateSnapPoints)
-    window.visualViewport?.addEventListener('scroll', updateSnapPoints)
-    const resizeObserver = typeof ResizeObserver === 'undefined'
-      ? null
-      : new ResizeObserver(updateSnapPoints)
-    const tabBar = mapShell.querySelector<HTMLElement>('.main-navigation')
-    resizeObserver?.observe(mapShell)
-    if (tabBar) resizeObserver?.observe(tabBar)
-
-    return () => {
-      window.removeEventListener('resize', updateSnapPoints)
-      window.visualViewport?.removeEventListener('resize', updateSnapPoints)
-      window.visualViewport?.removeEventListener('scroll', updateSnapPoints)
-      resizeObserver?.disconnect()
-    }
-  }, [portalContainer, updateSnapPoints])
+  const metrics = useContext(MobileSheetMetricsContext)
+  const snapPoints = useMemo<MobileSheetSnapPoints>(() => metrics
+    ? createMobileSheetSnapPoints(metrics.viewportHeight, metrics.tabBarInset, metrics.collapsedHeight)
+    : INITIAL_SNAP_POINTS, [metrics])
 
   return (
     <Drawer.Root

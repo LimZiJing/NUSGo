@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -21,7 +23,11 @@ import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
 import { ThemeToggle } from '../ui/theme-toggle'
-import { JourneyTestTimeControl } from '../ui/journey-test-time-control'
+// Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
+// dynamic import, the control module and its CSS.
+const JourneyTestTimeControl = import.meta.env.DEV
+  ? lazy(() => import('../ui/journey-test-time-control').then((module) => ({ default: module.JourneyTestTimeControl })))
+  : null
 import { FitRoutesControl } from '../ui/fit-routes-control'
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
@@ -371,20 +377,22 @@ function App() {
             state.journey.displayedCandidates.length > 0 && (
             <FitRoutesControl onFit={commands.fitJourneyRoutes} />
           )}
-          {import.meta.env.DEV && (
-            <JourneyTestTimeControl
-              simulatedAtMs={simulatedAtMs}
-              onApply={(instantMs) => {
-                testClock.set(instantMs)
-                setSimulatedAtMs(instantMs)
-                session?.replanJourney()
-              }}
-              onReset={() => {
-                testClock.set(null)
-                setSimulatedAtMs(null)
-                session?.replanJourney()
-              }}
-            />
+          {JourneyTestTimeControl && (
+            <Suspense fallback={null}>
+              <JourneyTestTimeControl
+                simulatedAtMs={simulatedAtMs}
+                onApply={(instantMs) => {
+                  testClock.set(instantMs)
+                  setSimulatedAtMs(instantMs)
+                  session?.replanJourney()
+                }}
+                onReset={() => {
+                  testClock.set(null)
+                  setSimulatedAtMs(null)
+                  session?.replanJourney()
+                }}
+              />
+            </Suspense>
           )}
           <LocationControl
             visible={!isMobileViewport || !(

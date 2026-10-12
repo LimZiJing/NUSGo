@@ -1,13 +1,18 @@
 import type { TransitIndex } from '../transit'
-import type { TransitStop } from '../transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type {
   TripEndpoint,
   TripLocationSearchResult,
 } from '../trip/types'
-import type { VenueLocationMap } from '../venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { getTripEndpointKey } from '../trip/endpoints'
 
 const MAX_RESULTS = 8
+
+// Venue data holds rooms only (no building records), so shuttle stops, which
+// are named after the main buildings they serve, rank ahead of rooms.
+const STOP_ORDER = 0
+const ROOM_ORDER = 1
 
 interface SearchCandidate {
   result: TripLocationSearchResult
@@ -96,7 +101,7 @@ export function searchTripLocations(
         detail: venue.roomName,
       },
       fields: [code, venue.roomName],
-      kindOrder: 0,
+      kindOrder: ROOM_ORDER,
     })
   }
 
@@ -105,10 +110,11 @@ export function searchTripLocations(
       result: {
         endpoint: { kind: 'stop', id: stop.id },
         label: stop.longName,
-        detail: `${stop.shortName} (${stop.id})`,
+        // A short name that repeats the stop ID would print the code twice.
+        detail: normalize(stop.shortName) === normalize(stop.id) ? '' : `${stop.shortName} (${stop.id})`,
       },
       fields: [stop.id, stop.longName, stop.shortName],
-      kindOrder: 1,
+      kindOrder: STOP_ORDER,
     })
   }
 
@@ -119,11 +125,11 @@ export function searchTripLocations(
     }))
     .filter((candidate): candidate is SearchCandidate & { priority: number } => candidate.priority !== null)
     .sort((first, second) => {
-      const priorityDifference = first.priority - second.priority
-      if (priorityDifference !== 0) return priorityDifference
-
       const kindDifference = first.kindOrder - second.kindOrder
       if (kindDifference !== 0) return kindDifference
+
+      const priorityDifference = first.priority - second.priority
+      if (priorityDifference !== 0) return priorityDifference
 
       return compareText(
         normalize(getTripEndpointKey(first.result.endpoint)),

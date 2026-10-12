@@ -14,9 +14,11 @@ import {
   MapPin,
   LocateFixed,
   Navigation,
+  Moon,
   Route,
   Search,
   Star,
+  Sun,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -85,6 +87,14 @@ export function NavigationIcon(props: IconProps) {
 
 export function RouteIcon(props: IconProps) {
   return renderDecorativeIcon(Route, props)
+}
+
+export function MoonIcon(props: IconProps) {
+  return renderDecorativeIcon(Moon, props)
+}
+
+export function SunIcon(props: IconProps) {
+  return renderDecorativeIcon(Sun, props)
 }
 
 export function SearchIcon(props: IconProps) {

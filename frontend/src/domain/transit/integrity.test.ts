@@ -1,10 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import {
-  validateTransitNetwork,
-  validateTransitRouteGeometry,
-  validateTransitVerificationManifest,
-} from './index'
+import { validateTransitNetwork, validateTransitVerificationManifest } from '@navus/shared/transit/model'
+import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))

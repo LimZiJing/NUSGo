@@ -5,7 +5,7 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
 import {
   createBusStopPopupContent,
@@ -28,7 +28,7 @@ export interface JourneyStopRoute {
 const BUS_STOP_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
   'text-anchor': 'top',
   'text-field': ['get', 'shortName'],
-  'text-font': ['Open Sans Regular'],
+  'text-font': ['Noto Sans Regular'],
   'text-offset': [0, 0.9],
   'text-padding': 2,
   'text-size': [

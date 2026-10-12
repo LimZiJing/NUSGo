@@ -42,6 +42,20 @@ describe('LocationControl', () => {
     expect(button.querySelector('.location-control-spinner')).toBeTruthy()
   })
 
+  it('does not start another request while searching and keeps one loading indicator', async () => {
+    const user = userEvent.setup()
+    const onLocate = vi.fn()
+    render(<LocationControl topOffset={76} searching onLocate={onLocate} />)
+
+    const button = screen.getByRole('button', { name: 'Finding your location' })
+    await user.click(button)
+
+    expect(onLocate).not.toHaveBeenCalled()
+    expect(button.getAttribute('aria-busy')).toBe('true')
+    expect(button.querySelector('.location-control-icon')).toBeTruthy()
+    expect(button.querySelectorAll('.location-control-spinner')).toHaveLength(1)
+  })
+
   it('is absent while the mobile Plan sheet is expanded', () => {
     render(<LocationControl visible={false} topOffset={76} searching={false} onLocate={vi.fn()} />)
 

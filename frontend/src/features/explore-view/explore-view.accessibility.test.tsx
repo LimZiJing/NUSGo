@@ -14,9 +14,9 @@ import {
 } from './state'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { TransitNetwork } from '../../domain/transit/types'
+import type { TransitNetwork } from '@navus/shared/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { PanelStatus } from './status'
 
 const venues: VenueLocationMap = {

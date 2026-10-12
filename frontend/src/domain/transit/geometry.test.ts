@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { TransitNetwork, TransitRouteGeometry } from './types'
-import { validateTransitRouteGeometry } from './geometry'
-import { validateTransitNetwork } from './model'
+import type { TransitNetwork, TransitRouteGeometry } from '@navus/shared/transit/types'
+import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateTransitNetwork } from '@navus/shared/transit/model'
 import { createValidTransitNetwork } from './test-fixtures'
 
 function createValidGeometry(): TransitRouteGeometry {

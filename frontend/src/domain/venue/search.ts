@@ -1,4 +1,4 @@
-import type { VenueLocation, VenueLocationMap } from './types'
+import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 
 export interface VenueSearchResult {
   readonly code: string

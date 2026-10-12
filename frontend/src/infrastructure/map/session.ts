@@ -11,7 +11,7 @@ import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/t
 import type { Journey } from '../../domain/trip/journey'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
-import type { VenueLocation } from '../../domain/venue/types'
+import type { VenueLocation } from '@navus/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
@@ -25,7 +25,7 @@ import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 const EMPTY_VIEWPORT_INSETS: MapViewportInsets = {

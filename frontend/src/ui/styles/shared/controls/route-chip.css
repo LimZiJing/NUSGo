@@ -137,10 +137,6 @@ button.route-chip:active {
   box-shadow: var(--shadow-chip);
 }
 
-.route-chip[data-active='true']:is([data-route-id='A1'], [data-route-id='R1']) {
-  color: #fff;
-}
-
 /* Map popup chips share the control contract but do not behave like buttons. */
 .map .route-chip {
   cursor: default;

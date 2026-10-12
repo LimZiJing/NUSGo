@@ -174,7 +174,7 @@ describe('JourneyResult', () => {
     expect(markup).not.toContain('Alight')
     expect(markup).not.toContain('Stops:')
     expect(markup).not.toContain('journey-option-endpoint-arrow')
-    expect(markup).toContain('Live shuttle arrivals may be used when available')
+    expect(markup).toContain('Uses live arrivals where available.')
     expect(markup).not.toContain('not guaranteed arrival times')
   })
 
@@ -540,7 +540,7 @@ describe('JourneyResult', () => {
 
   it.each([
     [0, 'Arriving now'],
-    [29, 'Arriving soon'],
+    [29, 'Arriving now'],
     [60, '1 min'],
     [119, '2 min'],
   ])('uses threshold wording for a %s-second wait', (waitingSeconds, expected) => {

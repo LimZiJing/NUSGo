@@ -1,10 +1,10 @@
 import type { TransitIndex } from '../../domain/transit'
-import type { ShuttleTimingData } from '../../domain/transit/timing'
+import type { ShuttleTimingData } from '@navus/shared/transit/timing'
 import type {
   TransitNetwork,
   TransitRouteGeometry,
-} from '../../domain/transit/types'
-import type { VenueLocationMap } from '../../domain/venue/types'
+} from '@navus/shared/transit/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export interface LoadedVenueData {
   readonly venues: VenueLocationMap

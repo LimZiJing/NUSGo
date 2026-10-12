@@ -11,7 +11,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocationMap } from '../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createInitialResourceStatus,
   deriveResourceStatus,

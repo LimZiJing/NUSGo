@@ -1,10 +1,10 @@
 import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
-import { validateTransitMapData } from '../../domain/transit/map-data'
-import { validateVenueLocationMap, getVenueCount } from '../../domain/venue/validation'
-import { validateShuttleTimingData } from '../../domain/transit/timing'
-import type { ShuttleTimingData } from '../../domain/transit/timing'
-import type { TransitNetwork } from '../../domain/transit/types'
+import { validateTransitMapData } from '@navus/shared/transit/map-data'
+import { validateVenueLocationMap, getVenueCount } from '@navus/shared/venue/validation'
+import { validateShuttleTimingData } from '@navus/shared/transit/timing'
+import type { ShuttleTimingData } from '@navus/shared/transit/timing'
+import type { TransitNetwork } from '@navus/shared/transit/types'
 import { fetchJson } from './json'
 
 export type JsonFetcher = (

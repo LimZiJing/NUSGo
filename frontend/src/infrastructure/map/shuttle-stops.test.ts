@@ -12,7 +12,7 @@ import {
   createShuttleStopMarkers,
 } from './shuttle-stops'
 import { getTripEndpointMarkerClass } from './endpoint-markers'
-import type { TransitStop } from '../../domain/transit/types'
+import type { TransitStop } from '@navus/shared/transit/types'
 import { createBusStopPopupContent, createPopupCoordinator } from './popup'
 
 vi.mock('maplibre-gl', () => {
@@ -320,7 +320,7 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
     )
     expect(services?.children[0].children[0].style.setProperty).toHaveBeenCalledWith(
       '--route-text-color',
-      '#fff',
+      '#ffffff',
     )
     expect(buttons).toHaveLength(1)
     expect(buttons[0].className).toContain('bus-stop-popup-navigation-action')

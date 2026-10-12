@@ -42,6 +42,9 @@ jobs:
         run: npm test
 
       - name: Build
+        env:
+          VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN }}
+          VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build
 
       - name: Set up GitHub Pages

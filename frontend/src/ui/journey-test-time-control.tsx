@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { formatSingaporeDateTime, parseSingaporeDateTime } from '../domain/trip/journey-test-clock'
+import './styles/shared/controls/journey-test-time.css'
 
 interface JourneyTestTimeControlProps {
   readonly simulatedAtMs: number | null
@@ -46,6 +47,7 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
           <input
             id="journey-test-time-input"
             type="datetime-local"
+            lang="en-GB"
             value={value}
             onChange={(event) => {
               setValue(event.target.value)

@@ -1,7 +1,7 @@
 import type {
   TransitGeoJsonPosition,
   TransitRouteGeometry,
-} from './types'
+} from '@navus/shared/transit/types'
 
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320

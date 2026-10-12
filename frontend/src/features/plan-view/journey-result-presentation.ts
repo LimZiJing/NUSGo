@@ -3,7 +3,7 @@ import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/j
 import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export type JourneyTimelineEntry =
   | {
@@ -78,7 +78,7 @@ function getJourneyRoutePresentation(
 export function formatWaitDuration(seconds: number): string {
   const nonNegativeSeconds = Math.max(0, seconds)
   if (nonNegativeSeconds === 0) return 'Arriving now'
-  if (nonNegativeSeconds < 60) return 'Arriving soon'
+  if (nonNegativeSeconds < 60) return 'Arriving now'
   return formatDuration(nonNegativeSeconds)
 }
 

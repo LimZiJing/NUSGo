@@ -2,5 +2,21 @@
   "name": "@navus/backend",
   "private": true,
   "version": "0.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@navus/shared": "0.0.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.13.3",
+    "typescript": "~6.0.2"
+  },
+  "scripts": {
+    "predev": "npm --prefix .. run shuttle:timing:generate:geometry",
+    "dev": "node --env-file-if-exists=.env --experimental-strip-types --watch src/server.ts",
+    "start": "node --env-file-if-exists=.env --experimental-strip-types src/server.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --experimental-strip-types --test src/config.test.ts src/data.test.ts src/server.test.ts"
+  }
 }

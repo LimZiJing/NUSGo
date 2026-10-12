@@ -1,4 +1,4 @@
-import type { VenueLocation, VenueLocationMap } from './types'
+import type { VenueLocation, VenueLocationMap } from './types.ts'
 
 export class VenueValidationError extends Error {
   readonly issues: readonly string[]

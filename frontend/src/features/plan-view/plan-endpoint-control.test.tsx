@@ -4,10 +4,10 @@ import { PlanView } from './plan-view'
 import { PlanEndpointControl } from './plan-endpoint-control'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { TransitStopInput } from '../../domain/transit/types'
+import type { TransitStopInput } from '@navus/shared/transit/types'
 import type { Journey } from '../../domain/trip/journey'
 import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
-import type { VenueLocationMap } from '../../domain/venue/types'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -103,6 +103,29 @@ describe('PlanEndpointControl', () => {
     expect(venueMarkup).toContain('COM1-0210')
     expect(stopMarkup).toContain('STOP-A')
     expect(venueMarkup).toContain('Origin search results')
+  })
+
+  it('does not repeat a stop code in search results when the short name matches the ID', () => {
+    const codeNetwork = createValidTransitNetwork()
+    codeNetwork.stops = [{ ...stops[0], shortName: 'stop-a' }, codeNetwork.stops[1]]
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={null}
+        networkIndex={createTransitIndex(codeNetwork)}
+        searchQuery="Central Library"
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('<strong>STOP-A</strong>')
+    expect(markup).toContain('<span>Central Library</span>')
+    expect(markup).not.toContain('stop-a (STOP-A)')
+    expect(markup).not.toContain('>stop-a<')
+    expect(markup.match(/>STOP-A</g)).toHaveLength(1)
   })
 
   it('announces that location data is still loading when search data is unavailable', () => {

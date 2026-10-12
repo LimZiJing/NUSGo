@@ -11,12 +11,12 @@ import type {
 } from '../../src/domain/trip/planner.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
-import { validateTransitMapData } from '../../src/domain/transit/map-data.js'
+import { validateTransitMapData } from '@navus/shared/transit/map-data'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours.js'
-import { generateShuttleTimingData } from '../../src/domain/transit/timing.js'
-import type { VenueLocationMap } from '../../src/domain/venue/types.js'
-import { validateVenueLocationMap } from '../../src/domain/venue/validation.js'
-import { validateWalkingStopGraph } from '../../src/infrastructure/routing/walking-stop-graph.js'
+import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { validateVenueLocationMap } from '@navus/shared/venue/validation'
+import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type {
   JourneyBenchmarkManifest,
   JourneyBenchmarkManifestCase,

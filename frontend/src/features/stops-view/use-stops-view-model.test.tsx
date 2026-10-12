@@ -4,7 +4,6 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { LocationTrackingState } from '../../domain/location/types'
 import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
 import type { StopsServiceWindowsLoader } from './use-stops-service-windows'
@@ -83,30 +82,77 @@ describe('useStopsViewModel', () => {
     expect(enableLocationTracking).not.toHaveBeenCalled()
   })
 
-  it('expands only Nearby stops within range after the requested location succeeds', async () => {
-    const requestLocation = vi.fn()
-    const initialLocation: LocationTrackingState = { status: 'disabled', latestFix: null }
-    const options = createOptions({ requestLocation, location: initialLocation })
+  it('uses the settled map centre after the location button moves the camera', async () => {
+    const locateFromControl = vi.fn()
+    const options = createOptions({
+      location: {
+        status: 'tracking',
+        latestFix: { longitude: 103.1, latitude: 1.1, accuracy: 10, timestamp: Date.now() },
+      },
+      locateFromControl,
+    })
     const { result, rerender } = renderHook(
       (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
       { initialProps: options },
     )
 
-    await waitFor(() => expect(requestLocation).toHaveBeenCalledOnce())
-    rerender({
-      ...options,
-      location: {
-        status: 'tracking',
-        latestFix: {
-          longitude: 103,
-          latitude: 1,
-          accuracy: 10,
-          timestamp: Date.now(),
-        },
-      },
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
+    act(() => result.current.locateFromControl())
+    expect(locateFromControl).toHaveBeenCalledOnce()
+
+    rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
+    expect(result.current.overviewStops.find(({ stop }) => stop.id === 'STOP-B')?.distanceMeters).toBe(0)
+  })
+
+  it('expands Nearby stops around the map centre without waiting for a device fix', async () => {
+    const options = createOptions({
+      location: { status: 'disabled', latestFix: null },
     })
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      { initialProps: options },
+    )
 
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
     expect(result.current.state.expandedStopIds.favourites).toEqual([])
+    expect(result.current.overviewStops.find(({ stop }) => stop.id === 'STOP-A')?.distanceMeters).toBeNull()
+    rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
+  })
+
+  it('keeps manual Nearby expansion changes until the map centre changes', async () => {
+    const options = createOptions()
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      { initialProps: options },
+    )
+
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
+    act(() => result.current.toggleExpanded('STOP-A'))
+    rerender({ ...options, mapCenter: { longitude: 103, latitude: 1 } })
+    expect(result.current.state.expandedStopIds.nearby).toEqual([])
+
+    rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
+  })
+
+  it('keeps Favourites expansion unchanged and applies a pending map move on return to Nearby', async () => {
+    localStorage.setItem('navus:favorite-stops:v1', '["STOP-B"]')
+    const options = createOptions()
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      { initialProps: options },
+    )
+
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
+    act(() => result.current.selectList('favourites'))
+    act(() => result.current.toggleExpanded('STOP-B'))
+    rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
+    expect(result.current.state.expandedStopIds.favourites).toEqual(['STOP-B'])
+
+    act(() => result.current.selectList('nearby'))
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
+    expect(result.current.state.expandedStopIds.favourites).toEqual(['STOP-B'])
   })
 })

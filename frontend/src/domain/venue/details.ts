@@ -1,4 +1,4 @@
-import type { VenueLocation } from './types'
+import type { VenueLocation } from '@navus/shared/venue/types'
 
 // Names are confirmed by NUS FASS, BBA, Computing, Libraries, the campus map, or OSA.
 // Keep unverified prefixes omitted until a published NUS source confirms the alias.

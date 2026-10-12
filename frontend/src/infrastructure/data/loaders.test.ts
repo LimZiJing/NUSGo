@@ -6,13 +6,10 @@ import {
   loadVenueData,
   type JsonFetcher,
 } from './loaders'
-import {
-  generateShuttleTimingData,
-  TransitValidationError,
-  validateTransitNetwork,
-} from '../../domain/transit'
-import { validateTransitRouteGeometry } from '../../domain/transit/geometry'
-import { VenueValidationError } from '../../domain/venue/validation'
+import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { TransitValidationError, validateTransitNetwork } from '@navus/shared/transit/model'
+import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { VenueValidationError } from '@navus/shared/venue/validation'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))

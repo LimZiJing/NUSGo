@@ -16,9 +16,11 @@ import {
   FootprintsIcon,
   LocateIcon,
   MapPinIcon,
+  MoonIcon,
   NavigationIcon,
   RouteIcon,
   SearchIcon,
+  SunIcon,
 } from './index'
 
 const icons = [
@@ -36,9 +38,11 @@ const icons = [
   FootprintsIcon,
   LocateIcon,
   MapPinIcon,
+  MoonIcon,
   NavigationIcon,
   RouteIcon,
   SearchIcon,
+  SunIcon,
 ]
 
 describe('centralized UI icons', () => {

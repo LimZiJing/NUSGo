@@ -224,7 +224,7 @@ export function JourneyResult({
           : null
         // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
         const liveArrivalNotice = !simulated && hasShuttleLeg
-          ? 'Live shuttle arrivals may be used when available.'
+          ? 'Uses live arrivals where available.'
           : null
         const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
         const titleId = `journey-option-summary-${index + 1}`

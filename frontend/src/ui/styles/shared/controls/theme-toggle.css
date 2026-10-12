@@ -12,6 +12,15 @@
   box-shadow: var(--shadow-sm);
   font: 600 13px/1 var(--sans);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-toggle-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
 }
 
 @media (max-width: 768px) {

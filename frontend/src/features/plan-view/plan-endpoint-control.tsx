@@ -148,7 +148,7 @@ export function PlanEndpointControl({
           <SearchField
             id={inputId}
             value={inputValue}
-            placeholder={role === 'origin' ? 'Choose starting point' : 'Choose destination'}
+            placeholder={role === 'origin' ? 'Choose origin' : 'Choose destination'}
             onFocus={() => {
               onCancelOriginLocationRequest?.()
               if (endpoint && !editing) {
@@ -250,7 +250,7 @@ export function PlanEndpointControl({
                       <strong>{getResultLabel(result)}</strong>
                     </span>
                   )}
-                  <span>{result.label}</span>
+                  {result.label !== getResultLabel(result) && <span>{result.label}</span>}
                   <span>{result.detail}</span>
                 </button>
               ))

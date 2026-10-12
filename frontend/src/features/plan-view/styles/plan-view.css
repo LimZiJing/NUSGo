@@ -277,6 +277,12 @@
   outline-offset: 1px;
 }
 
+.plan-endpoint-control .search-field input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 .plan-endpoint-control .search-field input::placeholder {
   color: var(--text-muted);
 }

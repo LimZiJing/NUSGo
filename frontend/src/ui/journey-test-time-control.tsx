@@ -47,6 +47,7 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
           <input
             id="journey-test-time-input"
             type="datetime-local"
+            lang="en-GB"
             value={value}
             onChange={(event) => {
               setValue(event.target.value)

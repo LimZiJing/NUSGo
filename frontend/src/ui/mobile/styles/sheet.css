@@ -66,8 +66,10 @@
     cursor: grabbing;
   }
 
+  /* Keep the ring inside the handle so the sheet's overflow clipping cannot hide it. */
   .mobile-sheet-handle:focus-visible {
-    outline: none;
+    outline: 3px solid var(--focus-ring);
+    outline-offset: -3px;
   }
 
   .mobile-sheet-grabber {

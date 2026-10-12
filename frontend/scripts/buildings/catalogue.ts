@@ -83,6 +83,8 @@ export type BuildCatalogueInput = {
   readonly venues: VenueLocationMap
   readonly aliases: readonly BuildingAlias[]
   readonly overrides: BuildingOverrides
+  /** Prefixes deliberately left unlinked, with the reason (from the overrides file). */
+  readonly intentionallyUnlinked?: Readonly<Record<string, string>>
   readonly source: BuildingCatalogueSource
 }
 
@@ -425,8 +427,21 @@ export function buildCatalogue(input: BuildCatalogueInput): BuildCatalogueResult
   const distanceWarnings: DistanceWarning[] = []
   let roomsLinked = 0
 
+  const unlinkedReasons = new Map(
+    Object.entries(input.intentionallyUnlinked ?? {}).map(([prefix, reason]) => [compactName(prefix), reason]),
+  )
+
   const prefixRooms = groupRoomsByPrefix(input.venues)
   for (const rooms of prefixRooms) {
+    const reason = unlinkedReasons.get(compactName(rooms.prefix))
+    if (reason !== undefined) {
+      unlinkedPrefixes.push({
+        prefix: rooms.prefix,
+        roomCount: rooms.codes.length,
+        note: `Left unlinked on purpose: ${reason}`,
+      })
+      continue
+    }
     const result = linkPrefix(rooms, drafts, aliases, input.venues)
     if (result.kind === 'linked') {
       const { draft, rule } = result

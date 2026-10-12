@@ -4,7 +4,7 @@ import type { BuildingCatalogue, BuildingCatalogueSource } from '../../../shared
 import { validateBuildingCatalogue, validateVenueLocationMap } from '../../../shared/src/venue/validation.ts'
 import { BUILDING_ALIASES, validateAliases } from './aliases.ts'
 import { buildCatalogue } from './catalogue.ts'
-import { parseOverrides } from './overrides.ts'
+import { parseOverrides, parseUnlinkedPrefixes } from './overrides.ts'
 import { renderReport } from './report.ts'
 import { BUILDINGS_API_URL, fetchBuildingsSnapshot, parseBuildingsResponse, SNAPSHOT_DIRECTORY } from './snapshot.ts'
 
@@ -76,10 +76,12 @@ async function importFromSnapshot(paths: CommandPaths): Promise<string> {
   }
 
   const venues = validateVenueLocationMap(await readJson(paths.venues))
+  const overridesFile = await readJson(paths.overrides)
   const overrides = parseOverrides(
-    await readJson(paths.overrides),
+    overridesFile,
     new Set(apiBuildings.map((building) => building.elementId)),
   )
+  const intentionallyUnlinked = parseUnlinkedPrefixes(overridesFile)
   const aliases = validateAliases(BUILDING_ALIASES)
   const source: BuildingCatalogueSource = {
     name: SOURCE_NAME,
@@ -88,7 +90,7 @@ async function importFromSnapshot(paths: CommandPaths): Promise<string> {
     licenceNote: LICENCE_NOTE,
   }
 
-  const result = buildCatalogue({ apiBuildings, venues, aliases, overrides, source })
+  const result = buildCatalogue({ apiBuildings, venues, aliases, overrides, intentionallyUnlinked, source })
   validateBuildingCatalogue(result.catalogue)
   const json = serialiseCatalogue(result.catalogue)
   const report = renderReport(result, { snapshotFile: basename(latestFile), aliases })

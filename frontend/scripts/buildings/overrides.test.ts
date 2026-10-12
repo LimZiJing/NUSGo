@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseOverrides } from './overrides'
+import { parseOverrides, parseUnlinkedPrefixes } from './overrides'
 
 const KNOWN = new Set(['54619721', '140087398'])
 
@@ -46,6 +46,18 @@ describe('parseOverrides', () => {
       version: 1,
       overrides: { 54619721: { entrance, location: { x: 103.7739, y: 1.295 } } },
     }, KNOWN)).toThrow('54619721 cannot set both entrance and location')
+  })
+
+  it('reads prefixes that are deliberately left unlinked, with a reason each', () => {
+    const file = { version: 1, overrides: {}, unlinkedPrefixes: { Y: 'Retired Yale-NUS code spread across several buildings.' } }
+
+    expect(parseOverrides(file, KNOWN)).toEqual({})
+    expect(parseUnlinkedPrefixes(file)).toEqual({ Y: 'Retired Yale-NUS code spread across several buildings.' })
+    expect(parseUnlinkedPrefixes({ version: 1, overrides: {} })).toEqual({})
+    expect(() => parseUnlinkedPrefixes({ version: 1, overrides: {}, unlinkedPrefixes: { Y: '', Z: 3 } }))
+      .toThrow(/unlinkedPrefixes Y.*unlinkedPrefixes Z/)
+    expect(() => parseUnlinkedPrefixes({ version: 1, overrides: {}, unlinkedPrefixes: [] }))
+      .toThrow('unlinkedPrefixes must be an object')
   })
 
   it('fails on unknown elementIds, unknown fields and malformed values', () => {

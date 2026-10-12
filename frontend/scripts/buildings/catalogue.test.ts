@@ -302,6 +302,19 @@ describe('buildCatalogue rule chain', () => {
     })
   })
 
+  it('reports a deliberately unlinked prefix with its reason and no nearest-building hint', () => {
+    const result = build({
+      apiBuildings: [api('1', 'Elm College', 1.30654, 103.77214)],
+      venues: { 'Y-CR11': room('Elm College - Classroom 11', 1.30644, 103.7723) },
+      intentionallyUnlinked: { y: 'Retired Yale-NUS code spread across several buildings.' },
+    })
+
+    expect(result.findings.unlinkedPrefixes).toEqual([
+      { prefix: 'Y', roomCount: 1, note: 'Left unlinked on purpose: Retired Yale-NUS code spread across several buildings.' },
+    ])
+    expect(result.findings.counts.roomsUnlinked).toBe(1)
+  })
+
   it('produces identical output for the same input', () => {
     const input = {
       apiBuildings: [api('2', 'COM2', 1.29397, 103.77413), api('1', 'COM1', 1.29502, 103.77391)],

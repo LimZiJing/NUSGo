@@ -30,6 +30,7 @@ The import exits without writing anything if the response is invalid or empty, o
 ## Corrections
 
 - `scripts/data/building-overrides.json` is hand-edited and committed. Entries are keyed by API `elementId` and win over the API data and our own data. It is merged at import time and is not shipped to the browser. Its allowed fields are described in the file; `entrance` records a provisional OpenStreetMap entrance and is how the 29 accepted entrances are stored.
+- A room code prefix that should stay unlinked on purpose (for example `Y`, a retired Yale-NUS code spread across several buildings) goes in the overrides file's `unlinkedPrefixes`, with a reason. The report then shows the decision instead of a nearest-building hint.
 - The curated abbreviation table is `frontend/scripts/buildings/aliases.ts`. Add an entry only where the dedupe report and the data support it.
 - Proximity never links a room to a building; it only produces a warning.
 

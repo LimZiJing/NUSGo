@@ -5011,7 +5011,9 @@
         "y": 1.29137
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "SH"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -5032,7 +5034,9 @@
         "y": 1.2914
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "SH"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",

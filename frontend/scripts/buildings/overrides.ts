@@ -22,7 +22,7 @@ export type BuildingOverride = {
 /** Hand-edited decisions keyed by API elementId. */
 export type BuildingOverrides = Readonly<Record<string, BuildingOverride>>
 
-const FILE_FIELDS = new Set(['version', '$comment', 'overrides'])
+const FILE_FIELDS = new Set(['version', '$comment', 'overrides', 'unlinkedPrefixes'])
 const OVERRIDE_FIELDS = new Set(['name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', '$comment'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -85,6 +85,24 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
     ...(entrance === undefined ? {} : { entrance: { ...entrance as { x: number, y: number, osmNode: string } } }),
     ...(groupKey === undefined ? {} : { groupKey: groupKey as string }),
   }
+}
+
+/**
+ * Room-code prefixes the maintainer decided not to link to any building, each with a reason
+ * (for example a code that spans several buildings). Keyed by prefix.
+ */
+export function parseUnlinkedPrefixes(input: unknown): Readonly<Record<string, string>> {
+  if (!isRecord(input)) throw new Error('Building overrides file must be an object')
+  if (input.unlinkedPrefixes === undefined) return {}
+  if (!isRecord(input.unlinkedPrefixes)) throw new Error('Building overrides unlinkedPrefixes must be an object')
+  const issues: string[] = []
+  const prefixes: Record<string, string> = {}
+  for (const [prefix, reason] of Object.entries(input.unlinkedPrefixes)) {
+    if (isNonEmptyString(reason)) prefixes[prefix] = reason
+    else issues.push(`unlinkedPrefixes ${prefix} must have a non-empty reason`)
+  }
+  if (issues.length > 0) throw new Error(`Building overrides are invalid: ${issues.join('; ')}`)
+  return prefixes
 }
 
 /** Validates the overrides file at its boundary; unknown elementIds or fields fail the import. */

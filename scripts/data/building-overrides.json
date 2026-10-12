@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, and $comment for the reason. Unknown elementIds or fields fail the import.",
+  "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, and $comment for the reason. unlinkedPrefixes ({prefix: reason}) lists room code prefixes deliberately left unlinked. Unknown elementIds or fields fail the import.",
   "overrides": {
     "1084196072": {
       "entrance": {
@@ -208,6 +208,18 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
     },
+    "639258228": {
+      "roomCodePrefixes": [
+        "SH"
+      ],
+      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found."
+    },
+    "640840065": {
+      "roomCodePrefixes": [
+        "SH"
+      ],
+      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found."
+    },
     "732229037": {
       "roomCodePrefixes": [
         "RC3"
@@ -327,5 +339,8 @@
         "Frontier"
       ]
     }
+  },
+  "unlinkedPrefixes": {
+    "Y": "Yale-NUS classroom code whose rooms are spread across several buildings (Saga, Cendana, Elm, East Core, West Core, Black Box Theatre); maintainer decision of 13/10/2026 to leave it unlinked. Room-level links, if wanted, belong in #261."
   }
 }

@@ -48,7 +48,7 @@
 }
 
 .journey-test-time-toggle {
-  min-height: 44px;
+  min-height: 40px;
   padding: 8px 12px;
   cursor: pointer;
 }
@@ -63,7 +63,7 @@
 .journey-test-time-panel input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
+  min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
@@ -78,12 +78,12 @@
 }
 
 .journey-test-time-actions button {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   box-sizing: border-box;
-  min-height: 44px;
-  padding: 8px 12px;
+  min-height: 32px;
+  padding: 6px 10px;
   border-radius: var(--radius-panel);
-  font: 600 14px/1.2 var(--sans);
+  font: 600 13px/1.2 var(--sans);
   cursor: pointer;
 }
 

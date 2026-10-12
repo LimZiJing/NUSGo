@@ -4,6 +4,10 @@ import type { NavigationState, NavigationView } from '../navigation/navigation-s
 import type { MapViewportInsets } from '../map-camera'
 import { applyMapOverlayMeasurements } from './map-insets-controller'
 import {
+  createMobileSheetSnapPoints,
+  getMobileSheetOccupiedHeight,
+} from '../../ui/mobile/mobile-sheet/mobile-sheet-snap-points'
+import {
   areMobileSheetMetricsEqual,
   measureMobileSheetMetrics,
   type MobileSheetMetrics,
@@ -115,18 +119,23 @@ export function useMapOverlayLayout({
           : refs.exploreView.current
       const activeSheetBounds = activeSheet?.getBoundingClientRect()
       const mapShellElement = refs.mapShell.current
-      const mapShellBottom = mapShellElement?.getBoundingClientRect().bottom ?? viewportHeight
       const measuredNavigationWidth = isMobileViewport
         ? 0
         : refs.navigationColumn.current?.getBoundingClientRect().width ?? 0
       setNavigationColumnWidth((current) => (
         current === measuredNavigationWidth ? current : measuredNavigationWidth
       ))
-      const tabBarInset = mapShellElement
-        ? measureMobileSheetMetrics(mapShellElement, refs.mainNavigation.current).tabBarInset
-        : 0
-      const activeSheetHeight = activeSheet?.classList.contains('mobile-sheet-popup')
-        ? Math.max(0, mapShellBottom - tabBarInset - (activeSheetBounds?.top ?? mapShellBottom))
+      const metrics = mapShellElement
+        ? measureMobileSheetMetrics(mapShellElement, refs.mainNavigation.current)
+        : null
+      const tabBarInset = metrics?.tabBarInset ?? 0
+      // A mobile sheet is sized from its detent: its bounds are still mid-transition when
+      // the detent has only just changed, which would leave the map inset one step behind.
+      const activeSheetHeight = metrics && activeSheet?.classList.contains('mobile-sheet-popup')
+        ? Math.max(0, getMobileSheetOccupiedHeight(
+          navigation.sheets[activeView].detent,
+          createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
+        ) - tabBarInset)
         : activeSheetBounds?.height ?? 0
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
@@ -171,9 +180,7 @@ export function useMapOverlayLayout({
     commands,
     isMobileViewport,
     navigation.activeView,
-    navigation.sheets.explore.detent,
-    navigation.sheets.plan.detent,
-    navigation.sheets.stops.detent,
+    navigation.sheets,
     sheetPortalContainer,
     refs,
     onMeasurementsApplied,

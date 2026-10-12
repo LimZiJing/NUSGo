@@ -12,7 +12,9 @@ describe('route browser visual contracts', () => {
   it('keeps feature button defaults from overriding shared route chips', () => {
     // The Stops screen no longer restyles buttons by element type, so it cannot override route chips.
     expect(stopsStyles).not.toMatch(/\.stops-view button\b/)
-    expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{[^}]*padding:\s*5px 8px;/s)
+    expect(exploreStyles).not.toMatch(/\.explore-view button/)
+    expect(exploreStyles).not.toMatch(/\.explore-segments button/)
+    expect(routeBrowserStyles).not.toMatch(/(^|[\s,>+~])button/m)
   })
 
   it('keeps route browser stop geometry specific to its button host', () => {

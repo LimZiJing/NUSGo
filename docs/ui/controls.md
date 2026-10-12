@@ -85,7 +85,7 @@ Allowed: `.button`, `button.primary`, `.panel button.primary`, `button[type='sub
 Each item is one small pull request, and each lowers the matching counts in the lint allowlist. Screens keep their feature stylesheets until they migrate; those stylesheets still style bare `button` elements and are the reason the primitives raise specificity only where a compatibility file says so.
 
 - [ ] Stops (also remove `ghost-back-button.css` and the `.stop-opposite` rule in `navigate-button.css`)
-- [ ] Explore
+- [x] Explore
 - [ ] Plan
 - [ ] Map controls
 - [ ] Sheet

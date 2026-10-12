@@ -20,6 +20,12 @@ function provideSheetSnapFeedback(): void {
   navigator.vibrate(10)
 }
 
+// Summaries read "Tab · detail"; the tab name leads and the detail is quieter.
+function splitSummary(summary: string): { title: string, detail: string } {
+  const [title, ...detail] = summary.split(' · ')
+  return { title, detail: detail.join(' · ') }
+}
+
 export function MobileSheetHandle({
   detent,
   restoreDetent = 'partial',
@@ -57,7 +63,12 @@ export function MobileSheetHandle({
     >
       <span aria-hidden="true" className="mobile-sheet-grabber" />
       {collapsedSummary && (
-        <span aria-hidden="true" className="mobile-sheet-summary">{collapsedSummary}</span>
+        <span aria-hidden="true" className="mobile-sheet-summary">
+          <span className="mobile-sheet-summary-title">{splitSummary(collapsedSummary).title}</span>
+          {splitSummary(collapsedSummary).detail && (
+            <span className="mobile-sheet-summary-detail">{splitSummary(collapsedSummary).detail}</span>
+          )}
+        </span>
       )}
     </button>
   )

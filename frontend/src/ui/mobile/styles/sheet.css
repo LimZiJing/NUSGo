@@ -98,15 +98,42 @@
   }
 
   .mobile-sheet-summary {
+    display: flex;
+    min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
     padding-inline: 16px;
-    color: var(--text-secondary);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 16px;
-    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .mobile-sheet-summary-title {
+    flex: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* A quiet detail after a small dot keeps the strip calm; only the detail truncates. */
+  .mobile-sheet-summary-detail {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+  }
+
+  .mobile-sheet-summary-detail::before {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-inline-end: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    content: '';
+    vertical-align: middle;
   }
 
   .mobile-sheet-handle:active .mobile-sheet-grabber,

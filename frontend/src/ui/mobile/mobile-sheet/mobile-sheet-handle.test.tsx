@@ -95,14 +95,15 @@ describe('MobileSheetHandle', () => {
       <MobileSheetHandle
         detent="collapsed"
         label="Stops panel"
-        summary="Stops · 20 nearby"
+        summary="Stops Â· 20 nearby"
         controlsId="stops-content"
         onDetentChange={vi.fn()}
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Expand Stops panel, Stops · 20 nearby' })).toBeTruthy()
-    expect(document.querySelector('.mobile-sheet-summary')?.textContent).toBe('Stops · 20 nearby')
+    expect(screen.getByRole('button', { name: 'Expand Stops panel, Stops Â· 20 nearby' })).toBeTruthy()
+    expect(document.querySelector('.mobile-sheet-summary-title')?.textContent).toBe('Stops')
+    expect(document.querySelector('.mobile-sheet-summary-detail')?.textContent).toBe('20 nearby')
   })
 
   it('hides the summary once the sheet is open', () => {
@@ -110,7 +111,7 @@ describe('MobileSheetHandle', () => {
       <MobileSheetHandle
         detent="partial"
         label="Stops panel"
-        summary="Stops · 20 nearby"
+        summary="Stops Â· 20 nearby"
         controlsId="stops-content"
         onDetentChange={vi.fn()}
       />,

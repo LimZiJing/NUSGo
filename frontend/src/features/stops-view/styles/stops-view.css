@@ -5,7 +5,9 @@
   box-sizing: border-box;
 }
 
-.stops-view button:where(:not(.route-chip)) {
+/* Excluded primary buttons: this rule has the same specificity as the shared
+   button.navigate-button rule and loads later, so it would override their accent colours. */
+.stops-view button:where(:not(.route-chip):not(.navigate-button):not(.stop-opposite)) {
   min-width: 44px;
   min-height: var(--control-height-lg);
   padding: 8px 10px;
@@ -330,11 +332,11 @@
     gap: 8px;
   }
 
-  .stop-actions .navigate-button {
+  .stop-actions .navigate-button,
+  .stop-actions .stop-opposite {
     flex: 0 1 auto;
     min-width: 0;
-    min-height: var(--control-height-lg);
-    align-self: stretch;
+    min-height: var(--control-height-sm);
   }
 
   .stop-selection h3 {
@@ -456,21 +458,8 @@
     color: var(--text-muted);
   }
 
-  .stops-view .stop-opposite {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 7px 8px;
-    border-color: var(--border-subtle);
-    border-radius: var(--radius-panel);
-    background: var(--surface-raised);
-    font: 600 12px/1.2 system-ui, sans-serif;
-  }
-
   .stop-opposite span {
-    color: var(--text-strong);
+    color: inherit;
     font-size: 18px;
     line-height: 1;
   }

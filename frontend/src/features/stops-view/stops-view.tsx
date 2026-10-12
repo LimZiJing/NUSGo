@@ -170,13 +170,21 @@ export function StopsView({
                   />
                 ))}
               </div>
+            ) : selectedList === 'favourites' && !overviewLoading ? (
+              <div className="stops-empty stops-empty--favourites">
+                <FavoriteIcon filled={false} className="stops-empty-icon" />
+                <p>No favourites? Use the Star icon to favourite stops.</p>
+                <button
+                  type="button"
+                  className="stops-empty-action"
+                  onClick={() => onSelectList?.('nearby')}
+                >
+                  Browse stops
+                </button>
+              </div>
             ) : (
               <p className="stops-empty">
-                {overviewLoading
-                  ? 'Loading stops…'
-                  : selectedList === 'favourites'
-                  ? 'No favourite stops yet. Star a stop to save it here.'
-                  : 'No stops available.'}
+                {overviewLoading ? 'Loading stops…' : 'No stops available.'}
               </p>
             )}
           </div>

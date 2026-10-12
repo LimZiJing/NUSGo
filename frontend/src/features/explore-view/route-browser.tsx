@@ -22,7 +22,7 @@ interface RouteBrowserProps {
   selectedRouteId: string | null
   onRouteSelect: (routeId: string) => void
   firstRouteCardRef?: RefObject<HTMLButtonElement | null>
-  onFocusStop?: (stopId: string) => void
+  onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
 const ROUTE_DISPLAY_ORDER = ['A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P']
@@ -315,7 +315,7 @@ export function RouteBrowser({
                       data-hover-filter="none"
                       data-route-stop-id={stopId}
                       aria-label={`${stop?.longName ?? stopId}, shuttle stop, code ${stopId}. Focus on map`}
-                      onClick={() => onFocusStop?.(stopId)}
+                      onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}
                     >
                       <span className="explore-route-browser-node" aria-hidden="true" />
                       <span className="explore-route-browser-stop-text">

@@ -1,3 +1,4 @@
+import { Button } from '@base-ui/react/button'
 import type { CSSProperties } from 'react'
 import { LocateIcon } from './icons'
 
@@ -24,7 +25,7 @@ export function LocationControl({
       ref={onRootChange}
       style={{ '--location-control-top': `${Math.max(0, topOffset)}px` } as CSSProperties}
     >
-      <button
+      <Button
         className={`location-control-chip${searching ? ' location-control-chip-searching' : ''}`}
         type="button"
         aria-label={searching ? 'Finding your location' : 'Show my location'}
@@ -35,7 +36,7 @@ export function LocationControl({
       >
         <LocateIcon className="location-control-icon" />
         {searching && <span className="location-control-spinner" aria-hidden="true" />}
-      </button>
+      </Button>
       {searching && (
         <span className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
           Finding your location

@@ -110,7 +110,8 @@ export function searchTripLocations(
       result: {
         endpoint: { kind: 'stop', id: stop.id },
         label: stop.longName,
-        detail: `${stop.shortName} (${stop.id})`,
+        // A short name that repeats the stop ID would print the code twice.
+        detail: normalize(stop.shortName) === normalize(stop.id) ? '' : `${stop.shortName} (${stop.id})`,
       },
       fields: [stop.id, stop.longName, stop.shortName],
       kindOrder: STOP_ORDER,

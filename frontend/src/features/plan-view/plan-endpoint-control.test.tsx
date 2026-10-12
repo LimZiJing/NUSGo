@@ -105,6 +105,29 @@ describe('PlanEndpointControl', () => {
     expect(venueMarkup).toContain('Origin search results')
   })
 
+  it('does not repeat a stop code in search results when the short name matches the ID', () => {
+    const codeNetwork = createValidTransitNetwork()
+    codeNetwork.stops = [{ ...stops[0], shortName: 'stop-a' }, codeNetwork.stops[1]]
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={null}
+        networkIndex={createTransitIndex(codeNetwork)}
+        searchQuery="Central Library"
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('<strong>STOP-A</strong>')
+    expect(markup).toContain('<span>Central Library</span>')
+    expect(markup).not.toContain('stop-a (STOP-A)')
+    expect(markup).not.toContain('>stop-a<')
+    expect(markup.match(/>STOP-A</g)).toHaveLength(1)
+  })
+
   it('announces that location data is still loading when search data is unavailable', () => {
     const markup = renderToStaticMarkup(
       <PlanEndpointControl

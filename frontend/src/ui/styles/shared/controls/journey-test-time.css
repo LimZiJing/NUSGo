@@ -37,6 +37,16 @@
   color: var(--text-primary);
 }
 
+/* Native date inputs follow color-scheme, which tokens.css sets to light dark (OS preference).
+   Pin it to the app theme so the input matches the Light/Dark popover. */
+:root[data-theme='light'] .journey-test-time-control {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] .journey-test-time-control {
+  color-scheme: dark;
+}
+
 .journey-test-time-toggle {
   min-height: 40px;
   padding: 8px 12px;
@@ -53,7 +63,13 @@
 .journey-test-time-panel input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 38px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  background: var(--surface);
+  font: inherit;
 }
 
 .journey-test-time-actions {
@@ -62,14 +78,44 @@
 }
 
 .journey-test-time-actions button {
-  min-height: 38px;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: var(--radius-panel);
+  font: 600 13px/1.2 var(--sans);
+  cursor: pointer;
+}
+
+/* Apply: primary action, same tokens as the Plan "Get route" submit. */
+.journey-test-time-actions button[type='submit'] {
+  border: 1px solid var(--accent);
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.journey-test-time-actions button[type='submit']:hover {
+  background: var(--accent-hover);
+}
+
+/* Reset to live: readable secondary action. */
+.journey-test-time-actions button[type='button'] {
+  border: 1px solid var(--border-control);
+  color: var(--text-primary);
+  background: var(--surface-control);
+}
+
+.journey-test-time-actions button[type='button']:disabled {
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
   .map-control-stack > .journey-test-time-control {
     position: absolute;
     z-index: 14;
-    top: max(56px, calc(env(safe-area-inset-top, 0px) + 56px));
+    top: calc(var(--map-control-inset-top, 12px) + var(--map-control-row-step, 52px));
     right: max(12px, env(safe-area-inset-right, 0px));
     display: flex;
     flex-direction: column;

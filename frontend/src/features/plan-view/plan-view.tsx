@@ -68,8 +68,18 @@ export function PlanView({
     destination: '',
   })
   const [tripActionsOpen, setTripActionsOpen] = useState(false)
+  const [planAttempted, setPlanAttempted] = useState(false)
   const tripActionsRef = useRef<HTMLDivElement>(null)
   const tripValidation = validateTripRequest(tripRequest)
+  // Validation is shown only after Get route is pressed, so an empty Plan form starts quietly.
+  const visibleTripValidation = planAttempted ? tripValidation : null
+  const requestPlanJourney = (): void => {
+    if (tripValidation) {
+      setPlanAttempted(true)
+      return
+    }
+    onPlanJourney()
+  }
   const setSearchQuery = (role: TripEndpointRole, query: string): void => {
     if (role === 'origin') onCancelOriginLocationRequest?.()
     setSearchQueries((current) => ({ ...current, [role]: query }))
@@ -81,6 +91,7 @@ export function PlanView({
   }
   const clearTrip = (): void => {
     setSearchQueries({ origin: '', destination: '' })
+    setPlanAttempted(false)
     setTripActionsOpen(false)
     onClearTrip()
   }
@@ -207,18 +218,18 @@ export function PlanView({
           <button
             type="button"
             className="plan-view-submit"
-            onClick={onPlanJourney}
-            disabled={tripValidation !== null || journey.status === 'loading'}
+            onClick={requestPlanJourney}
+            disabled={journey.status === 'loading'}
             aria-label="Get route"
             title="Get route"
           >
             <ArrowRightIcon />
           </button>
         </div>
-        {tripValidation && (
+        {visibleTripValidation && (
           <div className="plan-view-footer">
             <p className="plan-validation" role="status" aria-live="polite" aria-atomic="true">
-              {tripValidation}
+              {visibleTripValidation}
             </p>
           </div>
         )}

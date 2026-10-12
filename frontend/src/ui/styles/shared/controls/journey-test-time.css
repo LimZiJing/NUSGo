@@ -115,7 +115,7 @@
   .map-control-stack > .journey-test-time-control {
     position: absolute;
     z-index: 14;
-    top: max(56px, calc(env(safe-area-inset-top, 0px) + 56px));
+    top: calc(var(--map-control-inset-top, 12px) + var(--map-control-row-step, 52px));
     right: max(12px, env(safe-area-inset-right, 0px));
     display: flex;
     flex-direction: column;

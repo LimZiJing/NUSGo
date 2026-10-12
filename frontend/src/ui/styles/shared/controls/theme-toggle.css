@@ -29,6 +29,7 @@
 
 @media (max-width: 768px) {
   .theme-toggle {
+    top: var(--map-control-inset-top, 12px);
     right: max(12px, env(safe-area-inset-right));
     left: auto;
   }

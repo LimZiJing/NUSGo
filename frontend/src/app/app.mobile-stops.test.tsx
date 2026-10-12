@@ -201,16 +201,103 @@ describe('mobile Stops tab state', () => {
     expect(appHarness.commands.enableLocationTracking).not.toHaveBeenCalled()
   })
 
-  it('keeps mobile Explore popup behavior when a stop is selected', async () => {
+  it('opens a map-selected stop from Explore and expands a collapsed Stops sheet', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('collapsed')
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    const mapMarker = document.createElement('button')
+    document.body.append(mapMarker)
+    mapMarker.focus()
+
+    act(() => {
+      expect(appHarness.onStopSelected?.('STOP-A')).toBe(true)
+    })
+
+    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
+
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await waitFor(() => expect(document.activeElement).toBe(mapMarker))
+    mapMarker.remove()
+  })
+
+  it('opens a stop from the Explore route list and restores its route context and focus', async () => {
+    const initialState = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+    appHarness.state = {
+      ...initialState,
+      selectedRouteId: 'A1',
+      exploreView: {
+        mode: 'shuttle',
+        query: '',
+        selectedVenue: null,
+        history: [],
+      },
+    }
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
-    act(() => {
-      expect(appHarness.onStopSelected?.('STOP-A')).toBe(false)
+    const stopRow = await screen.findByRole('button', {
+      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
     })
+    const scrollArea = stopRow.closest('.explore-route-browser-scroll')
+    if (!scrollArea) throw new Error('Route stop row has no scroll area')
+    scrollArea.scrollTop = 38
+    stopRow.focus()
+    await user.keyboard('{Enter}')
 
-    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.queryByRole('heading', { name: 'Stop A' })).toBeNull()
+    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
+    expect(screen.getByRole('button', { name: 'Shuttle routes' })).toBeTruthy()
+    expect(screen.getByRole('button', {
+      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
+    })).toBe(stopRow)
+    expect(document.activeElement).toBe(stopRow)
+    expect(scrollArea.scrollTop).toBe(38)
+  })
+
+  it('opens a nearby stop from venue details and restores venue context and focus', async () => {
+    const initialState = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+    const venue = {
+      roomName: 'Seminar Room 3',
+      floor: 2,
+      location: { x: 103, y: 1 },
+    }
+    appHarness.state = {
+      ...initialState,
+      venues: { 'COM1-0212': venue },
+      exploreView: {
+        mode: 'venue-detail',
+        query: '',
+        selectedVenue: { code: 'COM1-0212', venue },
+        history: [{ mode: 'venue-search', query: 'COM1', selectedVenue: null }],
+      },
+    }
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    const nearbyStop = await screen.findByRole('button', {
+      name: /Nearby shuttle stop Stop A, code STOP-A/,
+    })
+    nearbyStop.focus()
+    await user.keyboard('{Enter}')
+
+    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
+    expect(screen.getByRole('heading', { name: 'COM1-0212, venue' })).toBeTruthy()
+    expect(screen.getByRole('button', {
+      name: /Nearby shuttle stop Stop A, code STOP-A/,
+    })).toBe(nearbyStop)
+    expect(document.activeElement).toBe(nearbyStop)
   })
 })

@@ -131,7 +131,7 @@ describe('RouteBrowser', () => {
     expect(stopRow.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
     await user.click(stopRow)
 
-    expect(onFocusStop).toHaveBeenCalledWith('STOP-A')
+    expect(onFocusStop).toHaveBeenCalledWith('STOP-A', stopRow)
   })
 
   it('renders every D2 stop in canonical order, including the terminal return', () => {

@@ -39,6 +39,7 @@ export interface UseAppNavigationOptions {
   readonly exploreView: Pick<ExploreViewState, 'mode' | 'selectedVenue'>
   readonly locationStatus: LocationTrackingStatus
   readonly pendingViewFocusRef: RefObject<NavigationView | null>
+  readonly pendingExploreReturnFocusRef: RefObject<HTMLElement | null>
   readonly focusStop: (stopId: string) => void
 }
 
@@ -50,6 +51,8 @@ export interface AppNavigation {
   readonly stopFocusRequest: { readonly stopId: string | null; readonly sequence: number }
   readonly focusStopAfterMapLayout: () => void
   readonly openStopInStopsView: (stopId: string) => void
+  readonly openStopFromExplore: (stopId: string, focusTarget?: HTMLElement) => void
+  readonly backFromStopDetails: (backToStops: () => void) => void
   readonly handleStopSelected: (stopId: string) => boolean
   readonly handleMapStopInteraction: (stopId: string) => void
   readonly selectView: (view: NavigationView, stopsList?: 'nearby' | 'favourites') => void
@@ -85,6 +88,7 @@ export function useAppNavigation({
   exploreView,
   locationStatus,
   pendingViewFocusRef,
+  pendingExploreReturnFocusRef,
   focusStop,
 }: UseAppNavigationOptions): AppNavigation {
   const navigationRef = useRef(state)
@@ -95,6 +99,7 @@ export function useAppNavigation({
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
   const previousExploreViewRef = useRef<Pick<ExploreViewState, 'mode' | 'selectedVenue'> | null>(null)
+  const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
 
   const activeView = state.activeView
   const previousActiveViewRef = useRef(activeView)
@@ -107,32 +112,59 @@ export function useAppNavigation({
   }, [isMobileViewport, state])
 
   const openStopInStopsView = useCallback((stopId: string): void => {
+    const currentNavigation = navigationRef.current
     focusStop(stopId)
     setStopFocusRequest((current) => ({ stopId, sequence: current.sequence + 1 }))
-    if (navigationRef.current.activeView !== 'stops') {
+    if (isMobileViewportRef.current && currentNavigation.sheets.stops.detent === 'collapsed') {
+      dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
+    }
+    if (currentNavigation.activeView !== 'stops') {
       pendingViewFocusRef.current = 'stops'
       dispatch({ type: 'select-view', view: 'stops' })
     }
   }, [dispatch, focusStop, pendingViewFocusRef])
 
+  const openStopFromExplore = useCallback((
+    stopId: string,
+    focusTarget?: HTMLElement,
+  ): void => {
+    const activeElement = focusTarget ?? (
+      typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    )
+    returnToExploreRef.current = { focusTarget: activeElement }
+    openStopInStopsView(stopId)
+  }, [openStopInStopsView])
+
   const handleStopSelected = useCallback((stopId: string): boolean => {
     const currentNavigation = navigationRef.current
+    if (currentNavigation.activeView === 'explore') {
+      openStopFromExplore(stopId)
+      return true
+    }
     if (isMobileViewportRef.current && currentNavigation.activeView !== 'stops') return false
 
+    returnToExploreRef.current = null
     openStopInStopsView(stopId)
-    if (
-      isMobileViewportRef.current &&
-      currentNavigation.sheets.stops.detent === 'collapsed'
-    ) {
-      dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
-    }
     return true
-  }, [dispatch, openStopInStopsView])
+  }, [openStopFromExplore, openStopInStopsView])
 
   const handleMapStopInteraction = useCallback((stopId: string): void => {
     if (isMobileViewportRef.current) return
     openStopInStopsView(stopId)
   }, [openStopInStopsView])
+
+  const backFromStopDetails = useCallback((backToStops: () => void): void => {
+    const returnContext = returnToExploreRef.current
+    returnToExploreRef.current = null
+    backToStops()
+    if (!returnContext) return
+
+    pendingViewFocusRef.current = 'explore'
+    pendingExploreReturnFocusRef.current = returnContext.focusTarget
+    dispatch({ type: 'select-view', view: 'explore' })
+  }, [dispatch, pendingExploreReturnFocusRef, pendingViewFocusRef])
 
   const selectView = useCallback((
     view: NavigationView,
@@ -278,6 +310,8 @@ export function useAppNavigation({
     stopFocusRequest,
     focusStopAfterMapLayout,
     openStopInStopsView,
+    openStopFromExplore,
+    backFromStopDetails,
     handleStopSelected,
     handleMapStopInteraction,
     selectView,

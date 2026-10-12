@@ -41,7 +41,7 @@ Every primitive supports: default, hover, active, focus-visible, disabled, and s
 - **Active** scales down slightly (not with reduced motion).
 - **Focus-visible** draws the shared 2px accent outline offset by 2px (`--focus-outline`, `--focus-ring-offset`). Menu items draw it inset.
 - **Disabled** uses `--text-muted` on `--surface-control` at reduced opacity and does not react to hover or press. Disabled controls are exempt from WCAG contrast requirements, so they have no 3:1 rule.
-- **Selected** is expressed as `aria-pressed="true"`: accent border with `--accent-soft` fill for `Button`; for `Chip`, a solid accent fill with inverse text, or the chip tone (such as a route colour) when one is supplied.
+- **Selected** is expressed as `aria-pressed="true"`: accent border with `--accent-soft` fill for primary and secondary `Button`; a pressed ghost button (an icon toggle such as the favourite star) draws no box, so the caller must change the icon to show the state; for `Chip`, a solid accent fill with inverse text, or the chip tone (such as a route colour) when one is supplied.
 
 Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 

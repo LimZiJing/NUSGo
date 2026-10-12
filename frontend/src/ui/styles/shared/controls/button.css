@@ -43,6 +43,14 @@
   background: var(--accent-soft);
 }
 
+/* A pressed ghost button is an icon toggle (such as a favourite star): the icon shows the state,
+   so it draws no box. Hover and focus tints still apply. */
+.button[data-variant='ghost'][aria-pressed='true'] {
+  border-color: transparent;
+  color: var(--accent);
+  background: transparent;
+}
+
 .button svg {
   flex: 0 0 16px;
   width: 16px;

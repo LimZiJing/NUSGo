@@ -174,14 +174,6 @@
   stroke: none;
 }
 
-.location-control-chip-searching {
-  cursor: wait;
-}
-
-.location-control-chip-searching .location-control-icon {
-  opacity: 0.45;
-}
-
 .location-control-spinner {
   position: absolute;
   width: 28px;
@@ -221,6 +213,42 @@
   border-radius: 50%;
   background: rgb(66 133 244 / 22%);
   content: '';
+}
+
+.current-location-marker::after {
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border: 1px solid #4285f4;
+  border-radius: 50%;
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.7);
+}
+
+.current-location-marker-pulsing::after {
+  animation: current-location-marker-pulse var(--current-location-pulse-duration) ease-out both;
+}
+
+@keyframes current-location-marker-pulse {
+  0% {
+    opacity: .65;
+    transform: scale(.7);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .current-location-marker-pulsing::after {
+    animation: none;
+    opacity: .45;
+    transform: scale(1.8);
+  }
 }
 
 .bus-stop-marker {

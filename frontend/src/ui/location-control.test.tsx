@@ -35,22 +35,23 @@ describe('LocationControl', () => {
   it('shows a quiet searching state while waiting for the first fix', () => {
     render(<LocationControl topOffset={76} searching onLocate={vi.fn()} />)
 
-    const button = screen.getByRole('button', { name: 'Finding your location' })
-    expect(button.hasAttribute('disabled')).toBe(true)
-    expect(button.getAttribute('title')).toBe('Finding your location')
+    const button = screen.getByRole('button', { name: 'Recenter map while finding your location' })
+    expect(button.hasAttribute('disabled')).toBe(false)
+    expect(button.getAttribute('title')).toBe('Recenter map while finding your location')
     expect(screen.getByRole('status').textContent).toBe('Finding your location')
     expect(button.querySelector('.location-control-spinner')).toBeTruthy()
   })
 
-  it('does not start another request while searching and keeps one loading indicator', async () => {
+  it('keeps the recenter action available while searching and shows one loading indicator', async () => {
     const user = userEvent.setup()
     const onLocate = vi.fn()
     render(<LocationControl topOffset={76} searching onLocate={onLocate} />)
 
-    const button = screen.getByRole('button', { name: 'Finding your location' })
+    const button = screen.getByRole('button', { name: 'Recenter map while finding your location' })
     await user.click(button)
 
-    expect(onLocate).not.toHaveBeenCalled()
+    expect(onLocate).toHaveBeenCalledOnce()
+    expect(button.hasAttribute('disabled')).toBe(false)
     expect(button.getAttribute('aria-busy')).toBe('true')
     expect(button.querySelector('.location-control-icon')).toBeTruthy()
     expect(button.querySelectorAll('.location-control-spinner')).toHaveLength(1)

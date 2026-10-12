@@ -120,6 +120,39 @@ describe('mobile location control integration', () => {
     expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
   })
 
+  it('keeps the location action available while searching and after a fix arrives', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    const waitingState = {
+      ...createInitialNavigationSessionState(),
+      location: { status: 'requesting', latestFix: null },
+    }
+    appHarness.state = waitingState
+
+    const { rerender } = render(<App />)
+
+    const waitingButton = screen.getByRole('button', { name: 'Recenter map while finding your location' })
+    expect(waitingButton.hasAttribute('disabled')).toBe(false)
+    expect(waitingButton.getAttribute('aria-busy')).toBe('true')
+    await user.click(waitingButton)
+    expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
+
+    appHarness.state = createInitialNavigationSessionState({
+      status: 'tracking',
+      latestFix: {
+        longitude: 103,
+        latitude: 1,
+        accuracy: 10,
+        timestamp: Date.now(),
+      },
+    })
+    rerender(<App />)
+
+    const readyButton = screen.getByRole('button', { name: 'Show my location' })
+    expect(readyButton.hasAttribute('disabled')).toBe(false)
+    expect(readyButton.getAttribute('aria-busy')).toBe('false')
+  })
+
   it('uses the locate command for the automatic Nearby location request', async () => {
     mockMobileViewport()
 

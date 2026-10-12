@@ -444,6 +444,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     focusCurrentLocation(fix: DeviceLocationFix) {
       if (disposed) return
       pendingCameraFit = null
+      map.once('moveend', currentLocationMarker.pulse)
       map.flyTo({
         center: [fix.longitude, fix.latitude],
         zoom: 17,

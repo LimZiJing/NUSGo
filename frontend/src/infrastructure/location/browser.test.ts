@@ -71,6 +71,16 @@ describe('Browser location tracker', () => {
     })
   })
 
+  it('keeps one geolocation watch while a request is pending', () => {
+    const { provider } = createProvider()
+    const tracker = createBrowserLocationTracker(provider)
+
+    tracker.enable()
+    tracker.enable()
+
+    expect(provider.watchPosition).toHaveBeenCalledOnce()
+  })
+
   it('keeps the latest valid fix and accepts low-accuracy readings', () => {
     const { provider, callbacks } = createProvider()
     const tracker = createBrowserLocationTracker(provider, {

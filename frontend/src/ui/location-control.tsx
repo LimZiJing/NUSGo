@@ -19,6 +19,10 @@ export function LocationControl({
 }: LocationControlProps) {
   if (!visible) return null
 
+  const buttonLabel = searching
+    ? 'Recenter map while finding your location'
+    : 'Show my location'
+
   return (
     <div
       className="location-control"
@@ -26,12 +30,11 @@ export function LocationControl({
       style={{ '--location-control-top': `${Math.max(0, topOffset)}px` } as CSSProperties}
     >
       <Button
-        className={`location-control-chip${searching ? ' location-control-chip-searching' : ''}`}
+        className="location-control-chip"
         type="button"
-        aria-label={searching ? 'Finding your location' : 'Show my location'}
+        aria-label={buttonLabel}
         aria-busy={searching}
-        title={searching ? 'Finding your location' : 'Show my location'}
-        disabled={searching}
+        title={buttonLabel}
         onClick={onLocate}
       >
         <LocateIcon className="location-control-icon" />

@@ -174,14 +174,6 @@
   stroke: none;
 }
 
-.location-control-chip-searching {
-  cursor: wait;
-}
-
-.location-control-chip-searching .location-control-icon {
-  opacity: 0.45;
-}
-
 .location-control-spinner {
   position: absolute;
   width: 28px;

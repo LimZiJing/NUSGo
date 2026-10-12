@@ -9,6 +9,7 @@ describe('location control searching styles', () => {
   it('animates only the spinner and stops it under reduced motion', () => {
     expect(mapStyles).toMatch(/\.location-control-spinner\s*\{[^}]*animation:\s*location-control-spin/)
     expect(mapStyles).not.toMatch(/\.location-control-chip-searching\s*\{[^}]*animation:/)
+    expect(mapStyles).not.toMatch(/\.location-control-icon\s*\{[^}]*opacity:/)
 
     const reducedMotion = mapStyles.match(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.location-control-spinner\s*\{([^}]*)\}/)
     expect(reducedMotion?.[1]).toMatch(/animation:\s*none/)

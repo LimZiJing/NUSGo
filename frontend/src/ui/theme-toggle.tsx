@@ -18,7 +18,6 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       onClick={onToggle}
     >
       {theme === 'dark' ? <MoonIcon className="theme-toggle-icon" /> : <SunIcon className="theme-toggle-icon" />}
-      {nextTheme === 'dark' ? 'Dark' : 'Light'}
     </button>
   )
 }

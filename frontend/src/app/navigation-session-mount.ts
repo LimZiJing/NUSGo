@@ -19,6 +19,7 @@ export interface NavigationSessionMountDependencies {
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapStopInteraction?: (stopId: string) => void
+  readonly onMapStopDestinationSet?: (stopId: string) => void
   readonly onMapJourneyOptionSelected?: (candidateKey: string) => void
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
@@ -56,6 +57,7 @@ export function createNavigationSessionMount(
     journeyPlanner: dependencies.journeyPlanner,
     locationTracker: dependencies.locationTracker,
     onMapStopInteraction: dependencies.onMapStopInteraction,
+    onMapStopDestinationSet: dependencies.onMapStopDestinationSet,
   })
 
   const controller = new AbortController()
@@ -115,6 +117,7 @@ export interface NavigationSessionCommands {
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
   readonly zoomOut: () => void
@@ -155,6 +158,7 @@ function createNavigationSessionCommands(
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),

@@ -21,6 +21,7 @@ const appHarness = vi.hoisted(() => {
     state: null as unknown,
     onStopSelected: null as ((stopId: string) => boolean) | null,
     onMapStopInteraction: null as ((stopId: string) => void) | null,
+    onMapStopDestinationSet: null as ((stopId: string) => void) | null,
     onMapJourneyOptionSelected: null as ((candidateKey: string) => void) | null,
     session: {
       locateUser: vi.fn(),
@@ -44,12 +45,14 @@ vi.mock('./navigation-session-mount', () => ({
     dependencies: {
       onStopSelected?: (stopId: string) => boolean
       onMapStopInteraction?: (stopId: string) => void
+      onMapStopDestinationSet?: (stopId: string) => void
       onMapJourneyOptionSelected?: (candidateKey: string) => void
       onMapCenterChange?: (center: readonly [number, number]) => void
     },
   ) => {
     appHarness.onStopSelected = dependencies.onStopSelected ?? null
     appHarness.onMapStopInteraction = dependencies.onMapStopInteraction ?? null
+    appHarness.onMapStopDestinationSet = dependencies.onMapStopDestinationSet ?? null
     appHarness.onMapJourneyOptionSelected = dependencies.onMapJourneyOptionSelected ?? null
     dependencies.onMapCenterChange?.([103, 1])
     return {
@@ -160,6 +163,7 @@ afterEach(() => {
   localStorage.clear()
   appHarness.onStopSelected = null
   appHarness.onMapStopInteraction = null
+  appHarness.onMapStopDestinationSet = null
   appHarness.onMapJourneyOptionSelected = null
   appHarness.session.locateUser.mockReset()
   appHarness.session.enableLocationTracking.mockReset()
@@ -360,7 +364,7 @@ describe('desktop shared navigation shell', () => {
     mapMarker.remove()
   })
 
-  it('switches to Stops when a map popup endpoint action is used', async () => {
+  it('switches to Stops for a map popup origin action', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -372,6 +376,20 @@ describe('desktop shared navigation shell', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy())
     expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens Plan after a map popup sets the destination', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    act(() => {
+      appHarness.onMapStopDestinationSet?.('STOP-A')
+    })
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current'))
+      .toBe('page'))
+    expect(screen.getByRole('region', { name: 'Trip endpoints' })).toBeTruthy()
   })
 
   it('preserves Stops view state while switching views', async () => {

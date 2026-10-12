@@ -444,6 +444,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     focusCurrentLocation(fix: DeviceLocationFix) {
       if (disposed) return
       pendingCameraFit = null
+      map.once('moveend', currentLocationMarker.pulse)
       map.flyTo({
         center: [fix.longitude, fix.latitude],
         zoom: 17,
@@ -474,8 +475,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    dismissStopPopup() {
+      if (disposed) return false
+      return shuttleStopMarkers?.dismissPopup() ?? false
+    },
+
     dismissPopup() {
       if (disposed) return false
+      if (shuttleStopMarkers?.dismissPopup()) return true
       const closeButton = map.getContainer().querySelector<HTMLButtonElement>(
         '.maplibregl-popup-close-button',
       )

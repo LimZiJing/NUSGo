@@ -45,7 +45,13 @@ vi.mock('maplibre-gl', () => {
       this.handlers.get(event)?.delete(handler)
       return this
     })
-    readonly once = vi.fn((event: string, handler: (...args: never[]) => void) => this.on(event, handler))
+    readonly once = vi.fn((event: string, handler: (...args: never[]) => void) => {
+      const onceHandler = (...args: never[]) => {
+        this.handlers.get(event)?.delete(onceHandler)
+        handler(...args)
+      }
+      return this.on(event, onceHandler)
+    })
     readonly addControl = vi.fn(() => this)
     readonly removeControl = vi.fn(() => this)
     readonly addSource = vi.fn((id: string, source: { data?: unknown }) => {
@@ -102,6 +108,11 @@ vi.mock('maplibre-gl', () => {
 
     isStyleLoaded() {
       return true
+    }
+
+    fire(event: string) {
+      for (const handler of [...(this.handlers.get(event) ?? [])]) handler()
+      return this
     }
 
     getSource(id: string) {
@@ -226,6 +237,8 @@ class FakeElement {
   }
   readonly classes = new Set<string>()
   readonly classList = {
+    add: vi.fn((name: string) => this.classes.add(name)),
+    remove: vi.fn((name: string) => this.classes.delete(name)),
     toggle: vi.fn((name: string, force: boolean) => {
       if (force) this.classes.add(name)
       else this.classes.delete(name)
@@ -482,6 +495,8 @@ describe('MapSession', () => {
         readonly coordinate: unknown
         readonly remove: ReturnType<typeof vi.fn>
       }>
+      readonly fire: (event: string) => void
+      readonly once: ReturnType<typeof vi.fn>
       readonly flyTo: ReturnType<typeof vi.fn>
       readonly fitBounds: ReturnType<typeof vi.fn>
     }
@@ -516,8 +531,14 @@ describe('MapSession', () => {
       center: [secondFix.longitude, secondFix.latitude],
       zoom: 17,
     }))
+    expect(map.once).toHaveBeenCalledWith('moveend', expect.any(Function))
+    const currentLocationMarker = marker?.element as FakeElement
+    expect(currentLocationMarker.classes.has('current-location-marker-pulsing')).toBe(false)
+    map.fire('moveend')
+    expect(currentLocationMarker.classes.has('current-location-marker-pulsing')).toBe(true)
 
     session.dispose()
+    expect(currentLocationMarker.classes.has('current-location-marker-pulsing')).toBe(false)
     expect(marker?.remove).toHaveBeenCalledTimes(3)
   })
 
@@ -546,6 +567,30 @@ describe('MapSession', () => {
 
     session.dispose()
     expect(session.dismissPopup()).toBe(false)
+  })
+
+  it('dismisses only a shuttle-stop popup through the stop-specific command', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const closeEndpointPopup = vi.fn()
+    fakeMapState.popupCloseButton = { click: closeEndpointPopup }
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const transitData = createTransitData()
+
+    await session.ready
+    session.loadTransitData(transitData, createRouteSelection(transitData))
+    session.focusStop('STOP-A')
+
+    expect(session.dismissStopPopup()).toBe(true)
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
+    expect(closeEndpointPopup).not.toHaveBeenCalled()
+    expect(session.dismissStopPopup()).toBe(false)
+
+    session.dispose()
+    vi.unstubAllGlobals()
   })
 
   it('preserves a valid route presentation across transit reloads without refitting', async () => {
@@ -1213,6 +1258,8 @@ describe('MapSession', () => {
       offset: [0, -256],
     }))
     expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(true)
+    expect(session.dismissStopPopup()).toBe(true)
+    expect(fakeMapState.popups.some((popup) => (popup as { open: boolean }).open)).toBe(false)
     session.focusStop('unknown')
     expect(map.flyTo).toHaveBeenCalledOnce()
 

@@ -27,6 +27,7 @@ function createMapDouble(): MapSession {
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -75,6 +76,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     escape: vi.fn(),
     closeToRoot: vi.fn(),
     handleMapClick: vi.fn(),
+    dismissStopPopup: vi.fn(() => false),
     dismissMapPopup: vi.fn(() => false),
     reportMapError: vi.fn(),
     reportStartupFailure: vi.fn(),
@@ -239,6 +241,8 @@ describe('navigation session application seam', () => {
     expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)
     expect(session.dismissMapPopup).toHaveBeenCalledOnce()
+    expect(firstCommands.dismissStopPopup()).toBe(false)
+    expect(session.dismissStopPopup).toHaveBeenCalledOnce()
     firstCommands.focusStopInStopsTab('STOP-A')
     firstCommands.setStopsPinVisible(true)
     expect(session.focusStopInStopsTab).toHaveBeenCalledWith('STOP-A')

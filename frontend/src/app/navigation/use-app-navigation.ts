@@ -33,6 +33,7 @@ export interface UseAppNavigationOptions {
     | 'dismissStopPopup'
     | 'dismissMapPopup'
     | 'setStopsPinVisible'
+    | 'setPlanLayersVisible'
     | 'escape'
   >
   readonly isMobileViewport: boolean
@@ -290,6 +291,10 @@ export function useAppNavigation({
 
   useLayoutEffect(() => {
     commands.setStopsPinVisible(activeView === 'stops')
+  }, [activeView, commands])
+
+  useLayoutEffect(() => {
+    commands.setPlanLayersVisible(activeView === 'plan')
   }, [activeView, commands])
 
   useEffect(() => {

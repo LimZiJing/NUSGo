@@ -108,6 +108,7 @@ export interface NavigationSession {
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
   setStopsPinVisible(visible: boolean): void
+  setPlanLayersVisible(visible: boolean): void
   enableLocationTracking(): void
   locateUser(): void
   useCurrentLocationForOrigin(): void
@@ -670,6 +671,11 @@ export function createNavigationSession(
     setStopsPinVisible(visible) {
       if (disposed) return
       dependencies.map.setStopsPinVisible(visible)
+    },
+
+    setPlanLayersVisible(visible) {
+      if (disposed) return
+      dependencies.map.setPlanLayersVisible(visible)
     },
 
     enableLocationTracking() {

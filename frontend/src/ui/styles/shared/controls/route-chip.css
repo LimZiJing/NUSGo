@@ -109,7 +109,7 @@
   border-radius: var(--radius-pill);
   color: var(--text-strong);
   background: var(--surface-muted);
-  font: 700 14px/1 system-ui, sans-serif;
+  font: 700 14px/1 var(--sans);
   cursor: pointer;
   scroll-snap-align: start;
   transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),

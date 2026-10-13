@@ -36,6 +36,7 @@ import { AppViews, type AppViewsProps } from './composition/app-views'
 import { useStopsViewModel } from '../features/stops-view/use-stops-view-model'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
+import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops-view/use-stops-arrivals'
@@ -133,6 +134,13 @@ function App() {
     mainNavigationRef,
     navigationColumnRef,
     onMeasurementsApplied: appNavigation.focusStopAfterMapLayout,
+  })
+  useMobilePlanRefit({
+    commands,
+    isMobileViewport,
+    activeView: navigation.activeView,
+    planDetent: navigation.sheets.plan.detent,
+    hasJourney: state.journey.displayedCandidates.length > 0,
   })
 
   useLayoutEffect(() => {

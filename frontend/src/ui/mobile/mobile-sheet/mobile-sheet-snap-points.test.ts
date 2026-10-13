@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createMobileSheetSnapPoints,
+  getMobileSheetOccupiedHeight,
   getMobileSheetDetent,
   getMobileSheetSnapPoint,
 } from './mobile-sheet-snap-points'
@@ -52,5 +53,13 @@ describe('mobile sheet snap points', () => {
     expect(getMobileSheetDetent(Number.NaN, points)).toBeNull()
     expect(getMobileSheetDetent('502.9px', points)).toBe('partial')
     expect(getMobileSheetDetent('510px', points)).toBeNull()
+  })
+
+  it('reports the height a detent occupies above the bottom of the map', () => {
+    const points = createMobileSheetSnapPoints(1000, 80, 44)
+
+    expect(getMobileSheetOccupiedHeight('collapsed', points)).toBe(124)
+    expect(getMobileSheetOccupiedHeight('partial', points)).toBe(580)
+    expect(getMobileSheetOccupiedHeight('full', points)).toBe(1000)
   })
 })

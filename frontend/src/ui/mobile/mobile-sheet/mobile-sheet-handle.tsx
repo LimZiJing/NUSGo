@@ -7,6 +7,7 @@ import {
 interface MobileSheetHandleProps {
   readonly detent: MobileSheetDetent
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly onButtonRef?: (button: HTMLButtonElement | null) => void
   readonly onDetentChange: (detent: MobileSheetDetent) => void
@@ -15,6 +16,12 @@ interface MobileSheetHandleProps {
 function provideSheetSnapFeedback(): void {
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
   navigator.vibrate(10)
+}
+
+// Summaries read "Tab · detail"; the tab name leads and the detail is quieter.
+function splitSummary(summary: string): { title: string, detail: string } {
+  const [title, ...detail] = summary.split(' · ')
+  return { title, detail: detail.join(' · ') }
 }
 
 // A tap toggles the two open detents; collapsing is a separate action (swipe down or
@@ -31,6 +38,7 @@ function getArrowDetent(detent: MobileSheetDetent, key: string): MobileSheetDete
 export function MobileSheetHandle({
   detent,
   label,
+  summary,
   controlsId,
   onButtonRef,
   onDetentChange,
@@ -48,6 +56,7 @@ export function MobileSheetHandle({
   }
 
   const handleAction = detent === 'full' ? 'Reduce' : 'Expand'
+  const collapsedSummary = detent === 'collapsed' ? summary : undefined
 
   return (
     <button
@@ -56,12 +65,20 @@ export function MobileSheetHandle({
       ref={onButtonRef}
       aria-controls={controlsId}
       aria-expanded={isOpenMobileSheetDetent(detent)}
-      aria-label={`${handleAction} ${label}`}
+      aria-label={collapsedSummary ? `${handleAction} ${label}, ${collapsedSummary}` : `${handleAction} ${label}`}
       aria-description="Press Up or Down Arrow to change the sheet height. Down Arrow at partial height collapses it."
       onClick={() => changeDetent(getToggledDetent(detent))}
       onKeyDown={handleKeyDown}
     >
       <span aria-hidden="true" className="mobile-sheet-grabber" />
+      {collapsedSummary && (
+        <span aria-hidden="true" className="mobile-sheet-summary">
+          <span className="mobile-sheet-summary-title">{splitSummary(collapsedSummary).title}</span>
+          {splitSummary(collapsedSummary).detail && (
+            <span className="mobile-sheet-summary-detail">{splitSummary(collapsedSummary).detail}</span>
+          )}
+        </span>
+      )}
     </button>
   )
 }

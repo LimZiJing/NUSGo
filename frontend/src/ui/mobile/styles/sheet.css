@@ -86,6 +86,56 @@
     background: var(--text-secondary);
   }
 
+  /* The collapsed strip stacks the grabber above a one-line summary of the sheet. */
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    row-gap: 4px;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-grabber {
+    transform: none;
+  }
+
+  .mobile-sheet-summary {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    padding-inline: 16px;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  .mobile-sheet-summary-title {
+    flex: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* A quiet detail after a small dot keeps the strip calm; only the detail truncates. */
+  .mobile-sheet-summary-detail {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+  }
+
+  .mobile-sheet-summary-detail::before {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-inline-end: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    content: '';
+    vertical-align: middle;
+  }
+
   .mobile-sheet-handle:active .mobile-sheet-grabber,
   .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
     opacity: 0.72;

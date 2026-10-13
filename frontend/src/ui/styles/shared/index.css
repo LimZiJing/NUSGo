@@ -7,6 +7,9 @@
 @import './map.css';
 @import './navigation.css';
 @import './panels/navigation-panel.css';
+@import './controls/button.css';
+@import './controls/chip.css';
+@import './controls/pill.css';
 @import './controls/route-chip.css';
 @import '../disclosure-chevron.css';
 @import './controls/ghost-back-button.css';

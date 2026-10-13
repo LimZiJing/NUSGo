@@ -1,0 +1,167 @@
+/* Button, IconButton, and MenuItem primitives. See docs/ui/controls.md for the spec.
+   Primitives set data-hover-filter="none" to opt out of the global hover filter in base.css,
+   so their hover darkening applies only on devices that can hover. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: 5px var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-control);
+  font: 500 var(--font-size-control)/1.2 var(--sans);
+  cursor: pointer;
+}
+
+.button[data-size='lg'] {
+  min-height: var(--control-height-lg);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-control-lg);
+  font-size: var(--font-size-control-lg);
+  font-weight: 600;
+}
+
+.button[data-variant='primary'] {
+  border-color: var(--accent);
+  color: var(--text-inverse);
+  background: var(--accent);
+}
+
+.button[data-variant='ghost'] {
+  border-color: transparent;
+  color: var(--accent);
+  background: transparent;
+}
+
+.button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+/* A pressed ghost button is an icon toggle (such as a favourite star): the icon shows the state,
+   so it draws no box. Hover and focus tints still apply. */
+.button[data-variant='ghost'][aria-pressed='true'],
+.button[data-variant='plain'] {
+  border-color: transparent;
+  color: var(--accent);
+  background: transparent;
+}
+
+.button svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.button[data-size='lg'] svg {
+  flex-basis: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.button.icon-button {
+  width: var(--control-height-sm);
+  padding: 0;
+}
+
+.button.icon-button[data-size='lg'] {
+  width: var(--control-height-lg);
+}
+
+.button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button[data-variant='ghost']:focus-visible {
+  background: var(--accent-soft);
+}
+
+/* Plain icon buttons never draw a box: hover only dims the icon, focus keeps the ring. */
+.button[data-variant='plain'] {
+  color: inherit;
+}
+
+.button[data-variant='plain'] svg {
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  border-color: var(--control-border);
+  color: var(--text-muted);
+  background: var(--surface-control);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Ghost controls have no surface to darken, so hover and disabled keep them borderless. */
+.button[data-variant='ghost']:disabled,
+.button[data-variant='plain']:disabled {
+  border-color: transparent;
+  background: transparent;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: transparent;
+  font: 500 var(--font-size-control)/1.2 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-item:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  background: var(--accent-soft);
+}
+
+.menu-item:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .button:not(:disabled):not([aria-pressed='true']):not([data-variant='ghost']):not([data-variant='plain']):hover {
+    filter: brightness(0.85);
+  }
+
+  .button[data-variant='plain']:not(:disabled):hover svg {
+    opacity: 0.7;
+  }
+
+  .button[data-variant='ghost']:not(:disabled):hover,
+  .menu-item:not(:disabled):hover {
+    background: var(--accent-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}

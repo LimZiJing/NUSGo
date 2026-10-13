@@ -1,3 +1,4 @@
+import { Button } from './button'
 import { ArrowLeftIcon } from './icons'
 
 interface GhostBackButtonProps {
@@ -7,9 +8,12 @@ interface GhostBackButtonProps {
 
 export function GhostBackButton({ label, onClick }: GhostBackButtonProps) {
   return (
-    <button type="button" className="ghost-back-button" onClick={onClick}>
-      <ArrowLeftIcon />
-      {label}
-    </button>
+    <Button
+      className="ghost-back-button"
+      variant="ghost"
+      icon={<ArrowLeftIcon />}
+      label={label}
+      onClick={onClick}
+    />
   )
 }

@@ -119,8 +119,7 @@
 }
 
 .location-control-chip,
-.fit-routes-control,
-.location-control-popover button {
+.fit-routes-control {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--border-control);

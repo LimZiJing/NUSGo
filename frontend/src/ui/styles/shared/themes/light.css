@@ -31,7 +31,7 @@
   --text-warning: #b45309;
   --text-success-strong: #15803d;
   --text-error-strong: #b91c1c;
-  --text-favorite: #a16207;
+  --text-favorite: #d97706;
   --bus-stop-default-color: #334155;
 
   --border-default: #e5e4e7;
@@ -39,6 +39,7 @@
   --border-strong: #cbd5e1;
   --border-inverse: #475569;
   --border-control: #cbd5e1;
+  --control-border: color-mix(in srgb, var(--text-primary) 50%, var(--surface));
   --border-muted: #d8e1ec;
   --border-faint: #e4e8ef;
   --border-success: #9ee8d0;

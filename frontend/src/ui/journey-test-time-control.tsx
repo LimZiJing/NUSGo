@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { formatSingaporeDateTime, parseSingaporeDateTime } from '../domain/trip/simulated-time'
+import { Button } from './button'
 import './styles/shared/controls/journey-test-time.css'
 
 interface JourneyTestTimeControlProps {
@@ -13,8 +14,7 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
   const [value, setValue] = useState(() => formatSingaporeDateTime(Date.now()))
   const [error, setError] = useState<string | null>(null)
 
-  const apply = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
+  const apply = (): void => {
     const instantMs = parseSingaporeDateTime(value)
     if (instantMs === null) {
       setError('Enter a valid Singapore date and time.')
@@ -22,6 +22,12 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
     }
     setError(null)
     onApply(instantMs)
+  }
+
+  // Button is always type="button", so Apply calls apply() directly; the form handler keeps Enter-to-submit working.
+  const submit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault()
+    apply()
   }
 
   const reset = (): void => {
@@ -42,7 +48,7 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
         Test time{simulatedAtMs === null ? '' : ' · simulated'}
       </button>
       {open && (
-        <form id="journey-test-time-panel" className="journey-test-time-panel" onSubmit={apply} noValidate>
+        <form id="journey-test-time-panel" className="journey-test-time-panel" onSubmit={submit} noValidate>
           <label htmlFor="journey-test-time-input">Singapore date and time (SGT)</label>
           <input
             id="journey-test-time-input"
@@ -58,8 +64,8 @@ export function JourneyTestTimeControl({ simulatedAtMs, onApply, onReset }: Jour
           />
           {error && <p id="journey-test-time-error" role="alert">{error}</p>}
           <div className="journey-test-time-actions">
-            <button type="submit">Apply</button>
-            <button type="button" onClick={reset} disabled={simulatedAtMs === null}>Reset to live</button>
+            <Button className="journey-test-time-action" variant="primary" label="Apply" onClick={apply} />
+            <Button className="journey-test-time-action" label="Reset to live" onClick={reset} disabled={simulatedAtMs === null} />
           </div>
         </form>
       )}

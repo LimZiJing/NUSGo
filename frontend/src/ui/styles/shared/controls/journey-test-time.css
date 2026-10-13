@@ -77,38 +77,8 @@
   gap: 8px;
 }
 
-.journey-test-time-actions button {
+.journey-test-time-action {
   flex: 1 1 auto;
-  box-sizing: border-box;
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: var(--radius-panel);
-  font: 600 13px/1.2 var(--sans);
-  cursor: pointer;
-}
-
-/* Apply: primary action, same tokens as the Plan "Get route" submit. */
-.journey-test-time-actions button[type='submit'] {
-  border: 1px solid var(--accent);
-  color: var(--accent-contrast);
-  background: var(--accent);
-}
-
-.journey-test-time-actions button[type='submit']:hover {
-  background: var(--accent-hover);
-}
-
-/* Reset to live: readable secondary action. */
-.journey-test-time-actions button[type='button'] {
-  border: 1px solid var(--border-control);
-  color: var(--text-primary);
-  background: var(--surface-control);
-}
-
-.journey-test-time-actions button[type='button']:disabled {
-  color: var(--text-muted);
-  background: var(--surface-muted);
-  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

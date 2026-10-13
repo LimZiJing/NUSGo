@@ -1,3 +1,4 @@
+import { Button, IconButton } from '../../ui/button'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import {
@@ -7,7 +8,7 @@ import {
   type PublicServiceTiming,
 } from './stop-timings'
 import { StopCard } from './stop-card'
-import { BusIcon, FavoriteIcon } from '../../ui/icons'
+import { BusIcon, ChevronRightIcon, CloseIcon, FavoriteIcon } from '../../ui/icons'
 import { type StopRouteDeparture } from './stops-view-state'
 import './styles/stops-view.css'
 
@@ -90,15 +91,14 @@ export function StopsView({
                 </h2>
                 <span className="stop-id">{selectedStop.id}</span>
               </div>
-              <button
+              <IconButton
                 className="stop-favorite"
-                type="button"
-                aria-label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName}, shuttle stop ${selectedStopFavorite ? 'from' : 'to'} favourites`}
-                aria-pressed={selectedStopFavorite}
+                variant="plain"
+                label={`${selectedStopFavorite ? 'Remove' : 'Add'} ${selectedStop.longName}, shuttle stop ${selectedStopFavorite ? 'from' : 'to'} favourites`}
+                icon={<FavoriteIcon filled={selectedStopFavorite} />}
+                pressed={selectedStopFavorite}
                 onClick={() => onToggleFavorite?.(selectedStop.id)}
-              >
-                <FavoriteIcon filled={selectedStopFavorite} />
-              </button>
+              />
             </div>
             <div className="stop-actions">
               <NavigateButton
@@ -106,15 +106,14 @@ export function StopsView({
                 onClick={() => onNavigateToStop(selectedStop.id)}
               />
               {oppositeStop ? (
-                <button
+                <Button
                   className="stop-opposite"
-                  type="button"
-                  aria-label={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
-                  title={`Opposite shuttle stop: ${oppositeStop.longName} (${oppositeStop.id})`}
+                  variant="secondary"
+                  label="Opposite stop"
+                  trailingIcon={<ChevronRightIcon />}
+                  ariaLabel={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
                   onClick={() => onSelectOppositeStop(oppositeStop.id)}
-                >
-                  Opposite stop <span aria-hidden="true">›</span>
-                </button>
+                />
               ) : null}
             </div>
             {liveArrivalMessage && (
@@ -135,8 +134,8 @@ export function StopsView({
         ) : overviewStops ? (
           <div className="stops-overview">
             <div className="stops-list-selector" role="group" aria-label="Stop list">
-              <button type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
-              <button type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
+              <button className="stops-list-selector-option" type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
+              <button className="stops-list-selector-option" type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
             </div>
             {liveArrivalMessage && (
               <p className="stop-live-arrival-message" role="status">
@@ -146,7 +145,12 @@ export function StopsView({
             {locationNotice && selectedList === 'nearby' && (
               <div className="stops-location-notice" role="status">
                 <span>{locationNotice}</span>
-                <button type="button" aria-label="Dismiss location notice" onClick={onDismissLocationNotice}>×</button>
+                <IconButton
+                  variant="plain"
+                  label="Dismiss location notice"
+                  icon={<CloseIcon />}
+                  onClick={() => onDismissLocationNotice?.()}
+                />
               </div>
             )}
             {overviewStops.length ? (
@@ -174,13 +178,11 @@ export function StopsView({
               <div className="stops-empty stops-empty--favourites">
                 <FavoriteIcon filled={false} className="stops-empty-icon" />
                 <p>No favourites? Use the Star icon to favourite stops.</p>
-                <button
-                  type="button"
-                  className="stops-empty-action"
+                <Button
+                  variant="secondary"
+                  label="Browse stops"
                   onClick={() => onSelectList?.('nearby')}
-                >
-                  Browse stops
-                </button>
+                />
               </div>
             ) : (
               <p className="stops-empty">

@@ -1,0 +1,99 @@
+/* Development-only controls gallery. Layout and forced states only; the look of every control
+   comes from the shared primitives. The gallery is excluded from production builds. */
+.gallery-page,
+.gallery {
+  padding: var(--space-4);
+  color: var(--text-primary);
+  background: var(--surface);
+  text-align: left;
+}
+
+.gallery-page {
+  min-height: 100svh;
+  box-sizing: border-box;
+}
+
+.gallery-frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+  gap: var(--space-4);
+}
+
+.gallery-frame {
+  width: 100%;
+  height: calc(100svh - 140px);
+  min-height: 480px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.gallery h1,
+.gallery-page h1 {
+  margin: 0 0 var(--space-3);
+  font-size: 24px;
+  letter-spacing: 0;
+}
+
+.gallery h2 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 18px;
+}
+
+.gallery-row {
+  display: grid;
+  grid-template-columns: 110px repeat(6, minmax(120px, 1fr));
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+}
+
+.gallery-grid {
+  overflow-x: auto;
+}
+
+.gallery-heading {
+  color: var(--text-secondary);
+  font: 600 var(--font-size-label)/1.2 var(--sans);
+}
+
+.gallery-sample {
+  display: flex;
+  min-width: 0;
+}
+
+.gallery-pills {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Forced states mirror the real rules in controls/button.css and controls/chip.css. */
+.gallery-sample[data-state='hover'] :is(.button, .chip):not([data-variant='ghost'], [aria-pressed='true']) {
+  filter: brightness(0.85);
+}
+
+.gallery-sample[data-state='hover'] :is(.button[data-variant='ghost'], .menu-item) {
+  background: var(--accent-soft);
+}
+
+.gallery-sample[data-state='active'] .button {
+  transform: scale(0.98);
+}
+
+.gallery-sample[data-state='active'] .chip {
+  transform: scale(0.96);
+}
+
+.gallery-sample[data-state='focus-visible'] :is(.button, .chip) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.gallery-sample[data-state='focus-visible'] .button[data-variant='ghost'] {
+  background: var(--accent-soft);
+}
+
+.gallery-sample[data-state='focus-visible'] .menu-item {
+  outline: var(--focus-outline);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  background: var(--accent-soft);
+}

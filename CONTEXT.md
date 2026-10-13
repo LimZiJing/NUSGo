@@ -47,3 +47,10 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 - **Favourites**: The Stops list of shuttle stops saved by the person in their browser.
 - **Venue details**: The view of a selected venue's identity and confirmed location information, with actions such as navigation.
 - **Stop details**: The view of a selected shuttle stop's identity, services, and available arrival information.
+
+## Interface controls
+
+- **Button**: An interactive control that performs an action, with a variant (primary, secondary, or ghost) and a size.
+- **Chip**: An interactive, selectable pill-shaped control, such as a route chip. A chip that toggles reports its selected state to assistive technology.
+- **Pill**: A non-interactive, pill-shaped status label, such as a stop's Live badge.
+- **Touch target**: The area a person can press. Every interactive control is at least 36px tall and wide, except where a documented exception applies.

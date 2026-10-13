@@ -18,6 +18,7 @@ import {
 } from '../../domain/venue/details'
 import { findNearbyShuttleStops, type TransitIndex } from '../../domain/transit'
 import nusmodsLogoUrl from '../../ui/brand-assets/nusmods-logo.svg'
+import { IconButton } from '../../ui/button'
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
@@ -459,6 +460,7 @@ export function ExploreView({
           >
             <button
               type="button"
+              className="explore-segment"
               data-focus-id="explore-venue-segment"
               aria-pressed={venueSearchView}
               onClick={handleSelectVenueSearch}
@@ -467,6 +469,7 @@ export function ExploreView({
             </button>
             <button
               type="button"
+              className="explore-segment"
               data-focus-id="explore-shuttle-segment"
               aria-pressed={state.mode === 'shuttle'}
               onClick={handleSelectShuttle}
@@ -505,17 +508,16 @@ export function ExploreView({
               autoComplete="off"
             />
             {state.query && (
-              <button
-                type="button"
+              <IconButton
+                variant="plain"
                 className="explore-view-search-clear"
+                label="Clear venue search"
+                icon={<CloseIcon />}
                 onClick={() => {
                   onQueryChange('')
                   searchInputRef.current?.focus()
                 }}
-                aria-label="Clear venue search"
-              >
-                <CloseIcon />
-              </button>
+              />
             )}
           </div>
           <div className="navigation-panel-content explore-view-search-body">

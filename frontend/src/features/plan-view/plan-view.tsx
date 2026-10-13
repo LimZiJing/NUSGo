@@ -16,6 +16,8 @@ import {
   ArrowRightIcon,
   EllipsisVerticalIcon,
 } from '../../ui/icons'
+import { IconButton } from '../../ui/button'
+import { MenuItem } from '../../ui/menu-item'
 import './styles/plan-view.css'
 
 interface PlanViewProps {
@@ -145,27 +147,22 @@ export function PlanView({
           <h2>Plan trip</h2>
         </div>
         <div className="plan-view-menu" ref={tripActionsRef}>
-          <button
-            type="button"
-            className="plan-view-menu-trigger"
-            aria-expanded={tripActionsOpen}
-            aria-controls="plan-view-actions-menu"
-            aria-label="Trip actions"
+          <IconButton
+            variant="plain"
+            label="Trip actions"
             title="Trip actions"
+            icon={<EllipsisVerticalIcon />}
+            expanded={tripActionsOpen}
+            controls="plan-view-actions-menu"
             onClick={() => setTripActionsOpen((current) => !current)}
-          >
-            <EllipsisVerticalIcon />
-          </button>
+          />
           {tripActionsOpen && (
             <div id="plan-view-actions-menu" className="plan-view-menu-panel">
-              <button
-                type="button"
-                className="plan-view-menu-item"
+              <MenuItem
+                label="Clear all"
                 onClick={clearTrip}
                 disabled={!tripRequest.origin && !tripRequest.destination}
-              >
-                Clear all
-              </button>
+              />
             </div>
           )}
         </div>
@@ -206,15 +203,14 @@ export function PlanView({
             onSelect={(endpoint) => selectEndpoint('destination', endpoint)}
             onClear={onClearDestinationEndpoint}
           />
-          <button
-            type="button"
+          <IconButton
+            variant="plain"
             className="plan-endpoint-swap"
+            label="Swap origin and destination"
+            icon={<ArrowDownUpIcon />}
             onClick={swapTripEndpoints}
             disabled={!tripRequest.origin || !tripRequest.destination}
-            aria-label="Swap origin and destination"
-          >
-            <ArrowDownUpIcon />
-          </button>
+          />
           <button
             type="button"
             className="plan-view-submit"

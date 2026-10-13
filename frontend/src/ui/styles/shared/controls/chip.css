@@ -1,0 +1,63 @@
+/* Chip primitive: an interactive, selectable pill. See docs/ui/controls.md for the spec. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  background: var(--surface-control);
+  font: 700 var(--font-size-control)/1 var(--sans);
+  cursor: pointer;
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.chip[data-size='lg'] {
+  min-height: var(--control-height-lg);
+}
+
+/* A tone (such as an official route colour) fills the selected chip; otherwise it is solid accent. */
+.chip[data-selected='true'] {
+  border-color: var(--chip-tone, var(--accent));
+  color: var(--chip-tone-text, var(--text-inverse));
+  background: var(--chip-tone, var(--accent));
+  box-shadow: var(--shadow-chip);
+}
+
+.chip:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.chip:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.chip:disabled {
+  border-color: var(--control-border);
+  color: var(--text-muted);
+  background: var(--surface-control);
+  box-shadow: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .chip:not(:disabled):not([aria-pressed='true']):hover {
+    filter: brightness(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip:active:not(:disabled) {
+    transform: none;
+  }
+}

@@ -8,6 +8,7 @@ import type {
   TripLocationSearchResult,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { IconButton } from '../../ui/button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import {
@@ -207,27 +208,23 @@ export function PlanEndpointControl({
           />
           <div className="plan-endpoint-actions">
             {role === 'origin' && onUseCurrentLocation && (
-              <button
-                type="button"
-                className="plan-endpoint-location"
-                onClick={onUseCurrentLocation}
-                disabled={isGettingCurrentLocation}
-                aria-label={locationActionLabel}
-                aria-busy={isGettingCurrentLocation}
+              <IconButton
+                variant="plain"
+                label={locationActionLabel}
                 title={locationActionLabel}
-              >
-                <LocateIcon />
-              </button>
+                icon={<LocateIcon />}
+                busy={isGettingCurrentLocation}
+                disabled={isGettingCurrentLocation}
+                onClick={onUseCurrentLocation}
+              />
             )}
             {(endpoint || searchQuery) && (
-              <button
-                type="button"
-                className="plan-endpoint-clear"
+              <IconButton
+                variant="plain"
+                label={`Clear ${roleLabel.toLocaleLowerCase()}`}
+                icon={<CloseIcon />}
                 onClick={clearEndpoint}
-                aria-label={`Clear ${roleLabel.toLocaleLowerCase()}`}
-              >
-                <CloseIcon />
-              </button>
+              />
             )}
           </div>
         </div>

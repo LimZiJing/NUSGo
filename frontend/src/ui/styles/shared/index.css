@@ -8,6 +8,7 @@
 @import './navigation.css';
 @import './panels/navigation-panel.css';
 @import './controls/route-chip.css';
+@import './controls/segmented-control.css';
 @import '../disclosure-chevron.css';
 @import './controls/ghost-back-button.css';
 @import './controls/search-field.css';

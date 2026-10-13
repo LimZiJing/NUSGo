@@ -8,6 +8,7 @@ import {
 } from './stop-timings'
 import { StopCard } from './stop-card'
 import { BusIcon, FavoriteIcon } from '../../ui/icons'
+import { SegmentedControl } from '../../ui/segmented-control'
 import { type StopRouteDeparture } from './stops-view-state'
 import './styles/stops-view.css'
 
@@ -134,10 +135,16 @@ export function StopsView({
           </div>
         ) : overviewStops ? (
           <div className="stops-overview">
-            <div className="stops-list-selector" role="group" aria-label="Stop list">
-              <button type="button" aria-pressed={selectedList === 'nearby'} onClick={() => onSelectList?.('nearby')}>Nearby</button>
-              <button type="button" aria-pressed={selectedList === 'favourites'} onClick={() => onSelectList?.('favourites')}>Favourites</button>
-            </div>
+            <SegmentedControl
+              className="stops-list-selector"
+              label="Stop list"
+              options={[
+                { value: 'nearby', label: 'Nearby' },
+                { value: 'favourites', label: 'Favourites' },
+              ]}
+              value={selectedList}
+              onValueChange={(list) => onSelectList?.(list)}
+            />
             {liveArrivalMessage && (
               <p className="stop-live-arrival-message" role="status">
                 {liveArrivalMessage}

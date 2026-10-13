@@ -7,7 +7,7 @@
 
 /* Excluded primary buttons: this rule has the same specificity as the shared
    button.navigate-button rule and loads later, so it would override their accent colours. */
-.stops-view button:where(:not(.route-chip):not(.navigate-button):not(.stop-opposite)) {
+.stops-view button:where(:not(.route-chip):not(.navigate-button):not(.stop-opposite):not(.segmented-control-option)) {
   min-width: 44px;
   min-height: var(--control-height-lg);
   padding: 8px 10px;
@@ -49,54 +49,6 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable both-edges;
-  }
-
-  .stops-list-selector {
-    position: relative;
-    z-index: 2;
-    flex: 0 0 auto;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0;
-    padding: 0;
-    border-radius: var(--radius-card);
-    background: var(--surface-segmented-control);
-  }
-
-  .stops-list-selector button {
-    position: relative;
-    isolation: isolate;
-    min-width: 0;
-    min-height: var(--control-height-lg);
-    padding: 8px 10px;
-    border: 0;
-    border-radius: 9px;
-    color: var(--text-secondary);
-    background: transparent;
-    font: 600 14px/1.2 var(--sans);
-    cursor: pointer;
-  }
-
-  .stops-list-selector button[aria-pressed='true'] {
-    color: var(--text-contrast);
-  }
-
-  .stops-list-selector button[aria-pressed='true']::before {
-    position: absolute;
-    z-index: -1;
-    inset: 3px;
-    border-radius: 7px;
-    background: var(--surface-raised);
-    box-shadow: var(--shadow-soft);
-    content: '';
-    pointer-events: none;
-  }
-
-  .stops-list-selector button:hover,
-  .stops-list-selector button[aria-pressed='true']:hover,
-  .stops-list-selector button[aria-pressed='true']:focus-visible {
-    border-color: transparent;
-    background: transparent;
   }
 
   .stops-location-notice {

@@ -51,7 +51,7 @@ describe('StopTimings', () => {
     expect(destinationBadges).toHaveLength(2)
     expect(destinationBadges[0]?.getAttribute('data-opposite')).toBeNull()
     expect(destinationBadges[1]?.getAttribute('data-opposite')).toBe('true')
-    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
+    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop')).toBeNull()
   })
 
   it('uses the same status row for scheduled routes and public services', () => {

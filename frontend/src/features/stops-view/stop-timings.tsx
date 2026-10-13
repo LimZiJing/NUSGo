@@ -1,5 +1,5 @@
 import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
-import { BusIcon, FavoriteIcon } from '../../ui/icons'
+import { FavoriteIcon } from '../../ui/icons'
 
 export interface StopFavoriteDestination {
   readonly id: string
@@ -109,7 +109,6 @@ export function StopTimings({
                     aria-label={`${name}, shuttle stop, ${id}`}
                   >
                     <FavoriteIcon filled />
-                    <BusIcon className="location-identity-icon location-identity-icon--stop" />
                     <span>{name}</span>
                   </span>
                 ))}

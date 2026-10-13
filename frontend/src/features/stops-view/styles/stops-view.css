@@ -461,13 +461,6 @@
     background: var(--status-info-surface);
   }
 
-  .stop-reachable-favorite .location-identity-icon {
-    width: 11px;
-    height: 11px;
-    flex-basis: 11px;
-    color: currentColor;
-  }
-
   .stop-reachable-favorite svg {
     flex: 0 0 auto;
     width: 11px;

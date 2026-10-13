@@ -33,6 +33,7 @@ export function MainNavigation({
     >
       {NAVIGATION_VIEWS.map(({ id, label, panelId }) => (
         <button
+          className="navigation-tab"
           type="button"
           key={id}
           aria-controls={panelId}

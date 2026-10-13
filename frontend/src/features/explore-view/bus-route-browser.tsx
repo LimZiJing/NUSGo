@@ -262,6 +262,7 @@ export function BusRouteBrowser({
                 }}
                 routeId={route.id}
                 routeColor={route.color}
+                size="small"
                 focusId={`shuttle-route-${route.id}`}
                 ariaLabel={`Route ${route.id}`}
                 active={selectedRouteId === route.id}

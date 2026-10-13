@@ -88,9 +88,9 @@ describe('RouteBrowser', () => {
       'A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P',
     ])
     expect(cards[0].textContent).toContain('A1')
-    expect((cards[0] as HTMLButtonElement).style.getPropertyValue('--route-color')).toBe('#fb0101')
+    expect((cards[0] as HTMLButtonElement).style.getPropertyValue('--chip-tone')).toBe('#fb0101')
     expect(cards[0].getAttribute('aria-pressed')).toBe('false')
-    expect((cards[1] as HTMLButtonElement).style.getPropertyValue('--route-text-color'))
+    expect((cards[1] as HTMLButtonElement).style.getPropertyValue('--chip-tone-text'))
       .toBe('#000000')
   })
 

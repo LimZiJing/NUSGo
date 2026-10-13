@@ -101,7 +101,7 @@
     box-sizing: border-box;
   }
 
-  .main-navigation button {
+  .main-navigation .navigation-tab {
     min-height: var(--control-height-sm);
   }
 

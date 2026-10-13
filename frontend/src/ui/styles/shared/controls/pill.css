@@ -1,0 +1,29 @@
+/* Pill primitive: a non-interactive status label. See docs/ui/controls.md for the spec. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font: 500 var(--font-size-label)/1.2 var(--sans);
+  white-space: nowrap;
+}
+
+.pill[data-tone='neutral'] {
+  color: var(--text-muted);
+  background: var(--surface-muted);
+}
+
+.pill[data-tone='success'] {
+  border: 1px solid var(--border-success);
+  color: var(--status-success);
+  background: var(--status-success-surface);
+}
+
+.pill[data-leading-dot='true']::before {
+  width: 5px;
+  height: 5px;
+  margin-right: var(--space-1);
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}

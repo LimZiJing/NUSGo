@@ -1,4 +1,5 @@
-import { FavoriteIcon } from '../../../ui/icons'
+import { Button, IconButton } from '../../../ui/button'
+import { CloseIcon, FavoriteIcon } from '../../../ui/icons'
 import type { StopListEntry } from '../data/stop-list-data'
 import { StopCard } from './stop-card'
 
@@ -35,7 +36,12 @@ export function StopList({
       {locationNotice && selectedStopList === 'nearby' && (
         <div className="stops-location-notice" role="status">
           <span>{locationNotice}</span>
-          <button type="button" aria-label="Dismiss location notice" onClick={onDismissLocationNotice}>×</button>
+          <IconButton
+            variant="plain"
+            label="Dismiss location notice"
+            icon={<CloseIcon />}
+            onClick={onDismissLocationNotice}
+          />
         </div>
       )}
       {entries.length ? (
@@ -63,13 +69,11 @@ export function StopList({
         <div className="stops-empty stops-empty--favourites">
           <FavoriteIcon filled={false} className="stops-empty-icon" />
           <p>No favourites? Use the Star icon to favourite stops.</p>
-          <button
-            type="button"
-            className="stops-empty-action"
+          <Button
+            variant="secondary"
+            label="Browse stops"
             onClick={() => onSelectStopList('nearby')}
-          >
-            Browse stops
-          </button>
+          />
         </div>
       ) : (
         <p className="stops-empty">

@@ -8,19 +8,26 @@
   font: 14px/1.2 var(--sans);
   box-sizing: border-box;
 }
-.plan-view button:not(:disabled) {
+
+.plan-view-submit:not(:disabled),
+.plan-endpoint-result:not(:disabled),
+.journey-option-summary:not(:disabled) {
   transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
     border-color var(--motion-duration-fast) var(--motion-ease-standard),
     color var(--motion-duration-fast) var(--motion-ease-standard),
     transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
-.plan-view button:active:not(:disabled) {
+.plan-view-submit:active:not(:disabled),
+.plan-endpoint-result:active:not(:disabled),
+.journey-option-summary:active:not(:disabled) {
   transform: scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .plan-view button:active {
+  .plan-view-submit:active,
+  .plan-endpoint-result:active,
+  .journey-option-summary:active {
     transform: none;
   }
 }
@@ -53,44 +60,6 @@
   position: relative;
 }
 
-.plan-view-menu-trigger,
-.plan-view-menu-item {
-  color: var(--text-primary);
-  background: var(--surface-muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.plan-view-menu-trigger {
-  display: grid;
-  width: var(--control-height-sm);
-  height: var(--control-height-sm);
-  padding: 5px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  place-items: center;
-}
-
-.plan-view-menu-trigger svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
-.plan-view-menu-trigger:hover,
-.plan-view-menu-trigger:focus-visible {
-  background: var(--surface-control);
-}
-
-.plan-view-menu-trigger[aria-expanded='true'] {
-  background: var(--surface-control);
-}
-
 .plan-view-menu-panel {
   position: absolute;
   z-index: 4;
@@ -104,22 +73,9 @@
   box-shadow: var(--shadow-results);
 }
 
-.plan-view-menu-item {
-  width: 100%;
-  padding: 8px 10px;
-  border-color: transparent;
-  border-radius: var(--radius-sm);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.plan-view-menu-item:not(:disabled):hover,
-.plan-view-menu-item:not(:disabled):focus-visible {
-  border-color: var(--border-control);
-  background: var(--surface-control);
-}
-
-.plan-view button:disabled {
+.plan-view-submit:disabled,
+.plan-endpoint-result:disabled,
+.journey-option-summary:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -205,34 +161,9 @@
 .plan-endpoint-swap {
   position: absolute;
   z-index: 2;
-  top: 50%;
+  /* Centred without a transform so the primitive's pressed scale cannot make it jump. */
+  top: calc(50% - var(--control-height-sm) / 2);
   right: 8px;
-  display: grid;
-  width: var(--control-height-sm);
-  height: var(--control-height-sm);
-  padding: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  color: var(--text-primary);
-  background: transparent;
-  cursor: pointer;
-  transform: translateY(-50%);
-}
-
-.plan-endpoint-swap:hover:not(:disabled),
-.plan-endpoint-swap:focus-visible:not(:disabled) {
-  background: var(--surface-control);
-}
-
-.plan-endpoint-swap svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
 }
 
 .plan-endpoint-field {
@@ -295,38 +226,6 @@
   align-items: center;
   gap: 2px;
   transform: translateY(-50%);
-}
-
-.plan-endpoint-location,
-.plan-endpoint-clear {
-  display: grid;
-  width: var(--control-height-sm);
-  height: var(--control-height-sm);
-  padding: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-}
-
-.plan-endpoint-location:hover,
-.plan-endpoint-location:focus-visible,
-.plan-endpoint-clear:hover,
-.plan-endpoint-clear:focus-visible {
-  color: var(--text-primary);
-  background: var(--surface-control);
-}
-
-.plan-endpoint-location svg,
-.plan-endpoint-clear svg {
-  width: 15px;
-  height: 15px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 2;
 }
 
 .plan-endpoint-location-status {
@@ -1033,7 +932,9 @@
     margin-inline: var(--space-2) 0;
   }
 
-  .plan-view button,
+  .plan-view-submit,
+  .plan-endpoint-result,
+  .journey-option-summary,
   .plan-view input,
   .plan-view select {
     min-height: var(--control-height-sm);

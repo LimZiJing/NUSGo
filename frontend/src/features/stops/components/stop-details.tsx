@@ -1,6 +1,7 @@
 import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { NavigateButton } from '../../../ui/navigate-button'
-import { BusIcon, FavoriteIcon } from '../../../ui/icons'
+import { Button, IconButton } from '../../../ui/button'
+import { BusIcon, ChevronRightIcon, FavoriteIcon } from '../../../ui/icons'
 import type { StopDetailsModel } from '../data/stop-details-model'
 import { StopDepartureList } from './stop-departure-list'
 
@@ -40,15 +41,14 @@ export function StopDetails({
           </h2>
           <span className="stop-id">{stop.id}</span>
         </div>
-        <button
+        <IconButton
           className="stop-favorite"
-          type="button"
-          aria-label={`${favorite ? 'Remove' : 'Add'} ${stop.longName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
-          aria-pressed={favorite}
+          variant="plain"
+          label={`${favorite ? 'Remove' : 'Add'} ${stop.longName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
+          icon={<FavoriteIcon filled={favorite} />}
+          pressed={favorite}
           onClick={() => onToggleFavorite(stop.id)}
-        >
-          <FavoriteIcon filled={favorite} />
-        </button>
+        />
       </div>
       <div className="stop-actions">
         <NavigateButton
@@ -56,15 +56,14 @@ export function StopDetails({
           onClick={() => onNavigateToStop(stop.id)}
         />
         {oppositeStop ? (
-          <button
+          <Button
             className="stop-opposite"
-            type="button"
-            aria-label={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
-            title={`Opposite shuttle stop: ${oppositeStop.longName} (${oppositeStop.id})`}
+            variant="secondary"
+            label="Opposite stop"
+            trailingIcon={<ChevronRightIcon />}
+            ariaLabel={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
             onClick={() => onSelectOppositeStop(oppositeStop.id)}
-          >
-            Opposite stop <span aria-hidden="true">›</span>
-          </button>
+          />
         ) : null}
       </div>
       {liveArrivalMessage && (

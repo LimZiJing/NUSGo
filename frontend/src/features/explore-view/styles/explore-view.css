@@ -30,8 +30,8 @@
   font: 600 18px/1.2 system-ui, sans-serif;
 }
 
-.explore-view-header button:where(:not(.route-chip):not(.explore-route-browser-stop):not(.navigate-button):not(.segmented-control-option)),
-.explore-view button:where(:not(.route-chip):not(.explore-route-browser-stop):not(.navigate-button):not(.segmented-control-option)) {
+.explore-view-result,
+.nearby-stop-row {
   padding: 5px 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
@@ -86,21 +86,11 @@
   appearance: none;
 }
 
-.explore-view .explore-view-search-clear {
+.explore-view-search-clear {
   position: absolute;
   top: 50%;
   right: 3px;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0;
   transform: translateY(-50%);
-  border: 0;
-  border-radius: var(--radius-panel);
-  color: var(--text-muted);
-  background: transparent;
 }
 
 .explore-view-search-clear svg {
@@ -385,12 +375,15 @@
   color: var(--text-primary);
 }
 
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.segmented-control-option):where(:not(.explore-route-browser-stop)):hover,
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.segmented-control-option):where(:not(.explore-route-browser-stop)):focus-visible {
+.explore-view .explore-view-result:hover,
+.explore-view .explore-view-result:focus-visible,
+.explore-view .nearby-stop-row:hover,
+.explore-view .nearby-stop-row:focus-visible {
   border-color: var(--border-focus);
 }
 
-.explore-view button:not(.mobile-sheet-handle):not(.route-chip):not(.navigate-button):not(.segmented-control-option):where(:not(.explore-route-browser-stop)):focus-visible {
+.explore-view .explore-view-result:focus-visible,
+.explore-view .nearby-stop-row:focus-visible {
   background: var(--surface-subtle);
 }
 @media (max-width: 768px) {
@@ -518,15 +511,6 @@
     gap: 8px;
   }
 
-  .explore-view-actions button {
-    min-height: 52px;
-    padding: 10px 12px;
-    border-color: var(--border-muted);
-    border-radius: var(--radius-lg);
-    background: var(--surface-muted);
-    font-weight: 600;
-  }
-
   .explore-view-search-row {
     gap: 8px;
   }
@@ -539,11 +523,8 @@
     background: var(--surface-muted);
   }
 
-  .explore-view .explore-view-search-clear {
+  .explore-view-search-clear {
     right: 2px;
-    width: 44px;
-    height: 44px;
-    min-height: var(--control-height-lg);
   }
 
   .explore-view .explore-view-results {
@@ -554,12 +535,10 @@
     font-size: 24px;
   }
 
-  .explore-view-header button:where(:not(.route-chip):not(.explore-route-browser-stop):not(.navigate-button):not(.segmented-control-option)),
-  .explore-view button:where(:not(.route-chip):not(.explore-route-browser-stop):not(.navigate-button):not(.segmented-control-option)) {
-    border-radius: var(--radius-card);
-  }
-
-  .explore-view button:focus-visible,
+  .explore-view .segmented-control-option:focus-visible,
+  .explore-view .explore-view-result:focus-visible,
+  .explore-view .nearby-stop-row:focus-visible,
+  .explore-view .explore-route-browser-stop:focus-visible,
   .explore-view input:focus-visible,
   .explore-view select:focus-visible {
     outline: 3px solid var(--focus-ring-strong);

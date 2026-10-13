@@ -42,6 +42,14 @@ export interface Path {
   readonly planningQuality: PathQuality
 }
 
+/** A candidate Path paired with its core-search score for ranking and Plan selection. */
+export interface ScoredPathCandidate {
+  readonly candidateKey: string
+  readonly path: Path
+  readonly adjustedDurationSeconds: number
+  readonly score: number
+}
+
 export interface PathEndpointLocation {
   readonly endpoint: TripEndpoint
   readonly coordinate: TripCoordinate

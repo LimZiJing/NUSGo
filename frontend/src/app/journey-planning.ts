@@ -12,10 +12,9 @@ import {
   zeroBusWaitingTime,
   type PathCandidateSearchResult,
   type PathSearchStatus,
-  type ScoredPathCandidate,
   type BusWaitingTimeProvider,
   type PathWalkingConnection,
-} from '../domain/trip/planner'
+} from '../pathfinding/search/search-path-candidates'
 import { createLiveBusWaitingTimeProvider } from '../domain/trip/live-waiting'
 import {
   describeShuttleServiceUnavailable,
@@ -23,7 +22,7 @@ import {
   type ShuttleServiceEvaluation,
   type ShuttleServiceWindow,
 } from '../domain/transit/service-hours'
-import type { Path, PathEndpointLocation } from '../pathfinding/path'
+import type { Path, PathEndpointLocation, ScoredPathCandidate } from '../pathfinding/path'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import { getTripEndpointKey } from '../domain/trip/endpoints'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { Path } from '../pathfinding/path'
-import type { ScoredPathCandidate } from '../domain/trip/planner'
+import type { ScoredPathCandidate } from '../pathfinding/path'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 

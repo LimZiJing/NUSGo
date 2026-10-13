@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createTransitNetworkIndex } from '../transit'
+import { createTransitNetworkIndex } from '../../domain/transit'
 import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
-import type { TripEndpoint } from './types'
-import { getTripEndpointKey } from './endpoints'
+import type { TripEndpoint } from '../../domain/trip/types'
+import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import {
   searchPaths,
   searchPathsWithinBudget,
@@ -12,7 +12,7 @@ import {
   zeroBusWaitingTime,
   type PathSearchInput,
   type PathWalkingConnection,
-} from './planner'
+} from './search-path-candidates'
 
 const origin: TripEndpoint = { kind: 'venue', id: 'ORIGIN' }
 const destination: TripEndpoint = { kind: 'venue', id: 'DESTINATION' }

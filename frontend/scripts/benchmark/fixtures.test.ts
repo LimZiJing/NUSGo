@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { searchPathsWithinBudget } from '../../src/domain/trip/planner'
+import { searchPathsWithinBudget } from '../../src/pathfinding/search/search-path-candidates'
 import { loadJourneyBenchmarkManifest } from './manifest'
 import { createJourneyBenchmarkCases, loadJourneyBenchmarkFixtures } from './fixtures'
 import { validateJourneyBenchmarkOutcome } from './outcome'

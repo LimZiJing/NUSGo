@@ -8,7 +8,7 @@ import {
 import type {
   PathSearchInput,
   PathWalkingConnection,
-} from '../../src/domain/trip/planner.js'
+} from '../../src/pathfinding/search/search-path-candidates.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
 import { validateTransitMapData } from '@navus/shared/transit/map-data'

@@ -1,6 +1,6 @@
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import type { Path, PathLeg } from '../../pathfinding/path'
-import type { ScoredPathCandidate } from '../../domain/trip/planner'
+import type { ScoredPathCandidate } from '../../pathfinding/path'
 import type { TripEndpoint } from '../../domain/trip/types'
 
 const MAX_DISPLAYED_JOURNEYS = 3

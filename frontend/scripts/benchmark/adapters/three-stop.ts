@@ -2,7 +2,7 @@ import {
   createJourneyPlanningService,
   NoPathAvailableError,
 } from '../../../src/app/journey-planning.js'
-import { searchPaths } from '../../../src/domain/trip/planner.js'
+import { searchPaths } from '../../../src/pathfinding/search/search-path-candidates.js'
 import type { Path } from '../../../src/pathfinding/path.js'
 import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
 import type {

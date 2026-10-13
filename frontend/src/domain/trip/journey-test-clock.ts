@@ -1,5 +1,5 @@
 import { evaluateShuttleService, type ShuttleServiceWindow } from '../transit/service-hours'
-import type { BusWaitingTimeProvider } from './planner'
+import type { BusWaitingTimeProvider } from '../../pathfinding/search/search-path-candidates'
 
 const SINGAPORE_OFFSET_MS = 8 * 60 * 60 * 1000
 

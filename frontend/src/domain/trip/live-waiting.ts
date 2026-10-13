@@ -3,7 +3,7 @@ import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type {
   BusWaitingTimeContext,
   BusWaitingTimeProvider,
-} from './planner'
+} from '../../pathfinding/search/search-path-candidates'
 
 const LIVE_DATA_STALE_AFTER_SECONDS = 45
 const LIVE_DATA_EXPIRED_AFTER_SECONDS = 120

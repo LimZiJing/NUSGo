@@ -1,5 +1,5 @@
 import type { Path } from '../pathfinding/path'
-import type { ScoredPathCandidate } from '../domain/trip/planner'
+import type { ScoredPathCandidate } from '../pathfinding/path'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 

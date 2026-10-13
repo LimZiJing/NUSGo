@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Path } from '../../pathfinding/path'
-import type { ScoredPathCandidate } from '../../domain/trip/planner'
+import type { ScoredPathCandidate } from '../../pathfinding/path'
 import { selectDisplayedPaths } from './journey-candidate-selection'
 
 const origin = { kind: 'stop', id: 'STOP-A' } as const

@@ -728,6 +728,50 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('hides planned Journey layers and endpoint markers outside Plan and restores them without replanning', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      layers: Set<string>
+      addedMarkers: Array<{ remove: ReturnType<typeof vi.fn> }>
+    }
+    const venues = {
+      ONE: { roomName: 'One', location: { x: 103.7, y: 1.3 } },
+      TWO: { roomName: 'Two', location: { x: 103.8, y: 1.4 } },
+    }
+    const request = { origin: { kind: 'venue', id: 'ONE' }, destination: { kind: 'venue', id: 'TWO' } } as const
+    const options = [{ candidateKey: 'bus', journey: createJourney() }]
+
+    await session.ready
+    session.setTripRequest(request, venues, null)
+    session.setJourneyOptions(options, 'bus')
+    const endpointMarkers = [...map.addedMarkers]
+    expect(endpointMarkers.length).toBeGreaterThan(0)
+    expect(map.layers.size).toBe(6)
+
+    session.setPlanLayersVisible(false)
+
+    expect(map.layers.size).toBe(0)
+    expect(endpointMarkers.every((marker) => marker.remove.mock.calls.length > 0)).toBe(true)
+
+    session.setJourneyOptions(options, 'bus')
+    session.setTripRequest(request, venues, null)
+    expect(map.layers.size).toBe(0)
+    const markerCountWhileHidden = map.addedMarkers.length
+
+    session.setPlanLayersVisible(true)
+
+    expect(map.layers.size).toBe(6)
+    expect(map.addedMarkers.length).toBe(markerCountWhileHidden + endpointMarkers.length)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('forwards rendered Journey route clicks through the MapSession callback', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     vi.stubGlobal('Element', class {})

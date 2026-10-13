@@ -180,10 +180,10 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     await user.click(screen.getByRole('button', { name: 'Expand Explore panel' }))
 
-    expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Reduce Explore panel' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
 
-    expect(screen.getByRole('button', { name: 'Collapse Explore panel' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Reduce Explore panel' })).toBeTruthy()
   })
 
   it('opens Plan after a shuttle-stop popup sets the destination', async () => {

@@ -147,17 +147,15 @@ export function PlanView({
           <h2>Plan trip</h2>
         </div>
         <div className="plan-view-menu" ref={tripActionsRef}>
-          <button
-            type="button"
-            className="plan-view-menu-trigger"
-            aria-expanded={tripActionsOpen}
-            aria-controls="plan-view-actions-menu"
-            aria-label="Trip actions"
+          <IconButton
+            variant="plain"
+            label="Trip actions"
             title="Trip actions"
+            icon={<EllipsisVerticalIcon />}
+            expanded={tripActionsOpen}
+            controls="plan-view-actions-menu"
             onClick={() => setTripActionsOpen((current) => !current)}
-          >
-            <EllipsisVerticalIcon />
-          </button>
+          />
           {tripActionsOpen && (
             <div id="plan-view-actions-menu" className="plan-view-menu-panel">
               <MenuItem

@@ -208,17 +208,15 @@ export function PlanEndpointControl({
           />
           <div className="plan-endpoint-actions">
             {role === 'origin' && onUseCurrentLocation && (
-              <button
-                type="button"
-                className="plan-endpoint-location"
-                onClick={onUseCurrentLocation}
-                disabled={isGettingCurrentLocation}
-                aria-label={locationActionLabel}
-                aria-busy={isGettingCurrentLocation}
+              <IconButton
+                variant="plain"
+                label={locationActionLabel}
                 title={locationActionLabel}
-              >
-                <LocateIcon />
-              </button>
+                icon={<LocateIcon />}
+                busy={isGettingCurrentLocation}
+                disabled={isGettingCurrentLocation}
+                onClick={onUseCurrentLocation}
+              />
             )}
             {(endpoint || searchQuery) && (
               <IconButton

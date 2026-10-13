@@ -6,7 +6,7 @@ This is the spec for NavUS buttons, chips, and pills (issue #333). Vocabulary is
 
 | Component | Use for | Notes |
 | --- | --- | --- |
-| `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Optional leading `icon` and `trailingIcon`. Always `type="button"`. |
+| `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Optional leading `icon` and `trailingIcon`. Always `type="button"`. Also accepts `title`, `expanded` and `controls` (`aria-expanded`, `aria-controls`) for disclosure triggers, and `busy` (`aria-busy`). |
 | `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. Also accepts variant `plain`: no box at rest, on hover or when pressed (hover only dims the icon; focus keeps the ring), for icon toggles such as a favourite star and for dismiss icons. The caller changes the icon to show a pressed state. |
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
 | `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
@@ -95,7 +95,7 @@ Each item is one small pull request, and each lowers the matching counts in the 
 - [x] Plan
 - [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling from #343; only a dead `.location-control-popover button` rule was removed)
 - [ ] Sheet
-- [x] Popovers (the endpoint locate button and search result rows keep their own classes: the locate button needs aria-busy and a boxed hover the primitives lack, and result rows are rich multi-line rows)
-- [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem`; its ellipsis trigger keeps its own class because it needs `aria-expanded` and `aria-controls`)
+- [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
+- [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
 
 Known leftovers until then: `RouteChip` in its compact size keeps its current 24px height (the Chip `sm` size is 36px) and `InfoPill` keeps its 10px compact metrics, both to avoid visual change on screens that are not yet migrated. Map popup route chips are plain elements that still use the `route-chip` class.

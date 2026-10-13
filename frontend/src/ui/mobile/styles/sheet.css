@@ -114,9 +114,9 @@
     left: 0;
     display: flex;
     width: auto;
-    height: var(--mobile-viewport-height) !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    height: var(--mobile-viewport-height);
+    min-height: 0;
+    max-height: none;
     flex-direction: column;
     overflow: hidden;
     /* Keep scrollable content inside the visible part of a partial sheet. */
@@ -169,6 +169,10 @@
     z-index: 15;
     padding-top: max(8px, env(safe-area-inset-top, 0px));
     border-radius: 0;
+    /* A full sheet already starts at the viewport top. Ignore Base UI's
+       transient offset while its ResizeObserver catches up after a keyboard
+       resize; keep the swipe variable so a full sheet remains draggable. */
+    transform: translateY(var(--drawer-swipe-movement-y, 0px));
   }
 
   .navigation-panel.mobile-sheet-popup[data-detent='collapsed'] {

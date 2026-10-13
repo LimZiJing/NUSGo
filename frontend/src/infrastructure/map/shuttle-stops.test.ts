@@ -499,7 +499,12 @@ describe('bus-stop presentation', () => {
     const obstacleLayer = vi.mocked(map.addLayer).mock.calls[2][0] as {
       layout: Record<string, unknown>
     }
+    expect(obstacleLayer.layout['icon-padding']).toBe(0)
     expect(obstacleLayer.layout['icon-allow-overlap']).toBe(true)
+    // Label box edge (offset minus text-padding) must clear the obstacle half-size.
+    expect(
+      12 * (BUS_STOP_LABEL_LAYOUT as Record<string, number>)['text-radial-offset'] - 2,
+    ).toBeGreaterThan(BUS_STOP_OBSTACLE_SIZE / 2)
     expect(obstacleLayer.layout['icon-ignore-placement']).toBe(false)
 
     adapter.dispose()

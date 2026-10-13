@@ -19,8 +19,9 @@ export const BUS_STOP_ACTIVE_LABEL_LAYER_ID = 'shuttle-stop-active-labels'
 export const BUS_STOP_INACTIVE_LABEL_LAYER_ID = 'shuttle-stop-inactive-labels'
 export const BUS_STOP_OBSTACLE_LAYER_ID = 'shuttle-stop-obstacles'
 export const BUS_STOP_OBSTACLE_IMAGE_ID = 'shuttle-stop-obstacle'
-// 14px marker (including border) plus 2px of clearance on each side.
-export const BUS_STOP_OBSTACLE_SIZE = 18
+// Exactly the 14px marker (including border); any larger box, or the default
+// 2px icon-padding, reaches the label's own box and suppresses every label.
+export const BUS_STOP_OBSTACLE_SIZE = 14
 export const BUS_STOP_LABEL_TEXT_SIZE = 12
 // In ems: 12px from the stop coordinate clears the 7px marker radius by 5px.
 export const BUS_STOP_LABEL_RADIAL_OFFSET = 1
@@ -54,6 +55,7 @@ export const BUS_STOP_OBSTACLE_LAYER: SymbolLayerSpecification = {
   minzoom: BUS_STOP_MIN_ZOOM,
   layout: {
     'icon-image': BUS_STOP_OBSTACLE_IMAGE_ID,
+    'icon-padding': 0,
     'icon-allow-overlap': true,
     'icon-ignore-placement': false,
   },

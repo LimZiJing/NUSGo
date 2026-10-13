@@ -1,7 +1,7 @@
 import type { ShuttleArrivalSnapshot, ShuttleRouteArrivalData } from '../../src/domain/transit/arrivals.js'
 import type { ShuttleServiceWindow } from '../../src/domain/transit/service-hours.js'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
-import type { JourneyBenchmarkTimingProfile } from './manifest.js'
+import type { PathfindingBenchmarkTimingProfile } from './manifest.js'
 
 export interface BenchmarkRouteStops {
   readonly id: string
@@ -9,7 +9,7 @@ export interface BenchmarkRouteStops {
 }
 
 export function createBenchmarkArrivalSnapshot(
-  profile: JourneyBenchmarkTimingProfile,
+  profile: PathfindingBenchmarkTimingProfile,
   routes: readonly BenchmarkRouteStops[],
   arrivalRouteIds: readonly string[] | undefined,
   nowMs: number,
@@ -49,7 +49,7 @@ export function createBenchmarkArrivalSnapshot(
 
 export function applyBenchmarkShuttleTimingProfile(
   records: readonly ShuttleTimingRecord[],
-  profile: JourneyBenchmarkTimingProfile,
+  profile: PathfindingBenchmarkTimingProfile,
   arrivalRouteIds: readonly string[] | undefined,
 ): readonly ShuttleTimingRecord[] {
   if (profile.shuttleTiming === 'canonical') return records
@@ -80,7 +80,7 @@ export function applyBenchmarkShuttleTimingProfile(
 }
 
 export function createBenchmarkServiceWindows(
-  profile: JourneyBenchmarkTimingProfile,
+  profile: PathfindingBenchmarkTimingProfile,
   nowMs: number,
 ): (routeIds: readonly string[]) => Readonly<Record<string, readonly ShuttleServiceWindow[]>> {
   const date = new Intl.DateTimeFormat('en-CA', {

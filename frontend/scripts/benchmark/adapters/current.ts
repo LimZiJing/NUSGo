@@ -1,32 +1,32 @@
 import {
-  createJourneyPlanningService,
+  createFindPathsService,
   NoPathAvailableError,
-} from '../../../src/app/journey-planning.js'
+} from '../../../src/pathfinding/find-paths.js'
 import { searchPathsWithinBudget } from '../../../src/pathfinding/search/search-path-candidates.js'
 import type { Path } from '../../../src/pathfinding/path.js'
-import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
+import { createWalkingConnectionProvider } from '../../../src/pathfinding/walking/walking-connections.js'
 import type {
-  JourneyBenchmarkAdapterFactory,
-  JourneyBenchmarkOutcome,
+  PathfindingBenchmarkAdapterFactory,
+  PathfindingBenchmarkOutcome,
 } from '../contract.js'
 
-const JOURNEY_SEARCH_MAX_DURATION_MS = 350
-const JOURNEY_SEARCH_MAX_EXPANDED_PATHS = 10_000
+const PATHFINDING_SEARCH_MAX_DURATION_MS = 350
+const PATHFINDING_SEARCH_MAX_EXPANDED_PATHS = 10_000
 
-function asOutcome(path: Path | null): JourneyBenchmarkOutcome {
-  if (!path) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
-  return { kind: 'journey', path }
+function asOutcome(path: Path | null): PathfindingBenchmarkOutcome {
+  if (!path) return { kind: 'no-route', reason: 'The Path service returned no route.' }
+  return { kind: 'path', path }
 }
 
-export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () => ({
+export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFactory = () => ({
   id: 'current-priority-queue',
   label: 'Current NavUS planner',
 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {
       const result = await searchPathsWithinBudget(benchmarkCase.searchInput, {
-        maxDurationMs: JOURNEY_SEARCH_MAX_DURATION_MS,
-        maxExpandedPaths: JOURNEY_SEARCH_MAX_EXPANDED_PATHS,
+        maxDurationMs: PATHFINDING_SEARCH_MAX_DURATION_MS,
+        maxExpandedPaths: PATHFINDING_SEARCH_MAX_EXPANDED_PATHS,
         shouldCancel: () => signal.aborted,
         yieldEvery: 0,
       })
@@ -38,7 +38,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
       if (!result.path) {
         return {
           kind: 'no-route',
-          reason: `Planner returned no journey (${result.status}).`,
+          reason: `Planner returned no path (${result.status}).`,
           diagnostics: {
             planningStatus: result.status,
             expandedPathCount: result.expandedPathCount,
@@ -46,7 +46,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
         }
       }
       return {
-        kind: 'journey',
+        kind: 'path',
         path: result.path,
         diagnostics: {
           planningStatus: result.status,
@@ -56,30 +56,38 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
     }
   },
 
-  createJourneyRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
+  createPathRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
     const walkingConnectionProvider = createWalkingConnectionProvider({
       routeEngine,
       loadGraph: async () => walkingGraph,
     })
-    const service = createJourneyPlanningService(
+    const arrivals = createArrivalClient(benchmarkCase)
+    const serviceHours = createServiceHoursClient?.(benchmarkCase)
+    const service = createFindPathsService({
       routeEngine,
-      createArrivalClient(benchmarkCase),
-      createServiceHoursClient?.(benchmarkCase),
-      now,
       walkingConnectionProvider,
-    )
+      getArrivals: (stops, signal) => arrivals.getArrivals(stops, signal),
+      getServiceWindows: serviceHours
+        ? (routeIds, signal) => serviceHours.getServiceWindows(routeIds, signal)
+        : undefined,
+      getTestDepartureMs: () => null,
+      now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
 
     return async (signal) => {
       try {
         const result = await service({
-          tripRequest: {
-            origin: benchmarkCase.origin,
-            destination: benchmarkCase.destination,
-          },
+          origin: benchmarkCase.origin,
+          destination: benchmarkCase.destination,
           venues,
-          transit,
-          signal,
-        })
+          transit: {
+            index: transit.index,
+            geometry: transit.geometry,
+            shuttleTiming: transit.shuttleTiming,
+          },
+        }, { signal })
         return asOutcome(result?.candidates[0]?.path ?? null)
       } catch (error) {
         if (error instanceof NoPathAvailableError) {

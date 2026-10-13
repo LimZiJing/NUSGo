@@ -98,12 +98,12 @@ function getGitIdentity() {
 }
 
 function createCaseDefinitions(fixtures, modules, manifest) {
-  return modules.createJourneyBenchmarkCases(manifest, fixtures)
+  return modules.createPathfindingBenchmarkCases(manifest, fixtures)
 }
 
 async function loadBenchmarkModules(vite) {
   const [valhalla, outcomeValidator, manifest, fixturesModule, report, instrumentation, identity] = await Promise.all([
-    vite.ssrLoadModule('/src/infrastructure/routing/valhalla.ts'),
+    vite.ssrLoadModule('/src/pathfinding/walking/valhalla-walking-client.ts'),
     vite.ssrLoadModule('/scripts/benchmark/outcome.ts'),
     vite.ssrLoadModule('/scripts/benchmark/manifest.ts'),
     vite.ssrLoadModule('/scripts/benchmark/fixtures.ts'),
@@ -113,12 +113,12 @@ async function loadBenchmarkModules(vite) {
   ])
   return {
     createValhallaRouteEngine: valhalla.createValhallaRouteEngine,
-    validateOutcome: outcomeValidator.validateJourneyBenchmarkOutcome,
-    loadJourneyBenchmarkManifest: manifest.loadJourneyBenchmarkManifest,
-    loadJourneyBenchmarkFixtures: fixturesModule.loadJourneyBenchmarkFixtures,
-    createJourneyBenchmarkCases: fixturesModule.createJourneyBenchmarkCases,
+    validateOutcome: outcomeValidator.validatePathfindingBenchmarkOutcome,
+    loadPathfindingBenchmarkManifest: manifest.loadPathfindingBenchmarkManifest,
+    loadPathfindingBenchmarkFixtures: fixturesModule.loadPathfindingBenchmarkFixtures,
+    createPathfindingBenchmarkCases: fixturesModule.createPathfindingBenchmarkCases,
     createBenchmarkServiceHoursClient: fixturesModule.createBenchmarkServiceHoursClient,
-    createJourneyBenchmarkModeReport: report.createJourneyBenchmarkModeReport,
+    createPathfindingBenchmarkModeReport: report.createPathfindingBenchmarkModeReport,
     shouldFailBenchmarkRun: report.shouldFailBenchmarkRun,
     compareBenchmarkCaseResults: report.compareBenchmarkCaseResults,
     createMeasuredRouteEngine: instrumentation.createMeasuredRouteEngine,
@@ -127,7 +127,7 @@ async function loadBenchmarkModules(vite) {
 }
 
 async function loadFixtures(modules) {
-  return modules.loadJourneyBenchmarkFixtures()
+  return modules.loadPathfindingBenchmarkFixtures()
 }
 
 async function findProjectRoot(adapterPath) {
@@ -148,16 +148,16 @@ async function loadAdapters(vite, paths, context) {
   const loaded = []
   for (const path of paths) {
     const module = await vite.ssrLoadModule(toViteFsModuleId(path))
-    if (typeof module.createJourneyBenchmarkAdapter !== 'function') {
-      throw new Error(`${path} must export createJourneyBenchmarkAdapter(context)`)
+    if (typeof module.createPathfindingBenchmarkAdapter !== 'function') {
+      throw new Error(`${path} must export createPathfindingBenchmarkAdapter(context)`)
     }
-    const adapter = await module.createJourneyBenchmarkAdapter(context)
+    const adapter = await module.createPathfindingBenchmarkAdapter(context)
     if (
       !adapter ||
       typeof adapter.id !== 'string' || adapter.id.trim().length === 0 ||
       typeof adapter.label !== 'string' || adapter.label.trim().length === 0 ||
       typeof adapter.createSearchRunner !== 'function' ||
-      typeof adapter.createJourneyRunner !== 'function'
+      typeof adapter.createPathRunner !== 'function'
     ) {
       throw new Error(`${path} returned an invalid Path benchmark adapter`)
     }
@@ -281,7 +281,7 @@ function createBenchmarkProgress(totalCases) {
 
 async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixtures, modules, options, progress) {
   const isSearch = mode === 'offline'
-  const makeRunnerName = isSearch ? 'createSearchRunner' : 'createJourneyRunner'
+  const makeRunnerName = isSearch ? 'createSearchRunner' : 'createPathRunner'
   const caseRuns = []
   const adapterId = loadedAdapter.adapter.id.length > 14
     ? `${loadedAdapter.adapter.id.slice(0, 13)}…`
@@ -335,7 +335,7 @@ async function benchmarkMode(loadedAdapter, mode, caseDefs, adapterContext, fixt
     progress.completeCase(failure ? 'failed' : 'complete')
   }
 
-  const report = modules.createJourneyBenchmarkModeReport(caseRuns, options.samples)
+  const report = modules.createPathfindingBenchmarkModeReport(caseRuns, options.samples)
   const equalWeightHeadline = report.overall.statistics?.meanMs ?? null
   return {
     ...report,
@@ -386,7 +386,7 @@ function formatNetworkPhases(report) {
 }
 
 function formatQuality(quality) {
-  return `journeys ${quality.paths} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
+  return `paths ${quality.paths} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
 }
 
 function formatMode(name, modeReport, local = false) {
@@ -465,7 +465,7 @@ async function main() {
   let loadedAdapters = []
   let progress
   const report = {
-    benchmark: 'NavUS Journey planner benchmark',
+    benchmark: 'NavUS Pathfinding benchmark',
     baseline: getGitIdentity(),
     configuration: {
       mode: options.mode,
@@ -486,7 +486,7 @@ async function main() {
 
   try {
     const modules = await loadBenchmarkModules(vite)
-    const manifest = await modules.loadJourneyBenchmarkManifest()
+    const manifest = await modules.loadPathfindingBenchmarkManifest()
     const fixedNowMs = Date.parse(manifest.fixedNow)
     const fixtures = await loadFixtures(modules)
     const caseDefs = createCaseDefinitions(fixtures, modules, manifest)
@@ -581,6 +581,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : 'Journey benchmark failed')
+  console.error(error instanceof Error ? error.message : 'Pathfinding benchmark failed')
   process.exitCode = 1
 })

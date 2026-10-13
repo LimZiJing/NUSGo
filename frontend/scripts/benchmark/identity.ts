@@ -1,9 +1,9 @@
-export interface JourneyBenchmarkAdapterIdentity {
+export interface PathfindingBenchmarkAdapterIdentity {
   readonly id: string
   readonly path: string
 }
 
-export function assertUniqueAdapterIds(adapters: readonly JourneyBenchmarkAdapterIdentity[]): void {
+export function assertUniqueAdapterIds(adapters: readonly PathfindingBenchmarkAdapterIdentity[]): void {
   const pathsById = new Map<string, Set<string>>()
   for (const { id, path } of adapters) {
     const paths = pathsById.get(id) ?? new Set<string>()

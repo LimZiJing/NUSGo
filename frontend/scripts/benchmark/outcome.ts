@@ -2,7 +2,7 @@ import type { LoadedTransitData } from '../../src/app/contracts/data.js'
 import type {
   WalkingMatrixConnection,
   WalkingMatrixRequest,
-} from '../../src/app/contracts/routing.js'
+} from '../../src/pathfinding/walking/walking-contracts.js'
 import type { Path, PathGeometry } from '../../src/pathfinding/path.js'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
@@ -10,23 +10,23 @@ import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type {
-  JourneyBenchmarkCase,
+  PathfindingBenchmarkCase,
 } from './contract.js'
 
-export interface JourneyBenchmarkValidation {
+export interface PathfindingBenchmarkValidation {
   readonly valid: boolean
   readonly errors: readonly string[]
   readonly result: Readonly<Record<string, unknown>>
 }
 
-export interface JourneyBenchmarkMatrixResult {
+export interface PathfindingBenchmarkMatrixResult {
   readonly request: WalkingMatrixRequest
   readonly connections: readonly WalkingMatrixConnection[]
 }
 
-export interface JourneyBenchmarkOutcomeEvidence {
+export interface PathfindingBenchmarkOutcomeEvidence {
   readonly mode: 'offline' | 'local'
-  readonly matrixRequests?: readonly JourneyBenchmarkMatrixResult[]
+  readonly matrixRequests?: readonly PathfindingBenchmarkMatrixResult[]
   readonly walkingStopGraph?: Pick<WalkingStopGraph, 'connections'>
   readonly valhallaRequestCounts?: { readonly matrix: number; readonly route: number }
 }
@@ -182,10 +182,10 @@ function matchesCoordinate(
 }
 
 function walkingConnectionsForValidation(
-  benchmarkCase: JourneyBenchmarkCase,
+  benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
-  evidence: JourneyBenchmarkOutcomeEvidence | undefined,
+  evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   label: string,
   errors: string[],
 ): readonly WalkingMetricConnection[] | null {
@@ -321,10 +321,10 @@ function validateWalkingMetrics(
   to: TripEndpoint,
   durationSeconds: unknown,
   distanceMeters: unknown,
-  benchmarkCase: JourneyBenchmarkCase,
+  benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
-  evidence: JourneyBenchmarkOutcomeEvidence | undefined,
+  evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   label: string,
   errors: string[],
 ): void {
@@ -359,7 +359,7 @@ function validateWalkingMetrics(
 }
 
 function findCaseRideTiming(
-  benchmarkCase: JourneyBenchmarkCase,
+  benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
   routeId: string,
   fromStopId: string,
@@ -373,33 +373,33 @@ function findCaseRideTiming(
   ))
 }
 
-function validateJourney(
+function validatePath(
   value: unknown,
-  benchmarkCase: JourneyBenchmarkCase,
+  benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
-  evidence: JourneyBenchmarkOutcomeEvidence | undefined,
+  evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   errors: string[],
 ): Path | null {
   if (!isRecord(value)) {
-    errors.push('journey must be an object')
+    errors.push('path must be an object')
     return null
   }
 
-  if (!isEndpoint(value.origin)) errors.push('journey origin must be a valid endpoint')
-  if (!isEndpoint(value.destination)) errors.push('journey destination must be a valid endpoint')
+  if (!isEndpoint(value.origin)) errors.push('path origin must be a valid endpoint')
+  if (!isEndpoint(value.destination)) errors.push('path destination must be a valid endpoint')
   if (isEndpoint(value.origin) && endpointKey(value.origin) !== endpointKey(benchmarkCase.origin)) {
-    errors.push('journey origin does not match the benchmark case')
+    errors.push('path origin does not match the benchmark case')
   }
   if (isEndpoint(value.destination) && endpointKey(value.destination) !== endpointKey(benchmarkCase.destination)) {
-    errors.push('journey destination does not match the benchmark case')
+    errors.push('path destination does not match the benchmark case')
   }
-  if (value.estimateStatus !== 'estimated') errors.push('journey estimateStatus must be estimated')
+  if (value.estimateStatus !== 'estimated') errors.push('path estimateStatus must be estimated')
   if (value.planningQuality !== 'exact' && value.planningQuality !== 'bounded') {
-    errors.push('journey planningQuality must be exact or bounded')
+    errors.push('path planningQuality must be exact or bounded')
   }
   if (!Array.isArray(value.legs) || value.legs.length === 0) {
-    errors.push('journey must contain at least one leg')
+    errors.push('path must contain at least one leg')
     return null
   }
 
@@ -517,13 +517,13 @@ function validateJourney(
   })
 
   if (endpointKey(expectedFrom) !== endpointKey(benchmarkCase.destination)) {
-    errors.push('journey legs do not end at the benchmark destination')
+    errors.push('path legs do not end at the benchmark destination')
   }
   if (!isNonNegativeInteger(value.totalDurationSeconds) || value.totalDurationSeconds !== durationTotal) {
-    errors.push('journey totalDurationSeconds must equal the sum of its leg durations')
+    errors.push('path totalDurationSeconds must equal the sum of its leg durations')
   }
   if (!isNonNegativeInteger(value.totalDistanceMeters) || value.totalDistanceMeters !== distanceTotal) {
-    errors.push('journey totalDistanceMeters must equal the sum of its leg distances')
+    errors.push('path totalDistanceMeters must equal the sum of its leg distances')
   }
   if (benchmarkCase.expected.shuttleBoardings !== undefined && shuttleBoardings !== benchmarkCase.expected.shuttleBoardings) {
     errors.push(`expected ${benchmarkCase.expected.shuttleBoardings} shuttle boardings; got ${shuttleBoardings}`)
@@ -537,23 +537,23 @@ function validateJourney(
   const bounds = benchmarkCase.durationBoundsSeconds
   if (isNonNegativeInteger(value.totalDurationSeconds)) {
     if (bounds?.min !== undefined && value.totalDurationSeconds < bounds.min) {
-      errors.push(`journey totalDurationSeconds is below the minimum ${bounds.min}`)
+      errors.push(`path totalDurationSeconds is below the minimum ${bounds.min}`)
     }
     if (bounds?.max !== undefined && value.totalDurationSeconds > bounds.max) {
-      errors.push(`journey totalDurationSeconds exceeds the maximum ${bounds.max}`)
+      errors.push(`path totalDurationSeconds exceeds the maximum ${bounds.max}`)
     }
   }
 
   return value as unknown as Path
 }
 
-export function validateJourneyBenchmarkOutcome(
+export function validatePathfindingBenchmarkOutcome(
   input: unknown,
-  benchmarkCase: JourneyBenchmarkCase,
+  benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
-  evidence?: JourneyBenchmarkOutcomeEvidence,
-): JourneyBenchmarkValidation {
+  evidence?: PathfindingBenchmarkOutcomeEvidence,
+): PathfindingBenchmarkValidation {
   const errors: string[] = []
   let result: Readonly<Record<string, unknown>> = { kind: 'invalid' }
 
@@ -571,12 +571,12 @@ export function validateJourneyBenchmarkOutcome(
       reason: typeof input.reason === 'string' ? input.reason : '',
       ...outcomeDiagnostics(input.diagnostics),
     }
-  } else if (input.kind === 'journey') {
-    if (benchmarkCase.expected.outcome !== 'journey') errors.push('expected no-route; got journey')
-    const path = validateJourney(input.path, benchmarkCase, transit, venues, evidence, errors)
+  } else if (input.kind === 'path') {
+    if (benchmarkCase.expected.outcome !== 'path') errors.push('expected no-route; got path')
+    const path = validatePath(input.path, benchmarkCase, transit, venues, evidence, errors)
     if (path) {
       result = {
-        kind: 'journey',
+        kind: 'path',
         modes: path.legs.map((leg) => leg.mode),
         shuttleBoardings: path.legs.filter((leg) => leg.mode === 'shuttle').length,
         routeIds: path.legs.flatMap((leg) => leg.mode === 'shuttle' ? [leg.routeId] : []),
@@ -589,7 +589,7 @@ export function validateJourneyBenchmarkOutcome(
       }
     }
   } else {
-    errors.push('benchmark outcome kind must be journey or no-route')
+    errors.push('benchmark outcome kind must be path or no-route')
   }
 
   if (evidence?.valhallaRequestCounts) {

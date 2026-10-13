@@ -129,7 +129,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "A1"
@@ -150,7 +150,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "A2"
@@ -171,7 +171,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "D1"
@@ -192,7 +192,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "D2"
@@ -213,7 +213,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "K"
@@ -234,7 +234,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "P"
@@ -255,7 +255,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "R1"
@@ -276,7 +276,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "arrivalRouteIds": [
         "R2"
@@ -297,7 +297,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -315,7 +315,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -333,7 +333,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -351,7 +351,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -369,7 +369,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -387,7 +387,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -405,7 +405,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -423,7 +423,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -441,7 +441,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       },
       "durationBoundsSeconds": {
         "max": 900
@@ -462,7 +462,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -480,7 +480,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -498,7 +498,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey"
+        "outcome": "path"
       }
     },
     {
@@ -516,7 +516,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -541,7 +541,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -566,7 +566,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -591,7 +591,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -616,7 +616,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -641,7 +641,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -666,7 +666,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -691,7 +691,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -716,7 +716,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -741,7 +741,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -753,7 +753,7 @@
     },
     {
       "id": "tie-kv-utown-p-r1",
-      "label": "Equal P and R1 journeys from KV to UTown",
+      "label": "Equal P and R1 paths from KV to UTown",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -766,7 +766,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -782,7 +782,7 @@
     },
     {
       "id": "tie-kv-museum-k-r1",
-      "label": "Equal K and R1 journeys from KV to Museum",
+      "label": "Equal K and R1 paths from KV to Museum",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -795,7 +795,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -811,7 +811,7 @@
     },
     {
       "id": "tie-com3-utown-d1-d2",
-      "label": "Equal D1 and D2 journeys from COM3 to UTown",
+      "label": "Equal D1 and D2 paths from COM3 to UTown",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -824,7 +824,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -840,7 +840,7 @@
     },
     {
       "id": "tie-museum-utown-d1-d2-r1",
-      "label": "Equal D1, D2, and R1 journeys from Museum to UTown",
+      "label": "Equal D1, D2, and R1 paths from Museum to UTown",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -853,7 +853,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -870,7 +870,7 @@
     },
     {
       "id": "tie-yih-clb-a1-d1-r1",
-      "label": "Equal A1, D1, and R1 journeys from YIH to CLB",
+      "label": "Equal A1, D1, and R1 paths from YIH to CLB",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -883,7 +883,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -900,7 +900,7 @@
     },
     {
       "id": "tie-pgp-krmrt-a1-k",
-      "label": "Equal A1 and K journeys from PGP to KR-MRT",
+      "label": "Equal A1 and K paths from PGP to KR-MRT",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -913,7 +913,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -929,7 +929,7 @@
     },
     {
       "id": "tie-krmrt-uhall-a1-d2-k",
-      "label": "Equal A1, D2, and K journeys from KR-MRT to UHALL",
+      "label": "Equal A1, D2, and K paths from KR-MRT to UHALL",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -942,7 +942,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -959,7 +959,7 @@
     },
     {
       "id": "tie-lt13-as5-a1-d1-r1",
-      "label": "Equal A1, D1, and R1 journeys from LT13 to AS5",
+      "label": "Equal A1, D1, and R1 paths from LT13 to AS5",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -972,7 +972,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -989,7 +989,7 @@
     },
     {
       "id": "tie-tcoms-opp-krmrt-a1-d2",
-      "label": "Equal A1 and D2 journeys from TCOMS-OPP to KR-MRT",
+      "label": "Equal A1 and D2 paths from TCOMS-OPP to KR-MRT",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -1002,7 +1002,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -1018,7 +1018,7 @@
     },
     {
       "id": "tie-uhc-uhall-opp-a2-d2-k",
-      "label": "Equal A2, D2, and K journeys from UHC to UHALL-OPP",
+      "label": "Equal A2, D2, and K paths from UHC to UHALL-OPP",
       "group": "normal",
       "scenario": "selection-tie",
       "origin": {
@@ -1031,7 +1031,7 @@
       },
       "timingProfile": "tie-equal-rides",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -1061,7 +1061,7 @@
       },
       "timingProfile": "no-arrivals",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1083,7 +1083,7 @@
       },
       "timingProfile": "expired-arrivals",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1109,7 +1109,7 @@
       },
       "timingProfile": "closed-service",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1135,7 +1135,7 @@
       },
       "timingProfile": "invalid-shuttle-timing",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1161,7 +1161,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1186,7 +1186,7 @@
       },
       "timingProfile": "fresh-30",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -1212,7 +1212,7 @@
       },
       "timingProfile": "stale-46",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1238,7 +1238,7 @@
       },
       "timingProfile": "headway-only",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 1,
         "modes": [
           "shuttle"
@@ -1264,7 +1264,7 @@
       },
       "timingProfile": "pre-service",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"
@@ -1290,7 +1290,7 @@
       },
       "timingProfile": "post-service",
       "expected": {
-        "outcome": "journey",
+        "outcome": "path",
         "shuttleBoardings": 0,
         "modes": [
           "walking"

@@ -1,5 +1,5 @@
 import type { LoadedTransitData } from '../../src/app/contracts/data.js'
-import type { WalkingRouteEngine } from '../../src/app/contracts/routing.js'
+import type { WalkingRouteEngine } from '../../src/pathfinding/walking/walking-contracts.js'
 import type { ShuttleArrivalClient } from '../../src/app/contracts/shuttle-arrivals.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import type { Path } from '../../src/pathfinding/path.js'
@@ -8,40 +8,40 @@ import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
-import type { JourneyBenchmarkGroup, JourneyBenchmarkScenario, JourneyBenchmarkTimingProfile } from './manifest.js'
+import type { PathfindingBenchmarkGroup, PathfindingBenchmarkScenario, PathfindingBenchmarkTimingProfile } from './manifest.js'
 
-export interface JourneyBenchmarkExpectation {
-  readonly outcome: 'journey' | 'no-route'
+export interface PathfindingBenchmarkExpectation {
+  readonly outcome: 'path' | 'no-route'
   readonly shuttleBoardings?: number
   readonly modes?: readonly ('walking' | 'shuttle')[]
   readonly routeIds?: readonly string[]
 }
 
-export interface JourneyBenchmarkDurationBounds {
+export interface PathfindingBenchmarkDurationBounds {
   readonly min?: number
   readonly max?: number
 }
 
-export interface JourneyBenchmarkCase {
+export interface PathfindingBenchmarkCase {
   readonly id: string
   readonly label: string
   readonly origin: TripEndpoint
   readonly destination: TripEndpoint
   readonly arrivalSeconds: number
-  readonly group?: JourneyBenchmarkGroup
-  readonly scenario?: JourneyBenchmarkScenario
-  readonly timingProfile?: JourneyBenchmarkTimingProfile
+  readonly group?: PathfindingBenchmarkGroup
+  readonly scenario?: PathfindingBenchmarkScenario
+  readonly timingProfile?: PathfindingBenchmarkTimingProfile
   readonly arrivalRouteIds?: readonly string[]
   readonly arrivalSnapshot?: ShuttleArrivalSnapshot
   readonly transit?: LoadedTransitData
-  readonly expected: JourneyBenchmarkExpectation
-  readonly durationBoundsSeconds?: JourneyBenchmarkDurationBounds
+  readonly expected: PathfindingBenchmarkExpectation
+  readonly durationBoundsSeconds?: PathfindingBenchmarkDurationBounds
   readonly searchInput: PathSearchInput
 }
 
-export type JourneyBenchmarkOutcome =
+export type PathfindingBenchmarkOutcome =
   | {
-    readonly kind: 'journey'
+    readonly kind: 'path'
     readonly path: Path
     readonly diagnostics?: Readonly<Record<string, number | string | boolean>>
   }
@@ -51,37 +51,37 @@ export type JourneyBenchmarkOutcome =
     readonly diagnostics?: Readonly<Record<string, number | string | boolean>>
   }
 
-export type JourneyBenchmarkRunner = (
+export type PathfindingBenchmarkRunner = (
   signal: AbortSignal,
-) => Promise<JourneyBenchmarkOutcome>
+) => Promise<PathfindingBenchmarkOutcome>
 
-export interface JourneyBenchmarkContext {
+export interface PathfindingBenchmarkContext {
   readonly transit: LoadedTransitData
   readonly venues: VenueLocationMap
   readonly walkingGraph: WalkingStopGraph
   readonly routeEngine: WalkingRouteEngine
   readonly now: () => number
-  readonly createArrivalClient: (benchmarkCase: JourneyBenchmarkCase) => ShuttleArrivalClient
-  readonly createServiceHoursClient?: (benchmarkCase: JourneyBenchmarkCase) => ShuttleServiceHoursClient
-  readonly cases: readonly JourneyBenchmarkCase[]
+  readonly createArrivalClient: (benchmarkCase: PathfindingBenchmarkCase) => ShuttleArrivalClient
+  readonly createServiceHoursClient?: (benchmarkCase: PathfindingBenchmarkCase) => ShuttleServiceHoursClient
+  readonly cases: readonly PathfindingBenchmarkCase[]
 }
 
-export interface JourneyBenchmarkCaseContext extends JourneyBenchmarkContext {
-  readonly benchmarkCase: JourneyBenchmarkCase
+export interface PathfindingBenchmarkCaseContext extends PathfindingBenchmarkContext {
+  readonly benchmarkCase: PathfindingBenchmarkCase
 }
 
-export interface JourneyBenchmarkAdapter {
+export interface PathfindingBenchmarkAdapter {
   readonly id: string
   readonly label: string
-  createSearchRunner(context: JourneyBenchmarkCaseContext):
-    | JourneyBenchmarkRunner
-    | Promise<JourneyBenchmarkRunner>
-  createJourneyRunner(context: JourneyBenchmarkCaseContext):
-    | JourneyBenchmarkRunner
-    | Promise<JourneyBenchmarkRunner>
+  createSearchRunner(context: PathfindingBenchmarkCaseContext):
+    | PathfindingBenchmarkRunner
+    | Promise<PathfindingBenchmarkRunner>
+  createPathRunner(context: PathfindingBenchmarkCaseContext):
+    | PathfindingBenchmarkRunner
+    | Promise<PathfindingBenchmarkRunner>
   dispose?(): void | Promise<void>
 }
 
-export type JourneyBenchmarkAdapterFactory = (
-  context: JourneyBenchmarkContext,
-) => JourneyBenchmarkAdapter | Promise<JourneyBenchmarkAdapter>
+export type PathfindingBenchmarkAdapterFactory = (
+  context: PathfindingBenchmarkContext,
+) => PathfindingBenchmarkAdapter | Promise<PathfindingBenchmarkAdapter>

@@ -6,17 +6,17 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
 - **Transit network**: The set of shuttle routes, shuttle stops, and service associations available for campus travel.
-- **Journey**: A complete, continuous ordered sequence of journey legs from an origin to a destination.
-- **Journey leg**: One part of a journey using one travel mode, such as walking or an internal shuttle.
-- **Recommended journey**: The best valid journey under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable.
-- **Trip endpoint**: A resolved journey origin or destination, identified by a stable venue or shuttle-stop reference, or by frozen coordinates for Current location.
+- **Path**: A complete, continuous ordered sequence of walking and bus legs between the selected origin and destination. It is the canonical name for one computed option.
+- **Path leg**: One walking or bus segment of a Path.
+- **Recommended result**: The best valid Path under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable. Plan may retain existing user-facing wording such as “recommended journey.”
+- **Trip endpoint**: A resolved Path origin or destination, identified by a stable venue or shuttle-stop reference, or by frozen coordinates for Current location.
 - **Current location**: A trip endpoint that snapshots the coordinates of an active valid device-location fix. It keeps those coordinates after the device location moves and has no venue or stop identifier.
-- **Walking connection**: A directed, validated walking path between two trip endpoints or shuttle stops, with travel distance and duration. A connection used as a journey leg also has route geometry.
-- **Transfer**: A change from one shuttle boarding to another within a journey. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
+- **Walking connection**: A directed, validated walking link between two trip endpoints or shuttle stops, with travel distance and duration. A walking Path leg also has routed geometry.
+- **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 
 ## Shuttle transit
 
-- **Route**: An internal campus shuttle service with a stable route ID, a display name, an official color, and an ordered sequence of stops.
+- **Bus route**: A fixed campus shuttle service with a stable route ID, a display name, an official color, and an ordered sequence of stops. The engine uses `BusRoute` for this concept; it is distinct from a computed Path.
 - **Internal route**: A route operated within the NavUS campus transit model. The current network contains eight internal routes.
 - **Stop**: A physical shuttle boarding or alighting location with a stable stop ID, a display name, coordinates, and service associations.
 - **Ordered stop list**: The sequence of stops that defines a route’s travel direction, from its first stop to its last stop.

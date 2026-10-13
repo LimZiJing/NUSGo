@@ -9,12 +9,13 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
+- `frontend/src/pathfinding` owns the provider-injected Path model, bounded search, ordered planning pipeline, and its walking provider boundary. The app composition supplies validated transit data, timing callbacks, clocks, cooperative yields, and cancellation; Plan presentation and MapLibre rendering stay outside this folder.
 
 `frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.
 
 ## Contracts and dependency direction
 
-Application contracts must be small, framework-free interfaces in `frontend/src/app/contracts`. Define a contract there when it describes an effect the application needs, such as map presentation or data loading. Concrete MapLibre and network implementations belong in `frontend/src/infrastructure`; the app composition root wires those adapters and feature entry points together with runtime imports. The frontend and backend may both depend on `shared/src`; shared modules must remain free of Node, browser, and provider dependencies.
+Application contracts must be small, framework-free interfaces in `frontend/src/app/contracts`. Define a contract there when it describes an effect the application needs, such as map presentation or data loading. Pathfinding's walking-provider contract stays beside the engine because it is part of the engine's replaceable provider boundary. Concrete MapLibre and network implementations belong in `frontend/src/infrastructure` or in that focused Pathfinding boundary; the app composition root wires adapters and feature entry points together with runtime imports. The frontend and backend may both depend on `shared/src`; shared modules must remain free of Node, browser, and provider dependencies.
 
 The intended direction is:
 
@@ -23,10 +24,12 @@ The intended direction is:
               | runtime --> frontend/src/features
               | runtime --> frontend/src/ui
               | runtime --> frontend/src/infrastructure --> frontend/src/domain
+              | runtime --> frontend/src/pathfinding --> frontend/src/domain/shared
 
        frontend/src/app -- state/callbacks --> frontend/src/features
        frontend/src/features -------------------------------> frontend/src/domain
        frontend/src/features -------------------------------> frontend/src/ui contracts
+       frontend/src/features -- import type --> frontend/src/pathfinding/path.ts
        frontend/src/infrastructure - - import type only - -> frontend/src/app/contracts
 ```
 
@@ -35,7 +38,7 @@ The intended direction is:
 - Infrastructure may depend on frontend domain and shared types and implement framework-free app contracts. It may use `import type` from `frontend/src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
 - Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns MapLibre, network/data-adapter, and integration-level DOM, listener, timer, and asynchronous effects.
 - Application controllers may use browser measurements, observers, or listeners only to coordinate app-owned responsive layout or cross-feature keyboard navigation. Keep these effects in the owning app controller and clean them up with its lifecycle.
-- Features depend only on frontend domain or shared values and UI contracts or primitives. They must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
+- Features depend on frontend domain or shared values, UI contracts or primitives, and may use `import type` from the public `frontend/src/pathfinding/path.ts` contract. They must not import Pathfinding runtime values or its search, pipeline, and walking internals. Features must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
 - Cross-feature coordination is performed by app composition through passed state and callbacks rather than direct feature-to-feature or feature-to-app-contract imports.
 - The app composition root passes application state and callbacks into feature entry points; features translate user intent through their UI contracts.
 - UI modules must not reach into application internals or infrastructure. They receive state and callbacks through props or small framework-free interfaces.
@@ -50,6 +53,8 @@ The diagram describes allowed ownership and dependency direction; it does not re
 - `NavigationPanelShell` keeps the desktop/mobile presentation seam. The app-owned `MobileSheet` module under `frontend/src/ui/mobile/` contains the Base UI Drawer integration; application navigation owns detents, and feature views receive state and callbacks without importing the library.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
+The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider because those effects move with the engine in #233. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
+
 ## Migration map and order
 
 Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable transit validation, geometry, and transport types belong in `shared/src`; frontend-only transformations remain in `frontend/src/domain`, and only MapLibre rendering and effect responsibilities belong in `frontend/src/infrastructure`.
@@ -61,7 +66,8 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
 | Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops-view` |
-| Trip endpoints and Journey presentation | `frontend/src/features/plan-view` |
+| Trip endpoints and Path presentation | `frontend/src/features/plan-view` |
+| Path model, search, ordered planning stages, and walking boundary | `frontend/src/pathfinding` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
 | Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |

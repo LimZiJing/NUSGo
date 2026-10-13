@@ -205,7 +205,7 @@
 
   .mobile-sheet-content > .plan-view,
   .mobile-sheet-content > .explore-view,
-  .mobile-sheet-content > .stops-view {
+  .mobile-sheet-content > .stops-content {
     height: auto;
     min-height: 0;
     flex: 1 1 auto;

@@ -2,32 +2,32 @@
 
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopTimings } from './stop-timings'
+import { StopDepartureList } from './stop-departure-list'
 
 afterEach(cleanup)
 
-describe('StopTimings', () => {
+describe('StopDepartureList', () => {
   it('marks the empty timing state for muted card styling', () => {
     render(
-      <StopTimings
+      <StopDepartureList
         departures={[]}
         publicServices={[]}
         onSelectRoute={vi.fn()}
       />,
     )
 
-    expect(screen.getByText('No bus timings available.').className).toBe('stop-timings-empty')
+    expect(screen.getByText('No bus timings available.').className).toBe('stop-departure-list-empty')
   })
 
   it('shows reachable favourite stop nicknames beside an internal route', () => {
     render(
-      <StopTimings
+      <StopDepartureList
         departures={[{
           routeId: 'A2',
           routeName: 'A2',
           routeColor: '#123456',
           timings: ['9m', '11m', '13m'],
-          reachableFavoriteStops: [
+          reachableFavouriteStops: [
             { id: 'STOP-LIBRARY', name: 'Library', isOpposite: false },
             { id: 'STOP-HALL', name: 'Hall', isOpposite: true },
           ],
@@ -47,16 +47,16 @@ describe('StopTimings', () => {
     expect(screen.getByText('11m')).toBeTruthy()
     expect(screen.getByText('13m')).toBeTruthy()
 
-    const destinationBadges = document.querySelectorAll('.stop-reachable-favorite')
+    const destinationBadges = document.querySelectorAll('.stop-reachable-favourite')
     expect(destinationBadges).toHaveLength(2)
     expect(destinationBadges[0]?.getAttribute('data-opposite')).toBeNull()
     expect(destinationBadges[1]?.getAttribute('data-opposite')).toBe('true')
-    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
+    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop')).toBeNull()
   })
 
   it('uses the same status row for scheduled routes and public services', () => {
     render(
-      <StopTimings
+      <StopDepartureList
         departures={[]}
         scheduledDepartures={[{
           routeId: 'A2',
@@ -76,7 +76,7 @@ describe('StopTimings', () => {
 
   it('explains normalized public timing states', () => {
     render(
-      <StopTimings
+      <StopDepartureList
         departures={[]}
         publicServices={[
           { serviceNumber: '95', timings: null, status: 'no-estimate' },

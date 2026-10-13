@@ -3,7 +3,7 @@ import {
   isOlderShuttleArrivalSnapshot,
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   type ShuttleArrivalSnapshot,
-} from '../../domain/transit/arrivals'
+} from '../../../domain/transit/arrivals'
 
 export interface StopsArrivalStopRequest {
   readonly stopId: string

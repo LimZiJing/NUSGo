@@ -3,12 +3,12 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopsView } from './stops-view'
-import type { StopSheetSelection } from './stops-view'
+import { StopsContent } from './stops-content'
+import type { StopDetailsModel } from '../data/stop-details-model'
 
 afterEach(cleanup)
 
-const selectedStop: StopSheetSelection = {
+const selectedStop: StopDetailsModel = {
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },
@@ -22,15 +22,19 @@ const selectedStop: StopSheetSelection = {
   liveArrivalMessage: null,
 }
 
-describe('StopsView', () => {
+describe('StopsContent', () => {
   it('orders stop identity, destination action, routes, public services and departures', () => {
     const { container } = render(
-      <StopsView
+      <StopsContent
         selectedStop={selectedStop}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
         onNavigateToStop={vi.fn()}
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
       />,
     )
 
@@ -61,12 +65,16 @@ describe('StopsView', () => {
     const onSelectRoute = vi.fn()
     const onNavigateToStop = vi.fn()
     render(
-      <StopsView
+      <StopsContent
         selectedStop={selectedStop}
         onBackToStops={onBackToStops}
         onSelectOppositeStop={onSelectOppositeStop}
         onSelectRoute={onSelectRoute}
         onNavigateToStop={onNavigateToStop}
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
       />,
     )
 
@@ -83,17 +91,20 @@ describe('StopsView', () => {
 
   it('shows the favourites empty state with a Browse stops action that switches to Nearby', async () => {
     const user = userEvent.setup()
-    const onSelectList = vi.fn()
+    const onSelectStopList = vi.fn()
     const { container } = render(
-      <StopsView
+      <StopsContent
         selectedStop={null}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
         onNavigateToStop={vi.fn()}
-        overviewStops={[]}
-        selectedList="favourites"
-        onSelectList={onSelectList}
+        stopListEntries={[]}
+        selectedStopList="favourites"
+        onSelectStopList={onSelectStopList}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
       />,
     )
 
@@ -104,20 +115,24 @@ describe('StopsView', () => {
 
     await user.click(browse)
 
-    expect(onSelectList).toHaveBeenCalledOnce()
-    expect(onSelectList).toHaveBeenCalledWith('nearby')
+    expect(onSelectStopList).toHaveBeenCalledOnce()
+    expect(onSelectStopList).toHaveBeenCalledWith('nearby')
   })
 
   it('keeps the plain nearby empty state without the favourites action', () => {
     render(
-      <StopsView
+      <StopsContent
         selectedStop={null}
         onBackToStops={vi.fn()}
         onSelectOppositeStop={vi.fn()}
         onSelectRoute={vi.fn()}
         onNavigateToStop={vi.fn()}
-        overviewStops={[]}
-        selectedList="nearby"
+        stopListEntries={[]}
+        selectedStopList="nearby"
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
       />,
     )
 

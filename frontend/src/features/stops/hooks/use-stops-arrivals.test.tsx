@@ -2,7 +2,7 @@
 
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
 import {
   type StopsArrivalLoader,
   type StopsArrivalStopRequest,

@@ -51,7 +51,7 @@ export interface AppNavigation {
   readonly activeSheetExpanded: boolean
   readonly stopFocusRequest: { readonly stopId: string | null; readonly sequence: number }
   readonly focusStopAfterMapLayout: () => void
-  readonly openStopInStopsView: (stopId: string) => void
+  readonly openStopInStops: (stopId: string) => void
   readonly openStopFromExplore: (stopId: string, focusTarget?: HTMLElement) => void
   readonly backFromStopDetails: (backToStops: () => void) => void
   readonly handleStopSelected: (stopId: string) => boolean
@@ -112,7 +112,7 @@ export function useAppNavigation({
     isMobileViewportRef.current = isMobileViewport
   }, [isMobileViewport, state])
 
-  const openStopInStopsView = useCallback((stopId: string): void => {
+  const openStopInStops = useCallback((stopId: string): void => {
     const currentNavigation = navigationRef.current
     focusStop(stopId)
     setStopFocusRequest((current) => ({ stopId, sequence: current.sequence + 1 }))
@@ -135,8 +135,8 @@ export function useAppNavigation({
         : null
     )
     returnToExploreRef.current = { focusTarget: activeElement }
-    openStopInStopsView(stopId)
-  }, [openStopInStopsView])
+    openStopInStops(stopId)
+  }, [openStopInStops])
 
   const handleStopSelected = useCallback((stopId: string): boolean => {
     const currentNavigation = navigationRef.current
@@ -147,14 +147,14 @@ export function useAppNavigation({
     if (isMobileViewportRef.current && currentNavigation.activeView !== 'stops') return false
 
     returnToExploreRef.current = null
-    openStopInStopsView(stopId)
+    openStopInStops(stopId)
     return true
-  }, [openStopFromExplore, openStopInStopsView])
+  }, [openStopFromExplore, openStopInStops])
 
   const handleMapStopInteraction = useCallback((stopId: string): void => {
     if (isMobileViewportRef.current) return
-    openStopInStopsView(stopId)
-  }, [openStopInStopsView])
+    openStopInStops(stopId)
+  }, [openStopInStops])
 
   const backFromStopDetails = useCallback((backToStops: () => void): void => {
     const returnContext = returnToExploreRef.current
@@ -314,7 +314,7 @@ export function useAppNavigation({
     activeSheetExpanded,
     stopFocusRequest,
     focusStopAfterMapLayout,
-    openStopInStopsView,
+    openStopInStops,
     openStopFromExplore,
     backFromStopDetails,
     handleStopSelected,

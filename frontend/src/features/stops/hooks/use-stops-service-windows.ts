@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   SHUTTLE_SERVICE_HOURS_REFRESH_INTERVAL_MS,
   type ShuttleServiceWindow,
-} from '../../domain/transit/service-hours'
+} from '../../../domain/transit/service-hours'
 
 export type StopsServiceWindowsLoader = (
   routeIds: readonly string[],

@@ -1,13 +1,13 @@
-import {
-  StopTimings,
-  type StopDeparture,
-  type StopScheduledDeparture,
-  type PublicServiceTiming,
-} from './stop-timings'
-import { InfoPill } from '../../ui/info-pill'
-import { IconButton } from '../../ui/button'
-import { BusIcon, FavoriteIcon } from '../../ui/icons'
-import { DisclosureChevron } from '../../ui/disclosure-chevron'
+import { StopDepartureList } from './stop-departure-list'
+import type {
+  StopDeparture,
+  StopScheduledDeparture,
+  PublicServiceTiming,
+} from '../data/stop-timing-data'
+import { InfoPill } from '../../../ui/info-pill'
+import { IconButton } from '../../../ui/button'
+import { BusIcon, FavoriteIcon } from '../../../ui/icons'
+import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 
 export interface StopCardProps {
   readonly stopId: string
@@ -88,7 +88,7 @@ export function StopCard({
         inert={!expanded}
       >
         <div className="stop-card-timings-inner">
-          <StopTimings
+          <StopDepartureList
             departures={departures}
             scheduledDepartures={scheduledDepartures}
             liveArrivalMessage={liveArrivalMessage}

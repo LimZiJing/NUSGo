@@ -66,6 +66,12 @@ A neutral control sits on a similar neutral surface, so its border is what marks
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
+## Documented exceptions
+
+Every interactive control is at least 36px tall and wide (`--control-height-sm`). The only exception is the mobile sheet grab bar:
+
+- **Mobile sheet handle**: the handle row is 24px tall at the partial and full detents, which meets the WCAG 2.2 AA target-size minimum (2.5.8) but not the 36px standard. This keeps the space between the grab bar and the sheet content tight (10px above and below the bar). The handle is full width, and a swipe anywhere on the sheet also moves it. Its keyboard focus uses a background tint instead of a ring (see above). Do not extend this exception to other controls.
+
 ## Gallery
 
 Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light, Dark, Matcha, and Sakura side by side. Each theme is its own embedded page (`/?gallery&frame=light`, `dark`, `matcha`, `sakura`) so it uses the real `data-theme` mechanism; the gallery sets `data-theme` directly because `ui/theme.ts` only models Light and Dark. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.

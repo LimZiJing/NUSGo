@@ -66,6 +66,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
+  // Keep the selected Path while Plan is hidden so returning to Plan restores the same route.
+  let planLayersVisible = true
   let viewportInsetsReady = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
@@ -188,9 +190,26 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     })
   }
 
+  const getDisplayedJourneyOptions = (): readonly MapJourneyOption[] => (
+    planLayersVisible ? currentJourneyOptions : []
+  )
+
+  const getDisplayedPath = (): Path | null => planLayersVisible ? currentPath : null
+
   const clearEndpointMarkers = () => {
     endpointMarkers?.dispose()
     endpointMarkers = null
+  }
+
+  const syncEndpointMarkers = (): void => {
+    clearEndpointMarkers()
+    if (!planLayersVisible || !currentTripRequest) return
+    endpointMarkers = createTripEndpointMarkers(
+      map,
+      currentTripRequest,
+      currentVenues,
+      currentTransitIndex,
+    )
   }
 
   const clearTransitData = () => {
@@ -207,18 +226,20 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const installJourneyRouteLayers = (): void => {
-    if (currentJourneyOptions.length === 0 || journeyRouteLayers) return
+    const displayedOptions = getDisplayedJourneyOptions()
+    if (displayedOptions.length === 0 || journeyRouteLayers) return
     const nextJourneyRouteLayers = createPathLayers(
       map,
       currentTransitIndex,
       options.onJourneyOptionSelected,
     )
-    nextJourneyRouteLayers.setJourneyOptions(currentJourneyOptions, selectedJourneyCandidateKey)
+    nextJourneyRouteLayers.setJourneyOptions(displayedOptions, selectedJourneyCandidateKey)
     journeyRouteLayers = nextJourneyRouteLayers
   }
 
   const applyJourneyRouteOptions = (): void => {
-    if (currentJourneyOptions.length === 0) {
+    const displayedOptions = getDisplayedJourneyOptions()
+    if (displayedOptions.length === 0) {
       clearJourneyRouteLayers()
       return
     }
@@ -226,15 +247,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       installJourneyRouteLayers()
       return
     }
-    journeyRouteLayers.setJourneyOptions(currentJourneyOptions, selectedJourneyCandidateKey)
+    journeyRouteLayers.setJourneyOptions(displayedOptions, selectedJourneyCandidateKey)
   }
 
   const getJourneyStopRoutes = (): ReadonlyMap<string, readonly JourneyStopRoute[]> | null => {
-    if (currentPath === null) return null
+    const displayedPath = getDisplayedPath()
+    if (displayedPath === null) return null
     const stopRoutes = new Map<string, JourneyStopRoute[]>()
     if (!currentTransitIndex) return stopRoutes
 
-    for (const leg of currentPath.legs) {
+    for (const leg of displayedPath.legs) {
       if (leg.mode !== 'shuttle') continue
       const route = currentTransitIndex.routeById.get(leg.routeId) ?? null
       const stopIds = getBusPathLegStopIds(leg, route)
@@ -252,7 +274,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const applyJourneyPresentation = (): void => {
-    const journeyActive = currentPath !== null
+    const journeyActive = getDisplayedPath() !== null
     transitRouteLayers?.setJourneyActive(journeyActive)
     shuttleStopMarkers?.setJourneyStops(getJourneyStopRoutes())
   }
@@ -318,15 +340,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
       applyJourneyPresentation()
-      clearEndpointMarkers()
-      if (currentTripRequest) {
-        endpointMarkers = createTripEndpointMarkers(
-          map,
-          currentTripRequest,
-          currentVenues,
-          currentTransitIndex,
-        )
-      }
+      syncEndpointMarkers()
       const nextRouteId = currentRouteSelection.route?.id ?? null
       if (nextRouteId !== previousRouteId) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
@@ -348,7 +362,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       applyRouteSelection(currentRouteSelection)
 
       if (!fit) pendingCameraFit = null
-      if (fit && nextRouteId !== previousRouteId && transitData && currentPath === null) {
+      if (fit && nextRouteId !== previousRouteId && transitData && getDisplayedPath() === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
@@ -389,8 +403,20 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentTripRequest = request
       currentVenues = venues
       currentTransitIndex = transitIndex
-      clearEndpointMarkers()
-      endpointMarkers = createTripEndpointMarkers(map, request, venues, transitIndex)
+      syncEndpointMarkers()
+    },
+
+    setPlanLayersVisible(visible: boolean) {
+      if (disposed || planLayersVisible === visible) return
+      planLayersVisible = visible
+      try {
+        syncEndpointMarkers()
+        applyJourneyPresentation()
+        applyJourneyRouteOptions()
+      } catch (error) {
+        clearJourneyRouteLayers()
+        options.onMapError(error)
+      }
     },
 
     setJourneyOptions(
@@ -413,7 +439,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       try {
         applyJourneyPresentation()
         applyJourneyRouteOptions()
-        if (fitOverview && currentJourneyOptions.length > 0) {
+        if (fitOverview && getDisplayedJourneyOptions().length > 0) {
           pendingCameraFit = { kind: 'journey' }
           if (viewportInsetsReady) {
             pendingCameraFit = null
@@ -431,7 +457,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     },
 
     fitJourneyRoutes() {
-      if (disposed || currentJourneyOptions.length === 0) return
+      if (disposed || getDisplayedJourneyOptions().length === 0) return
       pendingCameraFit = null
       fitJourneyOptions(currentJourneyOptions)
     },
@@ -471,7 +497,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           viewportInsets,
         )
       } else if (pendingFit?.kind === 'journey') {
-        fitJourneyOptions(currentJourneyOptions)
+        fitJourneyOptions(getDisplayedJourneyOptions())
       }
     },
 

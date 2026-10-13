@@ -19,8 +19,9 @@ async function readJson(filename: string): Promise<unknown> {
 }
 
 async function readInputs() {
-  const [venues, network, routeGeometry, walkingStopGraph] = await Promise.all([
+  const [venues, buildings, network, routeGeometry, walkingStopGraph] = await Promise.all([
     readJson('venues.json'),
+    readJson('buildings.json'),
     readJson('shuttle-network.json'),
     readJson('shuttle-routes.geojson'),
     readJson('walking-stop-graph.json'),
@@ -31,7 +32,7 @@ async function readInputs() {
     transit.geometry,
     transit.network.metadata.verifiedAt,
   )
-  return { venues, network, routeGeometry, walkingStopGraph, shuttleTiming }
+  return { venues, buildings, network, routeGeometry, walkingStopGraph, shuttleTiming }
 }
 
 describe('canonical backend data', () => {
@@ -41,6 +42,16 @@ describe('canonical backend data', () => {
     assert.equal(data.counts.stops, 33)
     assert.equal(data.counts.walkingConnections, 33 * 32)
     assert.ok(data.counts.venues > 0)
+    assert.equal(data.counts.buildings, data.buildings.buildings.length)
+  })
+
+  it('rejects an invalid building catalogue at startup', async () => {
+    const inputs = await readInputs()
+
+    assert.throws(() => validateCanonicalData({
+      ...inputs,
+      buildings: { version: 1, buildings: [{ id: '' }] },
+    }, 'development'), /Building catalogue source/)
   })
 
   it('rejects a walking graph built for a different network', async () => {
@@ -59,6 +70,7 @@ describe('canonical backend data', () => {
     try {
       await Promise.all([
         writeFile(resolve(directory, 'venues.json'), JSON.stringify(inputs.venues)),
+        writeFile(resolve(directory, 'buildings.json'), JSON.stringify(inputs.buildings)),
         writeFile(resolve(directory, 'shuttle-network.json'), JSON.stringify(inputs.network)),
         writeFile(resolve(directory, 'shuttle-routes.geojson'), JSON.stringify(inputs.routeGeometry)),
         writeFile(resolve(directory, 'shuttle-timing.json'), JSON.stringify(inputs.shuttleTiming)),

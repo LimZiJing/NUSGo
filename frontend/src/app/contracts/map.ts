@@ -61,6 +61,8 @@ export interface MapSession {
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
   setStopsPinVisible(visible: boolean): void
+  /** Shows or hides the planned Journey layers and trip endpoint markers without discarding them. */
+  setPlanLayersVisible(visible: boolean): void
   setTripRequest(
     request: TripRequest,
     venues: VenueLocationMap,

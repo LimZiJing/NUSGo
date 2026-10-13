@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
+  loadBuildingCatalogue,
   loadTransitMapData,
   loadShuttleTimingData,
   loadVenueData,
@@ -18,6 +19,7 @@ function readJson(path: string): unknown {
 const network = readJson('../../../public/data/shuttle-network.json')
 const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
+const buildings = readJson('../../../public/data/buildings.json')
 const validatedNetwork = validateTransitNetwork(network)
 const validatedGeometry = validateBusRouteGeometry(validatedNetwork, geometry)
 const timing = generateShuttleTimingData(validatedNetwork, validatedGeometry, '2026-09-22')
@@ -107,6 +109,23 @@ describe('data loaders', () => {
       '/data/shuttle-timing.json',
     ])
     await expect(pending).rejects.toThrow('Transit network version must be 1: 2')
+  })
+
+  it('validates the building catalogue before exposing it to consumers', async () => {
+    const calls: string[] = []
+    const result = await loadBuildingCatalogue(new AbortController().signal, async (path, _signal, name) => {
+      calls.push(`${path}|${name}`)
+      return buildings
+    })
+
+    expect(calls).toEqual(['data/buildings.json|Building catalogue'])
+    expect(result.version).toBe(1)
+    expect(Object.isFrozen(result.buildings)).toBe(true)
+
+    await expect(loadBuildingCatalogue(
+      new AbortController().signal,
+      createFetcher({ 'data/buildings.json': { version: 1, buildings: [{ id: '' }] } }),
+    )).rejects.toBeInstanceOf(VenueValidationError)
   })
 
   it('rejects malformed resources independently', async () => {

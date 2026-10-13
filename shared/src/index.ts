@@ -31,8 +31,19 @@ export type {
   TransitVerificationManifest,
 } from './transit/types.ts'
 export type { ShuttleTimingData, ShuttleTimingMetadata, ShuttleTimingRecord } from './transit/timing.ts'
-export { validateVenueLocationMap, getVenueCount, VenueValidationError } from './venue/validation.ts'
+export {
+  validateVenueLocationMap,
+  validateBuildingCatalogue,
+  getVenueCount,
+  VenueValidationError,
+} from './venue/validation.ts'
 export type { VenueLocation, VenueLocationMap } from './venue/types.ts'
+export type {
+  Building,
+  BuildingCatalogue,
+  BuildingCatalogueSource,
+  BuildingSourceRef,
+} from './venue/buildings.ts'
 export { WALKING_STOP_GRAPH_VERSION, validateWalkingStopGraph } from './routing/walking-stop-graph.ts'
 export type { WalkingStopGraph } from './routing/walking-stop-graph.ts'
 export type { WalkingConnection } from './routing/walking-connection.ts'

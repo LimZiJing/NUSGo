@@ -4,10 +4,12 @@ import {
   parseDataVersion,
   validateShuttleTimingData,
   validateTransitMapData,
+  validateBuildingCatalogue,
   validateVenueLocationMap,
   validateWalkingStopGraph,
 } from '@navus/shared'
 import type {
+  BuildingCatalogue,
   ShuttleTimingData,
   TransitNetwork,
   BusRouteGeometry,
@@ -17,6 +19,7 @@ import type {
 
 export interface CanonicalDataInputs {
   readonly venues: unknown
+  readonly buildings: unknown
   readonly network: unknown
   readonly routeGeometry: unknown
   readonly shuttleTiming: unknown
@@ -26,12 +29,14 @@ export interface CanonicalDataInputs {
 export interface BackendData {
   readonly dataVersion: string
   readonly venues: VenueLocationMap
+  readonly buildings: BuildingCatalogue
   readonly network: TransitNetwork
   readonly routeGeometry: BusRouteGeometry
   readonly shuttleTiming: ShuttleTimingData
   readonly walkingStopGraph: WalkingStopGraph
   readonly counts: {
     readonly venues: number
+    readonly buildings: number
     readonly routes: number
     readonly stops: number
     readonly walkingConnections: number
@@ -59,6 +64,7 @@ export function validateCanonicalData(
 ): BackendData {
   const version = parseDataVersion(dataVersion)
   const venues = validateVenueLocationMap(inputs.venues)
+  const buildings = validateBuildingCatalogue(inputs.buildings)
   const transit = validateTransitMapData(inputs.network, inputs.routeGeometry)
   const shuttleTiming = validateShuttleTimingData(inputs.shuttleTiming, transit.network)
   const walkingStopGraph = validateWalkingStopGraph(inputs.walkingStopGraph)
@@ -77,12 +83,14 @@ export function validateCanonicalData(
   return Object.freeze({
     dataVersion: version,
     venues,
+    buildings,
     network: transit.network,
     routeGeometry: transit.geometry,
     shuttleTiming,
     walkingStopGraph,
     counts: Object.freeze({
       venues: Object.keys(venues).length,
+      buildings: buildings.buildings.length,
       routes: transit.network.routes.length,
       stops: transit.network.stops.length,
       walkingConnections: walkingStopGraph.connections.length,
@@ -94,8 +102,9 @@ export async function loadCanonicalData(
   directory: string,
   dataVersion: string,
 ): Promise<BackendData> {
-  const [venues, network, routeGeometry, shuttleTiming, walkingStopGraph] = await Promise.all([
+  const [venues, buildings, network, routeGeometry, shuttleTiming, walkingStopGraph] = await Promise.all([
     readJson(directory, 'venues.json'),
+    readJson(directory, 'buildings.json'),
     readJson(directory, 'shuttle-network.json'),
     readJson(directory, 'shuttle-routes.geojson'),
     readJson(directory, 'shuttle-timing.json'),
@@ -104,6 +113,7 @@ export async function loadCanonicalData(
 
   return validateCanonicalData({
     venues,
+    buildings,
     network,
     routeGeometry,
     shuttleTiming,

@@ -86,6 +86,56 @@
     background: var(--text-secondary);
   }
 
+  /* The collapsed strip stacks the grabber above a one-line summary of the sheet. */
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-handle {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    row-gap: 4px;
+  }
+
+  [data-mobile-sheet][data-detent='collapsed'] .mobile-sheet-grabber {
+    transform: none;
+  }
+
+  .mobile-sheet-summary {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    padding-inline: 16px;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  .mobile-sheet-summary-title {
+    flex: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* A quiet detail after a small dot keeps the strip calm; only the detail truncates. */
+  .mobile-sheet-summary-detail {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+  }
+
+  .mobile-sheet-summary-detail::before {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-inline-end: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    content: '';
+    vertical-align: middle;
+  }
+
   .mobile-sheet-handle:active .mobile-sheet-grabber,
   .mobile-sheet-popup[data-swiping] .mobile-sheet-grabber {
     opacity: 0.72;
@@ -96,8 +146,8 @@
     z-index: 20;
     inset: 0;
     overflow: hidden;
+    /* Every detent, including full, stops above the tab bar so it stays visible and tappable. */
     clip-path: inset(0 0 var(--mobile-tab-bar-height) 0);
-    transition: clip-path var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: none;
     touch-action: none;
   }
@@ -107,10 +157,6 @@
     pointer-events: none;
   }
 
-  .mobile-sheet-viewport[data-detent='full'] {
-    clip-path: inset(0);
-  }
-
   .navigation-panel.mobile-sheet-popup {
     top: 0;
     right: 0;
@@ -118,9 +164,9 @@
     left: 0;
     display: flex;
     width: auto;
-    height: var(--mobile-viewport-height) !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    height: var(--mobile-viewport-height);
+    min-height: 0;
+    max-height: none;
     flex-direction: column;
     overflow: hidden;
     /* Keep scrollable content inside the visible part of a partial sheet. */
@@ -172,8 +218,11 @@
   .navigation-panel.mobile-sheet-popup[data-detent='full'] {
     z-index: 15;
     padding-top: max(8px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     border-radius: 0;
+    /* A full sheet already starts at the viewport top. Ignore Base UI's
+       transient offset while its ResizeObserver catches up after a keyboard
+       resize; keep the swipe variable so a full sheet remains draggable. */
+    transform: translateY(var(--drawer-swipe-movement-y, 0px));
   }
 
   .navigation-panel.mobile-sheet-popup[data-detent='collapsed'] {

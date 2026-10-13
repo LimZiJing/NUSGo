@@ -17,6 +17,13 @@ export const BUS_STOP_MIN_ZOOM = 14
 export const BUS_STOP_LABEL_SOURCE_ID = 'shuttle-stop-labels'
 export const BUS_STOP_ACTIVE_LABEL_LAYER_ID = 'shuttle-stop-active-labels'
 export const BUS_STOP_INACTIVE_LABEL_LAYER_ID = 'shuttle-stop-inactive-labels'
+export const BUS_STOP_OBSTACLE_LAYER_ID = 'shuttle-stop-obstacles'
+export const BUS_STOP_OBSTACLE_IMAGE_ID = 'shuttle-stop-obstacle'
+// 14px marker (including border) plus 2px of clearance on each side.
+export const BUS_STOP_OBSTACLE_SIZE = 18
+export const BUS_STOP_LABEL_TEXT_SIZE = 12
+// In ems: 12px from the stop coordinate clears the 7px marker radius by 5px.
+export const BUS_STOP_LABEL_RADIAL_OFFSET = 1
 export const BUS_STOP_INACTIVE_OPACITY = 0.2
 
 export interface JourneyStopRoute {
@@ -25,21 +32,43 @@ export interface JourneyStopRoute {
   readonly color: string
 }
 
-const BUS_STOP_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
-  'text-anchor': 'top',
+export const BUS_STOP_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
+  'text-variable-anchor': ['top', 'bottom'],
+  'text-radial-offset': BUS_STOP_LABEL_RADIAL_OFFSET,
   'text-field': ['get', 'shortName'],
   'text-font': ['Noto Sans Regular'],
-  'text-offset': [0, 0.9],
   'text-padding': 2,
-  'text-size': [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    14, 10,
-    17, 12,
-  ],
+  'text-size': BUS_STOP_LABEL_TEXT_SIZE,
   'text-allow-overlap': false,
   'text-ignore-placement': false,
+}
+
+// The stop circles are DOM markers, which MapLibre collision cannot see. This
+// invisible icon layer stands in for them. Placement runs from the topmost
+// layer down, so it is added after (above) the label layers and its icons are
+// placed first, making the labels avoid them.
+export const BUS_STOP_OBSTACLE_LAYER: SymbolLayerSpecification = {
+  id: BUS_STOP_OBSTACLE_LAYER_ID,
+  type: 'symbol',
+  source: BUS_STOP_LABEL_SOURCE_ID,
+  minzoom: BUS_STOP_MIN_ZOOM,
+  layout: {
+    'icon-image': BUS_STOP_OBSTACLE_IMAGE_ID,
+    'icon-allow-overlap': true,
+    'icon-ignore-placement': false,
+  },
+}
+
+function createTransparentObstacleImage(): {
+  width: number
+  height: number
+  data: Uint8Array
+} {
+  return {
+    width: BUS_STOP_OBSTACLE_SIZE,
+    height: BUS_STOP_OBSTACLE_SIZE,
+    data: new Uint8Array(BUS_STOP_OBSTACLE_SIZE * BUS_STOP_OBSTACLE_SIZE * 4),
+  }
 }
 
 function createBusStopLabelLayer(id: string): SymbolLayerSpecification {
@@ -342,6 +371,8 @@ export function createShuttleStopMarkers(
   const ownsSource = !map.getSource(BUS_STOP_LABEL_SOURCE_ID)
   const ownsInactiveLayer = !map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
   const ownsActiveLayer = !map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
+  const ownsObstacleLayer = !map.getLayer(BUS_STOP_OBSTACLE_LAYER_ID)
+  const ownsObstacleImage = !map.hasImage(BUS_STOP_OBSTACLE_IMAGE_ID)
 
   if (ownsSource) {
     map.addSource(BUS_STOP_LABEL_SOURCE_ID, {
@@ -351,6 +382,10 @@ export function createShuttleStopMarkers(
   }
   if (ownsInactiveLayer) map.addLayer(BUS_STOP_INACTIVE_LABEL_LAYER)
   if (ownsActiveLayer) map.addLayer(BUS_STOP_ACTIVE_LABEL_LAYER)
+  if (ownsObstacleImage) {
+    map.addImage(BUS_STOP_OBSTACLE_IMAGE_ID, createTransparentObstacleImage())
+  }
+  if (ownsObstacleLayer) map.addLayer(BUS_STOP_OBSTACLE_LAYER)
 
   for (const stop of busStops) {
     if (!Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) continue
@@ -472,6 +507,12 @@ export function createShuttleStopMarkers(
       markerDetails.length = 0
       markers.length = 0
       popupCoordinator.dispose()
+      if (ownsObstacleLayer && map.getLayer(BUS_STOP_OBSTACLE_LAYER_ID)) {
+        map.removeLayer(BUS_STOP_OBSTACLE_LAYER_ID)
+      }
+      if (ownsObstacleImage && map.hasImage(BUS_STOP_OBSTACLE_IMAGE_ID)) {
+        map.removeImage(BUS_STOP_OBSTACLE_IMAGE_ID)
+      }
       if (ownsActiveLayer && map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
         map.removeLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
       }

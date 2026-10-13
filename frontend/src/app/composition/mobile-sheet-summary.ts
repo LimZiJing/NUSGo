@@ -9,26 +9,26 @@ import type { JourneyState } from '../journey-state'
 
 interface StopsSummaryInput {
   readonly selectedStop?: { readonly longName: string } | null
-  readonly overviewStops?: readonly unknown[]
-  readonly overviewLoading?: boolean
-  readonly selectedList?: 'nearby' | 'favourites'
+  readonly stopListEntries?: readonly unknown[]
+  readonly stopListLoading?: boolean
+  readonly selectedStopList?: 'nearby' | 'favourites'
 }
 
 export function getStopsSheetSummary({
   selectedStop = null,
-  overviewStops = [],
-  overviewLoading = false,
-  selectedList = 'nearby',
+  stopListEntries = [],
+  stopListLoading = false,
+  selectedStopList = 'nearby',
 }: StopsSummaryInput): string {
   if (selectedStop) return `Stops · ${selectedStop.longName}`
-  if (overviewStops.length === 0) {
-    if (overviewLoading) return 'Stops · Finding nearby stops'
-    return selectedList === 'favourites' ? 'Stops · No favourites yet' : 'Stops · No stops nearby'
+  if (stopListEntries.length === 0) {
+    if (stopListLoading) return 'Stops · Finding nearby stops'
+    return selectedStopList === 'favourites' ? 'Stops · No favourites yet' : 'Stops · No stops nearby'
   }
-  if (selectedList === 'favourites') {
-    return `Stops · ${overviewStops.length} ${overviewStops.length === 1 ? 'favourite' : 'favourites'}`
+  if (selectedStopList === 'favourites') {
+    return `Stops · ${stopListEntries.length} ${stopListEntries.length === 1 ? 'favourite' : 'favourites'}`
   }
-  return `Stops · ${overviewStops.length} nearby`
+  return `Stops · ${stopListEntries.length} nearby`
 }
 
 function describePath(path: Path): string {

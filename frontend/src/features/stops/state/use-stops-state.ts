@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react'
-import type { TransitIndex } from '../../domain/transit'
-import { readFavoriteStopIds, writeFavoriteStopIds } from './stop-favorites'
+import type { TransitIndex } from '../../../domain/transit'
+import { readFavoriteStopIds, writeFavoriteStopIds } from '../data/favourite-stops-storage'
 import { createInitialStopsState, stopsReducer } from './stops-state'
 
 export function useStopsState(index: TransitIndex | null) {

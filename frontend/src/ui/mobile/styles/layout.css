@@ -1,5 +1,5 @@
 .main-navigation,
-.stops-view {
+.stops-content {
   display: none;
 }
 @media (max-width: 768px) {

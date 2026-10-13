@@ -2,13 +2,13 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createTransitIndex } from '../../domain/transit'
-import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
-import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import { createTransitIndex } from '../../../domain/transit'
+import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
+import type { PublicBusArrivalSnapshot } from '../../../domain/transit/public-bus-arrivals'
+import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
 import type { StopsServiceWindowsLoader } from './use-stops-service-windows'
 import type { StopsArrivalLoader } from './use-stops-arrivals'
-import { useStopsViewModel, type StopsViewModelOptions } from './use-stops-view-model'
+import { useStopsWorkflow, type StopsWorkflowOptions } from './use-stops-workflow'
 
 const transitIndex = createTransitIndex(createValidTransitNetwork())
 const arrivalSnapshot: ShuttleArrivalSnapshot = {
@@ -28,7 +28,7 @@ const loadArrivals: StopsArrivalLoader<ShuttleArrivalSnapshot> = async () => arr
 const loadPublicArrivals: StopsArrivalLoader<PublicBusArrivalSnapshot> = async () => publicArrivalSnapshot
 const loadServiceWindows: StopsServiceWindowsLoader = async () => ({})
 
-function createOptions(overrides: Partial<StopsViewModelOptions> = {}): StopsViewModelOptions {
+function createOptions(overrides: Partial<StopsWorkflowOptions> = {}): StopsWorkflowOptions {
   return {
     transitIndex,
     mapCenter: { longitude: 103, latitude: 1 },
@@ -49,12 +49,12 @@ afterEach(() => {
   localStorage.clear()
 })
 
-describe('useStopsViewModel', () => {
+describe('useStopsWorkflow', () => {
   it('requests Nearby location when Stops becomes active and location is disabled', async () => {
     const requestLocation = vi.fn()
     const enableLocationTracking = vi.fn()
 
-    renderHook(() => useStopsViewModel(createOptions({
+    renderHook(() => useStopsWorkflow(createOptions({
       requestLocation,
       enableLocationTracking,
     })))
@@ -67,7 +67,7 @@ describe('useStopsViewModel', () => {
     const requestLocation = vi.fn()
     const locateFromControl = vi.fn()
     const enableLocationTracking = vi.fn()
-    const { result } = renderHook(() => useStopsViewModel(createOptions({
+    const { result } = renderHook(() => useStopsWorkflow(createOptions({
       active: false,
       requestLocation,
       locateFromControl,
@@ -92,7 +92,7 @@ describe('useStopsViewModel', () => {
       locateFromControl,
     })
     const { result, rerender } = renderHook(
-      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
       { initialProps: options },
     )
 
@@ -102,7 +102,7 @@ describe('useStopsViewModel', () => {
 
     rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
-    expect(result.current.overviewStops.find(({ stop }) => stop.id === 'STOP-B')?.distanceMeters).toBe(0)
+    expect(result.current.stopListEntries.find(({ stop }) => stop.id === 'STOP-B')?.distanceMeters).toBe(0)
   })
 
   it('expands Nearby stops around the map centre without waiting for a device fix', async () => {
@@ -110,13 +110,13 @@ describe('useStopsViewModel', () => {
       location: { status: 'disabled', latestFix: null },
     })
     const { result, rerender } = renderHook(
-      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
       { initialProps: options },
     )
 
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
     expect(result.current.state.expandedStopIds.favourites).toEqual([])
-    expect(result.current.overviewStops.find(({ stop }) => stop.id === 'STOP-A')?.distanceMeters).toBeNull()
+    expect(result.current.stopListEntries.find(({ stop }) => stop.id === 'STOP-A')?.distanceMeters).toBeNull()
     rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
   })
@@ -124,7 +124,7 @@ describe('useStopsViewModel', () => {
   it('keeps manual Nearby expansion changes until the map centre changes', async () => {
     const options = createOptions()
     const { result, rerender } = renderHook(
-      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
       { initialProps: options },
     )
 
@@ -141,17 +141,17 @@ describe('useStopsViewModel', () => {
     localStorage.setItem('navus:favorite-stops:v1', '["STOP-B"]')
     const options = createOptions()
     const { result, rerender } = renderHook(
-      (currentOptions: StopsViewModelOptions) => useStopsViewModel(currentOptions),
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
       { initialProps: options },
     )
 
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
-    act(() => result.current.selectList('favourites'))
+    act(() => result.current.selectStopList('favourites'))
     act(() => result.current.toggleExpanded('STOP-B'))
     rerender({ ...options, mapCenter: { longitude: 103.1, latitude: 1.1 } })
     expect(result.current.state.expandedStopIds.favourites).toEqual(['STOP-B'])
 
-    act(() => result.current.selectList('nearby'))
+    act(() => result.current.selectStopList('nearby'))
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
     expect(result.current.state.expandedStopIds.favourites).toEqual(['STOP-B'])
   })

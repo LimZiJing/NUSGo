@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest'
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const exploreStyles = readFileSync(resolve(stylesDirectory, 'explore-view.css'), 'utf8')
 const routeBrowserStyles = readFileSync(resolve(stylesDirectory, 'route-browser.css'), 'utf8')
-const stopsStyles = readFileSync(resolve(stylesDirectory, '../../stops-view/styles/stops-view.css'), 'utf8')
+const stopsStyles = readFileSync(resolve(stylesDirectory, '../../stops/styles/stops-content.css'), 'utf8')
 
 describe('route browser visual contracts', () => {
   it('keeps feature button defaults from overriding shared route chips', () => {
-    expect(stopsStyles).toMatch(/\.stops-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{/s)
+    expect(stopsStyles).toMatch(/\.stops-content button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{/s)
     expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{[^}]*padding:\s*5px 8px;/s)
   })
 

@@ -66,7 +66,7 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Frontend-only transit indexes and transformations, plus location, trip, and pure Explore view state | `frontend/src/domain` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
 | Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
-| Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops-view` |
+| Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops` |
 | Trip endpoints and Path presentation | `frontend/src/features/plan-view` |
 | Path model, search, ordered planning stages, and walking boundary | `frontend/src/pathfinding` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |

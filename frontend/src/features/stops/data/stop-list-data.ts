@@ -1,23 +1,31 @@
-import { getDistanceMeters, type TransitIndex } from '../../domain/transit'
+import { getDistanceMeters, type TransitIndex } from '../../../domain/transit'
 import type { TransitStop } from '@navus/shared/transit/types'
-import type { DeviceLocationFix } from '../../domain/location/types'
+import type { DeviceLocationFix } from '../../../domain/location/types'
+import type { StopDetailsModel } from './stop-details-model'
 
 export const NEARBY_STOP_RADIUS_METERS = 500
 
-export interface StopOverviewItem {
+export interface StopListStop {
   readonly stop: TransitStop
   readonly distanceMeters: number | null
 }
 
+export interface StopListEntry {
+  readonly stop: StopDetailsModel
+  readonly distanceMeters: number | null
+  readonly favorite: boolean
+  readonly expanded: boolean
+}
+
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
-export function getStopsOverview(
+export function getStopsForList(
   index: TransitIndex | null,
   list: 'nearby' | 'favourites',
   center: Coordinate | null,
   fix: DeviceLocationFix | null,
   favoriteStopIds: readonly string[],
-): readonly StopOverviewItem[] {
+): readonly StopListStop[] {
   if (!index) return []
   const favorites = new Set(favoriteStopIds)
   return index.stops
@@ -36,8 +44,8 @@ export function getStopsOverview(
 export function getStopsWithinNearbyRadius(
   index: TransitIndex | null,
   center: Coordinate | null,
-): readonly StopOverviewItem[] {
+): readonly StopListStop[] {
   if (!center) return []
-  return getStopsOverview(index, 'nearby', center, null, [])
+  return getStopsForList(index, 'nearby', center, null, [])
     .filter(({ stop }) => getDistanceMeters(center, stop) <= NEARBY_STOP_RADIUS_METERS)
 }

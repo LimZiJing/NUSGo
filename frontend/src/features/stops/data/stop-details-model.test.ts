@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createTransitIndex } from '../../domain/transit'
-import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
-import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
-import type { ShuttleServiceWindow } from '../../domain/transit/service-hours'
-import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import { createTransitIndex } from '../../../domain/transit'
+import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
+import type { PublicBusArrivalSnapshot } from '../../../domain/transit/public-bus-arrivals'
+import type { ShuttleServiceWindow } from '../../../domain/transit/service-hours'
+import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import { getStopDetailsModel } from './stop-details-model'
 import type { StopDetailsModel } from './stop-details-model'
 import type { StopsServiceWindows } from './stop-timing-data'
@@ -364,7 +364,7 @@ describe('selected stop details model', () => {
       Date.parse('2026-09-30T00:00:00.000Z'),
     )
 
-    expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
+    expect(selection.departures[0]?.reachableFavouriteStops).toEqual([
       { id: 'STOP-C', name: 'C', isOpposite: false },
     ])
   })
@@ -403,7 +403,7 @@ describe('selected stop details model', () => {
       Date.parse('2026-09-30T00:00:00.000Z'),
     )
 
-    expect(selection.departures[0]?.reachableFavoriteStops).toEqual([
+    expect(selection.departures[0]?.reachableFavouriteStops).toEqual([
       { id: 'STOP-B', name: 'B', isOpposite: true },
       { id: 'STOP-C', name: 'C', isOpposite: false },
     ])

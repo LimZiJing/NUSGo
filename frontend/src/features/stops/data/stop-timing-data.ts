@@ -1,23 +1,23 @@
-import { getReachableFavoriteStops, type TransitIndex } from '../../domain/transit'
+import { getReachableFavoriteStops, type TransitIndex } from '../../../domain/transit'
 import {
   SHUTTLE_ARRIVAL_FRESHNESS_MS,
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
-} from '../../domain/transit/arrivals'
+} from '../../../domain/transit/arrivals'
 import {
   PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
-} from '../../domain/transit/public-bus-arrivals'
+} from '../../../domain/transit/public-bus-arrivals'
 import {
   evaluateShuttleService,
   getNextShuttleServiceStart,
   SHUTTLE_SERVICE_START_GRACE_MINUTES,
   type ShuttleServiceWindow,
-} from '../../domain/transit/service-hours'
+} from '../../../domain/transit/service-hours'
 import type { TransitStop } from '@navus/shared/transit/types'
 
-export interface StopFavoriteDestination {
+export interface StopFavouriteDestination {
   readonly id: string
   readonly name: string
   readonly isOpposite: boolean
@@ -28,7 +28,7 @@ export interface StopDeparture {
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
-  readonly reachableFavoriteStops?: readonly StopFavoriteDestination[]
+  readonly reachableFavouriteStops?: readonly StopFavouriteDestination[]
 }
 
 export interface PublicServiceTiming {
@@ -144,7 +144,7 @@ function getLiveStopDepartures(
       routeName: route.name,
       routeColor: route.color,
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
-      reachableFavoriteStops: [],
+      reachableFavouriteStops: [],
     }]
   })
 }
@@ -240,7 +240,7 @@ export function getStopTimingData(
     routeAvailability.liveRouteIds,
   ).map((departure) => ({
     ...departure,
-    reachableFavoriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
+    reachableFavouriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
       .map(({ id, shortName }) => ({
         id,
         name: shortName,

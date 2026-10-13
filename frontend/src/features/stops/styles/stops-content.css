@@ -1,4 +1,4 @@
-.stops-view {
+.stops-content {
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -7,7 +7,7 @@
 
 /* Excluded primary buttons: this rule has the same specificity as the shared
    button.navigate-button rule and loads later, so it would override their accent colours. */
-.stops-view button:where(:not(.route-chip):not(.navigate-button):not(.stop-opposite):not(.segmented-control-option)) {
+.stops-content button:where(:not(.route-chip):not(.navigate-button):not(.stop-opposite):not(.segmented-control-option)) {
   min-width: 44px;
   min-height: var(--control-height-lg);
   padding: 8px 10px;
@@ -22,14 +22,14 @@
     transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
-.stops-view button:active:not(:disabled) {
+.stops-content button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.stops-view p {
+.stops-content p {
   margin: 0;
 }
-  .stops-overview {
+  .stops-list-panel {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -67,7 +67,7 @@
     font-size: 12px;
   }
 
-  .stops-view .stops-location-notice button {
+  .stops-content .stops-location-notice button {
     flex: 0 0 44px;
     min-width: 44px;
     min-height: var(--control-height-lg);
@@ -108,7 +108,7 @@
     stroke-linecap: round;
   }
 
-  .stops-view .stops-empty-action {
+  .stops-content .stops-empty-action {
     min-height: var(--control-height-sm);
     padding: 7px 10px;
     border: 1px solid var(--border-control);
@@ -149,7 +149,7 @@
     stroke-width: 1.75;
   }
 
-  .stops-view .stop-card-header button {
+  .stops-content .stop-card-header button {
     min-width: 0;
     min-height: var(--control-height-lg);
     padding: 4px;
@@ -157,7 +157,7 @@
     background: transparent;
   }
 
-  .stops-view .stop-card-name {
+  .stops-content .stop-card-name {
     flex: 0 1 auto;
     overflow: hidden;
     color: var(--text-contrast);
@@ -177,7 +177,7 @@
     grid-column: 3;
   }
 
-  .stops-view .stop-card-header .stop-card-favorite {
+  .stops-content .stop-card-header .stop-card-favorite {
     display: grid;
     place-items: center;
     position: absolute;
@@ -188,7 +188,7 @@
     color: var(--text-favorite);
   }
 
-  .stops-view .stop-card-header .stop-card-toggle {
+  .stops-content .stop-card-header .stop-card-toggle {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto 30px 30px;
     align-items: center;
@@ -236,7 +236,7 @@
       transition: none;
     }
 
-    .stops-view button:active {
+    .stops-content button:active {
       transform: none;
     }
   }
@@ -245,7 +245,7 @@
     margin: 0 7px 6px;
   }
 
-  .stop-card .stop-timings-empty {
+  .stop-card .stop-departure-list-empty {
     padding: 0 7px 6px;
     color: var(--text-muted);
     font-size: 12px;
@@ -271,7 +271,7 @@
     text-align: left;
   }
 
-  .stops-view .ghost-back-button {
+  .stops-content .ghost-back-button {
     justify-self: start;
   }
 
@@ -299,7 +299,7 @@
     line-height: 1;
   }
 
-  .stops-view .stop-favorite {
+  .stops-content .stop-favorite {
     display: grid;
     place-items: center;
     min-width: 44px;
@@ -373,7 +373,7 @@
     line-height: 1.25;
   }
 
-  .stop-reachable-favorites {
+  .stop-reachable-favourites {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -381,14 +381,14 @@
     overflow: hidden;
   }
 
-  .stop-reachable-favorites-arrow {
+  .stop-reachable-favourites-arrow {
     flex: 0 0 auto;
     color: var(--text-muted);
     font-size: 16px;
     line-height: 1;
   }
 
-  .stop-reachable-favorite {
+  .stop-reachable-favourite {
     display: inline-flex;
     flex: 0 1 auto;
     align-items: center;
@@ -407,19 +407,19 @@
     white-space: nowrap;
   }
 
-  .stop-reachable-favorite[data-opposite='true'] {
+  .stop-reachable-favourite[data-opposite='true'] {
     border-color: var(--border-info);
     color: var(--status-info);
     background: var(--status-info-surface);
   }
 
-  .stop-reachable-favorite svg {
+  .stop-reachable-favourite svg {
     flex: 0 0 auto;
     width: 11px;
     height: 11px;
   }
 
-  .stops-view .route-chip-public {
+  .stops-content .route-chip-public {
     color: var(--text-strong);
     background: var(--surface-raised);
     box-shadow: none;
@@ -457,7 +457,7 @@
     margin-top: 8px;
   }
 
-  .stops-view {
+  .stops-content {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -470,20 +470,20 @@
     pointer-events: auto;
   }
 
-  .stops-view .navigation-panel-content {
+  .stops-content .navigation-panel-content {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
   }
 
-  .stops-view .navigation-panel-content[data-view='overview'] {
+  .stops-content .navigation-panel-content[data-content-state='stop-list'] {
     overflow: hidden;
   }
 
 }
 
 @media (min-width: 769px) {
-  .navigation-column .stops-view {
+  .navigation-column .stops-content {
     display: flex;
     width: 100%;
     height: 100%;

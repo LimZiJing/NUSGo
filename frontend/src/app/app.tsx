@@ -33,14 +33,14 @@ import { FitRoutesControl } from '../ui/fit-routes-control'
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
-import { useStopsViewModel } from '../features/stops-view/use-stops-view-model'
+import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
-import type { StopsArrivalLoader } from '../features/stops-view/use-stops-arrivals'
-import type { StopsServiceWindowsLoader } from '../features/stops-view/use-stops-service-windows'
+import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
+import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -92,7 +92,7 @@ function App() {
   const requestNearbyLocation = useCallback((): void => {
     session?.locateUser()
   }, [session])
-  const stopsView = useStopsViewModel({
+  const stopsWorkflow = useStopsWorkflow({
     transitIndex: state.transitIndex,
     mapCenter,
     location: state.location,
@@ -109,7 +109,7 @@ function App() {
     commands,
     isMobileViewport,
     exploreView: state.exploreView,
-    focusStop: stopsView.focusStop,
+    focusStop: stopsWorkflow.focusStop,
     locationStatus: state.location.status,
     pendingViewFocusRef,
     pendingExploreReturnFocusRef,
@@ -352,25 +352,25 @@ function App() {
     onEscape: appNavigation.escapeExplore,
     onDismissMapPopup: commands.dismissMapPopup,
   }
-  const stopsViewProps: AppViewsProps['views']['stops'] = {
-    selectedStop: stopsView.selectedStop,
-    overviewStops: stopsView.overviewStops,
-    overviewLoading: stopsView.overviewLoading,
-    liveArrivalMessage: stopsView.liveArrivalMessage,
-    selectedList: stopsView.state.list,
-    selectedStopFavorite: stopsView.selectedStopFavorite,
-    locationNotice: stopsView.locationNotice,
-    onBackToStops: () => appNavigation.backFromStopDetails(stopsView.backToStops),
+  const stopsContentProps: AppViewsProps['views']['stops'] = {
+    selectedStop: stopsWorkflow.selectedStop,
+    stopListEntries: stopsWorkflow.stopListEntries,
+    stopListLoading: stopsWorkflow.stopListLoading,
+    liveArrivalMessage: stopsWorkflow.liveArrivalMessage,
+    selectedStopList: stopsWorkflow.state.list,
+    selectedStopFavorite: stopsWorkflow.selectedStopFavorite,
+    locationNotice: stopsWorkflow.locationNotice,
+    onBackToStops: () => appNavigation.backFromStopDetails(stopsWorkflow.backToStops),
     onSelectOppositeStop: appNavigation.handleStopSelected,
     onSelectRoute: appNavigation.selectRouteFromStops,
     onNavigateToStop: appNavigation.navigateToStop,
-    onSelectList: stopsView.selectList,
-    onToggleFavorite: stopsView.toggleFavorite,
-    onToggleExpanded: stopsView.toggleExpanded,
-    onDismissLocationNotice: stopsView.dismissLocationNotice,
+    onSelectStopList: stopsWorkflow.selectStopList,
+    onToggleFavorite: stopsWorkflow.toggleFavorite,
+    onToggleExpanded: stopsWorkflow.toggleExpanded,
+    onDismissLocationNotice: stopsWorkflow.dismissLocationNotice,
   }
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
-    appNavigation.selectView(view, stopsView.state.list)
+    appNavigation.selectView(view, stopsWorkflow.state.list)
   }
 
   return (
@@ -418,7 +418,7 @@ function App() {
             }}
             topOffset={mapInsets.top || 76}
             searching={state.location.status === 'requesting'}
-            onLocate={stopsView.locateFromControl}
+            onLocate={stopsWorkflow.locateFromControl}
           />
           <aside
             className="map-legend"
@@ -487,7 +487,7 @@ function App() {
             exploreRoutes: {
               onRouteSelect: commands.selectMobileRoute,
             },
-            stops: stopsViewProps,
+            stops: stopsContentProps,
           }}
         />
       </MobileSheetMetricsContext.Provider>

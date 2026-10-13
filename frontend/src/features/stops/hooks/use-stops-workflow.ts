@@ -1,24 +1,22 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react'
-import type { DeviceLocationFix, LocationTrackingState } from '../../domain/location/types'
-import type { TransitIndex } from '../../domain/transit'
+import type { DeviceLocationFix, LocationTrackingState } from '../../../domain/location/types'
+import type { TransitIndex } from '../../../domain/transit'
 import {
   isOlderPublicBusArrivalSnapshot,
   type PublicBusArrivalSnapshot,
-} from '../../domain/transit/public-bus-arrivals'
-import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
-import { getStopDetailsModel } from './stop-details-model'
-import { getStopsOverview, getStopsWithinNearbyRadius } from './stops-overview'
-import type { StopOverviewSelection } from './stops-view'
-import type { StopDetailsModel } from './stop-details-model'
-import type { StopTimingDataOptions } from './stop-timing-data'
+} from '../../../domain/transit/public-bus-arrivals'
+import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
+import { getStopDetailsModel, type StopDetailsModel } from '../data/stop-details-model'
+import { getStopsForList, getStopsWithinNearbyRadius, type StopListEntry } from '../data/stop-list-data'
+import type { StopTimingDataOptions } from '../data/stop-timing-data'
 import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
-import { useStopsState } from './use-stops-view'
-import type { StopsState } from './stops-state'
+import { useStopsState } from '../state/use-stops-state'
+import type { StopsState } from '../state/stops-state'
 
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
-export interface StopsViewModelOptions {
+export interface StopsWorkflowOptions {
   readonly transitIndex: TransitIndex | null
   readonly mapCenter: Coordinate | null
   readonly location: LocationTrackingState
@@ -31,16 +29,16 @@ export interface StopsViewModelOptions {
   readonly enableLocationTracking: () => void
 }
 
-export interface StopsViewModel {
+export interface StopsWorkflow {
   readonly state: StopsState
   readonly selectedStop: StopDetailsModel | null
-  readonly overviewStops: readonly StopOverviewSelection[]
-  readonly overviewLoading: boolean
+  readonly stopListEntries: readonly StopListEntry[]
+  readonly stopListLoading: boolean
   readonly selectedStopFavorite: boolean
   readonly locationNotice: string | null
   readonly liveArrivalMessage: string | null
   readonly focusStop: (stopId: string) => void
-  readonly selectList: (list: 'nearby' | 'favourites') => void
+  readonly selectStopList: (list: 'nearby' | 'favourites') => void
   readonly toggleFavorite: (stopId: string) => void
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
@@ -52,7 +50,7 @@ function hasLocationError(location: LocationTrackingState): boolean {
   return ['denied', 'unavailable', 'timeout', 'invalid'].includes(location.status)
 }
 
-export function useStopsViewModel({
+export function useStopsWorkflow({
   transitIndex,
   mapCenter,
   location,
@@ -63,7 +61,7 @@ export function useStopsViewModel({
   requestLocation,
   locateFromControl,
   enableLocationTracking,
-}: StopsViewModelOptions): StopsViewModel {
+}: StopsWorkflowOptions): StopsWorkflow {
   const [state, dispatch] = useStopsState(transitIndex)
   const initialNearbyLocationRequestedRef = useRef(false)
   const lastMapCenterRef = useRef<Coordinate | null>(null)
@@ -74,16 +72,16 @@ export function useStopsViewModel({
   const focusedStop = state.focusedStopId === null
     ? undefined
     : transitIndex?.stopById.get(state.focusedStopId)
-  const nearbyEntries = useMemo(() => transitIndex ? getStopsOverview(
+  const nearbyEntries = useMemo(() => transitIndex ? getStopsForList(
     transitIndex,
     'nearby',
     mapCenter,
     locationFix,
     state.favoriteStopIds,
   ) : [], [locationFix, mapCenter, state.favoriteStopIds, transitIndex])
-  const overviewEntries = useMemo(() => state.list === 'nearby'
+  const stopListData = useMemo(() => state.list === 'nearby'
     ? nearbyEntries
-    : transitIndex ? getStopsOverview(
+    : transitIndex ? getStopsForList(
       transitIndex,
       'favourites',
       mapCenter,
@@ -93,14 +91,14 @@ export function useStopsViewModel({
 
   const arrivalRequests = useMemo(() => {
     const requests = new Map<string, { readonly stopId: string; readonly stopName: string }>()
-    for (const { stop } of overviewEntries) {
+    for (const { stop } of stopListData) {
       requests.set(stop.id, { stopId: stop.id, stopName: stop.longName })
     }
     if (focusedStop) {
       requests.set(focusedStop.id, { stopId: focusedStop.id, stopName: focusedStop.longName })
     }
     return [...requests.values()]
-  }, [focusedStop, overviewEntries])
+  }, [focusedStop, stopListData])
   const stopArrivals = useStopsArrivals(loadArrivals, active, arrivalRequests)
   const publicArrivalRequests = useMemo(() => arrivalRequests.filter(({ stopId }) => (
     transitIndex?.stopById.get(stopId)?.services.some((service) => service.startsWith('PUB:')) ?? false
@@ -134,8 +132,8 @@ export function useStopsViewModel({
   const selectedStop = focusedStop && transitIndex
     ? getStopDetailsModel(focusedStop, transitIndex, timingOptions)
     : null
-  const overviewStops: readonly StopOverviewSelection[] = transitIndex
-    ? overviewEntries.map(({ stop, distanceMeters }) => ({
+  const stopListEntries: readonly StopListEntry[] = transitIndex
+    ? stopListData.map(({ stop, distanceMeters }) => ({
       stop: getStopDetailsModel(stop, transitIndex, timingOptions),
       distanceMeters,
       favorite: state.favoriteStopIds.includes(stop.id),
@@ -181,7 +179,7 @@ export function useStopsViewModel({
   const focusStop = useCallback((stopId: string): void => {
     dispatch({ type: 'focus-stop', stopId })
   }, [dispatch])
-  const selectList = useCallback((list: 'nearby' | 'favourites'): void => {
+  const selectStopList = useCallback((list: 'nearby' | 'favourites'): void => {
     if (list === 'nearby' && location.status === 'disabled') enableLocationTracking()
     dispatch({ type: 'select-list', list })
   }, [dispatch, enableLocationTracking, location.status])
@@ -212,13 +210,13 @@ export function useStopsViewModel({
   return {
     state,
     selectedStop,
-    overviewStops,
-    overviewLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
+    stopListEntries,
+    stopListLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
     selectedStopFavorite: focusedStop ? state.favoriteStopIds.includes(focusedStop.id) : false,
     locationNotice,
     liveArrivalMessage,
     focusStop,
-    selectList,
+    selectStopList,
     toggleFavorite,
     toggleExpanded,
     dismissLocationNotice,

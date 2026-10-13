@@ -2,7 +2,7 @@ import type { ComponentProps, Ref } from 'react'
 import { BusRouteBrowser as RouteBrowser } from '../../features/explore-view/bus-route-browser'
 import { ExploreView } from '../../features/explore-view/explore-view'
 import { PlanView } from '../../features/plan-view/plan-view'
-import { StopsView } from '../../features/stops-view/stops-view'
+import { StopsContent } from '../../features/stops/components/stops-content'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
@@ -42,7 +42,7 @@ export interface AppViewsProps {
       ComponentProps<typeof RouteBrowser>,
       'onRouteSelect'
     >
-    readonly stops: ComponentProps<typeof StopsView>
+    readonly stops: ComponentProps<typeof StopsContent>
   }
 }
 
@@ -132,7 +132,7 @@ export function AppViews({
             className="stops-sheet"
             label="Stops panel"
             summary={getStopsSheetSummary(views.stops)}
-            controlsId="stops-view-content"
+            controlsId="stops-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
             enabled={isMobileViewport}
             active={navigation.activeView === 'stops'}
@@ -141,7 +141,7 @@ export function AppViews({
             sectionProps={{ 'aria-label': 'Stops' }}
             shellRef={stopsSheetRef}
           >
-            <StopsView {...views.stops} />
+            <StopsContent {...views.stops} />
           </NavigationPanelShell>
         </NavigationViewShell>
       </div>

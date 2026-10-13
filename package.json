@@ -14,6 +14,7 @@
     "lint": "eslint --config frontend/eslint.config.js frontend backend/src shared/src",
     "preview": "npm --workspace @navus/frontend run preview",
     "valhalla:up": "node scripts/start-valhalla.mjs",
+    "buildings:import": "node --experimental-strip-types scripts/import-nus-digital-twin-buildings.mjs",
     "walking:graph:generate": "node --experimental-strip-types scripts/generate-walking-stop-graph.mjs",
     "valhalla:down": "docker compose -f docker-compose.valhalla.yml down",
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",

@@ -1,0 +1,5756 @@
+{
+  "version": 1,
+  "source": {
+    "name": "Buildings: NUS Digital Twin (City Syntax Lab)",
+    "url": "https://www.nus-digital-twin.com/api/v1/buildings",
+    "fetchedOn": "2026-10-13",
+    "licenceNote": "Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers (per the NUS Digital Twin API documentation). Locations are API centroids, except buildings marked provisional-entrance, which use an unverified OpenStreetMap entrance."
+  },
+  "buildings": [
+    {
+      "id": "as1",
+      "name": "AS1",
+      "aliases": [
+        "AS 1"
+      ],
+      "elementId": "142077688",
+      "address": "11 Arts Link",
+      "postal": "117573",
+      "location": {
+        "x": 103.77214,
+        "y": 1.29526
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142077688"
+        }
+      ]
+    },
+    {
+      "id": "as2",
+      "name": "AS2",
+      "aliases": [
+        "AS 2"
+      ],
+      "elementId": "142077129",
+      "address": "1 Arts Link",
+      "postal": "117568",
+      "location": {
+        "x": 103.77134,
+        "y": 1.29522
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142077129"
+        }
+      ]
+    },
+    {
+      "id": "as3",
+      "name": "AS3",
+      "aliases": [
+        "AS 3"
+      ],
+      "elementId": "142077984",
+      "address": "3 Arts Link",
+      "postal": "117570",
+      "location": {
+        "x": 103.77129,
+        "y": 1.29475
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142077984"
+        }
+      ]
+    },
+    {
+      "id": "as4",
+      "name": "AS4",
+      "aliases": [
+        "AS 4"
+      ],
+      "elementId": "142078389",
+      "address": "9 Arts Link",
+      "postal": "117572",
+      "location": {
+        "x": 103.77178,
+        "y": 1.29455
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142078389"
+        }
+      ]
+    },
+    {
+      "id": "as5",
+      "name": "AS5",
+      "aliases": [
+        "AS 5"
+      ],
+      "elementId": "142080062",
+      "address": "7 Arts Link",
+      "postal": "117570",
+      "location": {
+        "x": 103.77182,
+        "y": 1.29416
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS5"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142080062"
+        }
+      ]
+    },
+    {
+      "id": "as6",
+      "name": "AS6",
+      "aliases": [
+        "AS 6"
+      ],
+      "elementId": "15347235",
+      "address": "11 Computing Drive",
+      "postal": "117416",
+      "location": {
+        "x": 103.7735602,
+        "y": 1.2953637
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "AS6"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15347235"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10574167549"
+        }
+      ]
+    },
+    {
+      "id": "as7-shaw-foundation-building",
+      "name": "AS7 - Shaw Foundation Building",
+      "aliases": [
+        "AS 7",
+        "AS7",
+        "Shaw Foundation Building"
+      ],
+      "elementId": "142079835",
+      "address": "5 Arts Link",
+      "postal": "117570",
+      "location": {
+        "x": 103.770923,
+        "y": 1.2941719
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "AS7"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142079835"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10701211314"
+        }
+      ]
+    },
+    {
+      "id": "as8",
+      "name": "AS8",
+      "aliases": [
+        "AS 8"
+      ],
+      "elementId": "54583485",
+      "address": "10 Kent Ridge Crescent",
+      "postal": "119260",
+      "location": {
+        "x": 103.77229,
+        "y": 1.29603
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "AS8"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583485"
+        }
+      ]
+    },
+    {
+      "id": "biz-1-mochtar-riady-building",
+      "name": "BIZ 1 - Mochtar Riady Building",
+      "aliases": [
+        "BIZ 1",
+        "BIZ1",
+        "Mochtar Riady Building"
+      ],
+      "elementId": "140087160",
+      "address": "15 Kent Ridge Drive",
+      "postal": "119245",
+      "location": {
+        "x": 103.77415,
+        "y": 1.2925
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "BIZ1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087160"
+        }
+      ]
+    },
+    {
+      "id": "biz-2",
+      "name": "BIZ 2",
+      "aliases": [
+        "BIZ2"
+      ],
+      "elementId": "54619697",
+      "address": "1 Business Link",
+      "postal": "117592",
+      "location": {
+        "x": 103.77507,
+        "y": 1.29355
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "BIZ2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619697"
+        }
+      ]
+    },
+    {
+      "id": "c-j-koh-law-library-elm-wing",
+      "name": "C J Koh Law Library (Elm Wing)",
+      "aliases": [],
+      "elementId": "732229047",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77237,
+        "y": 1.30616
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229047"
+        }
+      ]
+    },
+    {
+      "id": "cendana-college-1",
+      "name": "Cendana College",
+      "aliases": [],
+      "elementId": "732229037",
+      "groupKey": "cendana-college",
+      "address": "28 College Avenue West",
+      "postal": "138533",
+      "location": {
+        "x": 103.77221,
+        "y": 1.30812
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229037"
+        }
+      ]
+    },
+    {
+      "id": "cendana-college-2",
+      "name": "Cendana College",
+      "aliases": [],
+      "elementId": "732229051",
+      "groupKey": "cendana-college",
+      "address": "28 College Avenue West",
+      "postal": "138533",
+      "location": {
+        "x": 103.77249,
+        "y": 1.30791
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229051"
+        }
+      ]
+    },
+    {
+      "id": "cendana-college-3",
+      "name": "Cendana College",
+      "aliases": [],
+      "elementId": "732229052",
+      "groupKey": "cendana-college",
+      "address": "28 College Avenue West",
+      "postal": "138533",
+      "location": {
+        "x": 103.77239,
+        "y": 1.30775
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229052"
+        }
+      ]
+    },
+    {
+      "id": "cendana-college-4",
+      "name": "Cendana College",
+      "aliases": [],
+      "elementId": "732229053",
+      "groupKey": "cendana-college",
+      "address": "28 College Avenue West",
+      "postal": "138533",
+      "location": {
+        "x": 103.77248,
+        "y": 1.30814
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229053"
+        }
+      ]
+    },
+    {
+      "id": "cendana-college-5",
+      "name": "Cendana College",
+      "aliases": [],
+      "elementId": "732229054",
+      "groupKey": "cendana-college",
+      "address": "28 College Avenue West",
+      "postal": "138533",
+      "location": {
+        "x": 103.77207,
+        "y": 1.30783
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229054"
+        }
+      ]
+    },
+    {
+      "id": "central-library",
+      "name": "Central Library",
+      "aliases": [
+        "CLB"
+      ],
+      "elementId": "54583490",
+      "address": "12 Kent Ridge Crescent",
+      "postal": "119275",
+      "location": {
+        "x": 103.77308,
+        "y": 1.29662
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "CLB"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583490"
+        }
+      ]
+    },
+    {
+      "id": "central-library-annexe",
+      "name": "Central Library Annexe",
+      "aliases": [],
+      "elementId": "140087398",
+      "address": "12 Kent Ridge Crescent",
+      "postal": "119275",
+      "location": {
+        "x": 103.77378,
+        "y": 1.29692
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087398"
+        }
+      ]
+    },
+    {
+      "id": "central-water-tank",
+      "name": "Central Water Tank",
+      "aliases": [],
+      "elementId": "163560748",
+      "address": "7 Kent Ridge Road",
+      "postal": "119216",
+      "location": {
+        "x": 103.776727,
+        "y": 1.295509
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "163560748"
+        }
+      ]
+    },
+    {
+      "id": "centre-for-english-language-communication",
+      "name": "Centre for English Language Communication",
+      "aliases": [
+        "CELC"
+      ],
+      "elementId": "140084916",
+      "address": "10 Architecture Drive",
+      "postal": "117511",
+      "location": {
+        "x": 103.771613,
+        "y": 1.2971337
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "CELC"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140084916"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11243901177"
+        }
+      ]
+    },
+    {
+      "id": "centre-for-life-sciences",
+      "name": "Centre for Life Sciences",
+      "aliases": [
+        "CELS"
+      ],
+      "elementId": "141913023",
+      "address": "28 Medical Drive",
+      "postal": "117456",
+      "location": {
+        "x": 103.78077,
+        "y": 1.29444
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "CELS"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141913023"
+        }
+      ]
+    },
+    {
+      "id": "centre-for-protective-technology",
+      "name": "Centre for Protective Technology",
+      "aliases": [],
+      "elementId": "298991082",
+      "address": "12 Kent Ridge Road",
+      "postal": "119222",
+      "location": {
+        "x": 103.77515,
+        "y": 1.29719
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "298991082"
+        }
+      ]
+    },
+    {
+      "id": "chinese-library",
+      "name": "Chinese Library",
+      "aliases": [],
+      "elementId": "140087374",
+      "address": "12 Kent Ridge Crescent",
+      "postal": "119275",
+      "location": {
+        "x": 103.7731924,
+        "y": 1.2969426
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087374"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11224826735"
+        }
+      ]
+    },
+    {
+      "id": "chua-thian-poh-hall",
+      "name": "Chua Thian Poh Hall",
+      "aliases": [],
+      "elementId": "124543532",
+      "address": "16 College Ave East",
+      "postal": "138592",
+      "location": {
+        "x": 103.77329,
+        "y": 1.30702
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543532"
+        }
+      ]
+    },
+    {
+      "id": "cinnamon-college",
+      "name": "Cinnamon College",
+      "aliases": [],
+      "elementId": "124542228",
+      "address": "22 College Ave East",
+      "postal": "138593",
+      "location": {
+        "x": 103.77347,
+        "y": 1.30669
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124542228"
+        }
+      ]
+    },
+    {
+      "id": "cinnamon-south-learn-lobe",
+      "name": "Cinnamon South Learn Lobe",
+      "aliases": [],
+      "elementId": "124549211",
+      "address": "22 College Ave East",
+      "postal": "138593",
+      "location": {
+        "x": 103.77315,
+        "y": 1.30657
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124549211"
+        }
+      ]
+    },
+    {
+      "id": "college-of-alice-and-peter-tan",
+      "name": "College of Alice & Peter Tan",
+      "aliases": [
+        "CAPT"
+      ],
+      "elementId": "124543527",
+      "address": "8 College Avenue East",
+      "postal": "138615",
+      "location": {
+        "x": 103.77315,
+        "y": 1.3076
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "CAPT"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543527"
+        }
+      ]
+    },
+    {
+      "id": "college-of-alice-and-peter-tan-multi-purpose-hall",
+      "name": "College of Alice & Peter Tan Multi-Purpose Hall",
+      "aliases": [],
+      "elementId": "124543528",
+      "address": "8 College Avenue East",
+      "postal": "138615",
+      "location": {
+        "x": 103.77314,
+        "y": 1.30731
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543528"
+        }
+      ]
+    },
+    {
+      "id": "com1",
+      "name": "COM1",
+      "aliases": [
+        "COM 1"
+      ],
+      "elementId": "54619721",
+      "address": "13 Computing Drive",
+      "postal": "117417",
+      "location": {
+        "x": 103.7736946,
+        "y": 1.2948072
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "COM1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619721"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/5936493260"
+        }
+      ]
+    },
+    {
+      "id": "com2",
+      "name": "COM2",
+      "aliases": [
+        "COM 2"
+      ],
+      "elementId": "54619699",
+      "address": "15 Computing Drive",
+      "postal": "117418",
+      "location": {
+        "x": 103.77413,
+        "y": 1.29397
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "COM2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619699"
+        }
+      ]
+    },
+    {
+      "id": "com3",
+      "name": "COM3",
+      "aliases": [
+        "COM 3"
+      ],
+      "elementId": "15780831",
+      "address": "11 Research Link",
+      "postal": "119391",
+      "location": {
+        "x": 103.77458,
+        "y": 1.29458
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "COM3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15780831"
+        }
+      ]
+    },
+    {
+      "id": "com4",
+      "name": "COM4",
+      "aliases": [
+        "COM 4"
+      ],
+      "elementId": "1084196072",
+      "address": "3A Research Link",
+      "postal": "119392",
+      "location": {
+        "x": 103.7756091,
+        "y": 1.2950488
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "COM4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1084196072"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11252774947"
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "name": "Create",
+      "aliases": [],
+      "elementId": "420847275",
+      "address": "1 Create Wy",
+      "postal": "138602",
+      "location": {
+        "x": 103.77437,
+        "y": 1.30418
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "420847275"
+        }
+      ]
+    },
+    {
+      "id": "create-tower",
+      "name": "Create Tower",
+      "aliases": [],
+      "elementId": "125842215",
+      "address": "1 Create Wy",
+      "postal": "138602",
+      "location": {
+        "x": 103.77358,
+        "y": 1.30385
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "125842215"
+        }
+      ]
+    },
+    {
+      "id": "dining-hall-1",
+      "name": "Dining Hall",
+      "aliases": [],
+      "elementId": "124236990",
+      "groupKey": "dining-hall",
+      "address": "22 College Ave East",
+      "postal": "138593",
+      "location": {
+        "x": 103.77361,
+        "y": 1.30646
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124236990"
+        }
+      ]
+    },
+    {
+      "id": "dining-hall-2",
+      "name": "Dining Hall",
+      "aliases": [],
+      "elementId": "124543529",
+      "groupKey": "dining-hall",
+      "address": "8 College Avenue East",
+      "postal": "138615",
+      "location": {
+        "x": 103.77328,
+        "y": 1.3079
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543529"
+        }
+      ]
+    },
+    {
+      "id": "director-administration-conference-room",
+      "name": "Director Administration Conference Room",
+      "aliases": [],
+      "elementId": "173058823",
+      "address": "17 Prince George's Park",
+      "postal": "118416",
+      "location": {
+        "x": 103.77919,
+        "y": 1.29253
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "173058823"
+        }
+      ]
+    },
+    {
+      "id": "e1",
+      "name": "E1",
+      "aliases": [],
+      "elementId": "139976357",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77079,
+        "y": 1.29939
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139976357"
+        }
+      ]
+    },
+    {
+      "id": "e1a",
+      "name": "E1A",
+      "aliases": [],
+      "elementId": "139976284",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.7711,
+        "y": 1.29871
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E1A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139976284"
+        }
+      ]
+    },
+    {
+      "id": "e2",
+      "name": "E2",
+      "aliases": [],
+      "elementId": "139974570",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77118,
+        "y": 1.29931
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139974570"
+        }
+      ]
+    },
+    {
+      "id": "e2a",
+      "name": "E2A",
+      "aliases": [],
+      "elementId": "628777635",
+      "address": "6 Engineering Drive 4",
+      "postal": "117361",
+      "location": {
+        "x": 103.77138,
+        "y": 1.29877
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E2A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "628777635"
+        }
+      ]
+    },
+    {
+      "id": "e3",
+      "name": "E3",
+      "aliases": [],
+      "elementId": "139971771",
+      "address": "1 Engineering Drive 2",
+      "postal": "117576",
+      "location": {
+        "x": 103.77172,
+        "y": 1.29945
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139971771"
+        }
+      ]
+    },
+    {
+      "id": "e3a",
+      "name": "E3A",
+      "aliases": [],
+      "elementId": "139974054",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77144,
+        "y": 1.30026
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E3A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139974054"
+        }
+      ]
+    },
+    {
+      "id": "e4",
+      "name": "E4",
+      "aliases": [],
+      "elementId": "139970613",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77219,
+        "y": 1.29871
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139970613"
+        }
+      ]
+    },
+    {
+      "id": "e4a",
+      "name": "E4A",
+      "aliases": [],
+      "elementId": "139960333",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77258,
+        "y": 1.29864
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E4A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139960333"
+        }
+      ]
+    },
+    {
+      "id": "e5",
+      "name": "E5",
+      "aliases": [],
+      "elementId": "54583929",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77244,
+        "y": 1.29801
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E5"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583929"
+        }
+      ]
+    },
+    {
+      "id": "e5a-t-lab",
+      "name": "E5A / T-Lab",
+      "aliases": [],
+      "elementId": "139957953",
+      "address": "5A Engineering Drive 1",
+      "postal": "117411",
+      "location": {
+        "x": 103.7721,
+        "y": 1.29973
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139957953"
+        }
+      ]
+    },
+    {
+      "id": "e6",
+      "name": "E6",
+      "aliases": [],
+      "elementId": "139959760",
+      "address": "5 Engineering Drive 1",
+      "postal": "117608",
+      "location": {
+        "x": 103.77304,
+        "y": 1.29916
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139959760"
+        }
+      ]
+    },
+    {
+      "id": "e7",
+      "name": "E7",
+      "aliases": [],
+      "elementId": "1060426986",
+      "address": "15 Kent Ridge Crescent",
+      "postal": "119276",
+      "location": {
+        "x": 103.77335,
+        "y": 1.2986
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1060426986"
+        }
+      ]
+    },
+    {
+      "id": "e8",
+      "name": "E8",
+      "aliases": [],
+      "elementId": "139959807",
+      "address": "1 Engineering Drive 3",
+      "postal": "117580",
+      "location": {
+        "x": 103.77252,
+        "y": 1.29914
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "E8"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139959807"
+        }
+      ]
+    },
+    {
+      "id": "ea",
+      "name": "EA",
+      "aliases": [],
+      "elementId": "139978993",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77077,
+        "y": 1.30055
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "EA"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139978993"
+        }
+      ]
+    },
+    {
+      "id": "education-resource-centre",
+      "name": "Education Resource Centre",
+      "aliases": [
+        "ERC"
+      ],
+      "elementId": "124549217",
+      "address": "8 College Avenue West",
+      "postal": "138608",
+      "location": {
+        "x": 103.77291,
+        "y": 1.30598
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "ERC"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124549217"
+        }
+      ]
+    },
+    {
+      "id": "elm-college-1",
+      "name": "Elm College",
+      "aliases": [],
+      "elementId": "732229043",
+      "groupKey": "elm-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77214,
+        "y": 1.30654
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229043"
+        }
+      ]
+    },
+    {
+      "id": "elm-college-2",
+      "name": "Elm College",
+      "aliases": [],
+      "elementId": "732229045",
+      "groupKey": "elm-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77195,
+        "y": 1.30624
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229045"
+        }
+      ]
+    },
+    {
+      "id": "elm-college-3",
+      "name": "Elm College",
+      "aliases": [],
+      "elementId": "732229048",
+      "groupKey": "elm-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77236,
+        "y": 1.30646
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229048"
+        }
+      ]
+    },
+    {
+      "id": "eusoff-hall-block-a",
+      "name": "Eusoff Hall Block A",
+      "aliases": [],
+      "elementId": "142219217",
+      "address": "10 Kent Ridge Drive",
+      "postal": "119242",
+      "location": {
+        "x": 103.76968,
+        "y": 1.29349
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142219217"
+        }
+      ]
+    },
+    {
+      "id": "eusoff-hall-block-b-and-c",
+      "name": "Eusoff Hall Block B and C",
+      "aliases": [],
+      "elementId": "142219214",
+      "address": "10 Kent Ridge Drive",
+      "postal": "119242",
+      "location": {
+        "x": 103.77002,
+        "y": 1.29304
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142219214"
+        }
+      ]
+    },
+    {
+      "id": "eusoff-hall-block-d",
+      "name": "Eusoff Hall Block D",
+      "aliases": [],
+      "elementId": "142219212",
+      "address": "10 Kent Ridge Drive",
+      "postal": "119242",
+      "location": {
+        "x": 103.77039,
+        "y": 1.29326
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142219212"
+        }
+      ]
+    },
+    {
+      "id": "eusoff-hall-block-e",
+      "name": "Eusoff Hall Block E",
+      "aliases": [],
+      "elementId": "142219213",
+      "address": "10 Kent Ridge Drive",
+      "postal": "119242",
+      "location": {
+        "x": 103.77027,
+        "y": 1.29352
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142219213"
+        }
+      ]
+    },
+    {
+      "id": "ew1",
+      "name": "EW1",
+      "aliases": [
+        "EW 1"
+      ],
+      "elementId": "54619717",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77072,
+        "y": 1.29854
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "EW1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619717"
+        }
+      ]
+    },
+    {
+      "id": "ew1a",
+      "name": "EW1A",
+      "aliases": [
+        "EW 1A"
+      ],
+      "elementId": "624224897",
+      "address": "1 Engineering Drive 2",
+      "postal": "117576",
+      "location": {
+        "x": 103.77038,
+        "y": 1.29943
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "624224897"
+        }
+      ]
+    },
+    {
+      "id": "frontier-1",
+      "name": "Frontier",
+      "aliases": [],
+      "elementId": "141910213",
+      "groupKey": "frontier",
+      "address": "12 Science Drive 2",
+      "postal": "117549",
+      "location": {
+        "x": 103.78067,
+        "y": 1.29647
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "Frontier"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910213"
+        }
+      ]
+    },
+    {
+      "id": "frontier-2",
+      "name": "Frontier",
+      "aliases": [],
+      "elementId": "874067395",
+      "groupKey": "frontier",
+      "address": "12 Science Drive 2",
+      "postal": "117549",
+      "location": {
+        "x": 103.7800815,
+        "y": 1.2963667
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "Frontier"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "874067395"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11025586094"
+        }
+      ]
+    },
+    {
+      "id": "greenhouse-1",
+      "name": "Greenhouse",
+      "aliases": [],
+      "elementId": "1158481785",
+      "groupKey": "greenhouse",
+      "address": "1 Research Link",
+      "postal": "117604",
+      "location": {
+        "x": 103.77716,
+        "y": 1.29461
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1158481785"
+        }
+      ]
+    },
+    {
+      "id": "greenhouse-2",
+      "name": "Greenhouse",
+      "aliases": [],
+      "elementId": "142089841",
+      "groupKey": "greenhouse",
+      "address": "1 Research Link",
+      "postal": "117604",
+      "location": {
+        "x": 103.7767,
+        "y": 1.29391
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142089841"
+        }
+      ]
+    },
+    {
+      "id": "greenhouse-3",
+      "name": "Greenhouse",
+      "aliases": [],
+      "elementId": "84517830",
+      "groupKey": "greenhouse",
+      "address": "1 Research Link",
+      "postal": "117604",
+      "location": {
+        "x": 103.77723,
+        "y": 1.29384
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "84517830"
+        }
+      ]
+    },
+    {
+      "id": "helix-house",
+      "name": "Helix House",
+      "aliases": [],
+      "elementId": "HELIX_HOUSE",
+      "address": "37 Prince George's Park",
+      "postal": "118430",
+      "location": {
+        "x": 103.7795422532624,
+        "y": 1.2913216161148813
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "HELIX_HOUSE"
+        }
+      ]
+    },
+    {
+      "id": "helix-house-block-15-17",
+      "name": "Helix House Block 15 - 17",
+      "aliases": [
+        "17"
+      ],
+      "elementId": "238932766",
+      "address": "37 Prince George's Park",
+      "postal": "118430",
+      "location": {
+        "x": 103.7796,
+        "y": 1.29134
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932766"
+        }
+      ]
+    },
+    {
+      "id": "helix-house-block-18-and-19",
+      "name": "Helix House Block 18 and 19",
+      "aliases": [],
+      "elementId": "238932773",
+      "address": "37 Prince George's Park",
+      "postal": "118430",
+      "location": {
+        "x": 103.77989,
+        "y": 1.29109
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932773"
+        }
+      ]
+    },
+    {
+      "id": "hon-sui-sen-memorial-library",
+      "name": "Hon Sui Sen Memorial Library",
+      "aliases": [
+        "HSS"
+      ],
+      "elementId": "54619685",
+      "address": "1 Hon Sui Sen Drive",
+      "postal": "117588",
+      "location": {
+        "x": 103.7747466,
+        "y": 1.2931313
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "HSS"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619685"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10773610197"
+        }
+      ]
+    },
+    {
+      "id": "i3",
+      "name": "i3",
+      "aliases": [],
+      "elementId": "54619687",
+      "address": "21 Heng Mui Keng Ter",
+      "postal": "119613",
+      "location": {
+        "x": 103.7755061,
+        "y": 1.2922072
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "I3",
+        "i3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619687"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11137523179"
+        }
+      ]
+    },
+    {
+      "id": "ims-auditorium",
+      "name": "IMS Auditorium",
+      "aliases": [],
+      "elementId": "351136507",
+      "address": "3 Prince George's Park",
+      "postal": "118402",
+      "location": {
+        "x": 103.77974,
+        "y": 1.29257
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "351136507"
+        }
+      ]
+    },
+    {
+      "id": "information-technology",
+      "name": "Information Technology",
+      "aliases": [],
+      "elementId": "54583488",
+      "address": "2 Engineering Drive 4",
+      "postal": "117584",
+      "location": {
+        "x": 103.77251,
+        "y": 1.29755
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583488"
+        }
+      ]
+    },
+    {
+      "id": "innovation-4-0",
+      "name": "Innovation 4.0",
+      "aliases": [],
+      "elementId": "54619703",
+      "address": "3 Research Link",
+      "postal": "117602",
+      "location": {
+        "x": 103.7758547,
+        "y": 1.2941643
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619703"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11252774960"
+        }
+      ]
+    },
+    {
+      "id": "institute-for-math-and-science-1",
+      "name": "Institute for Math and Science",
+      "aliases": [],
+      "elementId": "351136508",
+      "groupKey": "institute-for-math-and-science",
+      "address": "3 Prince George's Park",
+      "postal": "118402",
+      "location": {
+        "x": 103.77951,
+        "y": 1.29266
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "351136508"
+        }
+      ]
+    },
+    {
+      "id": "institute-for-math-and-science-2",
+      "name": "Institute for Math and Science",
+      "aliases": [],
+      "elementId": "351136509",
+      "groupKey": "institute-for-math-and-science",
+      "address": "4 Prince George's Park",
+      "postal": "118403",
+      "location": {
+        "x": 103.77928,
+        "y": 1.2929
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "351136509"
+        }
+      ]
+    },
+    {
+      "id": "institute-of-systems-science",
+      "name": "Institute of Systems Science",
+      "aliases": [],
+      "elementId": "4548824",
+      "address": "25 Heng Mui Keng Ter",
+      "postal": "119615",
+      "location": {
+        "x": 103.77658,
+        "y": 1.292046
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "4548824"
+        }
+      ]
+    },
+    {
+      "id": "investigation-division-multi-purpose-room",
+      "name": "Investigation Division Multi-Purpose Room",
+      "aliases": [],
+      "elementId": "173059405",
+      "address": "18 Prince George's Park",
+      "postal": "118417",
+      "location": {
+        "x": 103.77958,
+        "y": 1.29229
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "173059405"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-guild-house",
+      "name": "Kent Ridge Guild House",
+      "aliases": [],
+      "elementId": "858981035",
+      "address": "9 Kent Ridge Drive",
+      "postal": "119241",
+      "location": {
+        "x": 103.77262,
+        "y": 1.2938
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "858981035"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-guild-house-extension",
+      "name": "Kent Ridge Guild House Extension",
+      "aliases": [],
+      "elementId": "54619694",
+      "address": "9 Kent Ridge Drive",
+      "postal": "119241",
+      "location": {
+        "x": 103.77308,
+        "y": 1.29387
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619694"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "KRH"
+      ],
+      "elementId": "627395978",
+      "address": "10 Heng Mui Keng Ter",
+      "postal": "119617",
+      "location": {
+        "x": 103.77451,
+        "y": 1.29178
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "KRH"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "627395978"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall-block-a",
+      "name": "Kent Ridge Hall Block A",
+      "aliases": [],
+      "elementId": "455250293",
+      "address": "10 Heng Mui Keng Ter",
+      "postal": "119617",
+      "location": {
+        "x": 103.775,
+        "y": 1.29163
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250293"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall-block-b",
+      "name": "Kent Ridge Hall Block B",
+      "aliases": [],
+      "elementId": "455250298",
+      "address": "10 Heng Mui Keng Ter",
+      "postal": "119617",
+      "location": {
+        "x": 103.7749,
+        "y": 1.29132
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250298"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall-block-c",
+      "name": "Kent Ridge Hall Block C",
+      "aliases": [],
+      "elementId": "455250297",
+      "address": "10 Heng Mui Keng Ter",
+      "postal": "119617",
+      "location": {
+        "x": 103.77471,
+        "y": 1.29148
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250297"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall-block-d",
+      "name": "Kent Ridge Hall Block D",
+      "aliases": [],
+      "elementId": "455250296",
+      "address": "10 Heng Mui Keng Ter",
+      "location": {
+        "x": 103.77437,
+        "y": 1.29154
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250296"
+        }
+      ]
+    },
+    {
+      "id": "kent-ridge-hall-block-e",
+      "name": "Kent Ridge Hall Block E",
+      "aliases": [],
+      "elementId": "455250295",
+      "address": "10 Heng Mui Keng Ter",
+      "location": {
+        "x": 103.77412,
+        "y": 1.29172
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250295"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-a",
+      "name": "King Edward VII Hall Block A",
+      "aliases": [],
+      "elementId": "238933469",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78138,
+        "y": 1.29169
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933469"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-b",
+      "name": "King Edward VII Hall Block B",
+      "aliases": [],
+      "elementId": "15521866",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78127,
+        "y": 1.29162
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15521866"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-c",
+      "name": "King Edward VII Hall Block C",
+      "aliases": [],
+      "elementId": "15521865",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78116,
+        "y": 1.29149
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15521865"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-d",
+      "name": "King Edward VII Hall Block D",
+      "aliases": [],
+      "elementId": "238933484",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78079,
+        "y": 1.29141
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933484"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-e-1",
+      "name": "King Edward VII Hall Block E",
+      "aliases": [],
+      "elementId": "238933477",
+      "groupKey": "king-edward-vii-hall-block-e",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78052,
+        "y": 1.29336
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933477"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-e-2",
+      "name": "King Edward VII Hall Block E",
+      "aliases": [],
+      "elementId": "238933479",
+      "groupKey": "king-edward-vii-hall-block-e",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78084,
+        "y": 1.29303
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933479"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-f-1",
+      "name": "King Edward VII Hall Block F",
+      "aliases": [],
+      "elementId": "238933473",
+      "groupKey": "king-edward-vii-hall-block-f",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78035,
+        "y": 1.29327
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933473"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-f-2",
+      "name": "King Edward VII Hall Block F",
+      "aliases": [],
+      "elementId": "238933482",
+      "groupKey": "king-edward-vii-hall-block-f",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78074,
+        "y": 1.29284
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933482"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-g",
+      "name": "King Edward VII Hall Block G",
+      "aliases": [],
+      "elementId": "15521864",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78039,
+        "y": 1.2929
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15521864"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-block-h",
+      "name": "King Edward VII Hall Block H",
+      "aliases": [],
+      "elementId": "238933488",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78022,
+        "y": 1.29299
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933488"
+        }
+      ]
+    },
+    {
+      "id": "king-edward-vii-hall-communal-hall",
+      "name": "King Edward VII Hall Communal Hall",
+      "aliases": [],
+      "elementId": "238933471",
+      "address": "1A Kent Ridge Road",
+      "postal": "119224",
+      "location": {
+        "x": 103.78097,
+        "y": 1.29234
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238933471"
+        }
+      ]
+    },
+    {
+      "id": "kuok-foundation-house-block-7-and-8",
+      "name": "Kuok Foundation House (Block 7 & 8)",
+      "aliases": [],
+      "elementId": "241265457",
+      "address": "21 Kent Ridge Crescent",
+      "postal": "119280",
+      "location": {
+        "x": 103.77361,
+        "y": 1.30034
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265457"
+        }
+      ]
+    },
+    {
+      "id": "lee-kong-chian-natural-history-museum",
+      "name": "Lee Kong Chian Natural History Museum",
+      "aliases": [],
+      "elementId": "54619794",
+      "address": "2 Conservatory Drive",
+      "postal": "117377",
+      "location": {
+        "x": 103.77361,
+        "y": 1.30152
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619794"
+        }
+      ]
+    },
+    {
+      "id": "lee-wee-kheng-building-s1a-lt-32",
+      "name": "Lee Wee Kheng Building (S1A/LT 32)",
+      "aliases": [
+        "LT 32",
+        "LT32",
+        "Lee Wee Kheng Building",
+        "S1A"
+      ],
+      "elementId": "141905556",
+      "address": "3 Science Drive 2",
+      "postal": "117543",
+      "location": {
+        "x": 103.77833,
+        "y": 1.29606
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT32",
+        "S1A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905556"
+        }
+      ]
+    },
+    {
+      "id": "lighthouse-block-26",
+      "name": "LightHouse Block 26",
+      "aliases": [],
+      "elementId": "238932790",
+      "address": "24 Prince George's Park",
+      "postal": "118424",
+      "location": {
+        "x": 103.78158,
+        "y": 1.29062
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932790"
+        }
+      ]
+    },
+    {
+      "id": "lighthouse-block-27-and-28",
+      "name": "LightHouse Block 27 and 28",
+      "aliases": [],
+      "elementId": "238932793",
+      "address": "24 Prince George's Park",
+      "postal": "118424",
+      "location": {
+        "x": 103.78169,
+        "y": 1.29029
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932793"
+        }
+      ]
+    },
+    {
+      "id": "lighthouse-block-29-and-30",
+      "name": "LightHouse Block 29 and 30",
+      "aliases": [],
+      "elementId": "238932794",
+      "address": "24 Prince George's Park",
+      "postal": "118424",
+      "location": {
+        "x": 103.7819,
+        "y": 1.29049
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932794"
+        }
+      ]
+    },
+    {
+      "id": "lim-seng-tjoe-lecture-theatre-lt-27",
+      "name": "Lim Seng Tjoe Lecture Theatre (LT 27)",
+      "aliases": [
+        "LT 27",
+        "LT27",
+        "Lim Seng Tjoe Lecture Theatre"
+      ],
+      "elementId": "141907258",
+      "address": "27 Science Drive 1",
+      "postal": "117541",
+      "location": {
+        "x": 103.78086,
+        "y": 1.297
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT27"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141907258"
+        }
+      ]
+    },
+    {
+      "id": "lt-1",
+      "name": "LT 1",
+      "aliases": [
+        "LT1"
+      ],
+      "elementId": "139974326",
+      "address": "5 Engineering Drive 2",
+      "postal": "117579",
+      "location": {
+        "x": 103.77131,
+        "y": 1.2995
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139974326"
+        }
+      ]
+    },
+    {
+      "id": "lt-10",
+      "name": "LT 10",
+      "aliases": [
+        "LT10"
+      ],
+      "elementId": "142078783",
+      "address": "11 Computing Drive",
+      "postal": "117416",
+      "location": {
+        "x": 103.772,
+        "y": 1.29487
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT10"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142078783"
+        }
+      ]
+    },
+    {
+      "id": "lt-11",
+      "name": "LT 11",
+      "aliases": [
+        "LT11"
+      ],
+      "elementId": "142076923",
+      "address": "10 Kent Ridge Drive",
+      "postal": "119242",
+      "location": {
+        "x": 103.7714,
+        "y": 1.29545
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT11"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142076923"
+        }
+      ]
+    },
+    {
+      "id": "lt-12",
+      "name": "LT 12",
+      "aliases": [
+        "LT12"
+      ],
+      "elementId": "142077784",
+      "address": "Kent Ridge Drive",
+      "postal": "119246",
+      "location": {
+        "x": 103.77114,
+        "y": 1.29497
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT12"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142077784"
+        }
+      ]
+    },
+    {
+      "id": "lt-13",
+      "name": "LT 13",
+      "aliases": [
+        "LT13"
+      ],
+      "elementId": "142077734",
+      "address": "Kent Ridge Drive",
+      "postal": "119246",
+      "location": {
+        "x": 103.77089,
+        "y": 1.29506
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT13"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142077734"
+        }
+      ]
+    },
+    {
+      "id": "lt-14",
+      "name": "LT 14",
+      "aliases": [
+        "LT14"
+      ],
+      "elementId": "142079319",
+      "address": "11 Computing Drive",
+      "postal": "117416",
+      "location": {
+        "x": 103.77337,
+        "y": 1.29571
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT14"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142079319"
+        }
+      ]
+    },
+    {
+      "id": "lt-15",
+      "name": "LT 15",
+      "aliases": [
+        "LT15"
+      ],
+      "elementId": "142079318",
+      "address": "11 Computing Drive",
+      "postal": "117416",
+      "location": {
+        "x": 103.77343,
+        "y": 1.29552
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT15"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142079318"
+        }
+      ]
+    },
+    {
+      "id": "lt-16",
+      "name": "LT 16",
+      "aliases": [
+        "LT16"
+      ],
+      "elementId": "142082467",
+      "address": "13 Computing Drive",
+      "postal": "117417",
+      "location": {
+        "x": 103.773801,
+        "y": 1.2940473
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "LT16"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142082467"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/13760043544"
+        }
+      ]
+    },
+    {
+      "id": "lt-17",
+      "name": "LT 17",
+      "aliases": [
+        "LT17"
+      ],
+      "elementId": "142082470",
+      "address": "13 Computing Drive",
+      "postal": "117417",
+      "location": {
+        "x": 103.774,
+        "y": 1.29361
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT17"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142082470"
+        }
+      ]
+    },
+    {
+      "id": "lt-18",
+      "name": "LT 18",
+      "aliases": [
+        "LT18"
+      ],
+      "elementId": "142083506",
+      "address": "1 Business Link",
+      "postal": "117592",
+      "location": {
+        "x": 103.7746,
+        "y": 1.29332
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT18"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142083506"
+        }
+      ]
+    },
+    {
+      "id": "lt-19",
+      "name": "LT 19",
+      "aliases": [
+        "LT19"
+      ],
+      "elementId": "142083509",
+      "address": "Computing Drive",
+      "postal": "119077",
+      "location": {
+        "x": 103.7743443,
+        "y": 1.2937939
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "LT19"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142083509"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11243901183"
+        }
+      ]
+    },
+    {
+      "id": "lt-2",
+      "name": "LT 2",
+      "aliases": [
+        "LT2"
+      ],
+      "elementId": "139974364",
+      "address": "9 Engineering Drive 2",
+      "postal": "117575",
+      "location": {
+        "x": 103.77142,
+        "y": 1.29932
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139974364"
+        }
+      ]
+    },
+    {
+      "id": "lt-20",
+      "name": "LT 20",
+      "aliases": [
+        "LT20"
+      ],
+      "elementId": "141905825",
+      "address": "8 Science Drive 2",
+      "postal": "117547",
+      "location": {
+        "x": 103.7788,
+        "y": 1.29582
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT20"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905825"
+        }
+      ]
+    },
+    {
+      "id": "lt-21",
+      "name": "LT 21",
+      "aliases": [
+        "LT21"
+      ],
+      "elementId": "141906024",
+      "address": "8 Science Drive 2",
+      "postal": "117547",
+      "location": {
+        "x": 103.77946,
+        "y": 1.29536
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT21"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141906024"
+        }
+      ]
+    },
+    {
+      "id": "lt-26",
+      "name": "LT 26",
+      "aliases": [
+        "LT26"
+      ],
+      "elementId": "141910214",
+      "address": "Science Drive 2",
+      "postal": "117547",
+      "location": {
+        "x": 103.78113,
+        "y": 1.29642
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT26"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910214"
+        }
+      ]
+    },
+    {
+      "id": "lt-28",
+      "name": "LT 28",
+      "aliases": [
+        "LT28"
+      ],
+      "elementId": "141907104",
+      "address": "2 Medical Drive",
+      "postal": "117593",
+      "location": {
+        "x": 103.78116,
+        "y": 1.29723
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT28"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141907104"
+        }
+      ]
+    },
+    {
+      "id": "lt-29",
+      "name": "LT 29",
+      "aliases": [
+        "LT29"
+      ],
+      "elementId": "141907010",
+      "address": "2 Medical Drive",
+      "postal": "117593",
+      "location": {
+        "x": 103.7812156,
+        "y": 1.2970127
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "LT29"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141907010"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11153264937"
+        }
+      ]
+    },
+    {
+      "id": "lt-3",
+      "name": "LT 3",
+      "aliases": [
+        "LT3"
+      ],
+      "elementId": "140087835",
+      "address": "10 Kent Ridge Crescent",
+      "postal": "119260",
+      "location": {
+        "x": 103.77333,
+        "y": 1.29767
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087835"
+        }
+      ]
+    },
+    {
+      "id": "lt-31",
+      "name": "LT 31",
+      "aliases": [
+        "LT31"
+      ],
+      "elementId": "142075681",
+      "address": "6 Science Drive 2",
+      "postal": "117546",
+      "location": {
+        "x": 103.78039,
+        "y": 1.29687
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT31"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142075681"
+        }
+      ]
+    },
+    {
+      "id": "lt-33",
+      "name": "LT 33",
+      "aliases": [
+        "LT33"
+      ],
+      "elementId": "142074913",
+      "address": "10 Lower Kent Ridge Road",
+      "postal": "119076",
+      "location": {
+        "x": 103.78096,
+        "y": 1.29776
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT33"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142074913"
+        }
+      ]
+    },
+    {
+      "id": "lt-34",
+      "name": "LT 34",
+      "aliases": [
+        "LT34"
+      ],
+      "elementId": "142074910",
+      "address": "21 Lower Kent Ridge Road",
+      "postal": "119077",
+      "location": {
+        "x": 103.78081,
+        "y": 1.29772
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT34"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142074910"
+        }
+      ]
+    },
+    {
+      "id": "lt-4",
+      "name": "LT 4",
+      "aliases": [
+        "LT4"
+      ],
+      "elementId": "140087837",
+      "address": "10 Kent Ridge Crescent",
+      "postal": "119260",
+      "location": {
+        "x": 103.77352,
+        "y": 1.29757
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087837"
+        }
+      ]
+    },
+    {
+      "id": "lt-6",
+      "name": "LT 6",
+      "aliases": [
+        "LT6"
+      ],
+      "elementId": "139960627",
+      "address": "10 Kent Ridge Crescent",
+      "postal": "119260",
+      "location": {
+        "x": 103.77197,
+        "y": 1.29878
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT6"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139960627"
+        }
+      ]
+    },
+    {
+      "id": "lt-7",
+      "name": "LT 7",
+      "aliases": [
+        "LT7"
+      ],
+      "elementId": "139972031",
+      "address": "9 Engineering Drive 1",
+      "postal": "117575",
+      "location": {
+        "x": 103.77106,
+        "y": 1.30008
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT7"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "139972031"
+        }
+      ]
+    },
+    {
+      "id": "lt-8",
+      "name": "LT 8",
+      "aliases": [
+        "LT8"
+      ],
+      "elementId": "142080063",
+      "address": "7 Arts Link",
+      "postal": "117571",
+      "location": {
+        "x": 103.77197,
+        "y": 1.29414
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT8"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142080063"
+        }
+      ]
+    },
+    {
+      "id": "lt-9",
+      "name": "LT 9",
+      "aliases": [
+        "LT9"
+      ],
+      "elementId": "142078782",
+      "address": "11 Arts Link",
+      "postal": "117573",
+      "location": {
+        "x": 103.77223,
+        "y": 1.29494
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "LT9"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142078782"
+        }
+      ]
+    },
+    {
+      "id": "md1-tahir-foundation-building",
+      "name": "MD1 - Tahir Foundation Building",
+      "aliases": [
+        "MD 1",
+        "MD1",
+        "Tahir Foundation Building"
+      ],
+      "elementId": "141912739",
+      "address": "12 Science Drive 2",
+      "postal": "117549",
+      "location": {
+        "x": 103.78051,
+        "y": 1.29536
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141912739"
+        }
+      ]
+    },
+    {
+      "id": "md10",
+      "name": "MD10",
+      "aliases": [
+        "MD 10"
+      ],
+      "elementId": "141908489",
+      "address": "4 Medical Drive",
+      "postal": "117594",
+      "location": {
+        "x": 103.78178,
+        "y": 1.29649
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD10"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141908489"
+        }
+      ]
+    },
+    {
+      "id": "md11",
+      "name": "MD11",
+      "aliases": [
+        "MD 11"
+      ],
+      "elementId": "141910336",
+      "address": "10 Medical Drive",
+      "postal": "117597",
+      "location": {
+        "x": 103.7819404,
+        "y": 1.2958909
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "MD11"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910336"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11020038671"
+        }
+      ]
+    },
+    {
+      "id": "md2",
+      "name": "MD2",
+      "aliases": [
+        "MD 2"
+      ],
+      "elementId": "141912951",
+      "address": "12 Science Drive 2",
+      "postal": "117549",
+      "location": {
+        "x": 103.78118,
+        "y": 1.29491
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141912951"
+        }
+      ]
+    },
+    {
+      "id": "md3",
+      "name": "MD3",
+      "aliases": [
+        "MD 3"
+      ],
+      "elementId": "141912946",
+      "address": "16 Medical Drive",
+      "postal": "117600",
+      "location": {
+        "x": 103.78115,
+        "y": 1.29533
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141912946"
+        }
+      ]
+    },
+    {
+      "id": "md4",
+      "name": "MD4",
+      "aliases": [
+        "MD 4"
+      ],
+      "elementId": "141910523",
+      "address": "5 Science Drive 2",
+      "postal": "117545",
+      "location": {
+        "x": 103.78093,
+        "y": 1.29575
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910523"
+        }
+      ]
+    },
+    {
+      "id": "md4a",
+      "name": "MD4A",
+      "aliases": [
+        "MD 4A"
+      ],
+      "elementId": "141910559",
+      "address": "5 Science Drive 2",
+      "postal": "117545",
+      "location": {
+        "x": 103.78084,
+        "y": 1.29562
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910559"
+        }
+      ]
+    },
+    {
+      "id": "md5",
+      "name": "MD5",
+      "aliases": [
+        "MD 5"
+      ],
+      "elementId": "141910561",
+      "address": "16 Medical Drive",
+      "postal": "117600",
+      "location": {
+        "x": 103.78139,
+        "y": 1.29563
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910561"
+        }
+      ]
+    },
+    {
+      "id": "md6",
+      "name": "MD6",
+      "aliases": [
+        "MD 6"
+      ],
+      "elementId": "141912974",
+      "address": "15 Medical Drive",
+      "postal": "117599",
+      "location": {
+        "x": 103.7820045,
+        "y": 1.2953223
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "MD6"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141912974"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1553396926"
+        }
+      ]
+    },
+    {
+      "id": "md7",
+      "name": "MD7",
+      "aliases": [
+        "MD 7"
+      ],
+      "elementId": "141910273",
+      "address": "8 Medical Drive",
+      "postal": "117596",
+      "location": {
+        "x": 103.78114,
+        "y": 1.296
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD7"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141910273"
+        }
+      ]
+    },
+    {
+      "id": "md9",
+      "name": "MD9",
+      "aliases": [
+        "MD 9"
+      ],
+      "elementId": "141908093",
+      "address": "2 Medical Drive",
+      "postal": "117593",
+      "location": {
+        "x": 103.78127,
+        "y": 1.2967
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "MD9"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141908093"
+        }
+      ]
+    },
+    {
+      "id": "medicine-science-library",
+      "name": "Medicine + Science Library",
+      "aliases": [],
+      "elementId": "141913116",
+      "address": "11 Lower Kent Ridge Road",
+      "postal": "119083",
+      "location": {
+        "x": 103.7816129,
+        "y": 1.2969695
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141913116"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11153264936"
+        }
+      ]
+    },
+    {
+      "id": "mpsh-1-4",
+      "name": "MPSH 1 - 4",
+      "aliases": [
+        "4",
+        "MPSH 1",
+        "MPSH1"
+      ],
+      "elementId": "142090371",
+      "address": "Sports Drive 1",
+      "postal": "119077",
+      "location": {
+        "x": 103.77603,
+        "y": 1.30076
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142090371"
+        }
+      ]
+    },
+    {
+      "id": "mpsh-5",
+      "name": "MPSH 5",
+      "aliases": [
+        "MPSH5"
+      ],
+      "elementId": "54619808",
+      "address": "Sports Drive 1",
+      "postal": "119077",
+      "location": {
+        "x": 103.77633,
+        "y": 1.30036
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619808"
+        }
+      ]
+    },
+    {
+      "id": "mpsh-6",
+      "name": "MPSH 6",
+      "aliases": [
+        "MPSH6"
+      ],
+      "elementId": "142090370",
+      "address": "Sports Drive 1",
+      "postal": "119077",
+      "location": {
+        "x": 103.77576,
+        "y": 1.30031
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142090370"
+        }
+      ]
+    },
+    {
+      "id": "ngee-ann-kongsi-auditorium",
+      "name": "Ngee Ann Kongsi Auditorium",
+      "aliases": [
+        "NAK"
+      ],
+      "elementId": "124550688",
+      "address": "8 College Ave West",
+      "postal": "138608",
+      "location": {
+        "x": 103.77316,
+        "y": 1.30553
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "NAK"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124550688"
+        }
+      ]
+    },
+    {
+      "id": "nus-college-office",
+      "name": "NUS College Office",
+      "aliases": [],
+      "elementId": "124543531",
+      "address": "18 College Ave East",
+      "postal": "138593",
+      "location": {
+        "x": 103.77303,
+        "y": 1.30684
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543531"
+        }
+      ]
+    },
+    {
+      "id": "nus-enterprise-incubator",
+      "name": "NUS Enterprise Incubator",
+      "aliases": [],
+      "elementId": "12017240",
+      "address": "9 Prince George's Park",
+      "postal": "118408",
+      "location": {
+        "x": 103.77816,
+        "y": 1.29331
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "12017240"
+        }
+      ]
+    },
+    {
+      "id": "nus-museum",
+      "name": "NUS Museum",
+      "aliases": [],
+      "elementId": "NUS_MUSEUM",
+      "address": "50 Kent Ridge Crescent",
+      "postal": "119279",
+      "location": {
+        "x": 103.77229,
+        "y": 1.30176
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "NUS_MUSEUM"
+        }
+      ]
+    },
+    {
+      "id": "nus-staff-club",
+      "name": "NUS Staff Club",
+      "aliases": [],
+      "elementId": "54619777",
+      "address": "30 Lower Kent Ridge Road",
+      "postal": "119075",
+      "location": {
+        "x": 103.77578,
+        "y": 1.29922
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619777"
+        }
+      ]
+    },
+    {
+      "id": "ocs-command-centre",
+      "name": "OCS Command Centre",
+      "aliases": [],
+      "elementId": "1136599404",
+      "address": "18A Prince George's Park",
+      "postal": "118417",
+      "location": {
+        "x": 103.77923,
+        "y": 1.29226
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1136599404"
+        }
+      ]
+    },
+    {
+      "id": "office-of-safety-health-and-environment",
+      "name": "Office of Safety, Health and Environment",
+      "aliases": [],
+      "elementId": "351136506",
+      "address": "2 Prince George's Park",
+      "postal": "118401",
+      "location": {
+        "x": 103.77999,
+        "y": 1.29241
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "351136506"
+        }
+      ]
+    },
+    {
+      "id": "pgp-amphitheatre",
+      "name": "PGP Amphitheatre",
+      "aliases": [],
+      "elementId": "241503843",
+      "address": "39 Prince George's Park",
+      "postal": "118431",
+      "location": {
+        "x": 103.7799,
+        "y": 1.29159
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241503843"
+        }
+      ]
+    },
+    {
+      "id": "pgp-canteen",
+      "name": "PGP Canteen",
+      "aliases": [],
+      "elementId": "732229815",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78215,
+        "y": 1.29078
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229815"
+        }
+      ]
+    },
+    {
+      "id": "pgp-foyer",
+      "name": "PGP Foyer",
+      "aliases": [],
+      "elementId": "251677507",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78114,
+        "y": 1.29097
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "251677507"
+        }
+      ]
+    },
+    {
+      "id": "pgp-gym",
+      "name": "PGP Gym",
+      "aliases": [],
+      "elementId": "238932795",
+      "address": "33 Prince George's Park",
+      "postal": "118428",
+      "location": {
+        "x": 103.78084,
+        "y": 1.29038
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932795"
+        }
+      ]
+    },
+    {
+      "id": "pgp-mpsh-minimart",
+      "name": "PGP MPSH / Minimart",
+      "aliases": [],
+      "elementId": "241523920",
+      "address": "31 Prince George's Park",
+      "postal": "118427",
+      "location": {
+        "x": 103.7812616,
+        "y": 1.290337
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241523920"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/5250150676"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-1-block-1",
+      "name": "PGP Residence 1 Block 1",
+      "aliases": [],
+      "elementId": "238932786",
+      "address": "21 Prince George's Park",
+      "postal": "118420",
+      "location": {
+        "x": 103.7829,
+        "y": 1.29155
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932786"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-1-block-2",
+      "name": "PGP Residence 1 Block 2",
+      "aliases": [],
+      "elementId": "238932783",
+      "address": "21 Prince George's Park",
+      "postal": "118420",
+      "location": {
+        "x": 103.78266,
+        "y": 1.29143
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932783"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-1-block-3",
+      "name": "PGP Residence 1 Block 3",
+      "aliases": [],
+      "elementId": "238932785",
+      "address": "21 Prince George's Park",
+      "postal": "118420",
+      "location": {
+        "x": 103.78242,
+        "y": 1.29132
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932785"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-1-block-4",
+      "name": "PGP Residence 1 Block 4",
+      "aliases": [],
+      "elementId": "238932792",
+      "address": "21 Prince George's Park",
+      "postal": "118420",
+      "location": {
+        "x": 103.78218,
+        "y": 1.2912
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932792"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2",
+      "name": "PGP Residence 2",
+      "aliases": [],
+      "elementId": "PGP_RESIDENCE_2",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78114,
+        "y": 1.29097
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "PGP_RESIDENCE_2"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2-block-5",
+      "name": "PGP Residence 2 Block 5",
+      "aliases": [],
+      "elementId": "238932778",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78176,
+        "y": 1.29101
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932778"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2-block-6",
+      "name": "PGP Residence 2 Block 6",
+      "aliases": [],
+      "elementId": "238932780",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78148,
+        "y": 1.29088
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932780"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2-block-7",
+      "name": "PGP Residence 2 Block 7",
+      "aliases": [],
+      "elementId": "238932775",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78121,
+        "y": 1.29083
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932775"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2-block-8",
+      "name": "PGP Residence 2 Block 8",
+      "aliases": [],
+      "elementId": "1084099106",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78086,
+        "y": 1.29085
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1084099106"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-2-foyer-and-canteen",
+      "name": "PGP Residence 2, Foyer and Canteen",
+      "aliases": [],
+      "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER",
+      "address": "27 Prince George's Park",
+      "postal": "118425",
+      "location": {
+        "x": 103.78114,
+        "y": 1.29097
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-3-block-10",
+      "name": "PGP Residence 3 Block 10",
+      "aliases": [],
+      "elementId": "238932777",
+      "address": "29 Prince George's Park",
+      "postal": "118426",
+      "location": {
+        "x": 103.78032,
+        "y": 1.29119
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932777"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-3-block-11",
+      "name": "PGP Residence 3 Block 11",
+      "aliases": [],
+      "elementId": "238932781",
+      "address": "29 Prince George's Park",
+      "postal": "118426",
+      "location": {
+        "x": 103.78017,
+        "y": 1.29148
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932781"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-3-block-12",
+      "name": "PGP Residence 3 Block 12",
+      "aliases": [],
+      "elementId": "238932776",
+      "address": "29 Prince George's Park",
+      "postal": "118426",
+      "location": {
+        "x": 103.78011,
+        "y": 1.29181
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932776"
+        }
+      ]
+    },
+    {
+      "id": "pgp-residence-3-block-9",
+      "name": "PGP Residence 3 Block 9",
+      "aliases": [],
+      "elementId": "238932782",
+      "address": "29 Prince George's Park",
+      "postal": "118426",
+      "location": {
+        "x": 103.78056,
+        "y": 1.29098
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932782"
+        }
+      ]
+    },
+    {
+      "id": "pgr-graduate-student-block-13",
+      "name": "PGR Graduate Student Block 13",
+      "aliases": [],
+      "elementId": "238932768",
+      "address": "39 Prince George's Park",
+      "postal": "118431",
+      "location": {
+        "x": 103.77986,
+        "y": 1.29185
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932768"
+        }
+      ]
+    },
+    {
+      "id": "pgr-graduate-student-block-14",
+      "name": "PGR Graduate Student Block 14",
+      "aliases": [],
+      "elementId": "238932769",
+      "address": "39 Prince George's Park",
+      "postal": "118431",
+      "location": {
+        "x": 103.77964,
+        "y": 1.29164
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932769"
+        }
+      ]
+    },
+    {
+      "id": "pioneer-house-block-20-and-21",
+      "name": "Pioneer House Block 20 and 21",
+      "aliases": [],
+      "elementId": "238932772",
+      "address": "35 Prince George's Park",
+      "postal": "118429",
+      "location": {
+        "x": 103.78013,
+        "y": 1.29072
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932772"
+        }
+      ]
+    },
+    {
+      "id": "pioneer-house-block-22-25",
+      "name": "Pioneer House Block 22 - 25",
+      "aliases": [
+        "25"
+      ],
+      "elementId": "238932774",
+      "address": "35 Prince George's Park",
+      "postal": "118429",
+      "location": {
+        "x": 103.78042,
+        "y": 1.29037
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "238932774"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-1-communal-hall",
+      "name": "Raffles Hall (Block 1 / Communal Hall)",
+      "aliases": [
+        "Block 1",
+        "Block1",
+        "Raffles Hall"
+      ],
+      "elementId": "241265458",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.77389,
+        "y": 1.29989
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265458"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-2",
+      "name": "Raffles Hall Block 2",
+      "aliases": [],
+      "elementId": "241265455",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.77333,
+        "y": 1.29952
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265455"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-3",
+      "name": "Raffles Hall Block 3",
+      "aliases": [],
+      "elementId": "241265453",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.77317,
+        "y": 1.30032
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265453"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-4",
+      "name": "Raffles Hall Block 4",
+      "aliases": [],
+      "elementId": "241265454",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.77299,
+        "y": 1.2999
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265454"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-5",
+      "name": "Raffles Hall Block 5",
+      "aliases": [],
+      "elementId": "1309257814",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.773017,
+        "y": 1.300509
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "1309257814"
+        }
+      ]
+    },
+    {
+      "id": "raffles-hall-block-6",
+      "name": "Raffles Hall Block 6",
+      "aliases": [],
+      "elementId": "241265456",
+      "address": "19 Kent Ridge Crescent",
+      "postal": "119278",
+      "location": {
+        "x": 103.77265,
+        "y": 1.30029
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "241265456"
+        }
+      ]
+    },
+    {
+      "id": "rc4-multi-purpose-hall",
+      "name": "RC4 Multi-Purpose Hall",
+      "aliases": [],
+      "elementId": "124543998",
+      "address": "6 College Avenue East",
+      "postal": "138614",
+      "location": {
+        "x": 103.77297,
+        "y": 1.30836
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543998"
+        }
+      ]
+    },
+    {
+      "id": "rc4-tower",
+      "name": "RC4 Tower",
+      "aliases": [],
+      "elementId": "124543999",
+      "address": "6 College Avenue East",
+      "postal": "138614",
+      "location": {
+        "x": 103.77329,
+        "y": 1.30824
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124543999"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-a",
+      "name": "Ridge View Residential College Block A",
+      "aliases": [],
+      "elementId": "427077073",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.77624,
+        "y": 1.29773
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077073"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-b",
+      "name": "Ridge View Residential College Block B",
+      "aliases": [],
+      "elementId": "427077081",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.77595,
+        "y": 1.29807
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077081"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-c",
+      "name": "Ridge View Residential College Block C",
+      "aliases": [],
+      "elementId": "427077076",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.77641,
+        "y": 1.29813
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077076"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-d",
+      "name": "Ridge View Residential College Block D",
+      "aliases": [],
+      "elementId": "427077083",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.7758,
+        "y": 1.29841
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077083"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-e",
+      "name": "Ridge View Residential College Block E",
+      "aliases": [],
+      "elementId": "427077084",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.77617,
+        "y": 1.29856
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077084"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-residential-college-block-g",
+      "name": "Ridge View Residential College Block G",
+      "aliases": [],
+      "elementId": "546382548",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.77681,
+        "y": 1.29739
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "546382548"
+        }
+      ]
+    },
+    {
+      "id": "ridge-view-tower",
+      "name": "Ridge View Tower",
+      "aliases": [],
+      "elementId": "427077072",
+      "address": "25 Lower Kent Ridge Road",
+      "postal": "119081",
+      "location": {
+        "x": 103.7768934,
+        "y": 1.2977527
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "427077072"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11503213901"
+        }
+      ]
+    },
+    {
+      "id": "runme-shaw-cfa-studios",
+      "name": "Runme Shaw CFA Studios",
+      "aliases": [],
+      "elementId": "54619731",
+      "address": "17 Kent Ridge Crescent",
+      "postal": "119277",
+      "location": {
+        "x": 103.7737201,
+        "y": 1.2989457
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619731"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10821049775"
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "name": "S1",
+      "aliases": [],
+      "elementId": "141905781",
+      "address": "Science Drive 4",
+      "postal": "117543",
+      "location": {
+        "x": 103.77793,
+        "y": 1.29577
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905781"
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "name": "S10",
+      "aliases": [],
+      "elementId": "141906238",
+      "address": "Science Drive 4",
+      "postal": "117543",
+      "location": {
+        "x": 103.77971,
+        "y": 1.29627
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141906238"
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "name": "S11",
+      "aliases": [],
+      "elementId": "141905252",
+      "address": "Science Drive 4",
+      "postal": "117543",
+      "location": {
+        "x": 103.77877,
+        "y": 1.29665
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S11"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905252"
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "name": "S12",
+      "aliases": [],
+      "elementId": "141905202",
+      "address": "Science Drive 2",
+      "postal": "117542",
+      "location": {
+        "x": 103.77869,
+        "y": 1.29694
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S12"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905202"
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "name": "S13",
+      "aliases": [],
+      "elementId": "141905403",
+      "address": "Science Drive 2",
+      "postal": "117543",
+      "location": {
+        "x": 103.77925,
+        "y": 1.29674
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S13"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905403"
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "name": "S14",
+      "aliases": [],
+      "elementId": "140087728",
+      "address": "Science Drive 3",
+      "postal": "117543",
+      "location": {
+        "x": 103.77973,
+        "y": 1.29686
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S14"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087728"
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "name": "S15",
+      "aliases": [],
+      "elementId": "141906507",
+      "address": "Science Drive 2",
+      "postal": "117543",
+      "location": {
+        "x": 103.7804832,
+        "y": 1.2973481
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141906507"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1554926664"
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "name": "S16",
+      "aliases": [],
+      "elementId": "141906506",
+      "address": "Science Drive 2",
+      "postal": "117543",
+      "location": {
+        "x": 103.7802176,
+        "y": 1.2965938
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "S16"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141906506"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/10686208841"
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "name": "S17",
+      "aliases": [],
+      "elementId": "142074912",
+      "address": "Science Drive 2",
+      "postal": "117543",
+      "location": {
+        "x": 103.7803913,
+        "y": 1.2975499
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "S17"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142074912"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/1554926665"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "name": "S2",
+      "aliases": [],
+      "elementId": "141905796",
+      "address": "8 Science Drive 2",
+      "postal": "117547",
+      "location": {
+        "x": 103.77801,
+        "y": 1.29546
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905796"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "name": "S3",
+      "aliases": [],
+      "elementId": "141905799",
+      "address": "Science Drive 3",
+      "postal": "117542",
+      "location": {
+        "x": 103.77865,
+        "y": 1.29556
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905799"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "name": "S4",
+      "aliases": [],
+      "elementId": "141905829",
+      "address": "Science Drive 3",
+      "postal": "117542",
+      "location": {
+        "x": 103.77919,
+        "y": 1.29562
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905829"
+        }
+      ]
+    },
+    {
+      "id": "s4a",
+      "name": "S4A",
+      "aliases": [],
+      "elementId": "141905922",
+      "address": "Science Drive 4",
+      "postal": "117597",
+      "location": {
+        "x": 103.77922,
+        "y": 1.29581
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S4A"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905922"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "name": "S5",
+      "aliases": [],
+      "elementId": "141905956",
+      "address": "Science Drive 2",
+      "postal": "117546",
+      "location": {
+        "x": 103.77971,
+        "y": 1.29546
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S5"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905956"
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "name": "S6",
+      "aliases": [],
+      "elementId": "141913009",
+      "address": "Science Drive 2",
+      "postal": "117548",
+      "location": {
+        "x": 103.78023,
+        "y": 1.29509
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S6"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141913009"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "name": "S7",
+      "aliases": [],
+      "elementId": "141905434",
+      "address": "6 Science Drive 3",
+      "postal": "117554",
+      "location": {
+        "x": 103.77888,
+        "y": 1.29633
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905434"
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "name": "S8",
+      "aliases": [],
+      "elementId": "141905474",
+      "address": "Lower Kent Ridge Road",
+      "postal": "119076",
+      "location": {
+        "x": 103.77934,
+        "y": 1.29613
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "S8"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141905474"
+        }
+      ]
+    },
+    {
+      "id": "s9-wet-science-building",
+      "name": "S9 - Wet Science Building",
+      "aliases": [
+        "S9",
+        "Wet Science Building"
+      ],
+      "elementId": "141906130",
+      "address": "4 Science Drive 2",
+      "postal": "117544",
+      "location": {
+        "x": 103.77999,
+        "y": 1.29594
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "141906130"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-1",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229038",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77231,
+        "y": 1.30581
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229038"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-2",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229039",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77205,
+        "y": 1.30554
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229039"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-3",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229040",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77227,
+        "y": 1.30562
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229040"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-4",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229041",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77182,
+        "y": 1.30561
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229041"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-5",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229042",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77179,
+        "y": 1.30585
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229042"
+        }
+      ]
+    },
+    {
+      "id": "saga-college-6",
+      "name": "Saga College",
+      "aliases": [],
+      "elementId": "732229046",
+      "groupKey": "saga-college",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77206,
+        "y": 1.3059
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "RC1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229046"
+        }
+      ]
+    },
+    {
+      "id": "sde1",
+      "name": "SDE1",
+      "aliases": [
+        "SDE 1"
+      ],
+      "elementId": "140078777",
+      "address": "4 Architecture Drive",
+      "postal": "117566",
+      "location": {
+        "x": 103.77068,
+        "y": 1.29732
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SDE1"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140078777"
+        }
+      ]
+    },
+    {
+      "id": "sde2",
+      "name": "SDE2",
+      "aliases": [
+        "SDE 2"
+      ],
+      "elementId": "140078560",
+      "address": "2 Architecture Drive",
+      "postal": "117565",
+      "location": {
+        "x": 103.77113,
+        "y": 1.29728
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SDE2"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140078560"
+        }
+      ]
+    },
+    {
+      "id": "sde3",
+      "name": "SDE3",
+      "aliases": [
+        "SDE 3"
+      ],
+      "elementId": "140079084",
+      "address": "4 Architecture Drive",
+      "postal": "117566",
+      "location": {
+        "x": 103.77037,
+        "y": 1.29793
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SDE3"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140079084"
+        }
+      ]
+    },
+    {
+      "id": "sde4",
+      "name": "SDE4",
+      "aliases": [
+        "SDE 4"
+      ],
+      "elementId": "628774809",
+      "address": "8 Architecture Drive",
+      "postal": "117356",
+      "location": {
+        "x": 103.77035,
+        "y": 1.29681
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SDE4"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "628774809"
+        }
+      ]
+    },
+    {
+      "id": "shaw-foundation-alumni-house",
+      "name": "Shaw Foundation Alumni House",
+      "aliases": [
+        "SFAH"
+      ],
+      "elementId": "142080252",
+      "address": "11 Kent Ridge Drive",
+      "postal": "119244",
+      "location": {
+        "x": 103.7736,
+        "y": 1.29325
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SFAH"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142080252"
+        }
+      ]
+    },
+    {
+      "id": "sheares-block-a",
+      "name": "Sheares Block A",
+      "aliases": [],
+      "elementId": "455250294",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.77531,
+        "y": 1.29151
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250294"
+        }
+      ]
+    },
+    {
+      "id": "sheares-block-b",
+      "name": "Sheares Block B",
+      "aliases": [],
+      "elementId": "627395979",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.7752,
+        "y": 1.29125
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "627395979"
+        }
+      ]
+    },
+    {
+      "id": "sheares-block-c",
+      "name": "Sheares Block C",
+      "aliases": [],
+      "elementId": "455250299",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.7754,
+        "y": 1.29112
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250299"
+        }
+      ]
+    },
+    {
+      "id": "sheares-block-d",
+      "name": "Sheares Block D",
+      "aliases": [],
+      "elementId": "455250300",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.77571,
+        "y": 1.29105
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "455250300"
+        }
+      ]
+    },
+    {
+      "id": "sheares-block-e",
+      "name": "Sheares Block E",
+      "aliases": [],
+      "elementId": "639080232",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.77595,
+        "y": 1.29095
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "639080232"
+        }
+      ]
+    },
+    {
+      "id": "sheares-hall-1",
+      "name": "Sheares Hall",
+      "aliases": [],
+      "elementId": "639258228",
+      "groupKey": "sheares-hall",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.7761,
+        "y": 1.29137
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SH"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "639258228"
+        }
+      ]
+    },
+    {
+      "id": "sheares-hall-2",
+      "name": "Sheares Hall",
+      "aliases": [],
+      "elementId": "640840065",
+      "groupKey": "sheares-hall",
+      "address": "20 Heng Mui Keng Ter",
+      "postal": "119618",
+      "location": {
+        "x": 103.77601,
+        "y": 1.2914
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "SH"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "640840065"
+        }
+      ]
+    },
+    {
+      "id": "singapore-synchrotron-light-source",
+      "name": "Singapore Synchrotron Light Source",
+      "aliases": [],
+      "elementId": "54619730",
+      "address": "5 Research Link",
+      "postal": "117603",
+      "location": {
+        "x": 103.774913,
+        "y": 1.2957666
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54619730"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11155921865"
+        }
+      ]
+    },
+    {
+      "id": "singapore-wind-tunnel-facility",
+      "name": "Singapore Wind Tunnel Facility",
+      "aliases": [],
+      "elementId": "643598737",
+      "address": "5 Sports Drive 2",
+      "postal": "117508",
+      "location": {
+        "x": 103.77535,
+        "y": 1.30105
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "643598737"
+        }
+      ]
+    },
+    {
+      "id": "stephen-riady-centre",
+      "name": "Stephen Riady Centre",
+      "aliases": [
+        "UTSRC"
+      ],
+      "elementId": "125774787",
+      "address": "2 College Avenue West",
+      "postal": "138607",
+      "location": {
+        "x": 103.77252,
+        "y": 1.30462
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "UTSRC"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "125774787"
+        }
+      ]
+    },
+    {
+      "id": "techno-edge",
+      "name": "Techno Edge",
+      "aliases": [],
+      "elementId": "730959512",
+      "address": "2 Engineering Drive 4",
+      "postal": "117584",
+      "location": {
+        "x": 103.77153,
+        "y": 1.29795
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "730959512"
+        }
+      ]
+    },
+    {
+      "id": "technology-centre-for-offshore-and-marine-singapore",
+      "name": "Technology Centre for Offshore and Marine, Singapore",
+      "aliases": [],
+      "elementId": "546374635",
+      "address": "12 Prince George's Park",
+      "postal": "118411",
+      "location": {
+        "x": 103.77668,
+        "y": 1.29311
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "546374635"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "TH"
+      ],
+      "elementId": "142221851",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77138,
+        "y": 1.2927
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "TH"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221851"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall-block-a",
+      "name": "Temasek Hall Block A",
+      "aliases": [],
+      "elementId": "142221852",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77079,
+        "y": 1.29304
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221852"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall-block-b",
+      "name": "Temasek Hall Block B",
+      "aliases": [],
+      "elementId": "142221865",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77056,
+        "y": 1.29268
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221865"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall-block-c",
+      "name": "Temasek Hall Block C",
+      "aliases": [],
+      "elementId": "142221858",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77096,
+        "y": 1.29265
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221858"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall-block-d",
+      "name": "Temasek Hall Block D",
+      "aliases": [],
+      "elementId": "142221853",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77182,
+        "y": 1.29268
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221853"
+        }
+      ]
+    },
+    {
+      "id": "temasek-hall-block-e",
+      "name": "Temasek Hall Block E",
+      "aliases": [],
+      "elementId": "142221863",
+      "address": "12 Kent Ridge Drive",
+      "postal": "119243",
+      "location": {
+        "x": 103.77221,
+        "y": 1.29265
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "142221863"
+        }
+      ]
+    },
+    {
+      "id": "temasek-life-sciences-laboratory",
+      "name": "Temasek Life Sciences Laboratory",
+      "aliases": [],
+      "elementId": "84517831",
+      "address": "1 Research Link",
+      "postal": "117604",
+      "location": {
+        "x": 103.77716,
+        "y": 1.29415
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "84517831"
+        }
+      ]
+    },
+    {
+      "id": "tembusu-multi-purpose-hall",
+      "name": "Tembusu Multi-Purpose Hall",
+      "aliases": [],
+      "elementId": "124230875",
+      "address": "28 College Ave East",
+      "postal": "138598",
+      "location": {
+        "x": 103.77385,
+        "y": 1.30594
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124230875"
+        }
+      ]
+    },
+    {
+      "id": "tembusu-tower",
+      "name": "Tembusu Tower",
+      "aliases": [],
+      "elementId": "124230878",
+      "address": "28 College Ave East",
+      "postal": "138598",
+      "location": {
+        "x": 103.7737599,
+        "y": 1.3061041
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124230878"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11411601592"
+        }
+      ]
+    },
+    {
+      "id": "tembusu-west-learn-lobe",
+      "name": "Tembusu West Learn Lobe",
+      "aliases": [],
+      "elementId": "124411297",
+      "address": "28 College Ave East",
+      "postal": "138598",
+      "location": {
+        "x": 103.77348,
+        "y": 1.30592
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "124411297"
+        }
+      ]
+    },
+    {
+      "id": "the-deck",
+      "name": "The Deck",
+      "aliases": [],
+      "elementId": "140087193",
+      "address": "5 Arts Link",
+      "postal": "117570",
+      "location": {
+        "x": 103.77249,
+        "y": 1.29467
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087193"
+        }
+      ]
+    },
+    {
+      "id": "town-plaza",
+      "name": "Town Plaza",
+      "aliases": [
+        "TP"
+      ],
+      "elementId": "15314907",
+      "address": "2 College Ave West",
+      "postal": "138607",
+      "location": {
+        "x": 103.77398,
+        "y": 1.3039
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "TP"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "15314907"
+        }
+      ]
+    },
+    {
+      "id": "tropical-marine-science-institute",
+      "name": "Tropical Marine Science Institute",
+      "aliases": [],
+      "elementId": "163560567",
+      "address": "18 Kent Ridge Road",
+      "postal": "119227",
+      "location": {
+        "x": 103.77421,
+        "y": 1.29756
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "163560567"
+        }
+      ]
+    },
+    {
+      "id": "university-cultural-centre",
+      "name": "University Cultural Centre",
+      "aliases": [],
+      "elementId": "UNIVERSITY_CULTURAL_CENTRE",
+      "address": "50 Kent Ridge Crescent",
+      "postal": "119279",
+      "location": {
+        "x": 103.77229,
+        "y": 1.30176
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "UNIVERSITY_CULTURAL_CENTRE"
+        }
+      ]
+    },
+    {
+      "id": "university-cultural-centre-nus-museum",
+      "name": "University Cultural Centre / NUS Museum",
+      "aliases": [],
+      "elementId": "54583930",
+      "address": "50 Kent Ridge Crescent",
+      "postal": "119279",
+      "location": {
+        "x": 103.77229,
+        "y": 1.30176
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583930"
+        }
+      ]
+    },
+    {
+      "id": "university-hall",
+      "name": "University Hall",
+      "aliases": [],
+      "elementId": "UNIVERSITY_HALL",
+      "address": "21 Lower Kent Ridge Road",
+      "postal": "119077",
+      "location": {
+        "x": 103.77787,
+        "y": 1.29697
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "UNIVERSITY_HALL"
+        }
+      ]
+    },
+    {
+      "id": "university-hall-lee-kong-chian-wing",
+      "name": "University Hall (Lee Kong Chian Wing)",
+      "aliases": [],
+      "elementId": "140087580",
+      "address": "21 Lower Kent Ridge Road",
+      "postal": "119077",
+      "location": {
+        "x": 103.77787,
+        "y": 1.29697
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087580"
+        }
+      ]
+    },
+    {
+      "id": "university-hall-tan-chin-tuan-wing",
+      "name": "University Hall (Tan Chin Tuan Wing)",
+      "aliases": [],
+      "elementId": "140087584",
+      "address": "21 Lower Kent Ridge Road",
+      "postal": "119077",
+      "location": {
+        "x": 103.77744,
+        "y": 1.29716
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "140087584"
+        }
+      ]
+    },
+    {
+      "id": "university-health-centre",
+      "name": "University Health Centre",
+      "aliases": [],
+      "elementId": "54583487",
+      "address": "20 Lower Kent Ridge Road",
+      "postal": "119080",
+      "location": {
+        "x": 103.77643,
+        "y": 1.29905
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583487"
+        }
+      ]
+    },
+    {
+      "id": "university-sports-centre",
+      "name": "University Sports Centre",
+      "aliases": [],
+      "elementId": "730956214",
+      "address": "2 Sports Drive 1",
+      "postal": "117561",
+      "location": {
+        "x": 103.77546,
+        "y": 1.29971
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "730956214"
+        }
+      ]
+    },
+    {
+      "id": "utown-residence-north-tower",
+      "name": "UTown Residence North Tower",
+      "aliases": [],
+      "elementId": "7765113",
+      "address": "36 College Ave East",
+      "postal": "138600",
+      "location": {
+        "x": 103.7737952,
+        "y": 1.3052011
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "7765113"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/4366419790"
+        }
+      ]
+    },
+    {
+      "id": "utown-residence-south-tower",
+      "name": "UTown Residence South Tower",
+      "aliases": [],
+      "elementId": "7765114",
+      "address": "36 College Ave East",
+      "postal": "138600",
+      "location": {
+        "x": 103.7738538,
+        "y": 1.305033
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "7765114"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/4366419789"
+        }
+      ]
+    },
+    {
+      "id": "ventus",
+      "name": "Ventus",
+      "aliases": [],
+      "elementId": "503403831",
+      "address": "8 Kent Ridge Drive",
+      "postal": "119246",
+      "location": {
+        "x": 103.7701913,
+        "y": 1.2950996
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "503403831"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11145614465"
+        }
+      ]
+    },
+    {
+      "id": "yale-nus-college",
+      "name": "Yale-NUS College",
+      "aliases": [],
+      "elementId": "732229050",
+      "address": "20 College Ave East",
+      "postal": "138529",
+      "location": {
+        "x": 103.7727043,
+        "y": 1.3074026
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229050"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11260211008"
+        }
+      ]
+    },
+    {
+      "id": "yale-nus-college-arts-centre",
+      "name": "Yale-NUS College Arts Centre",
+      "aliases": [],
+      "elementId": "732229049",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.77196,
+        "y": 1.30716
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229049"
+        }
+      ]
+    },
+    {
+      "id": "yale-nus-college-reception-and-admissions",
+      "name": "Yale-NUS College Reception and Admissions",
+      "aliases": [],
+      "elementId": "732229044",
+      "address": "16 College Ave West",
+      "postal": "138627",
+      "location": {
+        "x": 103.7718,
+        "y": 1.30644
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "732229044"
+        }
+      ]
+    },
+    {
+      "id": "yong-siew-toh-conservatory-of-music",
+      "name": "Yong Siew Toh Conservatory of Music",
+      "aliases": [
+        "YSTCM"
+      ],
+      "elementId": "111973157",
+      "address": "3 Conservatory Drive",
+      "postal": "117376",
+      "location": {
+        "x": 103.772812,
+        "y": 1.3017569
+      },
+      "locationKind": "provisional-entrance",
+      "roomCodePrefixes": [
+        "YSTCM"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "111973157"
+        },
+        {
+          "source": "openstreetmap",
+          "elementId": "node/11018992675"
+        }
+      ]
+    },
+    {
+      "id": "yusof-ishak-house",
+      "name": "Yusof Ishak House",
+      "aliases": [
+        "YI"
+      ],
+      "elementId": "54583491",
+      "address": "31 Lower Kent Ridge Road",
+      "postal": "119078",
+      "location": {
+        "x": 103.77477,
+        "y": 1.2985
+      },
+      "locationKind": "centroid",
+      "roomCodePrefixes": [
+        "YI"
+      ],
+      "sourceRefs": [
+        {
+          "source": "nus-digital-twin",
+          "elementId": "54583491"
+        }
+      ]
+    }
+  ]
+}

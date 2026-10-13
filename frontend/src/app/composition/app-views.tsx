@@ -1,5 +1,5 @@
 import type { ComponentProps, Ref } from 'react'
-import { RouteBrowser } from '../../features/explore-view/route-browser'
+import { BusRouteBrowser as RouteBrowser } from '../../features/explore-view/bus-route-browser'
 import { ExploreView } from '../../features/explore-view/explore-view'
 import { PlanView } from '../../features/plan-view/plan-view'
 import { StopsView } from '../../features/stops-view/stops-view'
@@ -107,7 +107,7 @@ export function AppViews({
               mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
               renderShuttleRoutes={(options) => (
-                <RouteBrowser
+    <RouteBrowser
                   network={views.explore.transitIndex?.network ?? null}
                   networkIndex={views.explore.transitIndex ?? null}
                   selectedRouteId={views.explore.selectedRouteId ?? null}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { WalkingConnectionRequest, WalkingRouteEngine } from '../../app/contracts/routing'
+import type { WalkingConnectionRequest, WalkingRouteEngine } from './walking-contracts'
 import { createWalkingConnectionProvider } from './walking-connections'
 import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 

@@ -3,7 +3,7 @@ import type { Path, PathLeg } from '../../pathfinding/path'
 import type { ScoredPathCandidate } from '../../pathfinding/path'
 import type { TripEndpoint } from '../../domain/trip/types'
 
-const MAX_DISPLAYED_JOURNEYS = 3
+const MAX_DISPLAYED_PATHS = 3
 const WALKING_FIRST_RATIO = 0.8
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,7 +45,7 @@ function isValidLineString(value: unknown): boolean {
   ))
 }
 
-function isJourneyLeg(value: unknown): value is PathLeg {
+function isPathLeg(value: unknown): value is PathLeg {
   if (!isRecord(value) || !isTripEndpoint(value.from) || !isTripEndpoint(value.to) ||
     !isFiniteNonNegative(value.durationSeconds) || !isFiniteNonNegative(value.distanceMeters) ||
     !isValidLineString(value.geometry)) return false
@@ -62,14 +62,14 @@ function isJourneyLeg(value: unknown): value is PathLeg {
     value.durationSeconds === value.waitingSeconds + value.rideSeconds
 }
 
-function isValidJourney(value: unknown): value is Path {
+function isValidPath(value: unknown): value is Path {
   if (!isRecord(value) || !isTripEndpoint(value.origin) || !isTripEndpoint(value.destination) ||
     !Array.isArray(value.legs) || value.legs.length === 0 ||
     value.estimateStatus !== 'estimated' ||
     (value.planningQuality !== 'exact' && value.planningQuality !== 'bounded') ||
     !isFiniteNonNegative(value.totalDurationSeconds) ||
     !isFiniteNonNegative(value.totalDistanceMeters) ||
-    !value.legs.every(isJourneyLeg)) return false
+    !value.legs.every(isPathLeg)) return false
 
   let expectedFrom = value.origin
   let totalDurationSeconds = 0
@@ -104,8 +104,8 @@ function getAdjustedDurationSeconds(path: Path): number {
   return adjustedDurationSeconds
 }
 
-function isScoredJourneyCandidate(value: unknown): value is ScoredPathCandidate {
-  if (!isRecord(value) || !isNonEmptyString(value.candidateKey) || !isValidJourney(value.path) ||
+function isScoredPathCandidate(value: unknown): value is ScoredPathCandidate {
+  if (!isRecord(value) || !isNonEmptyString(value.candidateKey) || !isValidPath(value.path) ||
     !isFiniteNonNegative(value.adjustedDurationSeconds) ||
     typeof value.score !== 'number' || Number.isNaN(value.score) || value.score < 0) return false
 
@@ -142,13 +142,13 @@ function compareCandidates(
 
 /**
  * Chooses the Plan candidates without changing #266's search or candidate scores.
- * The candidate pool must contain fully enriched Journeys; malformed entries fail closed.
+ * The candidate pool must contain fully enriched Paths; malformed entries fail closed.
  */
 export function selectDisplayedPaths(
   candidates: readonly ScoredPathCandidate[],
 ): readonly ScoredPathCandidate[] {
   const rankedCandidates = candidates
-    .filter(isScoredJourneyCandidate)
+    .filter(isScoredPathCandidate)
     .sort(compareCandidates)
   const seenCandidateKeys = new Set<string>()
   const distinctCandidates = rankedCandidates.filter(({ candidateKey }) => {
@@ -158,7 +158,7 @@ export function selectDisplayedPaths(
   })
   const busCandidates = distinctCandidates
     .filter(({ path }) => path.legs.some((leg) => leg.mode === 'shuttle'))
-    .slice(0, MAX_DISPLAYED_JOURNEYS)
+    .slice(0, MAX_DISPLAYED_PATHS)
   const walkingCandidate = distinctCandidates.find(({ path }) => (
     path.legs.every((leg) => leg.mode === 'walking')
   ))

@@ -5,7 +5,7 @@ import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { Path } from '../pathfinding/path'
 import type { ScoredPathCandidate } from '../pathfinding/path'
-import type { FindPathsResult } from './journey-planning'
+import type { FindPathsResult } from '../pathfinding/find-paths'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -543,7 +543,7 @@ describe('navigation session', () => {
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
     session.searchPaths()
-    const firstSignal = pathfinder.mock.calls[0][0].signal as AbortSignal
+    const firstSignal = pathfinder.mock.calls[0][1].signal
 
     session.replanPath()
     expect(firstSignal.aborted).toBe(true)
@@ -565,8 +565,8 @@ describe('navigation session', () => {
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
     session.searchPaths()
-    const firstCall = pathfinder.mock.calls[0] as unknown as [{ signal: AbortSignal }]
-    const signal = firstCall[0].signal
+    const firstCall = pathfinder.mock.calls[0] as unknown as [unknown, { signal: AbortSignal }]
+    const signal = firstCall[1].signal
 
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
 
@@ -619,7 +619,7 @@ describe('navigation session', () => {
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
     session.searchPaths()
-    const firstSignal = pathfinder.mock.calls[0]?.[0].signal as AbortSignal
+    const firstSignal = pathfinder.mock.calls[0]?.[1].signal as AbortSignal
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
     expect(firstSignal.aborted).toBe(true)
 

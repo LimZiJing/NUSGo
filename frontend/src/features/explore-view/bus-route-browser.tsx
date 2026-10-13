@@ -51,7 +51,7 @@ function getRouteStops(
   )
 }
 
-export function RouteBrowser({
+export function BusRouteBrowser({
   network,
   networkIndex,
   selectedRouteId,

@@ -1,23 +1,4 @@
-import { evaluateShuttleService, type ShuttleServiceWindow } from '../transit/service-hours'
-import type { BusWaitingTimeProvider } from '../../pathfinding/search/search-path-candidates'
-
 const SINGAPORE_OFFSET_MS = 8 * 60 * 60 * 1000
-
-export const TEST_SHUTTLE_WAIT_SECONDS = 5 * 60
-
-export function createTestShuttleWaitingTimeProvider(
-  departureMs: number,
-  serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
-): BusWaitingTimeProvider {
-  return (_record, context) => {
-    const windows = serviceWindows[context.routeId]
-    if (!windows) return null
-    const boardingAtMs = departureMs + (context.elapsedSeconds + TEST_SHUTTLE_WAIT_SECONDS) * 1000
-    return evaluateShuttleService(windows, new Date(boardingAtMs)).status === 'active'
-      ? TEST_SHUTTLE_WAIT_SECONDS
-      : null
-  }
-}
 
 export function parseSingaporeDateTime(value: string): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)

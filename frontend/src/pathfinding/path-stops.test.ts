@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BusRoute } from '@navus/shared/transit/types'
-import type { BusPathLeg } from '../../pathfinding/path'
-import { getShuttleJourneyLegStopIds } from './journey-stops'
+import type { BusPathLeg } from './path'
+import { getBusPathLegStopIds } from './path-stops'
 
 const route: BusRoute = {
   id: 'A1',
@@ -21,18 +21,18 @@ function createShuttleLeg(
   }
 }
 
-describe('getShuttleJourneyLegStopIds', () => {
+describe('getBusPathLegStopIds', () => {
   it('returns the inclusive ordered stop segment for a shuttle leg', () => {
-    expect(getShuttleJourneyLegStopIds(
+    expect(getBusPathLegStopIds(
       createShuttleLeg('STOP-A', 'STOP-B'),
       route,
     )).toEqual(['STOP-A', 'STOP-MIDDLE', 'STOP-B'])
   })
 
   it('returns null when the Route or forward ordered segment cannot be resolved', () => {
-    expect(getShuttleJourneyLegStopIds(createShuttleLeg('STOP-A', 'STOP-B'), null)).toBeNull()
-    expect(getShuttleJourneyLegStopIds(createShuttleLeg('STOP-B', 'STOP-A'), route)).toBeNull()
-    expect(getShuttleJourneyLegStopIds({
+    expect(getBusPathLegStopIds(createShuttleLeg('STOP-A', 'STOP-B'), null)).toBeNull()
+    expect(getBusPathLegStopIds(createShuttleLeg('STOP-B', 'STOP-A'), route)).toBeNull()
+    expect(getBusPathLegStopIds({
       ...createShuttleLeg('STOP-A', 'STOP-B'),
       routeId: 'B1',
     }, route)).toBeNull()

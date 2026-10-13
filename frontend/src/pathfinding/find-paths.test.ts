@@ -3,8 +3,8 @@ import { createTransitIndex } from '../domain/transit'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
 import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import type { LoadedTransitData } from './contracts/data'
-import { createJourneyPlanningService } from './journey-planning'
+import type { LoadedTransitData } from '../app/contracts/data'
+import { createFindPathsTestService } from './find-paths.test-support'
 import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
 
 function createTransitData(): LoadedTransitData {
@@ -179,8 +179,8 @@ function createAlternativeRouteEngine() {
   }
 }
 
-describe('createJourneyPlanningService', () => {
-  it('plans a walking Journey from the frozen Current location coordinate', async () => {
+describe('findPaths', () => {
+  it('plans a walking Path from the frozen Current location coordinate', async () => {
     const transit = createTransitData()
     const currentLocation = createCurrentLocationTripEndpoint({
       longitude: 103.78,
@@ -202,7 +202,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const result = await createJourneyPlanningService(routeEngine)({
+    const result = await createFindPathsTestService(routeEngine)({
       tripRequest: {
         origin: currentLocation,
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -267,7 +267,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const result = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const result = await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -298,7 +298,7 @@ describe('createJourneyPlanningService', () => {
     ))).toBe(true)
   })
 
-  it('converts walking matrix results and route geometry into a shuttle Journey', async () => {
+  it('converts walking matrix results and route geometry into a shuttle Path', async () => {
     const transit = createTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => [
@@ -318,7 +318,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const service = createJourneyPlanningService(routeEngine)
+    const service = createFindPathsTestService(routeEngine)
 
     const path = (await service({
       tripRequest: {
@@ -359,7 +359,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const result = await createJourneyPlanningService(routeEngine)({
+    const result = await createFindPathsTestService(routeEngine)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -382,7 +382,7 @@ describe('createJourneyPlanningService', () => {
     expect(result?.metrics.geometryRouteCacheHits).toBe(2)
   })
 
-  it('skips bus candidates with incomplete routed geometry and falls back to a complete walking Journey', async () => {
+  it('skips bus candidates with incomplete routed geometry and falls back to a complete walking Path', async () => {
     const transit = createParallelRouteTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => [
@@ -404,7 +404,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const result = await createJourneyPlanningService(routeEngine)({
+    const result = await createFindPathsTestService(routeEngine)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -466,7 +466,7 @@ describe('createJourneyPlanningService', () => {
         },
       ]),
     }
-    const service = createJourneyPlanningService(
+    const service = createFindPathsTestService(
       routeEngine,
       undefined,
       undefined,
@@ -532,7 +532,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const result = await createJourneyPlanningService(
+    const result = await createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       undefined,
@@ -586,7 +586,7 @@ describe('createJourneyPlanningService', () => {
       ]),
     }
 
-    const result = await createJourneyPlanningService(
+    const result = await createFindPathsTestService(
       routeEngine,
       undefined,
       undefined,
@@ -623,7 +623,7 @@ describe('createJourneyPlanningService', () => {
     )
   })
 
-  it('falls back to an exact-stop Journey when destination egress geometry is invalid', async () => {
+  it('falls back to an exact-stop Path when destination egress geometry is invalid', async () => {
     const transit = createFourStopTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => []),
@@ -648,7 +648,7 @@ describe('createJourneyPlanningService', () => {
       ]),
     }
 
-    const path = (await createJourneyPlanningService(
+    const path = (await createFindPathsTestService(
       routeEngine,
       undefined,
       undefined,
@@ -690,7 +690,7 @@ describe('createJourneyPlanningService', () => {
       routeWalking: vi.fn(),
     }
 
-    await expect(createJourneyPlanningService(routeEngine)({
+    await expect(createFindPathsTestService(routeEngine)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -739,7 +739,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -803,7 +803,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const path = (await createJourneyPlanningService(
+    const path = (await createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -869,7 +869,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const path = (await createJourneyPlanningService(
+    const path = (await createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -929,7 +929,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -974,7 +974,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1007,7 +1007,7 @@ describe('createJourneyPlanningService', () => {
       { fromIndex: 0, toIndex: 1, distanceMeters: 1_000, durationSeconds: 1_000 },
     ])
 
-    const result = await createJourneyPlanningService(routeEngine)({
+    const result = await createFindPathsTestService(routeEngine)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1068,7 +1068,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const service = createJourneyPlanningService(
+    const service = createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -1161,7 +1161,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1182,7 +1182,7 @@ describe('createJourneyPlanningService', () => {
     })
   })
 
-  it('keeps the walking-only Journey when live timing removes every shuttle edge', async () => {
+  it('keeps the walking-only Path when live timing removes every shuttle edge', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = createAlternativeRouteEngine()
     const shuttleArrivalClient = {
@@ -1193,7 +1193,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1220,7 +1220,7 @@ describe('createJourneyPlanningService', () => {
       }),
     }
 
-    await expect(createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    await expect(createFindPathsTestService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1234,7 +1234,7 @@ describe('createJourneyPlanningService', () => {
     })).rejects.toThrow('Live shuttle API unavailable')
   })
 
-  it('does not return a shuttle journey after the route service window ends', async () => {
+  it('does not return a shuttle path after the route service window ends', async () => {
     const transit = createTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => [
@@ -1266,7 +1266,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    await expect(createJourneyPlanningService(
+    await expect(createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -1283,7 +1283,7 @@ describe('createJourneyPlanningService', () => {
       transit,
       signal: new AbortController().signal,
     })).rejects.toMatchObject({
-      name: 'NoJourneyAvailableError',
+      name: 'NoPathAvailableError',
       message: 'Shuttle service has ended for today. It resumes tomorrow at 7:15 AM.',
     })
   })
@@ -1315,7 +1315,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
     let testDepartureMs = Date.parse('2026-09-23T04:00:00Z')
-    const service = createJourneyPlanningService(
+    const service = createFindPathsTestService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -1336,13 +1336,13 @@ describe('createJourneyPlanningService', () => {
       signal: new AbortController().signal,
     }
 
-    const activeJourney = (await service(request))?.candidates[0]?.path ?? null
-    expect(activeJourney?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 300 })
+    const activePath = (await service(request))?.candidates[0]?.path ?? null
+    expect(activePath?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 300 })
     expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
 
     testDepartureMs = Date.parse('2026-09-23T15:25:00Z')
-    const endedJourney = (await service(request))?.candidates[0]?.path ?? null
-    expect(endedJourney?.legs.every((leg) => leg.mode === 'walking')).toBe(true)
+    const endedPath = (await service(request))?.candidates[0]?.path ?? null
+    expect(endedPath?.legs.every((leg) => leg.mode === 'walking')).toBe(true)
     expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
   })
 })

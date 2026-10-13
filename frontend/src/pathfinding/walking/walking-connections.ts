@@ -4,12 +4,12 @@ import type {
   WalkingConnectionRequest,
   WalkingMatrixConnection,
   WalkingRouteEngine,
-} from '../../app/contracts/routing'
+} from './walking-contracts'
 import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import {
   loadWalkingStopGraph,
   type WalkingStopGraphLoader,
-} from './walking-stop-graph'
+} from './load-walking-stop-graph'
 
 interface WalkingConnectionProviderOptions {
   readonly routeEngine: WalkingRouteEngine
@@ -67,6 +67,7 @@ function addStaticConnections(
   ) {
     throw new Error('Walking stop graph does not match the loaded transit stops')
   }
+  // Preserve graph direction: a walk from A to B does not imply that B to A is equivalent.
   for (const connection of graph.connections) {
     const fromStopId = connection.fromKey.slice('stop:'.length)
     const toStopId = connection.toKey.slice('stop:'.length)
@@ -97,6 +98,7 @@ export function createWalkingConnectionProvider(
         .filter((location, index, locations) => (
           locations.findIndex((candidate) => candidate.key === location.key) === index
         ))
+      // Ask for endpoint connector costs while the checked-in graph loads or resolves from cache.
       const endpointQuery = options.routeEngine.matrixWalking({
         sources: [request.origin.coordinate],
         targets: targets.map((location) => location.coordinate),

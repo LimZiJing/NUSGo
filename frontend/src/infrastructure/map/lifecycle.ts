@@ -18,7 +18,7 @@ import {
   JOURNEY_SELECTED_CASING_LAYER_ID,
   JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
   JOURNEY_SELECTED_WALKING_LAYER_ID,
-} from './journey'
+} from './path-layers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 setWorkerUrl(maplibreWorkerUrl)

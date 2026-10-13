@@ -213,7 +213,7 @@ function updateBusStopMarkerElement(
   const routeNames = journeyRoutes?.map(({ routeName }) => routeName) ?? []
   const journeyLabel = routeNames.length === 0
     ? stopLabel
-    : `${stopLabel} on Path ${routeNames.length === 1 ? 'Route' : 'Routes'} ${routeNames.join(', ')}`
+    : `${stopLabel} on Journey ${routeNames.length === 1 ? 'Route' : 'Routes'} ${routeNames.join(', ')}`
   element.setAttribute('aria-label', journeyLabel)
   if (routeNames.length > 0) {
     element.setAttribute('title', journeyLabel)

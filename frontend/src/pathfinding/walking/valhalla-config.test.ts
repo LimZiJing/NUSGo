@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getValhallaBaseUrl } from './routing-config'
+import { getValhallaBaseUrl } from './valhalla-config'
 
 describe('getValhallaBaseUrl', () => {
   it('uses the local Vite proxy when no endpoint is configured in development', () => {

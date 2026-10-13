@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createLiveBusWaitingTimeProvider } from './live-waiting'
+import {
+  createLiveBusWaitingTimeProvider,
+  createTestBusWaitingTimeProvider,
+} from './apply-bus-waits'
 
 const snapshot = {
   observedAt: '2026-09-23T13:48:26.000Z',
@@ -110,5 +113,16 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
       boardingStopId: 'KR-MRT',
       elapsedSeconds: 0,
     })).toBe(60)
+  })
+
+  it('waits five minutes at each test boarding and checks service at that boarding instant', () => {
+    const wait = createTestBusWaitingTimeProvider(Date.parse('2026-09-23T14:50:00Z'), {
+      A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+      B1: [{ routeId: 'B1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+    })
+    const record = {} as Parameters<typeof wait>[0]
+    expect(wait(record, { routeId: 'A1', boardingStopId: 'STOP-A', elapsedSeconds: 0 })).toBe(300)
+    expect(wait(record, { routeId: 'B1', boardingStopId: 'STOP-B', elapsedSeconds: 240 })).toBe(300)
+    expect(wait(record, { routeId: 'B1', boardingStopId: 'STOP-B', elapsedSeconds: 600 })).toBeNull()
   })
 })

@@ -8,7 +8,7 @@ import type {
 import type { MapJourneyOption } from '../../app/contracts/map'
 import type { Path } from '../../pathfinding/path'
 import type { TransitIndex } from '../../domain/transit'
-import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './journey-duration-markers'
+import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './path-duration-markers'
 
 export const JOURNEY_ROUTE_SOURCE_ID = 'journey-route-geometry'
 export const JOURNEY_ALTERNATIVE_CASING_LAYER_ID = 'journey-alternative-casing'
@@ -234,7 +234,7 @@ export interface JourneyRouteLayers {
   dispose(): void
 }
 
-export function createJourneyRouteLayers(
+export function createPathLayers(
   map: Map,
   transitIndex: TransitIndex | null,
   onJourneyOptionSelected?: (candidateKey: string) => void,

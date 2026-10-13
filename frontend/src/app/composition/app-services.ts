@@ -3,17 +3,17 @@ import type { LocationTracker } from '../contracts/location'
 import type {
   WalkingConnectionProvider,
   WalkingRouteEngine,
-} from '../contracts/routing'
+} from '../../pathfinding/walking/walking-contracts'
 import type { ShuttleArrivalClient } from '../contracts/shuttle-arrivals'
 import type { PublicBusArrivalClient } from '../contracts/public-bus-arrivals'
-import type { FindPathsService } from '../journey-planning'
-import { getValhallaBaseUrl } from '../routing-config'
-import { createJourneyPlanningService } from '../journey-planning'
+import type { FindPathsService } from '../../pathfinding/find-paths'
+import { createFindPathsService } from '../../pathfinding/find-paths'
+import { getValhallaBaseUrl } from '../../pathfinding/walking/valhalla-config'
 import { loadTransitMapData, loadVenueData } from '../../infrastructure/data/loaders'
 import { createBrowserLocationTracker } from '../../infrastructure/location/browser'
 import { createPublicBusArrivalClient } from '../../infrastructure/lta-datamall/client'
-import { createValhallaRouteEngine } from '../../infrastructure/routing/valhalla'
-import { createWalkingConnectionProvider } from '../../infrastructure/routing/walking-connections'
+import { createValhallaRouteEngine } from '../../pathfinding/walking/valhalla-walking-client'
+import { createWalkingConnectionProvider } from '../../pathfinding/walking/walking-connections'
 import { createShuttleArrivalClient } from '../../infrastructure/shuttle-arrivals/client'
 import {
   createShuttleServiceHoursClient,
@@ -40,6 +40,27 @@ export interface CreateAppServicesOptions {
   readonly isDevelopment?: boolean
 }
 
+function yieldToBrowser(): Promise<void> {
+  const schedulerWithYield = (globalThis as typeof globalThis & {
+    scheduler?: { yield?: () => Promise<void> }
+  }).scheduler
+  if (schedulerWithYield?.yield) return schedulerWithYield.yield()
+
+  if (typeof MessageChannel !== 'undefined') {
+    return new Promise((resolve) => {
+      const channel = new MessageChannel()
+      channel.port1.onmessage = () => {
+        channel.port1.close()
+        channel.port2.close()
+        resolve()
+      }
+      channel.port2.postMessage(undefined)
+    })
+  }
+
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
 /** Creates the shared application collaborators used by the map session and views. */
 export function createAppServices(options: CreateAppServicesOptions): AppServices {
   const shuttleArrivalClient = createShuttleArrivalClient()
@@ -52,14 +73,16 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
     ),
   })
   const walkingConnectionProvider = createWalkingConnectionProvider({ routeEngine })
-  const pathfinder = createJourneyPlanningService(
+  const pathfinder = createFindPathsService({
     routeEngine,
-    shuttleArrivalClient,
-    shuttleServiceHoursClient,
-    Date.now,
     walkingConnectionProvider,
-    options.journeyTestClock.get,
-  )
+    getArrivals: (stops, signal) => shuttleArrivalClient.getArrivals(stops, signal),
+    getServiceWindows: (routeIds, signal) => shuttleServiceHoursClient.getServiceWindows(routeIds, signal),
+    getTestDepartureMs: options.journeyTestClock.get,
+    now: Date.now,
+    monotonicNow: () => performance.now(),
+    yieldControl: yieldToBrowser,
+  })
 
   return {
     loadTransit: loadTransitMapData,

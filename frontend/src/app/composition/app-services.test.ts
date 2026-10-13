@@ -10,7 +10,7 @@ const adapters = vi.hoisted(() => ({
   createShuttleServiceHoursClient: vi.fn(),
   createRouteEngine: vi.fn(),
   createWalkingConnectionProvider: vi.fn(),
-  createJourneyPlanningService: vi.fn(),
+  createFindPathsService: vi.fn(),
   locationTracker: {},
   shuttleArrivalClient: {},
   publicBusArrivalClient: {},
@@ -36,14 +36,14 @@ vi.mock('../../infrastructure/lta-datamall/client', () => ({
 vi.mock('../../infrastructure/shuttle-service-hours/client', () => ({
   createShuttleServiceHoursClient: adapters.createShuttleServiceHoursClient,
 }))
-vi.mock('../../infrastructure/routing/valhalla', () => ({
+vi.mock('../../pathfinding/walking/valhalla-walking-client', () => ({
   createValhallaRouteEngine: adapters.createRouteEngine,
 }))
-vi.mock('../../infrastructure/routing/walking-connections', () => ({
+vi.mock('../../pathfinding/walking/walking-connections', () => ({
   createWalkingConnectionProvider: adapters.createWalkingConnectionProvider,
 }))
-vi.mock('../journey-planning', () => ({
-  createJourneyPlanningService: adapters.createJourneyPlanningService,
+vi.mock('../../pathfinding/find-paths', () => ({
+  createFindPathsService: adapters.createFindPathsService,
 }))
 
 describe('createAppServices', () => {
@@ -55,7 +55,7 @@ describe('createAppServices', () => {
     adapters.createShuttleServiceHoursClient.mockReturnValue(adapters.shuttleServiceHoursClient)
     adapters.createRouteEngine.mockReturnValue(adapters.routeEngine)
     adapters.createWalkingConnectionProvider.mockReturnValue(adapters.walkingConnectionProvider)
-    adapters.createJourneyPlanningService.mockReturnValue(adapters.pathfinder)
+    adapters.createFindPathsService.mockReturnValue(adapters.pathfinder)
   })
 
   it('shares the Stops timing clients with Journey planning and preserves configured routing', () => {
@@ -77,14 +77,12 @@ describe('createAppServices', () => {
     expect(adapters.createWalkingConnectionProvider).toHaveBeenCalledWith({
       routeEngine: adapters.routeEngine,
     })
-    expect(adapters.createJourneyPlanningService).toHaveBeenCalledWith(
-      adapters.routeEngine,
-      adapters.shuttleArrivalClient,
-      adapters.shuttleServiceHoursClient,
-      Date.now,
-      adapters.walkingConnectionProvider,
-      journeyTestClock.get,
-    )
+    expect(adapters.createFindPathsService).toHaveBeenCalledWith(expect.objectContaining({
+      routeEngine: adapters.routeEngine,
+      walkingConnectionProvider: adapters.walkingConnectionProvider,
+      getTestDepartureMs: journeyTestClock.get,
+      now: Date.now,
+    }))
     expect(services.pathfinder).toBe(adapters.pathfinder)
   })
 

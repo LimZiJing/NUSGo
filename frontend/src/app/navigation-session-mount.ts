@@ -2,7 +2,7 @@ import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
-import type { FindPathsService } from './journey-planning'
+import type { FindPathsService } from '../pathfinding/find-paths'
 import type {
   NavigationSession,
   NavigationSessionDependencies,

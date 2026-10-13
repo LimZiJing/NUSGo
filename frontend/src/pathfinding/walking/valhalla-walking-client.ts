@@ -3,7 +3,7 @@ import type {
   WalkingMatrixConnection,
   WalkingRoute,
   WalkingRouteEngine,
-} from '../../app/contracts/routing'
+} from './walking-contracts'
 
 interface ValhallaRouteEngineOptions {
   readonly baseUrl: string
@@ -163,6 +163,7 @@ function requireRouteGeometry(trip: JsonRecord): WalkingRoute['geometry'] {
 }
 
 function requireRouteResult(payload: unknown): WalkingRoute {
+  // Decode and validate provider-specific fields here so the rest of Pathfinding sees only normalized values.
   const response = requireJsonRecord(payload, 'payload')
   const trip = requireJsonRecord(response.trip, 'trip')
   requireKilometerUnits(trip.units, 'route response')
@@ -182,6 +183,7 @@ function requireMatrixResults(
   sourceCount: number,
   targetCount: number,
 ): readonly WalkingMatrixConnection[] {
+  // Valhalla reports kilometre distances and matrix indexes; normalize both at this boundary.
   const response = requireJsonRecord(payload, 'payload')
   requireKilometerUnits(response.units, 'matrix response')
   if (!Array.isArray(response.sources_to_targets)) {

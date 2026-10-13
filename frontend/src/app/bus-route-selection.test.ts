@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { reconcileRouteSelection } from './route-selection'
+import { reconcileRouteSelection } from './bus-route-selection'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 

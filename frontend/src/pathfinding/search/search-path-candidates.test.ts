@@ -637,7 +637,7 @@ function createCompleteAlternativeInput(): PathSearchInput {
   }
 }
 
-describe('planJourney', () => {
+describe('searchPathCandidates', () => {
   it('caps venue-origin connectors to the five shortest walking durations', () => {
     const input = createFiveStopConnectorInput([
       walking(origin, stopA, 1),
@@ -814,7 +814,7 @@ describe('planJourney', () => {
     ))).toBe(true)
   })
 
-  it('returns the walking-only Journey and up to three distinct scored shuttle Journeys', async () => {
+  it('returns the walking-only Path and up to three distinct scored shuttle Paths', async () => {
     const input = createFiveStopConnectorInput([
       walking(origin, stopA, 10),
       walking(origin, { kind: 'stop', id: 'STOP-B' }, 20),
@@ -887,7 +887,7 @@ describe('planJourney', () => {
     expect(candidate?.score).toBeCloseTo(1 / candidate!.adjustedDurationSeconds, 12)
   })
 
-  it('deduplicates bus Journeys that differ only by walking approaches', async () => {
+  it('deduplicates bus Paths that differ only by walking approaches', async () => {
     const input = createInput([
       walking(origin, stopA, 120),
       walking(origin, stopA, 90),
@@ -915,7 +915,7 @@ describe('planJourney', () => {
       .toEqual([['walking']])
   })
 
-  it('returns a valid one-transfer Journey between different routes', async () => {
+  it('returns a valid one-transfer Path between different routes', async () => {
     const result = await searchPathsWithinBudget(createOneTransferInput(() => 5))
     const candidate = result.candidates.find(({ path }) => (
       path.legs.filter((leg) => leg.mode === 'shuttle').length === 2
@@ -926,7 +926,7 @@ describe('planJourney', () => {
     ))).toEqual(['A1', 'B1'])
   })
 
-  it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
+  it('includes a directed shuttle leg when zero waiting makes it the best path', () => {
     const path = searchPaths(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
@@ -1044,7 +1044,7 @@ describe('planJourney', () => {
     expect(path?.legs[1]).toMatchObject({ routeId: 'B1', boardingStopId: 'STOP-B' })
   })
 
-  it('passes the elapsed journey time to each shuttle wait calculation', () => {
+  it('passes the elapsed path time to each shuttle wait calculation', () => {
     const contexts: number[] = []
     const path = searchPaths(createInput([
       walking(origin, stopA, 100),
@@ -1121,7 +1121,7 @@ describe('planJourney', () => {
     })
   })
 
-  it('returns no journey when no complete connection exists', () => {
+  it('returns no path when no complete connection exists', () => {
     expect(searchPaths(createInput([]))).toBeNull()
   })
 

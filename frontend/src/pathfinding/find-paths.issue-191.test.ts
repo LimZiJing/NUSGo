@@ -5,9 +5,9 @@ import { validateTransitNetwork } from '@navus/shared/transit/model'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
-import { createJourneyPlanningService } from './journey-planning'
+import { createFindPathsService } from './find-paths'
 import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
-import type { LoadedTransitData } from './contracts/data'
+import type { LoadedTransitData } from '../app/contracts/data'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
@@ -48,8 +48,8 @@ function createWalkingConnections(
   return [...stopConnections, ...destinationConnections]
 }
 
-describe('issue 191 journey planning regression', () => {
-  it('returns a valid Journey for PGP to UTown Auditorium 2 within the search budget', { timeout: 5_000 }, async () => {
+describe('issue 191 path planning regression', () => {
+  it('returns a valid Path for PGP to UTown Auditorium 2 within the search budget', { timeout: 5_000 }, async () => {
     const transit = createIssueData()
     const venues = validateVenueLocationMap(readJson('../../public/data/venues.json'))
     const walkingConnections = createWalkingConnections()
@@ -70,22 +70,24 @@ describe('issue 191 journey planning regression', () => {
         },
       }),
     }
-    const service = createJourneyPlanningService(
+    const service = createFindPathsService({
       routeEngine,
-      undefined,
-      undefined,
-      Date.now,
-      { getWalkingConnections: async () => walkingConnections },
-    )
+      walkingConnectionProvider: { getWalkingConnections: async () => walkingConnections },
+      getTestDepartureMs: () => null,
+      now: Date.now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
     const path = (await service({
-      tripRequest: {
-        origin: { kind: 'stop', id: 'PGP' },
-        destination: { kind: 'venue', id: 'UT-AUD2' },
-      },
+      origin: { kind: 'stop', id: 'PGP' },
+      destination: { kind: 'venue', id: 'UT-AUD2' },
       venues,
-      transit,
-      signal: new AbortController().signal,
-    }))?.candidates[0]?.path ?? null
+      transit: {
+        index: transit.index,
+        geometry: transit.geometry,
+        shuttleTiming: transit.shuttleTiming,
+      },
+    }, { signal: new AbortController().signal }))?.candidates[0]?.path ?? null
 
     expect(path).not.toBeNull()
     expect(path?.origin).toEqual({ kind: 'stop', id: 'PGP' })

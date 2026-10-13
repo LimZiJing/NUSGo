@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createValhallaRouteEngine } from './valhalla'
+import { createValhallaRouteEngine } from './valhalla-walking-client'
 
 const origin = { longitude: 103, latitude: 1 }
 const destination = { longitude: 103.01, latitude: 1.01 }

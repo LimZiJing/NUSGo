@@ -1,5 +1,5 @@
 import { createInitialExploreViewState, type ExploreViewState } from '../features/explore-view/state'
-import { selectDisplayedPaths } from '../features/plan-view/journey-candidate-selection'
+import { selectDisplayedPaths } from '../features/plan-view/select-displayed-paths'
 import type { TransitIndex } from '../domain/transit'
 import { deriveBusRouteOverlapMap } from '../domain/transit/overlap'
 import {
@@ -21,7 +21,7 @@ import {
   markVenueLoaded,
   type ResourceStatusState,
 } from './resource-status'
-import { reconcileRouteSelection } from './route-selection'
+import { reconcileRouteSelection } from './bus-route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
@@ -35,7 +35,8 @@ import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import {
   NoPathAvailableError,
   type FindPathsService,
-} from './journey-planning'
+  type FindPathsRequest,
+} from '../pathfinding/find-paths'
 import {
   createInitialJourneyState,
   createJourneyStateWithStatus,
@@ -348,18 +349,22 @@ export function createNavigationSession(
     const requestId = journeyPlanningRequestId
     const controller = new AbortController()
     journeyPlanningAbortController = controller
-    const request = {
-      tripRequest: state.tripRequest,
+    const request: FindPathsRequest = {
+      origin: state.tripRequest.origin,
+      destination: state.tripRequest.destination,
       venues: state.venues,
-      transit: transitData,
-      signal: controller.signal,
+      transit: {
+        index: transitData.index,
+        geometry: transitData.geometry,
+        shuttleTiming: transitData.shuttleTiming,
+      },
     }
     dependencies.map.setJourneyOptions([], null)
     updateState({
       path: createJourneyStateWithStatus('loading'),
     })
 
-    void pathfinder(request).then(
+    void pathfinder(request, { signal: controller.signal }).then(
       (planningResult) => {
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
         const displayedCandidates = planningResult === null

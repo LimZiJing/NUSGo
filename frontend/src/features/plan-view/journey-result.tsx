@@ -14,7 +14,7 @@ import {
   type JourneyCompactSummary,
   type JourneyTimelineEntry,
 } from './journey-result-presentation'
-import { selectDisplayedPaths } from './journey-candidate-selection'
+import { selectDisplayedPaths } from './select-displayed-paths'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 

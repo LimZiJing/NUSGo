@@ -8,7 +8,7 @@ import {
   createTransferTransitNetwork,
 } from '../../domain/transit/test-fixtures'
 import {
-  createJourneyRouteLayers,
+  createPathLayers as createJourneyRouteLayers,
   JOURNEY_ROUTE_SOURCE_ID,
   JOURNEY_ALTERNATIVE_CASING_LAYER_ID,
   JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
@@ -16,7 +16,7 @@ import {
   JOURNEY_SELECTED_CASING_LAYER_ID,
   JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
   JOURNEY_SELECTED_WALKING_LAYER_ID,
-} from './journey'
+} from './path-layers'
 
 const markerState = vi.hoisted(() => ({ markers: [] as Array<{
   element: HTMLElement

@@ -10,7 +10,7 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '../../pathfinding/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
+import { getBusPathLegStopIds } from '../../pathfinding/path-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
@@ -22,7 +22,7 @@ import {
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { createVenueMarker, type VenueMarker } from './venue-markers'
-import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
+import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
@@ -208,7 +208,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
   const installJourneyRouteLayers = (): void => {
     if (currentJourneyOptions.length === 0 || journeyRouteLayers) return
-    const nextJourneyRouteLayers = createJourneyRouteLayers(
+    const nextJourneyRouteLayers = createPathLayers(
       map,
       currentTransitIndex,
       options.onJourneyOptionSelected,
@@ -237,7 +237,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     for (const leg of currentPath.legs) {
       if (leg.mode !== 'shuttle') continue
       const route = currentTransitIndex.routeById.get(leg.routeId) ?? null
-      const stopIds = getShuttleJourneyLegStopIds(leg, route)
+      const stopIds = getBusPathLegStopIds(leg, route)
       if (!route || !stopIds) continue
 
       for (const stopId of stopIds) {

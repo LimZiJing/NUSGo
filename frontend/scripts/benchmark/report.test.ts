@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { JourneyBenchmarkValidation } from './outcome'
-import type { JourneyBenchmarkCaseRun } from './report'
+import type { PathfindingBenchmarkValidation } from './outcome'
+import type { PathfindingBenchmarkCaseRun } from './report'
 import {
   compareBenchmarkCaseResults,
-  createJourneyBenchmarkModeReport,
+  createPathfindingBenchmarkModeReport,
   shouldFailBenchmarkRun,
 } from './report'
 
@@ -15,12 +15,12 @@ function run(
   valid = true,
   planningQuality: 'exact' | 'bounded' = 'exact',
   routeId = 'P',
-): JourneyBenchmarkCaseRun {
-  const validation: JourneyBenchmarkValidation = {
+): PathfindingBenchmarkCaseRun {
+  const validation: PathfindingBenchmarkValidation = {
     valid,
     errors: valid ? [] : ['wrong result'],
     result: {
-      kind: 'journey',
+      kind: 'path',
       modes: ['shuttle'],
       shuttleBoardings: 1,
       routeIds: [routeId],
@@ -33,23 +33,23 @@ function run(
     },
   }
   return {
-    benchmarkCase: { id, label, group: 'normal', scenario: 'route-pair', expected: { outcome: 'journey' } },
+    benchmarkCase: { id, label, group: 'normal', scenario: 'route-pair', expected: { outcome: 'path' } },
     samples: [{ elapsedMs, valhallaMs, validation }],
   }
 }
 
-describe('Journey benchmark report aggregation', () => {
+describe('Path benchmark report aggregation', () => {
   it('reports per-case and equal-weight aggregate timing, Valhalla, quality, and validation', () => {
-    const report = createJourneyBenchmarkModeReport([
+    const report = createPathfindingBenchmarkModeReport([
       {
-        benchmarkCase: { id: 'quick', label: 'Quick', group: 'normal', scenario: 'route-pair', expected: { outcome: 'journey' } },
+        benchmarkCase: { id: 'quick', label: 'Quick', group: 'normal', scenario: 'route-pair', expected: { outcome: 'path' } },
         samples: [
           run('quick', 'Quick', 10, 4).samples[0],
           run('quick', 'Quick', 20, 6).samples[0],
         ],
       },
       {
-        benchmarkCase: { id: 'slow', label: 'Slow', group: 'fallback', scenario: 'missing-arrivals', expected: { outcome: 'journey' } },
+        benchmarkCase: { id: 'slow', label: 'Slow', group: 'fallback', scenario: 'missing-arrivals', expected: { outcome: 'path' } },
         samples: [
           run('slow', 'Slow', 50, 20, true, 'bounded').samples[0],
           run('slow', 'Slow', 70, 40, true, 'bounded').samples[0],
@@ -61,7 +61,7 @@ describe('Journey benchmark report aggregation', () => {
     expect(report.overall.statistics).toMatchObject({ meanMs: 37.5, medianMs: 37.5, p95Ms: 60, sampleCount: 2 })
     expect(report.overall.valhalla).toMatchObject({ meanMs: 17.5, sampleCount: 2 })
     expect(report.overall.sampleCount).toBe(4)
-    expect(report.overall.resultQuality).toMatchObject({ journeys: 4, exact: 2, bounded: 2, invalid: 0 })
+    expect(report.overall.resultQuality).toMatchObject({ paths: 4, exact: 2, bounded: 2, invalid: 0 })
     expect(report.cases[0].planningWork).toMatchObject({
       searchDurationMs: { mean: 10 },
       searchYieldWaitMs: { mean: 3 },
@@ -75,13 +75,13 @@ describe('Journey benchmark report aggregation', () => {
 
   it('reports matrix and routed geometry time and request counts separately', () => {
     const sample = run('local', 'Local', 80, 40).samples[0]
-    const report = createJourneyBenchmarkModeReport([{
+    const report = createPathfindingBenchmarkModeReport([{
       benchmarkCase: {
         id: 'local',
         label: 'Local',
         group: 'normal',
         scenario: 'route-pair',
-        expected: { outcome: 'journey' },
+        expected: { outcome: 'path' },
       },
       samples: [{
         ...sample,
@@ -109,7 +109,7 @@ describe('Journey benchmark report aggregation', () => {
   })
 
   it('marks any invalid or incomplete case as partial', () => {
-    const report = createJourneyBenchmarkModeReport([
+    const report = createPathfindingBenchmarkModeReport([
       { ...run('invalid', 'Invalid', 10, 0, false), samples: run('invalid', 'Invalid', 10, 0, false).samples },
       { ...run('missing', 'Missing', 0, 0), samples: [], setupError: 'Adapter runner failed' },
     ], 2)
@@ -121,9 +121,9 @@ describe('Journey benchmark report aggregation', () => {
   })
 
   it('compares semantic outcomes separately from duration differences', () => {
-    const first = createJourneyBenchmarkModeReport([run('one', 'One', 10, 1)], 1)
-    const second = createJourneyBenchmarkModeReport([run('one', 'One', 20, 5)], 1)
-    const differentRoute = createJourneyBenchmarkModeReport([run('one', 'One', 15, 2, true, 'exact', 'R1')], 1)
+    const first = createPathfindingBenchmarkModeReport([run('one', 'One', 10, 1)], 1)
+    const second = createPathfindingBenchmarkModeReport([run('one', 'One', 20, 5)], 1)
+    const differentRoute = createPathfindingBenchmarkModeReport([run('one', 'One', 15, 2, true, 'exact', 'R1')], 1)
 
     expect(compareBenchmarkCaseResults([
       { id: 'first', cases: first.cases },
@@ -136,8 +136,8 @@ describe('Journey benchmark report aggregation', () => {
   })
 
   it('requests a failing process exit for invalid cases and adapter load failures', () => {
-    const partial = createJourneyBenchmarkModeReport([run('invalid', 'Invalid', 10, 0, false)], 1)
-    const available = createJourneyBenchmarkModeReport([run('valid', 'Valid', 10, 0)], 1)
+    const partial = createPathfindingBenchmarkModeReport([run('invalid', 'Invalid', 10, 0, false)], 1)
+    const available = createPathfindingBenchmarkModeReport([run('valid', 'Valid', 10, 0)], 1)
 
     expect(shouldFailBenchmarkRun({ adapters: [{ searchOnlyOffline: partial }] })).toBe(true)
     expect(shouldFailBenchmarkRun({ adapters: [{ loadError: 'Missing factory' }] })).toBe(true)

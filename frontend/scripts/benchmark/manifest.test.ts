@@ -1,17 +1,17 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import {
-  loadJourneyBenchmarkManifest,
-  validateJourneyBenchmarkManifest,
+  loadPathfindingBenchmarkManifest,
+  validatePathfindingBenchmarkManifest,
 } from './manifest'
 
 async function readRawManifest(): Promise<unknown> {
   return JSON.parse(await readFile(new URL('./cases.json', import.meta.url), 'utf8')) as unknown
 }
 
-describe('Journey benchmark manifest', () => {
+describe('Path benchmark manifest', () => {
   it('loads 50 named cases across the approved groups and scenarios', async () => {
-    const manifest = await loadJourneyBenchmarkManifest()
+    const manifest = await loadPathfindingBenchmarkManifest()
     const counts = (key: 'group' | 'scenario') => Object.groupBy(manifest.cases, (item) => item[key])
 
     expect(manifest.cases).toHaveLength(50)
@@ -27,7 +27,7 @@ describe('Journey benchmark manifest', () => {
 
   it('requires a unique, exact-size manifest', async () => {
     const input = await readRawManifest() as { cases: unknown[] }
-    expect(() => validateJourneyBenchmarkManifest({ ...input, cases: input.cases.slice(1) }))
+    expect(() => validatePathfindingBenchmarkManifest({ ...input, cases: input.cases.slice(1) }))
       .toThrow('exactly 50 cases')
   })
 
@@ -37,17 +37,17 @@ describe('Journey benchmark manifest', () => {
       ? { ...benchmarkCase, timingProfile: 'missing-profile' }
       : benchmarkCase)
 
-    expect(() => validateJourneyBenchmarkManifest({ ...input, cases }))
+    expect(() => validatePathfindingBenchmarkManifest({ ...input, cases }))
       .toThrow('references unknown timing profile')
   })
 
   it('allows exact route assertions only when the case declares shuttle modes', async () => {
     const input = await readRawManifest() as { cases: Array<Record<string, unknown>> }
     const cases = input.cases.map((benchmarkCase, index) => index === 0
-      ? { ...benchmarkCase, expected: { outcome: 'journey', routeIds: ['A1'] } }
+      ? { ...benchmarkCase, expected: { outcome: 'path', routeIds: ['A1'] } }
       : benchmarkCase)
 
-    expect(() => validateJourneyBenchmarkManifest({ ...input, cases }))
+    expect(() => validatePathfindingBenchmarkManifest({ ...input, cases }))
       .toThrow('routeIds requires a shuttle mode expectation')
   })
 
@@ -57,7 +57,7 @@ describe('Journey benchmark manifest', () => {
       ? { ...benchmarkCase, expected: { outcome: 'no-route' } }
       : benchmarkCase)
 
-    expect(() => validateJourneyBenchmarkManifest({ ...input, cases }))
+    expect(() => validatePathfindingBenchmarkManifest({ ...input, cases }))
       .toThrow('no-route cases belong in non-timed resilience tests')
   })
 })

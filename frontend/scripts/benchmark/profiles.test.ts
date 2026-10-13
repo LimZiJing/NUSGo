@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createLiveShuttleWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
+import { createLiveBusWaitingTimeProvider } from '../../src/pathfinding/pipeline/apply-bus-waits'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
-import { loadJourneyBenchmarkManifest } from './manifest'
+import { loadPathfindingBenchmarkManifest } from './manifest'
 import {
   applyBenchmarkShuttleTimingProfile,
   createBenchmarkArrivalSnapshot,
@@ -32,15 +32,15 @@ const RECORD: ShuttleTimingRecord = {
   unavailableReason: null,
 }
 
-describe('Journey benchmark timing profiles', () => {
+describe('Path benchmark timing profiles', () => {
   it('builds fresh, stale, headway, missing, and expired arrival snapshots', async () => {
-    const { profiles } = await loadJourneyBenchmarkManifest()
+    const { profiles } = await loadPathfindingBenchmarkManifest()
     const profileById = new Map(profiles.map((profile) => [profile.id, profile]))
     const getWait = (profileId: string) => {
       const profile = profileById.get(profileId)
       if (!profile) throw new Error(`Missing profile ${profileId}`)
       const snapshot = createBenchmarkArrivalSnapshot(profile, ROUTES, ['P'], NOW)
-      return createLiveShuttleWaitingTimeProvider(snapshot, NOW)(RECORD, {
+      return createLiveBusWaitingTimeProvider(snapshot, NOW)(RECORD, {
         routeId: 'P',
         boardingStopId: 'KV',
         elapsedSeconds: 0,
@@ -55,7 +55,7 @@ describe('Journey benchmark timing profiles', () => {
   })
 
   it('limits arrivals to the case route scope and marks unavailable ride timing', async () => {
-    const { profiles } = await loadJourneyBenchmarkManifest()
+    const { profiles } = await loadPathfindingBenchmarkManifest()
     const profile = profiles.find(({ id }) => id === 'invalid-shuttle-timing')
     if (!profile) throw new Error('Missing invalid timing profile')
     const snapshot = createBenchmarkArrivalSnapshot(profile, ROUTES, ['P'], NOW)
@@ -67,7 +67,7 @@ describe('Journey benchmark timing profiles', () => {
   })
 
   it('creates active, pre-service, and post-service windows at the fixed clock', async () => {
-    const { profiles } = await loadJourneyBenchmarkManifest()
+    const { profiles } = await loadPathfindingBenchmarkManifest()
     const profileById = new Map(profiles.map((profile) => [profile.id, profile]))
     const status = (profileId: string) => {
       const profile = profileById.get(profileId)
@@ -82,7 +82,7 @@ describe('Journey benchmark timing profiles', () => {
   })
 
   it('normalizes tie-case ride estimates to one fixed duration', async () => {
-    const { profiles } = await loadJourneyBenchmarkManifest()
+    const { profiles } = await loadPathfindingBenchmarkManifest()
     const profile = profiles.find(({ id }) => id === 'tie-equal-rides')
     if (!profile) throw new Error('Missing tie profile')
 

@@ -9,7 +9,7 @@ import type { MapViewportInsets } from '../../app/contracts/map'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   TransitGeoJsonPosition,
-  TransitRouteGeometry,
+  BusRouteGeometry,
 } from '@navus/shared/transit/types'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
@@ -95,7 +95,7 @@ export type TransitRouteBounds = [[number, number], [number, number]]
 
 export function getTransitRouteBounds(
   index: TransitIndex,
-  geometry: TransitRouteGeometry,
+  geometry: BusRouteGeometry,
   routeId: string | null,
 ): TransitRouteBounds | null {
   const selectedRoute = routeId
@@ -152,7 +152,7 @@ export interface TransitRouteLayers {
   setJourneyActive(active: boolean): void
   fitRoute(
     index: TransitIndex,
-    geometry: TransitRouteGeometry,
+    geometry: BusRouteGeometry,
     routeId: string | null,
     viewportInsets?: MapViewportInsets,
   ): void
@@ -276,7 +276,7 @@ function setTransitRouteVisibility(map: Map, visible: boolean): void {
 function fitTransitRoute(
   map: Map,
   index: TransitIndex,
-  geometry: TransitRouteGeometry,
+  geometry: BusRouteGeometry,
   routeId: string | null,
   viewportInsets?: MapViewportInsets,
 ): void {
@@ -292,7 +292,7 @@ function fitTransitRoute(
 
 export function createTransitRouteLayers(
   map: Map,
-  geometry: TransitRouteGeometry,
+  geometry: BusRouteGeometry,
 ): TransitRouteLayers {
   const ownsSource = !map.getSource(TRANSIT_ROUTE_SOURCE_ID)
   const ownsCasingLayer = !map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)

@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { TransitNetwork, TransitRouteGeometry } from '@navus/shared/transit/types'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import type { TransitNetwork, BusRouteGeometry } from '@navus/shared/transit/types'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
 import { createValidTransitNetwork } from './test-fixtures'
 
-function createValidGeometry(): TransitRouteGeometry {
+function createValidGeometry(): BusRouteGeometry {
   return {
     type: 'FeatureCollection',
     features: [{
@@ -24,7 +24,7 @@ function expectInvalidGeometry(
   geometry: unknown,
   expected: RegExp,
 ): void {
-  expect(() => validateTransitRouteGeometry(network, geometry)).toThrowError(expected)
+  expect(() => validateBusRouteGeometry(network, geometry)).toThrowError(expected)
 }
 
 function readJson(path: string): unknown {
@@ -47,19 +47,19 @@ describe('validateTransitRouteGeometry', () => {
     const network = createValidTransitNetwork()
     const geometry = createValidGeometry()
 
-    expect(validateTransitRouteGeometry(network, geometry)).toBe(geometry)
+    expect(validateBusRouteGeometry(network, geometry)).toBe(geometry)
   })
   it('accepts the committed geometry for all verified routes', () => {
     const network = validateTransitNetwork(readJson('../../../public/data/shuttle-network.json'))
     const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 
-    expect(validateTransitRouteGeometry(network, geometry)).toBe(geometry)
+    expect(validateBusRouteGeometry(network, geometry)).toBe(geometry)
   })
 
 
   it('uses the official route colors in both transit payloads', () => {
     const network = validateTransitNetwork(readJson('../../../public/data/shuttle-network.json'))
-    const geometry = readJson('../../../public/data/shuttle-routes.geojson') as TransitRouteGeometry
+    const geometry = readJson('../../../public/data/shuttle-routes.geojson') as BusRouteGeometry
 
     expect(Object.fromEntries(network.routes.map(({ id, color }) => [id, color]))).toEqual(
       OFFICIAL_ROUTE_COLORS,

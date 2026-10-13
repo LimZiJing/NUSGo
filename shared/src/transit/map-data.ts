@@ -1,10 +1,10 @@
 import { validateTransitNetwork } from './model.ts'
-import { validateTransitRouteGeometry } from './geometry.ts'
-import type { TransitNetwork, TransitRouteGeometry } from './types.ts'
+import { validateBusRouteGeometry } from './geometry.ts'
+import type { TransitNetwork, BusRouteGeometry } from './types.ts'
 
 export interface ValidatedTransitMapData {
   network: TransitNetwork
-  geometry: TransitRouteGeometry
+  geometry: BusRouteGeometry
 }
 
 export function validateTransitMapData(
@@ -12,6 +12,6 @@ export function validateTransitMapData(
   geometryInput: unknown,
 ): ValidatedTransitMapData {
   const network = validateTransitNetwork(networkInput)
-  const geometry = validateTransitRouteGeometry(network, geometryInput)
+  const geometry = validateBusRouteGeometry(network, geometryInput)
   return { network, geometry }
 }

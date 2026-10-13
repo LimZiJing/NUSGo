@@ -121,7 +121,7 @@ function App() {
   const commandsRef = useRef(commands)
   const dispatchNavigationRef = useRef(appNavigation.dispatch)
   const exploreViewModeRef = useRef(state.exploreView.mode)
-  const displayedCandidatesRef = useRef(state.journey.displayedCandidates)
+  const displayedCandidatesRef = useRef(state.path.displayedCandidates)
   const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
@@ -140,7 +140,7 @@ function App() {
     isMobileViewport,
     activeView: navigation.activeView,
     planDetent: navigation.sheets.plan.detent,
-    hasJourney: state.journey.displayedCandidates.length > 0,
+    hasJourney: state.path.displayedCandidates.length > 0,
   })
 
   useLayoutEffect(() => {
@@ -149,13 +149,13 @@ function App() {
     commandsRef.current = commands
     dispatchNavigationRef.current = appNavigation.dispatch
     exploreViewModeRef.current = state.exploreView.mode
-    displayedCandidatesRef.current = state.journey.displayedCandidates
+    displayedCandidatesRef.current = state.path.displayedCandidates
   }, [
     appNavigation.dispatch,
     commands,
     isMobileViewport,
     navigation,
-    state.journey.displayedCandidates,
+    state.path.displayedCandidates,
     state.exploreView.mode,
   ])
 
@@ -230,11 +230,11 @@ function App() {
       pendingMapJourneySelectionRef.current = null
       return
     }
-    if (!state.journey.displayedCandidates.some(({ candidateKey: key }) => key === candidateKey)) {
+    if (!state.path.displayedCandidates.some(({ candidateKey: key }) => key === candidateKey)) {
       pendingMapJourneySelectionRef.current = null
       return
     }
-    if (state.journey.selectedCandidateKey !== candidateKey) return
+    if (state.path.selectedCandidateKey !== candidateKey) return
 
     const content = tripControlsRef.current?.querySelector<HTMLElement>('.plan-view-content')
     const summary = Array.from(content?.querySelectorAll<HTMLElement>('.journey-option-summary') ?? [])
@@ -253,8 +253,8 @@ function App() {
     isMobileViewport,
     mapJourneySelectionRevision,
     navigation.activeView,
-    state.journey.displayedCandidates,
-    state.journey.selectedCandidateKey,
+    state.path.displayedCandidates,
+    state.path.selectedCandidateKey,
   ])
 
   useEffect(() => {
@@ -265,7 +265,7 @@ function App() {
       createNavigationSession,
       loadVenues: services.loadVenues,
       loadTransit: services.loadTransit,
-      journeyPlanner: services.journeyPlanner,
+      pathfinder: services.pathfinder,
       locationTracker: services.createLocationTracker(),
       onStopSelected: appNavigation.handleStopSelected,
       onMapStopInteraction: appNavigation.handleMapStopInteraction,
@@ -305,12 +305,12 @@ function App() {
     onSelectDestinationEndpoint: commands.selectDestinationEndpoint,
     onClearDestinationEndpoint: commands.clearDestinationEndpoint,
     onClearTrip: commands.clearTrip,
-    onPlanJourney: commands.planJourney,
+    onPlanJourney: commands.searchPaths,
     originLocationRequest: state.originLocationRequest,
     onSelectJourneyOption: commands.selectJourneyOption,
     onUseCurrentLocationForOrigin: commands.useCurrentLocationForOrigin,
     onCancelOriginLocationRequest: commands.cancelOriginLocationRequest,
-    journey: state.journey,
+    path: state.path,
     simulatedAtMs,
     onSearchFocus: () => appNavigation.beginMobileSearch('plan'),
     onSearchCancel: () => appNavigation.dismissMobileSearch('plan'),
@@ -388,8 +388,8 @@ function App() {
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {navigation.activeView === 'plan' &&
-            state.journey.status === 'ready' &&
-            state.journey.displayedCandidates.length > 0 && (
+            state.path.status === 'ready' &&
+            state.path.displayedCandidates.length > 0 && (
             <FitRoutesControl onFit={commands.fitJourneyRoutes} />
           )}
           {JourneyTestTimeControl && (
@@ -399,12 +399,12 @@ function App() {
                 onApply={(instantMs) => {
                   testClock.set(instantMs)
                   setSimulatedAtMs(instantMs)
-                  session?.replanJourney()
+                  session?.replanPath()
                 }}
                 onReset={() => {
                   testClock.set(null)
                   setSimulatedAtMs(null)
-                  session?.replanJourney()
+                  session?.replanPath()
                 }}
               />
             </Suspense>

@@ -1,4 +1,4 @@
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import { formatDuration } from '../../domain/trip/duration-format'
 import type { TripRequest } from '../../domain/trip/types'
 import type { ExploreViewState } from '../../features/explore-view/state'
@@ -31,14 +31,14 @@ export function getStopsSheetSummary({
   return `Stops · ${overviewStops.length} nearby`
 }
 
-function describeJourney(journey: Journey): string {
-  const duration = formatDuration(journey.totalDurationSeconds)
-  return journey.legs.every((leg) => leg.mode === 'walking') ? `${duration} walk` : `${duration} Journey`
+function describePath(path: Path): string {
+  const duration = formatDuration(path.totalDurationSeconds)
+  return path.legs.every((leg) => leg.mode === 'walking') ? `${duration} walk` : `${duration} Journey`
 }
 
 export function getPlanSheetSummary(
   tripRequest: TripRequest,
-  journeyState: Pick<JourneyState, 'status' | 'journey'> | undefined,
+  journeyState: Pick<JourneyState, 'status' | 'path'> | undefined,
 ): string {
   const { origin, destination } = tripRequest
   if (!origin && !destination) return 'Plan trip · Choose origin and destination'
@@ -50,8 +50,8 @@ export function getPlanSheetSummary(
     case 'no-route': return 'Plan trip · No Journey found'
     case 'failed': return 'Plan trip · Could not plan a Journey'
     case 'ready':
-      return journeyState.journey
-        ? `Plan trip · ${describeJourney(journeyState.journey)}`
+      return journeyState.path
+        ? `Plan trip · ${describePath(journeyState.path)}`
         : 'Plan trip · Ready to plan'
     default: return 'Plan trip · Ready to plan'
   }

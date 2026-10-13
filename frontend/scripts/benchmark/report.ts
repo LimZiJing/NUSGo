@@ -1,86 +1,86 @@
-import type { JourneyBenchmarkManifestCase } from './manifest.js'
-import type { JourneyBenchmarkValidation } from './outcome.js'
+import type { PathfindingBenchmarkManifestCase } from './manifest.js'
+import type { PathfindingBenchmarkValidation } from './outcome.js'
 
-export interface JourneyBenchmarkSample {
+export interface PathfindingBenchmarkSample {
   readonly elapsedMs: number
   readonly valhallaMs?: number
   readonly valhallaMatrixMs?: number
   readonly valhallaRouteMs?: number
   readonly valhallaMatrixRequests?: number
   readonly valhallaRouteRequests?: number
-  readonly validation: JourneyBenchmarkValidation
+  readonly validation: PathfindingBenchmarkValidation
 }
 
-export interface JourneyBenchmarkCaseRun {
-  readonly benchmarkCase: Pick<JourneyBenchmarkManifestCase, 'id' | 'label' | 'group' | 'scenario' | 'expected'>
-  readonly samples: readonly JourneyBenchmarkSample[]
+export interface PathfindingBenchmarkCaseRun {
+  readonly benchmarkCase: Pick<PathfindingBenchmarkManifestCase, 'id' | 'label' | 'group' | 'scenario' | 'expected'>
+  readonly samples: readonly PathfindingBenchmarkSample[]
   readonly setupError?: string
 }
 
-export interface JourneyBenchmarkStatistics {
+export interface PathfindingBenchmarkStatistics {
   readonly meanMs: number
   readonly medianMs: number
   readonly p95Ms: number
   readonly sampleCount: number
 }
 
-export interface JourneyBenchmarkQualityCounts {
-  readonly journeys: number
+export interface PathfindingBenchmarkQualityCounts {
+  readonly paths: number
   readonly noRoutes: number
   readonly exact: number
   readonly bounded: number
   readonly invalid: number
 }
 
-export interface JourneyBenchmarkValidationSummary {
+export interface PathfindingBenchmarkValidationSummary {
   readonly status: 'valid' | 'invalid' | 'not-run'
   readonly validSampleCount: number
   readonly invalidSampleCount: number
   readonly errors: readonly string[]
 }
 
-export interface JourneyBenchmarkCaseReport {
+export interface PathfindingBenchmarkCaseReport {
   readonly id: string
   readonly label: string
   readonly group: string
   readonly scenario: string
   readonly status: 'available' | 'failed'
-  readonly statistics: JourneyBenchmarkStatistics | null
-  readonly valhalla: JourneyBenchmarkStatistics | null
-  readonly valhallaMatrixMs: JourneyBenchmarkStatistics | null
-  readonly valhallaRouteMs: JourneyBenchmarkStatistics | null
-  readonly valhallaMatrixRequests: JourneyBenchmarkCountStatistics | null
-  readonly valhallaRouteRequests: JourneyBenchmarkCountStatistics | null
-  readonly resultQuality: JourneyBenchmarkQualityCounts
-  readonly validation: JourneyBenchmarkValidationSummary
+  readonly statistics: PathfindingBenchmarkStatistics | null
+  readonly valhalla: PathfindingBenchmarkStatistics | null
+  readonly valhallaMatrixMs: PathfindingBenchmarkStatistics | null
+  readonly valhallaRouteMs: PathfindingBenchmarkStatistics | null
+  readonly valhallaMatrixRequests: PathfindingBenchmarkCountStatistics | null
+  readonly valhallaRouteRequests: PathfindingBenchmarkCountStatistics | null
+  readonly resultQuality: PathfindingBenchmarkQualityCounts
+  readonly validation: PathfindingBenchmarkValidationSummary
   readonly planning: Readonly<Record<string, unknown>> | null
   readonly planningWork: Readonly<Record<string, unknown>>
   readonly resultStableAcrossSamples: boolean
   readonly error?: string
 }
 
-export interface JourneyBenchmarkAggregateReport {
+export interface PathfindingBenchmarkAggregateReport {
   readonly caseCount: number
   readonly measuredCaseCount: number
   readonly sampleCount: number
-  readonly statistics: JourneyBenchmarkStatistics | null
-  readonly valhalla: JourneyBenchmarkStatistics | null
-  readonly valhallaMatrixMs: JourneyBenchmarkStatistics | null
-  readonly valhallaRouteMs: JourneyBenchmarkStatistics | null
-  readonly valhallaMatrixRequests: JourneyBenchmarkCountStatistics | null
-  readonly valhallaRouteRequests: JourneyBenchmarkCountStatistics | null
-  readonly resultQuality: JourneyBenchmarkQualityCounts
-  readonly validation: JourneyBenchmarkValidationSummary
+  readonly statistics: PathfindingBenchmarkStatistics | null
+  readonly valhalla: PathfindingBenchmarkStatistics | null
+  readonly valhallaMatrixMs: PathfindingBenchmarkStatistics | null
+  readonly valhallaRouteMs: PathfindingBenchmarkStatistics | null
+  readonly valhallaMatrixRequests: PathfindingBenchmarkCountStatistics | null
+  readonly valhallaRouteRequests: PathfindingBenchmarkCountStatistics | null
+  readonly resultQuality: PathfindingBenchmarkQualityCounts
+  readonly validation: PathfindingBenchmarkValidationSummary
 }
 
-export interface JourneyBenchmarkModeReport {
+export interface PathfindingBenchmarkModeReport {
   readonly status: 'available' | 'partial'
-  readonly cases: readonly JourneyBenchmarkCaseReport[]
-  readonly overall: JourneyBenchmarkAggregateReport
-  readonly categories: Readonly<Record<string, JourneyBenchmarkAggregateReport>>
+  readonly cases: readonly PathfindingBenchmarkCaseReport[]
+  readonly overall: PathfindingBenchmarkAggregateReport
+  readonly categories: Readonly<Record<string, PathfindingBenchmarkAggregateReport>>
 }
 
-function summarizeStatistics(values: readonly number[]): JourneyBenchmarkStatistics | null {
+function summarizeStatistics(values: readonly number[]): PathfindingBenchmarkStatistics | null {
   if (values.length === 0) return null
   const sorted = [...values].sort((first, second) => first - second)
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length
@@ -97,7 +97,7 @@ function summarizeStatistics(values: readonly number[]): JourneyBenchmarkStatist
   }
 }
 
-function summarizeCountStatistics(values: readonly number[]): JourneyBenchmarkCountStatistics | null {
+function summarizeCountStatistics(values: readonly number[]): PathfindingBenchmarkCountStatistics | null {
   const statistics = summarizeStatistics(values)
   if (!statistics) return null
   return {
@@ -108,7 +108,7 @@ function summarizeCountStatistics(values: readonly number[]): JourneyBenchmarkCo
   }
 }
 
-export interface JourneyBenchmarkCountStatistics {
+export interface PathfindingBenchmarkCountStatistics {
   readonly mean: number
   readonly median: number
   readonly p95: number
@@ -127,11 +127,11 @@ function summarizePlanningMetric(values: readonly number[]) {
   }
 }
 
-function emptyQualityCounts(): { journeys: number; noRoutes: number; exact: number; bounded: number; invalid: number } {
-  return { journeys: 0, noRoutes: 0, exact: 0, bounded: 0, invalid: 0 }
+function emptyQualityCounts(): { paths: number; noRoutes: number; exact: number; bounded: number; invalid: number } {
+  return { paths: 0, noRoutes: 0, exact: 0, bounded: 0, invalid: 0 }
 }
 
-function countQuality(samples: readonly JourneyBenchmarkSample[]): JourneyBenchmarkQualityCounts {
+function countQuality(samples: readonly PathfindingBenchmarkSample[]): PathfindingBenchmarkQualityCounts {
   const counts = emptyQualityCounts()
   for (const sample of samples) {
     const result = sample.validation.result
@@ -143,8 +143,8 @@ function countQuality(samples: readonly JourneyBenchmarkSample[]): JourneyBenchm
       counts.noRoutes += 1
       continue
     }
-    if (result.kind !== 'journey') continue
-    counts.journeys += 1
+    if (result.kind !== 'path') continue
+    counts.paths += 1
     if (result.planningQuality === 'exact') counts.exact += 1
     if (result.planningQuality === 'bounded') counts.bounded += 1
   }
@@ -152,10 +152,10 @@ function countQuality(samples: readonly JourneyBenchmarkSample[]): JourneyBenchm
 }
 
 function summarizeValidation(
-  samples: readonly JourneyBenchmarkSample[],
+  samples: readonly PathfindingBenchmarkSample[],
   expectedSamples: number,
   setupError?: string,
-): JourneyBenchmarkValidationSummary {
+): PathfindingBenchmarkValidationSummary {
   const invalidSampleCount = samples.filter(({ validation }) => !validation.valid).length
   const validSampleCount = samples.length - invalidSampleCount
   const errors = new Set<string>()
@@ -172,9 +172,9 @@ function summarizeValidation(
 }
 
 function createCaseReport(
-  run: JourneyBenchmarkCaseRun,
+  run: PathfindingBenchmarkCaseRun,
   expectedSamples: number,
-): JourneyBenchmarkCaseReport {
+): PathfindingBenchmarkCaseReport {
   const { benchmarkCase, samples, setupError } = run
   const validation = summarizeValidation(samples, expectedSamples, setupError)
   const timing = summarizeStatistics(samples.map(({ elapsedMs }) => elapsedMs))
@@ -243,9 +243,9 @@ function createCaseReport(
   }
 }
 
-function sumQualityCounts(reports: readonly JourneyBenchmarkCaseReport[]): JourneyBenchmarkQualityCounts {
+function sumQualityCounts(reports: readonly PathfindingBenchmarkCaseReport[]): PathfindingBenchmarkQualityCounts {
   return reports.reduce((sum, report) => ({
-    journeys: sum.journeys + report.resultQuality.journeys,
+    paths: sum.paths + report.resultQuality.paths,
     noRoutes: sum.noRoutes + report.resultQuality.noRoutes,
     exact: sum.exact + report.resultQuality.exact,
     bounded: sum.bounded + report.resultQuality.bounded,
@@ -253,7 +253,7 @@ function sumQualityCounts(reports: readonly JourneyBenchmarkCaseReport[]): Journ
   }), emptyQualityCounts())
 }
 
-function aggregateValidation(reports: readonly JourneyBenchmarkCaseReport[]): JourneyBenchmarkValidationSummary {
+function aggregateValidation(reports: readonly PathfindingBenchmarkCaseReport[]): PathfindingBenchmarkValidationSummary {
   const validSampleCount = reports.reduce((sum, report) => sum + report.validation.validSampleCount, 0)
   const invalidSampleCount = reports.reduce((sum, report) => sum + report.validation.invalidSampleCount, 0)
   const errors = [...new Set(reports.flatMap((report) => report.validation.errors))]
@@ -266,7 +266,7 @@ function aggregateValidation(reports: readonly JourneyBenchmarkCaseReport[]): Jo
   return { status, validSampleCount, invalidSampleCount, errors }
 }
 
-function createAggregate(reports: readonly JourneyBenchmarkCaseReport[]): JourneyBenchmarkAggregateReport {
+function createAggregate(reports: readonly PathfindingBenchmarkCaseReport[]): PathfindingBenchmarkAggregateReport {
   const timedCases = reports.flatMap((report) => report.statistics ? [report.statistics.meanMs] : [])
   const valhallaCases = reports.flatMap((report) => report.valhalla ? [report.valhalla.meanMs] : [])
   const matrixTimeCases = reports.flatMap((report) => (
@@ -296,10 +296,10 @@ function createAggregate(reports: readonly JourneyBenchmarkCaseReport[]): Journe
   }
 }
 
-export function createJourneyBenchmarkModeReport(
-  runs: readonly JourneyBenchmarkCaseRun[],
+export function createPathfindingBenchmarkModeReport(
+  runs: readonly PathfindingBenchmarkCaseRun[],
   expectedSamples: number,
-): JourneyBenchmarkModeReport {
+): PathfindingBenchmarkModeReport {
   if (!Number.isSafeInteger(expectedSamples) || expectedSamples < 1) {
     throw new Error('Expected benchmark sample count must be a positive integer')
   }
@@ -331,15 +331,15 @@ export function shouldFailBenchmarkRun(report: {
 }
 
 export function compareBenchmarkCaseResults(
-  reports: readonly { readonly id: string; readonly cases: readonly JourneyBenchmarkCaseReport[] }[],
+  reports: readonly { readonly id: string; readonly cases: readonly PathfindingBenchmarkCaseReport[] }[],
 ): readonly {
   readonly caseId: string
   readonly results: readonly {
     readonly adapterId: string
-    readonly status: JourneyBenchmarkCaseReport['status']
+    readonly status: PathfindingBenchmarkCaseReport['status']
     readonly meanMs: number | null
     readonly planningQuality: unknown
-    readonly validation: JourneyBenchmarkValidationSummary['status']
+    readonly validation: PathfindingBenchmarkValidationSummary['status']
   }[]
   readonly outcomesMatch: boolean
 }[] {

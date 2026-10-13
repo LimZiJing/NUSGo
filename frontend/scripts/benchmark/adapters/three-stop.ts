@@ -1,66 +1,74 @@
 import {
-  createJourneyPlanningService,
-  NoJourneyAvailableError,
-} from '../../../src/app/journey-planning.js'
-import { planJourney } from '../../../src/domain/trip/planner.js'
-import type { Journey } from '../../../src/domain/trip/journey.js'
-import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
+  createFindPathsService,
+  NoPathAvailableError,
+} from '../../../src/pathfinding/find-paths.js'
+import { searchPaths } from '../../../src/pathfinding/search/search-path-candidates.js'
+import type { Path } from '../../../src/pathfinding/path.js'
+import { createWalkingConnectionProvider } from '../../../src/pathfinding/walking/walking-connections.js'
 import type {
-  JourneyBenchmarkAdapterFactory,
-  JourneyBenchmarkOutcome,
+  PathfindingBenchmarkAdapterFactory,
+  PathfindingBenchmarkOutcome,
 } from '../contract.js'
 
-function asOutcome(journey: Journey | null): JourneyBenchmarkOutcome {
-  if (!journey) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
-  return { kind: 'journey', journey }
+function asOutcome(path: Path | null): PathfindingBenchmarkOutcome {
+  if (!path) return { kind: 'no-route', reason: 'The Path service returned no route.' }
+  return { kind: 'path', path }
 }
 
 function createAbortError(): Error {
-  const error = new Error('The benchmark Journey was cancelled')
+  const error = new Error('The benchmark Path was cancelled')
   error.name = 'AbortError'
   return error
 }
 
-export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () => ({
+export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFactory = () => ({
   id: 'three-stop-single-shuttle',
   label: 'Three-stop single-shuttle planner',
 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {
       if (signal.aborted) throw createAbortError()
-      const journey = planJourney(benchmarkCase.searchInput)
+      const path = searchPaths(benchmarkCase.searchInput)
       if (signal.aborted) throw createAbortError()
-      return asOutcome(journey)
+      return asOutcome(path)
     }
   },
 
-  createJourneyRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
+  createPathRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
     const walkingConnectionProvider = createWalkingConnectionProvider({
       routeEngine,
       loadGraph: async () => walkingGraph,
     })
-    const service = createJourneyPlanningService(
+    const arrivals = createArrivalClient(benchmarkCase)
+    const serviceHours = createServiceHoursClient?.(benchmarkCase)
+    const service = createFindPathsService({
       routeEngine,
-      createArrivalClient(benchmarkCase),
-      createServiceHoursClient?.(benchmarkCase),
-      now,
       walkingConnectionProvider,
-    )
+      getArrivals: (stops, signal) => arrivals.getArrivals(stops, signal),
+      getServiceWindows: serviceHours
+        ? (routeIds, signal) => serviceHours.getServiceWindows(routeIds, signal)
+        : undefined,
+      getTestDepartureMs: () => null,
+      now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
 
     return async (signal) => {
       try {
-        const journey = await service({
-          tripRequest: {
-            origin: benchmarkCase.origin,
-            destination: benchmarkCase.destination,
-          },
+        const result = await service({
+          origin: benchmarkCase.origin,
+          destination: benchmarkCase.destination,
           venues,
-          transit,
-          signal,
-        })
-        return asOutcome(journey)
+          transit: {
+            index: transit.index,
+            geometry: transit.geometry,
+            shuttleTiming: transit.shuttleTiming,
+          },
+        }, { signal })
+        return asOutcome(result?.candidates[0]?.path ?? null)
       } catch (error) {
-        if (error instanceof NoJourneyAvailableError) {
+        if (error instanceof NoPathAvailableError) {
           return { kind: 'no-route', reason: error.message }
         }
         throw error

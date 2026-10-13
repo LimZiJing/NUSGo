@@ -8,9 +8,9 @@ import type {
   MapViewportInsets,
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
+import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
@@ -22,7 +22,7 @@ import {
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { createVenueMarker, type VenueMarker } from './venue-markers'
-import { createJourneyRouteLayers, type JourneyRouteLayers } from './journey'
+import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
@@ -63,10 +63,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
-  let currentJourney: Journey | null = null
+  let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
-  // The planned Journey belongs to Plan: other menus hide its layers but keep it so returning restores it.
+  // Keep the selected Path while Plan is hidden so returning to Plan restores the same route.
   let planLayersVisible = true
   let viewportInsetsReady = false
   let transitData: LoadedTransitData | null = null
@@ -161,7 +161,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const fitJourneyOptions = (options: readonly MapJourneyOption[]): void => {
-    const coordinates = options.flatMap(({ journey }) => journey.legs.flatMap((leg) => (
+    const coordinates = options.flatMap(({ path }) => path.legs.flatMap((leg) => (
       leg.geometry.coordinates.filter(([longitude, latitude]) => (
         Number.isFinite(longitude) && Number.isFinite(latitude)
       ))
@@ -194,7 +194,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     planLayersVisible ? currentJourneyOptions : []
   )
 
-  const getDisplayedJourney = (): Journey | null => planLayersVisible ? currentJourney : null
+  const getDisplayedPath = (): Path | null => planLayersVisible ? currentPath : null
 
   const clearEndpointMarkers = () => {
     endpointMarkers?.dispose()
@@ -228,7 +228,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const installJourneyRouteLayers = (): void => {
     const displayedOptions = getDisplayedJourneyOptions()
     if (displayedOptions.length === 0 || journeyRouteLayers) return
-    const nextJourneyRouteLayers = createJourneyRouteLayers(
+    const nextJourneyRouteLayers = createPathLayers(
       map,
       currentTransitIndex,
       options.onJourneyOptionSelected,
@@ -251,15 +251,15 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const getJourneyStopRoutes = (): ReadonlyMap<string, readonly JourneyStopRoute[]> | null => {
-    const displayedJourney = getDisplayedJourney()
-    if (displayedJourney === null) return null
+    const displayedPath = getDisplayedPath()
+    if (displayedPath === null) return null
     const stopRoutes = new Map<string, JourneyStopRoute[]>()
     if (!currentTransitIndex) return stopRoutes
 
-    for (const leg of displayedJourney.legs) {
+    for (const leg of displayedPath.legs) {
       if (leg.mode !== 'shuttle') continue
       const route = currentTransitIndex.routeById.get(leg.routeId) ?? null
-      const stopIds = getShuttleJourneyLegStopIds(leg, route)
+      const stopIds = getBusPathLegStopIds(leg, route)
       if (!route || !stopIds) continue
 
       for (const stopId of stopIds) {
@@ -274,7 +274,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const applyJourneyPresentation = (): void => {
-    const journeyActive = getDisplayedJourney() !== null
+    const journeyActive = getDisplayedPath() !== null
     transitRouteLayers?.setJourneyActive(journeyActive)
     shuttleStopMarkers?.setJourneyStops(getJourneyStopRoutes())
   }
@@ -362,7 +362,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       applyRouteSelection(currentRouteSelection)
 
       if (!fit) pendingCameraFit = null
-      if (fit && nextRouteId !== previousRouteId && transitData && getDisplayedJourney() === null) {
+      if (fit && nextRouteId !== previousRouteId && transitData && getDisplayedPath() === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
@@ -429,10 +429,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       selectedJourneyCandidateKey = currentJourneyOptions.some(({ candidateKey }) => (
         candidateKey === selectedCandidateKey
       )) ? selectedCandidateKey : null
-      currentJourney = currentJourneyOptions.find(({ candidateKey }) => (
+      currentPath = currentJourneyOptions.find(({ candidateKey }) => (
         candidateKey === selectedJourneyCandidateKey
-      ))?.journey ?? null
-      if (currentJourney !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
+      ))?.path ?? null
+      if (currentPath !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
       if (currentJourneyOptions.length === 0 && pendingCameraFit?.kind === 'journey') {
         pendingCameraFit = null
       }
@@ -449,7 +449,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       } catch (error) {
         currentJourneyOptions = []
         selectedJourneyCandidateKey = null
-        currentJourney = null
+        currentPath = null
         clearJourneyRouteLayers()
         applyJourneyPresentation()
         options.onMapError(error)
@@ -576,7 +576,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearVenueMarker()
       clearEndpointMarkers()
       clearTransitData()
-      currentJourney = null
+      currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
       lifecycle.dispose()

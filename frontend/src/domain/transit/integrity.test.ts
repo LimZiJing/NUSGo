@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { validateTransitNetwork, validateTransitVerificationManifest } from '@navus/shared/transit/model'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
@@ -10,7 +10,7 @@ function readJson(path: string): unknown {
 describe('checked-in transit integrity gate', () => {
   it('accepts the committed network, route geometry, and verification manifest together', () => {
     const network = validateTransitNetwork(readJson('../../../public/data/shuttle-network.json'))
-    const geometry = validateTransitRouteGeometry(
+    const geometry = validateBusRouteGeometry(
       network,
       readJson('../../../public/data/shuttle-routes.geojson'),
     )

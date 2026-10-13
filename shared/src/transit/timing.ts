@@ -1,8 +1,8 @@
 import type {
   TransitGeoJsonPosition,
   TransitNetwork,
-  TransitRoute,
-  TransitRouteGeometry,
+  BusRoute,
+  BusRouteGeometry,
 } from './types.ts'
 
 export const SHUTTLE_TIMING_DATA_VERSION = 1
@@ -183,7 +183,7 @@ function selectOrderedProjections(
 }
 
 function routeProjections(
-  route: TransitRoute,
+  route: BusRoute,
   network: TransitNetwork,
   line: readonly TransitGeoJsonPosition[],
 ): readonly LineProjection[] | null {
@@ -197,7 +197,7 @@ function routeProjections(
 }
 
 function createUnavailableRecord(
-  route: TransitRoute,
+  route: BusRoute,
   fromStopId: string,
   toStopId: string,
   geometryVerifiedAt: string,
@@ -223,7 +223,7 @@ function createUnavailableRecord(
 
 export function generateShuttleTimingData(
   network: TransitNetwork,
-  geometry: TransitRouteGeometry,
+  geometry: BusRouteGeometry,
   generatedAt: string,
 ): ShuttleTimingData {
   if (!isDate(generatedAt)) throw new Error('Shuttle timing generatedAt must be a YYYY-MM-DD date')

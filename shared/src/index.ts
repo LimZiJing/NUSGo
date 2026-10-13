@@ -7,7 +7,7 @@ export {
   validateTransitNetwork,
   validateTransitVerificationManifest,
 } from './transit/model.ts'
-export { validateTransitRouteGeometry } from './transit/geometry.ts'
+export { validateBusRouteGeometry } from './transit/geometry.ts'
 export { validateTransitMapData } from './transit/map-data.ts'
 export {
   generateShuttleTimingData,
@@ -23,10 +23,10 @@ export type {
   TransitGeoJsonPosition,
   TransitNetwork,
   TransitNetworkMetadata,
-  TransitRoute,
-  TransitRouteGeometry,
-  TransitRouteGeometryFeature,
-  TransitRouteGeometryProperties,
+  BusRoute,
+  BusRouteGeometry,
+  BusRouteGeometryFeature,
+  BusRouteGeometryProperties,
   TransitStop,
   TransitVerificationManifest,
 } from './transit/types.ts'

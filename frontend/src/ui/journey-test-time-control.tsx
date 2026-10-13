@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { formatSingaporeDateTime, parseSingaporeDateTime } from '../domain/trip/journey-test-clock'
+import { formatSingaporeDateTime, parseSingaporeDateTime } from '../domain/trip/simulated-time'
 import './styles/shared/controls/journey-test-time.css'
 
 interface JourneyTestTimeControlProps {

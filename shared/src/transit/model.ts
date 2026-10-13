@@ -1,7 +1,7 @@
 import type {
   TransitNetwork,
   TransitNetworkMetadata,
-  TransitRoute,
+  BusRoute,
   TransitStop,
   TransitVerificationManifest,
 } from './types.ts'
@@ -64,7 +64,7 @@ function createTransitNetworkSnapshot(input: Record<string, unknown>): TransitNe
     coordinateSource: requireValidatedText(metadataInput.coordinateSource, 'metadata coordinateSource'),
   })
 
-  const routes = routesInput.map((value): TransitRoute => {
+  const routes = routesInput.map((value): BusRoute => {
     if (!isRecord(value) || !Array.isArray(value.stopIds) ||
       typeof value.id !== 'string' || typeof value.name !== 'string' || typeof value.color !== 'string' ||
       !value.stopIds.every((stopId): stopId is string => typeof stopId === 'string')) {

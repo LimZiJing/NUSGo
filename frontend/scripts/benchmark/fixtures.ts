@@ -1,14 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import type { LoadedTransitData } from '../../src/app/contracts/data.js'
-import type { JourneyEndpointLocation } from '../../src/domain/trip/journey.js'
+import type { PathEndpointLocation } from '../../src/pathfinding/path.js'
 import {
-  createLiveShuttleWaitingTimeProvider,
-} from '../../src/domain/trip/live-waiting.js'
+  createLiveBusWaitingTimeProvider,
+} from '../../src/pathfinding/pipeline/apply-bus-waits.js'
 import type {
-  PlanJourneyInput,
-  WalkingJourneyConnection,
-} from '../../src/domain/trip/planner.js'
+  PathSearchInput,
+  PathWalkingConnection,
+} from '../../src/pathfinding/search/search-path-candidates.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
 import { validateTransitMapData } from '@navus/shared/transit/map-data'
@@ -18,9 +18,9 @@ import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
 import type {
-  JourneyBenchmarkManifest,
-  JourneyBenchmarkManifestCase,
-  JourneyBenchmarkTimingProfile,
+  PathfindingBenchmarkManifest,
+  PathfindingBenchmarkManifestCase,
+  PathfindingBenchmarkTimingProfile,
 } from './manifest.js'
 import {
   applyBenchmarkShuttleTimingProfile,
@@ -28,27 +28,27 @@ import {
   createBenchmarkServiceWindows,
 } from './profiles.js'
 
-export interface JourneyBenchmarkFixtures {
+export interface PathfindingBenchmarkFixtures {
   readonly transit: LoadedTransitData
   readonly venues: VenueLocationMap
   readonly walkingGraph: ReturnType<typeof validateWalkingStopGraph>
 }
 
-export interface PreparedJourneyBenchmarkCase extends Omit<JourneyBenchmarkManifestCase, 'timingProfile'> {
+export interface PreparedPathfindingBenchmarkCase extends Omit<PathfindingBenchmarkManifestCase, 'timingProfile'> {
   readonly arrivalSeconds: number
   readonly arrivalSnapshot: ShuttleArrivalSnapshot
   readonly transit: LoadedTransitData
-  readonly timingProfile: JourneyBenchmarkTimingProfile
-  readonly searchInput: PlanJourneyInput
+  readonly timingProfile: PathfindingBenchmarkTimingProfile
+  readonly searchInput: PathSearchInput
 }
 
 async function readJson(root: string, path: string): Promise<unknown> {
   return JSON.parse(await readFile(resolve(root, path), 'utf8')) as unknown
 }
 
-export async function loadJourneyBenchmarkFixtures(
+export async function loadPathfindingBenchmarkFixtures(
   root = process.cwd(),
-): Promise<JourneyBenchmarkFixtures> {
+): Promise<PathfindingBenchmarkFixtures> {
   const [networkInput, geometryInput, venuesInput, walkingGraphInput] = await Promise.all([
     readJson(root, 'public/data/shuttle-network.json'),
     readJson(root, 'public/data/shuttle-routes.geojson'),
@@ -71,7 +71,7 @@ export async function loadJourneyBenchmarkFixtures(
 }
 
 function endpointCoordinate(
-  endpoint: JourneyBenchmarkManifestCase['origin'],
+  endpoint: PathfindingBenchmarkManifestCase['origin'],
   venues: VenueLocationMap,
   transit: LoadedTransitData,
 ): { readonly longitude: number; readonly latitude: number } {
@@ -98,11 +98,11 @@ function distanceMeters(
 }
 
 function toWalkingConnection(
-  from: JourneyBenchmarkManifestCase['origin'],
-  to: JourneyBenchmarkManifestCase['destination'],
+  from: PathfindingBenchmarkManifestCase['origin'],
+  to: PathfindingBenchmarkManifestCase['destination'],
   fromCoordinate: { readonly longitude: number; readonly latitude: number },
   toCoordinate: { readonly longitude: number; readonly latitude: number },
-): WalkingJourneyConnection {
+): PathWalkingConnection {
   const distance = Math.max(1, Math.round(distanceMeters(fromCoordinate, toCoordinate)))
   return {
     from,
@@ -120,13 +120,13 @@ function toWalkingConnection(
 }
 
 function createOfflineWalkingConnections(
-  benchmarkCase: JourneyBenchmarkManifestCase,
-  fixtures: JourneyBenchmarkFixtures,
-): readonly WalkingJourneyConnection[] {
+  benchmarkCase: PathfindingBenchmarkManifestCase,
+  fixtures: PathfindingBenchmarkFixtures,
+): readonly PathWalkingConnection[] {
   const { transit, venues, walkingGraph } = fixtures
   const originStopId = benchmarkCase.origin.kind === 'stop' ? benchmarkCase.origin.id : null
   const destinationStopId = benchmarkCase.destination.kind === 'stop' ? benchmarkCase.destination.id : null
-  const connections: WalkingJourneyConnection[] = walkingGraph.connections.flatMap((connection) => {
+  const connections: PathWalkingConnection[] = walkingGraph.connections.flatMap((connection) => {
     const fromStopId = connection.fromKey.slice('stop:'.length)
     const toStopId = connection.toKey.slice('stop:'.length)
     const from = transit.index.stopById.get(fromStopId)
@@ -184,10 +184,10 @@ function createOfflineWalkingConnections(
   return connections
 }
 
-export function createJourneyBenchmarkCases(
-  manifest: JourneyBenchmarkManifest,
-  fixtures: JourneyBenchmarkFixtures,
-): readonly PreparedJourneyBenchmarkCase[] {
+export function createPathfindingBenchmarkCases(
+  manifest: PathfindingBenchmarkManifest,
+  fixtures: PathfindingBenchmarkFixtures,
+): readonly PreparedPathfindingBenchmarkCase[] {
   const fixedNowMs = Date.parse(manifest.fixedNow)
   const profileById = new Map(manifest.profiles.map((profile) => [profile.id, profile]))
   return manifest.cases.map((definition) => {
@@ -208,19 +208,19 @@ export function createJourneyBenchmarkCases(
       ...fixtures.transit,
       shuttleTiming: { ...fixtures.transit.shuttleTiming, records: timingRecords },
     }
-    const origin: JourneyEndpointLocation = {
+    const origin: PathEndpointLocation = {
       endpoint: definition.origin,
       coordinate: endpointCoordinate(definition.origin, fixtures.venues, fixtures.transit),
     }
-    const destination: JourneyEndpointLocation = {
+    const destination: PathEndpointLocation = {
       endpoint: definition.destination,
       coordinate: endpointCoordinate(definition.destination, fixtures.venues, fixtures.transit),
     }
     const windows = createBenchmarkServiceWindows(profile, fixedNowMs)(
       fixtures.transit.index.routes.map(({ id }) => id),
     )
-    const liveWaiting = createLiveShuttleWaitingTimeProvider(arrivalSnapshot, fixedNowMs)
-    const getShuttleWaitingSeconds: PlanJourneyInput['getShuttleWaitingSeconds'] = (record, context) => {
+    const liveWaiting = createLiveBusWaitingTimeProvider(arrivalSnapshot, fixedNowMs)
+    const getShuttleWaitingSeconds: PathSearchInput['getShuttleWaitingSeconds'] = (record, context) => {
       const wait = liveWaiting(record, context)
       if (wait === null) return null
       const boardingAt = new Date(fixedNowMs + (context.elapsedSeconds + wait) * 1000)
@@ -228,7 +228,7 @@ export function createJourneyBenchmarkCases(
         ? wait
         : null
     }
-    const searchInput: PlanJourneyInput = {
+    const searchInput: PathSearchInput = {
       origin,
       destination,
       transitIndex: fixtures.transit.index,
@@ -249,7 +249,7 @@ export function createJourneyBenchmarkCases(
 }
 
 export function createBenchmarkServiceHoursClient(
-  benchmarkCase: PreparedJourneyBenchmarkCase,
+  benchmarkCase: PreparedPathfindingBenchmarkCase,
   nowMs: number,
 ): {
   getServiceWindows(routeIds: readonly string[], signal: AbortSignal): Promise<Readonly<Record<string, readonly import('../../src/domain/transit/service-hours.js').ShuttleServiceWindow[]>>>

@@ -6,8 +6,8 @@ import {
 } from '../../domain/transit/test-fixtures'
 import { createTransitIndex } from '../../domain/transit'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import type { TransitRouteGeometry } from '@navus/shared/transit/types'
-import type { Journey } from '../../domain/trip/journey'
+import type { BusRouteGeometry } from '@navus/shared/transit/types'
+import type { Path } from '../../pathfinding/path'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
@@ -275,7 +275,7 @@ function createTransitData(routeId = 'A1', color = '#123456') {
   network.stops.forEach((stop) => {
     stop.services = [routeId, ...(stop.id === 'STOP-A' ? ['PUB:95'] : [])]
   })
-  const geometry: TransitRouteGeometry = {
+  const geometry: BusRouteGeometry = {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -299,7 +299,7 @@ function createRouteSelection(data: ReturnType<typeof createTransitData>) {
   }
 }
 
-function createJourney(): Journey {
+function createPath(): Path {
   return {
     origin: { kind: 'venue', id: 'ORIGIN' },
     destination: { kind: 'venue', id: 'DESTINATION' },
@@ -320,17 +320,17 @@ function createJourney(): Journey {
 
 function setSingleJourney(
   session: ReturnType<typeof createMapSession>,
-  journey: Journey | null,
+  path: Path | null,
 ): void {
   session.setJourneyOptions(
-    journey ? [{ candidateKey: 'selected', journey }] : [],
-    journey ? 'selected' : null,
+    path ? [{ candidateKey: 'selected', path }] : [],
+    path ? 'selected' : null,
   )
 }
 
 function createTwoRouteTransitData() {
   const index = createTransitIndex(createTransferTransitNetwork())
-  const geometry: TransitRouteGeometry = {
+  const geometry: BusRouteGeometry = {
     type: 'FeatureCollection',
     features: [
       {
@@ -378,7 +378,7 @@ function createJourneyStopTransitData() {
     },
   )
   const index = createTransitIndex(network)
-  const geometry: TransitRouteGeometry = {
+  const geometry: BusRouteGeometry = {
     type: 'FeatureCollection',
     features: [
       {
@@ -405,7 +405,7 @@ function createJourneyStopTransitData() {
   }
 }
 
-function createTransferJourney(): Journey {
+function createTransferJourney(): Path {
   return {
     origin: { kind: 'stop', id: 'STOP-A' },
     destination: { kind: 'stop', id: 'STOP-C' },
@@ -444,7 +444,7 @@ function createTransferJourney(): Journey {
   }
 }
 
-function createSingleRouteJourney(): Journey {
+function createSingleRouteJourney(): Path {
   return {
     origin: { kind: 'stop', id: 'STOP-B' },
     destination: { kind: 'stop', id: 'STOP-C' },
@@ -456,7 +456,7 @@ function createSingleRouteJourney(): Journey {
   }
 }
 
-function createShuttleJourney(): Journey {
+function createBusPath(): Path {
   return {
     origin: { kind: 'stop', id: 'STOP-A' },
     destination: { kind: 'stop', id: 'STOP-B' },
@@ -660,7 +660,7 @@ describe('MapSession', () => {
     }
 
     await session.ready
-    setSingleJourney(session, createJourney())
+    setSingleJourney(session, createPath())
     expect(map.layers).toEqual(new Set([
       'journey-alternative-casing',
       'journey-alternative-walking-lines',
@@ -693,8 +693,8 @@ describe('MapSession', () => {
       sourceData: globalThis.Map<string, { setData: ReturnType<typeof vi.fn> }>
     }
     const options = [
-      { candidateKey: 'bus', journey: createJourney() },
-      { candidateKey: 'walking', journey: createTransferJourney() },
+      { candidateKey: 'bus', path: createPath() },
+      { candidateKey: 'walking', path: createTransferJourney() },
     ]
     const insets = { top: 32, right: 12, bottom: 184, left: 20 }
 
@@ -744,7 +744,7 @@ describe('MapSession', () => {
       TWO: { roomName: 'Two', location: { x: 103.8, y: 1.4 } },
     }
     const request = { origin: { kind: 'venue', id: 'ONE' }, destination: { kind: 'venue', id: 'TWO' } } as const
-    const options = [{ candidateKey: 'bus', journey: createJourney() }]
+    const options = [{ candidateKey: 'bus', path: createPath() }]
 
     await session.ready
     session.setTripRequest(request, venues, null)
@@ -789,8 +789,8 @@ describe('MapSession', () => {
     }
     await session.ready
     session.setJourneyOptions([
-      { candidateKey: 'option-a', journey: createJourney() },
-      { candidateKey: 'option-b', journey: createJourney() },
+      { candidateKey: 'option-a', path: createPath() },
+      { candidateKey: 'option-b', path: createPath() },
     ], 'option-a')
     map.queryRenderedFeatures.mockReturnValue([{ properties: { candidateKey: 'option-b' } }])
 
@@ -819,8 +819,8 @@ describe('MapSession', () => {
 
     await session.ready
     session.setJourneyOptions([
-      { candidateKey: 'bus', journey: createJourney() },
-      { candidateKey: 'walking', journey: createTransferJourney() },
+      { candidateKey: 'bus', path: createPath() },
+      { candidateKey: 'walking', path: createTransferJourney() },
     ], 'bus', true)
 
     expect(map.fitBounds).not.toHaveBeenCalled()
@@ -852,8 +852,8 @@ describe('MapSession', () => {
     await session.ready
     session.setViewportInsets({ top: 84, right: 12, bottom: 162, left: 12 })
     session.setJourneyOptions([
-      { candidateKey: 'bus', journey: createJourney() },
-      { candidateKey: 'walking', journey: createTransferJourney() },
+      { candidateKey: 'bus', path: createPath() },
+      { candidateKey: 'walking', path: createTransferJourney() },
     ], 'bus', true)
 
     expect(map.fitBounds).toHaveBeenLastCalledWith(
@@ -980,7 +980,7 @@ describe('MapSession', () => {
     const stopCPopup = stopCMarker?.getPopup()
     stopCPopup?.show()
 
-    setSingleJourney(session, createShuttleJourney())
+    setSingleJourney(session, createBusPath())
     session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
 
     expect(map.fitBounds).not.toHaveBeenCalled()
@@ -1031,7 +1031,7 @@ describe('MapSession', () => {
     const stopMarkers = map.addedMarkers.slice(-transitData.index.stops.length)
     map.failingLayers.add('journey-selected-walking-lines')
 
-    setSingleJourney(session, createShuttleJourney())
+    setSingleJourney(session, createBusPath())
 
     expect(onMapError).toHaveBeenCalledWith(new Error('Unable to add journey-selected-walking-lines'))
     expect(map.layoutProperties.get('shuttle-route-lines:visibility')).toBe('visible')

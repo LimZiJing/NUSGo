@@ -6,15 +6,15 @@ import {
   getPlanSheetSummary,
   getStopsSheetSummary,
 } from './mobile-sheet-summary'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 
 const stop = { longName: 'Kent Ridge MRT' }
 
-function createJourney(modes: readonly ('walking' | 'shuttle')[], totalDurationSeconds: number): Journey {
+function createPath(modes: readonly ('walking' | 'shuttle')[], totalDurationSeconds: number): Path {
   return {
     legs: modes.map((mode) => ({ mode })),
     totalDurationSeconds,
-  } as unknown as Journey
+  } as unknown as Path
 }
 
 describe('mobile sheet summaries', () => {
@@ -70,11 +70,11 @@ describe('mobile sheet summaries', () => {
     })
 
     it('summarises the planned Journey by duration', () => {
-      const ready = (journey: Journey) => ({ ...createInitialJourneyState(), status: 'ready' as const, journey })
+      const ready = (path: Path) => ({ ...createInitialJourneyState(), status: 'ready' as const, path })
 
-      expect(getPlanSheetSummary(request, ready(createJourney(['walking'], 14 * 60 - 20))))
+      expect(getPlanSheetSummary(request, ready(createPath(['walking'], 14 * 60 - 20))))
         .toBe('Plan trip · 14 min walk')
-      expect(getPlanSheetSummary(request, ready(createJourney(['walking', 'shuttle', 'walking'], 25 * 60))))
+      expect(getPlanSheetSummary(request, ready(createPath(['walking', 'shuttle', 'walking'], 25 * 60))))
         .toBe('Plan trip · 25 min Journey')
     })
   })

@@ -9,7 +9,7 @@ import {
 } from './loaders'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import { TransitValidationError, validateTransitNetwork } from '@navus/shared/transit/model'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { VenueValidationError } from '@navus/shared/venue/validation'
 
 function readJson(path: string): unknown {
@@ -21,7 +21,7 @@ const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
 const buildings = readJson('../../../public/data/buildings.json')
 const validatedNetwork = validateTransitNetwork(network)
-const validatedGeometry = validateTransitRouteGeometry(validatedNetwork, geometry)
+const validatedGeometry = validateBusRouteGeometry(validatedNetwork, geometry)
 const timing = generateShuttleTimingData(validatedNetwork, validatedGeometry, '2026-09-22')
 
 function createFetcher(payloads: Record<string, unknown>): JsonFetcher {

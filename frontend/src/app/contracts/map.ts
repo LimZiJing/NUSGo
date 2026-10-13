@@ -1,9 +1,9 @@
 import type { TransitIndex } from '../../domain/transit'
 import type {
-  TransitRoute,
+  BusRoute,
 } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import type { LoadedTransitData } from './data'
@@ -36,13 +36,13 @@ export type MapResetTarget =
   | { readonly kind: 'campus'; readonly center: MapCoordinate; readonly zoom: number }
 
 export interface MapRouteSelection {
-  readonly route: TransitRoute | null
+  readonly route: BusRoute | null
   readonly overlappingRouteIds: ReadonlySet<string>
 }
 
 export interface MapJourneyOption {
   readonly candidateKey: string
-  readonly journey: Journey
+  readonly path: Path
 }
 
 /**

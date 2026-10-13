@@ -11,9 +11,9 @@ import {
 } from './transit'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { TransitRouteGeometry } from '@navus/shared/transit/types'
+import type { BusRouteGeometry } from '@navus/shared/transit/types'
 
-function createValidGeometry(): TransitRouteGeometry {
+function createValidGeometry(): BusRouteGeometry {
   return {
     type: 'FeatureCollection',
     features: [{

@@ -234,9 +234,9 @@ describe('PlanView interactions', () => {
     await user.click(submit)
     expect(onPlanJourney).toHaveBeenCalledOnce()
 
-    rerender(<PlanView {...controls} journey={{
+    rerender(<PlanView {...controls} path={{
       status: 'loading',
-      journey: null,
+      path: null,
       candidates: [],
       error: null,
     }} />)

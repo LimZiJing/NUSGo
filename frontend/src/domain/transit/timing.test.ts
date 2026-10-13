@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
-import type { TransitRouteGeometry } from '@navus/shared/transit/types'
+import type { BusRouteGeometry } from '@navus/shared/transit/types'
 import { createValidTransitNetwork } from './test-fixtures'
 import {
   generateShuttleTimingData,
@@ -23,7 +23,7 @@ function createTimingNetwork() {
   return validateTransitNetwork(input)
 }
 
-function createTimingGeometry(): TransitRouteGeometry {
+function createTimingGeometry(): BusRouteGeometry {
   return {
     type: 'FeatureCollection',
     features: [{
@@ -87,7 +87,7 @@ describe('shuttle timing', () => {
     input.stops[1].latitude = 1.001
     input.stops[1].longitude = 103
     const network = validateTransitNetwork(input)
-    const geometry: TransitRouteGeometry = {
+    const geometry: BusRouteGeometry = {
       type: 'FeatureCollection',
       features: [{
         type: 'Feature',

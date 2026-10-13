@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { planJourneyWithinBudget } from '../../src/domain/trip/planner'
-import { loadJourneyBenchmarkManifest } from './manifest'
-import { createJourneyBenchmarkCases, loadJourneyBenchmarkFixtures } from './fixtures'
-import { validateJourneyBenchmarkOutcome } from './outcome'
+import { searchPathsWithinBudget } from '../../src/pathfinding/search/search-path-candidates'
+import { loadPathfindingBenchmarkManifest } from './manifest'
+import { createPathfindingBenchmarkCases, loadPathfindingBenchmarkFixtures } from './fixtures'
+import { validatePathfindingBenchmarkOutcome } from './outcome'
 
-describe('manifest Journey correctness cases', () => {
+describe('manifest Path correctness cases', () => {
   it('runs and validates all 50 cases with fixed local fixtures', async () => {
     const [manifest, fixtures] = await Promise.all([
-      loadJourneyBenchmarkManifest(),
-      loadJourneyBenchmarkFixtures(),
+      loadPathfindingBenchmarkManifest(),
+      loadPathfindingBenchmarkFixtures(),
     ])
-    const cases = createJourneyBenchmarkCases(manifest, fixtures)
+    const cases = createPathfindingBenchmarkCases(manifest, fixtures)
     const results = await Promise.all(cases.map(async (benchmarkCase) => {
       let clockTicks = 0
-      const result = await planJourneyWithinBudget(benchmarkCase.searchInput, {
+      const result = await searchPathsWithinBudget(benchmarkCase.searchInput, {
         maxExpandedPaths: 10_000,
         now: () => clockTicks++,
         yieldEvery: 0,
       })
-      const validations = result.candidates.map(({ journey }) => validateJourneyBenchmarkOutcome(
-        { kind: 'journey', journey },
+      const validations = result.candidates.map(({ path }) => validatePathfindingBenchmarkOutcome(
+        { kind: 'path', path },
         benchmarkCase,
         benchmarkCase.transit,
         fixtures.venues,
@@ -27,8 +27,8 @@ describe('manifest Journey correctness cases', () => {
       ))
       const validation = validations.find((candidate) => candidate.valid) ?? (
         result.candidates.length === 0
-          ? validateJourneyBenchmarkOutcome(
-            { kind: 'no-route', reason: 'No journey was found for the fixed case.' },
+          ? validatePathfindingBenchmarkOutcome(
+            { kind: 'no-route', reason: 'No path was found for the fixed case.' },
             benchmarkCase,
             benchmarkCase.transit,
             fixtures.venues,

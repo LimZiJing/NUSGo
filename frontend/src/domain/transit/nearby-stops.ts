@@ -1,17 +1,17 @@
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { getDistanceMeters } from '../location/coordinates'
 import type { TransitIndex } from './index'
-import type { TransitRoute, TransitStop } from '@navus/shared/transit/types'
+import type { BusRoute, TransitStop } from '@navus/shared/transit/types'
 
 const MAX_NEARBY_STOP_DISTANCE_METERS = 500
 const MAX_NEARBY_STOP_COUNT = 3
 
 export interface NearbyShuttleStop {
   readonly stop: TransitStop
-  readonly services: readonly TransitRoute[]
+  readonly services: readonly BusRoute[]
 }
 
-function getInternalServices(stop: TransitStop, transitIndex: TransitIndex): TransitRoute[] {
+function getInternalServices(stop: TransitStop, transitIndex: TransitIndex): BusRoute[] {
   return stop.services.flatMap((serviceId) => {
     const route = transitIndex.routeById.get(serviceId)
     return route ? [route] : []

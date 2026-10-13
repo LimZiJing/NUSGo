@@ -3,14 +3,14 @@ import type {
   WalkingMatrixRequest,
   WalkingRouteEngine,
   WalkingRouteRequest,
-} from '../../src/app/contracts/routing.js'
-import type { JourneyBenchmarkMatrixResult } from './outcome.js'
+} from '../../src/pathfinding/walking/walking-contracts.js'
+import type { PathfindingBenchmarkMatrixResult } from './outcome.js'
 
 export interface MeasuredWalkingRouteEngine extends WalkingRouteEngine {
   readonly elapsedMs: number
   readonly matrixElapsedMs: number
   readonly routeElapsedMs: number
-  readonly matrixRequests: readonly JourneyBenchmarkMatrixResult[]
+  readonly matrixRequests: readonly PathfindingBenchmarkMatrixResult[]
   readonly requestCounts: { readonly matrix: number; readonly route: number }
   reset(): void
 }
@@ -23,7 +23,7 @@ export function createMeasuredRouteEngine(
   let routeElapsedMs = 0
   let matrixRequestCount = 0
   let routeRequestCount = 0
-  const matrixRequests: JourneyBenchmarkMatrixResult[] = []
+  const matrixRequests: PathfindingBenchmarkMatrixResult[] = []
 
   return {
     reset() {

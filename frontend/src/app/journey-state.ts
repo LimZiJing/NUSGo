@@ -1,13 +1,13 @@
-import type { Journey } from '../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../domain/trip/planner'
+import type { Path } from '../pathfinding/path'
+import type { ScoredPathCandidate } from '../pathfinding/path'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 
 export interface JourneyState {
   readonly status: JourneyStatus
-  readonly journey: Journey | null
-  readonly candidates: readonly ScoredJourneyCandidate[]
-  readonly displayedCandidates: readonly ScoredJourneyCandidate[]
+  readonly path: Path | null
+  readonly candidates: readonly ScoredPathCandidate[]
+  readonly displayedCandidates: readonly ScoredPathCandidate[]
   readonly selectedCandidateKey: string | null
   readonly error: string | null
 }
@@ -15,7 +15,7 @@ export interface JourneyState {
 export function createInitialJourneyState(): JourneyState {
   return {
     status: 'idle',
-    journey: null,
+    path: null,
     candidates: [],
     displayedCandidates: [],
     selectedCandidateKey: null,

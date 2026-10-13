@@ -1,26 +1,26 @@
 import {
-  createJourneyPlanningService,
-  NoJourneyAvailableError,
-} from '../../../src/app/journey-planning.js'
-import { planJourneyWithinBudget } from '../../../src/domain/trip/planner.js'
-import type { Journey } from '../../../src/domain/trip/journey.js'
-import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
+  createFindPathsService,
+  NoPathAvailableError,
+} from '../../../src/pathfinding/find-paths.js'
+import { searchPathsWithinBudget } from '../../../src/pathfinding/search/search-path-candidates.js'
+import type { Path } from '../../../src/pathfinding/path.js'
+import { createWalkingConnectionProvider } from '../../../src/pathfinding/walking/walking-connections.js'
 import type {
-  JourneyBenchmarkAdapterFactory,
-  JourneyBenchmarkOutcome,
+  PathfindingBenchmarkAdapterFactory,
+  PathfindingBenchmarkOutcome,
 } from '../contract.js'
 
-const JOURNEY_SEARCH_MAX_DURATION_MS = 350
-const JOURNEY_SEARCH_MAX_EXPANDED_PATHS = 10_000
+const PATHFINDING_SEARCH_MAX_DURATION_MS = 350
+const PATHFINDING_SEARCH_MAX_EXPANDED_PATHS = 10_000
 
 function asOutcome(
-  journey: Journey | null,
+  path: Path | null,
   diagnostics: Readonly<Record<string, number | string | boolean>> = {},
-): JourneyBenchmarkOutcome {
-  if (!journey) {
-    return { kind: 'no-route', reason: 'The Journey service returned no route.', diagnostics }
+): PathfindingBenchmarkOutcome {
+  if (!path) {
+    return { kind: 'no-route', reason: 'The Path service returned no route.', diagnostics }
   }
-  return { kind: 'journey', journey, diagnostics }
+  return { kind: 'path', path, diagnostics }
 }
 
 function createAbortError(): Error {
@@ -29,21 +29,21 @@ function createAbortError(): Error {
   return error
 }
 
-export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () => ({
+export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFactory = () => ({
   id: 'scored-candidate-pool',
   label: 'Scored candidate pool with geometry enrichment',
 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {
-      const result = await planJourneyWithinBudget(benchmarkCase.searchInput, {
-        maxDurationMs: JOURNEY_SEARCH_MAX_DURATION_MS,
-        maxExpandedPaths: JOURNEY_SEARCH_MAX_EXPANDED_PATHS,
+      const result = await searchPathsWithinBudget(benchmarkCase.searchInput, {
+        maxDurationMs: PATHFINDING_SEARCH_MAX_DURATION_MS,
+        maxExpandedPaths: PATHFINDING_SEARCH_MAX_EXPANDED_PATHS,
         shouldCancel: () => signal.aborted,
         yieldEvery: 0,
         now: () => performance.now(),
       })
       if (signal.aborted || result.status === 'cancelled') throw createAbortError()
-      return asOutcome(result.journey, {
+      return asOutcome(result.path, {
         planningStatus: result.status,
         expandedPathCount: result.expandedPathCount,
         indexBuildDurationMs: result.indexBuildDurationMs,
@@ -56,59 +56,58 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
         geometrySliceCount: result.geometrySliceCount,
         geometrySliceDurationMs: result.geometrySliceDurationMs,
         candidatePoolSize: result.candidates.length,
-        busCandidateCount: result.candidates.filter(({ journey }) => (
-          journey.legs.some((leg) => leg.mode === 'shuttle')
+        busCandidateCount: result.candidates.filter(({ path }) => (
+          path.legs.some((leg) => leg.mode === 'shuttle')
         )).length,
       })
     }
   },
 
-  createJourneyRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
+  createPathRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
     const walkingConnectionProvider = createWalkingConnectionProvider({
       routeEngine,
       loadGraph: async () => walkingGraph,
     })
-    const service = createJourneyPlanningService(
+    const arrivals = createArrivalClient(benchmarkCase)
+    const serviceHours = createServiceHoursClient?.(benchmarkCase)
+    const service = createFindPathsService({
       routeEngine,
-      createArrivalClient(benchmarkCase),
-      createServiceHoursClient?.(benchmarkCase),
-      now,
       walkingConnectionProvider,
-    )
+      getArrivals: (stops, signal) => arrivals.getArrivals(stops, signal),
+      getServiceWindows: serviceHours
+        ? (routeIds, signal) => serviceHours.getServiceWindows(routeIds, signal)
+        : undefined,
+      getTestDepartureMs: () => null,
+      now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
 
     return async (signal) => {
       try {
         const result = await service({
-          tripRequest: {
-            origin: benchmarkCase.origin,
-            destination: benchmarkCase.destination,
-          },
+          origin: benchmarkCase.origin,
+          destination: benchmarkCase.destination,
           venues,
-          transit,
-          signal,
-        })
-        return asOutcome(result, result ? {
-          planningStatus: result.status,
-          expandedPathCount: result.expandedPathCount,
-          indexBuildDurationMs: result.indexBuildDurationMs,
-          candidateResolutionDurationMs: result.candidateResolutionDurationMs,
-          candidateEnumerationStepCount: result.candidateEnumerationStepCount,
-          searchDurationMs: result.searchDurationMs,
-          searchYieldWaitMs: result.searchYieldWaitMs,
-          searchCpuMs: result.searchCpuMs,
-          maxSearchChunkDurationMs: result.maxSearchChunkDurationMs,
-          geometrySliceCount: result.geometrySliceCount,
-          geometrySliceDurationMs: result.geometrySliceDurationMs,
+          transit: {
+            index: transit.index,
+            geometry: transit.geometry,
+            shuttleTiming: transit.shuttleTiming,
+          },
+        }, { signal })
+        return asOutcome(result?.candidates[0]?.path ?? null, result ? {
+          planningStatus: result.searchStatus,
+          ...result.metrics,
           candidatePoolSize: result.candidates.length,
-          busCandidateCount: result.candidates.filter(({ journey }) => (
-            journey.legs.some((leg) => leg.mode === 'shuttle')
+          busCandidateCount: result.candidates.filter(({ path }) => (
+            path.legs.some((leg) => leg.mode === 'shuttle')
           )).length,
-          geometryCandidateChecks: result.geometryCandidateChecks,
-          geometryRouteRequests: result.geometryRouteRequests,
-          geometryRouteCacheHits: result.geometryRouteCacheHits,
+          geometryCandidateChecks: result.metrics.geometryCandidateChecks,
+          geometryRouteRequests: result.metrics.geometryRouteRequests,
+          geometryRouteCacheHits: result.metrics.geometryRouteCacheHits,
         } : {})
       } catch (error) {
-        if (error instanceof NoJourneyAvailableError) {
+        if (error instanceof NoPathAvailableError) {
           return { kind: 'no-route', reason: error.message }
         }
         throw error

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
-export type JourneyBenchmarkGroup = 'normal' | 'fallback' | 'timing'
-export type JourneyBenchmarkScenario =
+export type PathfindingBenchmarkGroup = 'normal' | 'fallback' | 'timing'
+export type PathfindingBenchmarkScenario =
   | 'route-pair'
   | 'one-shuttle'
   | 'selection-tie'
@@ -16,37 +16,37 @@ export type JourneyBenchmarkScenario =
   | 'pre-service'
   | 'post-service'
 
-export interface JourneyBenchmarkEndpoint {
+export interface PathfindingBenchmarkEndpoint {
   readonly kind: 'venue' | 'stop'
   readonly id: string
 }
 
-export interface JourneyBenchmarkExpectation {
-  readonly outcome: 'journey' | 'no-route'
+export interface PathfindingBenchmarkExpectation {
+  readonly outcome: 'path' | 'no-route'
   readonly shuttleBoardings?: number
   readonly modes?: readonly ('walking' | 'shuttle')[]
   readonly routeIds?: readonly string[]
 }
 
-export interface JourneyBenchmarkDurationBounds {
+export interface PathfindingBenchmarkDurationBounds {
   readonly min?: number
   readonly max?: number
 }
 
-export interface JourneyBenchmarkManifestCase {
+export interface PathfindingBenchmarkManifestCase {
   readonly id: string
   readonly label: string
-  readonly group: JourneyBenchmarkGroup
-  readonly scenario: JourneyBenchmarkScenario
-  readonly origin: JourneyBenchmarkEndpoint
-  readonly destination: JourneyBenchmarkEndpoint
+  readonly group: PathfindingBenchmarkGroup
+  readonly scenario: PathfindingBenchmarkScenario
+  readonly origin: PathfindingBenchmarkEndpoint
+  readonly destination: PathfindingBenchmarkEndpoint
   readonly timingProfile: string
   readonly arrivalRouteIds?: readonly string[]
-  readonly expected: JourneyBenchmarkExpectation
-  readonly durationBoundsSeconds?: JourneyBenchmarkDurationBounds
+  readonly expected: PathfindingBenchmarkExpectation
+  readonly durationBoundsSeconds?: PathfindingBenchmarkDurationBounds
 }
 
-export interface JourneyBenchmarkTimingProfile {
+export interface PathfindingBenchmarkTimingProfile {
   readonly id: string
   readonly arrivals: 'fresh' | 'stale' | 'expired' | 'headway' | 'missing'
   readonly observedAgeSeconds: number
@@ -58,11 +58,11 @@ export interface JourneyBenchmarkTimingProfile {
   readonly shuttleRideSecondsOverride: number | null
 }
 
-export interface JourneyBenchmarkManifest {
+export interface PathfindingBenchmarkManifest {
   readonly version: 1
   readonly fixedNow: string
-  readonly profiles: readonly JourneyBenchmarkTimingProfile[]
-  readonly cases: readonly JourneyBenchmarkManifestCase[]
+  readonly profiles: readonly PathfindingBenchmarkTimingProfile[]
+  readonly cases: readonly PathfindingBenchmarkManifestCase[]
 }
 
 const EXPECTED_CASE_COUNTS = {
@@ -74,7 +74,7 @@ const EXPECTED_CASE_COUNTS = {
   'selection-tie': 10,
 } as const
 
-const GROUP_SCENARIOS: Readonly<Record<JourneyBenchmarkGroup, readonly JourneyBenchmarkScenario[]>> = {
+const GROUP_SCENARIOS: Readonly<Record<PathfindingBenchmarkGroup, readonly PathfindingBenchmarkScenario[]>> = {
   normal: ['route-pair', 'one-shuttle', 'selection-tie'],
   fallback: [
     'missing-arrivals',
@@ -104,7 +104,7 @@ function requireNonNegativeInteger(value: unknown, label: string): number {
   return value
 }
 
-function validateEndpoint(value: unknown, label: string): JourneyBenchmarkEndpoint {
+function validateEndpoint(value: unknown, label: string): PathfindingBenchmarkEndpoint {
   if (!isRecord(value) || (value.kind !== 'venue' && value.kind !== 'stop')) {
     throw new Error(`${label} must reference a venue or stop`)
   }
@@ -123,7 +123,7 @@ function validateStringArray(value: unknown, label: string): readonly string[] {
   return items
 }
 
-function validateProfile(value: unknown, index: number): JourneyBenchmarkTimingProfile {
+function validateProfile(value: unknown, index: number): PathfindingBenchmarkTimingProfile {
   const label = `profiles[${index}]`
   if (!isRecord(value)) throw new Error(`${label} must be an object`)
   const arrivals = value.arrivals
@@ -175,9 +175,9 @@ function validateProfile(value: unknown, index: number): JourneyBenchmarkTimingP
   }
 }
 
-function validateExpectation(value: unknown, label: string): JourneyBenchmarkExpectation {
-  if (!isRecord(value) || (value.outcome !== 'journey' && value.outcome !== 'no-route')) {
-    throw new Error(`${label} must declare a journey or no-route outcome`)
+function validateExpectation(value: unknown, label: string): PathfindingBenchmarkExpectation {
+  if (!isRecord(value) || (value.outcome !== 'path' && value.outcome !== 'no-route')) {
+    throw new Error(`${label} must declare a path or no-route outcome`)
   }
   const shuttleBoardings = value.shuttleBoardings === undefined
     ? undefined
@@ -209,7 +209,7 @@ function validateCase(
   value: unknown,
   index: number,
   profiles: ReadonlySet<string>,
-): JourneyBenchmarkManifestCase {
+): PathfindingBenchmarkManifestCase {
   const label = `cases[${index}]`
   if (!isRecord(value)) throw new Error(`${label} must be an object`)
   const group = value.group
@@ -217,7 +217,7 @@ function validateCase(
     throw new Error(`${label}.group is unsupported`)
   }
   const scenario = value.scenario
-  if (typeof scenario !== 'string' || !GROUP_SCENARIOS[group].includes(scenario as JourneyBenchmarkScenario)) {
+  if (typeof scenario !== 'string' || !GROUP_SCENARIOS[group].includes(scenario as PathfindingBenchmarkScenario)) {
     throw new Error(`${label}.scenario is unsupported for ${group}`)
   }
   const timingProfile = requireText(value.timingProfile, `${label}.timingProfile`)
@@ -231,7 +231,7 @@ function validateCase(
     arrivalRouteIds = validateStringArray(value.arrivalRouteIds, `${label}.arrivalRouteIds`)
   }
 
-  let durationBoundsSeconds: JourneyBenchmarkDurationBounds | undefined
+  let durationBoundsSeconds: PathfindingBenchmarkDurationBounds | undefined
   if (value.durationBoundsSeconds !== undefined) {
     if (!isRecord(value.durationBoundsSeconds)) {
       throw new Error(`${label}.durationBoundsSeconds must be an object`)
@@ -252,15 +252,15 @@ function validateCase(
   }
 
   const expected = validateExpectation(value.expected, `${label}.expected`)
-  if (expected.outcome !== 'journey') {
-    throw new Error(`${label}.expected must be a Journey; no-route cases belong in non-timed resilience tests`)
+  if (expected.outcome !== 'path') {
+    throw new Error(`${label}.expected must be a Path; no-route cases belong in non-timed resilience tests`)
   }
 
   return {
     id: requireText(value.id, `${label}.id`),
     label: requireText(value.label, `${label}.label`),
     group,
-    scenario: scenario as JourneyBenchmarkScenario,
+    scenario: scenario as PathfindingBenchmarkScenario,
     origin: validateEndpoint(value.origin, `${label}.origin`),
     destination: validateEndpoint(value.destination, `${label}.destination`),
     timingProfile,
@@ -270,49 +270,49 @@ function validateCase(
   }
 }
 
-export function validateJourneyBenchmarkManifest(input: unknown): JourneyBenchmarkManifest {
+export function validatePathfindingBenchmarkManifest(input: unknown): PathfindingBenchmarkManifest {
   if (!isRecord(input) || input.version !== 1) {
-    throw new Error('Journey benchmark manifest version must be 1')
+    throw new Error('Path benchmark manifest version must be 1')
   }
   if (typeof input.fixedNow !== 'string' || !Number.isFinite(Date.parse(input.fixedNow))) {
-    throw new Error('Journey benchmark manifest fixedNow must be a valid timestamp')
+    throw new Error('Path benchmark manifest fixedNow must be a valid timestamp')
   }
   if (!Array.isArray(input.profiles) || input.profiles.length === 0) {
-    throw new Error('Journey benchmark manifest profiles must not be empty')
+    throw new Error('Path benchmark manifest profiles must not be empty')
   }
   const profiles = input.profiles.map(validateProfile)
   const profileIds = profiles.map(({ id }) => id)
-  if (new Set(profileIds).size !== profileIds.length) throw new Error('Journey benchmark timing profile IDs must be unique')
+  if (new Set(profileIds).size !== profileIds.length) throw new Error('Path benchmark timing profile IDs must be unique')
   const profileIdSet = new Set(profileIds)
 
-  if (!Array.isArray(input.cases)) throw new Error('Journey benchmark manifest cases must be an array')
+  if (!Array.isArray(input.cases)) throw new Error('Path benchmark manifest cases must be an array')
   const cases = input.cases.map((value, index) => validateCase(value, index, profileIdSet))
-  if (cases.length !== 50) throw new Error(`Journey benchmark manifest must contain exactly 50 cases; got ${cases.length}`)
+  if (cases.length !== 50) throw new Error(`Path benchmark manifest must contain exactly 50 cases; got ${cases.length}`)
   const caseIds = cases.map(({ id }) => id)
   const caseLabels = cases.map(({ label }) => label)
-  if (new Set(caseIds).size !== cases.length) throw new Error('Journey benchmark case IDs must be unique')
-  if (new Set(caseLabels).size !== cases.length) throw new Error('Journey benchmark case labels must be unique')
+  if (new Set(caseIds).size !== cases.length) throw new Error('Path benchmark case IDs must be unique')
+  if (new Set(caseLabels).size !== cases.length) throw new Error('Path benchmark case labels must be unique')
 
-  const groupCounts = new Map<JourneyBenchmarkGroup, number>()
+  const groupCounts = new Map<PathfindingBenchmarkGroup, number>()
   const scenarioCounts = new Map<string, number>()
   for (const benchmarkCase of cases) {
     groupCounts.set(benchmarkCase.group, (groupCounts.get(benchmarkCase.group) ?? 0) + 1)
     scenarioCounts.set(benchmarkCase.scenario, (scenarioCounts.get(benchmarkCase.scenario) ?? 0) + 1)
   }
   for (const [group, count] of Object.entries(EXPECTED_CASE_COUNTS).filter(([key]) => ['normal', 'fallback', 'timing'].includes(key))) {
-    if (groupCounts.get(group as JourneyBenchmarkGroup) !== count) {
-      throw new Error(`Journey benchmark manifest must contain ${count} ${group} cases`)
+    if (groupCounts.get(group as PathfindingBenchmarkGroup) !== count) {
+      throw new Error(`Path benchmark manifest must contain ${count} ${group} cases`)
     }
   }
   for (const scenario of ['route-pair', 'one-shuttle', 'selection-tie'] as const) {
     if (scenarioCounts.get(scenario) !== EXPECTED_CASE_COUNTS[scenario]) {
-      throw new Error(`Journey benchmark manifest must contain ${EXPECTED_CASE_COUNTS[scenario]} ${scenario} cases`)
+      throw new Error(`Path benchmark manifest must contain ${EXPECTED_CASE_COUNTS[scenario]} ${scenario} cases`)
     }
   }
   for (const group of ['fallback', 'timing'] as const) {
     for (const scenario of GROUP_SCENARIOS[group]) {
       if (scenarioCounts.get(scenario) !== 1) {
-        throw new Error(`Journey benchmark manifest must contain exactly one ${scenario} case`)
+        throw new Error(`Path benchmark manifest must contain exactly one ${scenario} case`)
       }
     }
   }
@@ -325,7 +325,7 @@ export function validateJourneyBenchmarkManifest(input: unknown): JourneyBenchma
   }
 }
 
-export async function loadJourneyBenchmarkManifest(): Promise<JourneyBenchmarkManifest> {
+export async function loadPathfindingBenchmarkManifest(): Promise<PathfindingBenchmarkManifest> {
   const source = await readFile(new URL('./cases.json', import.meta.url), 'utf8')
-  return validateJourneyBenchmarkManifest(JSON.parse(source) as unknown)
+  return validatePathfindingBenchmarkManifest(JSON.parse(source) as unknown)
 }

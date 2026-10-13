@@ -2,7 +2,7 @@ import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
-import type { JourneyPlanningService } from './journey-planning'
+import type { FindPathsService } from '../pathfinding/find-paths'
 import type {
   NavigationSession,
   NavigationSessionDependencies,
@@ -15,7 +15,7 @@ export interface NavigationSessionMountDependencies {
   ) => NavigationSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
-  readonly journeyPlanner: JourneyPlanningService
+  readonly pathfinder: FindPathsService
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapStopInteraction?: (stopId: string) => void
@@ -41,7 +41,7 @@ export function createNavigationSessionMount(
     onStopSelected: dependencies.onStopSelected,
     onJourneyOptionSelected: (candidateKey) => {
       if (!session) return
-      const isDisplayed = session.getState().journey.displayedCandidates.some(({ candidateKey: key }) => (
+      const isDisplayed = session.getState().path.displayedCandidates.some(({ candidateKey: key }) => (
         key === candidateKey
       ))
       if (!isDisplayed) return
@@ -54,7 +54,7 @@ export function createNavigationSessionMount(
     map,
     loadVenues: dependencies.loadVenues,
     loadTransit: dependencies.loadTransit,
-    journeyPlanner: dependencies.journeyPlanner,
+    pathfinder: dependencies.pathfinder,
     locationTracker: dependencies.locationTracker,
     onMapStopInteraction: dependencies.onMapStopInteraction,
     onMapStopDestinationSet: dependencies.onMapStopDestinationSet,
@@ -95,7 +95,7 @@ export interface NavigationSessionCommands {
   ) => void
   readonly clearDestinationEndpoint: () => void
   readonly clearTrip: () => void
-  readonly planJourney: () => void
+  readonly searchPaths: () => void
   readonly selectJourneyOption: (candidateKey: string) => void
   readonly setExploreViewQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
@@ -137,7 +137,7 @@ function createNavigationSessionCommands(
     navigateToEndpoint: (endpoint) => session?.navigateTo(endpoint),
     clearDestinationEndpoint: () => session?.clearTripEndpoint('destination'),
     clearTrip: () => session?.clearTrip(),
-    planJourney: () => session?.planJourney(),
+    searchPaths: () => session?.searchPaths(),
     selectJourneyOption: (candidateKey) => session?.selectJourneyOption(candidateKey),
     setExploreViewQuery: (query) => session?.setExploreViewQuery(query),
     selectVenue: (result) => session?.selectVenue(result),

@@ -114,6 +114,37 @@ describe('IconButton', () => {
   })
 })
 
+describe('Button and IconButton state attributes', () => {
+  it('passes title, expanded, controls and busy through to the button', () => {
+    render(
+      <IconButton
+        label="Trip actions"
+        title="More"
+        icon={<svg />}
+        expanded={false}
+        controls="menu"
+        busy
+        onClick={vi.fn()}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Trip actions' })
+    expect(button.getAttribute('title')).toBe('More')
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+    expect(button.getAttribute('aria-controls')).toBe('menu')
+    expect(button.getAttribute('aria-busy')).toBe('true')
+  })
+
+  it('leaves the state attributes off when they are not set', () => {
+    render(<Button label="Save" onClick={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: 'Save' })
+    for (const name of ['title', 'aria-expanded', 'aria-controls', 'aria-busy']) {
+      expect(button.hasAttribute(name)).toBe(false)
+    }
+  })
+})
+
 describe('MenuItem', () => {
   it('is a full-row button with its label and optional icon', () => {
     render(<MenuItem label="Clear all" icon={<svg data-testid="icon" />} onClick={vi.fn()} />)

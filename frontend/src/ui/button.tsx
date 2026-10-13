@@ -16,6 +16,13 @@ interface ButtonProps {
   readonly disabled?: boolean
   readonly pressed?: boolean
   readonly ariaLabel?: string
+  /** Hover text for controls whose icon needs a tooltip. */
+  readonly title?: string
+  /** Announces that the control opens or closes the element named by `controls`. */
+  readonly expanded?: boolean
+  readonly controls?: string
+  /** Announces that the action is in progress. */
+  readonly busy?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -29,6 +36,13 @@ interface IconButtonProps {
   readonly size?: ControlSize
   readonly disabled?: boolean
   readonly pressed?: boolean
+  /** Hover text for controls whose icon needs a tooltip. */
+  readonly title?: string
+  /** Announces that the control opens or closes the element named by `controls`. */
+  readonly expanded?: boolean
+  readonly controls?: string
+  /** Announces that the action is in progress. */
+  readonly busy?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -44,6 +58,10 @@ export function Button({
   disabled,
   pressed,
   ariaLabel,
+  title,
+  expanded,
+  controls,
+  busy,
   className,
   ref,
 }: ButtonProps) {
@@ -58,6 +76,10 @@ export function Button({
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={ariaLabel}
+      title={title}
+      aria-expanded={expanded}
+      aria-controls={controls}
+      aria-busy={busy}
       onClick={onClick}
     >
       {icon}
@@ -75,6 +97,10 @@ export function IconButton({
   size = 'sm',
   disabled,
   pressed,
+  title,
+  expanded,
+  controls,
+  busy,
   className,
   ref,
 }: IconButtonProps) {
@@ -89,6 +115,10 @@ export function IconButton({
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={label}
+      title={title}
+      aria-expanded={expanded}
+      aria-controls={controls}
+      aria-busy={busy}
       onClick={onClick}
     >
       {icon}

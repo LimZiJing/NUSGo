@@ -322,6 +322,8 @@ type ScreenRectangle = {
   bottom: number
 }
 
+type RouteMarkerPointOrientation = 'top' | 'bottom'
+
 const ROUTE_LABEL_CLEARANCE = 3
 const ROUTE_MARKER_POINT_SIZE = 8
 
@@ -381,11 +383,12 @@ function getElementRectangle(
   containerBounds: DOMRect,
 ): ScreenRectangle {
   const bounds = element.getBoundingClientRect()
+  const pointAtTop = element.classList.contains('bus-stop-marker-route-point-top')
   return {
     left: bounds.left - containerBounds.left,
-    top: bounds.top - containerBounds.top,
+    top: bounds.top - containerBounds.top - (pointAtTop ? ROUTE_MARKER_POINT_SIZE : 0),
     right: bounds.right - containerBounds.left,
-    bottom: bounds.bottom - containerBounds.top + ROUTE_MARKER_POINT_SIZE,
+    bottom: bounds.bottom - containerBounds.top + (pointAtTop ? 0 : ROUTE_MARKER_POINT_SIZE),
   }
 }
 
@@ -406,9 +409,14 @@ function setRouteMarkerLabel(
   detail: BusStopMarker,
   showName: boolean,
   hideMarker: boolean,
+  pointOrientation?: RouteMarkerPointOrientation,
 ): void {
   const element = detail.marker.getElement()
   const button = element as HTMLButtonElement
+  const orientation = pointOrientation ?? (
+    element.classList.contains('bus-stop-marker-route-point-top') ? 'top' : 'bottom'
+  )
+  element.classList.toggle('bus-stop-marker-route-point-top', orientation === 'top')
   element.classList.toggle('bus-stop-marker-route-name-hidden', !showName)
   element.classList.toggle('bus-stop-marker-layout-hidden', hideMarker)
 
@@ -424,10 +432,18 @@ function setRouteMarkerLabel(
 
   if (typeof detail.marker.setOffset === 'function') {
     const height = element.getBoundingClientRect().height || (showName ? 38 : 24)
+    const verticalOffset = height / 2 + ROUTE_MARKER_POINT_SIZE
     detail.marker.setOffset(element.classList.contains('bus-stop-marker-route')
-      ? [0, -(height / 2 + ROUTE_MARKER_POINT_SIZE)]
+      ? [0, orientation === 'top' ? verticalOffset : -verticalOffset]
       : [0, 0])
   }
+}
+
+function getRouteMarkerPointOrientations(
+  element: HTMLElement,
+): readonly RouteMarkerPointOrientation[] {
+  const current = element.classList.contains('bus-stop-marker-route-point-top') ? 'top' : 'bottom'
+  return [current, current === 'top' ? 'bottom' : 'top']
 }
 
 function isRectangleInViewport(rectangle: ScreenRectangle, viewport: ScreenRectangle): boolean {
@@ -468,18 +484,34 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
     .map((stopId) => markerByStopId.get(stopId))
     .filter((detail): detail is BusStopMarker => detail !== undefined)
   const compactRects = new globalThis.Map<BusStopMarker, ScreenRectangle>()
+  const compactOrientations = new globalThis.Map<BusStopMarker, RouteMarkerPointOrientation>()
   const visibleCompactRects: ScreenRectangle[] = []
 
   for (const detail of routeMarkers) {
     const element = detail.marker.getElement()
-    const rect = getElementRectangle(element, containerBounds)
-    const overlap = visibleCompactRects.some((placed) => rectanglesOverlap(rect, placed, 0)) ||
-      overlays.some((overlay) => rectanglesOverlap(rect, overlay, 0))
-    const outside = !isRectangleInViewport(rect, viewport)
-    const hideMarker = overlap || outside
-    setRouteMarkerLabel(detail, false, hideMarker)
+    const orientations = getRouteMarkerPointOrientations(element)
+    let pointOrientation = orientations[0]
+    let rect = getElementRectangle(element, containerBounds)
+    let canPlace = false
+
+    for (const orientation of orientations) {
+      setRouteMarkerLabel(detail, false, false, orientation)
+      rect = getElementRectangle(element, containerBounds)
+      const overlap = visibleCompactRects.some((placed) => rectanglesOverlap(rect, placed, 0)) ||
+        overlays.some((overlay) => rectanglesOverlap(rect, overlay, 0))
+      const outside = !isRectangleInViewport(rect, viewport)
+      if (overlap || outside) continue
+
+      pointOrientation = orientation
+      canPlace = true
+      break
+    }
+
+    setRouteMarkerLabel(detail, false, !canPlace, pointOrientation)
+    rect = getElementRectangle(element, containerBounds)
     compactRects.set(detail, rect)
-    if (!hideMarker) visibleCompactRects.push(rect)
+    compactOrientations.set(detail, pointOrientation)
+    if (canPlace) visibleCompactRects.push(rect)
   }
 
   const placedLabels: ScreenRectangle[] = []
@@ -487,24 +519,35 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
     const element = detail.marker.getElement()
     if (element.classList.contains('bus-stop-marker-layout-hidden')) continue
 
-    setRouteMarkerLabel(detail, true, false)
-    const rect = getElementRectangle(element, containerBounds)
-    const overlapsStop = routeMarkers.some((other) => (
-      other !== detail &&
-      !other.marker.getElement().classList.contains('bus-stop-marker-layout-hidden') &&
-      compactRects.has(other) &&
-      rectanglesOverlap(rect, compactRects.get(other)!)
-    ))
-    const collision = !isRectangleInViewport(rect, viewport) ||
-      overlays.some((overlay) => rectanglesOverlap(rect, overlay, 0)) ||
-      placedLabels.some((placed) => rectanglesOverlap(rect, placed)) ||
-      overlapsStop
+    const pointOrientation = compactOrientations.get(detail) ?? 'bottom'
+    const orientations = [
+      pointOrientation,
+      pointOrientation === 'top' ? 'bottom' : 'top',
+    ] as const
+    let placedRect: ScreenRectangle | null = null
 
-    if (collision) {
-      setRouteMarkerLabel(detail, false, false)
-    } else {
-      placedLabels.push(rect)
+    for (const orientation of orientations) {
+      setRouteMarkerLabel(detail, true, false, orientation)
+      const rect = getElementRectangle(element, containerBounds)
+      const overlapsStop = routeMarkers.some((other) => (
+        other !== detail &&
+        !other.marker.getElement().classList.contains('bus-stop-marker-layout-hidden') &&
+        compactRects.has(other) &&
+        rectanglesOverlap(rect, compactRects.get(other)!)
+      ))
+      const collision = !isRectangleInViewport(rect, viewport) ||
+        overlays.some((overlay) => rectanglesOverlap(rect, overlay, 0)) ||
+        placedLabels.some((placed) => rectanglesOverlap(rect, placed)) ||
+        overlapsStop
+
+      if (!collision) {
+        placedRect = rect
+        break
+      }
     }
+
+    if (placedRect) placedLabels.push(placedRect)
+    else setRouteMarkerLabel(detail, false, false, pointOrientation)
   }
 
   const visibleRouteRectangles = routeMarkers

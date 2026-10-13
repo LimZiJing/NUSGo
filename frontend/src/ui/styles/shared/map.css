@@ -286,6 +286,17 @@
   background: #fff;
 }
 
+.bus-stop-marker-route-point-top::before,
+.bus-stop-marker-route-point-top::after {
+  top: -8px;
+  bottom: auto;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.bus-stop-marker-route-point-top::after {
+  top: -5px;
+}
+
 .bus-stop-marker-route-name {
   position: relative;
   z-index: 2;
@@ -347,6 +358,45 @@
 .bus-stop-marker:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .bus-stop-marker-route {
+    max-width: 108px;
+    min-height: 25px;
+    gap: 2px;
+    padding: 2px 4px 4px;
+    border-width: 1px;
+    border-radius: 10px;
+  }
+
+  .bus-stop-marker-route::before {
+    width: 12px;
+    height: 8px;
+  }
+
+  .bus-stop-marker-route::after {
+    width: 7px;
+    height: 5px;
+  }
+
+  .bus-stop-marker-route-name {
+    max-width: 56px;
+    font-size: 9px;
+    line-height: 1.05;
+  }
+
+  .bus-stop-marker-route-numbers {
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+
+  .bus-stop-marker-route.bus-stop-marker-route-name-hidden {
+    min-width: 22px;
+    height: 22px;
+    min-height: 22px;
+    padding: 0 2px 2px;
+  }
 }
 
 .journey-duration-marker {

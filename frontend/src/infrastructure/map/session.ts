@@ -10,7 +10,7 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '../../pathfinding/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import { getBusPathLegStopIds } from '../../pathfinding/path-stops'
+import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'

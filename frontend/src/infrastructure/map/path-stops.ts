@@ -1,5 +1,5 @@
 import type { BusRoute } from '@navus/shared/transit/types'
-import type { BusPathLeg } from './path'
+import type { BusPathLeg } from '../../pathfinding/path'
 
 export function getBusPathLegStopIds(
   leg: Pick<BusPathLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'>,
@@ -11,5 +11,6 @@ export function getBusPathLegStopIds(
   const alightingIndex = route.stopIds.indexOf(leg.alightingStopId)
   if (boardingIndex < 0 || alightingIndex < boardingIndex) return null
 
+  // The map highlights every ordered stop between this Path leg's boarding and alighting stops.
   return route.stopIds.slice(boardingIndex, alightingIndex + 1)
 }

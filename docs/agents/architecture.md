@@ -30,12 +30,13 @@ The intended direction is:
        frontend/src/features -------------------------------> frontend/src/domain
        frontend/src/features -------------------------------> frontend/src/ui contracts
        frontend/src/features -- import type --> frontend/src/pathfinding/path.ts
+       frontend/src/infrastructure -- import type --> frontend/src/pathfinding/path.ts
        frontend/src/infrastructure - - import type only - -> frontend/src/app/contracts
 ```
 
 - Domain modules must not import React, MapLibre, browser DOM APIs, network clients, or other infrastructure.
 - The app composition root may runtime-import feature entry points, UI entry points, and infrastructure adapters to wire the application.
-- Infrastructure may depend on frontend domain and shared types and implement framework-free app contracts. It may use `import type` from `frontend/src/app/contracts` for those ports only; this type-only edge is erased at runtime and does not create a runtime dependency cycle.
+- Infrastructure may depend on frontend domain and shared types and implement framework-free app contracts. Map presentation may also use `import type` from the public `frontend/src/pathfinding/path.ts` model; it must not import Pathfinding runtime helpers or internals. Infrastructure may use `import type` from `frontend/src/app/contracts` for its ports; these type-only edges are erased at runtime and do not create runtime dependency cycles.
 - Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns MapLibre, network/data-adapter, and integration-level DOM, listener, timer, and asynchronous effects.
 - Application controllers may use browser measurements, observers, or listeners only to coordinate app-owned responsive layout or cross-feature keyboard navigation. Keep these effects in the owning app controller and clean them up with its lifecycle.
 - Features depend on frontend domain or shared values, UI contracts or primitives, and may use `import type` from the public `frontend/src/pathfinding/path.ts` contract. They must not import Pathfinding runtime values or its search, pipeline, and walking internals. Features must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.

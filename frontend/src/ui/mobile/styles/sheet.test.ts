@@ -25,3 +25,16 @@ describe('mobile sheet handle focus styles', () => {
     }
   })
 })
+
+describe('mobile sheet at the full detent', () => {
+  it('stays clipped above the tab bar so the tab bar remains visible and tappable (#307)', () => {
+    expect(styles).toMatch(/\.mobile-sheet-viewport\s*{[^}]*clip-path:\s*inset\(0 0 var\(--mobile-tab-bar-height\) 0\);/s)
+    expect(styles).not.toMatch(/\.mobile-sheet-viewport\[data-detent='full'\]/)
+  })
+
+  it('keeps full-detent content above the tab bar like the other detents', () => {
+    const fullPopup = styles.match(/\.navigation-panel\.mobile-sheet-popup\[data-detent='full'\]\s*{([^}]*)}/s)
+
+    expect(fullPopup?.[1]).not.toMatch(/padding-bottom/)
+  })
+})

@@ -6,7 +6,7 @@ import type {
   MapMouseEvent,
 } from 'maplibre-gl'
 import type { MapJourneyOption } from '../../app/contracts/map'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import type { TransitIndex } from '../../domain/transit'
 import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './journey-duration-markers'
 
@@ -28,7 +28,7 @@ interface JourneyRouteProperties {
   readonly featureKind: 'route'
   readonly candidateKey: string
   readonly legIndex: number
-  readonly mode: Journey['legs'][number]['mode']
+  readonly mode: Path['legs'][number]['mode']
   readonly routeId: string | null
   readonly routeColor: string | null
 }
@@ -47,12 +47,12 @@ interface JourneyRouteGeometry {
   readonly features: JourneyRouteFeature[]
 }
 
-function getRouteModeFilter(mode: Journey['legs'][number]['mode']): FilterSpecification {
+function getRouteModeFilter(mode: Path['legs'][number]['mode']): FilterSpecification {
   return ['all', ['==', ['get', 'featureKind'], 'route'], ['==', ['get', 'mode'], mode]]
 }
 
 function getCandidateFilter(
-  mode: Journey['legs'][number]['mode'],
+  mode: Path['legs'][number]['mode'],
   candidateKey: string,
 ): FilterSpecification {
   return [
@@ -64,7 +64,7 @@ function getCandidateFilter(
 }
 
 function getAlternativeFilter(
-  mode: Journey['legs'][number]['mode'],
+  mode: Path['legs'][number]['mode'],
   selectedCandidateKey: string | null,
 ): FilterSpecification {
   return selectedCandidateKey === null
@@ -194,8 +194,8 @@ function createJourneyRouteGeometry(
   transitIndex: TransitIndex | null,
 ): JourneyRouteGeometry {
   const features: JourneyRouteGeometry['features'] = []
-  options.forEach(({ candidateKey, journey }) => {
-    journey.legs.forEach((leg, legIndex) => {
+  options.forEach(({ candidateKey, path }) => {
+    path.legs.forEach((leg, legIndex) => {
       features.push({
         type: 'Feature',
         properties: {
@@ -225,7 +225,7 @@ function haveOptionsChanged(
   next: readonly MapJourneyOption[],
 ): boolean {
   return current.length !== next.length || current.some((option, index) => (
-    option.candidateKey !== next[index]?.candidateKey || option.journey !== next[index]?.journey
+    option.candidateKey !== next[index]?.candidateKey || option.path !== next[index]?.path
   ))
 }
 

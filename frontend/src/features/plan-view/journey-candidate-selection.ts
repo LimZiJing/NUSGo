@@ -1,6 +1,6 @@
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
-import type { Journey, JourneyLeg } from '../../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
+import type { Path, PathLeg } from '../../pathfinding/path'
+import type { ScoredPathCandidate } from '../../domain/trip/planner'
 import type { TripEndpoint } from '../../domain/trip/types'
 
 const MAX_DISPLAYED_JOURNEYS = 3
@@ -45,7 +45,7 @@ function isValidLineString(value: unknown): boolean {
   ))
 }
 
-function isJourneyLeg(value: unknown): value is JourneyLeg {
+function isJourneyLeg(value: unknown): value is PathLeg {
   if (!isRecord(value) || !isTripEndpoint(value.from) || !isTripEndpoint(value.to) ||
     !isFiniteNonNegative(value.durationSeconds) || !isFiniteNonNegative(value.distanceMeters) ||
     !isValidLineString(value.geometry)) return false
@@ -62,7 +62,7 @@ function isJourneyLeg(value: unknown): value is JourneyLeg {
     value.durationSeconds === value.waitingSeconds + value.rideSeconds
 }
 
-function isValidJourney(value: unknown): value is Journey {
+function isValidJourney(value: unknown): value is Path {
   if (!isRecord(value) || !isTripEndpoint(value.origin) || !isTripEndpoint(value.destination) ||
     !Array.isArray(value.legs) || value.legs.length === 0 ||
     value.estimateStatus !== 'estimated' ||
@@ -90,10 +90,10 @@ function almostEqual(first: number, second: number): boolean {
   return Math.abs(first - second) <= Number.EPSILON * Math.max(1, Math.abs(first), Math.abs(second)) * 8
 }
 
-function getAdjustedDurationSeconds(journey: Journey): number {
+function getAdjustedDurationSeconds(path: Path): number {
   let shuttleBoardings = 0
   let adjustedDurationSeconds = 0
-  for (const leg of journey.legs) {
+  for (const leg of path.legs) {
     if (leg.mode === 'walking') {
       adjustedDurationSeconds += leg.durationSeconds / 0.8
     } else {
@@ -104,12 +104,12 @@ function getAdjustedDurationSeconds(journey: Journey): number {
   return adjustedDurationSeconds
 }
 
-function isScoredJourneyCandidate(value: unknown): value is ScoredJourneyCandidate {
-  if (!isRecord(value) || !isNonEmptyString(value.candidateKey) || !isValidJourney(value.journey) ||
+function isScoredJourneyCandidate(value: unknown): value is ScoredPathCandidate {
+  if (!isRecord(value) || !isNonEmptyString(value.candidateKey) || !isValidJourney(value.path) ||
     !isFiniteNonNegative(value.adjustedDurationSeconds) ||
     typeof value.score !== 'number' || Number.isNaN(value.score) || value.score < 0) return false
 
-  const expectedDuration = getAdjustedDurationSeconds(value.journey)
+  const expectedDuration = getAdjustedDurationSeconds(value.path)
   const expectedScore = expectedDuration === 0 ? Number.POSITIVE_INFINITY : 1 / expectedDuration
   return almostEqual(value.adjustedDurationSeconds, expectedDuration) && value.score === expectedScore
 }
@@ -121,22 +121,22 @@ function compareText(first: string, second: string): number {
 }
 
 function compareCandidates(
-  first: ScoredJourneyCandidate,
-  second: ScoredJourneyCandidate,
+  first: ScoredPathCandidate,
+  second: ScoredPathCandidate,
 ): number {
-  const getBoardings = (journey: Journey): number => (
-    journey.legs.filter((leg) => leg.mode === 'shuttle').length
+  const getBoardings = (path: Path): number => (
+    path.legs.filter((leg) => leg.mode === 'shuttle').length
   )
-  const getWalkingDistance = (journey: Journey): number => (
-    journey.legs.reduce((total, leg) => (
+  const getWalkingDistance = (path: Path): number => (
+    path.legs.reduce((total, leg) => (
       total + (leg.mode === 'walking' ? leg.distanceMeters : 0)
     ), 0)
   )
 
   return first.adjustedDurationSeconds - second.adjustedDurationSeconds ||
-    getBoardings(first.journey) - getBoardings(second.journey) ||
-    getWalkingDistance(first.journey) - getWalkingDistance(second.journey) ||
-    first.journey.legs.length - second.journey.legs.length ||
+    getBoardings(first.path) - getBoardings(second.path) ||
+    getWalkingDistance(first.path) - getWalkingDistance(second.path) ||
+    first.path.legs.length - second.path.legs.length ||
     compareText(first.candidateKey, second.candidateKey)
 }
 
@@ -144,9 +144,9 @@ function compareCandidates(
  * Chooses the Plan candidates without changing #266's search or candidate scores.
  * The candidate pool must contain fully enriched Journeys; malformed entries fail closed.
  */
-export function selectJourneysForDisplay(
-  candidates: readonly ScoredJourneyCandidate[],
-): readonly ScoredJourneyCandidate[] {
+export function selectDisplayedPaths(
+  candidates: readonly ScoredPathCandidate[],
+): readonly ScoredPathCandidate[] {
   const rankedCandidates = candidates
     .filter(isScoredJourneyCandidate)
     .sort(compareCandidates)
@@ -157,10 +157,10 @@ export function selectJourneysForDisplay(
     return true
   })
   const busCandidates = distinctCandidates
-    .filter(({ journey }) => journey.legs.some((leg) => leg.mode === 'shuttle'))
+    .filter(({ path }) => path.legs.some((leg) => leg.mode === 'shuttle'))
     .slice(0, MAX_DISPLAYED_JOURNEYS)
-  const walkingCandidate = distinctCandidates.find(({ journey }) => (
-    journey.legs.every((leg) => leg.mode === 'walking')
+  const walkingCandidate = distinctCandidates.find(({ path }) => (
+    path.legs.every((leg) => leg.mode === 'walking')
   ))
 
   if (busCandidates.length === 0) return walkingCandidate ? [walkingCandidate] : []

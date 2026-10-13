@@ -1,9 +1,9 @@
 import {
   createJourneyPlanningService,
-  NoJourneyAvailableError,
+  NoPathAvailableError,
 } from '../../../src/app/journey-planning.js'
-import { planJourneyWithinBudget } from '../../../src/domain/trip/planner.js'
-import type { Journey } from '../../../src/domain/trip/journey.js'
+import { searchPathsWithinBudget } from '../../../src/domain/trip/planner.js'
+import type { Path } from '../../../src/pathfinding/path.js'
 import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
 import type {
   JourneyBenchmarkAdapterFactory,
@@ -13,9 +13,9 @@ import type {
 const JOURNEY_SEARCH_MAX_DURATION_MS = 350
 const JOURNEY_SEARCH_MAX_EXPANDED_PATHS = 10_000
 
-function asOutcome(journey: Journey | null): JourneyBenchmarkOutcome {
-  if (!journey) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
-  return { kind: 'journey', journey }
+function asOutcome(path: Path | null): JourneyBenchmarkOutcome {
+  if (!path) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
+  return { kind: 'journey', path }
 }
 
 export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () => ({
@@ -24,7 +24,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {
-      const result = await planJourneyWithinBudget(benchmarkCase.searchInput, {
+      const result = await searchPathsWithinBudget(benchmarkCase.searchInput, {
         maxDurationMs: JOURNEY_SEARCH_MAX_DURATION_MS,
         maxExpandedPaths: JOURNEY_SEARCH_MAX_EXPANDED_PATHS,
         shouldCancel: () => signal.aborted,
@@ -35,7 +35,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
         error.name = 'AbortError'
         throw error
       }
-      if (!result.journey) {
+      if (!result.path) {
         return {
           kind: 'no-route',
           reason: `Planner returned no journey (${result.status}).`,
@@ -47,7 +47,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
       }
       return {
         kind: 'journey',
-        journey: result.journey,
+        path: result.path,
         diagnostics: {
           planningStatus: result.status,
           expandedPathCount: result.expandedPathCount,
@@ -71,7 +71,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
 
     return async (signal) => {
       try {
-        const journey = await service({
+        const result = await service({
           tripRequest: {
             origin: benchmarkCase.origin,
             destination: benchmarkCase.destination,
@@ -80,9 +80,9 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
           transit,
           signal,
         })
-        return asOutcome(journey)
+        return asOutcome(result?.candidates[0]?.path ?? null)
       } catch (error) {
-        if (error instanceof NoJourneyAvailableError) {
+        if (error instanceof NoPathAvailableError) {
           return { kind: 'no-route', reason: error.message }
         }
         throw error

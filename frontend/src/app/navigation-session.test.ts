@@ -3,9 +3,9 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
-import type { Journey } from '../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../domain/trip/planner'
-import type { JourneyPlanningServiceResult } from './journey-planning'
+import type { Path } from '../pathfinding/path'
+import type { ScoredPathCandidate } from '../domain/trip/planner'
+import type { FindPathsResult } from './journey-planning'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -146,7 +146,7 @@ async function waitForState(
   })
 }
 
-function createJourney(destination: TripEndpoint): Journey {
+function createPath(destination: TripEndpoint): Path {
   return {
     origin: { kind: 'venue', id: 'COM1' },
     destination,
@@ -168,7 +168,7 @@ function createJourney(destination: TripEndpoint): Journey {
   }
 }
 
-function createShuttleJourney(): Journey {
+function createBusPath(): Path {
   const origin = { kind: 'venue', id: 'COM1' } as const
   const boarding = { kind: 'stop', id: 'STOP-A' } as const
   const destination = { kind: 'stop', id: 'STOP-B' } as const
@@ -205,10 +205,10 @@ function createShuttleJourney(): Journey {
   }
 }
 
-function scoreCandidate(candidateKey: string, journey: Journey): ScoredJourneyCandidate {
+function scoreCandidate(candidateKey: string, path: Path): ScoredPathCandidate {
   let shuttleBoardings = 0
   let adjustedDurationSeconds = 0
-  for (const leg of journey.legs) {
+  for (const leg of path.legs) {
     if (leg.mode === 'walking') {
       adjustedDurationSeconds += leg.durationSeconds / 0.8
     } else {
@@ -218,33 +218,34 @@ function scoreCandidate(candidateKey: string, journey: Journey): ScoredJourneyCa
   }
   return {
     candidateKey,
-    journey,
+    path,
     adjustedDurationSeconds,
     score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
   }
 }
 
 function createPlanningResult(
-  journey: Journey,
-  candidates: readonly ScoredJourneyCandidate[] = [scoreCandidate('test-candidate', journey)],
-): JourneyPlanningServiceResult {
+  path: Path,
+  candidates: readonly ScoredPathCandidate[] = [scoreCandidate('test-candidate', path)],
+): FindPathsResult {
   return {
-    ...journey,
     candidates,
-    status: 'complete',
-    expandedPathCount: 1,
-    indexBuildDurationMs: 0,
-    candidateResolutionDurationMs: 0,
-    candidateEnumerationStepCount: 1,
-    searchDurationMs: 0,
-    searchYieldWaitMs: 0,
-    searchCpuMs: 0,
-    maxSearchChunkDurationMs: 0,
-    geometrySliceCount: 0,
-    geometrySliceDurationMs: 0,
-    geometryCandidateChecks: 1,
-    geometryRouteRequests: 1,
-    geometryRouteCacheHits: 0,
+    searchStatus: 'complete',
+    metrics: {
+      expandedPathCount: 1,
+      indexBuildDurationMs: 0,
+      candidateResolutionDurationMs: 0,
+      candidateEnumerationStepCount: 1,
+      searchDurationMs: 0,
+      searchYieldWaitMs: 0,
+      searchCpuMs: 0,
+      maxSearchChunkDurationMs: 0,
+      geometrySliceCount: 0,
+      geometrySliceDurationMs: 0,
+      geometryCandidateChecks: 1,
+      geometryRouteRequests: 1,
+      geometryRouteCacheHits: 0,
+    },
   }
 }
 
@@ -276,9 +277,9 @@ describe('navigation session', () => {
         history: [],
       },
       tripRequest: { origin: null, destination: null },
-      journey: {
+      path: {
         status: 'idle',
-        journey: null,
+        path: null,
         candidates: [],
         displayedCandidates: [],
         selectedCandidateKey: null,
@@ -363,11 +364,11 @@ describe('navigation session', () => {
   ])('sets a popup destination and preserves the $name', async ({ origin }) => {
     const onMapStopDestinationSet = vi.fn()
     const onMapStopInteraction = vi.fn()
-    const journeyPlanner = vi.fn(async () => null)
+    const pathfinder = vi.fn(async () => null)
     const dependencies = createDependencies({
       onMapStopDestinationSet,
       onMapStopInteraction,
-      journeyPlanner,
+      pathfinder,
     })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
@@ -385,97 +386,97 @@ describe('navigation session', () => {
     expect(onMapStopInteraction).not.toHaveBeenCalled()
     expect(dependencies.locationTracker.requestCurrentLocation).not.toHaveBeenCalled()
     expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
-    expect(journeyPlanner).not.toHaveBeenCalled()
+    expect(pathfinder).not.toHaveBeenCalled()
   })
 
   it('does not plan when endpoints are selected until the user submits the trip', async () => {
-    const planning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn(() => planning.promise)
-    const dependencies = createDependencies({ journeyPlanner })
+    const planning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn(() => planning.promise)
+    const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
 
-    expect(journeyPlanner).not.toHaveBeenCalled()
-    expect(session.getState().journey).toEqual({
+    expect(pathfinder).not.toHaveBeenCalled()
+    expect(session.getState().path).toEqual({
       status: 'idle',
-      journey: null,
+      path: null,
       candidates: [],
       displayedCandidates: [],
       selectedCandidateKey: null,
       error: null,
     })
 
-    session.planJourney()
-    expect(session.getState().journey).toEqual({
+    session.searchPaths()
+    expect(session.getState().path).toEqual({
       status: 'loading',
-      journey: null,
+      path: null,
       candidates: [],
       displayedCandidates: [],
       selectedCandidateKey: null,
       error: null,
     })
-    const journey = createJourney({ kind: 'stop', id: 'STOP-A' })
-    planning.resolve(createPlanningResult(journey))
-    await waitForState(session, (state) => state.journey.status === 'ready')
+    const path = createPath({ kind: 'stop', id: 'STOP-A' })
+    planning.resolve(createPlanningResult(path))
+    await waitForState(session, (state) => state.path.status === 'ready')
 
-    expect(session.getState().journey).toMatchObject({
+    expect(session.getState().path).toMatchObject({
       status: 'ready',
-      journey,
+      path,
       error: null,
     })
     expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
-      [{ candidateKey: 'test-candidate', journey }],
+      [{ candidateKey: 'test-candidate', path }],
       'test-candidate',
       true,
     )
-    expect(Object.isFrozen(session.getState().journey.journey)).toBe(true)
-    expect(Object.isFrozen(session.getState().journey.journey?.legs[0])).toBe(true)
+    expect(Object.isFrozen(session.getState().path.path)).toBe(true)
+    expect(Object.isFrozen(session.getState().path.path?.legs[0])).toBe(true)
   })
 
   it('does not duplicate an in-flight Journey when submitted again', async () => {
-    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn(() => firstPlanning.promise)
-    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    const firstPlanning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn(() => firstPlanning.promise)
+    const session = createNavigationSession(createDependencies({ pathfinder }))
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
 
-    session.planJourney()
-    session.planJourney()
-    expect(journeyPlanner).toHaveBeenCalledOnce()
+    session.searchPaths()
+    session.searchPaths()
+    expect(pathfinder).toHaveBeenCalledOnce()
 
-    firstPlanning.resolve(createPlanningResult(createJourney({ kind: 'stop', id: 'STOP-A' })))
-    await waitForState(session, (state) => state.journey.status === 'ready')
+    firstPlanning.resolve(createPlanningResult(createPath({ kind: 'stop', id: 'STOP-A' })))
+    await waitForState(session, (state) => state.path.status === 'ready')
   })
 
   it('defaults to the Recommended display option and updates selection without replanning', async () => {
-    const busJourney = createShuttleJourney()
-    const walkingJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    const busJourney = createBusPath()
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
-      scoreCandidate('walking-option', walkingJourney),
+      scoreCandidate('walking-option', walkingPath),
     ])
-    const journeyPlanner = vi.fn(async () => result)
-    const dependencies = createDependencies({ journeyPlanner })
+    const pathfinder = vi.fn(async () => result)
+    const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
 
-    session.planJourney()
-    await waitForState(session, (state) => state.journey.status === 'ready')
+    session.searchPaths()
+    await waitForState(session, (state) => state.path.status === 'ready')
 
-    expect(session.getState().journey.displayedCandidates.map(({ candidateKey }) => candidateKey))
+    expect(session.getState().path.displayedCandidates.map(({ candidateKey }) => candidateKey))
       .toEqual(['walking-option', 'bus-option'])
-    expect(session.getState().journey.selectedCandidateKey).toBe('walking-option')
-    expect(session.getState().journey.journey).toEqual(walkingJourney)
+    expect(session.getState().path.selectedCandidateKey).toBe('walking-option')
+    expect(session.getState().path.path).toEqual(walkingPath)
     expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
       [
-        { candidateKey: 'walking-option', journey: walkingJourney },
-        { candidateKey: 'bus-option', journey: busJourney },
+        { candidateKey: 'walking-option', path: walkingPath },
+        { candidateKey: 'bus-option', path: busJourney },
       ],
       'walking-option',
       true,
@@ -483,121 +484,121 @@ describe('navigation session', () => {
 
     session.selectJourneyOption('bus-option')
 
-    expect(session.getState().journey.selectedCandidateKey).toBe('bus-option')
-    expect(session.getState().journey.journey).toEqual(busJourney)
+    expect(session.getState().path.selectedCandidateKey).toBe('bus-option')
+    expect(session.getState().path.path).toEqual(busJourney)
     expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith(
       [
-        { candidateKey: 'walking-option', journey: walkingJourney },
-        { candidateKey: 'bus-option', journey: busJourney },
+        { candidateKey: 'walking-option', path: walkingPath },
+        { candidateKey: 'bus-option', path: busJourney },
       ],
       'bus-option',
     )
-    expect(journeyPlanner).toHaveBeenCalledOnce()
+    expect(pathfinder).toHaveBeenCalledOnce()
   })
 
   it('resets an alternative selection to Recommended when a new calculation starts', async () => {
-    const busJourney = createShuttleJourney()
-    const walkingJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    const busJourney = createBusPath()
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
-      scoreCandidate('walking-option', walkingJourney),
+      scoreCandidate('walking-option', walkingPath),
     ])
-    const nextPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn()
+    const nextPlanning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn()
       .mockResolvedValueOnce(result)
       .mockImplementationOnce(() => nextPlanning.promise)
-    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    const session = createNavigationSession(createDependencies({ pathfinder }))
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
 
-    session.planJourney()
-    await waitForState(session, (state) => state.journey.status === 'ready')
+    session.searchPaths()
+    await waitForState(session, (state) => state.path.status === 'ready')
     session.selectJourneyOption('bus-option')
-    expect(session.getState().journey.selectedCandidateKey).toBe('bus-option')
+    expect(session.getState().path.selectedCandidateKey).toBe('bus-option')
 
-    session.replanJourney()
+    session.replanPath()
 
-    expect(session.getState().journey).toMatchObject({
+    expect(session.getState().path).toMatchObject({
       status: 'loading',
       selectedCandidateKey: null,
       displayedCandidates: [],
     })
     nextPlanning.resolve(result)
     await waitForState(session, (state) => (
-      state.journey.status === 'ready' && state.journey.selectedCandidateKey === 'walking-option'
+      state.path.status === 'ready' && state.path.selectedCandidateKey === 'walking-option'
     ))
-    expect(session.getState().journey.journey).toEqual(walkingJourney)
-    expect(journeyPlanner).toHaveBeenCalledTimes(2)
+    expect(session.getState().path.path).toEqual(walkingPath)
+    expect(pathfinder).toHaveBeenCalledTimes(2)
   })
 
   it('cancels an in-flight Journey and replans when test time changes', async () => {
-    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const secondPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn()
+    const firstPlanning = createDeferred<FindPathsResult | null>()
+    const secondPlanning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)
-    const session = createNavigationSession(createDependencies({ journeyPlanner }))
+    const session = createNavigationSession(createDependencies({ pathfinder }))
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
-    session.planJourney()
-    const firstSignal = journeyPlanner.mock.calls[0][0].signal as AbortSignal
+    session.searchPaths()
+    const firstSignal = pathfinder.mock.calls[0][0].signal as AbortSignal
 
-    session.replanJourney()
+    session.replanPath()
     expect(firstSignal.aborted).toBe(true)
-    expect(journeyPlanner).toHaveBeenCalledTimes(2)
-    const updated = createJourney({ kind: 'stop', id: 'STOP-A' })
+    expect(pathfinder).toHaveBeenCalledTimes(2)
+    const updated = createPath({ kind: 'stop', id: 'STOP-A' })
     secondPlanning.resolve(createPlanningResult(updated))
-    await waitForState(session, (state) => state.journey.status === 'ready')
+    await waitForState(session, (state) => state.path.status === 'ready')
     firstPlanning.resolve(null)
     await Promise.resolve()
-    expect(session.getState().journey.journey).toEqual(updated)
+    expect(session.getState().path.path).toEqual(updated)
   })
 
   it('cancels an in-flight Journey and clears it when an endpoint changes', async () => {
-    const planning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn(() => planning.promise)
-    const dependencies = createDependencies({ journeyPlanner })
+    const planning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn(() => planning.promise)
+    const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
-    session.planJourney()
-    const firstCall = journeyPlanner.mock.calls[0] as unknown as [{ signal: AbortSignal }]
+    session.searchPaths()
+    const firstCall = pathfinder.mock.calls[0] as unknown as [{ signal: AbortSignal }]
     const signal = firstCall[0].signal
 
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
 
     expect(signal.aborted).toBe(true)
-    expect(session.getState().journey).toEqual({
+    expect(session.getState().path).toEqual({
       status: 'idle',
-      journey: null,
+      path: null,
       candidates: [],
       displayedCandidates: [],
       selectedCandidateKey: null,
       error: null,
     })
     expect(dependencies.map.setJourneyOptions).toHaveBeenLastCalledWith([], null)
-    expect(journeyPlanner).toHaveBeenCalledOnce()
+    expect(pathfinder).toHaveBeenCalledOnce()
   })
 
   it('publishes a safe failure state when planning fails', async () => {
-    const journeyPlanner = vi.fn(async () => {
+    const pathfinder = vi.fn(async () => {
       throw new Error('routing service unavailable')
     })
-    const dependencies = createDependencies({ journeyPlanner })
+    const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
-    session.planJourney()
-    await waitForState(session, (state) => state.journey.status === 'failed')
+    session.searchPaths()
+    await waitForState(session, (state) => state.path.status === 'failed')
 
-    expect(session.getState().journey).toEqual({
+    expect(session.getState().path).toEqual({
       status: 'failed',
-      journey: null,
+      path: null,
       candidates: [],
       displayedCandidates: [],
       selectedCandidateKey: null,
@@ -606,37 +607,37 @@ describe('navigation session', () => {
   })
 
   it('requires a new submission after an endpoint is changed', async () => {
-    const firstPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const secondPlanning = createDeferred<JourneyPlanningServiceResult | null>()
-    const journeyPlanner = vi.fn()
+    const firstPlanning = createDeferred<FindPathsResult | null>()
+    const secondPlanning = createDeferred<FindPathsResult | null>()
+    const pathfinder = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)
-    const dependencies = createDependencies({ journeyPlanner })
+    const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
-    session.planJourney()
-    const firstSignal = journeyPlanner.mock.calls[0]?.[0].signal as AbortSignal
+    session.searchPaths()
+    const firstSignal = pathfinder.mock.calls[0]?.[0].signal as AbortSignal
     session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-B' })
     expect(firstSignal.aborted).toBe(true)
 
-    expect(journeyPlanner).toHaveBeenCalledOnce()
-    session.planJourney()
-    expect(journeyPlanner).toHaveBeenCalledTimes(2)
+    expect(pathfinder).toHaveBeenCalledOnce()
+    session.searchPaths()
+    expect(pathfinder).toHaveBeenCalledTimes(2)
 
-    const secondJourney = createJourney({ kind: 'stop', id: 'STOP-B' })
+    const secondJourney = createPath({ kind: 'stop', id: 'STOP-B' })
     secondPlanning.resolve(createPlanningResult(secondJourney))
-    await waitForState(session, (state) => state.journey.status === 'ready')
-    firstPlanning.resolve(createPlanningResult(createJourney({ kind: 'stop', id: 'STOP-A' })))
+    await waitForState(session, (state) => state.path.status === 'ready')
+    firstPlanning.resolve(createPlanningResult(createPath({ kind: 'stop', id: 'STOP-A' })))
     await Promise.resolve()
 
-    expect(session.getState().journey.journey?.destination).toEqual({ kind: 'stop', id: 'STOP-B' })
+    expect(session.getState().path.path?.destination).toEqual({ kind: 'stop', id: 'STOP-B' })
     session.clearTripEndpoint('destination')
-    expect(session.getState().journey).toEqual({
+    expect(session.getState().path).toEqual({
       status: 'idle',
-      journey: null,
+      path: null,
       candidates: [],
       displayedCandidates: [],
       selectedCandidateKey: null,

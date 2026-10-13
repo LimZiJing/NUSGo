@@ -1,6 +1,6 @@
 import type {
   TransitGeoJsonPosition,
-  TransitRouteGeometry,
+  BusRouteGeometry,
 } from '@navus/shared/transit/types'
 
 const METRES_PER_LATITUDE_DEGREE = 110540
@@ -175,11 +175,11 @@ function getDistanceInMetres(
   )
 }
 
-export type TransitRouteOverlapMap = ReadonlyMap<string, ReadonlySet<string>>
+export type BusRouteOverlapMap = ReadonlyMap<string, ReadonlySet<string>>
 
-export function deriveTransitRouteOverlapMap(
-  geometry: TransitRouteGeometry,
-): TransitRouteOverlapMap {
+export function deriveBusRouteOverlapMap(
+  geometry: BusRouteGeometry,
+): BusRouteOverlapMap {
   const overlaps = new Map<string, Set<string>>()
 
   for (let firstIndex = 0; firstIndex < geometry.features.length; firstIndex += 1) {

@@ -8,7 +8,7 @@ export interface TransitStop {
   readonly opposite?: string | null
 }
 
-export interface TransitRoute {
+export interface BusRoute {
   readonly id: string
   readonly name: string
   readonly color: string
@@ -25,7 +25,7 @@ export interface TransitStopInput {
   opposite?: string | null
 }
 
-export interface TransitRouteInput {
+export interface BusRouteInput {
   id: string
   name: string
   color: string
@@ -58,24 +58,24 @@ export interface TransitGeometryVerification {
 
 export type TransitGeoJsonPosition = [longitude: number, latitude: number]
 
-export interface TransitRouteGeometryProperties {
+export interface BusRouteGeometryProperties {
   routeId: string
   name: string
   color: string
 }
 
-export interface TransitRouteGeometryFeature {
+export interface BusRouteGeometryFeature {
   type: 'Feature'
-  properties: TransitRouteGeometryProperties
+  properties: BusRouteGeometryProperties
   geometry: {
     type: 'LineString'
     coordinates: TransitGeoJsonPosition[]
   }
 }
 
-export interface TransitRouteGeometry {
+export interface BusRouteGeometry {
   type: 'FeatureCollection'
-  features: TransitRouteGeometryFeature[]
+  features: BusRouteGeometryFeature[]
 }
 
 export interface TransitVerificationRoute {
@@ -96,13 +96,13 @@ export interface TransitVerificationManifest {
 export interface TransitNetwork {
   readonly version: number
   readonly metadata: TransitNetworkMetadata
-  readonly routes: readonly TransitRoute[]
+  readonly routes: readonly BusRoute[]
   readonly stops: readonly TransitStop[]
 }
 
 export interface TransitNetworkInput {
   version: number
   metadata: TransitNetworkMetadataInput
-  routes: TransitRouteInput[]
+  routes: BusRouteInput[]
   stops: TransitStopInput[]
 }

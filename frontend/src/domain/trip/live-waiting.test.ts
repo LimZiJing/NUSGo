@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLiveShuttleWaitingTimeProvider } from './live-waiting'
+import { createLiveBusWaitingTimeProvider } from './live-waiting'
 
 const snapshot = {
   observedAt: '2026-09-23T13:48:26.000Z',
@@ -29,7 +29,7 @@ const record = {
 
 describe('createLiveShuttleWaitingTimeProvider', () => {
   it('uses the next arrival for the first boarding', () => {
-    const waiting = createLiveShuttleWaitingTimeProvider(snapshot, Date.parse(snapshot.observedAt))
+    const waiting = createLiveBusWaitingTimeProvider(snapshot, Date.parse(snapshot.observedAt))
 
     expect(waiting(record, {
       routeId: 'D2',
@@ -39,7 +39,7 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
   })
 
   it('includes time walking to the stop and uses half headway after arrivals pass', () => {
-    const waiting = createLiveShuttleWaitingTimeProvider(snapshot, Date.parse(snapshot.observedAt))
+    const waiting = createLiveBusWaitingTimeProvider(snapshot, Date.parse(snapshot.observedAt))
 
     expect(waiting(record, {
       routeId: 'D2',
@@ -54,7 +54,7 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
   })
 
   it('rejects an expired stop snapshot', () => {
-    const waiting = createLiveShuttleWaitingTimeProvider(snapshot, Date.parse('2026-09-23T14:11:00.000Z'))
+    const waiting = createLiveBusWaitingTimeProvider(snapshot, Date.parse('2026-09-23T14:11:00.000Z'))
 
     expect(waiting(record, {
       routeId: 'D2',
@@ -64,7 +64,7 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
   })
 
   it('rejects a stale stop snapshot before its provider expiry', () => {
-    const waiting = createLiveShuttleWaitingTimeProvider(
+    const waiting = createLiveBusWaitingTimeProvider(
       snapshot,
       Date.parse('2026-09-23T13:49:12.000Z'),
     )
@@ -100,7 +100,7 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
         },
       },
     } as const
-    const waiting = createLiveShuttleWaitingTimeProvider(
+    const waiting = createLiveBusWaitingTimeProvider(
       mixedSnapshot,
       Date.parse('2026-09-23T13:49:26.000Z'),
     )

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { TransitRoute } from '@navus/shared/transit/types'
-import type { ShuttleJourneyLeg } from './journey'
+import type { BusRoute } from '@navus/shared/transit/types'
+import type { BusPathLeg } from '../../pathfinding/path'
 import { getShuttleJourneyLegStopIds } from './journey-stops'
 
-const route: TransitRoute = {
+const route: BusRoute = {
   id: 'A1',
   name: 'A1',
   color: '#123456',
@@ -13,7 +13,7 @@ const route: TransitRoute = {
 function createShuttleLeg(
   boardingStopId: string,
   alightingStopId: string,
-): Pick<ShuttleJourneyLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'> {
+): Pick<BusPathLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'> {
   return {
     routeId: 'A1',
     boardingStopId,

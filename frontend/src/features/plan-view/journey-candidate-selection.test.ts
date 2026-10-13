@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Journey } from '../../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
-import { selectJourneysForDisplay } from './journey-candidate-selection'
+import type { Path } from '../../pathfinding/path'
+import type { ScoredPathCandidate } from '../../domain/trip/planner'
+import { selectDisplayedPaths } from './journey-candidate-selection'
 
 const origin = { kind: 'stop', id: 'STOP-A' } as const
 const destination = { kind: 'stop', id: 'STOP-B' } as const
@@ -10,11 +10,11 @@ function candidate(
   key: string,
   mode: 'walking' | 'shuttle',
   adjustedDurationSeconds: number,
-): ScoredJourneyCandidate {
+): ScoredPathCandidate {
   const durationSeconds = mode === 'walking'
     ? adjustedDurationSeconds * 0.8
     : adjustedDurationSeconds
-  const leg: Journey['legs'][number] = mode === 'walking'
+  const leg: Path['legs'][number] = mode === 'walking'
     ? {
         mode,
         from: origin,
@@ -36,7 +36,7 @@ function candidate(
         waitingSeconds: 0,
         rideSeconds: durationSeconds,
       }
-  const journey: Journey = {
+  const path: Path = {
     origin,
     destination,
     legs: [leg],
@@ -48,7 +48,7 @@ function candidate(
 
   return {
     candidateKey: `${mode}:${key}`,
-    journey,
+    path,
     adjustedDurationSeconds,
     score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
   }
@@ -61,7 +61,7 @@ describe('selectJourneysForDisplay', () => {
     const busC = candidate('C1', 'shuttle', 280)
     const walking = candidate('walk', 'walking', 160)
 
-    expect(selectJourneysForDisplay([busA, walking, busB, busC]))
+    expect(selectDisplayedPaths([busA, walking, busB, busC]))
       .toEqual([busA, busB, busC, walking])
   })
 
@@ -72,9 +72,9 @@ describe('selectJourneysForDisplay', () => {
     const boundaryWalk = candidate('boundary', 'walking', 160)
     const fasterWalk = candidate('faster', 'walking', 159.9)
 
-    expect(selectJourneysForDisplay([boundaryWalk, busC, busA, busB]))
+    expect(selectDisplayedPaths([boundaryWalk, busC, busA, busB]))
       .toEqual([busA, busB, busC, boundaryWalk])
-    expect(selectJourneysForDisplay([fasterWalk, busC, busA, busB]))
+    expect(selectDisplayedPaths([fasterWalk, busC, busA, busB]))
       .toEqual([fasterWalk, busA, busB, busC])
   })
 
@@ -84,7 +84,7 @@ describe('selectJourneysForDisplay', () => {
     const busC = candidate('C1', 'shuttle', 280)
     const walking = candidate('walk', 'walking', 170)
 
-    expect(selectJourneysForDisplay([walking, busB, busA, busC]))
+    expect(selectDisplayedPaths([walking, busB, busA, busC]))
       .toEqual([busA, busB, busC, walking])
   })
 
@@ -92,21 +92,21 @@ describe('selectJourneysForDisplay', () => {
     const slowerWalk = candidate('slower', 'walking', 180)
     const fasterWalk = candidate('faster', 'walking', 120)
 
-    expect(selectJourneysForDisplay([slowerWalk, fasterWalk])).toEqual([fasterWalk])
+    expect(selectDisplayedPaths([slowerWalk, fasterWalk])).toEqual([fasterWalk])
   })
 
   it('ranks equal adjusted-duration bus candidates deterministically', () => {
     const busB = candidate('B1', 'shuttle', 200)
     const busA = candidate('A1', 'shuttle', 200)
 
-    expect(selectJourneysForDisplay([busB, busA])).toEqual([busA, busB])
+    expect(selectDisplayedPaths([busB, busA])).toEqual([busA, busB])
   })
 
   it('uses candidateKey for final ties when it differs from journey sequence order', () => {
     const sequenceFirst = { ...candidate('A1', 'shuttle', 200), candidateKey: 'z-candidate' }
     const candidateKeyFirst = { ...candidate('Z1', 'shuttle', 200), candidateKey: 'a-candidate' }
 
-    expect(selectJourneysForDisplay([sequenceFirst, candidateKeyFirst]))
+    expect(selectDisplayedPaths([sequenceFirst, candidateKeyFirst]))
       .toEqual([candidateKeyFirst, sequenceFirst])
   })
 
@@ -114,20 +114,20 @@ describe('selectJourneysForDisplay', () => {
     const complete = candidate('A1', 'shuttle', 200)
     const incomplete = {
       ...candidate('B1', 'shuttle', 210),
-      journey: {
-        ...candidate('B1', 'shuttle', 210).journey,
+      path: {
+        ...candidate('B1', 'shuttle', 210).path,
         legs: [{
-          ...candidate('B1', 'shuttle', 210).journey.legs[0]!,
+          ...candidate('B1', 'shuttle', 210).path.legs[0]!,
           geometry: { type: 'LineString', coordinates: [[103, 1]] },
         }],
       },
-    } as ScoredJourneyCandidate
+    } as ScoredPathCandidate
     const invalid = {
       ...candidate('C1', 'shuttle', 220),
-      journey: { ...candidate('C1', 'shuttle', 220).journey, legs: [] },
+      path: { ...candidate('C1', 'shuttle', 220).path, legs: [] },
     }
 
-    expect(selectJourneysForDisplay([incomplete, invalid, complete])).toEqual([complete])
+    expect(selectDisplayedPaths([incomplete, invalid, complete])).toEqual([complete])
   })
 
   it('displays up to three distinct bus Journeys plus one walking Journey', () => {
@@ -139,7 +139,7 @@ describe('selectJourneysForDisplay', () => {
     ]
     const walking = candidate('walk', 'walking', 180)
 
-    expect(selectJourneysForDisplay([...buses, walking]))
+    expect(selectDisplayedPaths([...buses, walking]))
       .toEqual([...buses.slice(0, 3), walking])
   })
 })

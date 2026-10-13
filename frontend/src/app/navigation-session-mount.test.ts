@@ -50,8 +50,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
     navigateTo: vi.fn(),
-    replanJourney: vi.fn(),
-    planJourney: vi.fn(),
+    replanPath: vi.fn(),
+    searchPaths: vi.fn(),
     selectJourneyOption: vi.fn(),
     clearTripEndpoint: vi.fn(),
     swapTripEndpoints: vi.fn(),
@@ -105,7 +105,7 @@ function createMountDependencies(
     createNavigationSession: vi.fn(() => session),
     loadVenues: vi.fn(async () => ({ venues: {}, venueCount: 0 })),
     loadTransit: vi.fn(async () => new Promise<LoadedTransitData>(() => undefined)),
-    journeyPlanner: vi.fn(async () => null),
+    pathfinder: vi.fn(async () => null),
     locationTracker,
     getMapOptions: () => mapOptions,
   }
@@ -133,7 +133,7 @@ describe('navigation session application seam', () => {
       map,
       loadVenues: dependencies.loadVenues,
       loadTransit: dependencies.loadTransit,
-      journeyPlanner: dependencies.journeyPlanner,
+      pathfinder: dependencies.pathfinder,
       locationTracker: dependencies.locationTracker,
     })
     expect(session.start).toHaveBeenCalledOnce()
@@ -158,8 +158,8 @@ describe('navigation session application seam', () => {
     const session = createSessionDouble({
       getState: vi.fn(() => ({
         ...state,
-        journey: {
-          ...state.journey,
+        path: {
+          ...state.path,
           displayedCandidates: [{ candidateKey: 'option-b' }] as never,
         },
       })),
@@ -233,8 +233,8 @@ describe('navigation session application seam', () => {
     expect(session.setTripEndpoint).toHaveBeenCalledWith('origin', { kind: 'venue', id: 'COM1' })
     firstCommands.navigateToEndpoint({ kind: 'stop', id: 'STOP-A' })
     expect(session.navigateTo).toHaveBeenCalledWith({ kind: 'stop', id: 'STOP-A' })
-    firstCommands.planJourney()
-    expect(session.planJourney).toHaveBeenCalledOnce()
+    firstCommands.searchPaths()
+    expect(session.searchPaths).toHaveBeenCalledOnce()
     firstCommands.selectJourneyOption('option-a')
     expect(session.selectJourneyOption).toHaveBeenCalledWith('option-a')
     firstCommands.fitJourneyRoutes()

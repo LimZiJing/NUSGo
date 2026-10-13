@@ -1,5 +1,5 @@
 import type { TransitIndex } from '../../domain/transit'
-import type { Journey, JourneyLeg, ShuttleJourneyLeg } from '../../domain/trip/journey'
+import type { Path, PathLeg, BusPathLeg } from '../../pathfinding/path'
 import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
@@ -10,7 +10,7 @@ export type JourneyTimelineEntry =
       readonly kind: 'location'
       readonly id: string
       readonly label: string
-      readonly locationKind: JourneyLeg['from']['kind']
+      readonly locationKind: PathLeg['from']['kind']
     }
   | {
       readonly kind: 'walking'
@@ -53,7 +53,7 @@ interface JourneyRoutePresentation {
 }
 
 function getEndpointLabel(
-  endpoint: JourneyLeg['from'],
+  endpoint: PathLeg['from'],
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
 ): string {
@@ -88,7 +88,7 @@ export function formatDistance(meters: number): string {
 }
 
 function getShuttleIntermediateStops(
-  leg: ShuttleJourneyLeg,
+  leg: BusPathLeg,
   networkIndex: TransitIndex | null,
 ): readonly { readonly id: string; readonly label: string }[] {
   if (!networkIndex) return []
@@ -112,7 +112,7 @@ function getShuttleIntermediateStops(
 }
 
 function getLegEntry(
-  leg: JourneyLeg,
+  leg: PathLeg,
   legIndex: number,
   networkIndex: TransitIndex | null,
 ): JourneyTimelineEntry {
@@ -125,7 +125,7 @@ function getLegEntry(
     }
   }
 
-  const shuttleLeg: ShuttleJourneyLeg = leg
+  const shuttleLeg: BusPathLeg = leg
   const routePresentation = getJourneyRoutePresentation(shuttleLeg.routeId, networkIndex)
   return {
     kind: 'shuttle',
@@ -140,13 +140,13 @@ function getLegEntry(
 }
 
 export function getJourneyCompactSummary(
-  journey: Journey,
+  path: Path,
   networkIndex: TransitIndex | null,
 ): JourneyCompactSummary {
-  const walkingDurationSeconds = journey.legs.reduce((total, leg) => (
+  const walkingDurationSeconds = path.legs.reduce((total, leg) => (
     total + (leg.mode === 'walking' ? leg.durationSeconds : 0)
   ), 0)
-  const modeSegments = journey.legs.map((leg): JourneyModeSummarySegment => {
+  const modeSegments = path.legs.map((leg): JourneyModeSummarySegment => {
     if (leg.mode === 'walking') return { kind: 'walking' }
     const routePresentation = getJourneyRoutePresentation(leg.routeId, networkIndex)
     return {
@@ -163,10 +163,10 @@ export function getJourneyCompactSummary(
 }
 
 export function getJourneyOptionHeader(
-  journey: Journey,
+  path: Path,
   optionIndex: number,
 ): JourneyOptionHeader {
-  const shuttleLegCount = journey.legs.filter((leg) => leg.mode === 'shuttle').length
+  const shuttleLegCount = path.legs.filter((leg) => leg.mode === 'shuttle').length
   if (optionIndex === 0) {
     return {
       kind: 'recommended',
@@ -185,12 +185,12 @@ export function getJourneyOptionHeader(
   }
 }
 
-function sameEndpoint(left: JourneyLeg['from'], right: JourneyLeg['from']): boolean {
+function sameEndpoint(left: PathLeg['from'], right: PathLeg['from']): boolean {
   return getTripEndpointKey(left) === getTripEndpointKey(right)
 }
 
 function getLocationEntry(
-  endpoint: JourneyLeg['from'],
+  endpoint: PathLeg['from'],
   id: string,
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
@@ -208,22 +208,22 @@ function getLocationEntry(
  * while ensuring each endpoint is rendered once in the feature's timeline.
  */
 export function getJourneyTimelineEntries(
-  journey: Journey,
+  path: Path,
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
 ): readonly JourneyTimelineEntry[] {
   const entries: JourneyTimelineEntry[] = [
-    getLocationEntry(journey.origin, 'origin', venues, networkIndex),
+    getLocationEntry(path.origin, 'origin', venues, networkIndex),
   ]
 
-  journey.legs.forEach((leg, legIndex) => {
+  path.legs.forEach((leg, legIndex) => {
     entries.push(getLegEntry(leg, legIndex, networkIndex))
     entries.push(getLocationEntry(leg.to, `location-${legIndex}`, venues, networkIndex))
   })
 
-  const lastLeg = journey.legs[journey.legs.length - 1]
-  if (!lastLeg || !sameEndpoint(lastLeg.to, journey.destination)) {
-    entries.push(getLocationEntry(journey.destination, 'destination', venues, networkIndex))
+  const lastLeg = path.legs[path.legs.length - 1]
+  if (!lastLeg || !sameEndpoint(lastLeg.to, path.destination)) {
+    entries.push(getLocationEntry(path.destination, 'destination', venues, networkIndex))
   }
 
   return entries

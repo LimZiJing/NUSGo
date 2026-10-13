@@ -6,7 +6,7 @@ import type {
 } from '../contracts/routing'
 import type { ShuttleArrivalClient } from '../contracts/shuttle-arrivals'
 import type { PublicBusArrivalClient } from '../contracts/public-bus-arrivals'
-import type { JourneyPlanningService } from '../journey-planning'
+import type { FindPathsService } from '../journey-planning'
 import { getValhallaBaseUrl } from '../routing-config'
 import { createJourneyPlanningService } from '../journey-planning'
 import { loadTransitMapData, loadVenueData } from '../../infrastructure/data/loaders'
@@ -29,7 +29,7 @@ export interface AppServices {
   readonly shuttleServiceHoursClient: ShuttleServiceHoursClient
   readonly routeEngine: WalkingRouteEngine
   readonly walkingConnectionProvider: WalkingConnectionProvider
-  readonly journeyPlanner: JourneyPlanningService
+  readonly pathfinder: FindPathsService
 }
 
 export interface CreateAppServicesOptions {
@@ -52,7 +52,7 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
     ),
   })
   const walkingConnectionProvider = createWalkingConnectionProvider({ routeEngine })
-  const journeyPlanner = createJourneyPlanningService(
+  const pathfinder = createJourneyPlanningService(
     routeEngine,
     shuttleArrivalClient,
     shuttleServiceHoursClient,
@@ -70,6 +70,6 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
     shuttleServiceHoursClient,
     routeEngine,
     walkingConnectionProvider,
-    journeyPlanner,
+    pathfinder,
   }
 }

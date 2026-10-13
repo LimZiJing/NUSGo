@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { Journey } from '../../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
+import type { Path } from '../../pathfinding/path'
+import type { ScoredPathCandidate } from '../../domain/trip/planner'
 import { getJourneyCompactSummary, getJourneyTimelineEntries } from './journey-result-presentation'
 import { JourneyResult } from './journey-result'
 
@@ -26,7 +26,7 @@ const route = networkIndex.routes[0]
 const boardingStopId = route.stopIds[0]
 const alightingStopId = route.stopIds[2]
 
-const journey: Journey = {
+const path: Path = {
   origin: { kind: 'venue', id: 'ORIGIN' },
   destination: { kind: 'venue', id: 'DESTINATION' },
   legs: [
@@ -66,10 +66,10 @@ const journey: Journey = {
   planningQuality: 'exact',
 }
 
-function scoreJourney(candidateJourney: Journey, candidateKey = 'test-candidate'): ScoredJourneyCandidate {
+function scoreJourney(candidatePath: Path, candidateKey = 'test-candidate'): ScoredPathCandidate {
   let shuttleBoardings = 0
   let adjustedDurationSeconds = 0
-  for (const leg of candidateJourney.legs) {
+  for (const leg of candidatePath.legs) {
     if (leg.mode === 'walking') {
       adjustedDurationSeconds += leg.durationSeconds / 0.8
     } else {
@@ -79,7 +79,7 @@ function scoreJourney(candidateJourney: Journey, candidateKey = 'test-candidate'
   }
   return {
     candidateKey,
-    journey: candidateJourney,
+    path: candidatePath,
     adjustedDurationSeconds,
     score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
   }
@@ -91,7 +91,7 @@ const venues = {
 }
 
 function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
-  const shuttleLeg = journey.legs[1]
+  const shuttleLeg = path.legs[1]
   if (!shuttleLeg || shuttleLeg.mode !== 'shuttle') {
     throw new Error('Test journey is missing its shuttle leg')
   }
@@ -100,31 +100,31 @@ function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
     <JourneyResult
       state={{
         status: 'ready',
-        journey: {
-          ...journey,
+        path: {
+          ...path,
           legs: [
-            journey.legs[0],
+            path.legs[0],
             {
               ...shuttleLeg,
               waitingSeconds,
               durationSeconds: waitingSeconds + shuttleLeg.rideSeconds,
             },
-            journey.legs[2],
+            path.legs[2],
           ],
-          totalDurationSeconds: journey.totalDurationSeconds + waitingSeconds,
+          totalDurationSeconds: path.totalDurationSeconds + waitingSeconds,
         },
         candidates: [scoreJourney({
-          ...journey,
+          ...path,
           legs: [
-            journey.legs[0],
+            path.legs[0],
             {
               ...shuttleLeg,
               waitingSeconds,
               durationSeconds: waitingSeconds + shuttleLeg.rideSeconds,
             },
-            journey.legs[2],
+            path.legs[2],
           ],
-          totalDurationSeconds: journey.totalDurationSeconds + waitingSeconds,
+          totalDurationSeconds: path.totalDurationSeconds + waitingSeconds,
         })],
         error: null,
       }}
@@ -138,7 +138,7 @@ describe('JourneyResult', () => {
   it('shows the estimated Journey totals and ordered walking and shuttle details', () => {
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
+        state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
       />,
@@ -179,13 +179,13 @@ describe('JourneyResult', () => {
   })
 
   it('does not show a walking-only travel-time disclaimer', () => {
-    const walkingJourney: Journey = {
-      origin: journey.origin,
-      destination: journey.destination,
+    const walkingPath: Path = {
+      origin: path.origin,
+      destination: path.destination,
       legs: [{
         mode: 'walking',
-        from: journey.origin,
-        to: journey.destination,
+        from: path.origin,
+        to: path.destination,
         durationSeconds: 600,
         distanceMeters: 4200,
         geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
@@ -197,7 +197,7 @@ describe('JourneyResult', () => {
     }
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey: walkingJourney, candidates: [scoreJourney(walkingJourney)], error: null }}
+        state={{ status: 'ready', path: walkingPath, candidates: [scoreJourney(walkingPath)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
       />,
@@ -207,13 +207,13 @@ describe('JourneyResult', () => {
   })
 
   it('renders every Journey chosen from the candidate pool as an ordered Plan option', () => {
-    const walkingAlternative: Journey = {
-      origin: journey.origin,
-      destination: journey.destination,
+    const walkingAlternative: Path = {
+      origin: path.origin,
+      destination: path.destination,
       legs: [{
         mode: 'walking',
-        from: journey.origin,
-        to: journey.destination,
+        from: path.origin,
+        to: path.destination,
         durationSeconds: 600,
         distanceMeters: 4200,
         geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
@@ -227,10 +227,10 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status: 'ready',
-          journey,
+          path,
           candidates: [
             scoreJourney(walkingAlternative, 'walking-alternative'),
-            scoreJourney(journey, 'bus-recommendation'),
+            scoreJourney(path, 'bus-recommendation'),
           ],
           error: null,
         }}
@@ -247,12 +247,12 @@ describe('JourneyResult', () => {
   })
 
   it('renders recommendation and mode headers for each option without departure-arrival ranges', () => {
-    const walkingJourney: Journey = {
-      ...journey,
+    const walkingPath: Path = {
+      ...path,
       legs: [{
         mode: 'walking',
-        from: journey.origin,
-        to: journey.destination,
+        from: path.origin,
+        to: path.destination,
         durationSeconds: 600,
         distanceMeters: 4200,
         geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
@@ -260,12 +260,12 @@ describe('JourneyResult', () => {
       totalDurationSeconds: 600,
       totalDistanceMeters: 4200,
     }
-    const shuttleLeg = journey.legs.find((leg) => leg.mode === 'shuttle')
+    const shuttleLeg = path.legs.find((leg) => leg.mode === 'shuttle')
     if (!shuttleLeg || shuttleLeg.mode !== 'shuttle') {
       throw new Error('Test journey is missing its shuttle leg')
     }
-    const transferJourney: Journey = {
-      ...journey,
+    const transferPath: Path = {
+      ...path,
       legs: [
         shuttleLeg,
         {
@@ -280,16 +280,16 @@ describe('JourneyResult', () => {
       totalDistanceMeters: shuttleLeg.distanceMeters * 2,
     }
     const options = [
-      scoreJourney(walkingJourney, 'walking-recommendation'),
-      scoreJourney(journey, 'direct-shuttle'),
-      scoreJourney(transferJourney, 'one-transfer'),
-      scoreJourney(walkingJourney, 'walking-alternative'),
+      scoreJourney(walkingPath, 'walking-recommendation'),
+      scoreJourney(path, 'direct-shuttle'),
+      scoreJourney(transferPath, 'one-transfer'),
+      scoreJourney(walkingPath, 'walking-alternative'),
     ]
     const markup = renderToStaticMarkup(
       <JourneyResult
         state={{
           status: 'ready',
-          journey: walkingJourney,
+          path: walkingPath,
           candidates: options,
           displayedCandidates: options,
           selectedCandidateKey: 'walking-alternative',
@@ -321,13 +321,13 @@ describe('JourneyResult', () => {
   })
 
   it('shows one accessible expanded option and keeps the first-ranked option in recommendation position', async () => {
-    const walkingAlternative: Journey = {
-      origin: journey.origin,
-      destination: journey.destination,
+    const walkingAlternative: Path = {
+      origin: path.origin,
+      destination: path.destination,
       legs: [{
         mode: 'walking',
-        from: journey.origin,
-        to: journey.destination,
+        from: path.origin,
+        to: path.destination,
         durationSeconds: 600,
         distanceMeters: 4200,
         geometry: { type: 'LineString', coordinates: [[103, 1], [103.2, 1.2]] },
@@ -338,7 +338,7 @@ describe('JourneyResult', () => {
       planningQuality: 'exact',
     }
     const options = [
-      scoreJourney(journey, 'bus-recommendation'),
+      scoreJourney(path, 'bus-recommendation'),
       scoreJourney(walkingAlternative, 'walking-alternative'),
     ]
     const onSelectCandidate = vi.fn()
@@ -347,7 +347,7 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status: 'ready',
-          journey,
+          path,
           candidates: options,
           displayedCandidates: options,
           selectedCandidateKey: 'bus-recommendation',
@@ -400,7 +400,7 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status: 'ready',
-          journey,
+          path,
           candidates: options,
           displayedCandidates: options,
           selectedCandidateKey: 'walking-alternative',
@@ -422,9 +422,9 @@ describe('JourneyResult', () => {
   })
 
   it('keeps the first-ranked option aligned with the map Journey when candidate keys break a sequence tie', () => {
-    const withRouteId = (routeId: string): Journey => ({
-      ...journey,
-      legs: journey.legs.map((leg) => leg.mode === 'shuttle' ? { ...leg, routeId } : leg),
+    const withRouteId = (routeId: string): Path => ({
+      ...path,
+      legs: path.legs.map((leg) => leg.mode === 'shuttle' ? { ...leg, routeId } : leg),
     })
     const mapJourney = withRouteId('ZZZ')
     const sequenceFirst = scoreJourney(withRouteId('AAA'), 'z-candidate')
@@ -433,7 +433,7 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status: 'ready',
-          journey: mapJourney,
+          path: mapJourney,
           candidates: [sequenceFirst, mapCandidate],
           error: null,
         }}
@@ -452,7 +452,7 @@ describe('JourneyResult', () => {
   })
 
   it('flattens each Journey into one ordered timeline without repeating locations', () => {
-    const entries = getJourneyTimelineEntries(journey, venues, networkIndex)
+    const entries = getJourneyTimelineEntries(path, venues, networkIndex)
 
     expect(entries.map((entry) => entry.kind)).toEqual([
       'location',
@@ -485,7 +485,7 @@ describe('JourneyResult', () => {
     }
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
+        state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
         venues={collidingVenues}
         networkIndex={createTransitIndex(collidingNetwork)}
       />,
@@ -496,7 +496,7 @@ describe('JourneyResult', () => {
   })
 
   it('summarizes ordered modes, canonical route labels, and total walking duration', () => {
-    expect(getJourneyCompactSummary(journey, networkIndex)).toEqual({
+    expect(getJourneyCompactSummary(path, networkIndex)).toEqual({
       walkingDurationLabel: '5 min',
       modeSegments: [
         { kind: 'walking' },
@@ -511,8 +511,8 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status: 'ready',
-          journey: { ...journey, planningQuality: 'bounded' },
-          candidates: [scoreJourney({ ...journey, planningQuality: 'bounded' })],
+          path: { ...path, planningQuality: 'bounded' },
+          candidates: [scoreJourney({ ...path, planningQuality: 'bounded' })],
           error: null,
         }}
         venues={venues}
@@ -527,7 +527,7 @@ describe('JourneyResult', () => {
   it('leaves the detailed simulation notice to PlanView', () => {
     const markup = renderToStaticMarkup(
       <JourneyResult
-        state={{ status: 'ready', journey, candidates: [scoreJourney(journey)], error: null }}
+        state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
         venues={venues}
         networkIndex={networkIndex}
         simulated
@@ -558,7 +558,7 @@ describe('JourneyResult', () => {
       <JourneyResult
         state={{
           status,
-          journey: null,
+          path: null,
           candidates: [],
           error: status === 'failed' ? 'Unable to plan journey' : null,
         }}

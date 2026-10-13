@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { LoadedTransitData } from './contracts/data'
 import { createJourneyPlanningService } from './journey-planning'
@@ -24,7 +24,7 @@ function createTransitData(): LoadedTransitData {
       { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
     ],
   })
-  const geometry = validateTransitRouteGeometry(network, {
+  const geometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -61,7 +61,7 @@ function createParallelRouteTransitData(): LoadedTransitData {
       { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1', 'B1'] },
     ],
   })
-  const geometry = validateTransitRouteGeometry(network, {
+  const geometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] } },
@@ -99,7 +99,7 @@ function createAlternativeTransitData(): LoadedTransitData {
       { id: 'STOP-D', longName: 'Stop D', shortName: 'D', latitude: 1, longitude: 103.011, services: ['B1'] },
     ],
   })
-  const geometry = validateTransitRouteGeometry(network, {
+  const geometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] } },
@@ -136,7 +136,7 @@ function createFourStopTransitData(): LoadedTransitData {
       services: ['A1'],
     })),
   })
-  const geometry = validateTransitRouteGeometry(network, {
+  const geometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -202,7 +202,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const journey = await createJourneyPlanningService(routeEngine)({
+    const result = await createJourneyPlanningService(routeEngine)({
       tripRequest: {
         origin: currentLocation,
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -213,8 +213,9 @@ describe('createJourneyPlanningService', () => {
       transit,
       signal: new AbortController().signal,
     })
+    const path = result?.candidates[0]?.path ?? null
 
-    expect(journey).toMatchObject({
+    expect(path).toMatchObject({
       origin: currentLocation,
       destination: { kind: 'venue', id: 'DESTINATION' },
       legs: [{
@@ -266,7 +267,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const result = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -287,12 +288,13 @@ describe('createJourneyPlanningService', () => {
       ],
       expect.any(AbortSignal),
     )
-    expect(journey?.legs.some((leg) => leg.mode === 'shuttle')).toBe(true)
-    expect(journey?.legs[0]).toMatchObject({ mode: 'walking', durationSeconds: 600 })
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 400 })
-    expect(journey?.candidates.length).toBeGreaterThan(1)
-    expect(journey?.candidates.every((candidate) => (
-      candidate.journey.legs.every((leg) => leg.mode !== 'walking' || leg.geometry.coordinates.length >= 2)
+    const path = result?.candidates[0]?.path ?? null
+    expect(path?.legs.some((leg) => leg.mode === 'shuttle')).toBe(true)
+    expect(path?.legs[0]).toMatchObject({ mode: 'walking', durationSeconds: 600 })
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 400 })
+    expect(result?.candidates.length).toBeGreaterThan(1)
+    expect(result?.candidates.every((candidate) => (
+      candidate.path.legs.every((leg) => leg.mode !== 'walking' || leg.geometry.coordinates.length >= 2)
     ))).toBe(true)
   })
 
@@ -318,7 +320,7 @@ describe('createJourneyPlanningService', () => {
     }
     const service = createJourneyPlanningService(routeEngine)
 
-    const journey = await service({
+    const path = (await service({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -329,10 +331,10 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs[1]).toMatchObject({ routeId: 'A1', waitingSeconds: 0 })
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs[1]).toMatchObject({ routeId: 'A1', waitingSeconds: 0 })
     expect(routeEngine.matrixWalking).toHaveBeenCalledOnce()
     expect(routeEngine.routeWalking).toHaveBeenCalledTimes(3)
   })
@@ -370,14 +372,14 @@ describe('createJourneyPlanningService', () => {
       signal: new AbortController().signal,
     })
 
-    expect(result?.candidates.filter(({ journey }) => journey.legs.some((leg) => leg.mode === 'shuttle'))
-      .map(({ journey }) => journey.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
+    expect(result?.candidates.filter(({ path }) => path.legs.some((leg) => leg.mode === 'shuttle'))
+      .map(({ path }) => path.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
         leg.mode === 'shuttle' ? leg.routeId : ''
       )))).toEqual([['A1'], ['B1']])
-    expect(result?.candidates.some(({ journey }) => journey.legs.every((leg) => leg.mode === 'walking'))).toBe(true)
+    expect(result?.candidates.some(({ path }) => path.legs.every((leg) => leg.mode === 'walking'))).toBe(true)
     expect(routeEngine.routeWalking).toHaveBeenCalledTimes(3)
-    expect(result?.geometryRouteRequests).toBe(3)
-    expect(result?.geometryRouteCacheHits).toBe(2)
+    expect(result?.metrics.geometryRouteRequests).toBe(3)
+    expect(result?.metrics.geometryRouteCacheHits).toBe(2)
   })
 
   it('skips bus candidates with incomplete routed geometry and falls back to a complete walking Journey', async () => {
@@ -416,12 +418,12 @@ describe('createJourneyPlanningService', () => {
     })
 
     expect(result?.candidates).toHaveLength(1)
-    expect(result?.candidates[0]?.journey.legs.every((leg) => leg.mode === 'walking')).toBe(true)
-    expect(result?.candidates.every((candidate) => candidate.journey.legs.every((leg) => (
+    expect(result?.candidates[0]?.path.legs.every((leg) => leg.mode === 'walking')).toBe(true)
+    expect(result?.candidates.every((candidate) => candidate.path.legs.every((leg) => (
       leg.geometry.coordinates.length >= 2
     )))).toBe(true)
-    expect(result?.geometryCandidateChecks).toBe(3)
-    expect(result?.geometryRouteCacheHits).toBe(2)
+    expect(result?.metrics.geometryCandidateChecks).toBe(3)
+    expect(result?.metrics.geometryRouteCacheHits).toBe(2)
   })
 
   it('uses the walking connection provider instead of the full matrix', async () => {
@@ -472,7 +474,7 @@ describe('createJourneyPlanningService', () => {
       walkingConnectionProvider,
     )
 
-    const journey = await service({
+    const path = (await service({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -483,9 +485,9 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
     expect(walkingConnectionProvider.getWalkingConnections).toHaveBeenCalledOnce()
     expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
   })
@@ -530,7 +532,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(
+    const result = await createJourneyPlanningService(
       routeEngine,
       shuttleArrivalClient,
       undefined,
@@ -547,12 +549,13 @@ describe('createJourneyPlanningService', () => {
       transit,
       signal: new AbortController().signal,
     })
+    const path = result?.candidates[0]?.path ?? null
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
       [{ stopId: 'STOP-A', stopName: 'Stop A' }],
       expect.any(AbortSignal),
     )
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-B',
@@ -583,7 +586,7 @@ describe('createJourneyPlanningService', () => {
       ]),
     }
 
-    const journey = await createJourneyPlanningService(
+    const result = await createJourneyPlanningService(
       routeEngine,
       undefined,
       undefined,
@@ -599,7 +602,7 @@ describe('createJourneyPlanningService', () => {
       signal: new AbortController().signal,
     })
 
-    expect(journey?.candidates.some(({ journey: candidate }) => {
+    expect(result?.candidates.some(({ path: candidate }) => {
       const firstLeg = candidate.legs[0]
       const finalLeg = candidate.legs.at(-1)
 
@@ -645,7 +648,7 @@ describe('createJourneyPlanningService', () => {
       ]),
     }
 
-    const journey = await createJourneyPlanningService(
+    const path = (await createJourneyPlanningService(
       routeEngine,
       undefined,
       undefined,
@@ -659,7 +662,7 @@ describe('createJourneyPlanningService', () => {
       venues: {},
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
     expect(routeEngine.routeWalking).toHaveBeenCalledWith(
       {
@@ -668,8 +671,8 @@ describe('createJourneyPlanningService', () => {
       },
       expect.any(AbortSignal),
     )
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['shuttle'])
-    expect(journey?.legs[0]).toMatchObject({
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['shuttle'])
+    expect(path?.legs[0]).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-D',
@@ -736,7 +739,7 @@ describe('createJourneyPlanningService', () => {
         },
       })),
     }
-    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -747,7 +750,7 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
       [
@@ -755,7 +758,7 @@ describe('createJourneyPlanningService', () => {
       ],
       expect.any(AbortSignal),
     )
-    expect(journey?.legs[1]).toMatchObject({ waitingSeconds: 20 })
+    expect(path?.legs[1]).toMatchObject({ waitingSeconds: 20 })
   })
 
   it('allows waiting before service starts when boarding occurs during service', async () => {
@@ -800,7 +803,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(
+    const path = (await createJourneyPlanningService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -816,10 +819,10 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs.some((leg) => leg.mode === 'shuttle')).toBe(true)
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+    expect(path?.legs.some((leg) => leg.mode === 'shuttle')).toBe(true)
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       waitingSeconds: 2_900,
     })
   })
@@ -866,7 +869,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(
+    const path = (await createJourneyPlanningService(
       routeEngine,
       shuttleArrivalClient,
       shuttleServiceHoursClient,
@@ -882,11 +885,11 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs.some((leg) => leg.mode === 'shuttle')).toBe(false)
-    expect(journey?.legs).toHaveLength(1)
-    expect(journey?.legs[0].mode).toBe('walking')
+    expect(path?.legs.some((leg) => leg.mode === 'shuttle')).toBe(false)
+    expect(path?.legs).toHaveLength(1)
+    expect(path?.legs[0].mode).toBe('walking')
   })
 
   it('requests live arrivals only for nearby boarding stops', async () => {
@@ -971,7 +974,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -982,7 +985,7 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
       [
@@ -991,7 +994,7 @@ describe('createJourneyPlanningService', () => {
       ],
       expect.any(AbortSignal),
     )
-    expect(journey?.legs.some((leg) => leg.mode === 'shuttle' && leg.routeId === 'B1')).toBe(true)
+    expect(path?.legs.some((leg) => leg.mode === 'shuttle' && leg.routeId === 'B1')).toBe(true)
   })
 
   it('uses a different-route transfer when no single route reaches the destination', async () => {
@@ -1004,7 +1007,7 @@ describe('createJourneyPlanningService', () => {
       { fromIndex: 0, toIndex: 1, distanceMeters: 1_000, durationSeconds: 1_000 },
     ])
 
-    const journey = await createJourneyPlanningService(routeEngine)({
+    const result = await createJourneyPlanningService(routeEngine)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1017,11 +1020,11 @@ describe('createJourneyPlanningService', () => {
       signal: new AbortController().signal,
     })
 
-    const transferCandidate = journey?.candidates.find(({ journey: candidateJourney }) => (
-      candidateJourney.legs.filter((leg) => leg.mode === 'shuttle')
+    const transferCandidate = result?.candidates.find(({ path: candidatePath }) => (
+      candidatePath.legs.filter((leg) => leg.mode === 'shuttle')
         .map((leg) => leg.routeId).join(',') === 'A1,B1'
     ))
-    expect(transferCandidate?.journey.legs.map((leg) => leg.mode)).toEqual([
+    expect(transferCandidate?.path.legs.map((leg) => leg.mode)).toEqual([
       'walking', 'shuttle', 'walking', 'shuttle', 'walking',
     ])
   })
@@ -1083,7 +1086,7 @@ describe('createJourneyPlanningService', () => {
       transit,
       signal: new AbortController().signal,
     } satisfies Parameters<typeof service>[0]
-    const journey = await service(request)
+    const result = await service(request)
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
       [
@@ -1096,29 +1099,29 @@ describe('createJourneyPlanningService', () => {
       ['A1', 'B1'],
       expect.any(AbortSignal),
     )
-    const transferCandidate = journey?.candidates.find(({ journey: candidateJourney }) => (
-      candidateJourney.legs.filter((leg) => leg.mode === 'shuttle')
+    const transferCandidate = result?.candidates.find(({ path: candidatePath }) => (
+      candidatePath.legs.filter((leg) => leg.mode === 'shuttle')
         .map((leg) => leg.routeId).join(',') === 'A1,B1'
     ))
-    expect(transferCandidate?.journey.legs.map((leg) => leg.mode)).toEqual([
+    expect(transferCandidate?.path.legs.map((leg) => leg.mode)).toEqual([
       'walking', 'shuttle', 'walking', 'shuttle', 'walking',
     ])
-    const shuttleLegs = transferCandidate?.journey.legs.filter((leg) => leg.mode === 'shuttle') ?? []
+    const shuttleLegs = transferCandidate?.path.legs.filter((leg) => leg.mode === 'shuttle') ?? []
     expect(shuttleLegs.map((leg) => leg.mode === 'shuttle' ? [leg.routeId, leg.waitingSeconds] : []))
       .toEqual([['A1', 20], ['B1', expect.any(Number)]])
-    const transferJourney = transferCandidate!.journey
-    const secondShuttleIndex = transferJourney.legs.findIndex((leg) => (
+    const transferPath = transferCandidate!.path
+    const secondShuttleIndex = transferPath.legs.findIndex((leg) => (
       leg.mode === 'shuttle' && leg.routeId === 'B1'
     ))
-    const secondBoardingElapsedSeconds = transferJourney.legs
+    const secondBoardingElapsedSeconds = transferPath.legs
       .slice(0, secondShuttleIndex)
       .reduce((total, leg) => total + leg.durationSeconds, 0)
-    const secondShuttleLeg = transferJourney.legs[secondShuttleIndex]
+    const secondShuttleLeg = transferPath.legs[secondShuttleIndex]
     expect(secondShuttleLeg?.mode).toBe('shuttle')
     if (secondShuttleLeg?.mode === 'shuttle') {
       expect(secondShuttleLeg.waitingSeconds).toBe(450 - secondBoardingElapsedSeconds)
     }
-    expect(transferCandidate?.journey.legs.every((leg) => (
+    expect(transferCandidate?.path.legs.every((leg) => (
       leg.mode !== 'walking' || leg.geometry.coordinates.length >= 2
     ))).toBe(true)
 
@@ -1126,9 +1129,9 @@ describe('createJourneyPlanningService', () => {
       A1: [{ routeId: 'A1', firstTime: '07:00', lastTime: '09:00', dayType: 'Mon-Fri', dates: [] }],
       B1: [{ routeId: 'B1', firstTime: '08:30', lastTime: '09:00', dayType: 'Mon-Fri', dates: [] }],
     })
-    const beforeServiceJourney = await service(request)
-    expect(beforeServiceJourney?.candidates.every(({ journey: candidateJourney }) => (
-      candidateJourney.legs.every((leg) => leg.mode === 'walking')
+    const beforeService = await service(request)
+    expect(beforeService?.candidates.every(({ path: candidatePath }) => (
+      candidatePath.legs.every((leg) => leg.mode === 'walking')
     ))).toBe(true)
   })
 
@@ -1158,7 +1161,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1169,10 +1172,10 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-B',
@@ -1190,7 +1193,7 @@ describe('createJourneyPlanningService', () => {
       })),
     }
 
-    const journey = await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
+    const path = (await createJourneyPlanningService(routeEngine, shuttleArrivalClient)({
       tripRequest: {
         origin: { kind: 'venue', id: 'ORIGIN' },
         destination: { kind: 'venue', id: 'DESTINATION' },
@@ -1201,11 +1204,11 @@ describe('createJourneyPlanningService', () => {
       },
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey?.legs).toHaveLength(1)
-    expect(journey?.legs[0].mode).toBe('walking')
-    expect(journey?.totalDurationSeconds).toBe(1_000)
+    expect(path?.legs).toHaveLength(1)
+    expect(path?.legs[0].mode).toBe('walking')
+    expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
   it('throws when live arrival data cannot be fetched', async () => {
@@ -1333,12 +1336,12 @@ describe('createJourneyPlanningService', () => {
       signal: new AbortController().signal,
     }
 
-    const activeJourney = await service(request)
+    const activeJourney = (await service(request))?.candidates[0]?.path ?? null
     expect(activeJourney?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({ waitingSeconds: 300 })
     expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
 
     testDepartureMs = Date.parse('2026-09-23T15:25:00Z')
-    const endedJourney = await service(request)
+    const endedJourney = (await service(request))?.candidates[0]?.path ?? null
     expect(endedJourney?.legs.every((leg) => leg.mode === 'walking')).toBe(true)
     expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
   })

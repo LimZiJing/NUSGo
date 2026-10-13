@@ -10,7 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
-import type { TransitNetwork, TransitRoute } from '@navus/shared/transit/types'
+import type { TransitNetwork, BusRoute } from '@navus/shared/transit/types'
 import { BusIcon } from '../../ui/icons'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
@@ -28,7 +28,7 @@ interface RouteBrowserProps {
 const ROUTE_DISPLAY_ORDER = ['A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P']
 const ROUTE_DISPLAY_ORDER_INDEX = new Map(ROUTE_DISPLAY_ORDER.map((routeId, index) => [routeId, index]))
 
-function orderRoutes(routes: readonly TransitRoute[]) {
+function orderRoutes(routes: readonly BusRoute[]) {
   return [...routes].sort((left, right) => (
     (ROUTE_DISPLAY_ORDER_INDEX.get(left.id) ?? ROUTE_DISPLAY_ORDER.length)
       - (ROUTE_DISPLAY_ORDER_INDEX.get(right.id) ?? ROUTE_DISPLAY_ORDER.length)
@@ -42,7 +42,7 @@ function setRouteScrollLeft(routeList: HTMLDivElement, scrollLeft: number) {
 
 function getRouteStops(
   networkIndex: TransitNetworkIndex,
-  route: TransitRoute,
+  route: BusRoute,
 ): Map<string, TransitNetwork['stops'][number]> {
   const stopsById = networkIndex.stopById
   return new Map(

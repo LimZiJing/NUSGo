@@ -36,7 +36,7 @@ interface PlanViewProps {
   onSelectJourneyOption?: (candidateKey: string) => void
   onUseCurrentLocationForOrigin?: () => void
   onCancelOriginLocationRequest?: () => void
-  journey?: JourneyResultState
+  path?: JourneyResultState
   simulatedAtMs?: number | null
 }
 
@@ -60,7 +60,7 @@ export function PlanView({
   onSelectJourneyOption,
   onUseCurrentLocationForOrigin,
   onCancelOriginLocationRequest,
-  journey = { status: 'idle', journey: null, candidates: [], error: null },
+  path = { status: 'idle', path: null, candidates: [], error: null },
   simulatedAtMs = null,
 }: PlanViewProps) {
   const [searchQueries, setSearchQueries] = useState({
@@ -219,7 +219,7 @@ export function PlanView({
             type="button"
             className="plan-view-submit"
             onClick={requestPlanJourney}
-            disabled={journey.status === 'loading'}
+            disabled={path.status === 'loading'}
             aria-label="Get route"
             title="Get route"
           >
@@ -240,7 +240,7 @@ export function PlanView({
           </p>
         )}
         <JourneyResult
-          state={journey}
+          state={path}
           venues={venues}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}

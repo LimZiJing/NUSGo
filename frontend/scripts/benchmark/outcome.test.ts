@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { LoadedTransitData } from '../../src/app/contracts/data'
 import type { WalkingMatrixConnection, WalkingMatrixRequest } from '../../src/app/contracts/routing'
-import type { Journey } from '../../src/domain/trip/journey'
-import type { WalkingJourneyConnection } from '../../src/domain/trip/planner'
-import { createLiveShuttleWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
+import type { Path } from '../../src/pathfinding/path'
+import type { PathWalkingConnection } from '../../src/domain/trip/planner'
+import { createLiveBusWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { JourneyBenchmarkCase } from './contract'
@@ -68,7 +68,7 @@ const defaultSnapshot = createSnapshot({
   C: { R2: { nextArrivalSeconds: 250, upcomingArrivalSeconds: [250], headwaySeconds: null } },
 })
 
-const offlineWalk: WalkingJourneyConnection = {
+const offlineWalk: PathWalkingConnection = {
   from: origin,
   to: destination,
   durationSeconds: 50,
@@ -83,7 +83,7 @@ function createCase(
     origin?: JourneyBenchmarkCase['origin']
     destination?: JourneyBenchmarkCase['destination']
     snapshot?: ShuttleArrivalSnapshot
-    walkingConnections?: readonly WalkingJourneyConnection[]
+    walkingConnections?: readonly PathWalkingConnection[]
     timingRecords?: readonly ShuttleTimingRecord[]
   } = {},
 ): JourneyBenchmarkCase {
@@ -106,14 +106,14 @@ function createCase(
     ...(durationBoundsSeconds ? { durationBoundsSeconds } : {}),
     searchInput: {
       walkingConnections: options.walkingConnections ?? [offlineWalk],
-      getShuttleWaitingSeconds: createLiveShuttleWaitingTimeProvider(snapshot, fixedNowMs),
+      getShuttleWaitingSeconds: createLiveBusWaitingTimeProvider(snapshot, fixedNowMs),
     } as JourneyBenchmarkCase['searchInput'],
   }
 }
 
 function createWalkJourney(
-  connection: WalkingJourneyConnection = offlineWalk,
-): Journey {
+  connection: PathWalkingConnection = offlineWalk,
+): Path {
   return {
     origin: connection.from,
     destination: connection.to,
@@ -125,7 +125,7 @@ function createWalkJourney(
   }
 }
 
-function createShuttleJourney(waitingSeconds = 10, rideSeconds = 80): Journey {
+function createBusPath(waitingSeconds = 10, rideSeconds = 80): Path {
   const durationSeconds = waitingSeconds + rideSeconds
   return {
     origin,
@@ -151,11 +151,11 @@ function createShuttleJourney(waitingSeconds = 10, rideSeconds = 80): Journey {
 }
 
 function validate(
-  journey: Journey,
+  path: Path,
   benchmarkCase: JourneyBenchmarkCase,
   evidence: Parameters<typeof validateJourneyBenchmarkOutcome>[4],
 ) {
-  return validateJourneyBenchmarkOutcome({ kind: 'journey', journey }, benchmarkCase, transit, venues, evidence)
+  return validateJourneyBenchmarkOutcome({ kind: 'journey', path }, benchmarkCase, transit, venues, evidence)
 }
 
 describe('validateJourneyBenchmarkOutcome', () => {
@@ -175,21 +175,21 @@ describe('validateJourneyBenchmarkOutcome', () => {
   it('accepts merged walking legs whose metrics sum from prepared connections', () => {
     const venueOrigin = { kind: 'venue', id: 'V' } as const
     const venueDestination = { kind: 'venue', id: 'W' } as const
-    const firstConnection: WalkingJourneyConnection = {
+    const firstConnection: PathWalkingConnection = {
       from: venueOrigin,
       to: origin,
       durationSeconds: 40,
       distanceMeters: 30,
       geometry: { type: 'LineString', coordinates: [[103.769, 1.289], stopCoordinates.A] },
     }
-    const secondConnection: WalkingJourneyConnection = {
+    const secondConnection: PathWalkingConnection = {
       from: origin,
       to: venueDestination,
       durationSeconds: 60,
       distanceMeters: 50,
       geometry: { type: 'LineString', coordinates: [stopCoordinates.A, [103.773, 1.293]] },
     }
-    const merged: WalkingJourneyConnection = {
+    const merged: PathWalkingConnection = {
       from: venueOrigin,
       to: venueDestination,
       durationSeconds: 100,
@@ -209,8 +209,8 @@ describe('validateJourneyBenchmarkOutcome', () => {
   })
 
   it('rejects tampered offline walking duration and distance', () => {
-    const journey = createWalkJourney({ ...offlineWalk, durationSeconds: 51, distanceMeters: 41 })
-    const result = validate(journey, createCase({ outcome: 'journey' }), { mode: 'offline' })
+    const path = createWalkJourney({ ...offlineWalk, durationSeconds: 51, distanceMeters: 41 })
+    const result = validate(path, createCase({ outcome: 'journey' }), { mode: 'offline' })
 
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('walking leg 1 durationSeconds does not match benchmark evidence')
@@ -231,7 +231,7 @@ describe('validateJourneyBenchmarkOutcome', () => {
 
   it('checks local endpoint walking metrics against captured Valhalla matrix output', () => {
     const venueOrigin = { kind: 'venue', id: 'V' } as const
-    const connection: WalkingJourneyConnection = {
+    const connection: PathWalkingConnection = {
       from: venueOrigin,
       to: destination,
       durationSeconds: 15,
@@ -252,8 +252,8 @@ describe('validateJourneyBenchmarkOutcome', () => {
       durationSeconds: 15,
       distanceMeters: 20,
     }
-    const journey = createWalkJourney(connection)
-    const result = validate(journey, benchmarkCase, {
+    const path = createWalkJourney(connection)
+    const result = validate(path, benchmarkCase, {
       mode: 'local',
       matrixRequests: [{ request, connections: [matrixConnection] }],
       valhallaRequestCounts: { matrix: 1, route: 2 },
@@ -265,8 +265,8 @@ describe('validateJourneyBenchmarkOutcome', () => {
 
   it('checks local stop-to-stop walking metrics against the canonical walking graph', () => {
     const graphConnection = { fromKey: 'stop:A', toKey: 'stop:B', durationSeconds: 50, distanceMeters: 40 }
-    const journey = createWalkJourney()
-    const result = validate(journey, createCase({ outcome: 'journey' }), {
+    const path = createWalkJourney()
+    const result = validate(path, createCase({ outcome: 'journey' }), {
       mode: 'local',
       walkingStopGraph: { connections: [graphConnection] } as never,
     })
@@ -276,7 +276,7 @@ describe('validateJourneyBenchmarkOutcome', () => {
 
   it('rejects walking metrics that disagree with a local matrix result', () => {
     const venueOrigin = { kind: 'venue', id: 'V' } as const
-    const connection: WalkingJourneyConnection = {
+    const connection: PathWalkingConnection = {
       from: venueOrigin,
       to: destination,
       durationSeconds: 15,
@@ -304,8 +304,8 @@ describe('validateJourneyBenchmarkOutcome', () => {
 
   it('rejects shuttle wait and ride values that do not match case timing', () => {
     const benchmarkCase = createCase({ outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'] })
-    const tamperedWait = createShuttleJourney(9, 80)
-    const tamperedRide = createShuttleJourney(10, 81)
+    const tamperedWait = createBusPath(9, 80)
+    const tamperedRide = createBusPath(10, 81)
 
     expect(validate(tamperedWait, benchmarkCase, { mode: 'offline' }).errors)
       .toContain('shuttle leg 1 waitingSeconds does not match benchmark timing')
@@ -322,7 +322,7 @@ describe('validateJourneyBenchmarkOutcome', () => {
       } },
     })
     const benchmarkCase = createCase({ outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'] }, undefined, { snapshot })
-    const result = validate(createShuttleJourney(60, 80), benchmarkCase, { mode: 'offline' })
+    const result = validate(createBusPath(60, 80), benchmarkCase, { mode: 'offline' })
 
     expect(result.valid).toBe(true)
   })
@@ -330,7 +330,7 @@ describe('validateJourneyBenchmarkOutcome', () => {
   it('accepts a transfer when each wait reflects elapsed journey time', () => {
     const transferOrigin = { kind: 'stop', id: 'A' } as const
     const transferDestination = { kind: 'stop', id: 'D' } as const
-    const transferWalk: WalkingJourneyConnection = {
+    const transferWalk: PathWalkingConnection = {
       from: { kind: 'stop', id: 'B' },
       to: { kind: 'stop', id: 'C' },
       durationSeconds: 30,
@@ -346,11 +346,11 @@ describe('validateJourneyBenchmarkOutcome', () => {
       destination: transferDestination,
       walkingConnections: [transferWalk],
     })
-    const journey: Journey = {
+    const path: Path = {
       origin: transferOrigin,
       destination: transferDestination,
       legs: [
-        createShuttleJourney(10, 80).legs[0],
+        createBusPath(10, 80).legs[0],
         { mode: 'walking', ...transferWalk },
         {
           mode: 'shuttle',
@@ -371,35 +371,35 @@ describe('validateJourneyBenchmarkOutcome', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const result = validate(journey, benchmarkCase, { mode: 'offline' })
+    const result = validate(path, benchmarkCase, { mode: 'offline' })
 
     expect(result.valid).toBe(true)
   })
 
   it('rejects Journey totals that do not equal the leg totals', () => {
-    const journey = { ...createWalkJourney(), totalDurationSeconds: 51 }
-    const result = validate(journey, createCase({ outcome: 'journey' }), { mode: 'offline' })
+    const path = { ...createWalkJourney(), totalDurationSeconds: 51 }
+    const result = validate(path, createCase({ outcome: 'journey' }), { mode: 'offline' })
 
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('journey totalDurationSeconds must equal the sum of its leg durations')
   })
 
   it('rejects geometry that does not meet the Journey endpoints', () => {
-    const journey = {
+    const path = {
       ...createWalkJourney(),
       legs: [{
         ...createWalkJourney().legs[0],
         geometry: { type: 'LineString', coordinates: [[103.78, 1.3], stopCoordinates.B] },
       }],
-    } as unknown as Journey
-    const result = validate(journey, createCase({ outcome: 'journey' }), { mode: 'offline' })
+    } as unknown as Path
+    const result = validate(path, createCase({ outcome: 'journey' }), { mode: 'offline' })
 
     expect(result.errors).toContain('leg 1 geometry does not start near its from endpoint')
   })
 
   it('checks exact route selection for tie cases only when expected', () => {
     const result = validate(
-      createShuttleJourney(),
+      createBusPath(),
       createCase({ outcome: 'journey', shuttleBoardings: 1, modes: ['shuttle'], routeIds: ['R2'] }),
       { mode: 'offline' },
     )

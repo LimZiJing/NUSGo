@@ -1,7 +1,7 @@
 import { createInitialExploreViewState, type ExploreViewState } from '../features/explore-view/state'
-import { selectJourneysForDisplay } from '../features/plan-view/journey-candidate-selection'
+import { selectDisplayedPaths } from '../features/plan-view/journey-candidate-selection'
 import type { TransitIndex } from '../domain/transit'
-import { deriveTransitRouteOverlapMap } from '../domain/transit/overlap'
+import { deriveBusRouteOverlapMap } from '../domain/transit/overlap'
 import {
   clearTripEndpoint,
   createCurrentLocationTripEndpoint,
@@ -33,8 +33,8 @@ import {
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import {
-  NoJourneyAvailableError,
-  type JourneyPlanningService,
+  NoPathAvailableError,
+  type FindPathsService,
 } from './journey-planning'
 import {
   createInitialJourneyState,
@@ -65,7 +65,7 @@ export interface NavigationSessionState {
   readonly rememberedMobileRouteId: string | null
   readonly exploreView: ExploreViewState
   readonly tripRequest: TripRequest
-  readonly journey: JourneyState
+  readonly path: JourneyState
   readonly location: LocationTrackingState
   readonly originLocationRequest: OriginLocationRequestState
   readonly locationMarkerVisible: boolean
@@ -89,7 +89,7 @@ export interface NavigationSessionDependencies {
   readonly map: MapSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
-  readonly journeyPlanner?: JourneyPlanningService
+  readonly pathfinder?: FindPathsService
   readonly locationTracker: LocationTracker
   readonly onMapStopInteraction?: (stopId: string) => void
   readonly onMapStopDestinationSet?: (stopId: string) => void
@@ -120,8 +120,8 @@ export interface NavigationSession {
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
   clearTrip(): void
-  planJourney(): void
-  replanJourney(): void
+  searchPaths(): void
+  replanPath(): void
   selectJourneyOption(candidateKey: string): void
   setExploreViewQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
@@ -152,7 +152,7 @@ export function createInitialNavigationSessionState(
     rememberedMobileRouteId: null,
     exploreView: createInitialExploreViewState(),
     tripRequest: createEmptyTripRequest(),
-    journey: createInitialJourneyState(),
+    path: createInitialJourneyState(),
     location,
     originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE,
     locationMarkerVisible: true,
@@ -265,12 +265,12 @@ export function createNavigationSession(
     cancelJourneyPlanning()
     dependencies.map.setJourneyOptions([], null)
     if (
-      state.journey.status !== 'idle' ||
-      state.journey.journey !== null ||
-      state.journey.selectedCandidateKey !== null ||
-      state.journey.error !== null
+      state.path.status !== 'idle' ||
+      state.path.path !== null ||
+      state.path.selectedCandidateKey !== null ||
+      state.path.error !== null
     ) {
-      updateState({ journey: createInitialJourneyState() })
+      updateState({ path: createInitialJourneyState() })
     }
   }
 
@@ -333,10 +333,10 @@ export function createNavigationSession(
 
   const requestJourneyPlanning = (): void => {
     if (!journeyPlanningRequested || journeyPlanningAbortController) return
-    const journeyPlanner = dependencies.journeyPlanner
+    const pathfinder = dependencies.pathfinder
 
     if (
-      !journeyPlanner ||
+      !pathfinder ||
       !state.tripRequest.origin ||
       !state.tripRequest.destination ||
       !state.venues ||
@@ -356,22 +356,22 @@ export function createNavigationSession(
     }
     dependencies.map.setJourneyOptions([], null)
     updateState({
-      journey: createJourneyStateWithStatus('loading'),
+      path: createJourneyStateWithStatus('loading'),
     })
 
-    void journeyPlanner(request).then(
+    void pathfinder(request).then(
       (planningResult) => {
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
         const displayedCandidates = planningResult === null
           ? []
-          : selectJourneysForDisplay(planningResult.candidates)
+          : selectDisplayedPaths(planningResult.candidates)
         const recommended = displayedCandidates[0] ?? null
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
           const displayedOptions: readonly MapJourneyOption[] = displayedCandidates.map((candidate) => ({
             candidateKey: candidate.candidateKey,
-            journey: candidate.journey,
+            path: candidate.path,
           }))
           dependencies.map.setJourneyOptions(
             displayedOptions,
@@ -379,10 +379,10 @@ export function createNavigationSession(
             recommended !== null,
           )
           updateState({
-            journey: recommended && planningResult
+            path: recommended && planningResult
               ? {
                   status: 'ready',
-                  journey: recommended.journey,
+                  path: recommended.path,
                   candidates: planningResult.candidates,
                   displayedCandidates,
                   selectedCandidateKey: recommended.candidateKey,
@@ -398,11 +398,11 @@ export function createNavigationSession(
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
           dependencies.map.setJourneyOptions([], null)
-          if (error instanceof NoJourneyAvailableError) {
+          if (error instanceof NoPathAvailableError) {
             updateState({
-              journey: {
+              path: {
                 status: 'no-route',
-                journey: null,
+                path: null,
                 candidates: [],
                 displayedCandidates: [],
                 selectedCandidateKey: null,
@@ -412,9 +412,9 @@ export function createNavigationSession(
             return
           }
           updateState({
-            journey: {
+            path: {
               status: 'failed',
-              journey: null,
+              path: null,
               candidates: [],
               displayedCandidates: [],
               selectedCandidateKey: null,
@@ -452,7 +452,7 @@ export function createNavigationSession(
       ...state,
       ...patch,
       tripRequest: request,
-      journey: createInitialJourneyState(),
+      path: createInitialJourneyState(),
       originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE,
     })
     syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
@@ -480,7 +480,7 @@ export function createNavigationSession(
   }
 
   const handleTransitLoad = (data: LoadedTransitData): void => {
-    const nextRouteOverlapMap = deriveTransitRouteOverlapMap(data.geometry)
+    const nextRouteOverlapMap = deriveBusRouteOverlapMap(data.geometry)
     const reconciledSelection = reconcileRouteSelection(
       data.index,
       state.selectedRouteId,
@@ -825,24 +825,24 @@ export function createNavigationSession(
       })
     },
 
-    planJourney() {
+    searchPaths() {
       cancelOriginLocationRequest()
       if (
         disposed ||
         journeyPlanningAbortController ||
-        state.journey.status === 'loading' ||
+        state.path.status === 'loading' ||
         !state.tripRequest.origin ||
         !state.tripRequest.destination
       ) return
       journeyPlanningRequested = true
       enqueueTransition(() => {
         if (disposed) return
-        updateState({ journey: createJourneyStateWithStatus('loading') })
+        updateState({ path: createJourneyStateWithStatus('loading') })
         requestJourneyPlanning()
       })
     },
 
-    replanJourney() {
+    replanPath() {
       if (disposed || !journeyPlanningRequested) return
       cancelJourneyPlanning()
       enqueueTransition(() => {
@@ -851,20 +851,20 @@ export function createNavigationSession(
     },
 
     selectJourneyOption(candidateKey) {
-      if (disposed || state.journey.status !== 'ready') return
-      const candidate = state.journey.displayedCandidates.find(({ candidateKey: key }) => (
+      if (disposed || state.path.status !== 'ready') return
+      const candidate = state.path.displayedCandidates.find(({ candidateKey: key }) => (
         key === candidateKey
       ))
-      if (!candidate || state.journey.selectedCandidateKey === candidateKey) return
-      const options: readonly MapJourneyOption[] = state.journey.displayedCandidates.map((item) => ({
+      if (!candidate || state.path.selectedCandidateKey === candidateKey) return
+      const options: readonly MapJourneyOption[] = state.path.displayedCandidates.map((item) => ({
         candidateKey: item.candidateKey,
-        journey: item.journey,
+        path: item.path,
       }))
       dependencies.map.setJourneyOptions(options, candidate.candidateKey)
       updateState({
-        journey: {
-          ...state.journey,
-          journey: candidate.journey,
+        path: {
+          ...state.path,
+          path: candidate.path,
           selectedCandidateKey: candidate.candidateKey,
         },
       })

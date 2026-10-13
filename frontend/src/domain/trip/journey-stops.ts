@@ -1,9 +1,9 @@
-import type { TransitRoute } from '@navus/shared/transit/types'
-import type { ShuttleJourneyLeg } from './journey'
+import type { BusRoute } from '@navus/shared/transit/types'
+import type { BusPathLeg } from '../../pathfinding/path'
 
 export function getShuttleJourneyLegStopIds(
-  leg: Pick<ShuttleJourneyLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'>,
-  route: TransitRoute | null,
+  leg: Pick<BusPathLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'>,
+  route: BusRoute | null,
 ): readonly string[] | null {
   if (!route || route.id !== leg.routeId) return null
 

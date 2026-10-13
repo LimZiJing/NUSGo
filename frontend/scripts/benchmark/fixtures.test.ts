@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planJourneyWithinBudget } from '../../src/domain/trip/planner'
+import { searchPathsWithinBudget } from '../../src/domain/trip/planner'
 import { loadJourneyBenchmarkManifest } from './manifest'
 import { createJourneyBenchmarkCases, loadJourneyBenchmarkFixtures } from './fixtures'
 import { validateJourneyBenchmarkOutcome } from './outcome'
@@ -13,13 +13,13 @@ describe('manifest Journey correctness cases', () => {
     const cases = createJourneyBenchmarkCases(manifest, fixtures)
     const results = await Promise.all(cases.map(async (benchmarkCase) => {
       let clockTicks = 0
-      const result = await planJourneyWithinBudget(benchmarkCase.searchInput, {
+      const result = await searchPathsWithinBudget(benchmarkCase.searchInput, {
         maxExpandedPaths: 10_000,
         now: () => clockTicks++,
         yieldEvery: 0,
       })
-      const validations = result.candidates.map(({ journey }) => validateJourneyBenchmarkOutcome(
-        { kind: 'journey', journey },
+      const validations = result.candidates.map(({ path }) => validateJourneyBenchmarkOutcome(
+        { kind: 'journey', path },
         benchmarkCase,
         benchmarkCase.transit,
         fixtures.venues,

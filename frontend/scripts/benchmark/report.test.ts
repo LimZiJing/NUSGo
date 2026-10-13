@@ -61,7 +61,7 @@ describe('Journey benchmark report aggregation', () => {
     expect(report.overall.statistics).toMatchObject({ meanMs: 37.5, medianMs: 37.5, p95Ms: 60, sampleCount: 2 })
     expect(report.overall.valhalla).toMatchObject({ meanMs: 17.5, sampleCount: 2 })
     expect(report.overall.sampleCount).toBe(4)
-    expect(report.overall.resultQuality).toMatchObject({ journeys: 4, exact: 2, bounded: 2, invalid: 0 })
+    expect(report.overall.resultQuality).toMatchObject({ paths: 4, exact: 2, bounded: 2, invalid: 0 })
     expect(report.cases[0].planningWork).toMatchObject({
       searchDurationMs: { mean: 10 },
       searchYieldWaitMs: { mean: 3 },

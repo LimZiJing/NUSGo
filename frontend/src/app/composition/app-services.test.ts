@@ -17,7 +17,7 @@ const adapters = vi.hoisted(() => ({
   shuttleServiceHoursClient: {},
   routeEngine: {},
   walkingConnectionProvider: {},
-  journeyPlanner: vi.fn(),
+  pathfinder: vi.fn(),
 }))
 
 vi.mock('../../infrastructure/data/loaders', () => ({
@@ -55,7 +55,7 @@ describe('createAppServices', () => {
     adapters.createShuttleServiceHoursClient.mockReturnValue(adapters.shuttleServiceHoursClient)
     adapters.createRouteEngine.mockReturnValue(adapters.routeEngine)
     adapters.createWalkingConnectionProvider.mockReturnValue(adapters.walkingConnectionProvider)
-    adapters.createJourneyPlanningService.mockReturnValue(adapters.journeyPlanner)
+    adapters.createJourneyPlanningService.mockReturnValue(adapters.pathfinder)
   })
 
   it('shares the Stops timing clients with Journey planning and preserves configured routing', () => {
@@ -85,7 +85,7 @@ describe('createAppServices', () => {
       adapters.walkingConnectionProvider,
       journeyTestClock.get,
     )
-    expect(services.journeyPlanner).toBe(adapters.journeyPlanner)
+    expect(services.pathfinder).toBe(adapters.pathfinder)
   })
 
   it('includes the default data loaders, public arrivals client and browser location tracker factory', () => {

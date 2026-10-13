@@ -1,4 +1,4 @@
-import type { TransitNetwork, TransitRoute, TransitStop } from '@navus/shared/transit/types'
+import type { TransitNetwork, BusRoute, TransitStop } from '@navus/shared/transit/types'
 
 export class TransitIndexPreconditionError extends Error {
   constructor(message: string) {
@@ -10,9 +10,9 @@ export class TransitIndexPreconditionError extends Error {
 /** Immutable canonical network route/stop snapshots; geometry and manifests are validated separately. */
 export interface TransitIndex {
   readonly network: TransitNetwork
-  readonly routes: readonly TransitRoute[]
+  readonly routes: readonly BusRoute[]
   readonly stops: readonly TransitStop[]
-  readonly routeById: ReadonlyMap<string, TransitRoute>
+  readonly routeById: ReadonlyMap<string, BusRoute>
   readonly stopById: ReadonlyMap<string, TransitStop>
   readonly routeMembership: ReadonlyMap<string, ReadonlySet<string>>
   readonly stopIdsByRouteId: ReadonlyMap<string, ReadonlySet<string>>
@@ -172,7 +172,7 @@ export function createTransitIndex(network: TransitNetwork): TransitIndex {
 export type TransitNetworkIndex = TransitIndex
 export const createTransitNetworkIndex = createTransitIndex
 
-export { deriveTransitRouteOverlapMap } from './overlap'
+export { deriveBusRouteOverlapMap } from './overlap'
 export { findNearbyShuttleStops } from './nearby-stops'
 export { getDistanceMeters } from '../location/coordinates'
 export type { NearbyShuttleStop } from './nearby-stops'

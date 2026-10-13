@@ -2,8 +2,8 @@ import type { LoadedTransitData } from '../../src/app/contracts/data.js'
 import type { WalkingRouteEngine } from '../../src/app/contracts/routing.js'
 import type { ShuttleArrivalClient } from '../../src/app/contracts/shuttle-arrivals.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
-import type { Journey } from '../../src/domain/trip/journey.js'
-import type { PlanJourneyInput } from '../../src/domain/trip/planner.js'
+import type { Path } from '../../src/pathfinding/path.js'
+import type { PathSearchInput } from '../../src/domain/trip/planner.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
@@ -36,13 +36,13 @@ export interface JourneyBenchmarkCase {
   readonly transit?: LoadedTransitData
   readonly expected: JourneyBenchmarkExpectation
   readonly durationBoundsSeconds?: JourneyBenchmarkDurationBounds
-  readonly searchInput: PlanJourneyInput
+  readonly searchInput: PathSearchInput
 }
 
 export type JourneyBenchmarkOutcome =
   | {
     readonly kind: 'journey'
-    readonly journey: Journey
+    readonly path: Path
     readonly diagnostics?: Readonly<Record<string, number | string | boolean>>
   }
   | {

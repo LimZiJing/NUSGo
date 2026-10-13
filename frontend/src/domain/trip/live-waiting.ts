@@ -1,8 +1,8 @@
 import type { ShuttleArrivalSnapshot } from '../transit/arrivals'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type {
-  ShuttleWaitingTimeContext,
-  ShuttleWaitingTimeProvider,
+  BusWaitingTimeContext,
+  BusWaitingTimeProvider,
 } from './planner'
 
 const LIVE_DATA_STALE_AFTER_SECONDS = 45
@@ -18,11 +18,11 @@ function getSnapshotAgeSeconds(observedAtMs: number, nowMs: number): number | nu
   return ageSeconds
 }
 
-export function createLiveShuttleWaitingTimeProvider(
+export function createLiveBusWaitingTimeProvider(
   snapshot: ShuttleArrivalSnapshot,
   nowMs = Date.now(),
-): ShuttleWaitingTimeProvider {
-  return (_record: ShuttleTimingRecord, context: ShuttleWaitingTimeContext) => {
+): BusWaitingTimeProvider {
+  return (_record: ShuttleTimingRecord, context: BusWaitingTimeContext) => {
     const stop = snapshot.stops[context.boardingStopId]
     const route = stop?.[context.routeId]
     if (!route) return null

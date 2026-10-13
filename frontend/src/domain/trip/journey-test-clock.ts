@@ -1,5 +1,5 @@
 import { evaluateShuttleService, type ShuttleServiceWindow } from '../transit/service-hours'
-import type { ShuttleWaitingTimeProvider } from './planner'
+import type { BusWaitingTimeProvider } from './planner'
 
 const SINGAPORE_OFFSET_MS = 8 * 60 * 60 * 1000
 
@@ -8,7 +8,7 @@ export const TEST_SHUTTLE_WAIT_SECONDS = 5 * 60
 export function createTestShuttleWaitingTimeProvider(
   departureMs: number,
   serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
-): ShuttleWaitingTimeProvider {
+): BusWaitingTimeProvider {
   return (_record, context) => {
     const windows = serviceWindows[context.routeId]
     if (!windows) return null

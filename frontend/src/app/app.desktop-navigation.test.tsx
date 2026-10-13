@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
-import type { Journey } from '../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../domain/trip/planner'
+import type { Path } from '../pathfinding/path'
+import type { ScoredPathCandidate } from '../domain/trip/planner'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 
@@ -103,7 +103,7 @@ function mockMobileViewport(): void {
 
 function createJourneySelectionState() {
   const baseState = createInitialNavigationSessionState()
-  const journey: Journey = {
+  const path: Path = {
     origin: { kind: 'venue', id: 'ORIGIN' },
     destination: { kind: 'venue', id: 'DESTINATION' },
     legs: [{
@@ -119,12 +119,12 @@ function createJourneySelectionState() {
     estimateStatus: 'estimated',
     planningQuality: 'exact',
   }
-  const selectedCandidate: ScoredJourneyCandidate = {
-    candidateKey: 'option-a', journey, adjustedDurationSeconds: 60, score: 1 / 60,
+  const selectedCandidate: ScoredPathCandidate = {
+    candidateKey: 'option-a', path, adjustedDurationSeconds: 60, score: 1 / 60,
   }
-  const otherCandidate: ScoredJourneyCandidate = {
+  const otherCandidate: ScoredPathCandidate = {
     candidateKey: 'option-b',
-    journey: { ...journey, totalDurationSeconds: 120 },
+    path: { ...path, totalDurationSeconds: 120 },
     adjustedDurationSeconds: 120,
     score: 1 / 120,
   }
@@ -132,10 +132,10 @@ function createJourneySelectionState() {
     state: {
       ...baseState,
       transitIndex: createTransitIndex(createValidTransitNetwork()),
-      journey: {
-        ...baseState.journey,
+      path: {
+        ...baseState.path,
         status: 'ready',
-        journey,
+        path,
         candidates: [selectedCandidate, otherCandidate],
         displayedCandidates: [selectedCandidate, otherCandidate],
         selectedCandidateKey: selectedCandidate.candidateKey,
@@ -178,7 +178,7 @@ describe('desktop shared navigation shell', () => {
   it('shows Fit routes only while Plan is active for a retained Journey', async () => {
     const user = userEvent.setup()
     const baseState = createInitialNavigationSessionState()
-    const journey: Journey = {
+    const path: Path = {
       origin: { kind: 'venue', id: 'ORIGIN' },
       destination: { kind: 'venue', id: 'DESTINATION' },
       legs: [{
@@ -194,19 +194,19 @@ describe('desktop shared navigation shell', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const candidate: ScoredJourneyCandidate = {
+    const candidate: ScoredPathCandidate = {
       candidateKey: 'retained-journey',
-      journey,
+      path,
       adjustedDurationSeconds: 60,
       score: 1 / 60,
     }
     appHarness.state = {
       ...baseState,
       transitIndex: createTransitIndex(createValidTransitNetwork()),
-      journey: {
-        ...baseState.journey,
+      path: {
+        ...baseState.path,
         status: 'ready',
-        journey,
+        path,
         candidates: [candidate],
         displayedCandidates: [candidate],
         selectedCandidateKey: candidate.candidateKey,
@@ -224,7 +224,7 @@ describe('desktop shared navigation shell', () => {
   it('preserves the selected option when switching tabs with the same Journey results', async () => {
     const user = userEvent.setup()
     const baseState = createInitialNavigationSessionState()
-    const journey: Journey = {
+    const path: Path = {
       origin: { kind: 'venue', id: 'ORIGIN' },
       destination: { kind: 'venue', id: 'DESTINATION' },
       legs: [{
@@ -240,22 +240,22 @@ describe('desktop shared navigation shell', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const first: ScoredJourneyCandidate = {
-      candidateKey: 'option-a', journey, adjustedDurationSeconds: 60, score: 1 / 60,
+    const first: ScoredPathCandidate = {
+      candidateKey: 'option-a', path, adjustedDurationSeconds: 60, score: 1 / 60,
     }
-    const second: ScoredJourneyCandidate = {
+    const second: ScoredPathCandidate = {
       candidateKey: 'option-b',
-      journey: { ...journey, totalDurationSeconds: 120 },
+      path: { ...path, totalDurationSeconds: 120 },
       adjustedDurationSeconds: 120,
       score: 1 / 120,
     }
     appHarness.state = {
       ...baseState,
       transitIndex: createTransitIndex(createValidTransitNetwork()),
-      journey: {
-        ...baseState.journey,
+      path: {
+        ...baseState.path,
         status: 'ready',
-        journey: second.journey,
+        path: second.path,
         candidates: [first, second],
         displayedCandidates: [first, second],
         selectedCandidateKey: second.candidateKey,
@@ -421,8 +421,8 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     act(() => {
       appHarness.state = {
         ...appHarness.state as object,
-        journey: {
-          ...(appHarness.state as { journey: object }).journey,
+        path: {
+          ...(appHarness.state as { path: object }).path,
           selectedCandidateKey: 'option-b',
         },
       }
@@ -474,8 +474,8 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     act(() => appHarness.onMapJourneyOptionSelected?.('option-b'))
     appHarness.state = {
       ...appHarness.state as object,
-      journey: {
-        ...(appHarness.state as { journey: object }).journey,
+      path: {
+        ...(appHarness.state as { path: object }).path,
         selectedCandidateKey: 'option-b',
       },
     }
@@ -512,8 +512,8 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     act(() => {
       appHarness.state = {
         ...appHarness.state as object,
-        journey: {
-          ...(appHarness.state as { journey: object }).journey,
+        path: {
+          ...(appHarness.state as { path: object }).path,
           selectedCandidateKey: 'option-b',
         },
       }

@@ -5,8 +5,8 @@ import { PlanEndpointControl } from './plan-endpoint-control'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '@navus/shared/transit/types'
-import type { Journey } from '../../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
+import type { Path } from '../../pathfinding/path'
+import type { ScoredPathCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
@@ -168,7 +168,7 @@ describe('PlanEndpointControl', () => {
 
 describe('Plan view Journey result', () => {
   it('shows the selected Journey inside the existing Plan trip experience', () => {
-    const journey: Journey = {
+    const path: Path = {
       origin: { kind: 'venue', id: 'COM1-0210' },
       destination: { kind: 'stop', id: 'STOP-A' },
       legs: [{
@@ -184,9 +184,9 @@ describe('Plan view Journey result', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const candidate: ScoredJourneyCandidate = {
+    const candidate: ScoredPathCandidate = {
       candidateKey: 'walking:COM1-0210>STOP-A',
-      journey,
+      path,
       adjustedDurationSeconds: 75,
       score: 1 / 75,
     }
@@ -199,7 +199,7 @@ describe('Plan view Journey result', () => {
         }}
         venues={venues}
         networkIndex={networkIndex}
-        journey={{ status: 'ready', journey, candidates: [candidate], error: null }}
+        path={{ status: 'ready', path, candidates: [candidate], error: null }}
         onSwap={() => undefined}
         onSelectOriginEndpoint={() => undefined}
         onClearOriginEndpoint={() => undefined}

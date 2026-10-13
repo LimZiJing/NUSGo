@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type {
   TransitGeoJsonPosition,
-  TransitRouteGeometry,
-  TransitRouteGeometryFeature,
+  BusRouteGeometry,
+  BusRouteGeometryFeature,
 } from '@navus/shared/transit/types'
-import { deriveTransitRouteOverlapMap } from './overlap'
+import { deriveBusRouteOverlapMap } from './overlap'
 
 function createFeature(
   routeId: string,
   coordinates: TransitGeoJsonPosition[],
-): TransitRouteGeometryFeature {
+): BusRouteGeometryFeature {
   return {
     type: 'Feature',
     properties: { routeId, name: routeId, color: '#123456' },
@@ -17,7 +17,7 @@ function createFeature(
   }
 }
 
-function createGeometry(features: TransitRouteGeometryFeature[]): TransitRouteGeometry {
+function createGeometry(features: BusRouteGeometryFeature[]): BusRouteGeometry {
   return { type: 'FeatureCollection', features }
 }
 
@@ -29,8 +29,8 @@ describe('deriveTransitRouteOverlapMap', () => {
       createFeature('P', [[104, 2], [104.0003, 2]]),
     ])
 
-    const overlaps = deriveTransitRouteOverlapMap(geometry)
-    const reversedOverlaps = deriveTransitRouteOverlapMap(createGeometry([...geometry.features].reverse()))
+    const overlaps = deriveBusRouteOverlapMap(geometry)
+    const reversedOverlaps = deriveBusRouteOverlapMap(createGeometry([...geometry.features].reverse()))
 
     expect(Array.from(overlaps.keys())).toEqual(['A1', 'A2'])
     expect(Array.from(overlaps.get('A1') ?? [])).toEqual(['A2'])
@@ -45,7 +45,7 @@ describe('deriveTransitRouteOverlapMap', () => {
       createFeature('SHORT-B', [[103, 1.00009], [103.0001, 1.00009]]),
     ])
 
-    expect(deriveTransitRouteOverlapMap(geometry)).toEqual(new Map())
+    expect(deriveBusRouteOverlapMap(geometry)).toEqual(new Map())
   })
 
   it('uses the 15 metre tolerance and ignores point crossings', () => {
@@ -56,7 +56,7 @@ describe('deriveTransitRouteOverlapMap', () => {
       createFeature('CROSS', [[103.00015, 0.9998], [103.00015, 1.0002]]),
     ])
 
-    const overlaps = deriveTransitRouteOverlapMap(geometry)
+    const overlaps = deriveBusRouteOverlapMap(geometry)
 
     expect(Array.from(overlaps.get('NEAR-A') ?? [])).toEqual(['NEAR-B'])
     expect(overlaps.has('FAR')).toBe(false)
@@ -71,6 +71,6 @@ describe('deriveTransitRouteOverlapMap', () => {
       createFeature('MIN-B', [[103, 1 + latitudeOffset], [103 + longitudeDelta, 1 + latitudeOffset]]),
     ])
 
-    expect(Array.from(deriveTransitRouteOverlapMap(geometry).keys())).toEqual(['MIN-A', 'MIN-B'])
+    expect(Array.from(deriveBusRouteOverlapMap(geometry).keys())).toEqual(['MIN-A', 'MIN-B'])
   })
 })

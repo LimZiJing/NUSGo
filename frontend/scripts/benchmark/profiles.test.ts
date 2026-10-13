@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLiveShuttleWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
+import { createLiveBusWaitingTimeProvider } from '../../src/domain/trip/live-waiting'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import { loadJourneyBenchmarkManifest } from './manifest'
@@ -40,7 +40,7 @@ describe('Journey benchmark timing profiles', () => {
       const profile = profileById.get(profileId)
       if (!profile) throw new Error(`Missing profile ${profileId}`)
       const snapshot = createBenchmarkArrivalSnapshot(profile, ROUTES, ['P'], NOW)
-      return createLiveShuttleWaitingTimeProvider(snapshot, NOW)(RECORD, {
+      return createLiveBusWaitingTimeProvider(snapshot, NOW)(RECORD, {
         routeId: 'P',
         boardingStopId: 'KV',
         elapsedSeconds: 0,

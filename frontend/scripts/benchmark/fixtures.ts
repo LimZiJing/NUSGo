@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import type { LoadedTransitData } from '../../src/app/contracts/data.js'
-import type { JourneyEndpointLocation } from '../../src/domain/trip/journey.js'
+import type { PathEndpointLocation } from '../../src/pathfinding/path.js'
 import {
-  createLiveShuttleWaitingTimeProvider,
+  createLiveBusWaitingTimeProvider,
 } from '../../src/domain/trip/live-waiting.js'
 import type {
-  PlanJourneyInput,
-  WalkingJourneyConnection,
+  PathSearchInput,
+  PathWalkingConnection,
 } from '../../src/domain/trip/planner.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
@@ -39,7 +39,7 @@ export interface PreparedJourneyBenchmarkCase extends Omit<JourneyBenchmarkManif
   readonly arrivalSnapshot: ShuttleArrivalSnapshot
   readonly transit: LoadedTransitData
   readonly timingProfile: JourneyBenchmarkTimingProfile
-  readonly searchInput: PlanJourneyInput
+  readonly searchInput: PathSearchInput
 }
 
 async function readJson(root: string, path: string): Promise<unknown> {
@@ -102,7 +102,7 @@ function toWalkingConnection(
   to: JourneyBenchmarkManifestCase['destination'],
   fromCoordinate: { readonly longitude: number; readonly latitude: number },
   toCoordinate: { readonly longitude: number; readonly latitude: number },
-): WalkingJourneyConnection {
+): PathWalkingConnection {
   const distance = Math.max(1, Math.round(distanceMeters(fromCoordinate, toCoordinate)))
   return {
     from,
@@ -122,11 +122,11 @@ function toWalkingConnection(
 function createOfflineWalkingConnections(
   benchmarkCase: JourneyBenchmarkManifestCase,
   fixtures: JourneyBenchmarkFixtures,
-): readonly WalkingJourneyConnection[] {
+): readonly PathWalkingConnection[] {
   const { transit, venues, walkingGraph } = fixtures
   const originStopId = benchmarkCase.origin.kind === 'stop' ? benchmarkCase.origin.id : null
   const destinationStopId = benchmarkCase.destination.kind === 'stop' ? benchmarkCase.destination.id : null
-  const connections: WalkingJourneyConnection[] = walkingGraph.connections.flatMap((connection) => {
+  const connections: PathWalkingConnection[] = walkingGraph.connections.flatMap((connection) => {
     const fromStopId = connection.fromKey.slice('stop:'.length)
     const toStopId = connection.toKey.slice('stop:'.length)
     const from = transit.index.stopById.get(fromStopId)
@@ -208,19 +208,19 @@ export function createJourneyBenchmarkCases(
       ...fixtures.transit,
       shuttleTiming: { ...fixtures.transit.shuttleTiming, records: timingRecords },
     }
-    const origin: JourneyEndpointLocation = {
+    const origin: PathEndpointLocation = {
       endpoint: definition.origin,
       coordinate: endpointCoordinate(definition.origin, fixtures.venues, fixtures.transit),
     }
-    const destination: JourneyEndpointLocation = {
+    const destination: PathEndpointLocation = {
       endpoint: definition.destination,
       coordinate: endpointCoordinate(definition.destination, fixtures.venues, fixtures.transit),
     }
     const windows = createBenchmarkServiceWindows(profile, fixedNowMs)(
       fixtures.transit.index.routes.map(({ id }) => id),
     )
-    const liveWaiting = createLiveShuttleWaitingTimeProvider(arrivalSnapshot, fixedNowMs)
-    const getShuttleWaitingSeconds: PlanJourneyInput['getShuttleWaitingSeconds'] = (record, context) => {
+    const liveWaiting = createLiveBusWaitingTimeProvider(arrivalSnapshot, fixedNowMs)
+    const getShuttleWaitingSeconds: PathSearchInput['getShuttleWaitingSeconds'] = (record, context) => {
       const wait = liveWaiting(record, context)
       if (wait === null) return null
       const boardingAt = new Date(fixedNowMs + (context.elapsedSeconds + wait) * 1000)
@@ -228,7 +228,7 @@ export function createJourneyBenchmarkCases(
         ? wait
         : null
     }
-    const searchInput: PlanJourneyInput = {
+    const searchInput: PathSearchInput = {
       origin,
       destination,
       transitIndex: fixtures.transit.index,

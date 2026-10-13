@@ -8,7 +8,7 @@ import type {
   MapViewportInsets,
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import { getShuttleJourneyLegStopIds } from '../../domain/trip/journey-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'
@@ -63,7 +63,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
-  let currentJourney: Journey | null = null
+  let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
   let viewportInsetsReady = false
@@ -159,7 +159,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const fitJourneyOptions = (options: readonly MapJourneyOption[]): void => {
-    const coordinates = options.flatMap(({ journey }) => journey.legs.flatMap((leg) => (
+    const coordinates = options.flatMap(({ path }) => path.legs.flatMap((leg) => (
       leg.geometry.coordinates.filter(([longitude, latitude]) => (
         Number.isFinite(longitude) && Number.isFinite(latitude)
       ))
@@ -230,11 +230,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const getJourneyStopRoutes = (): ReadonlyMap<string, readonly JourneyStopRoute[]> | null => {
-    if (currentJourney === null) return null
+    if (currentPath === null) return null
     const stopRoutes = new Map<string, JourneyStopRoute[]>()
     if (!currentTransitIndex) return stopRoutes
 
-    for (const leg of currentJourney.legs) {
+    for (const leg of currentPath.legs) {
       if (leg.mode !== 'shuttle') continue
       const route = currentTransitIndex.routeById.get(leg.routeId) ?? null
       const stopIds = getShuttleJourneyLegStopIds(leg, route)
@@ -252,7 +252,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   }
 
   const applyJourneyPresentation = (): void => {
-    const journeyActive = currentJourney !== null
+    const journeyActive = currentPath !== null
     transitRouteLayers?.setJourneyActive(journeyActive)
     shuttleStopMarkers?.setJourneyStops(getJourneyStopRoutes())
   }
@@ -348,7 +348,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       applyRouteSelection(currentRouteSelection)
 
       if (!fit) pendingCameraFit = null
-      if (fit && nextRouteId !== previousRouteId && transitData && currentJourney === null) {
+      if (fit && nextRouteId !== previousRouteId && transitData && currentPath === null) {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
     },
@@ -403,10 +403,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       selectedJourneyCandidateKey = currentJourneyOptions.some(({ candidateKey }) => (
         candidateKey === selectedCandidateKey
       )) ? selectedCandidateKey : null
-      currentJourney = currentJourneyOptions.find(({ candidateKey }) => (
+      currentPath = currentJourneyOptions.find(({ candidateKey }) => (
         candidateKey === selectedJourneyCandidateKey
-      ))?.journey ?? null
-      if (currentJourney !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
+      ))?.path ?? null
+      if (currentPath !== null && pendingCameraFit?.kind === 'route') pendingCameraFit = null
       if (currentJourneyOptions.length === 0 && pendingCameraFit?.kind === 'journey') {
         pendingCameraFit = null
       }
@@ -423,7 +423,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       } catch (error) {
         currentJourneyOptions = []
         selectedJourneyCandidateKey = null
-        currentJourney = null
+        currentPath = null
         clearJourneyRouteLayers()
         applyJourneyPresentation()
         options.onMapError(error)
@@ -550,7 +550,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearVenueMarker()
       clearEndpointMarkers()
       clearTransitData()
-      currentJourney = null
+      currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
       lifecycle.dispose()

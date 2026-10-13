@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createTransitNetworkIndex } from '../domain/transit'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import { createJourneyPlanningService } from './journey-planning'
 import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
@@ -15,7 +15,7 @@ function readJson(path: string): unknown {
 
 function createIssueData(): LoadedTransitData {
   const network = validateTransitNetwork(readJson('../../public/data/shuttle-network.json'))
-  const geometry = validateTransitRouteGeometry(
+  const geometry = validateBusRouteGeometry(
     network,
     readJson('../../public/data/shuttle-routes.geojson'),
   )
@@ -77,7 +77,7 @@ describe('issue 191 journey planning regression', () => {
       Date.now,
       { getWalkingConnections: async () => walkingConnections },
     )
-    const journey = await service({
+    const path = (await service({
       tripRequest: {
         origin: { kind: 'stop', id: 'PGP' },
         destination: { kind: 'venue', id: 'UT-AUD2' },
@@ -85,12 +85,12 @@ describe('issue 191 journey planning regression', () => {
       venues,
       transit,
       signal: new AbortController().signal,
-    })
+    }))?.candidates[0]?.path ?? null
 
-    expect(journey).not.toBeNull()
-    expect(journey?.origin).toEqual({ kind: 'stop', id: 'PGP' })
-    expect(journey?.destination).toEqual({ kind: 'venue', id: 'UT-AUD2' })
-    expect(journey?.legs.length).toBeGreaterThan(0)
-    expect(journey?.totalDurationSeconds).toBeGreaterThan(0)
+    expect(path).not.toBeNull()
+    expect(path?.origin).toEqual({ kind: 'stop', id: 'PGP' })
+    expect(path?.destination).toEqual({ kind: 'venue', id: 'UT-AUD2' })
+    expect(path?.legs.length).toBeGreaterThan(0)
+    expect(path?.totalDurationSeconds).toBeGreaterThan(0)
   })
 })

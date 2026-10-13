@@ -1,7 +1,7 @@
 import type {
   TransitGeoJsonPosition,
   TransitNetwork,
-  TransitRouteGeometry,
+  BusRouteGeometry,
 } from './types.ts'
 import { TransitValidationError } from './model.ts'
 
@@ -130,10 +130,10 @@ function readLineCoordinates(
   return coordinates.length === value.length ? coordinates : null
 }
 
-export function validateTransitRouteGeometry(
+export function validateBusRouteGeometry(
   network: TransitNetwork,
   input: unknown,
-): TransitRouteGeometry {
+): BusRouteGeometry {
   const issues: string[] = []
   if (!isRecord(input)) {
     throw new TransitValidationError(['Transit route geometry must be an object'])
@@ -242,5 +242,5 @@ export function validateTransitRouteGeometry(
   }
 
   if (issues.length > 0) throw new TransitValidationError(issues)
-  return input as unknown as TransitRouteGeometry
+  return input as unknown as BusRouteGeometry
 }

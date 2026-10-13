@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { createTransitNetworkIndex } from '../transit'
-import { validateTransitRouteGeometry } from '@navus/shared/transit/geometry'
+import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import { validateTransitNetwork } from '@navus/shared/transit/model'
 import type { TripEndpoint } from './types'
 import { getTripEndpointKey } from './endpoints'
 import {
-  planJourney,
-  planJourneyWithinBudget,
-  searchJourneyCandidatesWithinBudget,
-  zeroShuttleWaitingTime,
-  type PlanJourneyInput,
-  type WalkingJourneyConnection,
+  searchPaths,
+  searchPathsWithinBudget,
+  searchPathCandidatesWithinBudget,
+  zeroBusWaitingTime,
+  type PathSearchInput,
+  type PathWalkingConnection,
 } from './planner'
 
 const origin: TripEndpoint = { kind: 'venue', id: 'ORIGIN' }
@@ -25,7 +25,7 @@ const stopF: TripEndpoint = { kind: 'stop', id: 'STOP-F' }
 const stopG: TripEndpoint = { kind: 'stop', id: 'STOP-G' }
 const stopH: TripEndpoint = { kind: 'stop', id: 'STOP-H' }
 
-function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConnection['geometry'] {
+function lineGeometry(from: TripEndpoint, to: TripEndpoint): PathWalkingConnection['geometry'] {
   const coordinateByEndpoint = new Map([
     [`venue:ORIGIN`, [102.999, 1] as const],
     [`stop:STOP-A`, [103, 1] as const],
@@ -45,8 +45,8 @@ function lineGeometry(from: TripEndpoint, to: TripEndpoint): WalkingJourneyConne
 }
 
 function createTwoTransferInput(
-  getShuttleWaitingSeconds: PlanJourneyInput['getShuttleWaitingSeconds'],
-): PlanJourneyInput {
+  getShuttleWaitingSeconds: PathSearchInput['getShuttleWaitingSeconds'],
+): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -69,7 +69,7 @@ function createTwoTransferInput(
       { id: 'STOP-D', longName: 'Stop D', shortName: 'D', latitude: 1, longitude: 103.003, services: ['C1'] },
     ],
   })
-  const geometry = validateTransitRouteGeometry(network, {
+  const geometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] } },
@@ -97,7 +97,7 @@ function walking(
   to: TripEndpoint,
   durationSeconds: number,
   distanceMeters = durationSeconds,
-): WalkingJourneyConnection {
+): PathWalkingConnection {
   return {
     from,
     to,
@@ -108,9 +108,9 @@ function walking(
 }
 
 function createInput(
-  walkingConnections: readonly WalkingJourneyConnection[],
-  getShuttleWaitingSeconds = zeroShuttleWaitingTime,
-): PlanJourneyInput {
+  walkingConnections: readonly PathWalkingConnection[],
+  getShuttleWaitingSeconds = zeroBusWaitingTime,
+): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -127,7 +127,7 @@ function createInput(
       { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -147,7 +147,7 @@ function createInput(
   }
 }
 
-function createParallelRouteInput(): PlanJourneyInput {
+function createParallelRouteInput(): PathSearchInput {
   const routeIds = ['B1', 'A1']
   const network = validateTransitNetwork({
     version: 1,
@@ -165,7 +165,7 @@ function createParallelRouteInput(): PlanJourneyInput {
       { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: routeIds },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: routeIds.map((routeId) => ({
       type: 'Feature' as const,
@@ -184,13 +184,13 @@ function createParallelRouteInput(): PlanJourneyInput {
       walking(stopB, destination, 10),
       walking(origin, destination, 1_000),
     ],
-    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+    getShuttleWaitingSeconds: zeroBusWaitingTime,
   }
 }
 
 function createOneTransferInput(
-  getShuttleWaitingSeconds: PlanJourneyInput['getShuttleWaitingSeconds'],
-): PlanJourneyInput {
+  getShuttleWaitingSeconds: PathSearchInput['getShuttleWaitingSeconds'],
+): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -212,7 +212,7 @@ function createOneTransferInput(
       { id: 'STOP-D', longName: 'Stop D', shortName: 'D', latitude: 1, longitude: 103.003, services: ['B1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] } },
@@ -237,9 +237,9 @@ function createOneTransferInput(
 }
 
 function createFiveStopConnectorInput(
-  walkingConnections: readonly WalkingJourneyConnection[],
+  walkingConnections: readonly PathWalkingConnection[],
   rideSecondsByPair: ReadonlyMap<string, number>,
-): PlanJourneyInput {
+): PathSearchInput {
   const stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-D', 'STOP-E']
   const network = validateTransitNetwork({
     version: 1,
@@ -261,7 +261,7 @@ function createFiveStopConnectorInput(
       services: ['A1'],
     })),
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -295,14 +295,14 @@ function createFiveStopConnectorInput(
     routeGeometry,
     shuttleTiming,
     walkingConnections,
-    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+    getShuttleWaitingSeconds: zeroBusWaitingTime,
   }
 }
 
 function createEightStopDestinationInput(
-  walkingConnections: readonly WalkingJourneyConnection[],
+  walkingConnections: readonly PathWalkingConnection[],
   rideSecondsByPair: ReadonlyMap<string, number>,
-): PlanJourneyInput {
+): PathSearchInput {
   const stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-D', 'STOP-E', 'STOP-F', 'STOP-G', 'STOP-H']
   const network = validateTransitNetwork({
     version: 1,
@@ -324,7 +324,7 @@ function createEightStopDestinationInput(
       services: ['A1'],
     })),
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -353,11 +353,11 @@ function createEightStopDestinationInput(
     routeGeometry,
     shuttleTiming,
     walkingConnections,
-    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+    getShuttleWaitingSeconds: zeroBusWaitingTime,
   }
 }
 
-function createSameRouteInput(): PlanJourneyInput {
+function createSameRouteInput(): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -375,7 +375,7 @@ function createSameRouteInput(): PlanJourneyInput {
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -395,11 +395,11 @@ function createSameRouteInput(): PlanJourneyInput {
       walking({ kind: 'stop', id: 'STOP-C' }, destination, 10),
       walking(origin, destination, 1_000),
     ],
-    getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+    getShuttleWaitingSeconds: zeroBusWaitingTime,
   }
 }
 
-function createUpstreamBoardingInput(): PlanJourneyInput {
+function createUpstreamBoardingInput(): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -417,7 +417,7 @@ function createUpstreamBoardingInput(): PlanJourneyInput {
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -441,7 +441,7 @@ function createUpstreamBoardingInput(): PlanJourneyInput {
   }
 }
 
-function createTerminalReboardingInput(): PlanJourneyInput {
+function createTerminalReboardingInput(): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -459,7 +459,7 @@ function createTerminalReboardingInput(): PlanJourneyInput {
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1.002, longitude: 103, services: ['A1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -484,7 +484,7 @@ function createTerminalReboardingInput(): PlanJourneyInput {
   }
 }
 
-function createTimeDependentInput(): PlanJourneyInput {
+function createTimeDependentInput(): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -506,7 +506,7 @@ function createTimeDependentInput(): PlanJourneyInput {
       { id: 'STOP-E', longName: 'Stop E', shortName: 'E', latitude: 1, longitude: 103.004, services: ['B1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.002, 1], [103.003, 1]] } },
@@ -531,7 +531,7 @@ function createTimeDependentInput(): PlanJourneyInput {
   }
 }
 
-function createLabelOverflowInput(): PlanJourneyInput {
+function createLabelOverflowInput(): PathSearchInput {
   const branchStopIds = Array.from({ length: 9 }, (_, index) => `STOP-P${index + 1}`)
   const network = validateTransitNetwork({
     version: 1,
@@ -557,7 +557,7 @@ function createLabelOverflowInput(): PlanJourneyInput {
       { id: 'STOP-Y', longName: 'Stop Y', shortName: 'Y', latitude: 1, longitude: 103.001, services: ['A1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
@@ -565,7 +565,7 @@ function createLabelOverflowInput(): PlanJourneyInput {
       geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1]] },
     }],
   })
-  const genericGeometry: WalkingJourneyConnection['geometry'] = {
+  const genericGeometry: PathWalkingConnection['geometry'] = {
     type: 'LineString',
     coordinates: [[103, 1], [103.001, 1]],
   }
@@ -588,7 +588,7 @@ function createLabelOverflowInput(): PlanJourneyInput {
   }
 }
 
-function createCompleteAlternativeInput(): PlanJourneyInput {
+function createCompleteAlternativeInput(): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -609,14 +609,14 @@ function createCompleteAlternativeInput(): PlanJourneyInput {
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1', 'B1'] },
     ],
   })
-  const routeGeometry = validateTransitRouteGeometry(network, {
+  const routeGeometry = validateBusRouteGeometry(network, {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { routeId: 'A1', name: 'A1', color: '#123456' }, geometry: { type: 'LineString', coordinates: [[103, 1], [103.002, 1]] } },
       { type: 'Feature', properties: { routeId: 'B1', name: 'B1', color: '#234567' }, geometry: { type: 'LineString', coordinates: [[103.001, 1], [103.002, 1]] } },
     ],
   })
-  const genericGeometry: WalkingJourneyConnection['geometry'] = {
+  const genericGeometry: PathWalkingConnection['geometry'] = {
     type: 'LineString',
     coordinates: [[103, 1], [103.001, 1]],
   }
@@ -653,9 +653,9 @@ describe('planJourney', () => {
       ['STOP-D>STOP-E', 1],
     ]))
 
-    const journey = planJourney(input)
+    const path = searchPaths(input)
 
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       boardingStopId: 'STOP-D',
       alightingStopId: 'STOP-E',
     })
@@ -676,9 +676,9 @@ describe('planJourney', () => {
       ['STOP-A>STOP-E', 1],
     ]))
 
-    const journey = planJourney(input)
+    const path = searchPaths(input)
 
-    expect(journey?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
+    expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-E',
     })
@@ -691,7 +691,7 @@ describe('planJourney', () => {
       walking(stopD, selectedDestination, 20),
       walking(origin, selectedDestination, 2_000),
     ], new Map())
-    const result = await searchJourneyCandidatesWithinBudget({
+    const result = await searchPathCandidatesWithinBudget({
       ...input,
       destination: {
         endpoint: selectedDestination,
@@ -699,9 +699,9 @@ describe('planJourney', () => {
       },
     })
 
-    expect(result.rankedCandidates.some(({ journey }) => {
-      const lastLeg = journey.legs.at(-1)
-      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+    expect(result.rankedCandidates.some(({ path }) => {
+      const lastLeg = path.legs.at(-1)
+      return path.legs.some((leg) => leg.mode === 'shuttle') &&
         lastLeg?.mode === 'walking' &&
         lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-D' &&
         lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-E'
@@ -713,7 +713,7 @@ describe('planJourney', () => {
     const input = createFiveStopConnectorInput([
       walking(origin, selectedDestination, 100),
     ], new Map())
-    const result = await searchJourneyCandidatesWithinBudget({
+    const result = await searchPathCandidatesWithinBudget({
       ...input,
       destination: {
         endpoint: selectedDestination,
@@ -721,12 +721,12 @@ describe('planJourney', () => {
       },
     })
 
-    expect(result.rankedCandidates.some(({ journey }) => (
-      journey.legs.length === 1 &&
-      journey.legs[0].mode === 'walking' &&
-      journey.legs[0].from.kind === 'venue' &&
-      journey.legs[0].to.kind === 'stop' &&
-      journey.legs[0].to.id === 'STOP-E'
+    expect(result.rankedCandidates.some(({ path }) => (
+      path.legs.length === 1 &&
+      path.legs[0].mode === 'walking' &&
+      path.legs[0].from.kind === 'venue' &&
+      path.legs[0].to.kind === 'stop' &&
+      path.legs[0].to.id === 'STOP-E'
     ))).toBe(true)
   })
 
@@ -737,7 +737,7 @@ describe('planJourney', () => {
       walking(selectedDestination, stopD, 20),
       walking(origin, selectedDestination, 2_000),
     ], new Map())
-    const result = await searchJourneyCandidatesWithinBudget({
+    const result = await searchPathCandidatesWithinBudget({
       ...input,
       destination: {
         endpoint: selectedDestination,
@@ -745,8 +745,8 @@ describe('planJourney', () => {
       },
     })
 
-    expect(result.rankedCandidates.some(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'walking' &&
+    expect(result.rankedCandidates.some(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'walking' &&
         leg.from.kind === 'stop' && leg.from.id === 'STOP-D' &&
         leg.to.kind === 'stop' && leg.to.id === 'STOP-E')
     ))).toBe(false)
@@ -770,14 +770,14 @@ describe('planJourney', () => {
       ['STOP-A>STOP-G', 10],
       ['STOP-A>STOP-H', 500],
     ]))
-    const result = await searchJourneyCandidatesWithinBudget(input)
+    const result = await searchPathCandidatesWithinBudget(input)
 
-    expect(result.rankedCandidates.some(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-H')
+    expect(result.rankedCandidates.some(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-H')
     ))).toBe(true)
-    expect(result.rankedCandidates.some(({ journey }) => {
-      const lastLeg = journey.legs.at(-1)
-      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+    expect(result.rankedCandidates.some(({ path }) => {
+      const lastLeg = path.legs.at(-1)
+      return path.legs.some((leg) => leg.mode === 'shuttle') &&
         lastLeg?.mode === 'walking' &&
         lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-G' &&
         lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-H'
@@ -794,7 +794,7 @@ describe('planJourney', () => {
       ['STOP-A>STOP-G', 10],
       ['STOP-A>STOP-H', 300],
     ]))
-    const result = await searchJourneyCandidatesWithinBudget({
+    const result = await searchPathCandidatesWithinBudget({
       ...input,
       destination: {
         endpoint: selectedDestination,
@@ -802,15 +802,15 @@ describe('planJourney', () => {
       },
     })
 
-    expect(result.rankedCandidates.some(({ journey }) => {
-      const lastLeg = journey.legs.at(-1)
-      return journey.legs.some((leg) => leg.mode === 'shuttle') &&
+    expect(result.rankedCandidates.some(({ path }) => {
+      const lastLeg = path.legs.at(-1)
+      return path.legs.some((leg) => leg.mode === 'shuttle') &&
         lastLeg?.mode === 'walking' &&
         lastLeg.from.kind === 'stop' && lastLeg.from.id === 'STOP-G' &&
         lastLeg.to.kind === 'stop' && lastLeg.to.id === 'STOP-D'
     })).toBe(false)
-    expect(result.rankedCandidates.some(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-D')
+    expect(result.rankedCandidates.some(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle' && leg.alightingStopId === 'STOP-D')
     ))).toBe(true)
   })
 
@@ -821,15 +821,15 @@ describe('planJourney', () => {
       walking({ kind: 'stop', id: 'STOP-E' }, destination, 10),
       walking(origin, destination, 1_000),
     ], new Map())
-    const result = await planJourneyWithinBudget(input)
-    const busCandidates = result.candidates.filter(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
+    const result = await searchPathsWithinBudget(input)
+    const busCandidates = result.candidates.filter(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
     ))
-    const walkingCandidates = result.candidates.filter(({ journey }) => (
-      journey.legs.every((leg) => leg.mode === 'walking')
+    const walkingCandidates = result.candidates.filter(({ path }) => (
+      path.legs.every((leg) => leg.mode === 'walking')
     ))
 
-    expect(busCandidates.map(({ journey }) => journey.legs
+    expect(busCandidates.map(({ path }) => path.legs
       .filter((leg) => leg.mode === 'shuttle')
       .map((leg) => `${leg.routeId}:${leg.boardingStopId}>${leg.alightingStopId}`)))
       .toEqual([['A1:STOP-B>STOP-E'], ['A1:STOP-A>STOP-E']])
@@ -841,17 +841,17 @@ describe('planJourney', () => {
 
   it('orders equal-score candidates deterministically by shuttle route sequence', async () => {
     const input = createParallelRouteInput()
-    const firstSearch = await planJourneyWithinBudget(input)
-    const secondSearch = await planJourneyWithinBudget(input)
-    const firstBusCandidates = firstSearch.candidates.filter(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
+    const firstSearch = await searchPathsWithinBudget(input)
+    const secondSearch = await searchPathsWithinBudget(input)
+    const firstBusCandidates = firstSearch.candidates.filter(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
     ))
-    const secondBusCandidates = secondSearch.candidates.filter(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
+    const secondBusCandidates = secondSearch.candidates.filter(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
     ))
 
-    expect(firstBusCandidates.map(({ journey }) => (
-      journey.legs.find((leg) => leg.mode === 'shuttle')?.routeId
+    expect(firstBusCandidates.map(({ path }) => (
+      path.legs.find((leg) => leg.mode === 'shuttle')?.routeId
     ))).toEqual(['A1', 'B1'])
     expect(firstBusCandidates[0]?.adjustedDurationSeconds)
       .toBe(firstBusCandidates[1]?.adjustedDurationSeconds)
@@ -861,9 +861,9 @@ describe('planJourney', () => {
 
   it('scores each walk and discounts only shuttle legs boarded after a transfer', async () => {
     const input = createOneTransferInput((record) => record.routeId === 'A1' ? 10 : 20)
-    const result = await planJourneyWithinBudget(input)
-    const candidate = result.candidates.find(({ journey }) => (
-      journey.legs.filter((leg) => leg.mode === 'shuttle').length === 2
+    const result = await searchPathsWithinBudget(input)
+    const candidate = result.candidates.find(({ path }) => (
+      path.legs.filter((leg) => leg.mode === 'shuttle').length === 2
     ))
     const firstRide = input.shuttleTiming.records.find((record) => (
       record.routeId === 'A1' && record.fromStopId === 'STOP-A' && record.toStopId === 'STOP-B'
@@ -874,10 +874,10 @@ describe('planJourney', () => {
 
     expect(firstRide).not.toBeNull()
     expect(secondRide).not.toBeNull()
-    expect(candidate?.journey.legs.map((leg) => leg.mode)).toEqual([
+    expect(candidate?.path.legs.map((leg) => leg.mode)).toEqual([
       'walking', 'shuttle', 'walking', 'shuttle', 'walking',
     ])
-    expect(candidate?.journey.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
+    expect(candidate?.path.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
       leg.mode === 'shuttle' ? leg.routeId : null
     ))).toEqual(['A1', 'B1'])
     expect(candidate?.adjustedDurationSeconds).toBeCloseTo(
@@ -893,13 +893,13 @@ describe('planJourney', () => {
       walking(origin, stopA, 90),
       walking(stopB, destination, 100),
     ])
-    const result = await planJourneyWithinBudget(input)
-    const busCandidates = result.candidates.filter(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
+    const result = await searchPathsWithinBudget(input)
+    const busCandidates = result.candidates.filter(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
     ))
 
     expect(busCandidates).toHaveLength(1)
-    expect(busCandidates[0]?.journey.legs[0]).toMatchObject({ durationSeconds: 90 })
+    expect(busCandidates[0]?.path.legs[0]).toMatchObject({ durationSeconds: 90 })
   })
 
   it('rejects incomplete walking geometry while keeping other complete candidates', async () => {
@@ -909,62 +909,62 @@ describe('planJourney', () => {
       walking(stopB, destination, 100),
       walking(origin, destination, 500),
     ])
-    const result = await planJourneyWithinBudget(input)
+    const result = await searchPathsWithinBudget(input)
 
-    expect(result.candidates.map(({ journey }) => journey.legs.map((leg) => leg.mode)))
+    expect(result.candidates.map(({ path }) => path.legs.map((leg) => leg.mode)))
       .toEqual([['walking']])
   })
 
   it('returns a valid one-transfer Journey between different routes', async () => {
-    const result = await planJourneyWithinBudget(createOneTransferInput(() => 5))
-    const candidate = result.candidates.find(({ journey }) => (
-      journey.legs.filter((leg) => leg.mode === 'shuttle').length === 2
+    const result = await searchPathsWithinBudget(createOneTransferInput(() => 5))
+    const candidate = result.candidates.find(({ path }) => (
+      path.legs.filter((leg) => leg.mode === 'shuttle').length === 2
     ))
 
-    expect(candidate?.journey.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
+    expect(candidate?.path.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => (
       leg.mode === 'shuttle' ? leg.routeId : null
     ))).toEqual(['A1', 'B1'])
   })
 
   it('includes a directed shuttle leg when zero waiting makes it the best journey', () => {
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
       walking(origin, destination, 500),
     ]))
 
-    expect(journey).not.toBeNull()
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs[1]).toMatchObject({
+    expect(path).not.toBeNull()
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs[1]).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-B',
       waitingSeconds: 0,
     })
-    expect(journey?.totalDurationSeconds).toBeLessThan(500)
-    expect(journey?.estimateStatus).toBe('estimated')
+    expect(path?.totalDurationSeconds).toBeLessThan(500)
+    expect(path?.estimateStatus).toBe('estimated')
   })
 
   it('uses the waiting-time seam without changing the planner', () => {
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
       walking(origin, destination, 500),
     ], () => 1_000))
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(500)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(500)
   })
 
   it('uses the direct walking connection instead of composing endpoint connectors', () => {
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopA, 100, 120),
       walking(stopA, destination, 200, 240),
       walking(origin, destination, 500, 600),
     ]))
 
-    expect(journey?.legs).toHaveLength(1)
-    expect(journey?.legs[0]).toMatchObject({
+    expect(path?.legs).toHaveLength(1)
+    expect(path?.legs[0]).toMatchObject({
       mode: 'walking',
       from: origin,
       to: destination,
@@ -978,16 +978,16 @@ describe('planJourney', () => {
         ],
       },
     })
-    expect(journey?.totalDurationSeconds).toBe(500)
-    expect(journey?.totalDistanceMeters).toBe(600)
+    expect(path?.totalDurationSeconds).toBe(500)
+    expect(path?.totalDistanceMeters).toBe(600)
   })
 
   it('keeps a continuous same-route ride as one shuttle leg', () => {
-    const journey = planJourney(createSameRouteInput())
+    const path = searchPaths(createSameRouteInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs.filter((leg) => leg.mode === 'shuttle')).toHaveLength(1)
-    expect(journey?.legs[1]).toMatchObject({
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs.filter((leg) => leg.mode === 'shuttle')).toHaveLength(1)
+    expect(path?.legs[1]).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-C',
@@ -996,10 +996,10 @@ describe('planJourney', () => {
   })
 
   it('keeps a selected stop fixed instead of walking to another boarding stop', () => {
-    const journey = planJourney(createUpstreamBoardingInput())
+    const path = searchPaths(createUpstreamBoardingInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['shuttle', 'walking'])
-    expect(journey?.legs[0]).toMatchObject({
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['shuttle', 'walking'])
+    expect(path?.legs[0]).toMatchObject({
       routeId: 'A1',
       boardingStopId: 'STOP-B',
       alightingStopId: 'STOP-C',
@@ -1007,46 +1007,46 @@ describe('planJourney', () => {
   })
 
   it('does not reboard after a route reaches its declared terminal', () => {
-    const journey = planJourney(createTerminalReboardingInput())
+    const path = searchPaths(createTerminalReboardingInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(1_000)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
   it('uses direct walking when only a two-shuttle route could reach the destination', () => {
-    const journey = planJourney(createTimeDependentInput())
+    const path = searchPaths(createTimeDependentInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(1_000)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
   it('does not treat stop-to-stop walking as a path into the shuttle network', () => {
-    const journey = planJourney(createLabelOverflowInput())
+    const path = searchPaths(createLabelOverflowInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(1_000)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
   it('does not use a walking cycle to manufacture a later shuttle opportunity', () => {
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopA, 0),
       walking(stopA, origin, 1),
       walking(stopB, destination, 1),
     ], (_record, context) => context.elapsedSeconds === 1 ? 0 : null))
 
-    expect(journey).toBeNull()
+    expect(path).toBeNull()
   })
 
   it('chooses a slower complete route when a faster option is unavailable', () => {
-    const journey = planJourney(createCompleteAlternativeInput())
+    const path = searchPaths(createCompleteAlternativeInput())
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
-    expect(journey?.legs[1]).toMatchObject({ routeId: 'B1', boardingStopId: 'STOP-B' })
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
+    expect(path?.legs[1]).toMatchObject({ routeId: 'B1', boardingStopId: 'STOP-B' })
   })
 
   it('passes the elapsed journey time to each shuttle wait calculation', () => {
     const contexts: number[] = []
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
       walking(origin, destination, 500),
@@ -1055,26 +1055,26 @@ describe('planJourney', () => {
       return 10
     }))
 
-    expect(journey?.legs[1]).toMatchObject({ waitingSeconds: 10 })
+    expect(path?.legs[1]).toMatchObject({ waitingSeconds: 10 })
     expect(contexts).toContain(100)
   })
 
   it('falls back to direct walking when reaching the destination needs two transfers', () => {
-    const journey = planJourney(createTwoTransferInput(() => 25))
+    const path = searchPaths(createTwoTransferInput(() => 25))
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(1_000)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
   it('keeps shuttle movement directed and falls back to walking', () => {
-    const journey = planJourney(createInput([
+    const path = searchPaths(createInput([
       walking(origin, stopB, 100),
       walking(stopA, destination, 100),
       walking(origin, destination, 500),
     ]))
 
-    expect(journey?.legs.map((leg) => leg.mode)).toEqual(['walking'])
-    expect(journey?.totalDurationSeconds).toBe(500)
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
+    expect(path?.totalDurationSeconds).toBe(500)
   })
 
   it('plans the closing leg of a one-way loop', () => {
@@ -1094,7 +1094,7 @@ describe('planJourney', () => {
         { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1.001, longitude: 103, services: ['A1'] },
       ],
     })
-    const routeGeometry = validateTransitRouteGeometry(network, {
+    const routeGeometry = validateBusRouteGeometry(network, {
       type: 'FeatureCollection',
       features: [{
         type: 'Feature',
@@ -1102,18 +1102,18 @@ describe('planJourney', () => {
         geometry: { type: 'LineString', coordinates: [[103, 1], [103, 1.001], [103, 1]] },
       }],
     })
-    const journey = planJourney({
+    const path = searchPaths({
       origin: { endpoint: stopB, coordinate: { longitude: 103, latitude: 1.001 } },
       destination: { endpoint: stopA, coordinate: { longitude: 103, latitude: 1 } },
       transitIndex: createTransitNetworkIndex(network),
       routeGeometry,
       shuttleTiming: generateShuttleTimingData(network, routeGeometry, '2026-09-22'),
       walkingConnections: [],
-      getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+      getShuttleWaitingSeconds: zeroBusWaitingTime,
     })
 
-    expect(journey?.legs).toHaveLength(1)
-    expect(journey?.legs[0]).toMatchObject({
+    expect(path?.legs).toHaveLength(1)
+    expect(path?.legs[0]).toMatchObject({
       mode: 'shuttle',
       routeId: 'A1',
       boardingStopId: 'STOP-B',
@@ -1122,19 +1122,19 @@ describe('planJourney', () => {
   })
 
   it('returns no journey when no complete connection exists', () => {
-    expect(planJourney(createInput([]))).toBeNull()
+    expect(searchPaths(createInput([]))).toBeNull()
   })
 
   it('returns an exact result when the bounded search finishes', async () => {
-    const result = await planJourneyWithinBudget(createInput([
+    const result = await searchPathsWithinBudget(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
       walking(origin, destination, 500),
     ]), { maxExpandedPaths: 10_000 })
 
     expect(result.status).toBe('complete')
-    expect(result.journey?.planningQuality).toBe('exact')
-    expect(result.journey?.totalDurationSeconds).toBeLessThan(500)
+    expect(result.path?.planningQuality).toBe('exact')
+    expect(result.path?.totalDurationSeconds).toBeLessThan(500)
   })
 
   it('returns the best complete result when the search budget is reached', async () => {
@@ -1151,7 +1151,7 @@ describe('planJourney', () => {
       throw new Error('Expected a generated A1 ride estimate')
     }
 
-    const result = await planJourneyWithinBudget({
+    const result = await searchPathsWithinBudget({
       ...input,
       walkingConnections: [
         ...input.walkingConnections,
@@ -1160,8 +1160,8 @@ describe('planJourney', () => {
     }, { maxExpandedPaths: 1 })
 
     expect(result.status).toBe('budget-exceeded')
-    expect(result.journey?.planningQuality).toBe('bounded')
-    expect(result.journey?.totalDurationSeconds).toBe(rideSeconds + 2)
+    expect(result.path?.planningQuality).toBe('bounded')
+    expect(result.path?.totalDurationSeconds).toBe(rideSeconds + 2)
   })
 
   it('enforces the deadline while building the bounded search index', async () => {
@@ -1171,7 +1171,7 @@ describe('planJourney', () => {
     let nowMs = 0
     let yieldCount = 0
 
-    const result = await planJourneyWithinBudget({
+    const result = await searchPathsWithinBudget({
       ...input,
       shuttleTiming: {
         ...input.shuttleTiming,
@@ -1200,7 +1200,7 @@ describe('planJourney', () => {
     const abortController = new AbortController()
     let yieldCount = 0
 
-    const result = await planJourneyWithinBudget({
+    const result = await searchPathsWithinBudget({
       ...input,
       shuttleTiming: {
         ...input.shuttleTiming,
@@ -1227,7 +1227,7 @@ describe('planJourney', () => {
     if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
     let yieldCount = 0
 
-    const result = await planJourneyWithinBudget({
+    const result = await searchPathsWithinBudget({
       ...input,
       shuttleTiming: {
         ...input.shuttleTiming,
@@ -1245,12 +1245,12 @@ describe('planJourney', () => {
   })
 
   it('stops before expanding a path when cancelled', async () => {
-    const result = await planJourneyWithinBudget(createInput([
+    const result = await searchPathsWithinBudget(createInput([
       walking(origin, destination, 100),
     ]), { shouldCancel: () => true })
 
     expect(result.status).toBe('cancelled')
     expect(result.expandedPathCount).toBe(0)
-    expect(result.journey).toBeNull()
+    expect(result.path).toBeNull()
   })
 })

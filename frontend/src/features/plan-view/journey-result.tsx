@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import { formatDuration } from '../../domain/trip/duration-format'
-import type { Journey } from '../../domain/trip/journey'
-import type { ScoredJourneyCandidate } from '../../domain/trip/planner'
+import type { Path } from '../../pathfinding/path'
+import type { ScoredPathCandidate } from '../../domain/trip/planner'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'
@@ -14,15 +14,15 @@ import {
   type JourneyCompactSummary,
   type JourneyTimelineEntry,
 } from './journey-result-presentation'
-import { selectJourneysForDisplay } from './journey-candidate-selection'
+import { selectDisplayedPaths } from './journey-candidate-selection'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 
 export interface JourneyResultState {
   readonly status: JourneyStatus
-  readonly journey: Journey | null
-  readonly candidates: readonly ScoredJourneyCandidate[]
-  readonly displayedCandidates?: readonly ScoredJourneyCandidate[]
+  readonly path: Path | null
+  readonly candidates: readonly ScoredPathCandidate[]
+  readonly displayedCandidates?: readonly ScoredPathCandidate[]
   readonly selectedCandidateKey?: string | null
   readonly error: string | null
 }
@@ -69,8 +69,8 @@ function renderJourneyModeSummary(summary: JourneyCompactSummary) {
   )
 }
 
-function renderJourneyOptionHeader(journey: Journey, optionIndex: number) {
-  const header = getJourneyOptionHeader(journey, optionIndex)
+function renderJourneyOptionHeader(path: Path, optionIndex: number) {
+  const header = getJourneyOptionHeader(path, optionIndex)
   const headingClass = header.kind === 'recommended'
     ? 'journey-option-heading-recommended'
     : 'journey-option-heading-neutral'
@@ -196,15 +196,15 @@ export function JourneyResult({
   simulated = false,
   onSelectCandidate,
 }: JourneyResultProps) {
-  if (state.status !== 'ready' || state.journey === null) {
+  if (state.status !== 'ready' || state.path === null) {
     return renderJourneyStatus(state)
   }
 
-  const candidates = state.displayedCandidates ?? selectJourneysForDisplay(state.candidates)
+  const candidates = state.displayedCandidates ?? selectDisplayedPaths(state.candidates)
   if (candidates.length === 0) {
     return renderJourneyStatus({
       status: 'no-route',
-      journey: null,
+      path: null,
       candidates: [],
       error: null,
     })
@@ -216,10 +216,10 @@ export function JourneyResult({
     : candidates[0]!.candidateKey
   return (
     <ol className="journey-results" aria-label="Journey options" aria-live="polite">
-      {candidates.map(({ candidateKey, journey }, index) => {
+      {candidates.map(({ candidateKey, path }, index) => {
         const selected = candidateKey === selectedCandidateKey
-        const hasShuttleLeg = journey.legs.some((leg) => leg.mode === 'shuttle')
-        const planningNotice = journey.planningQuality === 'bounded'
+        const hasShuttleLeg = path.legs.some((leg) => leg.mode === 'shuttle')
+        const planningNotice = path.planningQuality === 'bounded'
           ? 'This is a valid route found within a short search budget. A faster route may exist.'
           : null
         // PlanView owns the detailed simulated-clock notice; keep this result notice from repeating it.
@@ -229,7 +229,7 @@ export function JourneyResult({
         const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
         const titleId = `journey-option-summary-${index + 1}`
         const detailsId = `journey-option-details-${index + 1}`
-        const summary = getJourneyCompactSummary(journey, networkIndex)
+        const summary = getJourneyCompactSummary(path, networkIndex)
 
         return (
           <li className="journey-results-item" key={candidateKey}>
@@ -249,9 +249,9 @@ export function JourneyResult({
                   onClick={() => onSelectCandidate?.(candidateKey)}
                 >
                   <span className="journey-option-summary-topline">
-                    {renderJourneyOptionHeader(journey, index)}
+                    {renderJourneyOptionHeader(path, index)}
                     <span className="journey-option-estimate">
-                      <span className="journey-option-duration">{formatDuration(journey.totalDurationSeconds)}</span>
+                      <span className="journey-option-duration">{formatDuration(path.totalDurationSeconds)}</span>
                       <DisclosureChevron expanded={selected} />
                     </span>
                   </span>
@@ -270,7 +270,7 @@ export function JourneyResult({
                 {selected && (
                   <>
                     <span className="journey-detail-distance">
-                      Total distance {formatDistance(journey.totalDistanceMeters)}
+                      Total distance {formatDistance(path.totalDistanceMeters)}
                     </span>
                     {journeyNotice && (
                       <p className="journey-notice" role="note">
@@ -281,7 +281,7 @@ export function JourneyResult({
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
                     >
-                      {getJourneyTimelineEntries(journey, venues, networkIndex).map(renderJourneyTimelineEntry)}
+                      {getJourneyTimelineEntries(path, venues, networkIndex).map(renderJourneyTimelineEntry)}
                     </ol>
                   </>
                 )}

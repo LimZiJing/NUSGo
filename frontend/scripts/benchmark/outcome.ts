@@ -3,7 +3,7 @@ import type {
   WalkingMatrixConnection,
   WalkingMatrixRequest,
 } from '../../src/app/contracts/routing.js'
-import type { Journey, JourneyLineString } from '../../src/domain/trip/journey.js'
+import type { Path, PathGeometry } from '../../src/pathfinding/path.js'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
@@ -62,7 +62,7 @@ function isEndpoint(value: unknown): value is TripEndpoint {
     value.id.length > 0
 }
 
-function isLineString(value: unknown): value is JourneyLineString {
+function isLineString(value: unknown): value is PathGeometry {
   return isRecord(value) &&
     value.type === 'LineString' &&
     Array.isArray(value.coordinates) &&
@@ -380,7 +380,7 @@ function validateJourney(
   venues: VenueLocationMap,
   evidence: JourneyBenchmarkOutcomeEvidence | undefined,
   errors: string[],
-): Journey | null {
+): Path | null {
   if (!isRecord(value)) {
     errors.push('journey must be an object')
     return null
@@ -544,7 +544,7 @@ function validateJourney(
     }
   }
 
-  return value as unknown as Journey
+  return value as unknown as Path
 }
 
 export function validateJourneyBenchmarkOutcome(
@@ -573,18 +573,18 @@ export function validateJourneyBenchmarkOutcome(
     }
   } else if (input.kind === 'journey') {
     if (benchmarkCase.expected.outcome !== 'journey') errors.push('expected no-route; got journey')
-    const journey = validateJourney(input.journey, benchmarkCase, transit, venues, evidence, errors)
-    if (journey) {
+    const path = validateJourney(input.path, benchmarkCase, transit, venues, evidence, errors)
+    if (path) {
       result = {
         kind: 'journey',
-        modes: journey.legs.map((leg) => leg.mode),
-        shuttleBoardings: journey.legs.filter((leg) => leg.mode === 'shuttle').length,
-        routeIds: journey.legs.flatMap((leg) => leg.mode === 'shuttle' ? [leg.routeId] : []),
-        waitingSeconds: journey.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.waitingSeconds : 0), 0),
-        rideSeconds: journey.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.rideSeconds : 0), 0),
-        totalDurationSeconds: journey.totalDurationSeconds,
-        totalDistanceMeters: journey.totalDistanceMeters,
-        planningQuality: journey.planningQuality,
+        modes: path.legs.map((leg) => leg.mode),
+        shuttleBoardings: path.legs.filter((leg) => leg.mode === 'shuttle').length,
+        routeIds: path.legs.flatMap((leg) => leg.mode === 'shuttle' ? [leg.routeId] : []),
+        waitingSeconds: path.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.waitingSeconds : 0), 0),
+        rideSeconds: path.legs.reduce((sum, leg) => sum + (leg.mode === 'shuttle' ? leg.rideSeconds : 0), 0),
+        totalDurationSeconds: path.totalDurationSeconds,
+        totalDistanceMeters: path.totalDistanceMeters,
+        planningQuality: path.planningQuality,
         ...outcomeDiagnostics(input.diagnostics),
       }
     }

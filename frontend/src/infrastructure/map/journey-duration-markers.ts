@@ -1,7 +1,7 @@
 import { Marker, type Map } from 'maplibre-gl'
 import type { MapJourneyOption } from '../../app/contracts/map'
 import { formatDuration } from '../../domain/trip/duration-format'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 
 const JOURNEY_DURATION_MARKER_Z_INDEX = 4
 const JOURNEY_DURATION_MARKER_SPACING = 32
@@ -18,11 +18,11 @@ function haveOptionsChanged(
   next: readonly MapJourneyOption[],
 ): boolean {
   return current.length !== next.length || current.some((option, index) => (
-    option.candidateKey !== next[index]?.candidateKey || option.journey !== next[index]?.journey
+    option.candidateKey !== next[index]?.candidateKey || option.path !== next[index]?.path
   ))
 }
 
-function getJourneyLabelPoint(journey: Journey): [number, number] | null {
+function getJourneyLabelPoint(path: Path): [number, number] | null {
   const segments: Array<{
     readonly from: readonly [number, number]
     readonly to: readonly [number, number]
@@ -30,7 +30,7 @@ function getJourneyLabelPoint(journey: Journey): [number, number] | null {
   }> = []
   let totalLength = 0
 
-  for (const leg of journey.legs) {
+  for (const leg of path.legs) {
     const coordinates = leg.geometry.coordinates
     for (let index = 1; index < coordinates.length; index += 1) {
       const from = coordinates[index - 1]
@@ -46,7 +46,7 @@ function getJourneyLabelPoint(journey: Journey): [number, number] | null {
   }
 
   if (segments.length === 0) {
-    const coordinate = journey.legs[0]?.geometry.coordinates[0]
+    const coordinate = path.legs[0]?.geometry.coordinates[0]
     return coordinate ? [coordinate[0], coordinate[1]] : null
   }
 
@@ -100,12 +100,12 @@ function createMarkers(
 ): JourneyDurationMarker[] {
   const markers: JourneyDurationMarker[] = []
   try {
-    options.forEach(({ candidateKey, journey }, candidateIndex) => {
-      const coordinate = getJourneyLabelPoint(journey)
+    options.forEach(({ candidateKey, path }, candidateIndex) => {
+      const coordinate = getJourneyLabelPoint(path)
       if (!coordinate) return
 
       const element = createDurationLabelElement(
-        formatDuration(journey.totalDurationSeconds),
+        formatDuration(path.totalDurationSeconds),
         candidateKey,
         candidateIndex + 1,
       )

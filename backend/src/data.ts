@@ -10,7 +10,7 @@ import {
 import type {
   ShuttleTimingData,
   TransitNetwork,
-  TransitRouteGeometry,
+  BusRouteGeometry,
   VenueLocationMap,
   WalkingStopGraph,
 } from '@navus/shared'
@@ -27,7 +27,7 @@ export interface BackendData {
   readonly dataVersion: string
   readonly venues: VenueLocationMap
   readonly network: TransitNetwork
-  readonly routeGeometry: TransitRouteGeometry
+  readonly routeGeometry: BusRouteGeometry
   readonly shuttleTiming: ShuttleTimingData
   readonly walkingStopGraph: WalkingStopGraph
   readonly counts: {

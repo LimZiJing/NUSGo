@@ -61,9 +61,9 @@ function snapshotTripRequest(request: TripRequest): TripRequest {
 }
 
 function snapshotJourneyState(state: JourneyState): JourneyState {
-  const snapshotJourney = (journey: JourneyState['journey']): JourneyState['journey'] => {
-    if (journey === null) return null
-    const legs = journey.legs.map((leg) => freeze({
+  const snapshotPath = (path: JourneyState['path']): JourneyState['path'] => {
+    if (path === null) return null
+    const legs = path.legs.map((leg) => freeze({
       ...leg,
       from: freeze({ ...leg.from }),
       to: freeze({ ...leg.to }),
@@ -75,22 +75,22 @@ function snapshotJourneyState(state: JourneyState): JourneyState {
       }),
     }))
     return freeze({
-      ...journey,
-      origin: freeze({ ...journey.origin }),
-      destination: freeze({ ...journey.destination }),
+      ...path,
+      origin: freeze({ ...path.origin }),
+      destination: freeze({ ...path.destination }),
       legs: freeze(legs),
     })
   }
   return freeze({
     ...state,
-    journey: snapshotJourney(state.journey),
+    path: snapshotPath(state.path),
     candidates: freeze(state.candidates.map((candidate) => freeze({
       ...candidate,
-      journey: snapshotJourney(candidate.journey)!,
+      path: snapshotPath(candidate.path)!,
     }))),
     displayedCandidates: freeze(state.displayedCandidates.map((candidate) => freeze({
       ...candidate,
-      journey: snapshotJourney(candidate.journey)!,
+      path: snapshotPath(candidate.path)!,
     }))),
   })
 }
@@ -128,7 +128,7 @@ export function freezeNavigationSessionSnapshot(state: NavigationSessionState): 
     ...state,
     exploreView: snapshotExploreView(state.exploreView),
     tripRequest: snapshotTripRequest(state.tripRequest),
-    journey: snapshotJourneyState(state.journey),
+    path: snapshotJourneyState(state.path),
     location: snapshotLocationState(state.location),
     originLocationRequest: freeze({ ...state.originLocationRequest }),
     resourceStatus: snapshotResourceStatus(state.resourceStatus),

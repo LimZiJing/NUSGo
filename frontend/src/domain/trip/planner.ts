@@ -5,42 +5,43 @@ import type {
 } from '@navus/shared/transit/timing'
 import type {
   TransitGeoJsonPosition,
-  TransitRouteGeometry,
+  BusRouteGeometry,
 } from '@navus/shared/transit/types'
 import type { TripEndpoint } from './types'
 import { getTripEndpointKey } from './endpoints'
 import type {
-  Journey,
-  JourneyEndpointLocation,
-  JourneyLineString,
-  JourneyLeg,
-  JourneyPlanningQuality,
-  ShuttleJourneyLeg,
-  WalkingJourneyLeg,
-} from './journey'
+  Path,
+  PathEndpointLocation,
+  PathGeometry,
+  PathLeg,
+  PathQuality,
+  BusPathLeg,
+  WalkingPathLeg,
+} from '../../pathfinding/path'
 
-export interface WalkingJourneyConnection {
+export interface PathWalkingConnection {
   readonly from: TripEndpoint
   readonly to: TripEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
-  readonly geometry: JourneyLineString
+  readonly geometry: PathGeometry
 }
 
-export interface ShuttleWaitingTimeContext {
+export interface BusWaitingTimeContext {
   readonly routeId: string
   readonly boardingStopId: string
   readonly elapsedSeconds: number
 }
 
-export type ShuttleWaitingTimeProvider = (
+export type BusWaitingTimeProvider = (
   record: ShuttleTimingRecord,
-  context: ShuttleWaitingTimeContext,
+  context: BusWaitingTimeContext,
 ) => number | null
 
-export const zeroShuttleWaitingTime: ShuttleWaitingTimeProvider = () => 0
+export const zeroBusWaitingTime: BusWaitingTimeProvider = () => 0
 
-export interface JourneyPlanningOptions {
+export interface PathSearchOptions {
+  /** Search stops at the first limit reached; a budget-limited Path is marked bounded. */
   readonly maxDurationMs?: number
   /** Optional monotonic deadline shared with downstream candidate enrichment. */
   readonly deadlineAtMs?: number
@@ -51,21 +52,22 @@ export interface JourneyPlanningOptions {
   readonly now?: () => number
 }
 
-export type JourneyPlanningStatus = 'complete' | 'budget-exceeded' | 'cancelled'
+/** Complete exhausts the supported connector/transfer space; it does not promise unbounded routing. */
+export type PathSearchStatus = 'complete' | 'budget-exceeded' | 'cancelled'
 
-export interface ScoredJourneyCandidate {
+export interface ScoredPathCandidate {
   readonly candidateKey: string
-  readonly journey: Journey
+  readonly path: Path
   readonly adjustedDurationSeconds: number
   readonly score: number
 }
 
-export interface JourneyPlanningResult {
+export interface PathSearchResult {
   /** The highest-scoring candidate, retained for callers that only need one Journey. */
-  readonly journey: Journey | null
+  readonly path: Path | null
   /** Up to three distinct shuttle Journeys plus the highest-scoring walking-only Journey. */
-  readonly candidates: readonly ScoredJourneyCandidate[]
-  readonly status: JourneyPlanningStatus
+  readonly candidates: readonly ScoredPathCandidate[]
+  readonly status: PathSearchStatus
   readonly expandedPathCount: number
   readonly indexBuildDurationMs: number
   readonly candidateResolutionDurationMs: number
@@ -82,10 +84,10 @@ export interface JourneyPlanningResult {
   readonly geometrySliceDurationMs: number
 }
 
-export interface JourneyCandidateSearchResult {
+export interface PathCandidateSearchResult {
   /** Ranked complete candidates considered by the bounded search for downstream geometry checks. */
-  readonly rankedCandidates: readonly ScoredJourneyCandidate[]
-  readonly status: JourneyPlanningStatus
+  readonly rankedCandidates: readonly ScoredPathCandidate[]
+  readonly status: PathSearchStatus
   readonly expandedPathCount: number
   readonly indexBuildDurationMs: number
   readonly candidateResolutionDurationMs: number
@@ -98,14 +100,14 @@ export interface JourneyCandidateSearchResult {
   readonly geometrySliceDurationMs: number
 }
 
-export interface PlanJourneyInput {
-  readonly origin: JourneyEndpointLocation
-  readonly destination: JourneyEndpointLocation
+export interface PathSearchInput {
+  readonly origin: PathEndpointLocation
+  readonly destination: PathEndpointLocation
   readonly transitIndex: TransitIndex
-  readonly routeGeometry: TransitRouteGeometry
+  readonly routeGeometry: BusRouteGeometry
   readonly shuttleTiming: ShuttleTimingData
-  readonly walkingConnections: readonly WalkingJourneyConnection[]
-  readonly getShuttleWaitingSeconds: ShuttleWaitingTimeProvider
+  readonly walkingConnections: readonly PathWalkingConnection[]
+  readonly getShuttleWaitingSeconds: BusWaitingTimeProvider
 }
 
 interface ProjectedPoint {
@@ -117,7 +119,7 @@ interface ProjectedPoint {
 
 interface WalkingConnector {
   readonly stopId: string
-  readonly connection: WalkingJourneyConnection | null
+  readonly connection: PathWalkingConnection | null
 }
 
 interface ShuttleRideDefinition {
@@ -131,22 +133,22 @@ interface ShuttleRideDefinition {
 }
 
 interface TransferOption {
-  readonly connection: WalkingJourneyConnection
+  readonly connection: PathWalkingConnection
   readonly ride: ShuttleRideDefinition
   readonly destinationConnector: WalkingConnector
 }
 
-interface JourneySearchIndex {
+interface PathSearchIndex {
   readonly originConnectors: readonly WalkingConnector[]
   readonly destinationConnectorByStopId: ReadonlyMap<string, WalkingConnector>
-  readonly directWalkingConnections: readonly WalkingJourneyConnection[]
+  readonly directWalkingConnections: readonly PathWalkingConnection[]
   readonly ridesByBoardingStopId: ReadonlyMap<string, readonly ShuttleRideDefinition[]>
   readonly transferOptionsByAlightingStopAndRoute: ReadonlyMap<
     string,
     ReadonlyMap<string, readonly TransferOption[]>
   >
   readonly getRideGeometry: (ride: ShuttleRideDefinition) => {
-    readonly geometry: JourneyLineString
+    readonly geometry: PathGeometry
     readonly distanceMeters: number
   } | null
   readonly getRideGeometryMetrics: () => {
@@ -157,25 +159,25 @@ interface JourneySearchIndex {
 
 interface DirectWalkingCandidateDefinition {
   readonly kind: 'walking'
-  readonly connection: WalkingJourneyConnection
+  readonly connection: PathWalkingConnection
 }
 
 interface ShuttleCandidateDefinition {
   readonly kind: 'shuttle'
   readonly originConnector: WalkingConnector
   readonly rides: readonly [ShuttleRideDefinition] | readonly [ShuttleRideDefinition, ShuttleRideDefinition]
-  readonly transferConnection?: WalkingJourneyConnection
+  readonly transferConnection?: PathWalkingConnection
   readonly destinationConnector: WalkingConnector
 }
 
-type JourneyCandidateDefinition = DirectWalkingCandidateDefinition | ShuttleCandidateDefinition
+type PathCandidateDefinition = DirectWalkingCandidateDefinition | ShuttleCandidateDefinition
 
 type CandidateEnumerationStep =
   | { readonly kind: 'work' }
-  | { readonly kind: 'candidate'; readonly definition: JourneyCandidateDefinition }
+  | { readonly kind: 'candidate'; readonly definition: PathCandidateDefinition }
 
-interface JourneyCandidate {
-  readonly legs: readonly JourneyLeg[]
+interface PathCandidate {
+  readonly legs: readonly PathLeg[]
   readonly durationSeconds: number
   readonly distanceMeters: number
   readonly walkingDistanceMeters: number
@@ -187,15 +189,16 @@ interface JourneyCandidate {
 }
 
 interface CandidateCollector {
-  readonly busByKey: Map<string, JourneyCandidate>
-  readonly walkingByKey: Map<string, JourneyCandidate>
+  readonly busByKey: Map<string, PathCandidate>
+  readonly walkingByKey: Map<string, PathCandidate>
 }
 
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const PROJECTION_EPSILON_METRES = 0.001
-export const MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS = 5
-export const MAX_BUS_JOURNEY_CANDIDATES = 3
+// Keep endpoint fan-out bounded so a nearby venue cannot multiply the bus search without limit.
+export const MAX_PATH_ENDPOINT_STOP_CONNECTORS = 5
+export const MAX_BUS_PATH_CANDIDATES = 3
 
 function compareText(first: string, second: string): number {
   if (first < second) return -1
@@ -207,7 +210,7 @@ function isFiniteNonNegativeInteger(value: number): boolean {
   return Number.isInteger(value) && Number.isFinite(value) && value >= 0
 }
 
-function isValidLineString(geometry: JourneyLineString): boolean {
+function isValidLineString(geometry: PathGeometry): boolean {
   return geometry.type === 'LineString' &&
     geometry.coordinates.length >= 2 &&
     geometry.coordinates.every(([longitude, latitude]) => (
@@ -246,6 +249,7 @@ function projectPointOntoLine(
   point: TransitGeoJsonPosition,
   line: readonly TransitGeoJsonPosition[],
 ): readonly ProjectedPoint[] {
+  // Stops can sit slightly off the drawn line; retain along-line position as well as proximity.
   let distanceAlongLine = 0
   const candidates: ProjectedPoint[] = []
 
@@ -299,7 +303,8 @@ function sliceRouteGeometry(
   line: readonly TransitGeoJsonPosition[],
   fromCandidates: readonly ProjectedPoint[],
   toCandidates: readonly ProjectedPoint[],
-): { readonly geometry: JourneyLineString; readonly distanceMeters: number } | null {
+): { readonly geometry: PathGeometry; readonly distanceMeters: number } | null {
+  // A bus can pass near the same stop more than once; select a forward pair on the official line.
   let selected: { readonly from: ProjectedPoint; readonly to: ProjectedPoint } | null = null
   let fromIndex = 0
   let closestForwardFrom: ProjectedPoint | null = null
@@ -339,9 +344,9 @@ function sliceRouteGeometry(
 function createShuttleLeg(
   ride: ShuttleRideDefinition,
   waitingSeconds: number,
-  geometry: JourneyLineString,
+  geometry: PathGeometry,
   distanceMeters: number,
-): ShuttleJourneyLeg {
+): BusPathLeg {
   const from: TripEndpoint = { kind: 'stop', id: ride.fromStopId }
   const to: TripEndpoint = { kind: 'stop', id: ride.toStopId }
   return {
@@ -359,7 +364,7 @@ function createShuttleLeg(
   }
 }
 
-function createWalkingLeg(connection: WalkingJourneyConnection): WalkingJourneyLeg {
+function createWalkingLeg(connection: PathWalkingConnection): WalkingPathLeg {
   return {
     mode: 'walking',
     from: connection.from,
@@ -370,15 +375,15 @@ function createWalkingLeg(connection: WalkingJourneyConnection): WalkingJourneyL
   }
 }
 
-function isValidWalkingConnection(connection: WalkingJourneyConnection): boolean {
+function isValidWalkingConnection(connection: PathWalkingConnection): boolean {
   return isFiniteNonNegativeInteger(connection.durationSeconds) &&
     isFiniteNonNegativeInteger(connection.distanceMeters) &&
     isValidLineString(connection.geometry)
 }
 
 function compareWalkingConnections(
-  first: WalkingJourneyConnection,
-  second: WalkingJourneyConnection,
+  first: PathWalkingConnection,
+  second: PathWalkingConnection,
 ): number {
   return first.durationSeconds - second.durationSeconds ||
     first.distanceMeters - second.distanceMeters ||
@@ -397,11 +402,12 @@ function compareConnectors(first: WalkingConnector, second: WalkingConnector): n
 }
 
 function* collectConnectorsSteps(
-  input: PlanJourneyInput,
-  endpoint: JourneyEndpointLocation,
+  input: PathSearchInput,
+  endpoint: PathEndpointLocation,
   isOrigin: boolean,
   shouldCheckpoint: () => boolean,
 ): Generator<void, readonly WalkingConnector[]> {
+  // Walking direction is part of the graph: reverse costs are never inferred from a forward edge.
   if (endpoint.endpoint.kind === 'stop') {
     if (!input.transitIndex.stopById.has(endpoint.endpoint.id)) return []
     if (isOrigin) return [{ stopId: endpoint.endpoint.id, connection: null }]
@@ -430,13 +436,13 @@ function* collectConnectorsSteps(
   const topConnectors: WalkingConnector[] = []
   for (const candidate of selectedByStop.values()) {
     const insertAt = topConnectors.findIndex((connector) => compareConnectors(candidate, connector) < 0)
-    if (insertAt < 0 && topConnectors.length >= MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS) {
+    if (insertAt < 0 && topConnectors.length >= MAX_PATH_ENDPOINT_STOP_CONNECTORS) {
       if (shouldCheckpoint()) yield
       continue
     }
     if (insertAt < 0) topConnectors.push(candidate)
     else topConnectors.splice(insertAt, 0, candidate)
-    if (topConnectors.length > MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS) topConnectors.pop()
+    if (topConnectors.length > MAX_PATH_ENDPOINT_STOP_CONNECTORS) topConnectors.pop()
     if (shouldCheckpoint()) yield
   }
   if (!isOrigin && endpoint.endpoint.kind === 'stop') {
@@ -450,8 +456,8 @@ function getTimingKey(routeId: string, fromStopId: string, toStopId: string): st
 }
 
 function addWalkingConnection(
-  byDestinationStop: Map<string, WalkingJourneyConnection>,
-  connection: WalkingJourneyConnection,
+  byDestinationStop: Map<string, PathWalkingConnection>,
+  connection: PathWalkingConnection,
 ): void {
   if (connection.from.kind !== 'stop' || connection.to.kind !== 'stop' || connection.from.id === connection.to.id) return
   const existing = byDestinationStop.get(connection.to.id)
@@ -464,9 +470,9 @@ const SEARCH_INDEX_CHECKPOINT_WORK = 64
 const SEARCH_INDEX_YIELD_CHECKPOINTS = 8
 
 function* buildSearchIndexSteps(
-  input: PlanJourneyInput,
+  input: PathSearchInput,
   now: () => number = () => performance.now(),
-): Generator<void, JourneySearchIndex> {
+): Generator<void, PathSearchIndex> {
   let workSinceCheckpoint = 0
   const shouldCheckpoint = () => {
     workSinceCheckpoint += 1
@@ -476,8 +482,8 @@ function* buildSearchIndexSteps(
   }
   const originKey = getTripEndpointKey(input.origin.endpoint)
   const destinationKey = getTripEndpointKey(input.destination.endpoint)
-  const directWalkingConnections: WalkingJourneyConnection[] = []
-  const walkingByFromStop = new Map<string, Map<string, WalkingJourneyConnection>>()
+  const directWalkingConnections: PathWalkingConnection[] = []
+  const walkingByFromStop = new Map<string, Map<string, PathWalkingConnection>>()
   const timingByKey = new Map<string, ShuttleTimingRecord>()
   for (const record of input.shuttleTiming.records) {
     timingByKey.set(getTimingKey(record.routeId, record.fromStopId, record.toStopId), record)
@@ -503,7 +509,7 @@ function* buildSearchIndexSteps(
       !input.transitIndex.stopById.has(connection.to.id) ||
       connection.from.id === connection.to.id
     ) continue
-    const byDestination = walkingByFromStop.get(connection.from.id) ?? new Map<string, WalkingJourneyConnection>()
+    const byDestination = walkingByFromStop.get(connection.from.id) ?? new Map<string, PathWalkingConnection>()
     addWalkingConnection(byDestination, connection)
     walkingByFromStop.set(connection.from.id, byDestination)
   }
@@ -637,7 +643,7 @@ function* buildSearchIndexSteps(
   }
 }
 
-function buildSearchIndex(input: PlanJourneyInput, now: () => number = () => performance.now()): JourneySearchIndex {
+function buildSearchIndex(input: PathSearchInput, now: () => number = () => performance.now()): PathSearchIndex {
   const builder = buildSearchIndexSteps(input, now)
   let step = builder.next()
   while (!step.done) step = builder.next()
@@ -647,8 +653,9 @@ function buildSearchIndex(input: PlanJourneyInput, now: () => number = () => per
 function hasRepeatedStops(
   firstRide: ShuttleRideDefinition,
   secondRide?: ShuttleRideDefinition,
-  transferConnection?: WalkingJourneyConnection,
+  transferConnection?: PathWalkingConnection,
 ): boolean {
+  // A two-route option must not revisit any stop already traversed by its first ride or transfer.
   const visited = firstRide.traversedStopIds
   if (transferConnection?.to.kind === 'stop' && visited.has(transferConnection.to.id)) return true
   if (secondRide) {
@@ -661,7 +668,7 @@ function hasRepeatedStops(
 
 interface CandidateSearchState {
   readonly collector: CandidateCollector
-  readonly status: JourneyPlanningStatus
+  readonly status: PathSearchStatus
   readonly expandedPathCount: number
   readonly indexBuildDurationMs: number
   readonly candidateResolutionDurationMs: number
@@ -675,7 +682,7 @@ interface CandidateSearchState {
 }
 
 function* enumerateCandidateDefinitions(
-  index: JourneySearchIndex,
+  index: PathSearchIndex,
 ): Generator<CandidateEnumerationStep> {
   for (const connection of index.directWalkingConnections) {
     yield { kind: 'work' }
@@ -720,21 +727,21 @@ function* enumerateCandidateDefinitions(
   }
 }
 
-function shuttleCandidateKey(legs: readonly JourneyLeg[]): string {
+function shuttleCandidateKey(legs: readonly PathLeg[]): string {
   return 'bus:' + legs
-    .filter((leg): leg is ShuttleJourneyLeg => leg.mode === 'shuttle')
+    .filter((leg): leg is BusPathLeg => leg.mode === 'shuttle')
     .map((leg) => `${leg.routeId}:${leg.boardingStopId}>${leg.alightingStopId}`)
     .join('|')
 }
 
-function candidateSequenceKey(legs: readonly JourneyLeg[]): string {
+function candidateSequenceKey(legs: readonly PathLeg[]): string {
   return legs.map((leg) => leg.mode === 'shuttle'
     ? `shuttle:${leg.routeId}:${leg.boardingStopId}>${leg.alightingStopId}`
     : `walking:${getTripEndpointKey(leg.from)}>${getTripEndpointKey(leg.to)}`)
     .join('|')
 }
 
-function createCandidate(legs: readonly JourneyLeg[]): JourneyCandidate {
+function createCandidate(legs: readonly PathLeg[]): PathCandidate {
   const durationSeconds = legs.reduce((total, leg) => total + leg.durationSeconds, 0)
   const distanceMeters = legs.reduce((total, leg) => total + leg.distanceMeters, 0)
   const walkingDistanceMeters = legs.reduce(
@@ -743,6 +750,7 @@ function createCandidate(legs: readonly JourneyLeg[]): JourneyCandidate {
   )
   let shuttleBoardings = 0
   let adjustedDurationSeconds = 0
+  // These policy weights also drive Plan's 80% walking-first threshold; keep both in sync.
   for (const leg of legs) {
     if (leg.mode === 'walking') {
       adjustedDurationSeconds += leg.durationSeconds / 0.8
@@ -767,7 +775,7 @@ function createCandidate(legs: readonly JourneyLeg[]): JourneyCandidate {
   }
 }
 
-function compareCandidates(first: JourneyCandidate, second: JourneyCandidate): number {
+function compareCandidates(first: PathCandidate, second: PathCandidate): number {
   return first.adjustedDurationSeconds - second.adjustedDurationSeconds ||
     first.shuttleBoardings - second.shuttleBoardings ||
     first.walkingDistanceMeters - second.walkingDistanceMeters ||
@@ -776,10 +784,10 @@ function compareCandidates(first: JourneyCandidate, second: JourneyCandidate): n
 }
 
 function resolveCandidate(
-  input: PlanJourneyInput,
-  index: JourneySearchIndex,
-  definition: JourneyCandidateDefinition,
-): JourneyCandidate | null {
+  input: PathSearchInput,
+  index: PathSearchIndex,
+  definition: PathCandidateDefinition,
+): PathCandidate | null {
   if (definition.kind === 'walking') {
     return createCandidate([createWalkingLeg(definition.connection)])
   }
@@ -793,7 +801,7 @@ function resolveCandidate(
     definition.rides.some((ride) => ride.traversedStopIds.has(destinationStopId))
   ) return null
 
-  const legs: JourneyLeg[] = []
+  const legs: PathLeg[] = []
   let elapsedSeconds = 0
   if (definition.originConnector.connection) {
     const walkingLeg = createWalkingLeg(definition.originConnector.connection)
@@ -839,7 +847,7 @@ function resolveCandidate(
   return createCandidate(legs)
 }
 
-function addCandidate(collector: CandidateCollector, candidate: JourneyCandidate | null): void {
+function addCandidate(collector: CandidateCollector, candidate: PathCandidate | null): void {
   if (!candidate) return
   if (candidate.shuttleBoardings === 0) {
     const current = collector.walkingByKey.get(candidate.candidateKey)
@@ -856,10 +864,10 @@ function addCandidate(collector: CandidateCollector, candidate: JourneyCandidate
 }
 
 function toJourney(
-  input: PlanJourneyInput,
-  candidate: JourneyCandidate,
-  planningQuality: JourneyPlanningQuality,
-): Journey {
+  input: PathSearchInput,
+  candidate: PathCandidate,
+  planningQuality: PathQuality,
+): Path {
   return {
     origin: input.origin.endpoint,
     destination: input.destination.endpoint,
@@ -872,13 +880,13 @@ function toJourney(
 }
 
 function collectJourneyCandidates(
-  input: PlanJourneyInput,
+  input: PathSearchInput,
   collector: CandidateCollector,
-  planningQuality: JourneyPlanningQuality,
-): readonly ScoredJourneyCandidate[] {
+  planningQuality: PathQuality,
+): readonly ScoredPathCandidate[] {
   const topBusCandidates = [...collector.busByKey.values()]
     .sort(compareCandidates)
-    .slice(0, MAX_BUS_JOURNEY_CANDIDATES)
+    .slice(0, MAX_BUS_PATH_CANDIDATES)
   const walkingCandidate = [...collector.walkingByKey.values()]
     .sort(compareCandidates)[0]
   const candidates = [
@@ -889,10 +897,10 @@ function collectJourneyCandidates(
 }
 
 function collectRankedJourneyCandidates(
-  input: PlanJourneyInput,
+  input: PathSearchInput,
   collector: CandidateCollector,
-  planningQuality: JourneyPlanningQuality,
-): readonly ScoredJourneyCandidate[] {
+  planningQuality: PathQuality,
+): readonly ScoredPathCandidate[] {
   const candidates = [
     ...collector.busByKey.values(),
     ...collector.walkingByKey.values(),
@@ -901,13 +909,13 @@ function collectRankedJourneyCandidates(
 }
 
 function toScoredJourneyCandidates(
-  input: PlanJourneyInput,
-  candidates: readonly JourneyCandidate[],
-  planningQuality: JourneyPlanningQuality,
-): readonly ScoredJourneyCandidate[] {
+  input: PathSearchInput,
+  candidates: readonly PathCandidate[],
+  planningQuality: PathQuality,
+): readonly ScoredPathCandidate[] {
   return candidates.map((candidate) => ({
     candidateKey: candidate.candidateKey,
-    journey: toJourney(input, candidate, planningQuality),
+    path: toJourney(input, candidate, planningQuality),
     adjustedDurationSeconds: candidate.adjustedDurationSeconds,
     score: candidate.score,
   }))
@@ -918,9 +926,9 @@ function createCollector(): CandidateCollector {
 }
 
 function createPlanningResult(
-  input: PlanJourneyInput,
+  input: PathSearchInput,
   collector: CandidateCollector,
-  status: JourneyPlanningStatus,
+  status: PathSearchStatus,
   expandedPathCount: number,
   indexBuildDurationMs: number,
   candidateResolutionDurationMs: number,
@@ -931,11 +939,11 @@ function createPlanningResult(
   maxSearchChunkDurationMs: number,
   geometrySliceCount: number,
   geometrySliceDurationMs: number,
-): JourneyPlanningResult {
+): PathSearchResult {
   const planningQuality = status === 'complete' ? 'exact' : 'bounded'
   const candidates = collectJourneyCandidates(input, collector, planningQuality)
   return {
-    journey: candidates[0]?.journey ?? null,
+    path: candidates[0]?.path ?? null,
     candidates,
     status,
     expandedPathCount,
@@ -951,7 +959,7 @@ function createPlanningResult(
   }
 }
 
-export function planJourney(input: PlanJourneyInput): Journey | null {
+export function searchPaths(input: PathSearchInput): Path | null {
   const index = buildSearchIndex(input)
   const collector = createCollector()
   for (const step of enumerateCandidateDefinitions(index)) {
@@ -959,18 +967,18 @@ export function planJourney(input: PlanJourneyInput): Journey | null {
       addCandidate(collector, resolveCandidate(input, index, step.definition))
     }
   }
-  return createPlanningResult(input, collector, 'complete', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).journey
+  return createPlanningResult(input, collector, 'complete', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).path
 }
 
-export async function planJourneyWithinBudget(
-  input: PlanJourneyInput,
-  options: JourneyPlanningOptions = {},
-): Promise<JourneyPlanningResult> {
+export async function searchPathsWithinBudget(
+  input: PathSearchInput,
+  options: PathSearchOptions = {},
+): Promise<PathSearchResult> {
   const search = await runBoundedCandidateSearch(input, options)
   const planningQuality = search.status === 'complete' ? 'exact' : 'bounded'
   const candidates = collectJourneyCandidates(input, search.collector, planningQuality)
   return {
-    journey: candidates[0]?.journey ?? null,
+    path: candidates[0]?.path ?? null,
     candidates,
     status: search.status,
     expandedPathCount: search.expandedPathCount,
@@ -986,17 +994,17 @@ export async function planJourneyWithinBudget(
   }
 }
 
-export async function searchJourneyCandidatesWithinBudget(
-  input: PlanJourneyInput,
-  options: JourneyPlanningOptions = {},
-): Promise<JourneyCandidateSearchResult> {
+export async function searchPathCandidatesWithinBudget(
+  input: PathSearchInput,
+  options: PathSearchOptions = {},
+): Promise<PathCandidateSearchResult> {
   const search = await runBoundedCandidateSearch(input, options)
   return createSearchResult(input, search)
 }
 
 async function runBoundedCandidateSearch(
-  input: PlanJourneyInput,
-  options: JourneyPlanningOptions,
+  input: PathSearchInput,
+  options: PathSearchOptions,
 ): Promise<CandidateSearchState> {
   const now = options.now ?? Date.now
   const startedAt = now()
@@ -1011,7 +1019,7 @@ async function runBoundedCandidateSearch(
   let searchChunkStartedAt = startedAt
   let getGeometryMetrics = () => ({ buildCount: 0, buildDurationMs: 0 })
 
-  const createState = (status: JourneyPlanningStatus): CandidateSearchState => {
+  const createState = (status: PathSearchStatus): CandidateSearchState => {
     const geometryMetrics = getGeometryMetrics()
     const endedAt = now()
     const searchDurationMs = Math.max(0, endedAt - startedAt)
@@ -1117,9 +1125,9 @@ async function runBoundedCandidateSearch(
 }
 
 function createSearchResult(
-  input: PlanJourneyInput,
+  input: PathSearchInput,
   search: CandidateSearchState,
-): JourneyCandidateSearchResult {
+): PathCandidateSearchResult {
   return {
     rankedCandidates: collectRankedJourneyCandidates(
       input,

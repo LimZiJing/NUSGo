@@ -159,7 +159,7 @@ async function loadAdapters(vite, paths, context) {
       typeof adapter.createSearchRunner !== 'function' ||
       typeof adapter.createJourneyRunner !== 'function'
     ) {
-      throw new Error(`${path} returned an invalid Journey benchmark adapter`)
+      throw new Error(`${path} returned an invalid Path benchmark adapter`)
     }
     loaded.push({ path, adapter })
   }
@@ -386,7 +386,7 @@ function formatNetworkPhases(report) {
 }
 
 function formatQuality(quality) {
-  return `journeys ${quality.journeys} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
+  return `journeys ${quality.paths} (exact ${quality.exact}, bounded ${quality.bounded}), no-route ${quality.noRoutes}, invalid ${quality.invalid}`
 }
 
 function formatMode(name, modeReport, local = false) {
@@ -427,7 +427,7 @@ function formatMode(name, modeReport, local = false) {
 
 function printReport(report) {
   const lines = [
-    `NavUS Journey benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
+    `NavUS Path benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
     `Runtime: Node ${report.configuration.runtime.node}; ${report.configuration.runtime.platform}/${report.configuration.runtime.architecture}.`,
     `Cases: ${report.configuration.caseCount}; ${report.configuration.samplesPerCase} samples and ${report.configuration.warmupsPerCase} warmups per case; fixed clock ${report.configuration.fixedNow}.`,
   ]

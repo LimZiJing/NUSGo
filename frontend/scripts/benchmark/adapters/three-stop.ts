@@ -1,18 +1,18 @@
 import {
   createJourneyPlanningService,
-  NoJourneyAvailableError,
+  NoPathAvailableError,
 } from '../../../src/app/journey-planning.js'
-import { planJourney } from '../../../src/domain/trip/planner.js'
-import type { Journey } from '../../../src/domain/trip/journey.js'
+import { searchPaths } from '../../../src/domain/trip/planner.js'
+import type { Path } from '../../../src/pathfinding/path.js'
 import { createWalkingConnectionProvider } from '../../../src/infrastructure/routing/walking-connections.js'
 import type {
   JourneyBenchmarkAdapterFactory,
   JourneyBenchmarkOutcome,
 } from '../contract.js'
 
-function asOutcome(journey: Journey | null): JourneyBenchmarkOutcome {
-  if (!journey) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
-  return { kind: 'journey', journey }
+function asOutcome(path: Path | null): JourneyBenchmarkOutcome {
+  if (!path) return { kind: 'no-route', reason: 'The Journey service returned no route.' }
+  return { kind: 'journey', path }
 }
 
 function createAbortError(): Error {
@@ -28,9 +28,9 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {
       if (signal.aborted) throw createAbortError()
-      const journey = planJourney(benchmarkCase.searchInput)
+      const path = searchPaths(benchmarkCase.searchInput)
       if (signal.aborted) throw createAbortError()
-      return asOutcome(journey)
+      return asOutcome(path)
     }
   },
 
@@ -49,7 +49,7 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
 
     return async (signal) => {
       try {
-        const journey = await service({
+        const result = await service({
           tripRequest: {
             origin: benchmarkCase.origin,
             destination: benchmarkCase.destination,
@@ -58,9 +58,9 @@ export const createJourneyBenchmarkAdapter: JourneyBenchmarkAdapterFactory = () 
           transit,
           signal,
         })
-        return asOutcome(journey)
+        return asOutcome(result?.candidates[0]?.path ?? null)
       } catch (error) {
-        if (error instanceof NoJourneyAvailableError) {
+        if (error instanceof NoPathAvailableError) {
           return { kind: 'no-route', reason: error.message }
         }
         throw error

@@ -1,23 +1,24 @@
-import type { TripCoordinate, TripEndpoint } from './types'
+import type { TripCoordinate, TripEndpoint } from '../domain/trip/types'
 
-export interface JourneyLineString {
+export interface PathGeometry {
   readonly type: 'LineString'
   readonly coordinates: readonly (readonly [number, number])[]
 }
 
-interface JourneyLegBase {
+/** One ordered travel-mode segment; its geometry is kept with the segment for map rendering. */
+interface PathLegBase {
   readonly from: TripEndpoint
   readonly to: TripEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
-  readonly geometry: JourneyLineString
+  readonly geometry: PathGeometry
 }
 
-export interface WalkingJourneyLeg extends JourneyLegBase {
+export interface WalkingPathLeg extends PathLegBase {
   readonly mode: 'walking'
 }
 
-export interface ShuttleJourneyLeg extends JourneyLegBase {
+export interface BusPathLeg extends PathLegBase {
   readonly mode: 'shuttle'
   readonly routeId: string
   readonly boardingStopId: string
@@ -26,21 +27,22 @@ export interface ShuttleJourneyLeg extends JourneyLegBase {
   readonly rideSeconds: number
 }
 
-export type JourneyLeg = WalkingJourneyLeg | ShuttleJourneyLeg
+export type PathLeg = WalkingPathLeg | BusPathLeg
 
-export type JourneyPlanningQuality = 'exact' | 'bounded'
+export type PathQuality = 'exact' | 'bounded'
 
-export interface Journey {
+/** One complete option between the selected endpoints, with ordered walking and bus legs. */
+export interface Path {
   readonly origin: TripEndpoint
   readonly destination: TripEndpoint
-  readonly legs: readonly JourneyLeg[]
+  readonly legs: readonly PathLeg[]
   readonly totalDurationSeconds: number
   readonly totalDistanceMeters: number
   readonly estimateStatus: 'estimated'
-  readonly planningQuality: JourneyPlanningQuality
+  readonly planningQuality: PathQuality
 }
 
-export interface JourneyEndpointLocation {
+export interface PathEndpointLocation {
   readonly endpoint: TripEndpoint
   readonly coordinate: TripCoordinate
 }

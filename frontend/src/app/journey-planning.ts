@@ -6,24 +6,24 @@ import type {
 } from './contracts/routing'
 import type { LoadedTransitData } from './contracts/data'
 import {
-  MAX_BUS_JOURNEY_CANDIDATES,
-  MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS,
-  searchJourneyCandidatesWithinBudget,
-  zeroShuttleWaitingTime,
-  type JourneyCandidateSearchResult,
-  type JourneyPlanningStatus,
-  type ScoredJourneyCandidate,
-  type ShuttleWaitingTimeProvider,
-  type WalkingJourneyConnection,
+  MAX_BUS_PATH_CANDIDATES,
+  MAX_PATH_ENDPOINT_STOP_CONNECTORS,
+  searchPathCandidatesWithinBudget,
+  zeroBusWaitingTime,
+  type PathCandidateSearchResult,
+  type PathSearchStatus,
+  type ScoredPathCandidate,
+  type BusWaitingTimeProvider,
+  type PathWalkingConnection,
 } from '../domain/trip/planner'
-import { createLiveShuttleWaitingTimeProvider } from '../domain/trip/live-waiting'
+import { createLiveBusWaitingTimeProvider } from '../domain/trip/live-waiting'
 import {
   describeShuttleServiceUnavailable,
   evaluateShuttleService,
   type ShuttleServiceEvaluation,
   type ShuttleServiceWindow,
 } from '../domain/transit/service-hours'
-import type { Journey, JourneyEndpointLocation } from '../domain/trip/journey'
+import type { Path, PathEndpointLocation } from '../pathfinding/path'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import { getTripEndpointKey } from '../domain/trip/endpoints'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
@@ -33,17 +33,14 @@ import type { ShuttleArrivalClient, ShuttleArrivalStopRequest } from './contract
 import type { ShuttleServiceHoursClient } from '../infrastructure/shuttle-service-hours/client'
 import { createTestShuttleWaitingTimeProvider } from '../domain/trip/journey-test-clock'
 
-export interface JourneyPlanningRequest {
+export interface FindPathsRequest {
   readonly tripRequest: TripRequest
   readonly venues: VenueLocationMap
   readonly transit: LoadedTransitData
   readonly signal: AbortSignal
 }
 
-/** The best Journey plus the complete bounded candidate pool for downstream ranking/display. */
-export interface JourneyPlanningServiceResult extends Journey {
-  readonly candidates: readonly ScoredJourneyCandidate[]
-  readonly status: JourneyPlanningStatus
+export interface FindPathsMetrics {
   readonly expandedPathCount: number
   readonly indexBuildDurationMs: number
   readonly candidateResolutionDurationMs: number
@@ -59,18 +56,26 @@ export interface JourneyPlanningServiceResult extends Journey {
   readonly geometryRouteCacheHits: number
 }
 
-export type JourneyPlanningService = (
-  request: JourneyPlanningRequest,
-) => Promise<JourneyPlanningServiceResult | null>
+/** Search output keeps candidate options separate from diagnostics and Path values. */
+export interface FindPathsResult {
+  readonly candidates: readonly ScoredPathCandidate[]
+  readonly searchStatus: PathSearchStatus
+  readonly metrics: FindPathsMetrics
+}
 
-export class NoJourneyAvailableError extends Error {
+export type FindPathsService = (
+  request: FindPathsRequest,
+) => Promise<FindPathsResult | null>
+
+export class NoPathAvailableError extends Error {
   constructor(message: string) {
     super(message)
+    // Keep the old runtime name so existing error consumers retain the same failure semantics.
     this.name = 'NoJourneyAvailableError'
   }
 }
 
-interface ResolvedLocation extends JourneyEndpointLocation {
+interface ResolvedLocation extends PathEndpointLocation {
   readonly key: string
 }
 
@@ -145,7 +150,7 @@ function addLocation(
 }
 
 function resolveLocations(
-  request: JourneyPlanningRequest,
+  request: FindPathsRequest,
 ): { readonly origin: ResolvedLocation; readonly destination: ResolvedLocation; readonly all: readonly ResolvedLocation[] } | null {
   const originEndpoint = request.tripRequest.origin
   const destinationEndpoint = request.tripRequest.destination
@@ -224,11 +229,11 @@ function selectWalkingCandidates(
   const originConnectors = candidates
     .filter((candidate) => candidate.from.key === originKey && candidate.to.endpoint.kind === 'stop')
     .sort(compareCandidates)
-    .slice(0, MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS)
+    .slice(0, MAX_PATH_ENDPOINT_STOP_CONNECTORS)
   const destinationConnectors = candidates
     .filter((candidate) => candidate.from.endpoint.kind === 'stop' && candidate.to.key === destinationKey)
     .sort(compareCandidates)
-    .slice(0, MAX_JOURNEY_ENDPOINT_STOP_CONNECTORS)
+    .slice(0, MAX_PATH_ENDPOINT_STOP_CONNECTORS)
   const transferConnections = candidates.filter((candidate) => (
     candidate.from.endpoint.kind === 'stop' && candidate.to.endpoint.kind === 'stop'
   ))
@@ -237,11 +242,11 @@ function selectWalkingCandidates(
 
 function collectEligibleBoardingStops(
   transit: LoadedTransitData,
-  search: JourneyCandidateSearchResult,
+  search: PathCandidateSearchResult,
 ): readonly ShuttleArrivalStopRequest[] {
   const eligibleBoardingIds = new Set<string>()
-  for (const { journey } of search.rankedCandidates) {
-    for (const leg of journey.legs) {
+  for (const { path } of search.rankedCandidates) {
+    for (const leg of path.legs) {
       if (leg.mode === 'shuttle') eligibleBoardingIds.add(leg.boardingStopId)
     }
   }
@@ -250,10 +255,10 @@ function collectEligibleBoardingStops(
     .map((stop) => ({ stopId: stop.id, stopName: stop.longName }))
 }
 
-function collectEligibleRouteIds(search: JourneyCandidateSearchResult): readonly string[] {
+function collectEligibleRouteIds(search: PathCandidateSearchResult): readonly string[] {
   const routeIds = new Set<string>()
-  for (const { journey } of search.rankedCandidates) {
-    for (const leg of journey.legs) {
+  for (const { path } of search.rankedCandidates) {
+    for (const leg of path.legs) {
       if (leg.mode === 'shuttle') routeIds.add(leg.routeId)
     }
   }
@@ -265,33 +270,33 @@ function shuttleTimingKey(routeId: string, boardingStopId: string, alightingStop
 }
 
 function compareScoredCandidates(
-  first: ScoredJourneyCandidate,
-  second: ScoredJourneyCandidate,
+  first: ScoredPathCandidate,
+  second: ScoredPathCandidate,
 ): number {
-  const shuttleBoardings = (candidate: ScoredJourneyCandidate) => (
-    candidate.journey.legs.filter((leg) => leg.mode === 'shuttle').length
+  const shuttleBoardings = (candidate: ScoredPathCandidate) => (
+    candidate.path.legs.filter((leg) => leg.mode === 'shuttle').length
   )
-  const walkingDistance = (candidate: ScoredJourneyCandidate) => (
-    candidate.journey.legs.reduce((total, leg) => (
+  const walkingDistance = (candidate: ScoredPathCandidate) => (
+    candidate.path.legs.reduce((total, leg) => (
       total + (leg.mode === 'walking' ? leg.distanceMeters : 0)
     ), 0)
   )
   return first.adjustedDurationSeconds - second.adjustedDurationSeconds ||
     shuttleBoardings(first) - shuttleBoardings(second) ||
     walkingDistance(first) - walkingDistance(second) ||
-    first.journey.legs.length - second.journey.legs.length ||
+    first.path.legs.length - second.path.legs.length ||
     compareText(first.candidateKey, second.candidateKey)
 }
 
 function scoreCandidatesWithWaiting(
-  search: JourneyCandidateSearchResult,
+  search: PathCandidateSearchResult,
   timingRecords: readonly ShuttleTimingRecord[],
-  getShuttleWaitingSeconds: ShuttleWaitingTimeProvider,
+  getShuttleWaitingSeconds: BusWaitingTimeProvider,
   serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>> | null,
   departureMs: number,
   signal: AbortSignal,
   deadlineAtMs: number,
-): JourneyCandidateSearchResult {
+): PathCandidateSearchResult {
   const timingByKey = new Map(timingRecords.map((record) => [
     shuttleTimingKey(record.routeId, record.fromStopId, record.toStopId),
     record,
@@ -310,9 +315,9 @@ function scoreCandidatesWithWaiting(
     let adjustedDurationSeconds = 0
     let shuttleBoardings = 0
     let valid = true
-    const legs: Journey['legs'][number][] = []
+    const legs: Path['legs'][number][] = []
 
-    for (const leg of candidate.journey.legs) {
+    for (const leg of candidate.path.legs) {
       if (leg.mode === 'walking') {
         legs.push(leg)
         elapsedSeconds += leg.durationSeconds
@@ -362,8 +367,8 @@ function scoreCandidatesWithWaiting(
       ...candidate,
       adjustedDurationSeconds,
       score: adjustedDurationSeconds === 0 ? Number.POSITIVE_INFINITY : 1 / adjustedDurationSeconds,
-      journey: {
-        ...candidate.journey,
+      path: {
+        ...candidate.path,
         totalDurationSeconds: elapsedSeconds,
         legs,
       },
@@ -374,11 +379,11 @@ function scoreCandidatesWithWaiting(
   return { ...search, status, rankedCandidates }
 }
 
-function isWalkingOnlyCandidate(candidate: ScoredJourneyCandidate): boolean {
-  return candidate.journey.legs.every((leg) => leg.mode === 'walking')
+function isWalkingOnlyCandidate(candidate: ScoredPathCandidate): boolean {
+  return candidate.path.legs.every((leg) => leg.mode === 'walking')
 }
 
-function walkingOnlySearch(search: JourneyCandidateSearchResult): JourneyCandidateSearchResult {
+function walkingOnlySearch(search: PathCandidateSearchResult): PathCandidateSearchResult {
   return {
     ...search,
     rankedCandidates: search.rankedCandidates.filter(isWalkingOnlyCandidate),
@@ -417,12 +422,12 @@ function yieldToBrowser(): Promise<void> {
 }
 
 async function planWithBudget(
-  planInput: Parameters<typeof searchJourneyCandidatesWithinBudget>[0],
+  planInput: Parameters<typeof searchPathCandidatesWithinBudget>[0],
   signal: AbortSignal,
   deadlineAtMs: number,
   maxDurationMs = JOURNEY_PLANNING_MAX_DURATION_MS,
-): Promise<JourneyCandidateSearchResult> {
-  const result = await searchJourneyCandidatesWithinBudget(planInput, {
+): Promise<PathCandidateSearchResult> {
+  const result = await searchPathCandidatesWithinBudget(planInput, {
     maxDurationMs,
     deadlineAtMs,
     maxExpandedPaths: JOURNEY_PLANNING_MAX_EXPANDED_PATHS,
@@ -438,7 +443,7 @@ async function planWithBudget(
 function createPlanningWalkingGeometry(
   from: ResolvedLocation,
   to: ResolvedLocation,
-): WalkingJourneyConnection['geometry'] {
+): PathWalkingConnection['geometry'] {
   return {
     type: 'LineString',
     coordinates: [
@@ -449,12 +454,12 @@ function createPlanningWalkingGeometry(
 }
 
 function getStaticServiceEvaluation(
-  journey: Journey,
+  path: Path,
   serviceWindows: Readonly<Record<string, readonly ShuttleServiceWindow[]>>,
   nowMs: number,
 ): ShuttleServiceEvaluation | null {
   let elapsedSeconds = 0
-  for (const leg of journey.legs) {
+  for (const leg of path.legs) {
     if (leg.mode === 'shuttle') {
       const windows = serviceWindows[leg.routeId]
       if (windows) {
@@ -469,14 +474,14 @@ function getStaticServiceEvaluation(
 
 function createWalkingConnections(
   candidates: readonly WalkingCandidate[],
-): readonly WalkingJourneyConnection[] {
+): readonly PathWalkingConnection[] {
   return candidates.map(({ from, to, connection }) => ({
       from: from.endpoint,
       to: to.endpoint,
       durationSeconds: connection.durationSeconds,
       distanceMeters: connection.distanceMeters,
       geometry: createPlanningWalkingGeometry(from, to),
-    } satisfies WalkingJourneyConnection))
+    } satisfies PathWalkingConnection))
 }
 
 async function getFullMatrixWalkingConnections(
@@ -501,7 +506,7 @@ async function getFullMatrixWalkingConnections(
   })
 }
 
-function isValidWalkingGeometry(geometry: Journey['legs'][number]['geometry']): boolean {
+function isValidWalkingGeometry(geometry: Path['legs'][number]['geometry']): boolean {
   return geometry.type === 'LineString' &&
     geometry.coordinates.length >= 2 &&
     geometry.coordinates.every(([longitude, latitude]) => (
@@ -532,15 +537,15 @@ function createDeadlineSignal(signal: AbortSignal, deadlineAtMs: number) {
 
 async function enrichCandidatePool(
   routeEngine: WalkingRouteEngine,
-  search: JourneyCandidateSearchResult,
+  search: PathCandidateSearchResult,
   locations: readonly ResolvedLocation[],
   signal: AbortSignal,
   deadlineAtMs: number,
-): Promise<JourneyPlanningServiceResult | null> {
+): Promise<FindPathsResult | null> {
   const locationByKey = new Map(locations.map((location) => [location.key, location]))
-  const routePromises = new Map<string, Promise<Journey['legs'][number]['geometry']>>()
+  const routePromises = new Map<string, Promise<Path['legs'][number]['geometry']>>()
   const deadline = createDeadlineSignal(signal, deadlineAtMs)
-  const candidates: ScoredJourneyCandidate[] = []
+  const candidates: ScoredPathCandidate[] = []
   let geometryCandidateChecks = 0
   let geometryRouteRequests = 0
   let geometryRouteCacheHits = 0
@@ -550,7 +555,7 @@ async function enrichCandidatePool(
   const getRouteGeometry = (
     from: ResolvedLocation,
     to: ResolvedLocation,
-  ): Promise<Journey['legs'][number]['geometry']> => {
+  ): Promise<Path['legs'][number]['geometry']> => {
     if (deadline.signal.aborted) {
       return Promise.reject(deadline.signal.reason ?? new Error('Walking geometry deadline exceeded'))
     }
@@ -572,13 +577,13 @@ async function enrichCandidatePool(
     return promise
   }
 
-  const preparedGeometry = new Map<ScoredJourneyCandidate, Promise<Journey['legs']>>()
-  const prepareCandidateGeometry = (candidate: ScoredJourneyCandidate): Promise<Journey['legs']> => (
-    Promise.all(candidate.journey.legs.map(async (leg) => {
+  const preparedGeometry = new Map<ScoredPathCandidate, Promise<Path['legs']>>()
+  const prepareCandidateGeometry = (candidate: ScoredPathCandidate): Promise<Path['legs']> => (
+    Promise.all(candidate.path.legs.map(async (leg) => {
       if (leg.mode === 'shuttle') return leg
       const from = locationByKey.get(getTripEndpointKey(leg.from))
       const to = locationByKey.get(getTripEndpointKey(leg.to))
-      if (!from || !to) throw new Error('Walking Journey leg has an unknown endpoint')
+      if (!from || !to) throw new Error('Walking path leg has an unknown endpoint')
       return { ...leg, geometry: await getRouteGeometry(from, to) }
     }))
   )
@@ -587,9 +592,9 @@ async function enrichCandidatePool(
     let preferredBusCount = 0
     let preferredWalkingFound = false
     for (const candidate of search.rankedCandidates) {
-      const isBus = candidate.journey.legs.some((leg) => leg.mode === 'shuttle')
+      const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
       if (isBus) {
-        if (preferredBusCount >= MAX_BUS_JOURNEY_CANDIDATES) continue
+        if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES) continue
         preferredBusCount += 1
       } else {
         if (preferredWalkingFound) continue
@@ -598,7 +603,7 @@ async function enrichCandidatePool(
       const promise = prepareCandidateGeometry(candidate)
       void promise.catch(() => undefined)
       preparedGeometry.set(candidate, promise)
-      if (preferredBusCount >= MAX_BUS_JOURNEY_CANDIDATES && preferredWalkingFound) break
+      if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES && preferredWalkingFound) break
     }
 
     let busCandidateCount = 0
@@ -610,9 +615,9 @@ async function enrichCandidatePool(
         break
       }
 
-      const isBus = candidate.journey.legs.some((leg) => leg.mode === 'shuttle')
+      const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
       if (
-        (isBus && busCandidateCount >= MAX_BUS_JOURNEY_CANDIDATES) ||
+        (isBus && busCandidateCount >= MAX_BUS_PATH_CANDIDATES) ||
         (!isBus && walkingCandidateFound)
       ) continue
       geometryCandidateChecks += 1
@@ -629,7 +634,7 @@ async function enrichCandidatePool(
         } else {
           candidates.push({
             ...candidate,
-            journey: { ...candidate.journey, legs },
+            path: { ...candidate.path, legs },
           })
           if (isBus) busCandidateCount += 1
           else walkingCandidateFound = true
@@ -649,7 +654,7 @@ async function enrichCandidatePool(
         status = 'budget-exceeded'
         break
       }
-      if (busCandidateCount >= MAX_BUS_JOURNEY_CANDIDATES && walkingCandidateFound) break
+      if (busCandidateCount >= MAX_BUS_PATH_CANDIDATES && walkingCandidateFound) break
     }
   } finally {
     deadline.dispose()
@@ -660,30 +665,31 @@ async function enrichCandidatePool(
     throw lastGeometryError
   }
 
-  const planningQuality: Journey['planningQuality'] = status === 'complete' ? 'exact' : 'bounded'
+  const planningQuality: Path['planningQuality'] = status === 'complete' ? 'exact' : 'bounded'
   const enrichedCandidates = candidates.map((candidate) => ({
     ...candidate,
-    journey: { ...candidate.journey, planningQuality },
+    path: { ...candidate.path, planningQuality },
   }))
   const primaryCandidate = enrichedCandidates[0]
   if (!primaryCandidate) return null
   return {
-    ...primaryCandidate.journey,
     candidates: enrichedCandidates,
-    status,
-    expandedPathCount: search.expandedPathCount,
-    indexBuildDurationMs: search.indexBuildDurationMs,
-    candidateResolutionDurationMs: search.candidateResolutionDurationMs,
-    candidateEnumerationStepCount: search.candidateEnumerationStepCount,
-    searchDurationMs: search.searchDurationMs,
-    searchYieldWaitMs: search.searchYieldWaitMs,
-    searchCpuMs: search.searchCpuMs,
-    maxSearchChunkDurationMs: search.maxSearchChunkDurationMs,
-    geometrySliceCount: search.geometrySliceCount,
-    geometrySliceDurationMs: search.geometrySliceDurationMs,
-    geometryCandidateChecks,
-    geometryRouteRequests,
-    geometryRouteCacheHits,
+    searchStatus: status,
+    metrics: {
+      expandedPathCount: search.expandedPathCount,
+      indexBuildDurationMs: search.indexBuildDurationMs,
+      candidateResolutionDurationMs: search.candidateResolutionDurationMs,
+      candidateEnumerationStepCount: search.candidateEnumerationStepCount,
+      searchDurationMs: search.searchDurationMs,
+      searchYieldWaitMs: search.searchYieldWaitMs,
+      searchCpuMs: search.searchCpuMs,
+      maxSearchChunkDurationMs: search.maxSearchChunkDurationMs,
+      geometrySliceCount: search.geometrySliceCount,
+      geometrySliceDurationMs: search.geometrySliceDurationMs,
+      geometryCandidateChecks,
+      geometryRouteRequests,
+      geometryRouteCacheHits,
+    },
   }
 }
 
@@ -694,7 +700,7 @@ export function createJourneyPlanningService(
   now: () => number = Date.now,
   walkingConnectionProvider?: WalkingConnectionProvider,
   getTestDepartureMs: () => number | null = () => null,
-): JourneyPlanningService {
+): FindPathsService {
   return async (request) => {
     const testDepartureMs = getTestDepartureMs()
     const locations = resolveLocations(request)
@@ -744,7 +750,7 @@ export function createJourneyPlanningService(
       routeGeometry: request.transit.geometry,
       shuttleTiming: request.transit.shuttleTiming,
       walkingConnections,
-      getShuttleWaitingSeconds: zeroShuttleWaitingTime,
+      getShuttleWaitingSeconds: zeroBusWaitingTime,
     }
     const staticSearchStartedAtMs = performance.now()
     const staticDeadlineAtMs = staticSearchStartedAtMs + JOURNEY_PLANNING_MAX_DURATION_MS
@@ -758,9 +764,9 @@ export function createJourneyPlanningService(
       0,
       JOURNEY_PLANNING_MAX_DURATION_MS - (performance.now() - staticSearchStartedAtMs),
     )
-    const staticBusJourney = staticSearch.rankedCandidates.find(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
-    ))?.journey ?? null
+    const staticBusJourney = staticSearch.rankedCandidates.find(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
+    ))?.path ?? null
     if (!shuttleArrivalClient && testDepartureMs === null) {
       return enrichCandidatePool(routeEngine, staticSearch, locations.all, request.signal, performance.now() + JOURNEY_PLANNING_MAX_DURATION_MS)
     }
@@ -804,8 +810,8 @@ export function createJourneyPlanningService(
           request.signal,
           performance.now() + remainingSearchBudgetMs,
         )
-        if (testSearch.rankedCandidates.some(({ journey }) => (
-          journey.legs.some((leg) => leg.mode === 'shuttle')
+        if (testSearch.rankedCandidates.some(({ path }) => (
+          path.legs.some((leg) => leg.mode === 'shuttle')
         ))) {
           return enrichCandidatePool(routeEngine, testSearch, locations.all, request.signal, performance.now() + JOURNEY_PLANNING_MAX_DURATION_MS)
         }
@@ -826,7 +832,7 @@ export function createJourneyPlanningService(
     }
 
     const nowMs = now()
-    const liveWaiting = createLiveShuttleWaitingTimeProvider(liveArrivals, nowMs)
+    const liveWaiting = createLiveBusWaitingTimeProvider(liveArrivals, nowMs)
     const liveSearch = scoreCandidatesWithWaiting(
       staticSearch,
       request.transit.shuttleTiming.records,
@@ -836,8 +842,8 @@ export function createJourneyPlanningService(
       request.signal,
       performance.now() + remainingSearchBudgetMs,
     )
-    const liveHasShuttleCandidate = liveSearch.rankedCandidates.some(({ journey }) => (
-      journey.legs.some((leg) => leg.mode === 'shuttle')
+    const liveHasShuttleCandidate = liveSearch.rankedCandidates.some(({ path }) => (
+      path.legs.some((leg) => leg.mode === 'shuttle')
     ))
     if (liveHasShuttleCandidate) {
       return enrichCandidatePool(routeEngine, liveSearch, locations.all, request.signal, performance.now() + JOURNEY_PLANNING_MAX_DURATION_MS)
@@ -849,7 +855,7 @@ export function createJourneyPlanningService(
     if (
       unavailable &&
       !liveSearch.rankedCandidates.some(isWalkingOnlyCandidate)
-    ) throw new NoJourneyAvailableError(describeShuttleServiceUnavailable(unavailable))
+    ) throw new NoPathAvailableError(describeShuttleServiceUnavailable(unavailable))
     const walkingSearch = walkingOnlySearch(liveSearch)
     return enrichCandidatePool(routeEngine, walkingSearch, locations.all, request.signal, performance.now() + JOURNEY_PLANNING_MAX_DURATION_MS)
   }

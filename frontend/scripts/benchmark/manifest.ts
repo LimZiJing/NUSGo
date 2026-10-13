@@ -253,7 +253,7 @@ function validateCase(
 
   const expected = validateExpectation(value.expected, `${label}.expected`)
   if (expected.outcome !== 'journey') {
-    throw new Error(`${label}.expected must be a Journey; no-route cases belong in non-timed resilience tests`)
+    throw new Error(`${label}.expected must be a Path; no-route cases belong in non-timed resilience tests`)
   }
 
   return {
@@ -287,7 +287,7 @@ export function validateJourneyBenchmarkManifest(input: unknown): JourneyBenchma
 
   if (!Array.isArray(input.cases)) throw new Error('Journey benchmark manifest cases must be an array')
   const cases = input.cases.map((value, index) => validateCase(value, index, profileIdSet))
-  if (cases.length !== 50) throw new Error(`Journey benchmark manifest must contain exactly 50 cases; got ${cases.length}`)
+  if (cases.length !== 50) throw new Error(`Path benchmark manifest must contain exactly 50 cases; got ${cases.length}`)
   const caseIds = cases.map(({ id }) => id)
   const caseLabels = cases.map(({ label }) => label)
   if (new Set(caseIds).size !== cases.length) throw new Error('Journey benchmark case IDs must be unique')
@@ -301,18 +301,18 @@ export function validateJourneyBenchmarkManifest(input: unknown): JourneyBenchma
   }
   for (const [group, count] of Object.entries(EXPECTED_CASE_COUNTS).filter(([key]) => ['normal', 'fallback', 'timing'].includes(key))) {
     if (groupCounts.get(group as JourneyBenchmarkGroup) !== count) {
-      throw new Error(`Journey benchmark manifest must contain ${count} ${group} cases`)
+      throw new Error(`Path benchmark manifest must contain ${count} ${group} cases`)
     }
   }
   for (const scenario of ['route-pair', 'one-shuttle', 'selection-tie'] as const) {
     if (scenarioCounts.get(scenario) !== EXPECTED_CASE_COUNTS[scenario]) {
-      throw new Error(`Journey benchmark manifest must contain ${EXPECTED_CASE_COUNTS[scenario]} ${scenario} cases`)
+      throw new Error(`Path benchmark manifest must contain ${EXPECTED_CASE_COUNTS[scenario]} ${scenario} cases`)
     }
   }
   for (const group of ['fallback', 'timing'] as const) {
     for (const scenario of GROUP_SCENARIOS[group]) {
       if (scenarioCounts.get(scenario) !== 1) {
-        throw new Error(`Journey benchmark manifest must contain exactly one ${scenario} case`)
+        throw new Error(`Path benchmark manifest must contain exactly one ${scenario} case`)
       }
     }
   }

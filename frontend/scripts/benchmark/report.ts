@@ -25,7 +25,7 @@ export interface JourneyBenchmarkStatistics {
 }
 
 export interface JourneyBenchmarkQualityCounts {
-  readonly journeys: number
+  readonly paths: number
   readonly noRoutes: number
   readonly exact: number
   readonly bounded: number
@@ -127,8 +127,8 @@ function summarizePlanningMetric(values: readonly number[]) {
   }
 }
 
-function emptyQualityCounts(): { journeys: number; noRoutes: number; exact: number; bounded: number; invalid: number } {
-  return { journeys: 0, noRoutes: 0, exact: 0, bounded: 0, invalid: 0 }
+function emptyQualityCounts(): { paths: number; noRoutes: number; exact: number; bounded: number; invalid: number } {
+  return { paths: 0, noRoutes: 0, exact: 0, bounded: 0, invalid: 0 }
 }
 
 function countQuality(samples: readonly JourneyBenchmarkSample[]): JourneyBenchmarkQualityCounts {
@@ -144,7 +144,7 @@ function countQuality(samples: readonly JourneyBenchmarkSample[]): JourneyBenchm
       continue
     }
     if (result.kind !== 'journey') continue
-    counts.journeys += 1
+    counts.paths += 1
     if (result.planningQuality === 'exact') counts.exact += 1
     if (result.planningQuality === 'bounded') counts.bounded += 1
   }
@@ -245,7 +245,7 @@ function createCaseReport(
 
 function sumQualityCounts(reports: readonly JourneyBenchmarkCaseReport[]): JourneyBenchmarkQualityCounts {
   return reports.reduce((sum, report) => ({
-    journeys: sum.journeys + report.resultQuality.journeys,
+    paths: sum.paths + report.resultQuality.paths,
     noRoutes: sum.noRoutes + report.resultQuality.noRoutes,
     exact: sum.exact + report.resultQuality.exact,
     bounded: sum.bounded + report.resultQuality.bounded,

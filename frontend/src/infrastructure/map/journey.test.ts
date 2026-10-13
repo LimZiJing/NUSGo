@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Map } from 'maplibre-gl'
-import type { Journey } from '../../domain/trip/journey'
+import type { Path } from '../../pathfinding/path'
 import { createTransitIndex } from '../../domain/transit'
 import {
   createTransferTransitNetwork,
@@ -147,7 +147,7 @@ function createFakeMap(failingLayerId?: string): {
   }
 }
 
-function createJourney(routeId: string): Journey {
+function createPath(routeId: string): Path {
   return {
     origin: { kind: 'venue', id: 'ORIGIN' },
     destination: { kind: 'venue', id: 'DESTINATION' },
@@ -191,10 +191,10 @@ describe('journey route layer adapter', () => {
     const index = createTransitIndex(createTransferTransitNetwork())
     const layers = createJourneyRouteLayers(state.map, index)
     const options = [
-      { candidateKey: 'option-1', journey: createJourney('A1') },
-      { candidateKey: 'option-2', journey: createJourney('B1') },
-      { candidateKey: 'option-3', journey: createJourney('A1') },
-      { candidateKey: 'option-4', journey: createJourney('B1') },
+      { candidateKey: 'option-1', path: createPath('A1') },
+      { candidateKey: 'option-2', path: createPath('B1') },
+      { candidateKey: 'option-3', path: createPath('A1') },
+      { candidateKey: 'option-4', path: createPath('B1') },
     ]
 
     layers.setJourneyOptions(options, 'option-2')
@@ -284,7 +284,7 @@ describe('journey route layer adapter', () => {
 
     const changedOptions = options.map((option) => ({
       ...option,
-      journey: { ...option.journey, totalDurationSeconds: option.journey.totalDurationSeconds + 60 },
+      path: { ...option.path, totalDurationSeconds: option.path.totalDurationSeconds + 60 },
     }))
     layers.setJourneyOptions(changedOptions, 'option-3')
     expect(labelMarkers.every(({ removed }) => removed)).toBe(true)
@@ -314,9 +314,9 @@ describe('journey route layer adapter', () => {
     const onJourneyOptionSelected = vi.fn()
     const layers = createJourneyRouteLayers(state.map, null, onJourneyOptionSelected)
     const options = [
-      { candidateKey: 'option-1', journey: createJourney('A1') },
-      { candidateKey: 'option-2', journey: createJourney('B1') },
-      { candidateKey: 'option-3', journey: createJourney('A1') },
+      { candidateKey: 'option-1', path: createPath('A1') },
+      { candidateKey: 'option-2', path: createPath('B1') },
+      { candidateKey: 'option-3', path: createPath('A1') },
     ]
     layers.setJourneyOptions(options, 'option-2')
 
@@ -347,7 +347,7 @@ describe('journey route layer adapter', () => {
     const index = createTransitIndex(createTransferTransitNetwork())
     const state = createFakeMap()
     const layers = createJourneyRouteLayers(state.map, index)
-    const journey: Journey = {
+    const path: Path = {
       origin: { kind: 'stop', id: 'STOP-A' },
       destination: { kind: 'stop', id: 'STOP-C' },
       legs: [
@@ -384,7 +384,7 @@ describe('journey route layer adapter', () => {
       planningQuality: 'exact',
     }
 
-    layers.setJourneyOptions([{ candidateKey: 'transfer', journey }], 'transfer')
+    layers.setJourneyOptions([{ candidateKey: 'transfer', path }], 'transfer')
 
     expect((state.addedSources[0].source as { data: { features: Array<{ properties: unknown }> } }).data.features
       .filter((feature) => (feature.properties as { featureKind?: string }).featureKind === 'route'))
@@ -399,7 +399,7 @@ describe('journey route layer adapter', () => {
     const layers = createJourneyRouteLayers(state.map, null)
 
     expect(() => layers.setJourneyOptions([
-      { candidateKey: 'option-1', journey: createJourney('A1') },
+      { candidateKey: 'option-1', path: createPath('A1') },
     ], 'option-1'))
       .toThrow(`Unable to add ${JOURNEY_SELECTED_WALKING_LAYER_ID}`)
     expect(state.sources.size).toBe(0)
@@ -414,9 +414,9 @@ describe('journey route layer adapter', () => {
     const layers = createJourneyRouteLayers(state.map, null)
 
     expect(() => layers.setJourneyOptions([
-      { candidateKey: 'option-1', journey: createJourney('A1') },
-      { candidateKey: 'option-2', journey: createJourney('B1') },
-      { candidateKey: 'option-3', journey: createJourney('A1') },
+      { candidateKey: 'option-1', path: createPath('A1') },
+      { candidateKey: 'option-2', path: createPath('B1') },
+      { candidateKey: 'option-3', path: createPath('A1') },
     ], 'option-1')).toThrow('Unable to add duration marker')
     expect(markerState.markers).toHaveLength(2)
     expect(markerState.markers.every(({ removed }) => removed)).toBe(true)

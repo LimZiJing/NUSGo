@@ -6,13 +6,15 @@ import {
   type PublicBusArrivalSnapshot,
 } from '../../domain/transit/public-bus-arrivals'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
-import { getStopSheetSelection } from './stops-view-state'
+import { getStopDetailsModel } from './stop-details-model'
 import { getStopsOverview, getStopsWithinNearbyRadius } from './stops-overview'
-import type { StopSheetSelection, StopOverviewSelection } from './stops-view'
+import type { StopOverviewSelection } from './stops-view'
+import type { StopDetailsModel } from './stop-details-model'
+import type { StopTimingDataOptions } from './stop-timing-data'
 import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
-import { useStopsView } from './use-stops-view'
-import type { StopsViewState } from './stops-view-state'
+import { useStopsState } from './use-stops-view'
+import type { StopsState } from './stops-state'
 
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
@@ -30,8 +32,8 @@ export interface StopsViewModelOptions {
 }
 
 export interface StopsViewModel {
-  readonly state: StopsViewState
-  readonly selectedStop: StopSheetSelection | null
+  readonly state: StopsState
+  readonly selectedStop: StopDetailsModel | null
   readonly overviewStops: readonly StopOverviewSelection[]
   readonly overviewLoading: boolean
   readonly selectedStopFavorite: boolean
@@ -62,7 +64,7 @@ export function useStopsViewModel({
   locateFromControl,
   enableLocationTracking,
 }: StopsViewModelOptions): StopsViewModel {
-  const [state, dispatch] = useStopsView(transitIndex)
+  const [state, dispatch] = useStopsState(transitIndex)
   const initialNearbyLocationRequestedRef = useRef(false)
   const lastMapCenterRef = useRef<Coordinate | null>(null)
   const pendingNearbyExpansionRef = useRef(false)
@@ -120,32 +122,21 @@ export function useStopsViewModel({
   const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
   const publicArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
 
+  const timingOptions: StopTimingDataOptions = {
+    favoriteStopIds: state.favoriteStopIds,
+    arrivalSnapshot: stopArrivals.snapshot,
+    nowMs: stopArrivals.nowMs,
+    serviceWindows: stopServiceWindows.windows,
+    isRefreshing: stopArrivalsUpdating,
+    publicArrivalSnapshot: publicStopArrivals.snapshot,
+    publicIsRefreshing: publicArrivalsUpdating,
+  }
   const selectedStop = focusedStop && transitIndex
-    ? getStopSheetSelection(
-      focusedStop,
-      transitIndex,
-      state.favoriteStopIds,
-      stopArrivals.snapshot,
-      stopArrivals.nowMs,
-      stopServiceWindows.windows,
-      stopArrivalsUpdating,
-      publicStopArrivals.snapshot,
-      publicArrivalsUpdating,
-    )
+    ? getStopDetailsModel(focusedStop, transitIndex, timingOptions)
     : null
   const overviewStops: readonly StopOverviewSelection[] = transitIndex
     ? overviewEntries.map(({ stop, distanceMeters }) => ({
-      stop: getStopSheetSelection(
-        stop,
-        transitIndex,
-        state.favoriteStopIds,
-        stopArrivals.snapshot,
-        stopArrivals.nowMs,
-        stopServiceWindows.windows,
-        stopArrivalsUpdating,
-        publicStopArrivals.snapshot,
-        publicArrivalsUpdating,
-      ),
+      stop: getStopDetailsModel(stop, transitIndex, timingOptions),
       distanceMeters,
       favorite: state.favoriteStopIds.includes(stop.id),
       expanded: state.expandedStopIds[state.list].includes(stop.id),

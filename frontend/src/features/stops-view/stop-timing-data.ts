@@ -16,129 +16,58 @@ import {
   type ShuttleServiceWindow,
 } from '../../domain/transit/service-hours'
 import type { TransitStop } from '@navus/shared/transit/types'
-import type { StopSheetSelection } from './stops-view'
-import type { PublicServiceTiming } from './stop-timings'
 
-type StopList = 'nearby' | 'favourites'
-
-export interface StopsViewState {
-  readonly focusedStopId: string | null
-  readonly list: StopList
-  readonly expandedStopIds: Readonly<Record<StopList, readonly string[]>>
-  readonly favoriteStopIds: readonly string[]
-  readonly locationNoticeDismissed: boolean
+export interface StopFavoriteDestination {
+  readonly id: string
+  readonly name: string
+  readonly isOpposite: boolean
 }
 
-export type StopsViewAction =
-  | { readonly type: 'focus-stop'; readonly stopId: string }
-  | { readonly type: 'back-to-stops' }
-  | { readonly type: 'select-list'; readonly list: StopList }
-  | { readonly type: 'toggle-expanded'; readonly stopId: string }
-  | { readonly type: 'set-nearby-expanded'; readonly stopIds: readonly string[] }
-  | { readonly type: 'toggle-favorite'; readonly stopId: string }
-  | { readonly type: 'reconcile-stops'; readonly stopIds: ReadonlySet<string> }
-  | { readonly type: 'dismiss-location-notice' }
-
-export interface StopRouteDeparture {
+export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly timings: readonly [string, string, string]
+  readonly reachableFavoriteStops?: readonly StopFavoriteDestination[]
 }
 
-export interface StopRouteScheduledDeparture {
+export interface PublicServiceTiming {
+  readonly serviceNumber: string
+  readonly timings: readonly [string, string, string] | null
+  readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
+}
+
+export interface StopScheduledDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
   readonly message: string
 }
 
-type StopsServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
+export type StopsServiceWindows = Readonly<Record<string, readonly ShuttleServiceWindow[]>>
 
 interface StopRouteAvailability {
   readonly liveRouteIds: ReadonlySet<string>
-  readonly scheduledDepartures: readonly StopRouteScheduledDeparture[]
+  readonly scheduledDepartures: readonly StopScheduledDeparture[]
 }
 
-export function createInitialStopsViewState(favoriteStopIds: readonly string[] = []): StopsViewState {
-  return {
-    focusedStopId: null,
-    list: 'nearby',
-    expandedStopIds: { nearby: [], favourites: [] },
-    favoriteStopIds,
-    locationNoticeDismissed: false,
-  }
+export interface StopTimingDataOptions {
+  readonly favoriteStopIds?: readonly string[]
+  readonly arrivalSnapshot?: ShuttleArrivalSnapshot | null
+  readonly nowMs: number
+  readonly serviceWindows?: StopsServiceWindows | null
+  readonly isRefreshing?: boolean
+  readonly publicArrivalSnapshot?: PublicBusArrivalSnapshot | null
+  readonly publicIsRefreshing?: boolean
 }
 
-export function stopsViewReducer(
-  state: StopsViewState,
-  action: StopsViewAction,
-): StopsViewState {
-  switch (action.type) {
-    case 'focus-stop':
-      return state.focusedStopId === action.stopId
-        ? state
-        : { ...state, focusedStopId: action.stopId }
-    case 'back-to-stops':
-      return state.focusedStopId === null ? state : { ...state, focusedStopId: null }
-    case 'select-list':
-      return state.list === action.list ? state : { ...state, list: action.list }
-    case 'toggle-expanded': {
-      const expandedStopIds = state.expandedStopIds[state.list]
-      const nextExpandedStopIds = expandedStopIds.includes(action.stopId)
-        ? expandedStopIds.filter((id) => id !== action.stopId)
-        : [...expandedStopIds, action.stopId]
-      return {
-        ...state,
-        expandedStopIds: {
-          ...state.expandedStopIds,
-          [state.list]: nextExpandedStopIds,
-        },
-      }
-    }
-    case 'set-nearby-expanded': {
-      const expandedStopIds = [...new Set(action.stopIds)]
-      if (
-        expandedStopIds.length === state.expandedStopIds.nearby.length &&
-        expandedStopIds.every((stopId, index) => stopId === state.expandedStopIds.nearby[index])
-      ) return state
-      return {
-        ...state,
-        expandedStopIds: {
-          ...state.expandedStopIds,
-          nearby: expandedStopIds,
-        },
-      }
-    }
-    case 'toggle-favorite':
-      return {
-        ...state,
-        favoriteStopIds: state.favoriteStopIds.includes(action.stopId)
-          ? state.favoriteStopIds.filter((id) => id !== action.stopId)
-          : [...state.favoriteStopIds, action.stopId],
-      }
-    case 'reconcile-stops': {
-      const favoriteStopIds = state.favoriteStopIds.filter((id) => action.stopIds.has(id))
-      const expandedStopIds = {
-        nearby: state.expandedStopIds.nearby.filter((id) => action.stopIds.has(id)),
-        favourites: state.expandedStopIds.favourites.filter((id) => action.stopIds.has(id)),
-      }
-      const focusedStopId = state.focusedStopId && action.stopIds.has(state.focusedStopId)
-        ? state.focusedStopId
-        : null
-      if (
-        favoriteStopIds.length === state.favoriteStopIds.length &&
-        expandedStopIds.nearby.length === state.expandedStopIds.nearby.length &&
-        expandedStopIds.favourites.length === state.expandedStopIds.favourites.length &&
-        focusedStopId === state.focusedStopId
-      ) return state
-      return { ...state, favoriteStopIds, expandedStopIds, focusedStopId }
-    }
-    case 'dismiss-location-notice':
-      return state.locationNoticeDismissed ? state : { ...state, locationNoticeDismissed: true }
-  }
+export interface StopTimingData {
+  readonly publicServices: readonly PublicServiceTiming[]
+  readonly departures: readonly StopDeparture[]
+  readonly scheduledDepartures: readonly StopScheduledDeparture[]
+  readonly live: boolean
+  readonly liveArrivalMessage: string | null
 }
-
 function formatArrivalSeconds(seconds: number): string {
   return seconds <= 60 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
 }
@@ -191,7 +120,7 @@ function getLiveStopDepartures(
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
   liveRouteIds: ReadonlySet<string>,
-): readonly StopRouteDeparture[] {
+): readonly StopDeparture[] {
   if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
   const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
@@ -224,8 +153,8 @@ function getLiveArrivalMessage(
   snapshot: ShuttleArrivalSnapshot | null,
   stopId: string,
   nowMs: number,
-  departures: readonly StopRouteDeparture[],
-  scheduledDepartures: readonly StopRouteScheduledDeparture[],
+  departures: readonly StopDeparture[],
+  scheduledDepartures: readonly StopScheduledDeparture[],
   isRefreshing: boolean,
   publicArrivalSnapshot: PublicBusArrivalSnapshot | null,
 ): string | null {
@@ -253,7 +182,7 @@ function getRouteAvailability(
   }
 
   const liveRouteIds = new Set<string>()
-  const scheduledDepartures: StopRouteScheduledDeparture[] = []
+  const scheduledDepartures: StopScheduledDeparture[] = []
   for (const routeId of routeIds) {
     const route = index.routeById.get(routeId)
     const windows = serviceWindows[routeId]
@@ -288,18 +217,19 @@ function getRouteAvailability(
   return { liveRouteIds, scheduledDepartures }
 }
 
-export function getStopSheetSelection(
+export function getStopTimingData(
   stop: TransitStop,
   index: TransitIndex,
-  favoriteStopIds: readonly string[] = [],
-  arrivalSnapshot: ShuttleArrivalSnapshot | null = null,
-  nowMs: number,
-  serviceWindows: StopsServiceWindows | null = null,
-  isRefreshing = false,
-  publicArrivalSnapshot: PublicBusArrivalSnapshot | null = null,
-  publicIsRefreshing = false,
-): StopSheetSelection {
-  const oppositeStop = stop.opposite ? index.stopById.get(stop.opposite) : null
+  {
+    favoriteStopIds = [],
+    arrivalSnapshot = null,
+    nowMs,
+    serviceWindows = null,
+    isRefreshing = false,
+    publicArrivalSnapshot = null,
+    publicIsRefreshing = false,
+  }: StopTimingDataOptions,
+): StopTimingData {
   const favorites = new Set(favoriteStopIds)
   const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)
   const departures = getLiveStopDepartures(
@@ -318,30 +248,30 @@ export function getStopSheetSelection(
       })),
   }))
   const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs)
+  const live = (
+    !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
+    getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
+  ) || (
+    !isRefreshing && !publicIsRefreshing &&
+    publicServices.some(({ timings, status }) => timings !== null && status === 'live') &&
+    publicArrivalSnapshot !== null &&
+    getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
+  )
+  const liveArrivalMessage = getLiveArrivalMessage(
+    arrivalSnapshot,
+    stop.id,
+    nowMs,
+    departures,
+    routeAvailability.scheduledDepartures,
+    isRefreshing,
+    publicArrivalSnapshot,
+  )
+
   return {
-    id: stop.id,
-    longName: stop.longName,
-    oppositeStop: oppositeStop ? { id: oppositeStop.id, longName: oppositeStop.longName } : null,
     publicServices,
     departures,
     scheduledDepartures: routeAvailability.scheduledDepartures,
-    live: (
-      !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
-      getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
-    ) || (
-      !isRefreshing && !publicIsRefreshing &&
-      publicServices.some(({ timings, status }) => timings !== null && status === 'live') &&
-      publicArrivalSnapshot !== null &&
-      getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
-    ),
-    liveArrivalMessage: getLiveArrivalMessage(
-      arrivalSnapshot,
-      stop.id,
-      nowMs,
-      departures,
-      routeAvailability.scheduledDepartures,
-      isRefreshing,
-      publicArrivalSnapshot,
-    ),
+    live,
+    liveArrivalMessage,
   }
 }

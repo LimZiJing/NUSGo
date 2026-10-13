@@ -1,32 +1,10 @@
 import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
 import { FavoriteIcon } from '../../ui/icons'
-
-export interface StopFavoriteDestination {
-  readonly id: string
-  readonly name: string
-  readonly isOpposite: boolean
-}
-
-export interface StopDeparture {
-  readonly routeId: string
-  readonly routeName: string
-  readonly routeColor: string
-  readonly timings: readonly [string, string, string]
-  readonly reachableFavoriteStops?: readonly StopFavoriteDestination[]
-}
-
-export interface PublicServiceTiming {
-  readonly serviceNumber: string
-  readonly timings: readonly [string, string, string] | null
-  readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
-}
-
-export interface StopScheduledDeparture {
-  readonly routeId: string
-  readonly routeName: string
-  readonly routeColor: string
-  readonly message: string
-}
+import type {
+  PublicServiceTiming,
+  StopDeparture,
+  StopScheduledDeparture,
+} from './stop-timing-data'
 
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
   return (

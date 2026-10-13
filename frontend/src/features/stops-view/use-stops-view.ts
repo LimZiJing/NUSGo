@@ -1,23 +1,23 @@
 import { useEffect, useReducer } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import { readFavoriteStopIds, writeFavoriteStopIds } from './stop-favorites'
-import { createInitialStopsViewState, stopsViewReducer } from './stops-view-state'
+import { createInitialStopsState, stopsReducer } from './stops-state'
 
-export function useStopsView(index: TransitIndex | null) {
-  const [view, dispatch] = useReducer(
-    stopsViewReducer,
+export function useStopsState(index: TransitIndex | null) {
+  const [state, dispatch] = useReducer(
+    stopsReducer,
     undefined,
-    () => createInitialStopsViewState(readFavoriteStopIds()),
+    () => createInitialStopsState(readFavoriteStopIds()),
   )
 
   useEffect(() => {
-    writeFavoriteStopIds(view.favoriteStopIds)
-  }, [view.favoriteStopIds])
+    writeFavoriteStopIds(state.favoriteStopIds)
+  }, [state.favoriteStopIds])
 
   useEffect(() => {
     if (!index) return
     dispatch({ type: 'reconcile-stops', stopIds: new Set(index.stops.map(({ id }) => id)) })
   }, [index])
 
-  return [view, dispatch] as const
+  return [state, dispatch] as const
 }

@@ -4,11 +4,11 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopsView } from './stops-view'
-import type { StopSheetSelection } from './stops-view'
+import type { StopDetailsModel } from './stop-details-model'
 
 afterEach(cleanup)
 
-const selectedStop: StopSheetSelection = {
+const selectedStop: StopDetailsModel = {
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },

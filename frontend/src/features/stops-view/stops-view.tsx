@@ -1,39 +1,21 @@
 import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
-import {
-  StopTimings,
-  type StopDeparture,
-  type StopScheduledDeparture,
-  type PublicServiceTiming,
-} from './stop-timings'
+import { StopTimings } from './stop-timings'
 import { StopCard } from './stop-card'
 import { BusIcon, FavoriteIcon } from '../../ui/icons'
 import { SegmentedControl } from '../../ui/segmented-control'
-import { type StopRouteDeparture } from './stops-view-state'
+import type { StopDetailsModel } from './stop-details-model'
 import './styles/stops-view.css'
 
-type StopSheetDeparture = StopRouteDeparture & StopDeparture
-
-export interface StopSheetSelection {
-  readonly id: string
-  readonly longName: string
-  readonly oppositeStop: { readonly id: string; readonly longName: string } | null
-  readonly publicServices: readonly PublicServiceTiming[]
-  readonly departures: readonly StopSheetDeparture[]
-  readonly scheduledDepartures: readonly StopScheduledDeparture[]
-  readonly live: boolean
-  readonly liveArrivalMessage: string | null
-}
-
 export interface StopOverviewSelection {
-  readonly stop: StopSheetSelection
+  readonly stop: StopDetailsModel
   readonly distanceMeters: number | null
   readonly favorite: boolean
   readonly expanded: boolean
 }
 
 interface StopsViewProps {
-  readonly selectedStop: StopSheetSelection | null
+  readonly selectedStop: StopDetailsModel | null
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void

@@ -1,9 +1,9 @@
-import {
-  StopTimings,
-  type StopDeparture,
-  type StopScheduledDeparture,
-  type PublicServiceTiming,
-} from './stop-timings'
+import { StopTimings } from './stop-timings'
+import type {
+  StopDeparture,
+  StopScheduledDeparture,
+  PublicServiceTiming,
+} from './stop-timing-data'
 import { InfoPill } from '../../ui/info-pill'
 import { BusIcon, FavoriteIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'

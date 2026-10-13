@@ -19,6 +19,7 @@ export const TRANSIT_ROUTE_DIRECTION_LAYER_ID = 'shuttle-route-directions'
 
 const BASE_ROUTE_LINE_COLOR = '#64748b'
 const NO_ROUTE_FILTER: FilterSpecification = ['==', ['get', 'routeId'], '']
+const ROUTE_STOP_PIN_CLEARANCE = 24
 
 const BASE_ROUTE_CASING_WIDTH: NonNullable<LineLayerSpecification['paint']>['line-width'] = [
   'interpolate',
@@ -135,16 +136,21 @@ export function getTransitRouteFitPadding(
       top: Math.max(24, viewportInsets.top),
       right: Math.max(24, viewportInsets.right),
       bottom: Math.max(64, viewportInsets.bottom),
-      left: Math.max(24, viewportInsets.left),
+      left: Math.max(24, viewportInsets.left) + ROUTE_STOP_PIN_CLEARANCE,
     }
   }
 
   if (viewportWidth <= 768) {
-    return { top: 280, right: 24, bottom: 64, left: 24 }
+    return { top: 280, right: 24, bottom: 64, left: 24 + ROUTE_STOP_PIN_CLEARANCE }
   }
 
   const sidePadding = Math.min(360, Math.max(24, Math.round(viewportWidth * 0.3)))
-  return { top: 112, right: sidePadding, bottom: 64, left: sidePadding }
+  return {
+    top: 112,
+    right: sidePadding,
+    bottom: 64,
+    left: sidePadding + ROUTE_STOP_PIN_CLEARANCE,
+  }
 }
 
 export interface TransitRouteLayers {

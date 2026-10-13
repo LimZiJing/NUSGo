@@ -240,13 +240,13 @@ describe('transit route camera', () => {
       top: 280,
       right: 24,
       bottom: 64,
-      left: 24,
+      left: 48,
     })
     expect(getTransitRouteFitPadding(769)).toEqual({
       top: 112,
       right: 231,
       bottom: 64,
-      left: 231,
+      left: 255,
     })
     expect(getTransitRouteFitPadding(390, {
       top: 88,
@@ -257,7 +257,7 @@ describe('transit route camera', () => {
       top: 88,
       right: 24,
       bottom: 196,
-      left: 24,
+      left: 48,
     })
     expect(getTransitRouteFitPadding(568, {
       top: 84,
@@ -268,7 +268,7 @@ describe('transit route camera', () => {
       top: 84,
       right: 24,
       bottom: 162,
-      left: 24,
+      left: 48,
     })
 
     const state = createFakeMap()
@@ -281,7 +281,7 @@ describe('transit route camera', () => {
       options: {
         duration: 500,
         maxZoom: 16,
-        padding: { top: 112, right: 360, bottom: 64, left: 360 },
+        padding: { top: 112, right: 360, bottom: 64, left: 384 },
       },
     }])
   })

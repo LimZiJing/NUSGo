@@ -134,6 +134,21 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     })
   }
 
+  const fitSelectedRoute = (routeId: string | null): void => {
+    if (!transitData || !viewportInsetsReady) {
+      pendingCameraFit = { kind: 'route', routeId }
+      return
+    }
+
+    pendingCameraFit = null
+    transitRouteLayers?.fitRoute(
+      transitData.index,
+      transitData.geometry,
+      routeId,
+      viewportInsets,
+    )
+  }
+
   const fitTripEndpoints = (coordinates: readonly (readonly [number, number])[]): void => {
     if (coordinates.length === 0) return
     if (coordinates.length === 1) {
@@ -329,8 +344,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         )
       }
       const nextRouteId = currentRouteSelection.route?.id ?? null
-      if (nextRouteId !== previousRouteId) {
-        pendingCameraFit = { kind: 'route', routeId: nextRouteId }
+      if (
+        nextRouteId !== previousRouteId ||
+        pendingCameraFit?.kind === 'route'
+      ) {
+        fitSelectedRoute(nextRouteId)
       }
       installJourneyRouteLayers()
     },
@@ -349,8 +367,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       applyRouteSelection(currentRouteSelection)
 
       if (!fit) pendingCameraFit = null
-      if (fit && nextRouteId !== previousRouteId && transitData && currentJourney === null) {
-        pendingCameraFit = { kind: 'route', routeId: nextRouteId }
+      if (fit && nextRouteId !== previousRouteId && currentJourney === null) {
+        fitSelectedRoute(nextRouteId)
       }
     },
 
@@ -465,12 +483,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (pendingFit?.kind === 'venue') {
         fitVenue(pendingFit.venue)
       } else if (pendingFit?.kind === 'route' && transitData) {
-        transitRouteLayers?.fitRoute(
-          transitData.index,
-          transitData.geometry,
-          pendingFit.routeId,
-          viewportInsets,
-        )
+        fitSelectedRoute(pendingFit.routeId)
       } else if (pendingFit?.kind === 'journey') {
         fitJourneyOptions(currentJourneyOptions)
       }

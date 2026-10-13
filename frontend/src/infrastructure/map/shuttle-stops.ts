@@ -7,6 +7,7 @@ import {
 } from 'maplibre-gl'
 import type { TransitStop } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
+import type { MapViewportInsets } from '../../app/contracts/map'
 import {
   createBusStopPopupContent,
   createPopupCoordinator,
@@ -113,9 +114,6 @@ function createBusStopMarkerElement(stop: TransitStop): {
   element.type = 'button'
   element.className = 'bus-stop-marker'
   element.setAttribute('aria-label', `${stop.longName} shuttle stop`)
-  const routeDot = document.createElement('span')
-  routeDot.className = 'bus-stop-marker-route-dot'
-  routeDot.setAttribute('aria-hidden', 'true')
   const routeName = document.createElement('span')
   routeName.className = 'bus-stop-marker-route-name'
   routeName.textContent = stop.shortName || stop.longName
@@ -125,7 +123,7 @@ function createBusStopMarkerElement(stop: TransitStop): {
   const routeLeader = document.createElement('span')
   routeLeader.className = 'bus-stop-marker-route-leader'
   routeLeader.setAttribute('aria-hidden', 'true')
-  element.append(routeDot, routeName, routeNumbers, routeLeader)
+  element.append(routeName, routeNumbers, routeLeader)
   return { button: element, routeNumbers }
 }
 
@@ -141,13 +139,9 @@ type BusStopMarker = {
   handleClose: () => void
 }
 
-type RouteOverflowPanel = {
-  element: HTMLDivElement
-  list: HTMLOListElement
-}
-
 export interface ShuttleStopMarkers {
   readonly markers: readonly Marker[]
+  setViewportInsets(insets: MapViewportInsets): void
   openStopPopup(stopId: string): boolean
   setStopsPin(stopId: string | null, visible: boolean): boolean
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
@@ -159,8 +153,6 @@ type ShuttleStopMarkerState = {
   map: Map
   markerDetails: BusStopMarker[]
   stopsPinMarker: Marker
-  routeOverflowPanel: RouteOverflowPanel
-  onStopSelected?: (stopId: string) => boolean
   selectedStopIds: ReadonlySet<string> | null
   routeStopNumbers: ReadonlyMap<string, string> | null
   selectedRouteColor: string | null
@@ -168,8 +160,10 @@ type ShuttleStopMarkerState = {
   selectedStopId: string | null
   pinVisible: boolean
   focusedStopIds: Set<string>
+  viewportInsets: MapViewportInsets
   handleZoom: () => void
   handleMove: () => void
+  handleResize: () => void
 }
 
 function getStopIdsFilter(stopIds: ReadonlySet<string>): FilterSpecification {
@@ -331,21 +325,36 @@ type ScreenRectangle = {
   bottom: number
 }
 
-type ScreenSegment = {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-}
-
 const BUS_STOP_MARKER_SIZE = 14
 const ROUTE_LABEL_CLEARANCE = 3
 const ROUTE_LABEL_EDGE_SPACING = 11
 const ROUTE_LABEL_SEARCH_STEP = 12
 const ROUTE_LABEL_SEARCH_DIRECTIONS = 24
 const ROUTE_LABEL_ANGLE_STEP = 15
-const ROUTE_LABEL_CHARACTER_WIDTH = 6.5
-const ROUTE_LABEL_FIXED_WIDTH = 42
+
+function getMapOverlayRectangles(mapContainer: HTMLElement): ScreenRectangle[] {
+  const mapBounds = mapContainer.getBoundingClientRect()
+  const siblings = mapContainer.parentElement?.children
+  if (!siblings) return []
+
+  const rectangles: ScreenRectangle[] = []
+  for (const sibling of Array.from(siblings)) {
+    if (!(sibling instanceof HTMLElement) || sibling === mapContainer) continue
+    for (const overlay of Array.from(sibling.children)) {
+      if (!(overlay instanceof HTMLElement) || getComputedStyle(overlay).pointerEvents === 'none') continue
+      const bounds = overlay.getBoundingClientRect()
+      if (bounds.width === 0 || bounds.height === 0) continue
+      rectangles.push({
+        left: bounds.left - mapBounds.left,
+        top: bounds.top - mapBounds.top,
+        right: bounds.right - mapBounds.left,
+        bottom: bounds.bottom - mapBounds.top,
+      })
+    }
+  }
+
+  return rectangles
+}
 
 function getRouteStopNumbers(stopIds: readonly string[] | null): ReadonlyMap<string, string> | null {
   if (stopIds === null) return null
@@ -374,147 +383,28 @@ function rectanglesOverlap(
     a.bottom + gap > b.top
 }
 
-function segmentIntersectsRectangle(segment: ScreenSegment, rect: ScreenRectangle): boolean {
-  const deltaX = segment.x2 - segment.x1
-  const deltaY = segment.y2 - segment.y1
-  const p = [-deltaX, deltaX, -deltaY, deltaY]
-  const q = [
-    segment.x1 - rect.left,
-    rect.right - segment.x1,
-    segment.y1 - rect.top,
-    rect.bottom - segment.y1,
-  ]
-  let start = 0
-  let end = 1
+function findGridLabelPlacement(
+  point: { x: number; y: number },
+  width: number,
+  height: number,
+  viewport: ScreenRectangle,
+  placedLabels: readonly ScreenRectangle[],
+): { x: number; y: number; rect: ScreenRectangle } | null {
+  let closest: { x: number; y: number; distance: number; rect: ScreenRectangle } | null = null
 
-  for (let index = 0; index < p.length; index += 1) {
-    if (p[index] === 0) {
-      if (q[index] < 0) return false
-      continue
+  for (let top = viewport.top; top + height <= viewport.bottom; top += ROUTE_LABEL_SEARCH_STEP) {
+    for (let left = viewport.left; left + width <= viewport.right; left += ROUTE_LABEL_SEARCH_STEP) {
+      const rect = { left, top, right: left + width, bottom: top + height }
+      if (placedLabels.some((placed) => rectanglesOverlap(rect, placed))) continue
+
+      const x = left + width / 2
+      const y = top + height / 2
+      const distance = Math.hypot(x - point.x, y - point.y)
+      if (closest === null || distance < closest.distance) closest = { x, y, distance, rect }
     }
-    const ratio = q[index] / p[index]
-    if (p[index] < 0) start = Math.max(start, ratio)
-    else end = Math.min(end, ratio)
-    if (start > end) return false
   }
-  return true
-}
 
-function pointToSegmentDistance(
-  point: { x: number; y: number },
-  segment: ScreenSegment,
-): number {
-  const deltaX = segment.x2 - segment.x1
-  const deltaY = segment.y2 - segment.y1
-  const lengthSquared = deltaX * deltaX + deltaY * deltaY
-  const ratio = lengthSquared === 0
-    ? 0
-    : Math.max(0, Math.min(1, (
-      (point.x - segment.x1) * deltaX + (point.y - segment.y1) * deltaY
-    ) / lengthSquared))
-  return Math.hypot(
-    point.x - (segment.x1 + ratio * deltaX),
-    point.y - (segment.y1 + ratio * deltaY),
-  )
-}
-
-function segmentsIntersect(first: ScreenSegment, second: ScreenSegment): boolean {
-  const orientation = (
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-    c: { x: number; y: number },
-  ): number => {
-    const value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y)
-    return Math.abs(value) < 0.001 ? 0 : Math.sign(value)
-  }
-  const onSegment = (
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-    c: { x: number; y: number },
-  ): boolean => (
-    b.x <= Math.max(a.x, c.x) &&
-    b.x >= Math.min(a.x, c.x) &&
-    b.y <= Math.max(a.y, c.y) &&
-    b.y >= Math.min(a.y, c.y)
-  )
-  const a = { x: first.x1, y: first.y1 }
-  const b = { x: first.x2, y: first.y2 }
-  const c = { x: second.x1, y: second.y1 }
-  const d = { x: second.x2, y: second.y2 }
-  const firstC = orientation(a, b, c)
-  const firstD = orientation(a, b, d)
-  const secondA = orientation(c, d, a)
-  const secondB = orientation(c, d, b)
-
-  return (firstC !== firstD && secondA !== secondB) ||
-    (firstC === 0 && onSegment(a, c, b)) ||
-    (firstD === 0 && onSegment(a, d, b)) ||
-    (secondA === 0 && onSegment(c, a, d)) ||
-    (secondB === 0 && onSegment(c, b, d))
-}
-
-function segmentsOverlap(
-  first: ScreenSegment,
-  second: ScreenSegment,
-  gap = ROUTE_LABEL_CLEARANCE,
-): boolean {
-  return segmentsIntersect(first, second) ||
-    pointToSegmentDistance({ x: first.x1, y: first.y1 }, second) <= gap ||
-    pointToSegmentDistance({ x: first.x2, y: first.y2 }, second) <= gap ||
-    pointToSegmentDistance({ x: second.x1, y: second.y1 }, first) <= gap ||
-    pointToSegmentDistance({ x: second.x2, y: second.y2 }, first) <= gap
-}
-
-function segmentIntersectsCircle(
-  segment: ScreenSegment,
-  point: { x: number; y: number },
-  radius: number,
-): boolean {
-  return pointToSegmentDistance(point, segment) <= radius
-}
-
-function createRouteOverflowPanel(): RouteOverflowPanel {
-  const element = document.createElement('div')
-  element.className = 'bus-stop-route-overflow'
-  element.setAttribute('role', 'region')
-  element.setAttribute('aria-label', 'Selected route stops')
-  element.hidden = true
-  const list = document.createElement('ol')
-  list.className = 'bus-stop-route-overflow-list'
-  element.append(list)
-  return { element, list }
-}
-
-function updateRouteOverflowPanel(
-  panel: RouteOverflowPanel,
-  routeMarkers: readonly BusStopMarker[],
-  routeStopNumbers: ReadonlyMap<string, string>,
-  onStopSelected?: (stopId: string) => boolean,
-): void {
-  panel.list.replaceChildren()
-  for (const detail of routeMarkers) {
-    const markerElement = detail.marker.getElement()
-    const stopId = markerElement.dataset.stopId ?? ''
-    const item = document.createElement('li')
-    const name = document.createElement('button')
-    name.type = 'button'
-    name.className = 'bus-stop-route-overflow-name'
-    name.textContent = markerElement.dataset.stopShortName ?? markerElement.dataset.stopName ?? ''
-    const visitNumbers = routeStopNumbers.get(stopId) ?? ''
-    name.setAttribute(
-      'aria-label',
-      name.textContent + ' shuttle stop, selected route visit' +
-        (visitNumbers.includes(',') ? 's' : '') + ' ' + visitNumbers,
-    )
-    name.addEventListener('click', (event) => {
-      if (onStopSelected?.(stopId)) event.stopImmediatePropagation()
-    })
-    const numbers = document.createElement('span')
-    numbers.className = 'bus-stop-route-overflow-numbers'
-    numbers.textContent = visitNumbers
-    item.append(name, numbers)
-    panel.list.append(item)
-  }
+  return closest
 }
 
 function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
@@ -522,26 +412,15 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
     ? state.routeStopNumbers
     : null
 
-  if (routeStopNumbers === null) {
-    state.routeOverflowPanel.element.hidden = true
-    state.stopsPinMarker.getElement().style.visibility = ''
-    for (const { marker } of state.markerDetails) {
-      if (typeof marker.setOffset === 'function') marker.setOffset([0, 0])
-      const element = marker.getElement()
-      element.classList.remove('bus-stop-marker-route-overflow')
-      element.style.setProperty('--bus-stop-leader-length', '0px')
-      element.style.setProperty('--bus-stop-leader-angle', '0deg')
-    }
-    return
-  }
-
   for (const { marker } of state.markerDetails) {
     if (typeof marker.setOffset === 'function') marker.setOffset([0, 0])
     const element = marker.getElement()
-    element.classList.remove('bus-stop-marker-route-overflow')
     element.style.setProperty('--bus-stop-leader-length', '0px')
+    element.style.setProperty('--bus-stop-leader-angle', '0deg')
   }
   state.stopsPinMarker.getElement().style.visibility = ''
+
+  if (routeStopNumbers === null) return
 
   if (
     typeof state.map.project !== 'function' ||
@@ -555,14 +434,17 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
   const routeMarkers = Array.from(routeStopNumbers.keys())
     .map((stopId) => markerByStopId.get(stopId))
     .filter((detail): detail is BusStopMarker => detail !== undefined)
-  if (routeMarkers.length === 0) {
-    state.routeOverflowPanel.element.hidden = true
-    return
-  }
+  if (routeMarkers.length === 0) return
 
   const container = state.map.getContainer()
-  const viewportWidth = container.clientWidth
-  const viewportHeight = container.clientHeight
+  const viewport = {
+    left: state.viewportInsets.left + ROUTE_LABEL_CLEARANCE,
+    top: state.viewportInsets.top + ROUTE_LABEL_CLEARANCE,
+    right: container.clientWidth - state.viewportInsets.right - ROUTE_LABEL_CLEARANCE,
+    bottom: container.clientHeight - state.viewportInsets.bottom - ROUTE_LABEL_CLEARANCE,
+  }
+  const viewportWidth = Math.max(0, viewport.right - viewport.left)
+  const viewportHeight = Math.max(0, viewport.bottom - viewport.top)
   const routePoints = routeMarkers.map((detail) => {
     const { marker } = detail
     const point = state.map.project(marker.getLngLat())
@@ -575,31 +457,7 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
     }),
     { x: 0, y: 0 },
   )
-  const visibleStopPoints = state.markerDetails
-    .filter(({ marker }) => marker.getElement().style.display !== 'none')
-    .map(({ marker }) => {
-      const point = state.map.project(marker.getLngLat())
-      return {
-        stopId: marker.getElement().dataset.stopId ?? '',
-        x: point.x,
-        y: point.y,
-      }
-    })
-  const stopsPinElement = state.stopsPinMarker.getElement()
-  const containerBounds = container.getBoundingClientRect()
-  const pinBounds = state.pinVisible && state.selectedStopId !== null
-    ? stopsPinElement.getBoundingClientRect()
-    : null
-  const visiblePinRect = pinBounds === null
-    ? null
-    : {
-      left: pinBounds.left - containerBounds.left,
-      top: pinBounds.top - containerBounds.top,
-      right: pinBounds.right - containerBounds.left,
-      bottom: pinBounds.bottom - containerBounds.top,
-    }
-  const placedLabels: ScreenRectangle[] = []
-  const placedLeaders: ScreenSegment[] = []
+  const placedLabels: ScreenRectangle[] = getMapOverlayRectangles(container)
   const placements: Array<{
     detail: BusStopMarker
     x: number
@@ -610,14 +468,8 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
 
   for (const { detail, marker, x, y } of routePoints) {
     const element = marker.getElement()
-    element.classList.remove('bus-stop-marker-route-overflow')
     const bounds = element.getBoundingClientRect()
-    const width = Math.max(
-      bounds.width,
-      (element.dataset.stopShortName?.length ?? 0) * ROUTE_LABEL_CHARACTER_WIDTH +
-        (routeStopNumbers.get(element.dataset.stopId ?? '')?.length ?? 0) *
-          ROUTE_LABEL_CHARACTER_WIDTH + ROUTE_LABEL_FIXED_WIDTH,
-    )
+    const width = Math.max(bounds.width, 52)
     const height = Math.max(bounds.height, 24)
     const dx = x - center.x
     const dy = y - center.y
@@ -628,7 +480,6 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
       x: number
       y: number
       rect: ScreenRectangle
-      leader: ScreenSegment
     } | null = null
 
     for (
@@ -651,77 +502,36 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
           right: x + offsetX + width / 2,
           bottom: y + offsetY + height / 2,
         }
-        const overflow = Math.max(0, -rect.left) + Math.max(0, -rect.top) +
-          Math.max(0, rect.right - viewportWidth) + Math.max(0, rect.bottom - viewportHeight)
-        const leaderStartDistance = Math.abs(directionX) * width / 2 +
-          Math.abs(directionY) * height / 2
-        const leader: ScreenSegment = {
-          x1: x + directionX * BUS_STOP_MARKER_SIZE / 2,
-          y1: y + directionY * BUS_STOP_MARKER_SIZE / 2,
-          x2: x + directionX * (distance - leaderStartDistance),
-          y2: y + directionY * (distance - leaderStartDistance),
-        }
-        const stopOverlap = visibleStopPoints.some((otherPoint) => (
-          otherPoint.stopId !== element.dataset.stopId &&
-          rectanglesOverlap(rect, {
-            left: otherPoint.x - BUS_STOP_MARKER_SIZE / 2,
-            top: otherPoint.y - BUS_STOP_MARKER_SIZE / 2,
-            right: otherPoint.x + BUS_STOP_MARKER_SIZE / 2,
-            bottom: otherPoint.y + BUS_STOP_MARKER_SIZE / 2,
-          }, ROUTE_LABEL_CLEARANCE)
-        )) || (visiblePinRect !== null && rectanglesOverlap(
-          rect,
-          visiblePinRect,
-          ROUTE_LABEL_CLEARANCE,
-        ))
+        const overflow = Math.max(0, viewport.left - rect.left) + Math.max(0, viewport.top - rect.top) +
+          Math.max(0, rect.right - viewport.right) + Math.max(0, rect.bottom - viewport.bottom)
         const labelOverlap = placedLabels.some((placed) => rectanglesOverlap(rect, placed))
-        const labelOverlapsLeader = placedLeaders.some((placed) => (
-          segmentIntersectsRectangle(placed, {
-            left: rect.left - ROUTE_LABEL_CLEARANCE,
-            top: rect.top - ROUTE_LABEL_CLEARANCE,
-            right: rect.right + ROUTE_LABEL_CLEARANCE,
-            bottom: rect.bottom + ROUTE_LABEL_CLEARANCE,
-          })
-        ))
-        const leaderOverlapsStop = visibleStopPoints.some((otherPoint) => (
-          otherPoint.stopId !== element.dataset.stopId &&
-          segmentIntersectsCircle(
-            leader,
-            otherPoint,
-            BUS_STOP_MARKER_SIZE / 2 + ROUTE_LABEL_CLEARANCE,
-          )
-        )) || (visiblePinRect !== null && segmentIntersectsRectangle(leader, visiblePinRect))
-        const leaderOverlapsLabel = placedLabels.some((placed) => (
-          segmentIntersectsRectangle(leader, {
-            left: placed.left - ROUTE_LABEL_CLEARANCE,
-            top: placed.top - ROUTE_LABEL_CLEARANCE,
-            right: placed.right + ROUTE_LABEL_CLEARANCE,
-            bottom: placed.bottom + ROUTE_LABEL_CLEARANCE,
-          })
-        ))
-        const leaderOverlapsLeader = placedLeaders.some((placed) => (
-          segmentsOverlap(leader, placed)
-        ))
 
-        if (
-          overflow === 0 &&
-          !stopOverlap &&
-          !labelOverlap &&
-          !labelOverlapsLeader &&
-          !leaderOverlapsStop &&
-          !leaderOverlapsLabel &&
-          !leaderOverlapsLeader
-        ) {
-          placement = { x: offsetX, y: offsetY, rect, leader }
+        if (overflow === 0 && !labelOverlap) {
+          placement = { x: offsetX, y: offsetY, rect }
           break
         }
       }
       if (placement) break
     }
 
-    if (!placement) break
+    if (!placement) {
+      const fallback = findGridLabelPlacement(
+        { x, y },
+        width,
+        height,
+        viewport,
+        placedLabels,
+      )
+      if (fallback) {
+        placement = {
+          x: fallback.x - x,
+          y: fallback.y - y,
+          rect: fallback.rect,
+        }
+      }
+    }
+    if (!placement) continue
     placedLabels.push(placement.rect)
-    placedLeaders.push(placement.leader)
     placements.push({
       detail,
       x: placement.x,
@@ -731,23 +541,6 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
     })
   }
 
-  if (placements.length !== routeMarkers.length) {
-    for (const { marker } of state.markerDetails) {
-      if (typeof marker.setOffset === 'function') marker.setOffset([0, 0])
-      marker.getElement().classList.add('bus-stop-marker-route-overflow')
-    }
-    state.stopsPinMarker.getElement().style.visibility = 'hidden'
-    updateRouteOverflowPanel(
-      state.routeOverflowPanel,
-      routeMarkers,
-      routeStopNumbers,
-      state.onStopSelected,
-    )
-    state.routeOverflowPanel.element.hidden = false
-    return
-  }
-
-  state.routeOverflowPanel.element.hidden = true
   for (const { detail, x, y, width, height } of placements) {
     const { marker } = detail
     const element = marker.getElement()
@@ -775,6 +568,42 @@ function updateRouteStopMarkerLayout(state: ShuttleStopMarkerState): void {
       `${height / 2 - directionY * leaderStartDistance}px`,
     )
   }
+}
+
+function updateRouteStopMarkerLayoutAfterMove(state: ShuttleStopMarkerState): void {
+  if (state.routeStopNumbers === null || state.journeyStopRoutes !== null) return
+  if (typeof state.map.getContainer !== 'function') return
+
+  // A pure pan moves stop markers and their labels together; relayout only if a label clips.
+  const container = state.map.getContainer()
+  const containerBounds = container.getBoundingClientRect()
+  const viewport = {
+    left: containerBounds.left + state.viewportInsets.left,
+    top: containerBounds.top + state.viewportInsets.top,
+    right: containerBounds.left + container.clientWidth - state.viewportInsets.right,
+    bottom: containerBounds.top + container.clientHeight - state.viewportInsets.bottom,
+  }
+  const routeStopIds = new Set(state.routeStopNumbers.keys())
+  const overlayRectangles = getMapOverlayRectangles(container)
+  const hasClippedLabel = state.markerDetails.some(({ marker }) => {
+    const element = marker.getElement()
+    if (!routeStopIds.has(element.dataset.stopId ?? '')) return false
+
+    const bounds = element.getBoundingClientRect()
+    const labelBounds = {
+      left: bounds.left - containerBounds.left,
+      top: bounds.top - containerBounds.top,
+      right: bounds.right - containerBounds.left,
+      bottom: bounds.bottom - containerBounds.top,
+    }
+    return bounds.left < viewport.left ||
+      bounds.top < viewport.top ||
+      bounds.right > viewport.right ||
+      bounds.bottom > viewport.bottom ||
+      overlayRectangles.some((overlay) => rectanglesOverlap(labelBounds, overlay, 0))
+  })
+
+  if (hasClippedLabel) updateRouteStopMarkerLayout(state)
 }
 
 function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
@@ -830,8 +659,6 @@ export function createShuttleStopMarkers(
   const markers: Marker[] = []
   const markerDetails: BusStopMarker[] = []
   const popupCoordinator = createPopupCoordinator()
-  const routeOverflowPanel = createRouteOverflowPanel()
-  map.getContainer().append(routeOverflowPanel.element)
   // MapLibre's default -14 px offset places the pin tip on the stop coordinate.
   const stopsPinMarker = new Marker({ color: '#64748b' })
   stopsPinMarker.getElement().style.pointerEvents = 'none'
@@ -840,8 +667,6 @@ export function createShuttleStopMarkers(
     map,
     markerDetails,
     stopsPinMarker,
-    routeOverflowPanel,
-    onStopSelected,
     selectedStopIds: null,
     routeStopNumbers: null,
     selectedRouteColor: null,
@@ -849,8 +674,10 @@ export function createShuttleStopMarkers(
     selectedStopId: null,
     pinVisible: false,
     focusedStopIds: new Set<string>(),
+    viewportInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     handleZoom: () => updateBusStopMarkerPresentation(state),
-    handleMove: () => updateRouteStopMarkerLayout(state),
+    handleMove: () => updateRouteStopMarkerLayoutAfterMove(state),
+    handleResize: () => updateRouteStopMarkerLayout(state),
   }
   const ownsSource = !map.getSource(BUS_STOP_LABEL_SOURCE_ID)
   const ownsInactiveLayer = !map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
@@ -919,14 +746,22 @@ export function createShuttleStopMarkers(
     markers.push(marker)
   }
 
-  map.on('zoom', state.handleZoom)
+  // The collision search reads layout, so avoid running it during every zoom animation frame.
+  map.on('zoomend', state.handleZoom)
   map.on('moveend', state.handleMove)
-  map.on('resize', state.handleMove)
+  map.on('resize', state.handleResize)
+  map.on('rotateend', state.handleResize)
+  map.on('pitchend', state.handleResize)
   updateBusStopMarkerPresentation(state)
   let disposed = false
 
   return {
     markers,
+    setViewportInsets(insets) {
+      if (disposed) return
+      state.viewportInsets = { ...insets }
+      updateRouteStopMarkerLayout(state)
+    },
     openStopPopup(stopId) {
       if (disposed) return false
       const detail = markerDetails.find(({ marker }) => marker.getElement().dataset.stopId === stopId)
@@ -973,10 +808,11 @@ export function createShuttleStopMarkers(
     dispose() {
       if (disposed) return
       disposed = true
-      map.off('zoom', state.handleZoom)
+      map.off('zoomend', state.handleZoom)
       map.off('moveend', state.handleMove)
-      map.off('resize', state.handleMove)
-      routeOverflowPanel.element.remove()
+      map.off('resize', state.handleResize)
+      map.off('rotateend', state.handleResize)
+      map.off('pitchend', state.handleResize)
       stopsPinMarker.remove()
       for (const detail of markerDetails) {
         detail.marker.getElement().removeEventListener('click', detail.handleMarkerClick, true)

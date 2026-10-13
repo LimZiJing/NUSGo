@@ -113,7 +113,6 @@ export function AppViews({
                   selectedRouteId={views.explore.selectedRouteId ?? null}
                   onRouteSelect={views.exploreRoutes.onRouteSelect}
                   firstRouteCardRef={options.firstRouteCardRef}
-                  onFocusStop={options.onFocusStop}
                 />
               )}
             />

@@ -113,28 +113,7 @@ describe('RouteBrowser', () => {
     expect(screen.queryByRole('button', { name: 'Show all routes' })).toBeNull()
   })
 
-  it('focuses a stop from a timeline row', async () => {
-    const user = userEvent.setup()
-    const network = createEightRouteNetwork()
-    const onFocusStop = vi.fn()
-    render(
-      <RouteBrowser
-        network={network}
-        networkIndex={createTransitIndex(network)}
-        selectedRouteId="A1"
-        onRouteSelect={() => undefined}
-        onFocusStop={onFocusStop}
-      />,
-    )
-
-    const stopRow = screen.getByRole('button', { name: 'Stop A, shuttle stop, code STOP-A. Focus on map' })
-    expect(stopRow.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
-    await user.click(stopRow)
-
-    expect(onFocusStop).toHaveBeenCalledWith('STOP-A', stopRow)
-  })
-
-  it('renders every D2 stop in canonical order, including the terminal return', () => {
+  it('shows the selected route stop count without an ordered stop list', () => {
     const network = createD2Network()
     render(
       <RouteBrowser
@@ -145,18 +124,9 @@ describe('RouteBrowser', () => {
       />,
     )
 
-    const stopLabels = Array.from(
-      screen.getByRole('list', { name: 'Route D2 ordered stops' }).children,
-      (stop) => stop.querySelector('.explore-route-browser-stop-text')?.textContent,
-    )
-    expect(stopLabels).toEqual([
-      'COM3COM3', 'TCOMS-OPPTCOMS-OPP', 'PGPPGP', 'KR-MRTKR-MRT',
-      'LT27LT27', 'UHALLUHALL', 'UHC-OPPUHC-OPP', 'MUSEUMMUSEUM',
-      'UTOWNUTOWN', 'UHCUHC', 'UHALL-OPPUHALL-OPP', 'S17S17',
-      'KR-MRT-OPPKR-MRT-OPP', 'PGPRPGPR', 'TCOMSTCOMS', 'COM3COM3',
-    ])
-    expect(screen.getByText('16 stops')).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: /COM 3, shuttle stop, code COM3/ })).toHaveLength(2)
+    expect(screen.getByText('16 stops highlighted on the map')).toBeTruthy()
+    expect(screen.queryByRole('list', { name: 'Route D2 ordered stops' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Focus on map/ })).toBeNull()
   })
 
   it('keeps the selected route visible as a pressed chip', () => {

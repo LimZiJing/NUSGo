@@ -311,6 +311,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         options.onStopSelected,
         routeColors,
       )
+      shuttleStopMarkers.setViewportInsets(viewportInsets)
       if (!shuttleStopMarkers.setStopsPin(stopsPinStopId, stopsPinVisible)) {
         stopsPinStopId = null
         shuttleStopMarkers.setStopsPin(null, stopsPinVisible)
@@ -458,6 +459,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       viewportInsets = { ...insets }
       viewportInsetsReady = true
       lifecycle.setViewportInsets(viewportInsets)
+      shuttleStopMarkers?.setViewportInsets(viewportInsets)
       const pendingFit = pendingCameraFit
       pendingCameraFit = null
       if (pendingFit?.kind === 'venue') {

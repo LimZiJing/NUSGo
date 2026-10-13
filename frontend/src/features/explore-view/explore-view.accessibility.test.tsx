@@ -33,14 +33,12 @@ function TestRouteBrowser({
   selectedRouteId,
   onRouteSelect,
   firstRouteCardRef,
-  onFocusStop,
 }: {
   network: TransitNetwork | null
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onRouteSelect: (routeId: string) => void
   firstRouteCardRef: RefObject<HTMLButtonElement | null>
-  onFocusStop: (stopId: string) => void
 }) {
   const routes = networkIndex?.routes ?? network?.routes ?? []
   const selectedRoute = selectedRouteId && networkIndex
@@ -61,24 +59,6 @@ function TestRouteBrowser({
           {route.id}
         </button>
       ))}
-      {selectedRoute && (
-        <ol aria-label={`Route ${selectedRoute.id} ordered stops`}>
-          {selectedRoute.stopIds.map((stopId) => {
-            const stop = networkIndex?.stopById.get(stopId)
-            return (
-              <li key={stopId}>
-                <button
-                  type="button"
-                  aria-label={`${stop?.longName ?? stopId}, stop ${stopId}. Focus on map`}
-                  onClick={() => onFocusStop(stopId)}
-                >
-                  {stop?.longName ?? stopId}
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-      )}
       <p>
         {!network
           ? 'Loading shuttle routes…'
@@ -137,7 +117,6 @@ function PanelHarness({
             selectedRouteId={selectedRouteId}
             onRouteSelect={setSelectedRouteId}
             firstRouteCardRef={options.firstRouteCardRef}
-            onFocusStop={options.onFocusStop}
           />
         )}
         mobileSheet={mobileSheet}

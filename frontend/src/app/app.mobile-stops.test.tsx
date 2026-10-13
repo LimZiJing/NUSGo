@@ -205,7 +205,7 @@ describe('mobile Stops tab state', () => {
     mapMarker.remove()
   })
 
-  it('opens a stop from the Explore route list and restores its route context and focus', async () => {
+  it('does not render an ordered stop list for a selected Explore route', async () => {
     const initialState = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
     appHarness.state = {
       ...initialState,
@@ -221,25 +221,9 @@ describe('mobile Stops tab state', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
-    const stopRow = await screen.findByRole('button', {
-      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
-    })
-    const scrollArea = stopRow.closest('.explore-route-browser-scroll')
-    if (!scrollArea) throw new Error('Route stop row has no scroll area')
-    scrollArea.scrollTop = 38
-    stopRow.focus()
-    await user.keyboard('{Enter}')
-
-    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
-    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
-
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
-    expect(screen.getByRole('button', { name: 'Shuttle routes' })).toBeTruthy()
-    expect(screen.getByRole('button', {
-      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
-    })).toBe(stopRow)
-    expect(document.activeElement).toBe(stopRow)
-    expect(scrollArea.scrollTop).toBe(38)
+    expect(screen.getByRole('button', { name: 'Route A1' })).toBeTruthy()
+    expect(screen.queryByRole('list', { name: 'Route A1 ordered stops' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Focus on map/ })).toBeNull()
   })
 
   it('opens a nearby stop from venue details and restores venue context and focus', async () => {

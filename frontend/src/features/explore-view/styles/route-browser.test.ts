@@ -14,9 +14,10 @@ describe('route browser visual contracts', () => {
     expect(exploreStyles).toMatch(/\.explore-view button:where\(:not\(\.route-chip\)(:not\(\.[\w-]+\))*\)\s*{[^}]*padding:\s*5px 8px;/s)
   })
 
-  it('keeps route browser stop geometry specific to its button host', () => {
-    expect(routeBrowserStyles).toMatch(/\.explore-view \.explore-route-browser-stop\s*{[^}]*padding:\s*8px 14px 8px 20px;[^}]*border:\s*0;[^}]*background:\s*transparent;/s)
-    expect(routeBrowserStyles).toMatch(/\.explore-route-browser-stop-list::before\s*{[^}]*left:\s*25px;[^}]*width:\s*3px;/s)
+  it('keeps the route summary compact without styling a stop list', () => {
+    expect(routeBrowserStyles).toMatch(/\.explore-route-browser-selection-status\s*{/s)
+    expect(routeBrowserStyles).not.toContain('explore-route-browser-stop-list')
+    expect(routeBrowserStyles).not.toContain('explore-route-browser-timeline')
   })
 
   it('keeps the mobile explore header compact above its content', () => {
@@ -24,10 +25,4 @@ describe('route browser visual contracts', () => {
     expect(exploreStyles).toMatch(/\.explore-view-shuttle \.explore-view-content\s*{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;/s)
   })
 
-  it('bounds the desktop shuttle stop list inside the navigation panel', () => {
-    expect(exploreStyles).toMatch(/\.navigation-column \.explore-view\.explore-view-shuttle\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden;/s)
-    expect(exploreStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-view-content\s*{[^}]*flex:\s*1 1 0;[^}]*min-height:\s*0;[^}]*overflow:\s*hidden;/s)
-    expect(routeBrowserStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-route-browser-timeline\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*min-height:\s*0;/s)
-    expect(routeBrowserStyles).toMatch(/\.navigation-column \.explore-view-shuttle \.explore-route-browser-scroll\s*{[^}]*flex:\s*1 1 0;[^}]*min-height:\s*0;/s)
-  })
 })

@@ -3,7 +3,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type RefObject,
@@ -11,7 +10,6 @@ import {
 } from 'react'
 import type { TransitNetworkIndex } from '../../domain/transit'
 import type { TransitNetwork, TransitRoute } from '@navus/shared/transit/types'
-import { BusIcon } from '../../ui/icons'
 import { RouteChip } from '../../ui/route-chip'
 import { ScrollArea } from '../../ui/scroll-area'
 import './styles/route-browser.css'
@@ -22,7 +20,6 @@ interface RouteBrowserProps {
   selectedRouteId: string | null
   onRouteSelect: (routeId: string) => void
   firstRouteCardRef?: RefObject<HTMLButtonElement | null>
-  onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
 const ROUTE_DISPLAY_ORDER = ['A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P']
@@ -40,24 +37,12 @@ function setRouteScrollLeft(routeList: HTMLDivElement, scrollLeft: number) {
   routeList.scrollLeft = Math.max(0, Math.min(maxScrollLeft, scrollLeft))
 }
 
-function getRouteStops(
-  networkIndex: TransitNetworkIndex,
-  route: TransitRoute,
-): Map<string, TransitNetwork['stops'][number]> {
-  const stopsById = networkIndex.stopById
-  return new Map(
-    route.stopIds.map((stopId) => [stopId, stopsById.get(stopId)])
-      .filter((entry): entry is [string, TransitNetwork['stops'][number]] => entry[1] !== undefined),
-  )
-}
-
 export function RouteBrowser({
   network,
   networkIndex,
   selectedRouteId,
   onRouteSelect,
   firstRouteCardRef,
-  onFocusStop,
 }: RouteBrowserProps) {
   const selectedChipRef = useRef<HTMLButtonElement>(null)
   const routeListRef = useRef<HTMLDivElement>(null)
@@ -132,9 +117,6 @@ export function RouteBrowser({
   const selectedRoute = selectedRouteId && networkIndex
     ? networkIndex.routeById.get(selectedRouteId)
     : undefined
-  const stopsById = selectedRoute && networkIndex
-    ? getRouteStops(networkIndex, selectedRoute)
-    : new Map<string, TransitNetwork['stops'][number]>()
 
   function scrollRoutes(direction: -1 | 1) {
     const routeList = routeListRef.current
@@ -301,45 +283,16 @@ export function RouteBrowser({
         </div>
       )}
       {selectedRoute ? (
-        <div className="navigation-panel-content explore-route-browser-timeline" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
-          <p className="explore-route-browser-timeline-count">{selectedRoute.stopIds.length} stops</p>
-          <ScrollArea className="navigation-panel-scroll-content explore-route-browser-scroll">
-            <ol className="explore-route-browser-stop-list" aria-label={`Route ${selectedRoute.id} ordered stops`}>
-              {selectedRoute.stopIds.map((stopId, index) => {
-                const stop = stopsById.get(stopId)
-                return (
-                  <li key={`${stopId}-${index}`}>
-                    <button
-                      type="button"
-                      className="explore-route-browser-stop"
-                      data-hover-filter="none"
-                      data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, shuttle stop, code ${stopId}. Focus on map`}
-                      onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}
-                    >
-                      <span className="explore-route-browser-node" aria-hidden="true" />
-                      <span className="explore-route-browser-stop-text">
-                        <span className="explore-route-browser-stop-name">
-                          <BusIcon className="location-identity-icon location-identity-icon--stop" />
-                          <strong>{stop?.shortName || stop?.longName || stopId}</strong>
-                        </span>
-                        <small>{stopId}</small>
-                      </span>
-                      <span className="explore-route-browser-chevron" aria-hidden="true">›</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ol>
-          </ScrollArea>
-        </div>
+        <p className="explore-route-browser-selection-status" role="status" aria-live="polite">
+          {selectedRoute.stopIds.length} stops highlighted on the map
+        </p>
       ) : (
         <p className="explore-route-browser-selection-status" role="status" aria-live="polite">
           {!network ? 'Loading shuttle routes…' : 'Shuttle route data is unavailable.'}
         </p>
       )}
       <p className="visually-hidden" role="status" aria-live="polite">
-        {selectedRoute ? `Route ${selectedRoute.id} selected. ${selectedRoute.stopIds.length} stops in route order.` : ''}
+        {selectedRoute ? `Route ${selectedRoute.id} selected. ${selectedRoute.stopIds.length} stops highlighted on the map.` : ''}
       </p>
     </section>
   )

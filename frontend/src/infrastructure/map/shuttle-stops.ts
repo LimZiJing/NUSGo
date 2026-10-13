@@ -73,6 +73,15 @@ function createTransparentObstacleImage(): {
   }
 }
 
+// A near-black label with a 2px white halo stays legible over roads, the pink building fill and
+// other busy map areas.
+export const BUS_STOP_LABEL_PAINT: SymbolLayerSpecification['paint'] = {
+  'text-color': '#0f172a',
+  'text-halo-color': '#ffffff',
+  'text-halo-width': 2,
+  'text-opacity': 1,
+}
+
 function createBusStopLabelLayer(id: string): SymbolLayerSpecification {
   return {
     id,
@@ -80,12 +89,7 @@ function createBusStopLabelLayer(id: string): SymbolLayerSpecification {
     source: BUS_STOP_LABEL_SOURCE_ID,
     layout: BUS_STOP_LABEL_LAYOUT,
     minzoom: BUS_STOP_MIN_ZOOM,
-    paint: {
-      'text-color': '#334155',
-      'text-halo-color': '#ffffff',
-      'text-halo-width': 1,
-      'text-opacity': 1,
-    },
+    paint: BUS_STOP_LABEL_PAINT,
   }
 }
 
@@ -297,7 +301,7 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
     state.map.setPaintProperty(
       BUS_STOP_INACTIVE_LABEL_LAYER_ID,
       'text-color',
-      state.journeyStopRoutes === null ? '#334155' : '#64748b',
+      state.journeyStopRoutes === null ? '#0f172a' : '#64748b',
     )
     state.map.setPaintProperty(
       BUS_STOP_INACTIVE_LABEL_LAYER_ID,

@@ -5,6 +5,7 @@ import {
   BUS_STOP_ACTIVE_LABEL_LAYER_ID,
   BUS_STOP_INACTIVE_LABEL_LAYER_ID,
   BUS_STOP_LABEL_LAYOUT,
+  BUS_STOP_LABEL_PAINT,
   BUS_STOP_OBSTACLE_IMAGE_ID,
   BUS_STOP_OBSTACLE_LAYER_ID,
   BUS_STOP_OBSTACLE_SIZE,
@@ -450,6 +451,14 @@ describe('bus-stop presentation', () => {
     expect(layout['text-radial-offset']).toBeGreaterThanOrEqual(1)
     expect(layout['text-size']).toBe(12)
     expect(layout['text-allow-overlap']).toBe(false)
+  })
+
+  it('draws labels in near-black with a wide white halo for contrast over busy map areas', () => {
+    const paint = BUS_STOP_LABEL_PAINT as Record<string, unknown>
+
+    expect(paint['text-color']).toBe('#0f172a')
+    expect(paint['text-halo-color']).toBe('#ffffff')
+    expect(paint['text-halo-width']).toBeGreaterThanOrEqual(2)
   })
 
   it('adds an invisible obstacle layer above the label layers so labels avoid stop circles', () => {

@@ -1015,7 +1015,6 @@
 
   .navigation-panel .plan-view-content {
     min-height: 0;
-    max-height: var(--mobile-sheet-max-height);
     overflow-x: clip;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1043,6 +1042,18 @@
   .navigation-panel[data-detent='partial'] .plan-view,
   .navigation-panel[data-detent='full'] .plan-view {
     align-content: start;
+  }
+
+  /* The partial sheet is clipped to its detent, so the content row takes the
+     remaining height and scrolls instead of growing past the visible area. */
+  .navigation-panel[data-detent='partial'] .plan-view {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  /* Size to the content, only scrolling once it outgrows the row. */
+  .navigation-panel[data-detent='partial'] .plan-view-content {
+    align-self: start;
+    max-height: 100%;
   }
 
   .navigation-panel[data-detent='full'] .plan-view-content {

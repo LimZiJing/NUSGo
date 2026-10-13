@@ -13,6 +13,7 @@ import type { MobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-deten
 interface NavigationPanelShellProps {
   readonly className: string
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly detent: MobileSheetDetent
   readonly enabled?: boolean
@@ -32,6 +33,7 @@ interface NavigationPanelShellProps {
 export function NavigationPanelShell({
   className,
   label,
+  summary,
   controlsId,
   detent,
   enabled = true,
@@ -81,6 +83,7 @@ export function NavigationPanelShell({
       <MobileSheet
         className={className}
         label={label}
+        summary={summary}
         controlsId={controlsId}
         active={active}
         portalContainer={portalContainer ?? null}

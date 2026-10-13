@@ -2,7 +2,7 @@ import { Drawer } from '@base-ui/react/drawer'
 import { useContext, useMemo, type ComponentPropsWithoutRef, type ReactNode } from 'react'
 import { MobileSheetHandle } from './mobile-sheet-handle'
 import { MobileSheetMetricsContext } from './mobile-sheet-metrics'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile-sheet-detent'
+import type { MobileSheetDetent } from './mobile-sheet-detent'
 import {
   createMobileSheetSnapPoints,
   getMobileSheetDetent,
@@ -13,11 +13,11 @@ import {
 interface MobileSheetProps {
   readonly className: string
   readonly label: string
+  readonly summary?: string
   readonly controlsId: string
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
-  readonly lastNonCollapsedDetent: OpenMobileSheetDetent
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
@@ -32,11 +32,11 @@ const INITIAL_SNAP_POINTS: MobileSheetSnapPoints = ['44px', '200px', '640px']
 export function MobileSheet({
   className,
   label,
+  summary,
   controlsId,
   active,
   portalContainer,
   detent,
-  lastNonCollapsedDetent,
   onDetentChange,
   onButtonRef,
   onPanelRef,
@@ -94,8 +94,8 @@ export function MobileSheet({
               <div className="mobile-sheet-handle-row">
                 <MobileSheetHandle
                   detent={detent}
-                  restoreDetent={lastNonCollapsedDetent}
                   label={label}
+                  summary={summary}
                   controlsId={controlsId}
                   onButtonRef={onButtonRef}
                   onDetentChange={onDetentChange}

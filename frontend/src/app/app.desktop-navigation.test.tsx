@@ -501,7 +501,8 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     const { rerender } = render(<App />)
     await user.click(screen.getByRole('button', { name: 'Plan' }))
     await user.click(screen.getByRole('button', { name: 'Expand Plan trip panel' }))
-    await user.click(screen.getByRole('button', { name: 'Collapse Plan trip panel' }))
+    await user.click(screen.getByRole('button', { name: 'Reduce Plan trip panel' }))
+    await user.keyboard('{ArrowDown}')
     const sheet = document.querySelector<HTMLElement>('.plan-sheet')
     expect(sheet?.dataset.detent).toBe('collapsed')
     await user.click(screen.getByRole('button', { name: 'Stops' }))
@@ -522,7 +523,7 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     act(() => rerender(<App />))
 
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
-    expect(sheet?.dataset.detent).toBe('full')
+    expect(sheet?.dataset.detent).toBe('partial')
     expect(document.querySelector('[data-candidate-key="option-b"]')?.getAttribute('aria-current'))
       .toBe('true')
     expect(document.activeElement).toBe(focused)
@@ -537,7 +538,8 @@ describe('mobile drawer tab switches', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
-    await user.click(screen.getByRole('button', { name: 'Collapse Stops panel' }))
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    await user.keyboard('{ArrowDown}')
     expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))

@@ -461,9 +461,9 @@ export function ExploreView({
               { value: 'shuttle', label: EXPLORE_LABELS.shuttle, focusId: 'explore-shuttle-segment' },
             ]}
             value={venueSearchView ? 'venue' : 'shuttle'}
-            onValueChange={(mode) => {
+            onValueChange={(mode, event) => {
               if (mode === 'venue') handleSelectVenueSearch()
-              else handleSelectShuttle()
+              else handleSelectShuttle(event)
             }}
           />
         )}

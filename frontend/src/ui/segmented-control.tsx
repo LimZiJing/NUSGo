@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 
 export interface SegmentedControlOption<Value extends string> {
   readonly value: Value
@@ -10,7 +10,7 @@ export interface SegmentedControlProps<Value extends string> {
   readonly label: string
   readonly options: readonly SegmentedControlOption<Value>[]
   readonly value: Value
-  readonly onValueChange: (value: Value) => void
+  readonly onValueChange: (value: Value, event: MouseEvent<HTMLButtonElement>) => void
   readonly className?: string
 }
 
@@ -34,7 +34,7 @@ export function SegmentedControl<Value extends string>({
           type="button"
           data-focus-id={option.focusId}
           aria-pressed={value === option.value}
-          onClick={() => onValueChange(option.value)}
+          onClick={(event) => onValueChange(option.value, event)}
         >
           {option.label}
         </button>

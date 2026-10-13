@@ -96,8 +96,8 @@
     z-index: 20;
     inset: 0;
     overflow: hidden;
+    /* Every detent, including full, stops above the tab bar so it stays visible and tappable. */
     clip-path: inset(0 0 var(--mobile-tab-bar-height) 0);
-    transition: clip-path var(--motion-duration-panel) var(--motion-ease-standard);
     pointer-events: none;
     touch-action: none;
   }
@@ -107,10 +107,6 @@
     pointer-events: none;
   }
 
-  .mobile-sheet-viewport[data-detent='full'] {
-    clip-path: inset(0);
-  }
-
   .navigation-panel.mobile-sheet-popup {
     top: 0;
     right: 0;
@@ -118,9 +114,9 @@
     left: 0;
     display: flex;
     width: auto;
-    height: var(--mobile-viewport-height) !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    height: var(--mobile-viewport-height);
+    min-height: 0;
+    max-height: none;
     flex-direction: column;
     overflow: hidden;
     /* Keep scrollable content inside the visible part of a partial sheet. */
@@ -172,8 +168,11 @@
   .navigation-panel.mobile-sheet-popup[data-detent='full'] {
     z-index: 15;
     padding-top: max(8px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     border-radius: 0;
+    /* A full sheet already starts at the viewport top. Ignore Base UI's
+       transient offset while its ResizeObserver catches up after a keyboard
+       resize; keep the swipe variable so a full sheet remains draggable. */
+    transform: translateY(var(--drawer-swipe-movement-y, 0px));
   }
 
   .navigation-panel.mobile-sheet-popup[data-detent='collapsed'] {

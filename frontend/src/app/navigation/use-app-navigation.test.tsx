@@ -21,6 +21,7 @@ function createCommands(): UseAppNavigationOptions['commands'] {
     selectMobileRoute: vi.fn(),
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
+    setPlanLayersVisible: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissMapPopup: vi.fn(() => false),
     escape: vi.fn(),
@@ -181,5 +182,25 @@ describe('map popup dismissal', () => {
     rerender({ activeView: 'explore', exploreMode: 'neutral' })
     expect(options.commands.dismissStopPopup).toHaveBeenCalledTimes(2)
     expect(options.commands.dismissMapPopup).toHaveBeenCalledOnce()
+  })
+
+  it('shows the planned Journey layers only while Plan is active', () => {
+    const options = createOptions(true, 'plan')
+    const { rerender } = renderHook(
+      ({ activeView }: { activeView: NavigationState['activeView'] }) => useAppNavigation({
+        ...options,
+        state: { ...options.state, activeView },
+      }),
+      { initialProps: { activeView: 'plan' as NavigationState['activeView'] } },
+    )
+    const setPlanLayersVisible = vi.mocked(options.commands.setPlanLayersVisible)
+
+    expect(setPlanLayersVisible).toHaveBeenLastCalledWith(true)
+    rerender({ activeView: 'explore' })
+    expect(setPlanLayersVisible).toHaveBeenLastCalledWith(false)
+    rerender({ activeView: 'plan' })
+    expect(setPlanLayersVisible).toHaveBeenLastCalledWith(true)
+    rerender({ activeView: 'stops' })
+    expect(setPlanLayersVisible).toHaveBeenLastCalledWith(false)
   })
 })

@@ -44,6 +44,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
+    setPlanLayersVisible: vi.fn(),
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -862,6 +863,8 @@ describe('navigation session', () => {
     expect(dependencies.map.focusStopInStopsTab).toHaveBeenCalledOnce()
     session.setStopsPinVisible(true)
     expect(dependencies.map.setStopsPinVisible).toHaveBeenCalledWith(true)
+    session.setPlanLayersVisible(false)
+    expect(dependencies.map.setPlanLayersVisible).toHaveBeenCalledWith(false)
 
     session.suspendMobileRoutes()
     expect(session.getState()).toMatchObject({

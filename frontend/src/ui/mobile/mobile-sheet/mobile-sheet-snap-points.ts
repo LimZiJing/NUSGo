@@ -55,6 +55,15 @@ function parseSnapPointPixels(snapPoint: Drawer.Root.SnapPoint): number | null {
 
 // Base UI reports the snap point it settled on, which can differ from ours by
 // sub-pixel rounding. A value from a different viewport size stays unmatched.
+// Snap points are heights from the bottom of the map shell, so a detent's value is the part
+// of the map it covers once settled. Use it instead of measuring a sheet that may still be moving.
+export function getMobileSheetOccupiedHeight(
+  detent: MobileSheetDetent,
+  snapPoints: MobileSheetSnapPoints,
+): number {
+  return Number.parseFloat(getMobileSheetSnapPoint(detent, snapPoints) as string)
+}
+
 export function getMobileSheetDetent(
   snapPoint: Drawer.Root.SnapPoint | null,
   snapPoints: MobileSheetSnapPoints,

@@ -8,14 +8,13 @@ import {
   type Ref,
 } from 'react'
 import { MobileSheet } from './mobile/mobile-sheet/mobile-sheet'
-import type { MobileSheetDetent, OpenMobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
+import type { MobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
 
 interface NavigationPanelShellProps {
   readonly className: string
   readonly label: string
   readonly controlsId: string
   readonly detent: MobileSheetDetent
-  readonly lastNonCollapsedDetent?: OpenMobileSheetDetent
   readonly enabled?: boolean
   readonly active?: boolean
   readonly portalContainer?: HTMLElement | null
@@ -35,7 +34,6 @@ export function NavigationPanelShell({
   label,
   controlsId,
   detent,
-  lastNonCollapsedDetent = 'partial',
   enabled = true,
   active = true,
   portalContainer,
@@ -87,7 +85,6 @@ export function NavigationPanelShell({
         active={active}
         portalContainer={portalContainer ?? null}
         detent={detent}
-        lastNonCollapsedDetent={lastNonCollapsedDetent}
         onDetentChange={onDetentChange}
         onButtonRef={assignHandleRef}
         onPanelRef={assignPanelRef}

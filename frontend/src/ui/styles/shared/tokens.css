@@ -28,9 +28,18 @@
   --control-height-md: 40px;
   --control-height-lg: 44px;
 
-  --font-size-control: 14px;
-  --font-size-control-lg: 16px;
-  --font-size-label: 12px;
+  /* Type scale. 12px is the smallest text size; larger display sizes keep literal values. */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  --font-size-control: var(--font-size-md);
+  --font-size-control-lg: var(--font-size-lg);
+  --font-size-label: var(--font-size-xs);
 
   /* Shared control focus outline: a 2px accent ring. --focus-ring stays the per-theme colour
      used by older controls. var(--accent) resolves per theme because themes also set :root. */

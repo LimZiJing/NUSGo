@@ -95,7 +95,7 @@ Each item is one small pull request, and each lowers the matching counts in the 
 - [x] Plan
 - [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling from #343; only a dead `.location-control-popover button` rule was removed)
 - [ ] Sheet
-- [ ] Popovers
-- [ ] Menus (including the Plan trip-actions `Clear all` row, which becomes a `MenuItem`)
+- [x] Popovers (the endpoint locate button and search result rows keep their own classes: the locate button needs aria-busy and a boxed hover the primitives lack, and result rows are rich multi-line rows)
+- [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem`; its ellipsis trigger keeps its own class because it needs `aria-expanded` and `aria-controls`)
 
 Known leftovers until then: `RouteChip` in its compact size keeps its current 24px height (the Chip `sm` size is 36px) and `InfoPill` keeps its 10px compact metrics, both to avoid visual change on screens that are not yet migrated. Map popup route chips are plain elements that still use the `route-chip` class.

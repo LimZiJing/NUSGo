@@ -98,7 +98,7 @@ The UI should call the output a `Recommended journey` and show that its duration
 
 ## Search completion and responsiveness
 
-The planner must preserve Journey validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Browser requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Journey is marked `exact`. If the budget is reached after a complete Journey has been found, that Journey is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Journey exists. If no complete multimodal Journey is found, the application may return a valid walking-only fallback or a clear failure.
+The planner must preserve Path validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Browser requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Path is marked `exact`. If the budget is reached after a complete Path has been found, that Path is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Path exists. If no complete multimodal Path is found, the application may return a valid walking-only fallback or a clear failure.
 
 This is a responsiveness policy, not a change to the Valhalla boundary or the canonical shuttle source of truth. The UI presents both exact and bounded results as `Recommended journey` and explains the tradeoff when a bounded result may not be globally fastest.
 
@@ -120,10 +120,10 @@ The boundary should support the precomputed stop graph, the two endpoint matrix 
 ## Missing data and failure states
 
 - An unmapped venue or invalid endpoint cannot be routed. The user receives an endpoint-specific status.
-- A walking failure removes only the affected walking connection. A valid direct walking Journey may still be returned if the transit network or shuttle timing is unavailable.
-- A missing or invalid shuttle timing estimate removes that shuttle edge. The planner may still return a walking-only Journey or another shuttle path with complete estimates.
+- A walking failure removes only the affected walking connection. A valid direct walking Path may still be returned if the transit network or shuttle timing is unavailable.
+- A missing or invalid shuttle timing estimate removes that shuttle edge. The planner may still return a walking-only Path or another shuttle Path with complete estimates.
 - An invalid transit network fails closed for shuttle paths. Direct walking remains eligible when both endpoints are mapped and the walking service succeeds.
-- If no complete Journey remains, NavUS shows that no recommended journey is currently available and explains whether route data, endpoint data, or shuttle timing data is missing. It does not present a partial Journey as a recommendation.
+- If no complete Path remains, NavUS shows that no recommended journey is currently available and explains whether route data, endpoint data, or shuttle timing data is missing. It does not present a partial Path as a recommendation.
 - Each trip request gets a request identity. Application state publishes results only for the latest active request; an abort or late response from an older request must not replace a newer result.
 
 ## Deployment, privacy, licensing, and rate limits
@@ -142,9 +142,9 @@ Positive consequences:
 
 - The canonical shuttle model remains one source of truth.
 - The pure planner can be tested offline with small walking and timing fixtures.
-- A Journey can contain any valid sequence of walking and shuttle legs without coupling the domain to a provider.
+- A Path can contain any valid sequence of walking and shuttle legs without coupling the domain to a provider.
 - Map and Plan trip can render the same ordered leg list and total estimate.
-- The walking provider can be replaced without changing the Journey or transit model.
+- The walking provider can be replaced without changing the Path or transit model.
 
 Costs and limitations:
 
@@ -158,10 +158,10 @@ Costs and limitations:
 
 1. #104 defines the provider-neutral shuttle timing policy and validated input shape; #25 verifies the provider-facing normalization.
 2. #71 implements the Valhalla-backed walking boundary and response validation.
-3. #66 implements the pure composed Journey planner and deterministic ranking.
+3. #66 implements the pure composed pathfinding engine and deterministic ranking.
 4. #67 connects planning to application state with request identity and cancellation.
-5. #68 renders the selected Journey geometry and cleans it up on replacement/clear.
-6. #69 presents the same Journey legs, wait/ride details, estimate status, and failure states in the responsive Plan trip panel.
+5. #68 renders the selected Path geometry and cleans it up on replacement/clear.
+6. #69 presents the same Path legs, wait/ride details, estimate status, and failure states in the responsive Plan trip panel.
 
 ## References
 

@@ -21,7 +21,7 @@
   border-radius: 9px;
   color: var(--text-secondary);
   background: transparent;
-  font: 600 14px/1.2 var(--sans);
+  font: 600 var(--font-size-md)/1.2 var(--sans);
   cursor: pointer;
 }
 

@@ -124,7 +124,7 @@ The nearest building is a review hint only; it is never used as a link.
 | WC | 9 | | Yale-NUS College Arts Centre (`yale-nus-college-arts-centre`), 15 m |
 | WS2 | 2 | | E8 (`e8`), 33 m |
 | WT | 1 | | SDE2 (`sde2`), 8 m |
-| Y | 44 | Left unlinked on purpose: Yale-NUS classroom code whose rooms are spread across several buildings (Saga, Cendana, Elm, East Core, West Core, Black Box Theatre); maintainer decision of 13/10/2026 to leave it unlinked. Room-level links, if wanted, belong in #261. | |
+| Y | 44 | Left unlinked on purpose: Yale-NUS classroom code whose rooms are spread across several buildings (Saga, Cendana, Elm, East Core, West Core, Black Box Theatre); maintainer decision of 13/10/2026 to leave it unlinked. Room-level links, if wanted, require a separate review. | |
 
 ## API buildings with no linked rooms
 
@@ -158,7 +158,7 @@ Each record stays a separate building; records sharing a normalised name share a
 
 ## Standalone-venue candidates
 
-Venues whose code equals a building code, or that have no room structure (input for #261).
+Venues whose code equals a building code, or that have no room structure (candidates for future search integration).
 
 | Venue | Reason |
 |---|---|

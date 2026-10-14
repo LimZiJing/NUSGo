@@ -1,18 +1,17 @@
 # Shuttle timing policy
 
-Status: accepted through Issue [#104](https://github.com/LimZiJing/NavUS/issues/104)
+Status: accepted
 
 This is the provider-neutral timing policy for internal shuttle Journeys. It
 defines the inputs that the pure planner may consume; it does not define a
 provider API, credentials, deployment, or UI implementation.
 
-## Ownership
+## Responsibilities
 
-- Issue #104 owns this policy and the timing contract.
-- Issue #25 owns NUS provider/API normalization; its current contract is recorded in [the Issue #25 research note](research/issue-25-live-shuttle-contract.md).
-- Issue #101 applies the contract to every candidate Journey and transfer.
-- Issue #102 verifies the private and release boundaries.
-- Issue #103 owns regression and release evidence.
+- This document defines the provider-neutral timing policy and contract consumed by pathfinding.
+- NUS-specific request and response normalization is recorded in [the NUS shuttle API contract](research/nus-shuttle-api-contract.md).
+- Pathfinding applies the contract to every candidate Journey and transfer.
+- Live-data boundary checks and release evidence are recorded in [the manual smoke checklist](qa/manual-smoke-check.md).
 
 ## Units and terminology
 

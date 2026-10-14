@@ -13,7 +13,7 @@ function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
 }
 
-function createIssueData(): LoadedTransitData {
+function createTransitData(): LoadedTransitData {
   const network = validateTransitNetwork(readJson('../../public/data/shuttle-network.json'))
   const geometry = validateBusRouteGeometry(
     network,
@@ -48,9 +48,9 @@ function createWalkingConnections(
   return [...stopConnections, ...destinationConnections]
 }
 
-describe('issue 191 path planning regression', () => {
+describe('canonical-data path planning regression', () => {
   it('returns a valid Path for PGP to UTown Auditorium 2 within the search budget', { timeout: 5_000 }, async () => {
-    const transit = createIssueData()
+    const transit = createTransitData()
     const venues = validateVenueLocationMap(readJson('../../public/data/venues.json'))
     const walkingConnections = createWalkingConnections()
     const routeEngine = {

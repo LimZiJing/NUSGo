@@ -1,4 +1,4 @@
-# Issue #30 manual smoke check
+# Responsive layout browser evidence
 
 Run these checks in Windows Chrome and Edge after starting the local Vite app. Leave each box unchecked until the browser check is actually performed.
 
@@ -73,8 +73,8 @@ The following additional facts were verified at 390 × 844, with the responsive 
 - Venue detail selection completed and attribution continued tracking the measured inset.
 - Map tiles loaded. OpenFreeMap glyph requests returned 404, the sprite was missing, and filter warnings remained; this is not complete map-data QA.
 
-Real Chrome, a real software keyboard, physical safe-area hardware, and the full manual pointer/keyboard smoke remain unverified. Any local screenshot reference is local and uncommitted only.
+Real Chrome, a real software keyboard, physical safe-area hardware, and the full manual pointer/keyboard smoke remain unverified. No screenshots are retained with this report.
 
-## PR9 follow-up — 2026-09-21
+## Release QA follow-up — 2026-09-21
 
-The [canonical PR9 record](manual-smoke-check.md) contains the detailed 1280 × 720 production-preview evidence. This issue’s earlier Edge headless/device-emulation evidence remains useful for the recorded mobile and breakpoint facts, but the full manual release checklist, real Chrome/Edge, physical software keyboard, safe-area hardware, and failure injection remain open.
+The [canonical release record](manual-smoke-check.md) contains the detailed 1280 × 720 production-preview evidence. Earlier Edge headless/device-emulation evidence remains useful for the recorded mobile and breakpoint facts, but the full manual release checklist, real Chrome/Edge, physical software keyboard, safe-area hardware, and failure injection remain open.

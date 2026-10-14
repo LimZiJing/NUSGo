@@ -54,7 +54,7 @@ The diagram describes allowed ownership and dependency direction; it does not re
 - `NavigationPanelShell` keeps the desktop/mobile presentation seam. The app-owned `MobileSheet` module under `frontend/src/ui/mobile/` contains the Base UI Drawer integration; application navigation owns detents, and feature views receive state and callbacks without importing the library.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
-The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider because those effects move with the engine in #233. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
+The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider so walking effects stay with the pathfinding engine. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
 
 ## Migration map and order
 
@@ -75,7 +75,7 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |
 | `frontend/src/app/app.tsx` and composition in `frontend/src/main.tsx` | `frontend/src/app` |
 
-Apply the architecture work in this exact order: **#38 → #39 → #34 → #35 → #30 → #40 → #36 → #37**. Complete **#30 before starting #40 or #36**. Move imports atomically with each step and keep one canonical source of truth.
+Make architecture changes in small, behavior-preserving steps. Move imports atomically with each boundary change and keep one canonical source of truth.
 
 ## Refactor gates
 

@@ -9,11 +9,10 @@ Supersedes: the application candidate-search scope in [ADR 0002](0002-nus-route-
 ## Context
 
 The Pathfinding engine needs to compare alternatives across directed walking
-connectors, bus rides, and one transfer while keeping planning time predictable. Issue
-#266 defines candidate generation and scoring. Issue #265 owns the subsequent
-bus-first selection and display policy, so Path ranking and display selection
-remain separate steps. Issue #356 establishes `Path`, `PathLeg`,
-`ScoredPathCandidate`, and `BusRoute` as the canonical code terminology.
+connectors, bus rides, and one transfer while keeping planning time predictable.
+Candidate generation and scoring stay separate from bus-first selection and
+display policy. The current code uses `Path`, `PathLeg`,
+`ScoredPathCandidate`, and `BusRoute` as its canonical terminology.
 
 ## Decision
 
@@ -48,7 +47,7 @@ new bus candidate.
 
 The engine returns up to three distinct bus-inclusive candidates plus the
 highest-ranked walking-only candidate. Candidate generation does not apply
-#265's bus-first display policy. Plan may display up to four Paths: up to three
+the separate bus-first display policy. Plan may display up to four Paths: up to three
 bus-inclusive Paths plus one walking-only Path. It ranks bus Paths by adjusted
 duration and places the walking Path first only when its adjusted duration is
 strictly below 80% of the fastest bus Path; otherwise it follows the bus
@@ -78,8 +77,8 @@ more than one transfer.
   full path; indexed joins and the shared path/time budget constrain work.
 - Navigation state retains the candidate pool while the map and current
   recommendation continue to use its highest-ranked complete Path.
-- #265 can apply its bus-first policy without changing planner scoring or
-  candidate generation.
+- The Plan display policy can apply bus-first ordering without changing
+  planner scoring or candidate generation.
 - Benchmark comparisons use identical deterministic fixtures and the
   `d18386c` baseline adapter. Offline mode isolates planner cost; local mode
   measures the service including walking matrix and routed geometry calls.

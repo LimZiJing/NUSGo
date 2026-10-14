@@ -1,4 +1,4 @@
-# Issue #70 routing options research
+# Walking and shuttle routing options research
 
 Date: 2026-09-21
 

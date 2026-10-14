@@ -1,10 +1,10 @@
 # NUS route recommendation architecture
 
-Status: accepted; the application candidate-search scope is superseded by [ADR 0003](0003-three-stop-single-shuttle-recommendation.md). Issue #356 updates the current code terminology and frontend module layout described here.
+Status: accepted; the application candidate-search scope is superseded by [ADR 0003](0003-three-stop-single-shuttle-recommendation.md).
 
 Date: 2026-09-21
 
-Issue: [#70](https://github.com/LimZiJing/NavUS/issues/70)
+Research: [Walking and shuttle routing options](../research/walking-and-shuttle-routing-options.md)
 
 ## Decision
 
@@ -102,11 +102,11 @@ The planner must preserve Path validity even when it cannot finish an exhaustive
 
 This is a responsiveness policy, not a change to the Valhalla boundary or the canonical shuttle source of truth. The UI presents both exact and bounded results as `Recommended journey` and explains the tradeoff when a bounded result may not be globally fastest.
 
-Issue #104 owns the provider-neutral shuttle timing policy and validated timing contract, recorded in [Shuttle timing policy](../shuttle-timing.md). Issue #25 owns provider/API normalization. The planner consumes the validated contract; it does not recalculate timing, silently replace missing values, or treat a transfer as free.
+The provider-neutral shuttle timing policy and validated timing contract are recorded in [Shuttle timing policy](../shuttle-timing.md). NUS provider/API normalization is documented in the linked research note. The planner consumes the validated contract; it does not recalculate timing, silently replace missing values, or treat a transfer as free.
 
 ## Route-engine boundary
 
-Issue #71 will implement a framework-free walking boundary in infrastructure. Its public result must contain only validated domain-facing values:
+The framework-free walking boundary lives in infrastructure. Its public result must contain only validated domain-facing values:
 
 - `from` and `to` request identities;
 - distance in metres;
@@ -154,20 +154,16 @@ Costs and limitations:
 - Static shuttle timing is an estimate. Live arrivals are optional server-side data; timetable-aware departure search remains future work.
 - The public Valhalla demo, public OSM routing services, and unbounded client-side provider calls are not production fallbacks.
 
-## Follow-up sequence
+## Implementation boundaries
 
-1. #104 defines the provider-neutral shuttle timing policy and validated input shape; #25 verifies the provider-facing normalization.
-2. #71 implements the Valhalla-backed walking boundary and response validation.
-3. #66 implements the pure composed pathfinding engine and deterministic ranking.
-4. #67 connects planning to application state with request identity and cancellation.
-5. #68 renders the selected Path geometry and cleans it up on replacement/clear.
-6. #69 presents the same Path legs, wait/ride details, estimate status, and failure states in the responsive Plan trip panel.
+- `docs/shuttle-timing.md` owns the timing policy; the linked research note records NUS provider normalization.
+- `frontend/src/pathfinding/walking/` owns the walking provider boundary and connection selection.
+- `frontend/src/pathfinding/search/` owns pure candidate generation, scoring, and budget control.
+- `frontend/src/app/navigation-session.ts` owns request identity and cancellation.
+- MapLibre rendering and Plan presentation remain outside pure pathfinding.
 
 ## References
 
-- [Issue #70](https://github.com/LimZiJing/NavUS/issues/70)
-- [Issue #175](https://github.com/LimZiJing/NavUS/issues/175)
-- [Issue #104](https://github.com/LimZiJing/NavUS/issues/104)
 - [Valhalla API](https://valhalla.github.io/valhalla/api/)
 - [Valhalla route API schema](https://github.com/valhalla/valhalla/blob/master/docs/docs/api/openapi.yaml)
 - [Valhalla license](https://github.com/valhalla/valhalla/blob/master/COPYING)
@@ -175,4 +171,4 @@ Costs and limitations:
 - [OSRM profiles](https://project-osrm.org/docs/v26.4.0/profiles)
 - [NUSMods API](https://api.nusmods.com/v2/)
 - [OpenStreetMap copyright and licence](https://www.openstreetmap.org/copyright)
-- [Issue #70 routing options research](../research/issue-70-routing-options.md)
+- [Walking and shuttle routing options research](../research/walking-and-shuttle-routing-options.md)

@@ -1,6 +1,6 @@
 # Type, radius and spacing scales
 
-This is the spec for the shared design scales (issue #319). Interface controls have their own spec in [controls.md](controls.md). All tokens live in `frontend/src/ui/styles/shared/tokens.css`; feature stylesheets should use them instead of literal values.
+This is the specification for the shared design scales. Interface controls have their own spec in [controls.md](controls.md). All tokens live in `frontend/src/ui/styles/shared/tokens.css`; feature stylesheets should use them instead of literal values.
 
 ## Font family
 

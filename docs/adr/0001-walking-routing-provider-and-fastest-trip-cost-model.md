@@ -29,14 +29,14 @@ The planner will compare these candidates:
 1. **Direct walking:** the routed walking duration from origin to destination.
 2. **One direct shuttle:** origin-to-boarding walking duration, approved waiting duration, approved shuttle ride duration, and alighting-to-destination walking duration.
 
-The 200-metre venue-to-stop rule remains an eligibility filter from #22; the routing service supplies the actual walking path and duration for an eligible connection. Transfers, live arrivals, and turn-by-turn instructions remain out of scope.
+The 200-metre venue-to-stop rule remains a product eligibility filter; the routing service supplies the actual walking path and duration for an eligible connection. Transfers, live arrivals, and turn-by-turn instructions remain out of scope.
 
-Candidates are ranked by total duration in seconds. Equal totals use stable tie-breaking in this order: fewer shuttle rides, shorter total walking distance, then lexicographically smaller internal route ID. A journey is not labelled fastest when a required walking route or approved shuttle timing is unavailable. The timing decision and data provenance are tracked separately in #21.
+Candidates are ranked by total duration in seconds. Equal totals use stable tie-breaking in this order: fewer shuttle rides, shorter total walking distance, then lexicographically smaller internal route ID. A journey is not labelled fastest when a required walking route or approved shuttle timing is unavailable. The timing decision and data provenance are defined in [the shuttle timing policy](../shuttle-timing.md).
 
 ## Consequences
 
-- #71 can implement one framework-free adapter without coupling the app to a provider response shape.
-- #66 can remain pure by consuming validated walking-route results and approved shuttle estimates rather than performing network calls.
+- The walking adapter can stay framework-free without coupling the app to a provider response shape.
+- The Pathfinding engine can stay pure by consuming validated walking-route results and approved shuttle estimates rather than performing network calls.
 - The map can render returned walking geometry instead of drawing straight-line approximations.
 - Routing requests expose venue and stop coordinates to the selected service, so provider privacy and retention terms must be accepted before production deployment.
 - Changing routing engines later should affect the adapter and deployment configuration, not the planner, map contract, or trip-panel model.

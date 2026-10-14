@@ -1,7 +1,8 @@
-# Issue #25: live shuttle contract
+# NUS shuttle API contract
 
 Status: implementation contract verified from the checked-in adapter and test
-fixtures. A private live smoke test still depends on Issue [#23](https://github.com/LimZiJing/NavUS/issues/23).
+fixtures. A live smoke test against the private upstream service has not been
+performed; it requires an authorized, controlled test environment.
 
 ## What the upstream service provides
 
@@ -91,6 +92,6 @@ Secret values must stay in the local environment or approved private test
 environment. They must not be committed, placed in `VITE_*` variables, sent to
 the browser, or recorded in an issue or research note.
 
-Private endpoint verification, credential access, and reproducible live smoke
-steps remain owned by Issue #23. Journey candidate ranking remains owned by
-Issue #101.
+Private endpoint verification and reproducible live smoke steps require a
+controlled test environment with authorized credentials. Journey candidate
+ranking is handled by the Pathfinding service.

@@ -23,6 +23,7 @@ import { GhostBackButton } from '../../ui/ghost-back-button'
 import { NavigateButton } from '../../ui/navigate-button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
+import { SegmentedControl } from '../../ui/segmented-control'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import {
   BuildingIcon,
@@ -453,30 +454,19 @@ export function ExploreView({
       >
       <div className="explore-view-header">
         {exploreSegments && (
-          <div
+          <SegmentedControl
             className="explore-segments"
-            role="group"
-            aria-label="Explore view"
-          >
-            <button
-              type="button"
-              className="explore-segment"
-              data-focus-id="explore-venue-segment"
-              aria-pressed={venueSearchView}
-              onClick={handleSelectVenueSearch}
-            >
-              {EXPLORE_LABELS.venue}
-            </button>
-            <button
-              type="button"
-              className="explore-segment"
-              data-focus-id="explore-shuttle-segment"
-              aria-pressed={state.mode === 'shuttle'}
-              onClick={handleSelectShuttle}
-            >
-              {EXPLORE_LABELS.shuttle}
-            </button>
-          </div>
+            label="Explore view"
+            options={[
+              { value: 'venue', label: EXPLORE_LABELS.venue, focusId: 'explore-venue-segment' },
+              { value: 'shuttle', label: EXPLORE_LABELS.shuttle, focusId: 'explore-shuttle-segment' },
+            ]}
+            value={venueSearchView ? 'venue' : 'shuttle'}
+            onValueChange={(mode, event) => {
+              if (mode === 'venue') handleSelectVenueSearch()
+              else handleSelectShuttle(event)
+            }}
+          />
         )}
         {state.mode === 'venue-detail' && !minimized && (
           <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={handleBack} />

@@ -478,44 +478,6 @@
     max-height: none;
   }
 
-  .explore-segments {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0;
-    padding: 0;
-    border-radius: var(--radius-card);
-    background: var(--surface-segmented-control);
-  }
-
-  .explore-view .explore-segment {
-    position: relative;
-    isolation: isolate;
-    min-width: 0;
-    min-height: var(--control-height-lg);
-    padding: 8px 10px;
-    border: 0;
-    border-radius: 9px;
-    color: var(--text-secondary);
-    background: transparent;
-    font: 600 14px/1.2 var(--sans);
-    cursor: pointer;
-  }
-
-  .explore-view .explore-segment[aria-pressed='true'] {
-    color: var(--text-contrast);
-  }
-
-  .explore-view .explore-segment[aria-pressed='true']::before {
-    position: absolute;
-    z-index: -1;
-    inset: 3px;
-    border-radius: 7px;
-    background: var(--surface-raised);
-    box-shadow: var(--shadow-soft);
-    content: '';
-    pointer-events: none;
-  }
-
   .explore-view-search-prompt {
     display: grid;
     align-content: center;
@@ -573,7 +535,7 @@
     font-size: 24px;
   }
 
-  .explore-view .explore-segment:focus-visible,
+  .explore-view .segmented-control-option:focus-visible,
   .explore-view .explore-view-result:focus-visible,
   .explore-view .nearby-stop-row:focus-visible,
   .explore-view .explore-route-browser-stop:focus-visible,
@@ -620,42 +582,7 @@
   }
 
   .navigation-column .explore-segments {
-    display: grid;
     width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0;
-    padding: 0;
-    border-radius: var(--radius-card);
-    background: var(--surface-segmented-control);
-  }
-
-  .navigation-column .explore-segment {
-    position: relative;
-    isolation: isolate;
-    min-width: 0;
-    min-height: var(--control-height-lg);
-    padding: 8px 10px;
-    border: 0;
-    border-radius: 9px;
-    color: var(--text-secondary);
-    background: transparent;
-    font: 600 14px/1.2 var(--sans);
-    cursor: pointer;
-  }
-
-  .navigation-column .explore-segment[aria-pressed='true'] {
-    color: var(--text-contrast);
-  }
-
-  .navigation-column .explore-segment[aria-pressed='true']::before {
-    position: absolute;
-    z-index: -1;
-    inset: 3px;
-    border-radius: 7px;
-    background: var(--surface-raised);
-    box-shadow: var(--shadow-soft);
-    content: '';
-    pointer-events: none;
   }
 
   .navigation-column .explore-view-venue-search {

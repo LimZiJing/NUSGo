@@ -1,32 +1,10 @@
-import { PublicServiceChip, RouteChip } from '../../ui/route-chip'
-import { BusIcon, FavoriteIcon } from '../../ui/icons'
-
-export interface StopFavoriteDestination {
-  readonly id: string
-  readonly name: string
-  readonly isOpposite: boolean
-}
-
-export interface StopDeparture {
-  readonly routeId: string
-  readonly routeName: string
-  readonly routeColor: string
-  readonly timings: readonly [string, string, string]
-  readonly reachableFavoriteStops?: readonly StopFavoriteDestination[]
-}
-
-export interface PublicServiceTiming {
-  readonly serviceNumber: string
-  readonly timings: readonly [string, string, string] | null
-  readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
-}
-
-export interface StopScheduledDeparture {
-  readonly routeId: string
-  readonly routeName: string
-  readonly routeColor: string
-  readonly message: string
-}
+import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
+import type {
+  PublicServiceTiming,
+  StopDeparture,
+  StopScheduledDeparture,
+} from '../data/stop-timing-data'
+import { ReachableFavouriteStops } from './reachable-favourite-stops'
 
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
   return (
@@ -57,7 +35,7 @@ function publicTimingMessage(status: PublicServiceTiming['status']): string {
   }
 }
 
-export function StopTimings({
+export function StopDepartureList({
   departures,
   scheduledDepartures = [],
   liveArrivalMessage = null,
@@ -71,7 +49,7 @@ export function StopTimings({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   if (departures.length === 0 && scheduledDepartures.length === 0 && publicServices.length === 0) {
-    return <p className="stop-timings-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
+    return <p className="stop-departure-list-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
 
   return (
@@ -93,28 +71,7 @@ export function StopTimings({
               size="compact"
               onClick={() => onSelectRoute(departure.routeId)}
             />
-            {departure.reachableFavoriteStops?.length ? (
-              <span
-                role="list"
-                aria-label="Reachable favourite shuttle stops"
-                className="stop-reachable-favorites"
-              >
-                <span className="stop-reachable-favorites-arrow" aria-hidden="true">→</span>
-                {departure.reachableFavoriteStops.map(({ id, name, isOpposite }) => (
-                  <span
-                    role="listitem"
-                    key={id}
-                    className="stop-reachable-favorite"
-                    data-opposite={isOpposite ? 'true' : undefined}
-                    aria-label={`${name}, shuttle stop, ${id}`}
-                  >
-                    <FavoriteIcon filled />
-                    <BusIcon className="location-identity-icon location-identity-icon--stop" />
-                    <span>{name}</span>
-                  </span>
-                ))}
-              </span>
-            ) : null}
+            <ReachableFavouriteStops stops={departure.reachableFavouriteStops ?? []} />
             <DepartureTimes timings={departure.timings} />
           </li>
         ))}
@@ -136,9 +93,7 @@ export function StopTimings({
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
-              <span className="stop-departure-status">
-                {publicTimingMessage(status)}
-              </span>
+              <span className="stop-departure-status">{publicTimingMessage(status)}</span>
             )}
           </li>
         ))}

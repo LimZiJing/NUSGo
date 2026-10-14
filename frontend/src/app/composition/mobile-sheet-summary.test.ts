@@ -20,25 +20,25 @@ function createPath(modes: readonly ('walking' | 'shuttle')[], totalDurationSeco
 describe('mobile sheet summaries', () => {
   describe('Stops', () => {
     it('summarises the Nearby and Favourites lists by count', () => {
-      expect(getStopsSheetSummary({ overviewStops: [{}, {}, {}], selectedList: 'nearby' }))
+      expect(getStopsSheetSummary({ stopListEntries: [{}, {}, {}], selectedStopList: 'nearby' }))
         .toBe('Stops · 3 nearby')
-      expect(getStopsSheetSummary({ overviewStops: [{}], selectedList: 'favourites' }))
+      expect(getStopsSheetSummary({ stopListEntries: [{}], selectedStopList: 'favourites' }))
         .toBe('Stops · 1 favourite')
-      expect(getStopsSheetSummary({ overviewStops: [{}, {}], selectedList: 'favourites' }))
+      expect(getStopsSheetSummary({ stopListEntries: [{}, {}], selectedStopList: 'favourites' }))
         .toBe('Stops · 2 favourites')
     })
 
     it('explains empty and loading lists', () => {
-      expect(getStopsSheetSummary({ overviewStops: [], selectedList: 'nearby' }))
+      expect(getStopsSheetSummary({ stopListEntries: [], selectedStopList: 'nearby' }))
         .toBe('Stops · No stops nearby')
-      expect(getStopsSheetSummary({ overviewStops: [], selectedList: 'favourites' }))
+      expect(getStopsSheetSummary({ stopListEntries: [], selectedStopList: 'favourites' }))
         .toBe('Stops · No favourites yet')
-      expect(getStopsSheetSummary({ overviewStops: [], overviewLoading: true, selectedList: 'nearby' }))
+      expect(getStopsSheetSummary({ stopListEntries: [], stopListLoading: true, selectedStopList: 'nearby' }))
         .toBe('Stops · Finding nearby stops')
     })
 
     it('names the open stop', () => {
-      expect(getStopsSheetSummary({ selectedStop: stop, overviewStops: [{}], selectedList: 'nearby' }))
+      expect(getStopsSheetSummary({ selectedStop: stop, stopListEntries: [{}], selectedStopList: 'nearby' }))
         .toBe('Stops · Kent Ridge MRT')
     })
   })

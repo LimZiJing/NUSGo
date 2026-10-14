@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Map as MapLibreMap, Popup } from 'maplibre-gl'
 import {
   BUS_STOP_INACTIVE_OPACITY,
+  BUS_STOP_ACTIVE_LABEL_LAYER_ID,
   BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+  BUS_STOP_LABEL_LAYOUT,
+  BUS_STOP_LABEL_PAINT,
+  BUS_STOP_OBSTACLE_IMAGE_ID,
+  BUS_STOP_OBSTACLE_LAYER_ID,
+  BUS_STOP_OBSTACLE_SIZE,
   BUS_STOP_MIN_ZOOM,
   createBusStopLabelGeoJson,
   getBusStopLabelFilters,
@@ -371,6 +377,7 @@ describe('bus-stop presentation', () => {
     const map = {
       getSource: vi.fn(() => ({})),
       getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
       setFilter: vi.fn(),
       setLayerZoomRange: vi.fn(),
       setPaintProperty: vi.fn(),
@@ -417,6 +424,7 @@ describe('bus-stop presentation', () => {
     const map = {
       getSource: vi.fn(() => ({})),
       getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
       setFilter: vi.fn(),
       setLayerZoomRange: vi.fn(),
       setPaintProperty: vi.fn(),
@@ -436,6 +444,85 @@ describe('bus-stop presentation', () => {
     vi.unstubAllGlobals()
   })
 
+  it('lays labels out above or below the stop at a constant 12px', () => {
+    const layout = BUS_STOP_LABEL_LAYOUT as Record<string, unknown>
+
+    expect(layout['text-variable-anchor']).toEqual(['top', 'bottom'])
+    expect(layout['text-radial-offset']).toBeGreaterThanOrEqual(1)
+    expect(layout['text-size']).toBe(12)
+    expect(layout['text-allow-overlap']).toBe(false)
+  })
+
+  it('draws labels in near-black with a wide white halo for contrast over busy map areas', () => {
+    const paint = BUS_STOP_LABEL_PAINT as Record<string, unknown>
+
+    expect(paint['text-color']).toBe('#0f172a')
+    expect(paint['text-halo-color']).toBe('#ffffff')
+    expect(paint['text-halo-width']).toBeGreaterThanOrEqual(2)
+  })
+
+  it('adds an invisible obstacle layer above the label layers so labels avoid stop circles', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const layers = new Set<string>()
+    const added: string[] = []
+    const images = new Set<string>()
+    const addImage = vi.fn((id: string) => {
+      images.add(id)
+    })
+    const map = {
+      getSource: vi.fn(() => undefined),
+      getLayer: vi.fn((id: string) => (layers.has(id) ? {} : undefined)),
+      hasImage: vi.fn((id: string) => images.has(id)),
+      addImage,
+      removeImage: vi.fn(),
+      addSource: vi.fn(),
+      addLayer: vi.fn((layer: { id: string }) => {
+        layers.add(layer.id)
+        added.push(layer.id)
+      }),
+      removeSource: vi.fn(),
+      removeLayer: vi.fn(),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => 15),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const adapter = createShuttleStopMarkers(map, [stops[0]])
+
+    expect(added).toEqual([
+      BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      BUS_STOP_ACTIVE_LABEL_LAYER_ID,
+      BUS_STOP_OBSTACLE_LAYER_ID,
+    ])
+    expect(addImage).toHaveBeenCalledWith(
+      BUS_STOP_OBSTACLE_IMAGE_ID,
+      expect.objectContaining({
+        width: BUS_STOP_OBSTACLE_SIZE,
+        height: BUS_STOP_OBSTACLE_SIZE,
+      }),
+    )
+    const obstacleLayer = vi.mocked(map.addLayer).mock.calls[2][0] as {
+      layout: Record<string, unknown>
+    }
+    expect(obstacleLayer.layout['icon-padding']).toBe(0)
+    expect(obstacleLayer.layout['icon-allow-overlap']).toBe(true)
+    // Label box edge (offset minus text-padding) must clear the obstacle half-size.
+    expect(
+      12 * (BUS_STOP_LABEL_LAYOUT as Record<string, number>)['text-radial-offset'] - 2,
+    ).toBeGreaterThan(BUS_STOP_OBSTACLE_SIZE / 2)
+    expect(obstacleLayer.layout['icon-ignore-placement']).toBe(false)
+
+    adapter.dispose()
+
+    expect(map.removeLayer).toHaveBeenCalledWith(BUS_STOP_OBSTACLE_LAYER_ID)
+    expect(map.removeImage).toHaveBeenCalledWith(BUS_STOP_OBSTACLE_IMAGE_ID)
+    vi.unstubAllGlobals()
+  })
+
   it('applies and clears route selection through the public marker adapter', () => {
     vi.stubGlobal('document', {
       createElement: (tagName: string) => new FakeElement(tagName),
@@ -443,6 +530,7 @@ describe('bus-stop presentation', () => {
     const map = {
       getSource: vi.fn(() => undefined),
       getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
       addSource: vi.fn(),
       addLayer: vi.fn(),
       removeSource: vi.fn(),
@@ -490,6 +578,7 @@ describe('bus-stop presentation', () => {
     const map = {
       getSource: vi.fn(() => ({})),
       getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
       addSource: vi.fn(),
       addLayer: vi.fn(),
       removeSource: vi.fn(),

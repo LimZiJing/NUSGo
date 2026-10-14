@@ -1,5 +1,5 @@
 .main-navigation,
-.stops-view {
+.stops-content {
   display: none;
 }
 @media (max-width: 768px) {
@@ -15,9 +15,9 @@
     --mobile-tab-bar-height: calc(
       var(--mobile-tab-bar-pill-height) + max(16px, env(safe-area-inset-bottom))
     );
-    --mobile-sheet-handle-row-height: 36px;
+    --mobile-sheet-handle-row-height: 24px;
     --mobile-sheet-handle-target-extension: 8px;
-    --mobile-sheet-grabber-offset: -4px;
+    --mobile-sheet-grabber-offset: 0px;
     --mobile-sheet-collapsed-height: calc(
       var(--mobile-sheet-handle-row-height) + var(--mobile-sheet-handle-target-extension)
     );

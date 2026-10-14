@@ -68,6 +68,14 @@ vi.mock('maplibre-gl', () => {
       if (this.failingLayers.has(layer.id)) throw new Error(`Unable to add ${layer.id}`)
       this.layers.add(layer.id)
     })
+    readonly images = new Set<string>()
+    readonly hasImage = vi.fn((id: string) => this.images.has(id))
+    readonly addImage = vi.fn((id: string) => {
+      this.images.add(id)
+    })
+    readonly removeImage = vi.fn((id: string) => {
+      this.images.delete(id)
+    })
     readonly removeSource = vi.fn((id: string) => {
       this.removedSources.push(id)
       this.sources.delete(id)
@@ -1492,7 +1500,7 @@ describe('MapSession', () => {
 
     session.dispose()
     session.dispose()
-    expect(map.removedLayers).toHaveLength(10)
+    expect(map.removedLayers).toHaveLength(12)
     expect(map.removedSources).toHaveLength(4)
     expect(map.addedMarkers).toHaveLength((transitData.index.stops.length + 1) * 2)
     expect(map.addedMarkers.every((marker) => marker.remove.mock.calls.length === 1)).toBe(true)

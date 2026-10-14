@@ -98,7 +98,8 @@ describe('PlanEndpointControl', () => {
     )
 
     expect(markup).toContain('value="Central Library"')
-    expect(markup).toContain('Destination set to Central Library')
+    expect(markup).toContain('Destination set to Central Library, building.')
+    expect(markup).not.toContain('central-library)')
   })
 
   it('shows Current location without fabricating an endpoint identifier', () => {

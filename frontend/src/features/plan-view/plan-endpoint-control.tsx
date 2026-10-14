@@ -141,7 +141,9 @@ export function PlanEndpointControl({
       : endpoint
         ? endpoint.kind === 'current-location'
           ? `${roleLabel} set to ${endpointLabel}.`
-          : `${roleLabel} set to ${endpointLabel}, ${endpointKindLabel} (${endpoint.id}).`
+          : endpoint.kind === 'building'
+            ? `${roleLabel} set to ${endpointLabel}, building.`
+            : `${roleLabel} set to ${endpointLabel}, ${endpointKindLabel} (${endpoint.id}).`
         : ''
 
   const clearEndpoint = (): void => {

@@ -118,8 +118,8 @@ describe('ExploreView building details', () => {
 
     expect(markup).toContain('aria-label="Saga College, building"')
     expect(markup).toContain('2 buildings')
-    expect(markup).toContain('8 College Avenue West')
-    expect(markup).toContain('10 College Avenue West')
+    expect(markup).toContain('Part 1 · 8 College Avenue West')
+    expect(markup).toContain('Part 2 · 10 College Avenue West')
     expect(markup).toContain('1 room')
     expect(markup).not.toContain('1 rooms')
   })

@@ -678,7 +678,7 @@ export function ExploreView({
                   <h4 id="venue-building-parts-heading">Buildings in this group</h4>
                   <ul>
                     {selectedBuilding.parts.map((part, index) => (
-                      <li key={part.id}>{part.address ?? `${part.name}, part ${index + 1}`}</li>
+                      <li key={part.id}>{`Part ${index + 1}${part.address ? ` · ${part.address}` : ''}`}</li>
                     ))}
                   </ul>
                 </section>

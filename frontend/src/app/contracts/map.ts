@@ -9,6 +9,11 @@ import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import type { LoadedTransitData } from './data'
 
+export interface MapBuildingSelection {
+  readonly name: string
+  readonly locations: readonly NonNullable<VenueLocation['location']>[]
+}
+
 export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
@@ -92,6 +97,8 @@ export interface MapSession {
   zoomOut(): void
   resetView(target: MapResetTarget): void
   selectVenue(venue: VenueLocation): void
+  /** Marks every part of a building, or a repeated-name group, and fits the camera to all of them. */
+  selectBuilding(building: MapBuildingSelection): void
   clearVenue(): void
   dispose(): void
 }

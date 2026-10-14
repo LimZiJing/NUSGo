@@ -82,6 +82,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     readonly kind: 'venue'
     readonly venue: VenueLocation
   } | {
+    readonly kind: 'building'
+    readonly locations: readonly VenueLocation['location'][]
+  } | {
     readonly kind: 'route'
     readonly routeId: string | null
   } | {
@@ -103,7 +106,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const clearVenueMarker = () => {
     selectedVenueMarker?.dispose()
     selectedVenueMarker = null
-    if (pendingCameraFit?.kind === 'venue') pendingCameraFit = null
+    if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
   // MapLibre retains flyTo padding, so use a temporary offset for sheet-aware point focus.
@@ -135,6 +138,24 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       duration: 500,
       offset: getFitOffset(),
       essential: true,
+    })
+  }
+
+  const fitBuilding = (locations: readonly NonNullable<VenueLocation['location']>[]): void => {
+    if (locations.length === 0) return
+    if (locations.length === 1) {
+      fitVenue({ roomName: '', location: locations[0] })
+      return
+    }
+    const longitudes = locations.map(({ x }) => x)
+    const latitudes = locations.map(({ y }) => y)
+    map.fitBounds([
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ], {
+      duration: 500,
+      maxZoom: 17,
+      padding: viewportInsets,
     })
   }
 
@@ -498,6 +519,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       pendingCameraFit = null
       if (pendingFit?.kind === 'venue') {
         fitVenue(pendingFit.venue)
+      } else if (pendingFit?.kind === 'building') {
+        fitBuilding(pendingFit.locations as NonNullable<VenueLocation['location']>[])
       } else if (pendingFit?.kind === 'route' && transitData) {
         transitRouteLayers?.fitRoute(
           transitData.index,
@@ -572,6 +595,24 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
       selectedVenueMarker = marker
       pendingCameraFit = { kind: 'venue', venue }
+    },
+
+    selectBuilding(building) {
+      if (disposed) return
+
+      clearVenueMarker()
+      const markers = building.locations.flatMap((location) => {
+        const marker = createVenueMarker(map, { roomName: building.name, location })
+        return marker ? [marker] : []
+      })
+      if (markers.length === 0) return
+
+      selectedVenueMarker = {
+        dispose() {
+          for (const marker of markers) marker.dispose()
+        },
+      }
+      pendingCameraFit = { kind: 'building', locations: building.locations }
     },
 
     clearVenue() {

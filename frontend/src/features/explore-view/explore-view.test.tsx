@@ -98,7 +98,7 @@ describe('ExploreView', () => {
         code: 'COM1-0210',
         venue: venues['COM1-0210'],
       },
-      history: [{ mode: 'shuttle' as const, query: '', selectedVenue: null }],
+      history: [{ mode: 'shuttle' as const, query: '', selectedVenue: null, selectedBuildingId: null }],
     }
 
     const markup = renderPanel(state)

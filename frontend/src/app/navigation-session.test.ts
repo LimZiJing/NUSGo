@@ -58,6 +58,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     zoomOut: vi.fn(),
     resetView: vi.fn(),
     selectVenue: vi.fn(),
+    selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
     dispose: vi.fn(),
   }
@@ -277,6 +278,7 @@ describe('navigation session', () => {
         mode: 'neutral',
         query: '',
         selectedVenue: null,
+        selectedBuildingId: null,
         history: [],
       },
       tripRequest: { origin: null, destination: null },
@@ -1362,6 +1364,37 @@ describe('navigation session', () => {
       dependencies.transit.index,
       buildings,
     )
+  })
+
+  it('selects a building for Explore, marking every part on the map, and clears it on back', async () => {
+    const buildings = buildBuildingIndex([
+      { id: 'saga-1', name: 'Saga College', aliases: [], elementId: 'way/1', groupKey: 'saga-college', location: { x: 103.774, y: 1.295 }, roomCodePrefixes: [], sourceRefs: [] },
+      { id: 'saga-2', name: 'Saga College', aliases: [], elementId: 'way/2', groupKey: 'saga-college', location: { x: 103.775, y: 1.296 }, roomCodePrefixes: [], sourceRefs: [] },
+    ])
+    const base = createDependencies()
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(async () => ({ ...base.venues, buildings })),
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.selectBuilding('missing')
+    expect(dependencies.map.selectBuilding).not.toHaveBeenCalled()
+
+    session.selectBuilding('saga-college')
+    expect(dependencies.map.selectBuilding).toHaveBeenCalledWith({
+      name: 'Saga College',
+      locations: [{ x: 103.774, y: 1.295 }, { x: 103.775, y: 1.296 }],
+    })
+    expect(session.getState().exploreView).toMatchObject({
+      mode: 'venue-detail',
+      selectedBuildingId: 'saga-college',
+      selectedVenue: null,
+    })
+
+    session.back()
+    expect(dependencies.map.clearVenue).toHaveBeenCalled()
+    expect(session.getState().exploreView.selectedBuildingId).toBeNull()
   })
 
   it('rejects a building endpoint when the catalogue could not be loaded', async () => {

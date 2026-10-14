@@ -129,6 +129,7 @@ export interface NavigationSession {
   selectJourneyOption(candidateKey: string): void
   setExploreViewQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
+  selectBuilding(buildingId: string): void
   reportStartupFailure(): void
   back(): void
   escape(): void
@@ -583,6 +584,8 @@ export function createNavigationSession(
     getVenues: () => state.venues,
     setExploreView: (exploreView) => updateState({ exploreView }),
     selectVenue: (venue) => dependencies.map.selectVenue(venue),
+    getBuildings: () => state.buildings,
+    selectBuilding: (building) => dependencies.map.selectBuilding(building),
     clearVenue: () => dependencies.map.clearVenue(),
   })
 
@@ -890,6 +893,7 @@ export function createNavigationSession(
 
     setExploreViewQuery: panelTransitions.setExploreViewQuery,
     selectVenue: panelTransitions.selectVenue,
+    selectBuilding: panelTransitions.selectBuilding,
     back: panelTransitions.back,
     escape: panelTransitions.escape,
     closeToRoot: panelTransitions.closeToRoot,

@@ -99,6 +99,7 @@ export interface NavigationSessionCommands {
   readonly selectJourneyOption: (candidateKey: string) => void
   readonly setExploreViewQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
+  readonly selectBuilding: (buildingId: string) => void
   readonly back: () => void
   readonly closeToRoot: () => void
   readonly escape: () => void
@@ -141,6 +142,7 @@ function createNavigationSessionCommands(
     selectJourneyOption: (candidateKey) => session?.selectJourneyOption(candidateKey),
     setExploreViewQuery: (query) => session?.setExploreViewQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
+    selectBuilding: (buildingId) => session?.selectBuilding(buildingId),
     back: () => session?.back(),
     closeToRoot: () => session?.closeToRoot(),
     escape: () => session?.escape(),

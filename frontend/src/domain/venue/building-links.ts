@@ -16,12 +16,12 @@ export interface BuildingVenueLinks {
   readonly extraNamesByBuildingId: ReadonlyMap<string, readonly string[]>
 }
 
-export const EMPTY_BUILDING_VENUE_LINKS: BuildingVenueLinks = Object.freeze({
-  buildingByVenueCode: new Map(),
-  wholeBuildingVenueCodes: new Set(),
-  roomCountByBuildingId: new Map(),
-  extraNamesByBuildingId: new Map(),
-})
+export const EMPTY_BUILDING_VENUE_LINKS: BuildingVenueLinks = {
+  buildingByVenueCode: new Map<string, BuildingEntry>(),
+  wholeBuildingVenueCodes: new Set<string>(),
+  roomCountByBuildingId: new Map<string, number>(),
+  extraNamesByBuildingId: new Map<string, readonly string[]>(),
+}
 
 /** The building token of a venue code: the part before the first "-" or "_". */
 function roomBuildingToken(venueCode: string): string {

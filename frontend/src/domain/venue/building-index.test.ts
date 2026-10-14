@@ -22,8 +22,16 @@ describe('buildBuildingIndex', () => {
     const index = buildBuildingIndex([com1])
 
     expect(index.entries).toEqual([
-      { id: 'com1', name: 'COM1', aliases: ['COM 1'], parts: [com1] },
+      {
+        id: 'com1',
+        name: 'COM1',
+        aliases: ['COM 1'],
+        parts: [com1],
+        location: com1.location,
+        locationKind: 'centroid',
+      },
     ])
+    expect(index.byId.get('com1')).toBe(index.entries[0])
   })
 
   it('collapses buildings sharing a group key into one entry that keeps every part, ordered by ID', () => {
@@ -35,6 +43,23 @@ describe('buildBuildingIndex', () => {
     expect(index.entries).toHaveLength(1)
     expect(index.entries[0]).toMatchObject({ id: 'elm-college', name: 'Elm College' })
     expect(index.entries[0].parts).toEqual([first, second])
+  })
+
+  it('places a group at the part nearest the centre of all its parts, never at an invented point', () => {
+    const west = building({ id: 'saga-college-1', name: 'Saga College', groupKey: 'saga-college', location: { x: 103.770, y: 1.300 } })
+    const middle = building({
+      id: 'saga-college-2',
+      name: 'Saga College',
+      groupKey: 'saga-college',
+      location: { x: 103.772, y: 1.300 },
+      locationKind: 'provisional-entrance',
+    })
+    const east = building({ id: 'saga-college-3', name: 'Saga College', groupKey: 'saga-college', location: { x: 103.775, y: 1.300 } })
+
+    const [entry] = buildBuildingIndex([east, west, middle]).entries
+
+    expect(entry.location).toEqual(middle.location)
+    expect(entry.locationKind).toBe('provisional-entrance')
   })
 
   it('collapses the repeated-name colleges in the real catalogue and nothing else', () => {

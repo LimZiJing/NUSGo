@@ -121,8 +121,9 @@
     white-space: nowrap;
   }
 
-  .stop-card-live {
+  .pill.info-pill.stop-card-live {
     grid-column: 2;
+    padding-right: calc(6px - 0.04em);
     letter-spacing: 0.04em;
   }
 

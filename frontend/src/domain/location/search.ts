@@ -9,7 +9,7 @@ import { getTripEndpointKey } from '../trip/endpoints'
 
 const MAX_RESULTS = 8
 
-// Venue data holds rooms only (no building records), so shuttle stops, which
+// Venue data holds rooms only (no building records), so bus stops, which
 // are named after the main buildings they serve, rank ahead of rooms.
 const STOP_ORDER = 0
 const ROOM_ORDER = 1

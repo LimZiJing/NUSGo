@@ -23,7 +23,7 @@ export function parseRequestedStops(
       throw new Error('Each requested stop must have a valid ID')
     }
     const canonicalStop = canonicalById.get(stopId)
-    if (!canonicalStop) throw new Error(`Unknown canonical shuttle stop: ${stopId}`)
+    if (!canonicalStop) throw new Error(`Unknown canonical bus stop: ${stopId}`)
     if (seen.has(stopId)) continue
     seen.add(stopId)
     stops.push(canonicalStop)

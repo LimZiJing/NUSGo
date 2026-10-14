@@ -179,10 +179,10 @@ export function describeShuttleServiceUnavailable(
   evaluation: ShuttleServiceEvaluation,
 ): string {
   if (evaluation.status === 'before-start') {
-    return `Shuttle service has not started yet${evaluation.nextStartLabel ? `. It resumes ${evaluation.nextStartLabel}` : ''}.`
+    return `bus service has not started yet${evaluation.nextStartLabel ? `. It resumes ${evaluation.nextStartLabel}` : ''}.`
   }
   if (evaluation.status === 'after-end') {
-    return `Shuttle service has ended for today${evaluation.nextStartLabel ? `. It resumes ${evaluation.nextStartLabel}` : ''}.`
+    return `bus service has ended for today${evaluation.nextStartLabel ? `. It resumes ${evaluation.nextStartLabel}` : ''}.`
   }
-  return 'Shuttle service hours are unavailable right now.'
+  return 'bus service hours are unavailable right now.'
 }

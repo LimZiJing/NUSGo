@@ -24,7 +24,7 @@ const cardProps = {
 }
 
 describe('StopCard', () => {
-  it('identifies the shuttle stop in its name and accessible card actions', () => {
+  it('identifies the bus stop in its name and accessible card actions', () => {
     const { container } = render(<StopCard
       {...cardProps}
       onToggleExpanded={vi.fn()}
@@ -32,8 +32,8 @@ describe('StopCard', () => {
       onSelectRoute={vi.fn()}
     />)
 
-    expect(screen.getByRole('button', { name: 'Collapse Central Library, shuttle stop bus timings' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Add Central Library, shuttle stop to favourites' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Collapse Central Library, bus stop arrival times' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add Central Library, bus stop to favourites' })).toBeTruthy()
     const busIcon = container.querySelector('.location-identity-icon--stop[aria-hidden="true"]')
     const chevron = container.querySelector('.stop-card-chevron')
     expect(busIcon).toBeTruthy()
@@ -53,8 +53,8 @@ describe('StopCard', () => {
       onSelectRoute={onSelectRoute}
     />)
 
-    const titleBar = screen.getByRole('button', { name: 'Collapse Central Library, shuttle stop bus timings' })
-    const star = screen.getByRole('button', { name: 'Add Central Library, shuttle stop to favourites' })
+    const titleBar = screen.getByRole('button', { name: 'Collapse Central Library, bus stop arrival times' })
+    const star = screen.getByRole('button', { name: 'Add Central Library, bus stop to favourites' })
     expect(titleBar.getAttribute('aria-expanded')).toBe('true')
     expect(titleBar.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(star.getAttribute('aria-pressed')).toBe('false')
@@ -81,10 +81,10 @@ describe('StopCard', () => {
       onSelectRoute={vi.fn()}
     />)
 
-    const titleBar = screen.getByRole('button', { name: 'Expand Central Library, shuttle stop bus timings' })
+    const titleBar = screen.getByRole('button', { name: 'Expand Central Library, bus stop arrival times' })
     expect(titleBar.getAttribute('aria-expanded')).toBe('false')
     expect(titleBar.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
-    expect(screen.getByRole('button', { name: 'Remove Central Library, shuttle stop from favourites' }).getAttribute('aria-pressed'))
+    expect(screen.getByRole('button', { name: 'Remove Central Library, bus stop from favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
     expect(container.querySelector('.stop-card-timings')?.hasAttribute('inert')).toBe(true)
     expect(screen.queryByText('LIVE')).toBeNull()
@@ -97,13 +97,13 @@ describe('StopCard', () => {
       {...cardProps}
       expanded
       live={false}
-      liveArrivalMessage="No live internal shuttle arrivals."
+      liveArrivalMessage="No live internal bus arrivals."
       onToggleExpanded={vi.fn()}
       onToggleFavorite={vi.fn()}
       onSelectRoute={vi.fn()}
     />)
 
     expect(screen.queryByText('LIVE')).toBeNull()
-    expect(screen.getByText('No live internal shuttle arrivals.')).toBeTruthy()
+    expect(screen.getByText('No live internal bus arrivals.')).toBeTruthy()
   })
 })

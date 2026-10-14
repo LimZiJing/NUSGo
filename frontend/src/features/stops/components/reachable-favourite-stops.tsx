@@ -11,7 +11,7 @@ export function ReachableFavouriteStops({
   return (
     <span
       role="list"
-      aria-label="Reachable favourite shuttle stops"
+      aria-label="Reachable favourite bus stops"
       className="stop-reachable-favourites"
     >
       <span className="stop-reachable-favourites-arrow" aria-hidden="true">→</span>
@@ -21,7 +21,7 @@ export function ReachableFavouriteStops({
           key={id}
           className="stop-reachable-favourite"
           data-opposite={isOpposite ? 'true' : undefined}
-          aria-label={`${name}, shuttle stop, ${id}`}
+          aria-label={`${name}, bus stop, ${id}`}
         >
           <FavoriteIcon filled />
           <span>{name}</span>

@@ -33,7 +33,7 @@ describe('parseCanonicalShuttleStops', () => {
   })
 
   it('rejects a malformed canonical stop list', () => {
-    expect(() => parseCanonicalShuttleStops({ stops: [] })).toThrow('Expected 33 canonical shuttle stops')
+    expect(() => parseCanonicalShuttleStops({ stops: [] })).toThrow('Expected 33 canonical bus stops')
   })
 })
 
@@ -47,7 +47,7 @@ describe('parseRequestedStops', () => {
 
   it('rejects a stop that is not in the canonical network', () => {
     expect(() => parseRequestedStops(JSON.stringify(['UNKNOWN']), canonicalStops))
-      .toThrow('Unknown canonical shuttle stop: UNKNOWN')
+      .toThrow('Unknown canonical bus stop: UNKNOWN')
   })
 })
 

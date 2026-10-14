@@ -343,7 +343,7 @@ describe('journey route layer adapter', () => {
     expect(state.eventHandlers.get('click')?.size).toBe(0)
   })
 
-  it('uses each canonical route color for shuttle legs in a Journey', () => {
+  it('uses each canonical route color for bus legs in a Journey', () => {
     const index = createTransitIndex(createTransferTransitNetwork())
     const state = createFakeMap()
     const layers = createJourneyRouteLayers(state.map, index)

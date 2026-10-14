@@ -9,7 +9,10 @@ import {
   type RefObject,
   type ReactNode,
 } from 'react'
-import { searchVenues, type VenueSearchResult } from '../../domain/venue/search'
+import type { VenueSearchResult } from '../../domain/venue/search'
+import { searchExplore, type ExploreSearchResult } from '../../domain/venue/explore-search'
+import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
+import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   formatVenueFloorAndBuilding,
@@ -64,6 +67,7 @@ function getVenueDetailReturnLabel(state: ExploreViewState): string {
 interface ExploreViewProps {
   state: ExploreViewState
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   transitIndex?: TransitIndex | null
   shuttleRoutesAvailable: boolean
   renderShuttleRoutes: (options: ShuttleRouteRenderOptions) => ReactNode
@@ -76,6 +80,8 @@ interface ExploreViewProps {
   selectedRouteId?: string | null
   onQueryChange: (query: string) => void
   onVenueSelect: (result: VenueSearchResult) => void
+  onBuildingSelect?: (buildingId: string) => void
+  onNavigateToBuilding?: (buildingId: string) => void
   onNavigateToVenue?: (venueCode: string) => void
   onOpenShuttle: () => void
   onLeaveMobileRoutes?: () => void
@@ -100,8 +106,9 @@ function findFocusTarget(key: string): HTMLElement | undefined {
     .find((element) => element.dataset.focusId === key)
 }
 
-function getPanelAnnouncement(state: ExploreViewState): string | null {
+function getPanelAnnouncement(state: ExploreViewState, buildingName?: string): string | null {
   if (state.mode === 'shuttle') return null
+  if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
   }
@@ -120,6 +127,7 @@ function getVisiblePanelStatus(
 export function ExploreView({
   state,
   venues,
+  buildings = null,
   transitIndex = null,
   shuttleRoutesAvailable,
   renderShuttleRoutes,
@@ -132,6 +140,8 @@ export function ExploreView({
   selectedRouteId = null,
   onQueryChange,
   onVenueSelect,
+  onBuildingSelect,
+  onNavigateToBuilding,
   onNavigateToVenue,
   onOpenShuttle,
   onLeaveMobileRoutes,
@@ -376,6 +386,15 @@ export function ExploreView({
     onVenueSelect(result)
   }
 
+  const handleBuildingSelect = (
+    buildingId: string,
+    event: MouseEvent<HTMLButtonElement>,
+  ): void => {
+    rememberCurrentControl(event, 'venue-search-opener')
+    onSearchResult?.()
+    onBuildingSelect?.(buildingId)
+  }
+
   const handleBack = (): void => {
     rememberPanelBackFocus()
     onBack()
@@ -416,21 +435,32 @@ export function ExploreView({
     onFocusStop?.(stopId, returnFocusTarget ?? undefined)
   }
 
-  const searchState = useMemo(() => {
+  const buildingIndex = buildings ?? EMPTY_BUILDING_INDEX
+  const buildingLinks = useMemo(
+    () => linkVenuesToBuildings(venues ?? {}, buildingIndex),
+    [venues, buildingIndex],
+  )
+  const searchState = useMemo((): { results: ExploreSearchResult[]; failed: boolean } => {
     if (!venues) return { results: [], failed: false }
 
     try {
-      return { results: searchVenues(venues, state.query), failed: false }
+      return {
+        results: searchExplore({ venues, buildings: buildingIndex, links: buildingLinks }, state.query),
+        failed: false,
+      }
     } catch (error) {
       // Venue data is independent from shuttle browsing, so a search failure must not
       // remove the panel or hide the route controls.
       console.error('Venue search failed:', error)
       return { results: [], failed: true }
     }
-  }, [state.query, venues])
+  }, [state.query, venues, buildingIndex, buildingLinks])
   const selectedVenue = state.selectedVenue
-  const selectedVenueLocation = selectedVenue?.venue.location
-  const venueHasCoordinates = selectedVenue ? hasVenueCoordinates(selectedVenue.venue) : false
+  const selectedBuilding = state.selectedBuildingId ? buildingIndex.byId.get(state.selectedBuildingId) ?? null : null
+  const selectedVenueLocation = selectedVenue?.venue.location ?? selectedBuilding?.location
+  const venueHasCoordinates = selectedVenue
+    ? hasVenueCoordinates(selectedVenue.venue)
+    : selectedBuilding !== null
   const venueFloorAndBuilding = selectedVenue
     ? formatVenueFloorAndBuilding(
       selectedVenue.venue.floor,
@@ -440,7 +470,14 @@ export function ExploreView({
   const nearbyStops = venueHasCoordinates && selectedVenueLocation && transitIndex
     ? findNearbyShuttleStops(selectedVenueLocation, transitIndex)
     : []
-  const panelAnnouncement = getPanelAnnouncement(state)
+  const buildingRoomCount = selectedBuilding ? buildingLinks.roomCountByBuildingId.get(selectedBuilding.id) ?? 0 : 0
+  const buildingDetailSummary = selectedBuilding
+    ? [
+      selectedBuilding.parts.length > 1 ? `${selectedBuilding.parts.length} buildings` : null,
+      `${buildingRoomCount} ${buildingRoomCount === 1 ? 'room' : 'rooms'}`,
+    ].filter((part): part is string => part !== null).join(' · ')
+    : ''
+  const panelAnnouncement = getPanelAnnouncement(state, selectedBuilding?.name)
   const panelStatus = getVisiblePanelStatus(status)
   const venueSearchView = state.mode === 'neutral' || state.mode === 'venue-search'
   const exploreSegments = venueSearchView || state.mode === 'shuttle'
@@ -518,22 +555,47 @@ export function ExploreView({
             ) : state.query.trim() ? (
               <ScrollArea className="navigation-panel-scroll-content explore-view-results" aria-label="Venue search results">
                 {searchState.results.length > 0 ? (
-                  searchState.results.map((result) => (
-                    <button
-                      className="explore-view-result"
-                      data-focus-id={`venue-result-${result.code}`}
-                      type="button"
-                      key={result.code}
-                      onClick={(event) => handleVenueSelect(result, event)}
-                      aria-label={`${result.code}, venue, ${result.venue.roomName}`}
-                    >
-                      <span className="explore-view-result-identity">
-                        <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
-                        <strong>{result.code}</strong>
-                      </span>
-                      <span>{result.venue.roomName}</span>
-                    </button>
-                  ))
+                  searchState.results.map((item) => {
+                    if (item.kind === 'building') {
+                      const { entry } = item
+                      const secondary = entry.parts.length > 1
+                        ? `${entry.parts.length} buildings`
+                        : entry.parts[0].address ?? ''
+                      return (
+                        <button
+                          className="explore-view-result"
+                          data-focus-id={`building-result-${entry.id}`}
+                          type="button"
+                          key={`building:${entry.id}`}
+                          onClick={(event) => handleBuildingSelect(entry.id, event)}
+                          aria-label={secondary ? `${entry.name}, building, ${secondary}` : `${entry.name}, building`}
+                        >
+                          <span className="explore-view-result-identity">
+                            <BuildingIcon className="location-identity-icon location-identity-icon--building" />
+                            <strong>{entry.name}</strong>
+                          </span>
+                          {secondary && <span>{secondary}</span>}
+                        </button>
+                      )
+                    }
+                    const { result } = item
+                    return (
+                      <button
+                        className="explore-view-result"
+                        data-focus-id={`venue-result-${result.code}`}
+                        type="button"
+                        key={`venue:${result.code}`}
+                        onClick={(event) => handleVenueSelect(result, event)}
+                        aria-label={`${result.code}, venue, ${result.venue.roomName}`}
+                      >
+                        <span className="explore-view-result-identity">
+                          <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                          <strong>{result.code}</strong>
+                        </span>
+                        <span>{result.venue.roomName}</span>
+                      </button>
+                    )
+                  })
                 ) : (
                   <p className="explore-view-status" role="status" aria-live="polite">No matching venues.</p>
                 )}
@@ -548,46 +610,86 @@ export function ExploreView({
         </div>
       )}
 
-      {state.mode === 'venue-detail' && state.selectedVenue && (
+      {state.mode === 'venue-detail' && (selectedVenue || selectedBuilding) && (
         <div
           id="explore-view-content"
           className="navigation-panel-content navigation-panel-scroll-content explore-view-content explore-view-detail"
         >
-          <div className="venue-detail-identity">
-            <h3
-              id="explore-venue-detail-heading"
-              ref={detailHeadingRef}
-              tabIndex={-1}
-              aria-label={`${state.selectedVenue.code}, venue`}
-            >
-              <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
-              {state.selectedVenue.code}
-            </h3>
-            <p className="venue-detail-name">{state.selectedVenue.venue.roomName}</p>
-          </div>
-          {venueFloorAndBuilding && (
-            <p className="venue-detail-location">
-              <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
-              <span>{venueFloorAndBuilding}</span>
-            </p>
-          )}
-          <div className="venue-detail-actions">
-            <NavigateButton
-              disabled={!venueHasCoordinates}
-              onClick={() => {
-                if (selectedVenue) onNavigateToVenue?.(selectedVenue.code)
-              }}
-            />
-            <a
-              className="venue-detail-action venue-detail-nusmods"
-              href={`https://nusmods.com/venues/${encodeURIComponent(state.selectedVenue.code)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span>View in</span>
-              <img src={nusmodsLogoUrl} alt="NUSMods" />
-            </a>
-          </div>
+          {selectedVenue ? (
+            <>
+            <div className="venue-detail-identity">
+              <h3
+                id="explore-venue-detail-heading"
+                ref={detailHeadingRef}
+                tabIndex={-1}
+                aria-label={`${selectedVenue.code}, venue`}
+              >
+                <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                {selectedVenue.code}
+              </h3>
+              <p className="venue-detail-name">{selectedVenue.venue.roomName}</p>
+            </div>
+            {venueFloorAndBuilding && (
+              <p className="venue-detail-location">
+                <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
+                <span>{venueFloorAndBuilding}</span>
+              </p>
+            )}
+            <div className="venue-detail-actions">
+              <NavigateButton
+                disabled={!venueHasCoordinates}
+                onClick={() => {
+                  if (selectedVenue) onNavigateToVenue?.(selectedVenue.code)
+                }}
+              />
+              <a
+                className="venue-detail-action venue-detail-nusmods"
+                href={`https://nusmods.com/venues/${encodeURIComponent(selectedVenue.code)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>View in</span>
+                <img src={nusmodsLogoUrl} alt="NUSMods" />
+              </a>
+            </div>
+            </>
+          ) : selectedBuilding ? (
+            <>
+              <div className="venue-detail-identity">
+                <h3
+                  id="explore-venue-detail-heading"
+                  ref={detailHeadingRef}
+                  tabIndex={-1}
+                  aria-label={`${selectedBuilding.name}, building`}
+                >
+                  <BuildingIcon className="location-identity-icon location-identity-icon--building" />
+                  {selectedBuilding.name}
+                </h3>
+                {selectedBuilding.parts.length === 1 && selectedBuilding.parts[0].address && (
+                  <p className="venue-detail-name">{selectedBuilding.parts[0].address}</p>
+                )}
+              </div>
+              <p className="venue-detail-location">
+                <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
+                <span>{buildingDetailSummary}</span>
+              </p>
+              {selectedBuilding.parts.length > 1 && (
+                <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
+                  <h4 id="venue-building-parts-heading">Buildings in this group</h4>
+                  <ul>
+                    {selectedBuilding.parts.map((part, index) => (
+                      <li key={part.id}>{part.address ?? `${part.name}, part ${index + 1}`}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              <div className="venue-detail-actions">
+                <NavigateButton
+                  onClick={() => onNavigateToBuilding?.(selectedBuilding.id)}
+                />
+              </div>
+            </>
+          ) : null}
           {venueHasCoordinates && (
             <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
               <h4 id="venue-nearby-stops-heading">

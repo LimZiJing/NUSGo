@@ -6,12 +6,12 @@ import type {
 } from '../trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { getTripEndpointKey } from '../trip/endpoints'
+import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../venue/building-index'
 
 const MAX_RESULTS = 8
 
-// Venue data holds rooms only (no building records), so shuttle stops, which
-// are named after the main buildings they serve, rank ahead of rooms.
-const STOP_ORDER = 0
+// Stops and buildings rank ahead of rooms; stops are often named after the building they serve.
+const STOP_AND_BUILDING_ORDER = 0
 const ROOM_ORDER = 1
 
 interface SearchCandidate {
@@ -84,6 +84,7 @@ export function searchTripLocations(
   stops: TransitStopSource,
   query: string,
   limit = MAX_RESULTS,
+  buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): TripLocationSearchResult[] {
   const normalizedQuery = normalize(query)
   if (!normalizedQuery) return []
@@ -114,7 +115,21 @@ export function searchTripLocations(
         detail: normalize(stop.shortName) === normalize(stop.id) ? '' : `${stop.shortName} (${stop.id})`,
       },
       fields: [stop.id, stop.longName, stop.shortName],
-      kindOrder: STOP_ORDER,
+      kindOrder: STOP_AND_BUILDING_ORDER,
+    })
+  }
+
+  for (const building of buildings.entries) {
+    candidates.push({
+      result: {
+        endpoint: { kind: 'building', id: building.id },
+        label: building.name,
+        detail: building.parts.length > 1
+          ? `${building.parts.length} buildings`
+          : building.parts[0].address ?? '',
+      },
+      fields: [building.name, ...building.aliases],
+      kindOrder: STOP_AND_BUILDING_ORDER,
     })
   }
 

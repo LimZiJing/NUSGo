@@ -33,6 +33,8 @@ import { FitRoutesControl } from '../ui/fit-routes-control'
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
+import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-panel-focus'
+import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
@@ -116,6 +118,46 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  // Feature hooks own view behavior; App wires their bindings into the content components.
+  const explorePanelFocus = useExplorePanelFocus({
+    state: state.exploreState,
+    selectedRouteId: state.selectedRouteId,
+    sheetDetent: navigation.sheets.explore.detent,
+    mobileSheet: isMobileViewport,
+    active: activeView === 'explore',
+    busRoutesAvailable: (state.transitIndex?.routes.length ?? 0) > 0,
+    onVenueSelect: commands.selectVenue,
+    onOpenBusRoutes: () => {
+      if (isMobileViewport) {
+        appNavigation.dismissMobileSearch('explore')
+      }
+      commands.enterMobileRoutes()
+    },
+    onLeaveMobileRoutes: commands.leaveMobileRoutes,
+    onFocusStop: appNavigation.openStopFromExplore,
+    onBack: commands.back,
+    onEscape: appNavigation.escapeExplore,
+    onMinimize: () => appNavigation.dispatch({
+      type: 'set-sheet-detent',
+      view: 'explore',
+      detent: 'collapsed',
+      source: 'manual',
+    }),
+    onDismissMapPopup: commands.dismissMapPopup,
+    onSearchCancel: () => appNavigation.dismissMobileSearch('explore'),
+    onSearchResult: () => appNavigation.selectMobileSearchResult('explore'),
+  })
+  const planTripForm = usePlanTripForm({
+    tripRequest: state.tripRequest,
+    onSwap: commands.swapTripEndpoints,
+    onSelectOriginEndpoint: commands.selectOriginEndpoint,
+    onClearOriginEndpoint: commands.clearOriginEndpoint,
+    onSelectDestinationEndpoint: commands.selectDestinationEndpoint,
+    onClearDestinationEndpoint: commands.clearDestinationEndpoint,
+    onClearTrip: commands.clearTrip,
+    onPlanJourney: commands.searchPaths,
+    onCancelOriginLocationRequest: commands.cancelOriginLocationRequest,
+  })
   const navigationRef = useRef(navigation)
   const isMobileViewportRef = useRef(isMobileViewport)
   const commandsRef = useRef(commands)
@@ -299,13 +341,7 @@ function App() {
     tripRequest: state.tripRequest,
     venues: state.venues,
     networkIndex: state.transitIndex,
-    onSwap: commands.swapTripEndpoints,
-    onSelectOriginEndpoint: commands.selectOriginEndpoint,
-    onClearOriginEndpoint: commands.clearOriginEndpoint,
-    onSelectDestinationEndpoint: commands.selectDestinationEndpoint,
-    onClearDestinationEndpoint: commands.clearDestinationEndpoint,
-    onClearTrip: commands.clearTrip,
-    onPlanJourney: commands.searchPaths,
+    form: planTripForm,
     originLocationRequest: state.originLocationRequest,
     onSelectJourneyOption: commands.selectJourneyOption,
     onUseCurrentLocationForOrigin: commands.useCurrentLocationForOrigin,
@@ -322,35 +358,16 @@ function App() {
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
     onRouteSelect: commands.selectMobileRoute,
+    focus: explorePanelFocus,
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
-    onVenueSelect: commands.selectVenue,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
       type: 'set-sheet-detent',
       view: 'explore',
       detent: 'partial',
     }),
-    onMinimize: () => appNavigation.dispatch({
-      type: 'set-sheet-detent',
-      view: 'explore',
-      detent: 'collapsed',
-      source: 'manual',
-    }),
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
-    onSearchCancel: () => appNavigation.dismissMobileSearch('explore'),
-    onSearchResult: () => appNavigation.selectMobileSearchResult('explore'),
-    onOpenBusRoutes: () => {
-      if (isMobileViewport) {
-        appNavigation.dismissMobileSearch('explore')
-      }
-      commands.enterMobileRoutes()
-    },
-    onLeaveMobileRoutes: commands.leaveMobileRoutes,
-    onFocusStop: appNavigation.openStopFromExplore,
-    onBack: commands.back,
-    onEscape: appNavigation.escapeExplore,
-    onDismissMapPopup: commands.dismissMapPopup,
   }
   const stopsContentProps: AppViewsProps['views']['stops'] = {
     selectedStop: stopsWorkflow.selectedStop,

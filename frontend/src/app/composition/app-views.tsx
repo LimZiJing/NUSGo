@@ -17,10 +17,7 @@ interface PanelShellBindings {
   readonly onDetentChange: (detent: MobileSheetDetent) => void
 }
 
-type ExploreContentProps = Omit<
-  ComponentProps<typeof ExploreContent>,
-  'active' | 'mobileSheet' | 'sheetDetent'
->
+type ExploreContentProps = Omit<ComponentProps<typeof ExploreContent>, 'sheetDetent'>
 
 export interface AppViewsProps {
   readonly isMobileViewport: boolean
@@ -107,8 +104,6 @@ export function AppViews({
             <ExploreContent
               {...views.explore}
               sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
-              mobileSheet={isMobileViewport}
-              active={navigation.activeView === 'explore'}
             />
           </NavigationPanelShell>
         </NavigationViewShell>

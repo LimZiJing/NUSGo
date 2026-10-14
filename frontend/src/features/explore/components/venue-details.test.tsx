@@ -5,7 +5,7 @@ import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures
 import type { TransitNetworkInput } from '@navus/shared/transit/types'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import { exploreReducer, createInitialExploreState } from '../state/explore-state'
-import { ExploreContent } from './explore-content'
+import { ExploreContentHarness as ExploreContent } from './explore-content-harness'
 
 const venue: VenueLocation = {
   roomName: 'Seminar Room 3',

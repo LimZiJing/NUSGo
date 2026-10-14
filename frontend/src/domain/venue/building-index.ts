@@ -1,4 +1,5 @@
 import type { Building } from '@navus/shared/venue/buildings'
+import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 /**
  * One searchable building result. Parts that share a group key (for example the five
@@ -18,12 +19,6 @@ export interface BuildingIndex {
 }
 
 export const EMPTY_BUILDING_INDEX: BuildingIndex = Object.freeze({ entries: [] })
-
-function compareText(first: string, second: string): number {
-  if (first < second) return -1
-  if (first > second) return 1
-  return 0
-}
 
 function toEntry(id: string, parts: readonly Building[]): BuildingEntry {
   const ordered = [...parts].sort((first, second) => compareText(first.id, second.id))
@@ -52,4 +47,22 @@ export function buildBuildingIndex(buildings: readonly Building[]): BuildingInde
   for (const [groupKey, parts] of groups) entries.push(toEntry(groupKey, parts))
 
   return { entries: entries.sort((first, second) => compareText(first.id, second.id)) }
+}
+
+const MAX_RESULTS = 8
+
+export function searchBuildings(
+  index: BuildingIndex,
+  query: string,
+  limit = MAX_RESULTS,
+): BuildingEntry[] {
+  const normalizedQuery = normalizeSearchText(query)
+  if (!normalizedQuery) return []
+
+  return index.entries
+    .map((entry) => ({ entry, priority: getMatchPriority([entry.name, ...entry.aliases], normalizedQuery) }))
+    .filter((match): match is { entry: BuildingEntry; priority: number } => match.priority !== null)
+    .sort((first, second) => first.priority - second.priority || compareText(first.entry.id, second.entry.id))
+    .slice(0, Math.max(0, limit))
+    .map((match) => match.entry)
 }

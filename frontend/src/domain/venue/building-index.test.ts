@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
-import { buildBuildingIndex } from './building-index'
+import { buildBuildingIndex, searchBuildings } from './building-index'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -49,5 +49,38 @@ describe('buildBuildingIndex', () => {
 
     expect(partCounts).toMatchObject({ 'cendana-college': 5, 'saga-college': 6, 'elm-college': 3 })
     expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(260)
+  })
+})
+
+describe('searchBuildings', () => {
+  const index = buildBuildingIndex([
+    building({ id: 'com1', name: 'COM1', aliases: ['COM 1', 'Computing 1'] }),
+    building({ id: 'com3', name: 'COM3', aliases: ['COM 3'] }),
+    building({ id: 'computing-drive-carpark', name: 'Computing Drive Carpark' }),
+    building({ id: 'saga-college-2', name: 'Saga College', groupKey: 'saga-college' }),
+    building({ id: 'saga-college-1', name: 'Saga College', groupKey: 'saga-college' }),
+  ])
+
+  it('returns nothing for an empty query', () => {
+    expect(searchBuildings(index, '  ')).toEqual([])
+  })
+
+  it('finds a building by name, spaced alias and descriptive alias', () => {
+    expect(searchBuildings(index, 'com1').map((entry) => entry.id)).toEqual(['com1'])
+    expect(searchBuildings(index, 'com 1').map((entry) => entry.id)).toEqual(['com1'])
+    expect(searchBuildings(index, 'computing 1').map((entry) => entry.id)).toEqual(['com1'])
+  })
+
+  it('ranks exact matches before prefix matches, then by ID', () => {
+    expect(searchBuildings(index, 'com').map((entry) => entry.id)).toEqual(['com1', 'com3', 'computing-drive-carpark'])
+    expect(searchBuildings(index, 'com3').map((entry) => entry.id)).toEqual(['com3'])
+  })
+
+  it('returns a repeated-name group once', () => {
+    expect(searchBuildings(index, 'saga').map((entry) => [entry.id, entry.parts.length])).toEqual([['saga-college', 2]])
+  })
+
+  it('honours the result limit', () => {
+    expect(searchBuildings(index, 'com', 2)).toHaveLength(2)
   })
 })

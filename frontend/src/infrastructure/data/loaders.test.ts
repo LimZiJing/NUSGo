@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   loadBuildingCatalogue,
   loadTransitMapData,
@@ -58,6 +58,41 @@ describe('data loaders', () => {
 
     expect(result.venueCount).toBeGreaterThan(0)
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
+  })
+
+  it('loads the building catalogue with the venues and indexes it for search', async () => {
+    const result = await loadVenueData(
+      new AbortController().signal,
+      createFetcher({ 'data/venues.json': venues, 'data/buildings.json': buildings }),
+    )
+
+    expect(result.buildings?.byId.get('com3')?.name).toBe('COM3')
+    expect(result.buildings?.byId.get('cendana-college')?.parts).toHaveLength(5)
+  })
+
+  it('still loads venues when the building catalogue is unavailable or invalid', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const unavailable = await loadVenueData(new AbortController().signal, createFetcher({ 'data/venues.json': venues }))
+    const invalid = await loadVenueData(
+      new AbortController().signal,
+      createFetcher({ 'data/venues.json': venues, 'data/buildings.json': { version: 1 } }),
+    )
+    errors.mockRestore()
+
+    expect(unavailable.venueCount).toBeGreaterThan(0)
+    expect(unavailable.buildings?.entries).toEqual([])
+    expect(invalid.buildings?.entries).toEqual([])
+  })
+
+  it('does not swallow an abort while loading the building catalogue', async () => {
+    const controller = new AbortController()
+    const fetcher: JsonFetcher = async (path) => {
+      if (path === 'data/venues.json') return venues
+      controller.abort()
+      throw new DOMException('Aborted', 'AbortError')
+    }
+
+    await expect(loadVenueData(controller.signal, fetcher)).rejects.toMatchObject({ name: 'AbortError' })
   })
 
   it('loads shuttle timing and validates it against the canonical network', async () => {

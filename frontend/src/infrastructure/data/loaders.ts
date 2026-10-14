@@ -6,6 +6,7 @@ import { validateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { ShuttleTimingData } from '@navus/shared/transit/timing'
 import type { BuildingCatalogue } from '@navus/shared/venue/buildings'
 import type { TransitNetwork } from '@navus/shared/transit/types'
+import { buildBuildingIndex, EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { fetchJson } from './json'
 
 export type JsonFetcher = (
@@ -24,6 +25,19 @@ export async function loadVenueData(
   return {
     venues,
     venueCount: getVenueCount(venues),
+    buildings: await loadBuildingIndex(signal, fetcher),
+  }
+}
+
+// Buildings supplement venues, so a missing or invalid catalogue must not take venue search down.
+async function loadBuildingIndex(signal: AbortSignal, fetcher: JsonFetcher): Promise<BuildingIndex> {
+  try {
+    const catalogue = await loadBuildingCatalogue(signal, fetcher)
+    return buildBuildingIndex(catalogue.buildings)
+  } catch (error) {
+    if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
+    console.error('Building catalogue unavailable; continuing without buildings:', error)
+    return EMPTY_BUILDING_INDEX
   }
 }
 

@@ -1,7 +1,6 @@
 import type { ComponentProps, Ref } from 'react'
-import { BusRouteBrowser as RouteBrowser } from '../../features/explore-view/bus-route-browser'
-import { ExploreView } from '../../features/explore-view/explore-view'
-import { PlanView } from '../../features/plan-view/plan-view'
+import { ExploreContent } from '../../features/explore/components/explore-content'
+import { PlanContent } from '../../features/plan/components/plan-content'
 import { StopsContent } from '../../features/stops/components/stops-content'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
@@ -18,9 +17,9 @@ interface PanelShellBindings {
   readonly onDetentChange: (detent: MobileSheetDetent) => void
 }
 
-type ExploreViewProps = Omit<
-  ComponentProps<typeof ExploreView>,
-  'active' | 'mobileSheet' | 'renderShuttleRoutes' | 'sheetDetent'
+type ExploreContentProps = Omit<
+  ComponentProps<typeof ExploreContent>,
+  'active' | 'mobileSheet' | 'sheetDetent'
 >
 
 export interface AppViewsProps {
@@ -36,12 +35,8 @@ export interface AppViewsProps {
     readonly stops: PanelShellBindings
   }
   readonly views: {
-    readonly plan: ComponentProps<typeof PlanView>
-    readonly explore: ExploreViewProps
-    readonly exploreRoutes: Pick<
-      ComponentProps<typeof RouteBrowser>,
-      'onRouteSelect'
-    >
+    readonly plan: ComponentProps<typeof PlanContent>
+    readonly explore: ExploreContentProps
     readonly stops: ComponentProps<typeof StopsContent>
   }
 }
@@ -83,7 +78,7 @@ export function AppViews({
             className="plan-sheet"
             label="Plan trip panel"
             summary={getPlanSheetSummary(views.plan.tripRequest, views.plan.path)}
-            controlsId="plan-view-content"
+            controlsId="plan-content-panel"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
             enabled={isMobileViewport}
             active={navigation.activeView === 'plan'}
@@ -92,7 +87,7 @@ export function AppViews({
             sectionProps={{ 'aria-label': 'Trip endpoints' }}
             shellRef={planSheetRef}
           >
-            <PlanView {...views.plan} />
+            <PlanContent {...views.plan} />
           </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="explore-panel" active={navigation.activeView === 'explore'}>
@@ -100,30 +95,20 @@ export function AppViews({
             className="explore-sheet"
             label="Explore panel"
             summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
-            controlsId="explore-view-content"
+            controlsId="explore-content-panel"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             enabled={isMobileViewport}
             active={navigation.activeView === 'explore'}
             portalContainer={sheetPortalContainer}
             onDetentChange={onExploreDetentChange}
-            sectionProps={{ 'aria-labelledby': 'explore-view-heading' }}
+            sectionProps={{ 'aria-labelledby': 'explore-content-heading' }}
             shellRef={exploreSheetRef}
           >
-            <ExploreView
+            <ExploreContent
               {...views.explore}
               sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
               mobileSheet={isMobileViewport}
               active={navigation.activeView === 'explore'}
-              renderShuttleRoutes={(options) => (
-    <RouteBrowser
-                  network={views.explore.transitIndex?.network ?? null}
-                  networkIndex={views.explore.transitIndex ?? null}
-                  selectedRouteId={views.explore.selectedRouteId ?? null}
-                  onRouteSelect={views.exploreRoutes.onRouteSelect}
-                  firstRouteCardRef={options.firstRouteCardRef}
-                  onFocusStop={options.onFocusStop}
-                />
-              )}
             />
           </NavigationPanelShell>
         </NavigationViewShell>

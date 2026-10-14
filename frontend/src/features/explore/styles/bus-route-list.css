@@ -1,0 +1,197 @@
+.explore-bus-route-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  box-shadow: none;
+  font: 14px/1.2 var(--sans);
+}
+
+.explore-bus-route-list .route-scroll-arrow {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.explore-bus-route-list-timeline {
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-timeline);
+  background: var(--surface-raised);
+}
+
+.explore-bus-route-list-timeline-count {
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.explore-bus-route-list-stop-list {
+  position: relative;
+  isolation: isolate;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.explore-bus-route-list-stop-list::before {
+  position: absolute;
+  z-index: 1;
+  top: 28px;
+  bottom: 28px;
+  left: 25px;
+  width: 3px;
+  background: var(--route-color);
+  content: '';
+}
+
+.explore-content .explore-bus-route-list-stop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 58px;
+  padding: 8px 14px 8px 20px;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-contrast);
+  background: transparent;
+  font: 14px/1.2 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .explore-bus-route-list-stop:hover {
+    background-color: var(--surface-subtle);
+  }
+}
+
+.explore-bus-route-list-node {
+  position: relative;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  box-sizing: border-box;
+  border: 2px solid var(--route-color);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card-strong);
+}
+
+.explore-bus-route-list-stop-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.explore-bus-route-list-stop-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.explore-bus-route-list-stop-name .location-identity-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+.explore-bus-route-list-stop-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explore-bus-route-list-stop-text small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.explore-bus-route-list-chevron {
+  color: var(--text-muted);
+  font-size: 23px;
+}
+
+.explore-bus-route-list-selection-status {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .explore-content-bus-routes .explore-bus-route-list,
+  .explore-content-bus-routes .explore-bus-route-list-timeline {
+    min-height: 0;
+  }
+
+  .explore-content-bus-routes .route-chip-list,
+  .explore-content-bus-routes .explore-bus-route-list-timeline-count,
+  .explore-content-bus-routes .explore-bus-route-list-selection-status {
+    flex: 0 0 auto;
+  }
+
+  .explore-content-bus-routes .explore-bus-route-list {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .explore-content-bus-routes .explore-bus-route-list-timeline {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+  }
+
+  .explore-content-bus-routes .explore-bus-route-list-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .explore-bus-route-list {
+    max-height: none;
+  }
+
+}
+
+@media (min-width: 769px) {
+  .navigation-column .explore-content-bus-routes .explore-bus-route-list {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .navigation-column .explore-content-bus-routes .explore-bus-route-list-timeline {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .navigation-column .explore-content-bus-routes .explore-bus-route-list-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+}

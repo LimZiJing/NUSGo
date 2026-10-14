@@ -14,19 +14,19 @@ describe('deriveResourceStatus', () => {
     const state = markTransitLoaded(venueFailed, { stopCount: 33, routeCount: 8 })
 
     expect(deriveResourceStatus(state)).toBe(
-      '33 shuttle stops · 8 shuttle routes loaded; Unable to load venue data',
+      '33 bus stops · 8 bus routes loaded; Unable to load venue data',
     )
   })
 
   it('preserves a transit failure when venues complete later', () => {
     const transitFailed = markTransitFailed(
       createInitialResourceStatus(),
-      'Unable to load shuttle route data',
+      'Unable to load bus route data',
     )
     const state = markVenueLoaded(transitFailed, 12)
 
     expect(deriveResourceStatus(state)).toBe(
-      '12 venues available; Unable to load shuttle route data',
+      '12 venues available; Unable to load bus route data',
     )
   })
 

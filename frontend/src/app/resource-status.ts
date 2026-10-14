@@ -55,7 +55,7 @@ export function deriveResourceStatus(state: ResourceStatusState): string {
   if (venueFailure && transitFailure) return `${venueFailure}; ${transitFailure}`
   if (venueFailure) {
     if (state.transit.status === 'loaded') {
-      return `${state.transit.value.stopCount} shuttle stops · ${state.transit.value.routeCount} shuttle routes loaded; ${venueFailure}`
+      return `${state.transit.value.stopCount} bus stops · ${state.transit.value.routeCount} bus routes loaded; ${venueFailure}`
     }
     return venueFailure
   }
@@ -67,13 +67,13 @@ export function deriveResourceStatus(state: ResourceStatusState): string {
   }
 
   if (state.venue.status === 'loaded' && state.transit.status === 'loaded') {
-    return `${state.venue.value} venues · ${state.transit.value.stopCount} shuttle stops · ${state.transit.value.routeCount} shuttle routes loaded`
+    return `${state.venue.value} venues · ${state.transit.value.stopCount} bus stops · ${state.transit.value.routeCount} bus routes loaded`
   }
   if (state.venue.status === 'loaded') {
-    return `${state.venue.value} venues available; loading shuttle routes…`
+    return `${state.venue.value} venues available; loading bus routes…`
   }
   if (state.transit.status === 'loaded') {
-    return `${state.transit.value.stopCount} shuttle stops · ${state.transit.value.routeCount} shuttle routes loaded; loading venue data…`
+    return `${state.transit.value.stopCount} bus stops · ${state.transit.value.routeCount} bus routes loaded; loading venue data…`
   }
   return 'Loading map data…'
 }

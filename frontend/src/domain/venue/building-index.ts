@@ -23,9 +23,11 @@ export interface BuildingEntry {
 export interface BuildingIndex {
   readonly entries: readonly BuildingEntry[]
   readonly byId: ReadonlyMap<string, BuildingEntry>
+  /** Lower-case room-code prefix (for example "com1") to the entry whose rooms use it. */
+  readonly byRoomCodePrefix: ReadonlyMap<string, BuildingEntry>
 }
 
-export const EMPTY_BUILDING_INDEX: BuildingIndex = Object.freeze({ entries: [], byId: new Map() })
+export const EMPTY_BUILDING_INDEX: BuildingIndex = Object.freeze({ entries: [], byId: new Map(), byRoomCodePrefix: new Map() })
 
 function pickRepresentativePart(parts: readonly Building[]): Building {
   const centreX = parts.reduce((total, part) => total + part.location.x, 0) / parts.length
@@ -67,7 +69,17 @@ export function buildBuildingIndex(buildings: readonly Building[]): BuildingInde
   for (const [groupKey, parts] of groups) entries.push(toEntry(groupKey, parts))
 
   const sorted = entries.sort((first, second) => compareText(first.id, second.id))
-  return { entries: sorted, byId: new Map(sorted.map((entry) => [entry.id, entry])) }
+  const byRoomCodePrefix = new Map<string, BuildingEntry>()
+  for (const entry of sorted) {
+    for (const part of entry.parts) {
+      for (const prefix of part.roomCodePrefixes) byRoomCodePrefix.set(prefix.toLowerCase(), entry)
+    }
+  }
+  return {
+    entries: sorted,
+    byId: new Map(sorted.map((entry) => [entry.id, entry])),
+    byRoomCodePrefix,
+  }
 }
 
 const MAX_RESULTS = 8

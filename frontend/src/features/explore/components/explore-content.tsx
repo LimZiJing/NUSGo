@@ -67,7 +67,18 @@ export function ExploreContent({
   onQueryChange,
   onNavigateToVenue,
   onSearchFocus,
-  focus,
+  focus: {
+    panelHeadingRef,
+    searchInputRef,
+    detailHeadingRef,
+    firstRouteCardRef,
+    onFocusCapture,
+    onVenueSelect,
+    onBack,
+    onSelectVenueSearch,
+    onSelectBusRoutes,
+    onFocusStop,
+  },
 }: ExploreContentProps) {
   const minimized = sheetDetent === 'collapsed'
   const explorePanelHeading = getExplorePanelHeading(state)
@@ -83,7 +94,7 @@ export function ExploreContent({
     <div className={contentClassName}>
       <div
         className="explore-content-focus-scope"
-        onFocusCapture={focus.onFocusCapture}
+        onFocusCapture={onFocusCapture}
       >
         <div className="explore-content-header">
           {showExploreSegments && (
@@ -96,17 +107,17 @@ export function ExploreContent({
               ]}
               value={showVenueSearch ? 'venue' : 'bus-routes'}
               onValueChange={(mode, event) => {
-                if (mode === 'venue') focus.onSelectVenueSearch()
-                else focus.onSelectBusRoutes(event)
+                if (mode === 'venue') onSelectVenueSearch()
+                else onSelectBusRoutes(event)
               }}
             />
           )}
           {state.mode === 'venue-detail' && !minimized && (
-            <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={focus.onBack} />
+            <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
             id="explore-content-heading"
-            ref={focus.panelHeadingRef}
+            ref={panelHeadingRef}
             tabIndex={-1}
             className={showExploreSegments || state.mode === 'venue-detail' ? 'visually-hidden' : undefined}
           >
@@ -119,11 +130,11 @@ export function ExploreContent({
             query={state.query}
             venues={venues}
             minimized={minimized}
-            inputRef={focus.searchInputRef}
+            inputRef={searchInputRef}
             onRestore={onRestore}
             onSearchFocus={onSearchFocus}
             onQueryChange={onQueryChange}
-            onSelect={focus.onVenueSelect}
+            onSelect={onVenueSelect}
           />
         )}
 
@@ -131,9 +142,9 @@ export function ExploreContent({
           <VenueDetails
             venue={state.selectedVenue}
             transitIndex={transitIndex}
-            headingRef={focus.detailHeadingRef}
+            headingRef={detailHeadingRef}
             onNavigateToVenue={onNavigateToVenue}
-            onFocusStop={focus.onFocusStop}
+            onFocusStop={onFocusStop}
           />
         )}
 
@@ -147,8 +158,8 @@ export function ExploreContent({
               networkIndex={transitIndex}
               selectedRouteId={selectedRouteId}
               onRouteSelect={onRouteSelect}
-              firstRouteCardRef={focus.firstRouteCardRef}
-              onFocusStop={focus.onFocusStop}
+              firstRouteCardRef={firstRouteCardRef}
+              onFocusStop={onFocusStop}
             />
           </div>
         )}

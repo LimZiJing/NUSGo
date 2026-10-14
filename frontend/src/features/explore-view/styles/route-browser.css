@@ -9,7 +9,7 @@
   color: var(--text-primary);
   background: transparent;
   box-shadow: none;
-  font: 14px/1.2 system-ui, sans-serif;
+  font: 14px/1.2 var(--sans);
 }
 
 .explore-route-browser .route-scroll-arrow {
@@ -71,7 +71,7 @@
   border-radius: 0;
   color: var(--text-contrast);
   background: transparent;
-  font: 14px/1.2 system-ui, sans-serif;
+  font: 14px/1.2 var(--sans);
   text-align: left;
   cursor: pointer;
 }

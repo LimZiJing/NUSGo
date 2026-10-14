@@ -4,19 +4,19 @@ import { useRef, useState, type ReactNode } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ExploreContentHarness as ExploreContent } from './explore-content-harness'
+import { ExploreContentHarness as ExploreContent } from './components/explore-content-harness.tsx'
 import {
   exploreReducer,
   createInitialExploreState,
   type ExploreAction,
   type ExploreState,
-} from '../state/explore-state'
-import { createTransitIndex } from '../../../domain/transit'
-import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
+} from './state/explore-state.ts'
+import { createTransitIndex } from '../../domain/transit'
+import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
 import type { TransitNetwork } from '@navus/shared/transit/types'
-import type { TransitNetworkIndex } from '../../../domain/transit'
+import type { TransitNetworkIndex } from '../../domain/transit'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import type { ExplorePanelStatus } from '../state/explore-panel-status'
+import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

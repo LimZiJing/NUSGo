@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 import { usePlanTripForm, type PlanTripFormOptions } from '../hooks/use-plan-trip-form'
-import { PlanContent } from './plan-content'
+import { PlanContent } from '../plan-content.tsx'
 
 type PlanContentHarnessProps = Omit<ComponentProps<typeof PlanContent>, 'form'>
   & Omit<PlanTripFormOptions, 'tripRequest'>

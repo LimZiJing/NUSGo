@@ -37,7 +37,7 @@ export interface UseAppNavigationOptions {
     | 'escape'
   >
   readonly isMobileViewport: boolean
-  readonly exploreView: Pick<ExploreViewState, 'mode' | 'selectedVenue'>
+  readonly exploreView: Pick<ExploreViewState, 'mode' | 'selectedVenue' | 'selectedBuildingId'>
   readonly locationStatus: LocationTrackingStatus
   readonly pendingViewFocusRef: RefObject<NavigationView | null>
   readonly pendingExploreReturnFocusRef: RefObject<HTMLElement | null>
@@ -100,7 +100,7 @@ export function useAppNavigation({
     readonly sequence: number
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
-  const previousExploreViewRef = useRef<Pick<ExploreViewState, 'mode' | 'selectedVenue'> | null>(null)
+  const previousExploreViewRef = useRef<Pick<ExploreViewState, 'mode' | 'selectedVenue' | 'selectedBuildingId'> | null>(null)
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
 
   const activeView = state.activeView
@@ -285,7 +285,8 @@ export function useAppNavigation({
     previousExploreViewRef.current = exploreView
     if (!previous) return
     const modeChanged = previous.mode !== exploreView.mode
-    const venueChanged = previous.selectedVenue?.code !== exploreView.selectedVenue?.code
+    const venueChanged = previous.selectedVenue?.code !== exploreView.selectedVenue?.code ||
+      previous.selectedBuildingId !== exploreView.selectedBuildingId
     if (
       (modeChanged || venueChanged) && isMobileViewport &&
       state.activeView === 'explore' && state.sheets.explore.detent === 'collapsed'

@@ -86,8 +86,9 @@ describe('searchExplore with the real data', () => {
     for (const [query, id, parts] of [['cendana', 'cendana-college', 5], ['saga', 'saga-college', 6], ['elm college', 'elm-college', 3]] as const) {
       const results = searchExplore(sources, query).filter((result) => result.kind === 'building' && result.entry.id === id)
       expect(results).toHaveLength(1)
-      expect(results[0]).toMatchObject({ entry: { parts: expect.any(Array) } })
-      expect((results[0] as { entry: { parts: unknown[] } }).entry.parts).toHaveLength(parts)
+      expect(results[0]).toMatchObject({ kind: 'building', entry: { id } })
+      const [first] = results
+      expect(first.kind === 'building' ? first.entry.parts : []).toHaveLength(parts)
     }
   })
 

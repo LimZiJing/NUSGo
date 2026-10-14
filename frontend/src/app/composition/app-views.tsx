@@ -99,7 +99,13 @@ export function AppViews({
           <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
-            summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
+            summary={getExploreSheetSummary(
+              views.explore.state,
+              selectedRoute,
+              views.explore.state.selectedBuildingId
+                ? views.explore.buildings?.byId.get(views.explore.state.selectedBuildingId)?.name
+                : undefined,
+            )}
             controlsId="explore-view-content"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             enabled={isMobileViewport}

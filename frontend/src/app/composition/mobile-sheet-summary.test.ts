@@ -93,6 +93,11 @@ describe('mobile sheet summaries', () => {
         mode: 'venue-detail',
         selectedVenue: { code: 'COM1-0201', venue: { roomName: 'Room' } },
       }, null)).toBe('Explore · COM1-0201')
+      expect(getExploreSheetSummary({
+        ...initial,
+        mode: 'venue-detail',
+        selectedBuildingId: 'com3',
+      }, null, 'COM3')).toBe('Explore · COM3')
     })
   })
 })

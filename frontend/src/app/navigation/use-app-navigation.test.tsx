@@ -40,7 +40,7 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
     dispatch,
     commands,
     isMobileViewport,
-    exploreView: { mode: 'neutral' as const, selectedVenue: null },
+    exploreView: { mode: 'neutral' as const, selectedVenue: null, selectedBuildingId: null },
     locationStatus: 'disabled' as const,
     pendingViewFocusRef,
     pendingExploreReturnFocusRef,
@@ -170,7 +170,7 @@ describe('map popup dismissal', () => {
       ({ activeView, exploreMode }: TestProps) => useAppNavigation({
         ...options,
         state: { ...options.state, activeView },
-        exploreView: { mode: exploreMode, selectedVenue: null },
+        exploreView: { mode: exploreMode, selectedVenue: null, selectedBuildingId: null },
       }),
       { initialProps },
     )

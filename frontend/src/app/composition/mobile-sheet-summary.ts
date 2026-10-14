@@ -58,10 +58,14 @@ export function getPlanSheetSummary(
 }
 
 export function getExploreSheetSummary(
-  state: Pick<ExploreViewState, 'mode' | 'selectedVenue'>,
+  state: Pick<ExploreViewState, 'mode' | 'selectedVenue' | 'selectedBuildingId'>,
   selectedRoute: { readonly id: string, readonly name: string } | null,
+  selectedBuildingName?: string,
 ): string {
   if (state.mode === 'venue-detail' && state.selectedVenue) return `Explore · ${state.selectedVenue.code}`
+  if (state.mode === 'venue-detail' && state.selectedBuildingId) {
+    return `Explore · ${selectedBuildingName ?? 'Building'}`
+  }
   if (state.mode === 'shuttle') {
     return selectedRoute ? `Explore · Route ${selectedRoute.id}` : 'Explore · Shuttle routes'
   }

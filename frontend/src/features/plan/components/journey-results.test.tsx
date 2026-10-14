@@ -306,7 +306,7 @@ describe('JourneyResults', () => {
     )
     expect(recommended?.querySelector('.journey-option-heading-recommended')?.textContent).toBe('Recommended')
     expect(recommended?.querySelector('.journey-option-heading-qualifier')?.textContent).toBe('Walking')
-    expect(direct?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('direct bus')
+    expect(direct?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('Direct bus')
     expect(transfer?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('1 transfer')
     expect(walking?.querySelector('.journey-option-heading-neutral')?.textContent).toBe('Walking')
     expect(recommended?.getAttribute('aria-expanded')).toBe('false')

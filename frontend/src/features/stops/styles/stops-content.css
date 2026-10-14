@@ -321,6 +321,7 @@
 
   .stop-reachable-favourites {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
     min-width: 0;
@@ -340,7 +341,7 @@
     align-items: center;
     gap: 3px;
     min-width: 0;
-    max-width: 7rem;
+    max-width: 100%;
     padding: 2px 6px;
     overflow: hidden;
     border: 1px solid var(--border-warning);
@@ -357,6 +358,12 @@
     border-color: var(--border-info);
     color: var(--status-info);
     background: var(--status-info-surface);
+  }
+
+  .stop-reachable-favourite > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stop-reachable-favourite svg {

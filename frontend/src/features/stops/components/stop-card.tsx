@@ -53,7 +53,7 @@ export function StopCard({
           className="stop-card-toggle"
           type="button"
           data-hover-filter="none"
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, shuttle stop bus timings`}
+          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, bus stop arrival times`}
           aria-expanded={expanded}
           aria-controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
@@ -74,7 +74,7 @@ export function StopCard({
         <IconButton
           className="stop-card-favorite"
           variant="plain"
-          label={`${favorite ? 'Remove' : 'Add'} ${stopName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
+          label={`${favorite ? 'Remove' : 'Add'} ${stopName}, bus stop ${favorite ? 'from' : 'to'} favourites`}
           icon={<FavoriteIcon filled={favorite} />}
           pressed={favorite}
           onClick={() => onToggleFavorite(stopId)}

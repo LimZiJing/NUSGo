@@ -14,9 +14,9 @@ This checklist is intentionally honest about the boundary between automated evid
 
 - [ ] Load the local desktop app and confirm venue and transit resources can fail independently without hiding the other resource's controls.
 - [ ] Search for a venue, open details, return to search, and confirm the selected marker behavior remains unchanged.
-- [ ] Open shuttle browsing, select each route, and confirm route lines, ordered stop labels, endpoint markers, and camera fitting remain correct.
+- [ ] Open bus route browsing, select each route, and confirm route lines, ordered stop labels, endpoint markers, and camera fitting remain correct.
 - [ ] Clear the route selection and confirm all routes/stops remain visible.
-- [ ] Select shuttle stops as trip endpoints and confirm labels and marker coordinates.
+- [ ] Select bus stops as trip endpoints and confirm labels and marker coordinates.
 - [ ] Exercise Back, Escape, empty-map click, and panel close behavior.
 - [ ] Check the desktop layout at the supported viewport sizes.
 
@@ -24,4 +24,4 @@ The original Issue #39 manual desktop/map verification was pending; PR9 follow-u
 
 ## PR9 follow-up — 2026-09-21
 
-The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview resource evidence: 719 venues, 33 shuttle stops, and 8 shuttle routes loaded, with route and endpoint workflows exercised. Independent failure injection and exact release viewport checks remain open.
+The [canonical PR9 record](manual-smoke-check.md) contains the detailed production-preview resource evidence: 719 venues, 33 bus stops, and 8 bus routes loaded, with route and endpoint workflows exercised. Independent failure injection and exact release viewport checks remain open.

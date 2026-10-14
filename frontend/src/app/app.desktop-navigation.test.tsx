@@ -283,7 +283,7 @@ describe('desktop shared navigation shell', () => {
       ...createInitialNavigationSessionState(),
       transitIndex: createTransitIndex(createValidTransitNetwork()),
       venues: { COM1: venue },
-      exploreView: {
+      exploreState: {
         mode: 'venue-detail',
         query: '',
         selectedVenue: { code: 'COM1', venue },
@@ -305,7 +305,7 @@ describe('desktop shared navigation shell', () => {
   it('starts on Stops and renders one active view at a time', () => {
     render(<App />)
 
-    const navigation = screen.getByRole('navigation', { name: 'Map views' })
+    const navigation = screen.getByRole('navigation', { name: 'Map navigation tabs' })
     expect(within(navigation).getByRole('button', { name: 'Stops' }).getAttribute('aria-current'))
       .toBe('page')
     expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy()
@@ -315,14 +315,14 @@ describe('desktop shared navigation shell', () => {
     expect(document.getElementById('plan-panel')?.hasAttribute('inert')).toBe(true)
   })
 
-  it('switches to the unified Explore view from the shared navigation', async () => {
+  it('switches to the unified Explore tab from the shared navigation', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
 
     expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Shuttle routes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
     expect(document.getElementById('stops-panel')?.hasAttribute('hidden')).toBe(true)
   })
 
@@ -355,7 +355,7 @@ describe('desktop shared navigation shell', () => {
       expect(appHarness.onStopSelected?.('STOP-A')).toBe(true)
     })
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
 
     await user.click(screen.getByRole('button', { name: 'Back to stops' }))
@@ -374,7 +374,7 @@ describe('desktop shared navigation shell', () => {
     })
 
     await waitFor(() => expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy())
-    expect(screen.getByRole('heading', { name: 'Stop A, shuttle stop' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -410,7 +410,7 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     mockDesktopViewport()
     const { state } = createJourneySelectionState()
     appHarness.state = priorTab === 'Explore'
-      ? { ...state, exploreView: { ...state.exploreView, mode: 'shuttle' } }
+      ? { ...state, exploreState: { ...state.exploreState, mode: 'bus-routes' } }
       : state
     render(<App />)
     if (priorTab === 'Explore') await userEvent.setup().click(screen.getByRole('button', { name: 'Explore' }))
@@ -446,11 +446,11 @@ describe.each(['Stops', 'Explore'] as const)('map Journey selection from %s', (p
     const user = userEvent.setup()
     const { state } = createJourneySelectionState()
     appHarness.state = priorTab === 'Explore'
-      ? { ...state, exploreView: { ...state.exploreView, mode: 'shuttle' } }
+      ? { ...state, exploreState: { ...state.exploreState, mode: 'bus-routes' } }
       : state
     const { rerender } = render(<App />)
     if (priorTab === 'Explore') await user.click(screen.getByRole('button', { name: 'Explore' }))
-    const content = document.querySelector<HTMLElement>('.plan-view-content')
+    const content = document.querySelector<HTMLElement>('.plan-content-panel')
     const target = document.querySelector<HTMLElement>('[data-candidate-key="option-b"]')
     expect(content).toBeTruthy()
     expect(target).toBeTruthy()

@@ -17,7 +17,7 @@ import {
   createNavigationSessionMount,
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
-import { deriveExploreViewStatus } from './explore-view-status'
+import { deriveExplorePanelStatus } from './explore-panel-status'
 import { getIsMobileViewport, subscribeToMobileViewport } from './navigation/navigation-state'
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
@@ -48,7 +48,7 @@ function App() {
   const mapShellRef = useRef<HTMLElement>(null)
   const [sheetPortalContainer, setSheetPortalContainer] = useState<HTMLElement | null>(null)
   const tripControlsRef = useRef<HTMLElement>(null)
-  const exploreViewRef = useRef<HTMLElement>(null)
+  const explorePanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
   const navigationColumnRef = useRef<HTMLElement>(null)
@@ -60,7 +60,7 @@ function App() {
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
   const state = useNavigationSession(session)
-  const panelStatus = deriveExploreViewStatus(
+  const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
     state.mapError,
     state.startupFailure,
@@ -108,7 +108,7 @@ function App() {
     ...navigationState,
     commands,
     isMobileViewport,
-    exploreView: state.exploreView,
+    exploreState: state.exploreState,
     focusStop: stopsWorkflow.focusStop,
     locationStatus: state.location.status,
     pendingViewFocusRef,
@@ -120,7 +120,7 @@ function App() {
   const isMobileViewportRef = useRef(isMobileViewport)
   const commandsRef = useRef(commands)
   const dispatchNavigationRef = useRef(appNavigation.dispatch)
-  const exploreViewModeRef = useRef(state.exploreView.mode)
+  const exploreModeRef = useRef(state.exploreState.mode)
   const displayedCandidatesRef = useRef(state.path.displayedCandidates)
   const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
@@ -129,7 +129,7 @@ function App() {
     mapShellRef,
     sheetPortalContainer,
     tripControlsRef,
-    exploreViewRef,
+    explorePanelRef,
     stopsSheetRef,
     mainNavigationRef,
     navigationColumnRef,
@@ -148,7 +148,7 @@ function App() {
     isMobileViewportRef.current = isMobileViewport
     commandsRef.current = commands
     dispatchNavigationRef.current = appNavigation.dispatch
-    exploreViewModeRef.current = state.exploreView.mode
+    exploreModeRef.current = state.exploreState.mode
     displayedCandidatesRef.current = state.path.displayedCandidates
   }, [
     appNavigation.dispatch,
@@ -156,7 +156,7 @@ function App() {
     isMobileViewport,
     navigation,
     state.path.displayedCandidates,
-    state.exploreView.mode,
+    state.exploreState.mode,
   ])
 
   useEffect(() => {
@@ -177,7 +177,7 @@ function App() {
     if (pendingViewFocusRef.current !== activeView) return
     pendingViewFocusRef.current = null
     const root = activeView === 'explore'
-      ? exploreViewRef.current
+      ? explorePanelRef.current
       : activeView === 'stops'
         ? stopsSheetRef.current
         : tripControlsRef.current
@@ -198,7 +198,7 @@ function App() {
     if (!focusTripControlAfterOverlayRef.current) return
     focusTripControlAfterOverlayRef.current = false
     const focusTarget = tripControlsRef.current?.querySelector<HTMLElement>(
-      '.plan-view-content input:not([disabled]), .plan-view-content select:not([disabled]), .plan-view-content textarea:not([disabled]), .mobile-sheet-handle',
+      '.plan-content-panel input:not([disabled]), .plan-content-panel select:not([disabled]), .plan-content-panel textarea:not([disabled]), .mobile-sheet-handle',
     )
     focusTarget?.focus()
   }, [isMobileViewport, navigation.sheets.plan.detent])
@@ -210,7 +210,7 @@ function App() {
     if (currentNavigation.activeView !== 'plan') {
       if (
         currentNavigation.activeView === 'explore' &&
-        exploreViewModeRef.current === 'shuttle'
+        exploreModeRef.current === 'bus-routes'
       ) {
         commandsRef.current.suspendMobileRoutes()
       }
@@ -236,7 +236,7 @@ function App() {
     }
     if (state.path.selectedCandidateKey !== candidateKey) return
 
-    const content = tripControlsRef.current?.querySelector<HTMLElement>('.plan-view-content')
+    const content = tripControlsRef.current?.querySelector<HTMLElement>('.plan-content-panel')
     const summary = Array.from(content?.querySelectorAll<HTMLElement>('.journey-option-summary') ?? [])
       .find((element) => element.dataset.candidateKey === candidateKey)
     if (content && summary) {
@@ -295,7 +295,7 @@ function App() {
     })
   }, [])
 
-  const planViewProps: AppViewsProps['views']['plan'] = {
+  const planContentProps: AppViewsProps['views']['plan'] = {
     tripRequest: state.tripRequest,
     venues: state.venues,
     networkIndex: state.transitIndex,
@@ -316,14 +316,14 @@ function App() {
     onSearchCancel: () => appNavigation.dismissMobileSearch('plan'),
     onSearchResult: () => appNavigation.selectMobileSearchResult('plan'),
   }
-  const exploreViewProps: AppViewsProps['views']['explore'] = {
-    state: state.exploreView,
+  const exploreContentProps: AppViewsProps['views']['explore'] = {
+    state: state.exploreState,
     venues: state.venues,
     transitIndex: state.transitIndex,
-    shuttleRoutesAvailable: (state.transitIndex?.routes.length ?? 0) > 0,
     selectedRouteId: state.selectedRouteId,
-    status: panelStatus,
-    onQueryChange: commands.setExploreViewQuery,
+    onRouteSelect: commands.selectMobileRoute,
+    status: explorePanelStatus,
+    onQueryChange: commands.setExploreQuery,
     onVenueSelect: commands.selectVenue,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
@@ -340,7 +340,7 @@ function App() {
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
     onSearchCancel: () => appNavigation.dismissMobileSearch('explore'),
     onSearchResult: () => appNavigation.selectMobileSearchResult('explore'),
-    onOpenShuttle: () => {
+    onOpenBusRoutes: () => {
       if (isMobileViewport) {
         appNavigation.dismissMobileSearch('explore')
       }
@@ -432,7 +432,7 @@ function App() {
             </div>
             <div className="bus-stop-legend-item">
               <span className="bus-stop-legend-marker bus-stop-legend-marker-other" aria-hidden="true" />
-              Other shuttle stop
+              Other bus stop
             </div>
             <div><span className="legend-marker origin-marker" /> Origin</div>
             <div><span className="legend-marker destination-marker" /> Destination</div>
@@ -463,7 +463,7 @@ function App() {
               },
             },
             explore: {
-              ref: exploreViewRef,
+              ref: explorePanelRef,
               onDetentChange: (detent) => appNavigation.dispatch({
                 type: 'set-sheet-detent',
                 view: 'explore',
@@ -482,11 +482,8 @@ function App() {
             },
           }}
           views={{
-            plan: planViewProps,
-            explore: exploreViewProps,
-            exploreRoutes: {
-              onRouteSelect: commands.selectMobileRoute,
-            },
+            plan: planContentProps,
+            explore: exploreContentProps,
             stops: stopsContentProps,
           }}
         />

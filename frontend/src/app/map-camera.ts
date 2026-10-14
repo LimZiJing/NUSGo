@@ -1,4 +1,4 @@
-import type { ExploreViewMode } from '../features/explore-view/state'
+import type { ExploreMode } from '../features/explore/state/explore-state'
 import type { TransitIndex } from '../domain/transit'
 import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
@@ -46,7 +46,7 @@ export interface MapOverlayMeasurements {
 export type { MapCoordinate, MapResetTarget, MapViewportInsets } from './contracts/map'
 
 export interface ResetTargetContext {
-  readonly panelMode: ExploreViewMode
+  readonly panelMode: ExploreMode
   readonly selectedVenue: VenueSearchResult | null
   readonly selectedRouteId: string | null
   readonly tripRequest: TripRequest
@@ -118,7 +118,7 @@ export function getResetTarget(context: ResetTargetContext): MapResetTarget {
   }
 
   if (
-    context.panelMode === 'shuttle' &&
+    context.panelMode === 'bus-routes' &&
     !hasCurrentLocationEndpoint &&
     context.selectedRouteId &&
     context.transitIndex?.routeById.has(context.selectedRouteId)

@@ -1,4 +1,4 @@
-import type { ExploreViewSnapshot, ExploreViewState } from '../features/explore-view/state'
+import type { ExploreSnapshot, ExploreState } from '../features/explore/state/explore-state'
 import type { TripEndpoint, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { NavigationSessionStartupFailure, NavigationSessionState } from './navigation-session'
@@ -14,7 +14,7 @@ function snapshotVenueResult(result: VenueSearchResult | null): VenueSearchResul
   return result === null ? null : freeze({ code: result.code, venue: result.venue })
 }
 
-function snapshotPanelSnapshot(snapshot: ExploreViewSnapshot): ExploreViewSnapshot {
+function snapshotPanelSnapshot(snapshot: ExploreSnapshot): ExploreSnapshot {
   return freeze({
     mode: snapshot.mode,
     query: snapshot.query,
@@ -22,7 +22,7 @@ function snapshotPanelSnapshot(snapshot: ExploreViewSnapshot): ExploreViewSnapsh
   })
 }
 
-function snapshotExploreView(panel: ExploreViewState): ExploreViewState {
+function snapshotExploreState(panel: ExploreState): ExploreState {
   return freeze({
     mode: panel.mode,
     query: panel.query,
@@ -126,7 +126,7 @@ function snapshotStartupFailure(
 export function freezeNavigationSessionSnapshot(state: NavigationSessionState): NavigationSessionState {
   return freeze({
     ...state,
-    exploreView: snapshotExploreView(state.exploreView),
+    exploreState: snapshotExploreState(state.exploreState),
     tripRequest: snapshotTripRequest(state.tripRequest),
     path: snapshotJourneyState(state.path),
     location: snapshotLocationState(state.location),

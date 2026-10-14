@@ -1,0 +1,988 @@
+.plan-content {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  gap: 8px;
+  color: var(--text-primary);
+  font: 14px/1.2 var(--sans);
+  box-sizing: border-box;
+}
+
+.plan-content-submit:not(:disabled),
+.plan-endpoint-result:not(:disabled),
+.journey-option-summary:not(:disabled) {
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.plan-content-submit:active:not(:disabled),
+.plan-endpoint-result:active:not(:disabled),
+.journey-option-summary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-content-submit:active,
+  .plan-endpoint-result:active,
+  .journey-option-summary:active {
+    transform: none;
+  }
+}
+
+.plan-content-heading,
+.plan-endpoint-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-content-title {
+  min-width: 0;
+  text-align: left;
+}
+
+.plan-content-panel {
+  display: grid;
+  gap: 6px;
+}
+
+.plan-content-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 18px/1.2 var(--heading);
+}
+
+.plan-content-menu {
+  position: relative;
+}
+
+.plan-content-menu-panel {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 104px;
+  padding: 4px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay-panel);
+  box-shadow: var(--shadow-results);
+}
+
+.plan-content-submit:disabled,
+.plan-endpoint-result:disabled,
+.journey-option-summary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.plan-endpoint-picker {
+  position: relative;
+  display: grid;
+  gap: 0;
+  /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
+  margin-bottom: 18px;
+  padding: 6px 48px 6px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+.plan-endpoint-picker::before {
+  position: absolute;
+  top: 27px;
+  bottom: 27px;
+  left: 17px;
+  border-left: 2px dotted var(--text-muted);
+  opacity: 0.75;
+  content: '';
+}
+
+.plan-endpoint-control {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.plan-endpoint-control:has(.plan-endpoint-results) {
+  z-index: 4;
+}
+
+.plan-endpoint-control-destination::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 32px;
+  border-top: 1px solid var(--border-control);
+  content: '';
+  opacity: 0.65;
+}
+
+.plan-endpoint-marker {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  margin: 8px 2px 0;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.plan-endpoint-control-origin .plan-endpoint-marker {
+  color: var(--status-marker-origin);
+}
+
+.plan-endpoint-control-destination .plan-endpoint-marker {
+  color: var(--status-marker-destination);
+}
+
+.plan-endpoint-marker svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.plan-endpoint-swap {
+  position: absolute;
+  z-index: 2;
+  /* Centred without a transform so the primitive's pressed scale cannot make it jump. */
+  top: calc(50% - var(--control-height-sm) / 2);
+  right: 8px;
+}
+
+.plan-endpoint-field {
+  position: relative;
+  min-width: 0;
+}
+
+.plan-endpoint-input-row {
+  position: relative;
+}
+
+.plan-endpoint-control .search-field-icon {
+  display: none;
+}
+
+.plan-endpoint-control .search-field input {
+  min-height: var(--control-height-md);
+  padding: 8px 86px 8px 10px;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+.plan-endpoint-control-has-identity .search-field input {
+  padding-left: 36px;
+}
+
+.plan-endpoint-control .plan-endpoint-selected-icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  z-index: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.plan-endpoint-control .search-field input:focus {
+  outline: 2px solid var(--focus-ring-neutral);
+  outline-offset: 1px;
+}
+
+.plan-endpoint-control .search-field input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.plan-endpoint-control .search-field input::placeholder {
+  color: var(--text-muted);
+}
+
+.plan-endpoint-actions {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transform: translateY(-50%);
+}
+
+.plan-endpoint-location-status {
+  margin: 4px 0 0;
+  color: var(--text-warning);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.plan-endpoint-search-status,
+.plan-validation {
+  margin: 0;
+}
+
+.plan-content-footer {
+  display: flex;
+  align-items: center;
+  min-height: 16px;
+  padding: 0 44px 0 9px;
+}
+
+.plan-content-submit {
+  position: absolute;
+  right: 8px;
+  bottom: -18px;
+  z-index: 3;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+}
+
+.plan-content-submit svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.plan-content-submit:not(:disabled):hover,
+.plan-content-submit:not(:disabled):focus-visible {
+  background: var(--accent-hover);
+}
+
+.plan-endpoint-results {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  display: grid;
+  gap: 4px;
+  max-height: 180px;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-results);
+}
+
+.plan-endpoint-result {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  font: inherit;
+  cursor: pointer;
+}
+
+.plan-endpoint-result:focus-visible {
+  background: var(--surface-muted);
+}
+
+.plan-endpoint-result:hover {
+  border-color: var(--border-focus);
+}
+
+.plan-endpoint-result-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-endpoint-result span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.plan-endpoint-empty {
+  margin: 4px 0;
+  padding: 4px;
+  color: var(--text-secondary);
+}
+
+.plan-validation {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--text-warning);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.plan-validation::before {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: '!';
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.journey-status {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-status);
+  color: var(--text-strong);
+  background: var(--surface-muted);
+}
+
+.journey-results {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-results-item {
+  min-width: 0;
+}
+
+.journey-result {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-status);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.journey-result-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.journey-result-heading {
+  min-width: 0;
+  margin: 0;
+}
+
+.journey-option-summary {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 7px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journey-option-summary:hover {
+  background: var(--surface-muted);
+}
+
+.journey-option-summary:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.journey-option-summary-topline,
+.journey-option-summary-bottomline,
+.journey-option-estimate,
+.journey-option-modes,
+.journey-option-walking,
+.journey-option-bus {
+  min-width: 0;
+}
+
+.journey-option-summary-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.journey-option-heading-labels {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.journey-option-heading-recommended {
+  color: var(--status-success-strong);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.journey-option-heading-neutral {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.journey-option-heading-qualifier {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.journey-option-estimate {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.journey-option-duration {
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.journey-option-estimate .disclosure-chevron {
+  color: var(--text-muted);
+}
+
+.journey-option-summary-bottomline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.journey-option-walking-total {
+  align-self: center;
+  justify-self: end;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.3;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.journey-option-modes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.journey-option-walking,
+.journey-option-bus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.journey-option-bus {
+  color: var(--journey-route-color, var(--text-secondary));
+}
+
+.journey-result-details {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 11px;
+  text-align: left;
+}
+
+.journey-result-details[hidden] {
+  display: none;
+}
+
+.journey-detail-distance {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.journey-result-details .journey-timeline {
+  padding: 0;
+}
+
+.journey-result-details .journey-timeline::before {
+  top: 8px;
+  bottom: 8px;
+}
+
+@media (max-width: 480px) {
+  .journey-option-summary {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .journey-option-heading-recommended {
+    font-size: 18px;
+  }
+
+  .journey-option-heading-neutral {
+    font-size: 13px;
+  }
+
+  .journey-option-duration {
+    font-size: 16px;
+  }
+
+  .journey-option-walking-total {
+    font-size: 10px;
+  }
+}
+
+.journey-result h3 {
+  margin: 0;
+}
+
+.journey-notice {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.journey-notice {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--status-warning-strong);
+  background: var(--surface-warning);
+}
+
+.journey-timeline {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+}
+
+/* One shared rail keeps the journey continuous while markers vary by entry type. */
+.journey-timeline::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 2px;
+  background: var(--border-control);
+  content: '';
+}
+
+.journey-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  padding: 4px 0;
+}
+
+.journey-timeline-marker {
+  z-index: 1;
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  border: 3px solid var(--surface-raised);
+  border-radius: 50%;
+  /* Match the marker's outer diameter to the rail's grid geometry. */
+  box-sizing: border-box;
+  background: var(--surface-journey-step);
+  box-shadow: 0 0 0 1px var(--border-control);
+}
+
+.journey-timeline-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.journey-timeline-location strong,
+.journey-timeline-content strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.journey-timeline-location strong {
+  justify-self: start;
+  max-width: 100%;
+  text-align: left;
+}
+
+.journey-location-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.journey-location-name .location-identity-icon {
+  width: 15px;
+  height: 15px;
+  flex-basis: 15px;
+}
+
+.journey-timeline-content span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.journey-timeline-leg .journey-timeline-marker {
+  width: 10px;
+  height: 10px;
+  margin-left: 4px;
+  border-width: 2px;
+  background: var(--surface-muted);
+}
+
+.journey-timeline-bus {
+  align-items: start;
+}
+
+.journey-timeline-bus .journey-timeline-marker {
+  margin-top: 5px;
+}
+
+/* The app shell centers text by default; keep the expanded route anchored to the rail. */
+.journey-bus-content {
+  text-align: left;
+}
+
+/* The stop dots replace the parent bus dot while the route details are open. */
+.journey-timeline-bus:has(.journey-stop-disclosure[open]) > .journey-timeline-marker {
+  visibility: hidden;
+}
+
+.journey-timeline-walking .journey-timeline-marker {
+  /* Keep the shared rail visually continuous through the walking leg marker. */
+  background: var(--border-control);
+  box-shadow: none;
+}
+
+.journey-timeline-content .journey-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.journey-bus-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 10px;
+}
+
+.journey-walking-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 10px;
+}
+
+.journey-walking-content > .journey-mode-label {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.journey-walking-content > .journey-leg-summary {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-width: max-content;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.journey-bus-content > .journey-route-chip,
+.journey-bus-content > .journey-stop-disclosure {
+  grid-column: 1;
+  justify-self: start;
+  min-width: 0;
+}
+
+.journey-bus-content > .journey-stop-disclosure[open] {
+  width: 100%;
+}
+
+.journey-bus-content > .journey-leg-summary {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-width: max-content;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.journey-mode-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.journey-walking-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.journey-timeline-bus .journey-timeline-marker {
+  background: var(--journey-route-color, var(--status-info));
+}
+
+.journey-route-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  color: var(--journey-route-color, var(--status-info)) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.01em;
+}
+
+.journey-stop-disclosure {
+  min-width: 0;
+}
+
+.journey-stop-disclosure summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.journey-stop-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.journey-stop-disclosure summary:focus-visible {
+  outline: 2px solid var(--focus-ring-neutral);
+  outline-offset: 2px;
+}
+
+.journey-disclosure-chevron {
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transition: transform 120ms ease-out;
+}
+
+.journey-stop-disclosure[open] .journey-disclosure-chevron {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.journey-stop-list {
+  display: grid;
+  gap: 0;
+  /* Pull the nested list back over the content column so its dots sit on the rail. */
+  margin: 4px 0 0 -28px;
+  padding: 4px 0 0;
+  list-style: none;
+  text-align: left;
+}
+
+.journey-stop-list li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.journey-stop-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.journey-stop-name .location-identity-icon {
+  width: 12px;
+  height: 12px;
+  flex-basis: 12px;
+  color: currentColor;
+}
+
+.journey-stop-marker {
+  width: 10px;
+  height: 10px;
+  margin-left: 4px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: var(--journey-route-color, var(--status-info));
+  box-shadow: 0 0 0 1px var(--journey-route-color, var(--status-info));
+}
+
+@media (max-width: 480px) {
+  .journey-timeline-content:not(.journey-bus-content):not(.journey-walking-content) {
+    display: grid;
+    gap: 1px;
+  }
+
+  .journey-timeline-content span {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navigation-panel.plan-sheet {
+    overflow: hidden;
+  }
+
+  .plan-content {
+    height: 100%;
+  }
+
+  .plan-content-heading {
+    min-height: var(--control-height-sm);
+  }
+
+  .plan-content-title {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .plan-content-title h2 {
+    font-size: 16px;
+  }
+
+  .navigation-panel .plan-content-panel {
+    min-height: 0;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: auto;
+  }
+
+  .navigation-panel .plan-content-panel .journey-results {
+    /* The 32px offset plus the 12px sheet inset leaves symmetric 44px viewport gutters. */
+    width: calc(100vw - 88px);
+    margin-inline-start: 32px;
+    box-sizing: border-box;
+  }
+
+  .plan-endpoint-picker {
+    width: 100%;
+    margin-inline: var(--space-2) 0;
+  }
+
+  .plan-content-submit,
+  .plan-endpoint-result,
+  .journey-option-summary,
+  .plan-content input,
+  .plan-content select {
+    min-height: var(--control-height-sm);
+  }
+
+  .navigation-panel[data-detent='partial'] .plan-content,
+  .navigation-panel[data-detent='full'] .plan-content {
+    align-content: start;
+  }
+
+  /* The partial sheet is clipped to its detent, so the content row takes the
+     remaining height and scrolls instead of growing past the visible area. */
+  .navigation-panel[data-detent='partial'] .plan-content {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  /* Size to the content, only scrolling once it outgrows the row. */
+  .navigation-panel[data-detent='partial'] .plan-content-panel {
+    align-self: start;
+    max-height: 100%;
+  }
+
+  .navigation-panel[data-detent='full'] .plan-content-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+}
+
+@media (min-width: 769px) {
+  .navigation-column .plan-content {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .navigation-column .plan-content-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}

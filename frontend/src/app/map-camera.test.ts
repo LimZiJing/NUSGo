@@ -87,7 +87,7 @@ describe('map camera application seams', () => {
 
   it('prioritizes the frozen Current location trip over retained venue and route context', () => {
     expect(getResetTarget(createContext({
-      panelMode: 'shuttle',
+      panelMode: 'bus-routes',
       selectedVenue: venueResult,
       selectedRouteId: 'A1',
       tripRequest: {
@@ -103,9 +103,9 @@ describe('map camera application seams', () => {
     })
   })
 
-  it('prioritizes the currently visible selected shuttle route over endpoints', () => {
+  it('prioritizes the currently visible selected bus route over endpoints', () => {
     expect(getResetTarget(createContext({
-      panelMode: 'shuttle',
+      panelMode: 'bus-routes',
       selectedRouteId: 'A1',
       tripRequest: { origin: { kind: 'venue', id: 'COM1' }, destination: null },
     }))).toEqual({ kind: 'route', routeId: 'A1' })

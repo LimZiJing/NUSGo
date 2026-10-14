@@ -784,7 +784,7 @@ describe('searchPathCandidates', () => {
     })).toBe(false)
   })
 
-  it('does not walk back to a selected stop already traversed by the shuttle leg', async () => {
+  it('does not walk back to a selected stop already traversed by the bus leg', async () => {
     const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-D' }
     const input = createEightStopDestinationInput([
       walking(stopG, selectedDestination, 5),
@@ -839,7 +839,7 @@ describe('searchPathCandidates', () => {
     expect(result.status).toBe('complete')
   })
 
-  it('orders equal-score candidates deterministically by shuttle route sequence', async () => {
+  it('orders equal-score candidates deterministically by bus route sequence', async () => {
     const input = createParallelRouteInput()
     const firstSearch = await searchPathsWithinBudget(input)
     const secondSearch = await searchPathsWithinBudget(input)
@@ -859,7 +859,7 @@ describe('searchPathCandidates', () => {
       .toEqual(secondBusCandidates.map(({ candidateKey }) => candidateKey))
   })
 
-  it('scores each walk and discounts only shuttle legs boarded after a transfer', async () => {
+  it('scores each walk and discounts only bus legs boarded after a transfer', async () => {
     const input = createOneTransferInput((record) => record.routeId === 'A1' ? 10 : 20)
     const result = await searchPathsWithinBudget(input)
     const candidate = result.candidates.find(({ path }) => (
@@ -926,7 +926,7 @@ describe('searchPathCandidates', () => {
     ))).toEqual(['A1', 'B1'])
   })
 
-  it('includes a directed shuttle leg when zero waiting makes it the best path', () => {
+  it('includes a directed bus leg when zero waiting makes it the best path', () => {
     const path = searchPaths(createInput([
       walking(origin, stopA, 100),
       walking(stopB, destination, 100),
@@ -982,7 +982,7 @@ describe('searchPathCandidates', () => {
     expect(path?.totalDistanceMeters).toBe(600)
   })
 
-  it('keeps a continuous same-route ride as one shuttle leg', () => {
+  it('keeps a continuous same-route ride as one bus leg', () => {
     const path = searchPaths(createSameRouteInput())
 
     expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
@@ -1013,14 +1013,14 @@ describe('searchPathCandidates', () => {
     expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
-  it('uses direct walking when only a two-shuttle route could reach the destination', () => {
+  it('uses direct walking when only a two-bus route could reach the destination', () => {
     const path = searchPaths(createTimeDependentInput())
 
     expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
     expect(path?.totalDurationSeconds).toBe(1_000)
   })
 
-  it('does not treat stop-to-stop walking as a path into the shuttle network', () => {
+  it('does not treat stop-to-stop walking as a path into the bus network', () => {
     const path = searchPaths(createLabelOverflowInput())
 
     expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking'])
@@ -1044,7 +1044,7 @@ describe('searchPathCandidates', () => {
     expect(path?.legs[1]).toMatchObject({ routeId: 'B1', boardingStopId: 'STOP-B' })
   })
 
-  it('passes the elapsed path time to each shuttle wait calculation', () => {
+  it('passes the elapsed path time to each bus wait calculation', () => {
     const contexts: number[] = []
     const path = searchPaths(createInput([
       walking(origin, stopA, 100),
@@ -1167,7 +1167,7 @@ describe('searchPathCandidates', () => {
   it('enforces the deadline while building the bounded search index', async () => {
     const input = createInput([])
     const timingRecord = input.shuttleTiming.records[0]
-    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    if (!timingRecord) throw new Error('Expected a generated bus timing record')
     let nowMs = 0
     let yieldCount = 0
 
@@ -1196,7 +1196,7 @@ describe('searchPathCandidates', () => {
   it('checks cancellation while building the bounded search index', async () => {
     const input = createInput([])
     const timingRecord = input.shuttleTiming.records[0]
-    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    if (!timingRecord) throw new Error('Expected a generated bus timing record')
     const abortController = new AbortController()
     let yieldCount = 0
 
@@ -1224,7 +1224,7 @@ describe('searchPathCandidates', () => {
   it('keeps explicit zero yieldEvery disabled during index construction', async () => {
     const input = createInput([])
     const timingRecord = input.shuttleTiming.records[0]
-    if (!timingRecord) throw new Error('Expected a generated shuttle timing record')
+    if (!timingRecord) throw new Error('Expected a generated bus timing record')
     let yieldCount = 0
 
     const result = await searchPathsWithinBudget({

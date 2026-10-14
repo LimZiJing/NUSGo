@@ -60,7 +60,7 @@ describe('data loaders', () => {
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
   })
 
-  it('loads shuttle timing and validates it against the canonical network', async () => {
+  it('loads bus timing and validates it against the canonical network', async () => {
     const result = await loadShuttleTimingData(
       validatedNetwork,
       new AbortController().signal,

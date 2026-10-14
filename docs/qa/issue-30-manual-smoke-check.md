@@ -4,12 +4,12 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 
 ## Desktop: 1440 × 900
 
-- [ ] The trip endpoint controls remain a compact card above the persistent Explore view.
-- [ ] The Explore view remains visible and usable while the map remains available for pan and zoom.
-- [ ] Venue search, venue detail, shuttle route selection, Back, Close, Escape, and map-click behavior work.
+- [ ] The trip endpoint controls remain a compact card above the persistent Explore panel.
+- [ ] The Explore panel remains visible and usable while the map remains available for pan and zoom.
+- [ ] Venue search, venue detail, bus route selection, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies the map to the venue and keeps its selected marker visible without a duplicate popup.
 - [ ] Route selection updates the map camera/content and the selected route details.
-- [ ] A venue-load failure still leaves shuttle browsing available.
+- [ ] A venue-load failure still leaves bus route browsing available.
 - [ ] Keyboard focus is visible, sequential, and returns to the initiating control after Back, Escape, and Close.
 
 ## Mobile: 390 × 844 (mobile layout through 768px)
@@ -20,17 +20,17 @@ Run these checks in Windows Chrome and Edge after starting the local Vite app. L
 - [ ] Expanding Plan trip minimizes the Explore sheet to an actionable labelled header.
 - [ ] Activating the Explore header restores the sheet, collapses Plan trip, and leaves focus on safe current content.
 - [ ] A map-triggered Explore change reveals the sheet without losing Explore state.
-- [ ] The Explore view is a persistent, non-modal bottom sheet capped at about half the viewport and sized to its content.
+- [ ] The Explore panel is a persistent, non-modal bottom sheet capped at about half the viewport and sized to its content.
 - [ ] The bottom sheet respects the safe-area inset, scrolls internally, and has no drag affordance or gesture requirement.
 - [ ] There is enough map space between the top card and bottom sheet for pan and zoom interaction.
 - [ ] Map navigation controls and attribution remain usable without overlapping either surface; the full legend is hidden.
-- [ ] Venue search receives focus when opened; venue-detail heading receives focus after selection; route select receives focus when shuttle mode opens, or the Back fallback receives focus until routes become available.
+- [ ] Venue search receives focus when opened; venue-detail heading receives focus after selection; route select receives focus when Bus routes opens, or the Back fallback receives focus until routes become available.
 - [ ] Back, Escape, and Close restore focus to the control that initiated the current view, with no focus left on removed content.
 - [ ] Trip endpoint search, selection, swap, clear, and validation remain usable.
 - [ ] The collapsed mobile Map controls chip appears below Plan trip and opens a labelled popover.
 - [ ] Zoom in and Zoom out each move the map by one animated step while keeping the popover open with action focus; Reset view closes the popover and restores chip focus.
 - [ ] Reset view targets the visible venue detail before other targets.
-- [ ] Reset view targets the visible selected shuttle route before trip endpoints.
+- [ ] Reset view targets the visible selected bus route before trip endpoints.
 - [ ] Reset view fits two mapped trip endpoints, centers one mapped endpoint at venue level, and falls back to the campus view when no target is available.
 - [ ] Escape and outside-map interaction dismiss the Map controls popover.
 - [ ] Keyboard dismissal restores focus to the Map controls chip.

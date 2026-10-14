@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialExploreViewState } from '../../features/explore-view/state'
+import { createInitialExploreState } from '../../features/explore/state/explore-state'
 import { createInitialJourneyState } from '../journey-state'
 import {
   getExploreSheetSummary,
@@ -81,12 +81,12 @@ describe('mobile sheet summaries', () => {
 
   describe('Explore', () => {
     it('describes the current Explore context', () => {
-      const initial = createInitialExploreViewState()
+      const initial = createInitialExploreState()
 
       expect(getExploreSheetSummary(initial, null)).toBe('Explore · Search venues')
-      expect(getExploreSheetSummary({ ...initial, mode: 'shuttle' }, null))
-        .toBe('Explore · Shuttle routes')
-      expect(getExploreSheetSummary({ ...initial, mode: 'shuttle' }, { id: 'A1', name: 'A1' }))
+      expect(getExploreSheetSummary({ ...initial, mode: 'bus-routes' }, null))
+        .toBe('Explore · Bus routes')
+      expect(getExploreSheetSummary({ ...initial, mode: 'bus-routes' }, { id: 'A1', name: 'A1' }))
         .toBe('Explore · Route A1')
       expect(getExploreSheetSummary({
         ...initial,

@@ -27,7 +27,7 @@ function isWindow(value: unknown): value is ShuttleServiceWindow {
 }
 
 function parseResponse(input: unknown): Readonly<Record<string, readonly ShuttleServiceWindow[]>> {
-  if (!isRecord(input) || !isRecord(input.routes)) throw new Error('Shuttle service-hour response was invalid')
+  if (!isRecord(input) || !isRecord(input.routes)) throw new Error('bus service-hour response was invalid')
   const routes: Record<string, readonly ShuttleServiceWindow[]> = {}
   for (const [routeId, value] of Object.entries(input.routes)) {
     if (!Array.isArray(value)) continue
@@ -45,7 +45,7 @@ export function createShuttleServiceHoursClient(
     async getServiceWindows(routeIds, signal) {
       const uniqueRouteIds = [...new Set(routeIds)]
       const response = await fetcher(`${endpoint}?routes=${encodeURIComponent(uniqueRouteIds.join(','))}`, { signal })
-      if (!response.ok) throw new Error(`Shuttle service-hour request failed: ${response.status}`)
+      if (!response.ok) throw new Error(`bus service-hour request failed: ${response.status}`)
       return parseResponse(await response.json() as unknown)
     },
   }

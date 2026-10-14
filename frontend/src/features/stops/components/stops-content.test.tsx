@@ -39,10 +39,10 @@ describe('StopsContent', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
-    const stopHeading = screen.getByRole('heading', { name: 'University Hall, shuttle stop' })
+    const stopHeading = screen.getByRole('heading', { name: 'University Hall, bus stop' })
     expect(stopHeading.querySelector('.location-identity-icon--stop[aria-hidden="true"]')).toBeTruthy()
     expect(screen.getByText('SR7')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Add University Hall, shuttle stop to favourites' }).getAttribute('aria-pressed'))
+    expect(screen.getByRole('button', { name: 'Add University Hall, bus stop to favourites' }).getAttribute('aria-pressed'))
       .toBe('false')
 
     const content = screen.getByTestId('stop-detail')
@@ -81,7 +81,7 @@ describe('StopsContent', () => {
     await user.click(screen.getByRole('button', { name: 'Back to stops' }))
     await user.click(screen.getByRole('button', { name: 'View D2 route details' }))
     await user.click(screen.getByRole('button', { name: 'Navigate to this stop' }))
-    await user.click(screen.getByRole('button', { name: /Opposite shuttle stop: University Hall \(Opposite\), SR8/ }))
+    await user.click(screen.getByRole('button', { name: /Opposite bus stop: University Hall \(Opposite\), SR8/ }))
 
     expect(onBackToStops).toHaveBeenCalledOnce()
     expect(onSelectRoute).toHaveBeenCalledWith('D2')

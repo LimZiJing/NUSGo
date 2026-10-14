@@ -6,7 +6,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
 - `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications. `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
-- `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
+- `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
 - `frontend/src/pathfinding` owns the provider-injected Path model, bounded search, ordered planning pipeline, and its walking provider boundary. The app composition supplies validated transit data, timing callbacks, clocks, cooperative yields, and cancellation; Plan presentation and MapLibre rendering stay outside this folder.
@@ -63,11 +63,12 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Current area | Target owner |
 | --- | --- |
 | Reusable transit and venue types and validation shared by the backend | `shared/src` |
-| Frontend-only transit indexes and transformations, plus location, trip, and pure Explore view state | `frontend/src/domain` |
+| Frontend-only transit indexes and transformations, plus location and trip models | `frontend/src/domain` |
+| Explore workflow state | `frontend/src/features/explore/state` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
-| Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
+| Explore route browsing and venue workflows | `frontend/src/features/explore` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops` |
-| Trip endpoints and Path presentation | `frontend/src/features/plan-view` |
+| Trip endpoints and Path presentation | `frontend/src/features/plan` |
 | Path model, search, ordered planning stages, and walking boundary | `frontend/src/pathfinding` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
 | Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |

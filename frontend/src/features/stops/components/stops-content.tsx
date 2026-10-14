@@ -84,7 +84,7 @@ export function StopsContent({
             />
           </div>
         ) : (
-          <p>Tap a shuttle stop on the map to view its details and route actions.</p>
+          <p>Tap a bus stop on the map to view its details and route actions.</p>
         )}
       </div>
     </div>

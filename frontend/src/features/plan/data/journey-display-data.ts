@@ -180,7 +180,7 @@ export function getJourneyOptionHeader(
   return {
     kind: 'neutral',
     label: transferCount === 0
-      ? 'direct bus'
+      ? 'Direct bus'
       : `${transferCount} transfer${transferCount === 1 ? '' : 's'}`,
   }
 }

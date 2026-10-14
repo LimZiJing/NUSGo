@@ -25,6 +25,7 @@ import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
@@ -72,6 +73,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
+  let currentBuildings: BuildingIndex | null = null
   let currentTransitIndex: TransitIndex | null = null
   let stopsPinStopId: string | null = null
   let stopsPinVisible = false
@@ -209,6 +211,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentTripRequest,
       currentVenues,
       currentTransitIndex,
+      currentBuildings,
     )
   }
 
@@ -397,12 +400,18 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       shuttleStopMarkers?.setStopsPin(stopsPinStopId, visible)
     },
 
-    setTripRequest(request: TripRequest, venues: VenueLocationMap, transitIndex: TransitIndex | null) {
+    setTripRequest(
+      request: TripRequest,
+      venues: VenueLocationMap,
+      transitIndex: TransitIndex | null,
+      buildings: BuildingIndex | null = null,
+    ) {
       if (disposed) return
 
       currentTripRequest = request
       currentVenues = venues
       currentTransitIndex = transitIndex
+      currentBuildings = buildings
       syncEndpointMarkers()
     },
 

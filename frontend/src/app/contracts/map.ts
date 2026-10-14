@@ -1,3 +1,4 @@
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   BusRoute,
@@ -67,6 +68,7 @@ export interface MapSession {
     request: TripRequest,
     venues: VenueLocationMap,
     transitIndex: TransitIndex | null,
+    buildings?: BuildingIndex | null,
   ): void
   setJourneyOptions(
     options: readonly MapJourneyOption[],

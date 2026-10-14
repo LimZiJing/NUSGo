@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { buildBuildingIndex } from '../domain/venue/building-index'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { VenueSearchResult } from '../domain/venue/search'
@@ -121,6 +122,29 @@ describe('map camera application seams', () => {
     }))).toEqual({
       kind: 'trip',
       coordinates: [[103.7, 1.3], [103, 1]],
+    })
+  })
+
+  it('fits a building endpoint at its own location, apart from the stop beside it', () => {
+    const buildings = buildBuildingIndex([{
+      id: 'com3',
+      name: 'COM3',
+      aliases: [],
+      elementId: 'way/1',
+      location: { x: 103.775, y: 1.295 },
+      roomCodePrefixes: [],
+      sourceRefs: [],
+    }])
+
+    expect(getResetTarget(createContext({
+      buildings,
+      tripRequest: {
+        origin: { kind: 'building', id: 'com3' },
+        destination: { kind: 'stop', id: 'STOP-A' },
+      },
+    }))).toEqual({
+      kind: 'trip',
+      coordinates: [[103.775, 1.295], [103, 1]],
     })
   })
 

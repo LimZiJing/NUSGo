@@ -11,6 +11,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
+import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createInitialResourceStatus,
@@ -60,6 +61,7 @@ export interface NavigationSessionStartupFailure {
 
 export interface NavigationSessionState {
   readonly venues: VenueLocationMap | null
+  readonly buildings: BuildingIndex | null
   readonly transitIndex: TransitIndex | null
   readonly selectedRouteId: string | null
   readonly selectedRouteColor: string | null
@@ -148,6 +150,7 @@ export function createInitialNavigationSessionState(
 ): NavigationSessionState {
   return freezeNavigationSessionSnapshot({
     venues: null,
+    buildings: null,
     transitIndex: null,
     selectedRouteId: null,
     selectedRouteColor: null,
@@ -354,6 +357,7 @@ export function createNavigationSession(
       origin: state.tripRequest.origin,
       destination: state.tripRequest.destination,
       venues: state.venues,
+      buildings: state.buildings,
       transit: {
         index: transitData.index,
         geometry: transitData.geometry,
@@ -437,11 +441,13 @@ export function createNavigationSession(
     request: TripRequest,
     venues: VenueLocationMap,
     nextTransitIndex: TransitIndex | null,
+    buildings: BuildingIndex | null,
   ): void => {
     dependencies.map.setTripRequest(
       request,
       venues,
       nextTransitIndex,
+      buildings,
     )
   }
 
@@ -461,12 +467,12 @@ export function createNavigationSession(
       path: createInitialJourneyState(),
       originLocationRequest: INITIAL_ORIGIN_LOCATION_REQUEST_STATE,
     })
-    syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex)
+    syncTripRequest(nextState.tripRequest, state.venues ?? {}, transitIndex, state.buildings)
     publishSnapshot(nextState)
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
-    const canonicalEndpoint = canonicalizeTripEndpoint(endpoint, state.venues, transitIndex)
+    const canonicalEndpoint = canonicalizeTripEndpoint(endpoint, state.venues, transitIndex, state.buildings)
     if (
       disposed ||
       !isTripEndpointRole(role) ||
@@ -480,8 +486,9 @@ export function createNavigationSession(
 
   const handleVenueLoad = (data: LoadedVenueData): void => {
     const resourceStatus = markVenueLoaded(state.resourceStatus, data.venueCount)
-    syncTripRequest(state.tripRequest, data.venues, transitIndex)
-    updateState({ venues: data.venues, resourceStatus })
+    const buildings = data.buildings ?? null
+    syncTripRequest(state.tripRequest, data.venues, transitIndex, buildings)
+    updateState({ venues: data.venues, buildings, resourceStatus })
     requestJourneyPlanning()
   }
 
@@ -513,7 +520,7 @@ export function createNavigationSession(
           }
         },
       )
-      syncTripRequest(state.tripRequest, state.venues ?? {}, data.index)
+      syncTripRequest(state.tripRequest, state.venues ?? {}, data.index, state.buildings)
     } catch (error) {
       transitIndex = previousTransitIndex
       transitData = previousTransitData
@@ -800,7 +807,7 @@ export function createNavigationSession(
     },
 
     navigateTo(destination) {
-      const canonicalDestination = canonicalizeTripEndpoint(destination, state.venues, transitIndex)
+      const canonicalDestination = canonicalizeTripEndpoint(destination, state.venues, transitIndex, state.buildings)
       if (disposed || canonicalDestination === null) return
       enqueueTransition(() => {
         if (disposed) return
@@ -928,6 +935,7 @@ export function createNavigationSession(
           selectedRouteId: state.selectedRouteId,
           tripRequest: state.tripRequest,
           venues: state.venues,
+          buildings: state.buildings,
           transitIndex,
         }))
       })

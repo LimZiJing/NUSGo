@@ -9,6 +9,7 @@ import type { FindPathsResult } from '../pathfinding/find-paths'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
+import { buildBuildingIndex } from '../domain/venue/building-index'
 import type { LocationTracker } from './contracts/location'
 import {
   INITIAL_LOCATION_TRACKING_STATE,
@@ -267,6 +268,7 @@ describe('navigation session', () => {
   it('starts with stable application defaults', () => {
     expect(createInitialNavigationSessionState()).toEqual({
       venues: null,
+      buildings: null,
       transitIndex: null,
       selectedRouteId: null,
       selectedRouteColor: null,
@@ -343,6 +345,7 @@ describe('navigation session', () => {
       session.getState().tripRequest,
       dependencies.venues.venues,
       dependencies.transit.index,
+      null,
     )
   })
 
@@ -1302,6 +1305,7 @@ describe('navigation session', () => {
       session.getState().tripRequest,
       dependencies.venues.venues,
       dependencies.transit.index,
+      null,
     )
   })
 
@@ -1322,7 +1326,52 @@ describe('navigation session', () => {
       session.getState().tripRequest,
       dependencies.venues.venues,
       dependencies.transit.index,
+      null,
     )
+  })
+
+  it('accepts a loaded building as a trip endpoint and shows it on the map with its own identity', async () => {
+    const buildings = buildBuildingIndex([{
+      id: 'com3',
+      name: 'COM3',
+      aliases: [],
+      elementId: 'way/1',
+      location: { x: 103.775, y: 1.295 },
+      roomCodePrefixes: [],
+      sourceRefs: [],
+    }])
+    const base = createDependencies()
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(async () => ({ ...base.venues, buildings })),
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'building', id: 'missing' })
+    session.setTripEndpoint('origin', { kind: 'building', id: 'com3' })
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+
+    expect(session.getState().buildings).toBe(buildings)
+    expect(session.getState().tripRequest).toEqual({
+      origin: { kind: 'building', id: 'com3' },
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+    expect(dependencies.map.setTripRequest).toHaveBeenLastCalledWith(
+      session.getState().tripRequest,
+      dependencies.venues.venues,
+      dependencies.transit.index,
+      buildings,
+    )
+  })
+
+  it('rejects a building endpoint when the catalogue could not be loaded', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.setTripEndpoint('origin', { kind: 'building', id: 'com3' })
+
+    expect(session.getState().tripRequest.origin).toBeNull()
   })
 
   it('atomically captures the active fix as a frozen origin when Navigate is used', async () => {
@@ -1419,6 +1468,7 @@ describe('navigation session', () => {
       request,
       dependencies.venues.venues,
       dependencies.transit.index,
+      null,
     )
     expect(map.setTripRequest.mock.lastCall?.[0]).toBe(request)
   })
@@ -1451,6 +1501,7 @@ describe('navigation session', () => {
       session.getState().tripRequest,
       dependencies.venues.venues,
       dependencies.transit.index,
+      null,
     )
   })
 

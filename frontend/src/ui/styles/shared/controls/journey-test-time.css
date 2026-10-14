@@ -50,6 +50,7 @@
 .journey-test-time-toggle {
   min-height: 40px;
   padding: 8px 12px;
+  font: inherit;
   cursor: pointer;
 }
 

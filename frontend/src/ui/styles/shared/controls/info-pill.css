@@ -2,5 +2,5 @@
    migration in docs/ui/controls.md adopts the shared label size. */
 .pill.info-pill {
   padding: 3px 6px;
-  font-size: 10px;
+  font-size: var(--font-size-xs);
 }

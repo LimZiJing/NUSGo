@@ -320,12 +320,15 @@ function App() {
   const exploreViewProps: AppViewsProps['views']['explore'] = {
     state: state.exploreView,
     venues: state.venues,
+    buildings: state.buildings,
     transitIndex: state.transitIndex,
     shuttleRoutesAvailable: (state.transitIndex?.routes.length ?? 0) > 0,
     selectedRouteId: state.selectedRouteId,
     status: panelStatus,
     onQueryChange: commands.setExploreViewQuery,
     onVenueSelect: commands.selectVenue,
+    onBuildingSelect: commands.selectBuilding,
+    onNavigateToBuilding: appNavigation.navigateToBuilding,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
       type: 'set-sheet-detent',

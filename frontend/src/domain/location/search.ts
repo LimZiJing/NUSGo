@@ -40,8 +40,10 @@ export function getTripEndpointLabel(
   endpoint: TripEndpoint,
   venues: VenueLocationMap,
   stops: TransitStopSource,
+  buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): string {
   if (endpoint.kind === 'current-location') return 'Current location'
+  if (endpoint.kind === 'building') return buildings.byId.get(endpoint.id)?.name ?? endpoint.id
   if (endpoint.kind === 'venue') {
     return venues[endpoint.id]?.roomName ?? endpoint.id
   }

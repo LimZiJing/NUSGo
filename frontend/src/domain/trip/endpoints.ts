@@ -65,7 +65,7 @@ function isCompleteEndpoint(endpoint: TripEndpoint | null): endpoint is TripEndp
   if (endpoint.kind === 'current-location') {
     return createCurrentLocationTripEndpoint(endpoint.coordinate) !== null
   }
-  return (endpoint.kind === 'venue' || endpoint.kind === 'stop') &&
+  return (endpoint.kind === 'venue' || endpoint.kind === 'building' || endpoint.kind === 'stop') &&
     typeof endpoint.id === 'string' &&
     endpoint.id.trim().length > 0
 }

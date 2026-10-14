@@ -28,7 +28,7 @@ function isTripEndpoint(value: unknown): value is TripEndpoint {
       typeof latitude === 'number' && Number.isFinite(latitude) &&
       latitude >= -90 && latitude <= 90
   }
-  return (value.kind === 'venue' || value.kind === 'stop') && isNonEmptyString(value.id)
+  return (value.kind === 'venue' || value.kind === 'building' || value.kind === 'stop') && isNonEmptyString(value.id)
 }
 
 function isValidLineString(value: unknown): boolean {

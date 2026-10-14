@@ -90,6 +90,20 @@ describe('validateTripRequest', () => {
     expect(validateTripRequest(request)).toBe('Origin selection is incomplete.')
   })
 
+  it('accepts a building and a stop with the same name as different locations', () => {
+    expect(validateTripRequest({
+      origin: { kind: 'building', id: 'com3' },
+      destination: { kind: 'stop', id: 'com3' },
+    })).toBeNull()
+  })
+
+  it('reports an incomplete building selection', () => {
+    expect(validateTripRequest({
+      origin: { kind: 'building', id: ' ' },
+      destination: stop,
+    })).toBe('Origin selection is incomplete.')
+  })
+
   it('reports identical origin and destination selections', () => {
     const request: TripRequest = {
       origin: venue,

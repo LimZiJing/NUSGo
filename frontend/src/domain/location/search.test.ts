@@ -140,6 +140,15 @@ describe('getTripEndpointLabel', () => {
     )
   })
 
+  it('labels a building by its name and falls back to its ID when the catalogue is unavailable', () => {
+    const index = buildBuildingIndex([
+      { id: 'com3', name: 'COM3', aliases: [], elementId: 'way/1', location: { x: 103.77, y: 1.29 }, roomCodePrefixes: [], sourceRefs: [] },
+    ])
+
+    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops, index)).toBe('COM3')
+    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops)).toBe('com3')
+  })
+
   it('falls back to the stable endpoint ID when data is unavailable', () => {
     expect(getTripEndpointLabel({ kind: 'venue', id: 'MISSING' }, venues, stops)).toBe('MISSING')
     expect(getTripEndpointLabel({ kind: 'stop', id: 'MISSING' }, venues, stops)).toBe('MISSING')

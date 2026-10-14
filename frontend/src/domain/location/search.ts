@@ -5,6 +5,7 @@ import type {
   TripLocationSearchResult,
 } from '../trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../venue/building-index'
 
@@ -18,37 +19,6 @@ interface SearchCandidate {
   result: TripLocationSearchResult
   fields: string[]
   kindOrder: number
-}
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase()
-}
-
-function getMatchPriority(fields: string[], query: string): number | null {
-  let priority: number | null = null
-
-  for (const field of fields) {
-    const normalizedField = normalize(field)
-    const fieldPriority = normalizedField === query
-      ? 0
-      : normalizedField.startsWith(query)
-        ? 1
-        : normalizedField.includes(query)
-          ? 2
-          : null
-
-    if (fieldPriority !== null && (priority === null || fieldPriority < priority)) {
-      priority = fieldPriority
-    }
-  }
-
-  return priority
-}
-
-function compareText(first: string, second: string): number {
-  if (first < second) return -1
-  if (first > second) return 1
-  return 0
 }
 
 function getResultLimit(limit: number): number {

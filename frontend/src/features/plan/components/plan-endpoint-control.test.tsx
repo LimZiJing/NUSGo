@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { PlanContent } from './plan-content'
+import { PlanContentHarness as PlanContent } from './plan-content-harness'
 import { PlanEndpointControl } from './plan-endpoint-control'
 import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'

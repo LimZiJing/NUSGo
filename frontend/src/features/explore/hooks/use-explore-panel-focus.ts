@@ -192,7 +192,8 @@ export function useExplorePanelFocus({
       return
     }
 
-    // Keep the clicked element when it survives the view change; its stable key is the fallback when it does not.
+    // Keep the clicked element when it survives the view change.
+    // Use its stable key as a fallback when the element was unmounted.
     const pendingFocus = pendingExploreFocusRef.current
     pendingExploreFocusRef.current = null
     const focusTarget = pendingFocus?.element?.isConnected

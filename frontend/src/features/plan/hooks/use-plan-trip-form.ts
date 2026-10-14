@@ -48,8 +48,8 @@ export function usePlanTripForm({
   const [planAttempted, setPlanAttempted] = useState(false)
   const previousTripRequest = useRef(tripRequest)
   const skipEndpointReset = useRef(false)
-  const tripValidation = validateTripRequest(tripRequest)
   // Validation stays quiet until the user asks for a route, then follows the current endpoint state.
+  const tripValidation = validateTripRequest(tripRequest)
 
   const onSearchQueryChange = (role: TripEndpointRole, query: string): void => {
     if (role === 'origin') onCancelOriginLocationRequest?.()
@@ -81,7 +81,7 @@ export function usePlanTripForm({
       skipEndpointReset.current = false
       return
     }
-    // Selecting an endpoint clears only that endpoint's stale query; deselecting or changing the other field is preserved.
+    // Selecting an endpoint clears its stale query. Deselecting or changing the other field stays untouched.
     const originSelected = tripRequest.origin !== null &&
       tripRequest.origin !== previous.origin
     const destinationSelected = tripRequest.destination !== null &&

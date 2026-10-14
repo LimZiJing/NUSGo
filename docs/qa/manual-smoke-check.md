@@ -24,23 +24,23 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 The Codex In-app Browser session used for this PR9 pass provided a 1280 × 720 viewport. Earlier Edge headless/device-emulation evidence at the release and mobile sizes remains recorded in the Issue #30 document, but it is not a replacement for a full manual release pass. This session did not provide viewport overrides or a real Chrome/Edge window, so the checklist remains unchecked where those conditions matter.
 
-- The basemap, route lines, attribution, venue layer, and shuttle-stop markers rendered. The application reported 719 venues, 33 shuttle stops, and 8 shuttle routes loaded.
+- The basemap, route lines, attribution, venue layer, and bus-stop markers rendered. The application reported 719 venues, 33 bus stops, and 8 bus routes loaded.
 - The existing OpenFreeMap glyph and sprite limitations remain relevant; the map still rendered with attribution and usable application controls.
 - Venue search for `COM1-0210` returned a result. Keyboard focus moved from the search field through the clear control to the result; Enter opened venue details and focused the venue heading.
 - Venue details showed the selected map marker without a duplicate popup. Back returned to search, Escape closed the map context, Close returned focus to Find a venue, and an empty-map click dismissed venue details.
-- Shuttle browsing opened with the route select focused. A1, A2, D1, D2, R1, R2, K, and P each displayed route-specific directions and ordered stop lists; Show all routes restored all 8 routes and 33 stops. Escape closed shuttle browsing.
-- Shuttle-stop popups displayed stop services and Set as origin, Set as destination, and Close popup controls. Direct origin and destination assignment from two popups worked, and Clear both endpoints removed them.
+- bus route browsing opened with the route select focused. A1, A2, D1, D2, R1, R2, K, and P each displayed route-specific directions and ordered stop lists; Show all routes restored all 8 routes and 33 stops. Escape closed bus route browsing.
+- Bus-stop popups displayed stop services and Set as origin, Set as destination, and Close popup controls. Direct origin and destination assignment from two popups worked, and Clear both endpoints removed them.
 - Trip endpoint search set origin `COM1-0210` and destination `LT13-OPP` (Ventus). Swap exchanged the endpoints and Clear both endpoints removed both markers and selections.
 - Automated and repository checks: `npm test` (31 files, 212 tests), `npm run lint`, `npm run build`, and `git diff --check` passed.
 - Not verified in this session: exact 1440 × 900 desktop, 390 × 844 mobile, 768/769px resize behavior, safe-area spacing, mobile map-controls focus flow, and injected resource failures. Real Chrome/Edge and a physical software keyboard were also not available.
 
 ## Desktop — 1440 × 900
 
-- [ ] The map, trip endpoint controls, and Explore view are visible without overlap.
+- [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
-- [ ] Shuttle browsing, route selection, route clearing, stop popups, and camera fitting work.
-- [ ] Trip endpoints can be set, swapped, and cleared for venues and shuttle stops.
+- [ ] bus route browsing, route selection, route clearing, stop popups, and camera fitting work.
+- [ ] Trip endpoints can be set, swapped, and cleared for venues and bus stops.
 - [ ] In Plan, the Origin location action requests browser location only after activation, fills the closest mapped venue, keeps the existing origin until success, and shows a retryable message when location is denied or unavailable.
 - [ ] In Plan, the endpoint rows, swap and location actions, validation message, Clear all control, and Get route action use compact, consistent alignment without clipping. The Journey summary and leg details remain readable.
 - [ ] Repeat the Plan layout check in both light and dark themes.
@@ -64,7 +64,7 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport:
 - Pointer and Enter activation moved the Kent Ridge MRT stop marker to the measured exposed-map centre (y=173px with a 498px bottom inset).
 - The button disappeared when Plan was expanded and returned after switching to Stops.
 - At 1280 × 720, the recenter button was absent and the native MapLibre navigation controls remained visible.
-- The browser pass supplied a runtime-generated shuttle timing payload in memory because `npm run build` is blocked by this environment's Node `ERR_NO_TYPESCRIPT` prebuild failure. OpenFreeMap glyph 404 warnings were visible; they did not prevent the map and controls from rendering.
+- The browser pass supplied a runtime-generated bus timing payload in memory because `npm run build` is blocked by this environment's Node `ERR_NO_TYPESCRIPT` prebuild failure. OpenFreeMap glyph 404 warnings were visible; they did not prevent the map and controls from rendering.
 
 ![Mobile map with the Recenter map button at the top-left safe area](issue-140-mobile-recenter.png)
 
@@ -75,7 +75,7 @@ Isolated headless Chrome, local Vite server, 390 × 844 mobile viewport with CDP
 - With geolocation denied, Recenter placed the Kent Ridge MRT stop at the exposed map center (195, 173px) using the measured 498px bottom inset.
 - After granting a device fix, the first location was shown. A later simulated fix moved the marker to (2059, 2083px) while the camera stayed put; activating Recenter then placed that marker at the exposed center (195, 173px).
 - The location marker remained visible in this browser flow; the focused session test separately verifies recentering while marker visibility is false.
-- The browser pass generated the shuttle timing payload in memory because the host Node.js prebuild fails with `ERR_NO_TYPESCRIPT`. OpenFreeMap sprite and glyph 404 warnings remained visible, but the map rendered and the recenter behavior passed.
+- The browser pass generated the bus timing payload in memory because the host Node.js prebuild fails with `ERR_NO_TYPESCRIPT`. OpenFreeMap sprite and glyph 404 warnings remained visible, but the map rendered and the recenter behavior passed.
 
 ![Mobile map recentered on the active device fix](issue-141-active-location-recenter.png)
 
@@ -88,7 +88,7 @@ The issue #140 and #141 screenshots document the pre-consolidation layout with s
 - [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
 - [ ] Scrollable sheet content scrolls natively, text and controls remain usable, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
-- [ ] Explore venue search/details and shuttle browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
+- [ ] Explore venue search/details and bus route browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
@@ -106,10 +106,10 @@ These measurements describe the initial implementation before the follow-up refi
 Codex Chrome DevTools, local Vite app, mobile/touch emulation:
 
 - At 390 × 844, the centered white pill matched the supplied reference. It measured 366 × 112px with 12px side insets and a 16px bottom gap; the three controls had equal 116px × 96px targets, visible labels, and a restrained active-state color change.
-- The Map views navigation exposed Explore, Stops, and Plan. Tab switching restored the collapsed Explore sheet and expanded Stops/Plan sheets. The Kent Ridge MRT marker stayed at (189, 344) across the switches.
+- The Map navigation tabs exposed Explore, Stops, and Plan. Tab switching restored the collapsed Explore sheet and expanded Stops/Plan sheets. The Kent Ridge MRT marker stayed at (189, 344) across the switches.
 - Pressing Tab moved focus to Plan and showed the 3px visible focus outline while Stops remained the selected view.
 - At 390 × 500, used as a software-keyboard viewport approximation, the pill stayed 16px above the viewport bottom and the Plan origin field remained visible above it. The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised; a physical safe-area device and real software keyboard were unavailable.
-- At 769px, the mobile bar was hidden and the desktop Explore view remained visible.
+- At 769px, the mobile bar was hidden and the desktop Explore panel remained visible.
 
 ## Issue #151 navigation refinement — 2026-09-29
 
@@ -121,7 +121,7 @@ Codex Chrome DevTools, local Vite app, mobile/touch emulation:
 - Before the later handle-row revert, the compact Stops handle measured y=372–416px while the pill began at y=428px. The handle geometry was not remeasured after that revert.
 - Stable map insets matched the active sheet height plus the 72px navigation reservation and existing 12px margin. The map remained visible above the active sheet and did not show through the bottom band.
 - Keyboard Tab moved focus from Explore to Stops and displayed the 3px focus outline with a 2px offset. Enter activated the focused tab. Collapsing each sheet, switching away, and returning retained each tab’s compact state.
-- At 769px, the mobile bar and band were hidden, the desktop Explore view remained visible, and the map bottom inset was 0px.
+- At 769px, the mobile bar and band were hidden, the desktop Explore panel remained visible, and the map bottom inset was 0px.
 - The browser reported a 0px safe-area inset, so the 16px CSS fallback was exercised. The 390 × 500 viewport approximated reduced space but did not open a real software keyboard; a physical safe-area device was unavailable.
 
 ## Issue #117 targeted verification — 2026-09-25
@@ -144,7 +144,7 @@ Local Chromium, Vite app from the feature branch:
 
 - At 390 × 844, Explore and Stops started compact and Plan started expanded. Each handle measured 44 × 44px, each sheet toggled, and switching tabs restored the independent Explore, Stops, and Plan states.
 - Explore expanded by touch and snapped between compact and expanded when dragged up and down. Stops and Plan handles also toggled by touch in dedicated browser passes. Plan kept Swap visible; its body scrolled independently (290px viewport, 444px content) without being clipped by the sheet, and an uncovered map point remained hit-testable.
-- At 768px, mobile tabs and handles remained visible. At 769px, mobile tabs and handles were hidden and the desktop Explore view returned to static positioning.
+- At 768px, mobile tabs and handles remained visible. At 769px, mobile tabs and handles were hidden and the desktop Explore panel returned to static positioning.
 - The component tests cover Enter and Space activation, cancelled drag restoration, and ignoring pointer gestures that start in sheet content.
 
 ## Mobile sheet elastic overdrag targeted verification — 2026-09-26
@@ -160,7 +160,7 @@ Local headless Chrome, Vite app from the feature branch:
 Codex In-App Browser (Chromium-based; exact version unavailable), local Vite development server, 390 × 844:
 
 - Explore venue search for `COM2` returned `COM2-0108 Tutorial Room 9`; selecting it opened details with the room name and floor.
-- Shuttle route cards showed the eight canonical routes and their colors. D2 details showed all 16 ordered stop calls; scrolling to the end exposed the terminal return to `COM3` after `TCOMS`.
+- bus route cards showed the eight canonical routes and their colors. D2 details showed all 16 ordered stop calls; scrolling to the end exposed the terminal return to `COM3` after `TCOMS`.
 - Back restored focus to the selected D2 card. Close returned to Explore, and reopening route browsing kept D2 selected. Show all routes cleared the selection.
 - This covers the #118 Explore changes only; the broader issue #89 map/responsive checklist was not repeated.
 
@@ -169,9 +169,9 @@ Codex In-App Browser (Chromium-based; exact version unavailable), local Vite dev
 Codex browser, local Vite app, 390 × 844 mobile/touch emulation:
 
 - Venue search for `COM2-0108` returned Tutorial Room 9; selecting it opened the existing room and floor details.
-- Browse shuttle routes opened the single Routes sheet with A1 selected and focused. Eight chips appeared in canonical order; selecting R2 scrolled its chip into view. Selecting D2 showed 16 stop calls, and scrolling the sheet exposed the final `COM3` after `TCOMS`.
+- Browse bus routes opened the single Routes sheet with A1 selected and focused. Eight chips appeared in canonical order; selecting R2 scrolled its chip into view. Selecting D2 showed 16 stop calls, and scrolling the sheet exposed the final `COM3` after `TCOMS`.
 - Tapping the final `COM3` row opened its existing popup. Its bottom edge was 41 px above the sheet after the stop camera adjustment. Escape closed the popup and restored focus to that row.
-- “← Explore” returned to the root, focused the Browse shuttle routes opener, and reopening restored D2. Switching to Plan and back also restored D2. At 1280 × 720, desktop still used the route selector.
+- “← Explore” returned to the root, focused the Browse bus routes opener, and reopening restored D2. Switching to Plan and back also restored D2. At 1280 × 720, desktop still used the route selector.
 - The broader #89 checklist was not repeated.
 
 ## Keyboard and accessibility
@@ -191,7 +191,7 @@ Codex browser, local Vite app, 390 × 844 mobile/touch emulation:
 Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0.1:4174/`, and the local Valhalla service at `127.0.0.1:8002`:
 
 - Selecting route A1 left its 12 route stops at computed opacity `1` and dimmed all 21 unrelated marker circles to `0.2`.
-- Setting origin KV and destination PGP produced a K shuttle Journey from KV through PGPR, followed by a walk to PGP. Stops outside the shuttle segment computed to `0.2`; Journey stops remained at `1`.
+- Setting origin KV and destination PGP produced a K bus Journey from KV through PGPR, followed by a walk to PGP. Stops outside the bus segment computed to `0.2`; Journey stops remained at `1`.
 - Clearing the Journey restored all markers to opacity `1`. Selecting and clearing A1 also restored all markers to opacity `1`.
 - Browser Fetch interception supplied deterministic local arrival and service-window data. No live NUS API was contacted.
 

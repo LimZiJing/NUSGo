@@ -9,7 +9,7 @@ Date: 2026-09-18 (Asia/Singapore)
 | Desktop map presents a quiet basemap with rail, airport, and major campus context | Blocked | Interactive browser could not start in the WSL environment. |
 | Narrow-screen controls remain stacked and usable | Blocked | Interactive browser could not start in the WSL environment. |
 | Native route-control keyboard operation still works | Blocked | Interactive browser could not start in the WSL environment. |
-| Shuttle stops appear at zoom 14 and focused route/stop content remains visible below it | Blocked | Interactive browser could not start in the WSL environment. |
+| bus stops appear at zoom 14 and focused route/stop content remains visible below it | Blocked | Interactive browser could not start in the WSL environment. |
 | Stop labels use short names and collision-aware placement | Blocked | Interactive browser could not start in the WSL environment. |
 | Venue search and neutral venue markers remain usable | Blocked | Interactive browser could not start in the WSL environment. |
 | Route lines remain subdued in the all-routes state and have no click affordance | Blocked | Interactive browser could not start in the WSL environment. |

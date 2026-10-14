@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { Building } from '@navus/shared/venue/buildings'
+import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { buildBuildingIndex } from './building-index'
 import { linkVenuesToBuildings } from './building-links'
@@ -65,5 +66,35 @@ describe('searchExplore', () => {
   it('keeps venues without a catalogue building searchable as venues', () => {
     expect(search('pinnacle')).toEqual([{ kind: 'venue', result: { code: 'Pinnacle', venue: venues.Pinnacle } }])
     expect(search('y-cr3')).toHaveLength(1)
+  })
+})
+
+describe('searchExplore with the real data', () => {
+  const realVenues = JSON.parse(readFileSync('public/data/venues.json', 'utf8')) as VenueLocationMap
+  const catalogue = JSON.parse(readFileSync('public/data/buildings.json', 'utf8')) as BuildingCatalogue
+  const realBuildings = buildBuildingIndex(catalogue.buildings)
+  const sources = { venues: realVenues, buildings: realBuildings, links: linkVenuesToBuildings(realVenues, realBuildings) }
+
+  it('shows Frontier once, as the two catalogue buildings, so the mislocated NUSMods room never appears', () => {
+    const results = searchExplore(sources, 'frontier')
+
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({ kind: 'building', entry: { id: 'frontier' } })
+  })
+
+  it('shows Cendana, Saga and Elm College once each', () => {
+    for (const [query, id, parts] of [['cendana', 'cendana-college', 5], ['saga', 'saga-college', 6], ['elm college', 'elm-college', 3]] as const) {
+      const results = searchExplore(sources, query).filter((result) => result.kind === 'building' && result.entry.id === id)
+      expect(results).toHaveLength(1)
+      expect(results[0]).toMatchObject({ entry: { parts: expect.any(Array) } })
+      expect((results[0] as { entry: { parts: unknown[] } }).entry.parts).toHaveLength(parts)
+    }
+  })
+
+  it('keeps Pinnacle and LAW_SR3 as venues because they have no catalogue building', () => {
+    expect(searchExplore(sources, 'pinnacle').map((result) => result.kind)).toContain('venue')
+    expect(searchExplore(sources, 'law_sr3')).toEqual([
+      { kind: 'venue', result: { code: 'LAW_SR3', venue: realVenues.LAW_SR3 } },
+    ])
   })
 })

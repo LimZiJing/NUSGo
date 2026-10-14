@@ -8,6 +8,7 @@ import type {
   TripLocationSearchResult,
 } from '../../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import { IconButton } from '../../ui/button'
 import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
@@ -29,6 +30,7 @@ interface PlanEndpointControlProps {
   role: TripEndpointRole
   endpoint: TripEndpoint | null
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   searchQuery: string
   onSearchQueryChange: (query: string) => void
@@ -50,12 +52,14 @@ function getEndpointLabel(
   endpoint: TripEndpoint,
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
+  buildings: BuildingIndex | null,
 ): string {
-  return getTripEndpointLabel(endpoint, venues ?? {}, networkIndex ?? [])
+  return getTripEndpointLabel(endpoint, venues ?? {}, networkIndex ?? [], buildings ?? undefined)
 }
 
 function getResultLabel(result: TripLocationSearchResult): string {
-  return result.endpoint.kind === 'current-location'
+  // A building's stable ID is a slug, so its name is the meaningful title.
+  return result.endpoint.kind === 'current-location' || result.endpoint.kind === 'building'
     ? result.label
     : result.endpoint.id
 }
@@ -78,6 +82,7 @@ function getVisibleResultDetail(result: TripLocationSearchResult): string | null
 
 function getEndpointKindLabel(endpoint: TripEndpoint): string | null {
   if (endpoint.kind === 'venue') return 'venue'
+  if (endpoint.kind === 'building') return 'building'
   if (endpoint.kind === 'stop') return 'shuttle stop'
   return null
 }
@@ -93,6 +98,7 @@ export function PlanEndpointControl({
   role,
   endpoint,
   venues,
+  buildings = null,
   networkIndex,
   searchQuery,
   onSearchQueryChange,
@@ -109,16 +115,16 @@ export function PlanEndpointControl({
   const inputId = `trip-${role}-search`
   const statusId = `trip-${role}-search-status`
   const locationStatusId = `trip-${role}-location-status`
-  const hasLocationData = venues !== null || networkIndex !== null
+  const hasLocationData = venues !== null || networkIndex !== null || buildings !== null
   const [editing, setEditing] = useState(endpoint === null)
   const results = useMemo(
-    () => searchTripLocations(venues ?? {}, networkIndex ?? [], searchQuery),
-    [searchQuery, networkIndex, venues],
+    () => searchTripLocations(venues ?? {}, networkIndex ?? [], searchQuery, undefined, buildings ?? undefined),
+    [searchQuery, networkIndex, venues, buildings],
   )
   const showResults = searchQuery.trim().length > 0
-  const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex) : ''
+  const endpointLabel = endpoint ? getEndpointLabel(endpoint, venues, networkIndex, buildings) : ''
   const endpointKindLabel = endpoint ? getEndpointKindLabel(endpoint) : null
-  const endpointIdentityKind = endpoint?.kind === 'venue' || endpoint?.kind === 'stop'
+  const endpointIdentityKind = endpoint?.kind === 'venue' || endpoint?.kind === 'building' || endpoint?.kind === 'stop'
     ? endpoint.kind
     : null
   const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
@@ -158,6 +164,9 @@ export function PlanEndpointControl({
         <div className="plan-endpoint-input-row">
           {endpointIdentityKind === 'venue' && (
             <BuildingIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--venue" />
+          )}
+          {endpointIdentityKind === 'building' && (
+            <BuildingIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--building" />
           )}
           {endpointIdentityKind === 'stop' && (
             <BusIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--stop" />
@@ -259,6 +268,9 @@ export function PlanEndpointControl({
                     <span className="plan-endpoint-result-identity">
                       {result.endpoint.kind === 'venue' && (
                         <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                      )}
+                      {result.endpoint.kind === 'building' && (
+                        <BuildingIcon className="location-identity-icon location-identity-icon--building" />
                       )}
                       {result.endpoint.kind === 'stop' && (
                         <BusIcon className="location-identity-icon location-identity-icon--stop" />

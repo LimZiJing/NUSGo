@@ -7,6 +7,7 @@ import type {
   TripEndpointRole,
   TripRequest,
 } from '../../domain/trip/types'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { PlanEndpointControl, type OriginLocationRequestState } from './plan-endpoint-control'
 import { JourneyResult, type JourneyResultState } from './journey-result'
@@ -23,6 +24,7 @@ import './styles/plan-view.css'
 interface PlanViewProps {
   tripRequest: TripRequest
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   onSearchFocus?: () => void
   onSearchCancel?: () => void
@@ -47,6 +49,7 @@ const PLAN_VIEW_CONTENT_ID = 'plan-view-content'
 export function PlanView({
   tripRequest,
   venues,
+  buildings = null,
   networkIndex,
   onSearchFocus,
   onSearchCancel,
@@ -177,6 +180,7 @@ export function PlanView({
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
+            buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={searchQueries.origin}
             onSearchQueryChange={(query) => setSearchQuery('origin', query)}
@@ -194,6 +198,7 @@ export function PlanView({
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
+            buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={searchQueries.destination}
             onSearchQueryChange={(query) => setSearchQuery('destination', query)}
@@ -238,6 +243,7 @@ export function PlanView({
         <JourneyResult
           state={path}
           venues={venues}
+          buildings={buildings}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
           onSelectCandidate={onSelectJourneyOption}

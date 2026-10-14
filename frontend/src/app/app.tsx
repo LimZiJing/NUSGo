@@ -298,6 +298,7 @@ function App() {
   const planViewProps: AppViewsProps['views']['plan'] = {
     tripRequest: state.tripRequest,
     venues: state.venues,
+    buildings: state.buildings,
     networkIndex: state.transitIndex,
     onSwap: commands.swapTripEndpoints,
     onSelectOriginEndpoint: commands.selectOriginEndpoint,

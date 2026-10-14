@@ -3,6 +3,7 @@ import type { Path, PathLeg, BusPathLeg } from '../../pathfinding/path'
 import { formatDuration } from '../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../domain/location/search'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export type JourneyTimelineEntry =
@@ -56,8 +57,9 @@ function getEndpointLabel(
   endpoint: PathLeg['from'],
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
+  buildings: BuildingIndex | null,
 ): string {
-  return getTripEndpointLabel(endpoint, venues ?? {}, networkIndex ?? [])
+  return getTripEndpointLabel(endpoint, venues ?? {}, networkIndex ?? [], buildings ?? undefined)
 }
 
 function getRouteName(routeId: string, networkIndex: TransitIndex | null): string {
@@ -194,11 +196,12 @@ function getLocationEntry(
   id: string,
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
+  buildings: BuildingIndex | null,
 ): Extract<JourneyTimelineEntry, { kind: 'location' }> {
   return {
     kind: 'location',
     id,
-    label: getEndpointLabel(endpoint, venues, networkIndex),
+    label: getEndpointLabel(endpoint, venues, networkIndex, buildings),
     locationKind: endpoint.kind,
   }
 }
@@ -211,19 +214,20 @@ export function getJourneyTimelineEntries(
   path: Path,
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
+  buildings: BuildingIndex | null = null,
 ): readonly JourneyTimelineEntry[] {
   const entries: JourneyTimelineEntry[] = [
-    getLocationEntry(path.origin, 'origin', venues, networkIndex),
+    getLocationEntry(path.origin, 'origin', venues, networkIndex, buildings),
   ]
 
   path.legs.forEach((leg, legIndex) => {
     entries.push(getLegEntry(leg, legIndex, networkIndex))
-    entries.push(getLocationEntry(leg.to, `location-${legIndex}`, venues, networkIndex))
+    entries.push(getLocationEntry(leg.to, `location-${legIndex}`, venues, networkIndex, buildings))
   })
 
   const lastLeg = path.legs[path.legs.length - 1]
   if (!lastLeg || !sameEndpoint(lastLeg.to, path.destination)) {
-    entries.push(getLocationEntry(path.destination, 'destination', venues, networkIndex))
+    entries.push(getLocationEntry(path.destination, 'destination', venues, networkIndex, buildings))
   }
 
   return entries

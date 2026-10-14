@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { PlanView } from './plan-view'
 import { PlanEndpointControl } from './plan-endpoint-control'
+import { buildBuildingIndex } from '../../domain/venue/building-index'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '@navus/shared/transit/types'
@@ -30,6 +31,15 @@ const stops: TransitStopInput[] = [
 const transitNetwork = createValidTransitNetwork()
 transitNetwork.stops = [stops[0], transitNetwork.stops[1]]
 const networkIndex = createTransitIndex(transitNetwork)
+const buildings = buildBuildingIndex([{
+  id: 'central-library',
+  name: 'Central Library',
+  aliases: [],
+  elementId: 'way/2',
+  location: { x: 103.773, y: 1.2966 },
+  roomCodePrefixes: [],
+  sourceRefs: [],
+}])
 
 describe('PlanEndpointControl', () => {
   it('shows the selected endpoint and a stable ID for a destination', () => {
@@ -50,6 +60,45 @@ describe('PlanEndpointControl', () => {
     expect(markup).toContain('STOP-A')
     expect(markup).toContain('aria-label="Clear destination"')
     expect(markup).toContain('id="trip-destination-search"')
+  })
+
+  it('lists a building by name with an accessible building label, apart from the stop of the same name', () => {
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={venues}
+        networkIndex={networkIndex}
+        buildings={buildings}
+        searchQuery="Library"
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Set origin to Central Library, building"')
+    expect(markup).toContain('aria-label="Set origin to Central Library, shuttle stop, STOP-A"')
+    expect(markup).not.toContain('>central-library<')
+  })
+
+  it('shows the selected building by name', () => {
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="destination"
+        endpoint={{ kind: 'building', id: 'central-library' }}
+        venues={venues}
+        networkIndex={networkIndex}
+        buildings={buildings}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={vi.fn()}
+      />,
+    )
+
+    expect(markup).toContain('value="Central Library"')
+    expect(markup).toContain('Destination set to Central Library')
   })
 
   it('shows Current location without fabricating an endpoint identifier', () => {

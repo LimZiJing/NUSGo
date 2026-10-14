@@ -88,12 +88,14 @@ export function searchBuildings(
   index: BuildingIndex,
   query: string,
   limit = MAX_RESULTS,
+  /** Extra searchable names per entry ID, such as the room name of a whole-building venue. */
+  extraNames: ReadonlyMap<string, readonly string[]> = new Map(),
 ): BuildingEntry[] {
   const normalizedQuery = normalizeSearchText(query)
   if (!normalizedQuery) return []
 
   return index.entries
-    .map((entry) => ({ entry, priority: getMatchPriority([entry.name, ...entry.aliases], normalizedQuery) }))
+    .map((entry) => ({ entry, priority: getMatchPriority([entry.name, ...entry.aliases, ...(extraNames.get(entry.id) ?? [])], normalizedQuery) }))
     .filter((match): match is { entry: BuildingEntry; priority: number } => match.priority !== null)
     .sort((first, second) => first.priority - second.priority || compareText(first.entry.id, second.entry.id))
     .slice(0, Math.max(0, limit))

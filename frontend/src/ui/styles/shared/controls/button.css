@@ -64,7 +64,9 @@
   height: 18px;
 }
 
+/* Icon buttons keep their full touch target when a flex row runs short of space. */
 .button.icon-button {
+  flex-shrink: 0;
   width: var(--control-height-sm);
   padding: 0;
 }

@@ -3,7 +3,6 @@ import type {
   LineLayerSpecification,
   Map,
   PaddingOptions,
-  SymbolLayerSpecification,
 } from 'maplibre-gl'
 import type { MapViewportInsets } from '../../app/contracts/map'
 import type { TransitIndex } from '../../domain/transit'
@@ -11,6 +10,12 @@ import type {
   TransitGeoJsonPosition,
   BusRouteGeometry,
 } from '@navus/shared/transit/types'
+import {
+  SELECTED_ROUTE_LANE_STOPS,
+  DIRECTION_IMAGE_PIXEL_RATIO,
+  createDirectionChevronImage,
+  type LineWidthSpecification,
+} from './route-lanes'
 
 export const TRANSIT_ROUTE_SOURCE_ID = 'shuttle-route-geometry'
 export const TRANSIT_ROUTE_CASING_LAYER_ID = 'shuttle-route-casing'
@@ -66,28 +71,36 @@ const TRANSIT_ROUTE_LAYER: LineLayerSpecification = {
   },
 }
 
-const TRANSIT_ROUTE_DIRECTION_LAYER: SymbolLayerSpecification = {
+const BASE_ROUTE_CASING_WIDTH_BY_ZOOM = { 12: 4, 15: 6, 18: 8 } as const
+const UNSELECTED_ROUTE_WIDTH_BY_ZOOM = { 12: 1.5, 15: 3, 18: 4.5 } as const
+
+const TRANSIT_ROUTE_DIRECTION_IMAGE_ID = 'shuttle-route-direction-chevron'
+
+const TRANSIT_ROUTE_DIRECTION_LAYER: LineLayerSpecification = {
   id: TRANSIT_ROUTE_DIRECTION_LAYER_ID,
-  type: 'symbol',
+  type: 'line',
   source: TRANSIT_ROUTE_SOURCE_ID,
   filter: NO_ROUTE_FILTER,
   layout: {
-    'symbol-placement': 'line',
-    'symbol-spacing': 80,
-    'text-field': '▶',
-    'text-font': ['Noto Sans Regular'],
-    'text-size': 12,
-    'text-pitch-alignment': 'map',
-    'text-rotation-alignment': 'map',
-    'text-keep-upright': false,
-    'text-allow-overlap': true,
-    'text-ignore-placement': true,
-    'text-padding': 0,
+    'line-cap': 'butt',
+    'line-join': 'round',
   },
   paint: {
-    'text-color': ['get', 'color'],
-    'text-halo-color': '#ffffff',
-    'text-halo-width': 1,
+    'line-pattern': TRANSIT_ROUTE_DIRECTION_IMAGE_ID,
+    // Only the selected route is shown, so this matches the lane offset and is
+    // slightly wider than the lane so the chevrons read clearly.
+    'line-width': [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      ...SELECTED_ROUTE_LANE_STOPS.flatMap(({ zoom, arrowWidth }) => [zoom, arrowWidth]),
+    ],
+    'line-offset': [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      ...SELECTED_ROUTE_LANE_STOPS.flatMap(({ zoom, offset }) => [zoom, offset]),
+    ],
   },
 }
 
@@ -194,6 +207,24 @@ function createRouteOpacityExpression(
   ]
 }
 
+// Singapore drives on the left, so each direction of the selected route is
+// shifted left of travel. Out-and-back sections (e.g. D2) then render as two
+// parallel lanes instead of one line with opposing arrows stacked on it.
+// MapLibre's positive line-offset is right of the line direction.
+function createSelectedRouteOffsetExpression(
+  routeMatch: RouteMatchExpression,
+): NonNullable<LineLayerSpecification['paint']>['line-offset'] {
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    ...SELECTED_ROUTE_LANE_STOPS.flatMap(({ zoom, offset }) => [
+      zoom,
+      ['case', routeMatch, offset, 0],
+    ]),
+  ] as NonNullable<LineLayerSpecification['paint']>['line-offset']
+}
+
 function setTransitRouteSelection(
   map: Map,
   routeId: string | null,
@@ -205,7 +236,9 @@ function setTransitRouteSelection(
     if (map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
       map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-opacity', 0.35)
       map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-width', BASE_ROUTE_CASING_WIDTH)
+      map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-offset', 0)
     }
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-offset', 0)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-color', BASE_ROUTE_LINE_COLOR)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', 0.55)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', BASE_ROUTE_LINE_WIDTH)
@@ -229,10 +262,16 @@ function setTransitRouteSelection(
         'interpolate',
         ['linear'],
         ['zoom'],
-        12, ['case', routeMatch, 7, 4],
-        15, ['case', routeMatch, 9, 6],
-        18, ['case', routeMatch, 11, 8],
-      ],
+        ...SELECTED_ROUTE_LANE_STOPS.flatMap(({ zoom, casingWidth }) => [
+          zoom,
+          ['case', routeMatch, casingWidth, BASE_ROUTE_CASING_WIDTH_BY_ZOOM[zoom]],
+        ]),
+      ] as LineWidthSpecification,
+    )
+    map.setPaintProperty(
+      TRANSIT_ROUTE_CASING_LAYER_ID,
+      'line-offset',
+      createSelectedRouteOffsetExpression(routeMatch),
     )
   }
   map.setPaintProperty(
@@ -252,10 +291,16 @@ function setTransitRouteSelection(
       'interpolate',
       ['linear'],
       ['zoom'],
-      12, ['case', routeMatch, 3, 1.5],
-      15, ['case', routeMatch, 6, 3],
-      18, ['case', routeMatch, 8, 4.5],
-    ],
+      ...SELECTED_ROUTE_LANE_STOPS.flatMap(({ zoom, width }) => [
+        zoom,
+        ['case', routeMatch, width, UNSELECTED_ROUTE_WIDTH_BY_ZOOM[zoom]],
+      ]),
+    ] as LineWidthSpecification,
+  )
+  map.setPaintProperty(
+    TRANSIT_ROUTE_LAYER_ID,
+    'line-offset',
+    createSelectedRouteOffsetExpression(routeMatch),
   )
   if (map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
     map.setFilter(TRANSIT_ROUTE_DIRECTION_LAYER_ID, routeMatch)
@@ -298,6 +343,7 @@ export function createTransitRouteLayers(
   const ownsCasingLayer = !map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)
   const ownsRouteLayer = !map.getLayer(TRANSIT_ROUTE_LAYER_ID)
   const ownsDirectionLayer = !map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
+  const ownsDirectionImage = !map.hasImage(TRANSIT_ROUTE_DIRECTION_IMAGE_ID)
 
   if (ownsSource) {
     map.addSource(TRANSIT_ROUTE_SOURCE_ID, {
@@ -307,6 +353,11 @@ export function createTransitRouteLayers(
   }
   if (ownsCasingLayer) map.addLayer(TRANSIT_ROUTE_CASING_LAYER)
   if (ownsRouteLayer) map.addLayer(TRANSIT_ROUTE_LAYER)
+  if (ownsDirectionImage) {
+    map.addImage(TRANSIT_ROUTE_DIRECTION_IMAGE_ID, createDirectionChevronImage(), {
+      pixelRatio: DIRECTION_IMAGE_PIXEL_RATIO,
+    })
+  }
   if (ownsDirectionLayer) map.addLayer(TRANSIT_ROUTE_DIRECTION_LAYER)
 
   let disposed = false
@@ -342,6 +393,9 @@ export function createTransitRouteLayers(
       disposed = true
       if (ownsDirectionLayer && map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
         map.removeLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)
+      }
+      if (ownsDirectionImage && map.hasImage(TRANSIT_ROUTE_DIRECTION_IMAGE_ID)) {
+        map.removeImage(TRANSIT_ROUTE_DIRECTION_IMAGE_ID)
       }
       if (ownsRouteLayer && map.getLayer(TRANSIT_ROUTE_LAYER_ID)) {
         map.removeLayer(TRANSIT_ROUTE_LAYER_ID)

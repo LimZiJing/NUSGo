@@ -9,6 +9,7 @@ import {
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_SOURCE_ID,
 } from './transit'
+import { createDirectionChevronImage } from './route-lanes'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 import type { BusRouteGeometry } from '@navus/shared/transit/types'
@@ -40,6 +41,8 @@ interface FakeMapState {
   filters: Array<{ id: string; value: unknown }>
   fitBoundsCalls: Array<{ bounds: unknown; options: unknown }>
   layoutProperties: Array<{ id: string; name: string; value: unknown }>
+  imageIds: Set<string>
+  removedImages: string[]
 }
 
 function createFakeMap(): FakeMapState {
@@ -56,6 +59,8 @@ function createFakeMap(): FakeMapState {
     filters: [],
     fitBoundsCalls: [],
     layoutProperties: [],
+    imageIds: new Set<string>(),
+    removedImages: [],
   }
 
   state.map = {
@@ -87,6 +92,14 @@ function createFakeMap(): FakeMapState {
     }),
     setLayoutProperty: vi.fn((id: string, name: string, value: unknown) => {
       state.layoutProperties.push({ id, name, value })
+    }),
+    hasImage: vi.fn((id: string) => state.imageIds.has(id)),
+    addImage: vi.fn((id: string) => {
+      state.imageIds.add(id)
+    }),
+    removeImage: vi.fn((id: string) => {
+      state.removedImages.push(id)
+      state.imageIds.delete(id)
     }),
     getContainer: vi.fn(() => ({ clientWidth: 1200 })),
     fitBounds: vi.fn((bounds: unknown, options: unknown) => {
@@ -124,6 +137,7 @@ describe('transit route layer adapter', () => {
       TRANSIT_ROUTE_CASING_LAYER_ID,
     ])
     expect(state.removedSources).toEqual([TRANSIT_ROUTE_SOURCE_ID])
+    expect(state.removedImages).toEqual(['shuttle-route-direction-chevron'])
   })
 
   it('dims unselected and overlapping routes, then restores all-routes presentation', () => {
@@ -141,7 +155,7 @@ describe('transit route layer adapter', () => {
         0.45,
       ]],
     })
-    expect(state.paintProperties[3]).toEqual({
+    expect(state.paintProperties[4]).toEqual({
       name: 'line-color',
       value: ['case', ['==', ['get', 'routeId'], 'A1'], ['get', 'color'], '#64748b'],
     })
@@ -152,6 +166,11 @@ describe('transit route layer adapter', () => {
 
     layers.setSelection(null)
 
+    expect(state.paintProperties.filter(({ name }) => name === 'line-offset').slice(-2)).toEqual([
+      { name: 'line-offset', value: 0 },
+      { name: 'line-offset', value: 0 },
+    ])
+
     expect(state.paintProperties.slice(-3)).toEqual([
       { name: 'line-color', value: '#64748b' },
       { name: 'line-opacity', value: 0.55 },
@@ -160,6 +179,63 @@ describe('transit route layer adapter', () => {
         value: ['interpolate', ['linear'], ['zoom'], 12, 2, 15, 4, 18, 6],
       },
     ])
+  })
+
+  it('offsets only the selected route into a left-hand lane so doubled-back legs separate', () => {
+    const state = createFakeMap()
+    const layers = createTransitRouteLayers(state.map, createValidGeometry())
+
+    layers.setSelection('D2')
+
+    const routeMatch = ['==', ['get', 'routeId'], 'D2']
+    const laneOffset = [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12, ['case', routeMatch, -1.75, 0],
+      15, ['case', routeMatch, -2.75, 0],
+      18, ['case', routeMatch, -3.5, 0],
+    ]
+    expect(state.paintProperties.filter(({ name }) => name === 'line-offset')).toEqual([
+      { name: 'line-offset', value: laneOffset },
+      { name: 'line-offset', value: laneOffset },
+    ])
+
+    const directionLayer = state.addedLayers.find(
+      (layer) => (layer as { id: string }).id === TRANSIT_ROUTE_DIRECTION_LAYER_ID,
+    ) as { type: string; paint: Record<string, unknown> }
+    expect(directionLayer.type).toBe('line')
+    expect(directionLayer.paint['line-pattern']).toBe('shuttle-route-direction-chevron')
+    expect(directionLayer.paint['line-offset']).toEqual([
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12, -1.75,
+      15, -2.75,
+      18, -3.5,
+    ])
+    expect(directionLayer.paint['line-width']).toEqual([
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12, 3.5,
+      15, 5.5,
+      18, 7,
+    ])
+  })
+
+  it('draws a chevron that points along the line direction', () => {
+    const { width, height, data } = createDirectionChevronImage()
+    const rightmostOpaqueX = (y: number) => {
+      for (let x = width - 1; x >= 0; x -= 1) {
+        if (data[(y * width + x) * 4 + 3] > 0) return x
+      }
+      return -1
+    }
+
+    expect(data).toHaveLength(width * height * 4)
+    expect(rightmostOpaqueX(height / 2)).toBeGreaterThan(rightmostOpaqueX(0))
+    expect(rightmostOpaqueX(height / 2)).toBeGreaterThan(rightmostOpaqueX(height - 1))
   })
 
   it('hides full-network layers during a Journey and restores the latest route selection', () => {
@@ -183,7 +259,7 @@ describe('transit route layer adapter', () => {
       { id: TRANSIT_ROUTE_LAYER_ID, name: 'visibility', value: 'visible' },
       { id: TRANSIT_ROUTE_DIRECTION_LAYER_ID, name: 'visibility', value: 'visible' },
     ])
-    expect(state.paintProperties.at(-2)).toEqual({
+    expect(state.paintProperties.at(-3)).toEqual({
       name: 'line-color',
       value: ['case', ['==', ['get', 'routeId'], 'B1'], ['get', 'color'], '#64748b'],
     })

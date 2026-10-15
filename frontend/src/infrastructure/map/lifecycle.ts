@@ -16,6 +16,7 @@ import {
   JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
   JOURNEY_ALTERNATIVE_WALKING_LAYER_ID,
   JOURNEY_SELECTED_CASING_LAYER_ID,
+  JOURNEY_SELECTED_DIRECTION_LAYER_ID,
   JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
   JOURNEY_SELECTED_WALKING_LAYER_ID,
 } from './path-layers'
@@ -132,6 +133,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       JOURNEY_SELECTED_CASING_LAYER_ID,
       JOURNEY_SELECTED_WALKING_LAYER_ID,
       JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
+      JOURNEY_SELECTED_DIRECTION_LAYER_ID,
     ].filter((layerId) => map.getLayer(layerId))
     if (routeLayerIds.length > 0 && map.queryRenderedFeatures(
       event.point,

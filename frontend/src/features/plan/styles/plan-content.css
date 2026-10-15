@@ -47,7 +47,7 @@
 
 .plan-content-panel {
   display: grid;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .plan-content-heading h2 {
@@ -86,7 +86,7 @@
   gap: 0;
   /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
   margin-bottom: 18px;
-  padding: 6px 48px 6px 6px;
+  padding: var(--space-2) 48px var(--space-2) var(--space-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
@@ -221,7 +221,7 @@
 .plan-endpoint-actions {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: var(--space-1);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -244,7 +244,7 @@
   display: flex;
   align-items: center;
   min-height: 16px;
-  padding: 0 44px 0 9px;
+  padding: 0 44px 0 var(--space-2);
 }
 
 .plan-content-submit {
@@ -320,7 +320,7 @@
 .plan-endpoint-result-identity {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .plan-endpoint-result span {
@@ -337,7 +337,7 @@
 .plan-validation {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   min-width: 0;
   color: var(--text-warning);
   font-size: 12px;
@@ -402,8 +402,8 @@
   display: grid;
   width: 100%;
   min-width: 0;
-  gap: 7px;
-  padding: 11px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) 12px;
   border: 0;
   border-radius: 0;
   color: var(--text-primary);
@@ -508,7 +508,7 @@
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .journey-option-walking,
@@ -529,7 +529,7 @@
 .journey-result-details {
   display: grid;
   gap: 8px;
-  padding: 0 12px 11px;
+  padding: 0 12px var(--space-3);
   text-align: left;
 }
 
@@ -554,7 +554,7 @@
 
 @media (max-width: 480px) {
   .journey-option-summary {
-    gap: 6px;
+    gap: var(--space-1);
     padding: 10px;
   }
 
@@ -586,7 +586,7 @@
 
 .journey-notice {
   margin: 0;
-  padding: 6px 8px;
+  padding: var(--space-2) 8px;
   border-left: 3px solid var(--status-warning-strong);
   background: var(--surface-warning);
 }
@@ -661,7 +661,7 @@
 .journey-location-name {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -691,7 +691,7 @@
 }
 
 .journey-timeline-bus .journey-timeline-marker {
-  margin-top: 5px;
+  margin-top: var(--space-1);
 }
 
 /* The app shell centers text by default; keep the expanded route anchored to the rail. */
@@ -713,7 +713,7 @@
 .journey-timeline-content .journey-mode-label {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 650;
@@ -790,8 +790,8 @@
 .journey-route-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 6px;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
   border: 1px solid currentColor;
   border-radius: var(--radius-sm);
   color: var(--journey-route-color, var(--status-info)) !important;
@@ -857,7 +857,7 @@
 .journey-stop-name {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   min-width: 0;
 }
 

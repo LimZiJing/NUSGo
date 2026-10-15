@@ -1,10 +1,10 @@
 # NUS Digital Twin buildings import
 
-`frontend/public/data/buildings.json` is generated from a one-off snapshot of the NUS Digital Twin buildings API (`GET https://www.nus-digital-twin.com/api/v1/buildings`, v1 beta, no key needed). See #260 for the decisions behind it.
+`frontend/public/data/buildings.json` is generated from a one-off snapshot of the NUS Digital Twin buildings API (`GET https://www.nus-digital-twin.com/api/v1/buildings`, v1 beta, no key needed). The [candidate inventory review](building-inventory-review.md) records the source and entrance decisions.
 
 ## Credit
 
-Buildings: NUS Digital Twin (City Syntax Lab). The API documentation says the data is sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers. The credit is recorded in the `source` field of `buildings.json` (`name`, `url`, `fetchedOn`, `licenceNote`). The in-app credit belongs in an About or settings footer once the settings menu exists (#334).
+Buildings: NUS Digital Twin (City Syntax Lab). The API documentation says the data is sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers. The credit is recorded in the `source` field of `buildings.json` (`name`, `url`, `fetchedOn`, `licenceNote`). The in-app credit belongs in an About or settings footer once the settings menu exists.
 
 ## What is in this folder
 

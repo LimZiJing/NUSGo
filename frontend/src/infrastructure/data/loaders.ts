@@ -55,9 +55,9 @@ export async function loadTransitMapData(
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedTransitData> {
   const [networkInput, geometryInput, timingInput] = await Promise.all([
-    fetcher('/data/shuttle-network.json', signal, 'Shuttle network'),
-    fetcher('/data/shuttle-routes.geojson', signal, 'Shuttle route geometry'),
-    fetcher('/data/shuttle-timing.json', signal, 'Shuttle timing'),
+    fetcher('/data/shuttle-network.json', signal, 'bus network'),
+    fetcher('/data/shuttle-routes.geojson', signal, 'bus route geometry'),
+    fetcher('/data/shuttle-timing.json', signal, 'bus timing'),
   ])
   const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
   const index = createTransitNetworkIndex(network)
@@ -71,7 +71,7 @@ export async function loadShuttleTimingData(
   fetcher: JsonFetcher = fetchJson,
 ): Promise<ShuttleTimingData> {
   return validateShuttleTimingData(
-    await fetcher('/data/shuttle-timing.json', signal, 'Shuttle timing'),
+    await fetcher('/data/shuttle-timing.json', signal, 'bus timing'),
     network,
   )
 }

@@ -11,7 +11,8 @@ import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../venue/building-inde
 
 const MAX_RESULTS = 8
 
-// Stops and buildings rank ahead of rooms; stops are often named after the building they serve.
+// Venue data holds rooms only, so bus stops and buildings, which stops are often named after,
+// rank ahead of rooms.
 const STOP_AND_BUILDING_ORDER = 0
 const ROOM_ORDER = 1
 

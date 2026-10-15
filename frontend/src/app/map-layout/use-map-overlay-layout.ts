@@ -20,7 +20,7 @@ export interface UseMapOverlayLayoutOptions {
   readonly mapShellRef: RefObject<HTMLElement | null>
   readonly sheetPortalContainer?: HTMLElement | null
   readonly tripControlsRef: RefObject<HTMLElement | null>
-  readonly exploreViewRef: RefObject<HTMLElement | null>
+  readonly explorePanelRef: RefObject<HTMLElement | null>
   readonly stopsSheetRef: RefObject<HTMLElement | null>
   readonly mainNavigationRef: RefObject<HTMLElement | null>
   readonly navigationColumnRef: RefObject<HTMLElement | null>
@@ -40,7 +40,7 @@ export function useMapOverlayLayout({
   mapShellRef,
   sheetPortalContainer,
   tripControlsRef,
-  exploreViewRef,
+  explorePanelRef,
   stopsSheetRef,
   mainNavigationRef,
   navigationColumnRef,
@@ -49,12 +49,12 @@ export function useMapOverlayLayout({
   const refs = useMemo(() => ({
     mapShell: mapShellRef,
     tripControls: tripControlsRef,
-    exploreView: exploreViewRef,
+    explorePanel: explorePanelRef,
     stopsSheet: stopsSheetRef,
     mainNavigation: mainNavigationRef,
     navigationColumn: navigationColumnRef,
   }), [
-    exploreViewRef,
+    explorePanelRef,
     mainNavigationRef,
     mapShellRef,
     navigationColumnRef,
@@ -116,7 +116,7 @@ export function useMapOverlayLayout({
         ? refs.tripControls.current
         : activeView === 'stops'
           ? refs.stopsSheet.current
-          : refs.exploreView.current
+          : refs.explorePanel.current
       const activeSheetBounds = activeSheet?.getBoundingClientRect()
       const mapShellElement = refs.mapShell.current
       const measuredNavigationWidth = isMobileViewport
@@ -165,7 +165,7 @@ export function useMapOverlayLayout({
       ? null
       : new ResizeObserver(updateInsets)
     if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current)
-    if (refs.exploreView.current) resizeObserver?.observe(refs.exploreView.current)
+    if (refs.explorePanel.current) resizeObserver?.observe(refs.explorePanel.current)
     if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current)
     if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current)
     if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current)

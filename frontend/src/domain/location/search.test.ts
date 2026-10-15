@@ -194,7 +194,7 @@ describe('searchTripLocations with buildings', () => {
     expect(search(query).map((result) => result.endpoint)).toContainEqual({ kind: 'building', id: 'com3' })
   })
 
-  it('lists the building and its shuttle stop as separate results with their own identities', () => {
+  it('lists the building and its bus stop as separate results with their own identities', () => {
     expect(search('com3').map((result) => result.endpoint)).toEqual([
       { kind: 'building', id: 'com3' },
       { kind: 'stop', id: 'COM3' },

@@ -1,5 +1,5 @@
-import { createInitialExploreViewState, type ExploreViewState } from '../features/explore-view/state'
-import { selectDisplayedPaths } from '../features/plan-view/select-displayed-paths'
+import { createInitialExploreState, type ExploreState } from '../features/explore/state/explore-state'
+import { selectDisplayedJourneyOptions } from '../features/plan/data/displayed-journey-options'
 import type { TransitIndex } from '../domain/transit'
 import { deriveBusRouteOverlapMap } from '../domain/transit/overlap'
 import {
@@ -66,7 +66,7 @@ export interface NavigationSessionState {
   readonly selectedRouteId: string | null
   readonly selectedRouteColor: string | null
   readonly rememberedMobileRouteId: string | null
-  readonly exploreView: ExploreViewState
+  readonly exploreState: ExploreState
   readonly tripRequest: TripRequest
   readonly path: JourneyState
   readonly location: LocationTrackingState
@@ -127,7 +127,7 @@ export interface NavigationSession {
   searchPaths(): void
   replanPath(): void
   selectJourneyOption(candidateKey: string): void
-  setExploreViewQuery(query: string): void
+  setExploreQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   selectBuilding(buildingId: string): void
   reportStartupFailure(): void
@@ -156,7 +156,7 @@ export function createInitialNavigationSessionState(
     selectedRouteId: null,
     selectedRouteColor: null,
     rememberedMobileRouteId: null,
-    exploreView: createInitialExploreViewState(),
+    exploreState: createInitialExploreState(),
     tripRequest: createEmptyTripRequest(),
     path: createInitialJourneyState(),
     location,
@@ -173,7 +173,7 @@ function getTransitFailureMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'TransitValidationError') {
     return `Transit route data validation failed: ${error.message}`
   }
-  return 'Unable to load shuttle route data'
+  return 'Unable to load bus route data'
 }
 
 export function createNavigationSession(
@@ -375,7 +375,7 @@ export function createNavigationSession(
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
         const displayedCandidates = planningResult === null
           ? []
-          : selectDisplayedPaths(planningResult.candidates)
+          : selectDisplayedJourneyOptions(planningResult.candidates)
         const recommended = displayedCandidates[0] ?? null
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
@@ -580,9 +580,9 @@ export function createNavigationSession(
   const panelTransitions = createNavigationSessionPanelTransitions({
     isDisposed: () => disposed,
     enqueue: enqueueTransition,
-    getExploreView: () => state.exploreView,
+    getExploreState: () => state.exploreState,
     getVenues: () => state.venues,
-    setExploreView: (exploreView) => updateState({ exploreView }),
+    setExploreState: (exploreState) => updateState({ exploreState }),
     selectVenue: (venue) => dependencies.map.selectVenue(venue),
     getBuildings: () => state.buildings,
     selectBuilding: (building) => dependencies.map.selectBuilding(building),
@@ -634,7 +634,7 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         mobileRoutesActive = true
-        panelTransitions.openShuttle()
+        panelTransitions.openBusRoutes()
         activateMobileRoute()
       })
     },
@@ -891,7 +891,7 @@ export function createNavigationSession(
       })
     },
 
-    setExploreViewQuery: panelTransitions.setExploreViewQuery,
+    setExploreQuery: panelTransitions.setExploreQuery,
     selectVenue: panelTransitions.selectVenue,
     selectBuilding: panelTransitions.selectBuilding,
     back: panelTransitions.back,
@@ -934,8 +934,8 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed) return
         dependencies.map.resetView(getResetTarget({
-          panelMode: state.exploreView.mode,
-          selectedVenue: state.exploreView.selectedVenue,
+          panelMode: state.exploreState.mode,
+          selectedVenue: state.exploreState.selectedVenue,
           selectedRouteId: state.selectedRouteId,
           tripRequest: state.tripRequest,
           venues: state.venues,

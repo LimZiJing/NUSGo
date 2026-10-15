@@ -40,7 +40,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseTimestamp(value: unknown, label: string): string {
   if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) {
-    throw new Error(`Shuttle arrival response has an invalid ${label}`)
+    throw new Error(`bus arrival response has an invalid ${label}`)
   }
   return value
 }
@@ -52,7 +52,7 @@ function parseOptionalTimestamp(value: unknown, label: string): string | undefin
 function parseOptionalVersion(value: unknown): string | undefined {
   if (value === undefined) return undefined
   if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error('Shuttle arrival response has an invalid snapshotVersion')
+    throw new Error('bus arrival response has an invalid snapshotVersion')
   }
   return value
 }
@@ -95,15 +95,15 @@ function normalizeRouteData(value: unknown): ShuttleRouteArrivalData | null {
 
 function parseStopObservations(value: unknown): Readonly<Record<string, ShuttleArrivalObservation>> | undefined {
   if (value === undefined) return undefined
-  if (!isRecord(value)) throw new Error('Shuttle arrival response has invalid stopObservations')
+  if (!isRecord(value)) throw new Error('bus arrival response has invalid stopObservations')
 
   const observations: Record<string, ShuttleArrivalObservation> = {}
   for (const [stopId, observationValue] of Object.entries(value)) {
-    if (!isRecord(observationValue)) throw new Error(`Shuttle arrival response has invalid observation for ${stopId}`)
+    if (!isRecord(observationValue)) throw new Error(`bus arrival response has invalid observation for ${stopId}`)
     const observedAt = parseTimestamp(observationValue.observedAt, `${stopId}.observedAt`)
     const expiresAt = parseTimestamp(observationValue.expiresAt, `${stopId}.expiresAt`)
     if (Date.parse(expiresAt) <= Date.parse(observedAt)) {
-      throw new Error(`Shuttle arrival response has an invalid expiry range for ${stopId}`)
+      throw new Error(`bus arrival response has an invalid expiry range for ${stopId}`)
     }
     observations[stopId] = { observedAt, expiresAt }
   }
@@ -112,12 +112,12 @@ function parseStopObservations(value: unknown): Readonly<Record<string, ShuttleA
 
 function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
   if (!isRecord(input) || !isRecord(input.stops)) {
-    throw new Error('Shuttle arrival response was invalid')
+    throw new Error('bus arrival response was invalid')
   }
   const observedAt = parseTimestamp(input.observedAt, 'observedAt')
   const expiresAt = parseTimestamp(input.expiresAt, 'expiresAt')
   if (Date.parse(expiresAt) <= Date.parse(observedAt)) {
-    throw new Error('Shuttle arrival response has an invalid expiry range')
+    throw new Error('bus arrival response has an invalid expiry range')
   }
 
   const stops: Record<string, ShuttleArrivalSnapshot['stops'][string]> = {}
@@ -224,10 +224,10 @@ export function createShuttleArrivalClient(
       { signal },
     )
       .then(async (response) => {
-        if (!response.ok) throw new Error(`Shuttle arrival request failed: ${response.status}`)
+        if (!response.ok) throw new Error(`bus arrival request failed: ${response.status}`)
         const snapshot = parseSnapshot(await response.json() as unknown)
         if (Date.parse(snapshot.expiresAt) <= now()) {
-          throw new Error('Shuttle arrival response has expired')
+          throw new Error('bus arrival response has expired')
         }
         const current = cached?.snapshot ?? null
         const merged = mergeSnapshot(current, snapshot)
@@ -247,7 +247,7 @@ export function createShuttleArrivalClient(
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === 'AbortError') throw error
-        throw new ShuttleArrivalFetchError('Live shuttle arrival data could not be fetched', {
+        throw new ShuttleArrivalFetchError('Live bus arrival data could not be fetched', {
           cause: error,
         })
       })
@@ -264,7 +264,7 @@ export function createShuttleArrivalClient(
     async getArrivals(stops, signal) {
       const uniqueStops = [...new Map(stops.map((stop) => [requestKey(stop), stop])).values()]
       if (uniqueStops.length === 0) {
-        throw new ShuttleArrivalFetchError('At least one shuttle stop is required')
+        throw new ShuttleArrivalFetchError('At least one bus stop is required')
       }
 
       if (!cached || cached.cacheExpiresAt <= now() || !hasStops(cached.snapshot, uniqueStops)) {
@@ -272,7 +272,7 @@ export function createShuttleArrivalClient(
       }
 
       if (!cached || cached.cacheExpiresAt <= now() || !hasStops(cached.snapshot, uniqueStops)) {
-        throw new ShuttleArrivalFetchError('Live shuttle arrival data did not include the requested stops')
+        throw new ShuttleArrivalFetchError('Live bus arrival data did not include the requested stops')
       }
       return selectStops(cached.snapshot, uniqueStops)
     },

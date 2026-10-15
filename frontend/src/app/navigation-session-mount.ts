@@ -97,7 +97,7 @@ export interface NavigationSessionCommands {
   readonly clearTrip: () => void
   readonly searchPaths: () => void
   readonly selectJourneyOption: (candidateKey: string) => void
-  readonly setExploreViewQuery: (query: string) => void
+  readonly setExploreQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
   readonly selectBuilding: (buildingId: string) => void
   readonly back: () => void
@@ -140,7 +140,7 @@ function createNavigationSessionCommands(
     clearTrip: () => session?.clearTrip(),
     searchPaths: () => session?.searchPaths(),
     selectJourneyOption: (candidateKey) => session?.selectJourneyOption(candidateKey),
-    setExploreViewQuery: (query) => session?.setExploreViewQuery(query),
+    setExploreQuery: (query) => session?.setExploreQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
     selectBuilding: (buildingId) => session?.selectBuilding(buildingId),
     back: () => session?.back(),

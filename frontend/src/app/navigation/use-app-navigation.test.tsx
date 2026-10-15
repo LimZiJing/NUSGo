@@ -40,7 +40,7 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
     dispatch,
     commands,
     isMobileViewport,
-    exploreView: { mode: 'neutral' as const, selectedVenue: null, selectedBuildingId: null },
+    exploreState: { mode: 'neutral' as const, selectedVenue: null, selectedBuildingId: null },
     locationStatus: 'disabled' as const,
     pendingViewFocusRef,
     pendingExploreReturnFocusRef,
@@ -163,29 +163,29 @@ describe('map popup dismissal', () => {
     const options = createOptions(true, 'explore')
     type TestProps = {
       activeView: NavigationState['activeView']
-      exploreMode: UseAppNavigationOptions['exploreView']['mode']
+      exploreMode: UseAppNavigationOptions['exploreState']['mode']
     }
     const initialProps: TestProps = { activeView: 'explore', exploreMode: 'neutral' }
     const { rerender } = renderHook(
       ({ activeView, exploreMode }: TestProps) => useAppNavigation({
         ...options,
         state: { ...options.state, activeView },
-        exploreView: { mode: exploreMode, selectedVenue: null, selectedBuildingId: null },
+        exploreState: { mode: exploreMode, selectedVenue: null, selectedBuildingId: null },
       }),
       { initialProps },
     )
 
     expect(options.commands.dismissStopPopup).not.toHaveBeenCalled()
-    rerender({ ...initialProps, exploreMode: 'shuttle' })
+    rerender({ ...initialProps, exploreMode: 'bus-routes' })
     expect(options.commands.dismissStopPopup).not.toHaveBeenCalled()
 
-    rerender({ activeView: 'plan', exploreMode: 'shuttle' })
+    rerender({ activeView: 'plan', exploreMode: 'bus-routes' })
     expect(options.commands.dismissStopPopup).toHaveBeenCalledOnce()
     expect(options.commands.dismissMapPopup).not.toHaveBeenCalled()
-    rerender({ activeView: 'stops', exploreMode: 'shuttle' })
+    rerender({ activeView: 'stops', exploreMode: 'bus-routes' })
     expect(options.commands.dismissStopPopup).toHaveBeenCalledOnce()
     expect(options.commands.dismissMapPopup).toHaveBeenCalledOnce()
-    rerender({ activeView: 'explore', exploreMode: 'shuttle' })
+    rerender({ activeView: 'explore', exploreMode: 'bus-routes' })
     expect(options.commands.dismissStopPopup).toHaveBeenCalledTimes(2)
     expect(options.commands.dismissMapPopup).toHaveBeenCalledOnce()
 

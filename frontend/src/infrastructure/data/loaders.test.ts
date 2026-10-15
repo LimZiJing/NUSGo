@@ -95,7 +95,7 @@ describe('data loaders', () => {
     await expect(loadVenueData(controller.signal, fetcher)).rejects.toMatchObject({ name: 'AbortError' })
   })
 
-  it('loads shuttle timing and validates it against the canonical network', async () => {
+  it('loads bus timing and validates it against the canonical network', async () => {
     const result = await loadShuttleTimingData(
       validatedNetwork,
       new AbortController().signal,

@@ -131,13 +131,13 @@ describe('mobile Stops tab state', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('renders live internal-shuttle arrivals for visible Stops cards', async () => {
+  it('renders live internal-bus arrivals for visible Stops cards', async () => {
     const user = userEvent.setup()
 
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
-    await user.click(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
     await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
 
     expect(screen.getByText('LIVE')).toBeTruthy()
@@ -156,11 +156,11 @@ describe('mobile Stops tab state', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
-    const stopCard = screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })
+    const stopCard = screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })
     await user.click(stopCard)
-    await user.click(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' }))
+    await user.click(screen.getByRole('button', { name: 'Collapse Stop A, bus stop arrival times' }))
 
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' }).getAttribute('aria-expanded'))
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }).getAttribute('aria-expanded'))
       .toBe('false')
 
     await user.click(screen.getByRole('button', { name: 'Plan' }))
@@ -168,11 +168,11 @@ describe('mobile Stops tab state', () => {
 
     expect(screen.getByRole('button', { name: 'Favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' }).getAttribute('aria-expanded'))
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }).getAttribute('aria-expanded'))
       .toBe('false')
   })
 
-  it('keeps a fully expanded Explore sheet when switching from venue search to shuttle routes', async () => {
+  it('keeps a fully expanded Explore sheet when switching from venue search to bus routes', async () => {
     const user = userEvent.setup()
 
     render(<App />)
@@ -181,12 +181,12 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Expand Explore panel' }))
 
     expect(screen.getByRole('button', { name: 'Reduce Explore panel' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Shuttle routes' }))
+    await user.click(screen.getByRole('button', { name: 'Bus routes' }))
 
     expect(screen.getByRole('button', { name: 'Reduce Explore panel' })).toBeTruthy()
   })
 
-  it('opens Plan after a shuttle-stop popup sets the destination', async () => {
+  it('opens Plan after a bus-stop popup sets the destination', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -217,7 +217,7 @@ describe('mobile Stops tab state', () => {
       expect(appHarness.onStopSelected?.('STOP-A')).toBe(true)
     })
 
-    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    await screen.findByRole('heading', { name: 'Stop A, bus stop' })
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
 
@@ -231,8 +231,8 @@ describe('mobile Stops tab state', () => {
     appHarness.state = {
       ...initialState,
       selectedRouteId: 'A1',
-      exploreView: {
-        mode: 'shuttle',
+      exploreState: {
+        mode: 'bus-routes',
         query: '',
         selectedVenue: null,
         history: [],
@@ -243,21 +243,21 @@ describe('mobile Stops tab state', () => {
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     const stopRow = await screen.findByRole('button', {
-      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
+      name: 'Stop A, bus stop, code STOP-A. Focus on map',
     })
-    const scrollArea = stopRow.closest('.explore-route-browser-scroll')
+    const scrollArea = stopRow.closest('.explore-bus-route-list-scroll')
     if (!scrollArea) throw new Error('Route stop row has no scroll area')
     scrollArea.scrollTop = 38
     stopRow.focus()
     await user.keyboard('{Enter}')
 
-    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    await screen.findByRole('heading', { name: 'Stop A, bus stop' })
     await user.click(screen.getByRole('button', { name: 'Back to stops' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
-    expect(screen.getByRole('button', { name: 'Shuttle routes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
     expect(screen.getByRole('button', {
-      name: 'Stop A, shuttle stop, code STOP-A. Focus on map',
+      name: 'Stop A, bus stop, code STOP-A. Focus on map',
     })).toBe(stopRow)
     expect(document.activeElement).toBe(stopRow)
     expect(scrollArea.scrollTop).toBe(38)
@@ -273,7 +273,7 @@ describe('mobile Stops tab state', () => {
     appHarness.state = {
       ...initialState,
       venues: { 'COM1-0212': venue },
-      exploreView: {
+      exploreState: {
         mode: 'venue-detail',
         query: '',
         selectedVenue: { code: 'COM1-0212', venue },
@@ -285,18 +285,18 @@ describe('mobile Stops tab state', () => {
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     const nearbyStop = await screen.findByRole('button', {
-      name: /Nearby shuttle stop Stop A, code STOP-A/,
+      name: /Nearby bus stop Stop A, code STOP-A/,
     })
     nearbyStop.focus()
     await user.keyboard('{Enter}')
 
-    await screen.findByRole('heading', { name: 'Stop A, shuttle stop' })
+    await screen.findByRole('heading', { name: 'Stop A, bus stop' })
     await user.click(screen.getByRole('button', { name: 'Back to stops' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
     expect(screen.getByRole('heading', { name: 'COM1-0212, venue' })).toBeTruthy()
     expect(screen.getByRole('button', {
-      name: /Nearby shuttle stop Stop A, code STOP-A/,
+      name: /Nearby bus stop Stop A, code STOP-A/,
     })).toBe(nearbyStop)
     expect(document.activeElement).toBe(nearbyStop)
   })

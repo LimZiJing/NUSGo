@@ -43,7 +43,7 @@ describe('MainNavigation', () => {
     const onSelectView = vi.fn()
     render(<MainNavigation activeView="explore" onSelectView={onSelectView} />)
 
-    const navigation = screen.getByRole('navigation', { name: 'Map views' })
+    const navigation = screen.getByRole('navigation', { name: 'Map navigation tabs' })
     const explore = screen.getByRole('button', { name: 'Explore' })
     const stops = screen.getByRole('button', { name: 'Stops' })
 

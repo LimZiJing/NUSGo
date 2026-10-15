@@ -1,6 +1,6 @@
-# NUS building inventory: candidate review (#260, slice 5)
+# NUS building inventory: candidate review
 
-Review date: 13/10/2026. Status: **candidate inventory for maintainer review. Not complete and not approved.** Every entry below is selectable on its API centroid only. No pedestrian entrance has been verified on the ground or from imagery; the OSM entrance evidence below is community-mapped and must be treated as unverified.
+Review date: 13/10/2026. Status: **candidate inventory approved for selection, with provisional entrances still unverified.** All entries are selectable. 231 use API centroids; 29 use provisional OSM entrance candidates. No pedestrian entrance has been verified on the ground or from imagery.
 
 **Update 13/10/2026:** the maintainer approved the 260 entries as selectable and accepted the 29 single OSM entrance candidates (11 main-tagged, 18 single) as provisional entrances. They are recorded in `scripts/data/building-overrides.json` and marked `provisional-entrance` in `buildings.json`; the other 231 stay on centroids. Gap dispositions, the ambiguous prefixes and the proposed categories were not decided and remain open.
 
@@ -35,19 +35,17 @@ Only 29 of 260 buildings (11%) have a single entrance candidate. OSM cannot supp
 - **BIZ 2** (`way/54619697`): no entrance node on its outline. The only entrance node within 60 m is 59 m from the centroid and does not belong to this outline. The BIZ2 shuttle stop (1.293223, 103.775068) is 36 m from the centroid and is separate. **Entrance unverified; needs an on-site check.**
 - Both stay selectable on their centroids, distinct from their stops, until verified.
 
-## Findings that correct the issue text
+## Findings from source review
 
 1. **`elementId` is not always an OpenStreetMap ID.** 6 records use text IDs: `UNIVERSITY_HALL`, `NUS_MUSEUM`, `UNIVERSITY_CULTURAL_CENTRE`, `HELIX_HOUSE`, `PGP_RESIDENCE_2_CANTEEN_FOYER`, `PGP_RESIDENCE_2`. They cannot be looked up in OSM.
 2. **A numeric `elementId` does not say whether it is an OSM way or a relation.** 6 buildings have both a way and a relation with that number: UTown Residence North Tower (`7765113`), UTown Residence South Tower (`7765114`), Town Plaza (`15314907`), COM3 (`15780831`), King Edward VII Hall Block G (`15521864`), Institute of Systems Science (`4548824`). I chose by name match (for Institute of Systems Science, the way with the same number is a different building, "Tyskö"). Treat `elementId` as an opaque reference and never fetch an OSM object from it without a type.
 3. **Two postal codes are invalid** (Kent Ridge Hall Blocks D and E have 7 digits); the importer omits them.
 
-## Decisions needed from the maintainer
+## Open review questions
 
-1. Approve the 260 entries as selectable on centroids, with entrances recorded as unverified? Yes or no.
-2. Accept the 11 main-tagged and 18 single-entrance OSM nodes as provisional entrances, or keep every building on its centroid until verified on site?
-3. Disposition of the gaps: (a) Bukit Timah and Outram buildings: defer to a follow-up with a named source, or have a list drafted once the NUS campus map's reuse terms are checked? (b) COM 3, BIZ 2 and the 214 buildings with no entrance: on-site verification by the team, or centroid-only for now?
-4. Resolve the ambiguous room-prefix links in `dedupe-report.md` (Frontier, RC1 to RC3, SH, Y), which need overrides.
-5. Confirm the proposed categories and campus split, or say which to correct.
+1. Disposition of the gaps: (a) Bukit Timah and Outram buildings: defer to a follow-up with a named source, or have a list drafted once the NUS campus map's reuse terms are checked? (b) COM 3, BIZ 2 and the 214 buildings with no entrance: on-site verification by the team, or centroid-only for now?
+2. Resolve the ambiguous room-prefix links in `dedupe-report.md` (Frontier, RC1 to RC3, SH, Y), which need overrides.
+3. Confirm the proposed categories and campus split, or say which to correct.
 
 ## Inventory (260 buildings)
 

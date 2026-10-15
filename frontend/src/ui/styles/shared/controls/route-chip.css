@@ -123,15 +123,8 @@ button.route-chip:active {
   transform: scale(0.96);
 }
 
-/* The small size is the Chip primitive's 36px touch height. */
-.route-chip[data-size='sm'] {
-  min-width: 40px;
-  min-height: var(--control-height-sm);
-  padding: 4px 10px;
-}
-
-/* Compact chips (stop rows, map popups) stay 24px: popups set data-size='compact', React RouteChips data-compact. */
-.route-chip:is([data-size='compact'], [data-compact]) {
+/* Map popup chips set data-size='compact'; React RouteChips render the Chip primitive's 'sm' size. */
+.route-chip:is([data-size='compact'], [data-size='sm']) {
   min-width: 34px;
   min-height: 24px;
   padding: 2px 6px;

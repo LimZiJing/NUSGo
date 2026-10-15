@@ -18,7 +18,7 @@ const stop = { id: 'COM3', longName: 'COM3', shortName: 'COM3', latitude: 1.2944
 const transit = { stops: [stop], stopById: new Map([[stop.id, stop]]) } as unknown as TransitIndex
 
 describe('resolvePathEndpoints with buildings', () => {
-  it('keeps a building and the shuttle stop of the same name as separate locations', () => {
+  it('keeps a building and the bus stop of the same name as separate locations', () => {
     const resolved = resolvePathEndpoints(
       { kind: 'building', id: 'com3' },
       { kind: 'stop', id: 'COM3' },

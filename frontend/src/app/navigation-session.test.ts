@@ -274,7 +274,7 @@ describe('navigation session', () => {
       selectedRouteId: null,
       selectedRouteColor: null,
       rememberedMobileRouteId: null,
-      exploreView: {
+      exploreState: {
         mode: 'neutral',
         query: '',
         selectedVenue: null,
@@ -309,11 +309,11 @@ describe('navigation session', () => {
     const listener = vi.fn()
     const cleanup = session.subscribe(listener)
 
-    session.setExploreViewQuery('COM1')
+    session.setExploreQuery('COM1')
     expect(listener).toHaveBeenCalledOnce()
 
     cleanup()
-    session.setExploreViewQuery('STOP')
+    session.setExploreQuery('STOP')
     expect(listener).toHaveBeenCalledOnce()
   })
 
@@ -334,7 +334,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       venues: dependencies.venues.venues,
       transitIndex: dependencies.transit.index,
-      status: '1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+      status: '1 venues · 2 bus stops · 1 bus routes loaded',
     })
     expect(dependencies.map.loadTransitData).toHaveBeenCalledOnce()
     expect(dependencies.map.loadTransitData).toHaveBeenCalledWith(
@@ -664,15 +664,15 @@ describe('navigation session', () => {
 
     const venueLoaded = waitForState(
       session,
-      (state) => state.status === '1 venues available; loading shuttle routes…',
+      (state) => state.status === '1 venues available; loading bus routes…',
     )
     venueDeferred.resolve(dependencies.venues)
     await venueLoaded
-    expect(session.getState().status).toBe('1 venues available; loading shuttle routes…')
+    expect(session.getState().status).toBe('1 venues available; loading bus routes…')
 
     transitDeferred.resolve(dependencies.transit)
     await start
-    expect(session.getState().status).toBe('1 venues · 2 shuttle stops · 1 shuttle routes loaded')
+    expect(session.getState().status).toBe('1 venues · 2 bus stops · 1 bus routes loaded')
 
     const reverseVenue = createDeferred<LoadedVenueData>()
     const reverseTransit = createDeferred<LoadedTransitData>()
@@ -685,13 +685,13 @@ describe('navigation session', () => {
 
     const transitLoaded = waitForState(
       reverseSession,
-      (state) => state.status === '2 shuttle stops · 1 shuttle routes loaded; loading venue data…',
+      (state) => state.status === '2 bus stops · 1 bus routes loaded; loading venue data…',
     )
     reverseTransit.resolve(reverseDependencies.transit)
     await transitLoaded
     reverseVenue.resolve(reverseDependencies.venues)
     await reverseStart
-    expect(reverseSession.getState().status).toBe('1 venues · 2 shuttle stops · 1 shuttle routes loaded')
+    expect(reverseSession.getState().status).toBe('1 venues · 2 bus stops · 1 bus routes loaded')
   })
 
   it('aggregates independent and combined resource failures in completion order', async () => {
@@ -703,7 +703,7 @@ describe('navigation session', () => {
       const venueFailureSession = createNavigationSession(venueFailure)
       await venueFailureSession.start(new AbortController().signal)
       expect(venueFailureSession.getState().status).toBe(
-        '2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data',
+        '2 bus stops · 1 bus routes loaded; Unable to load venue data',
       )
 
       const transitFailure = createDependencies({
@@ -712,7 +712,7 @@ describe('navigation session', () => {
       const transitFailureSession = createNavigationSession(transitFailure)
       await transitFailureSession.start(new AbortController().signal)
       expect(transitFailureSession.getState().status).toBe(
-        '1 venues available; Unable to load shuttle route data',
+        '1 venues available; Unable to load bus route data',
       )
 
       const combined = createDependencies({
@@ -722,7 +722,7 @@ describe('navigation session', () => {
       const combinedSession = createNavigationSession(combined)
       await combinedSession.start(new AbortController().signal)
       expect(combinedSession.getState().status).toBe(
-        'Unable to load venue data; Unable to load shuttle route data',
+        'Unable to load venue data; Unable to load bus route data',
       )
     } finally {
       consoleError.mockRestore()
@@ -733,14 +733,14 @@ describe('navigation session', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     try {
       const scenarios = [
-        [false, false, false, '1 venues · 2 shuttle stops · 1 shuttle routes loaded'],
-        [false, false, true, '1 venues available; Unable to load shuttle route data'],
-        [false, true, false, '2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data'],
-        [false, true, true, 'Unable to load venue data; Unable to load shuttle route data'],
-        [true, false, false, 'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded'],
-        [true, false, true, 'Unable to load map tiles; 1 venues available; Unable to load shuttle route data'],
-        [true, true, false, 'Unable to load map tiles; 2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data'],
-        [true, true, true, 'Unable to load map tiles; Unable to load venue data; Unable to load shuttle route data'],
+        [false, false, false, '1 venues · 2 bus stops · 1 bus routes loaded'],
+        [false, false, true, '1 venues available; Unable to load bus route data'],
+        [false, true, false, '2 bus stops · 1 bus routes loaded; Unable to load venue data'],
+        [false, true, true, 'Unable to load venue data; Unable to load bus route data'],
+        [true, false, false, 'Unable to load map tiles; 1 venues · 2 bus stops · 1 bus routes loaded'],
+        [true, false, true, 'Unable to load map tiles; 1 venues available; Unable to load bus route data'],
+        [true, true, false, 'Unable to load map tiles; 2 bus stops · 1 bus routes loaded; Unable to load venue data'],
+        [true, true, true, 'Unable to load map tiles; Unable to load venue data; Unable to load bus route data'],
       ] as const
 
       for (const [mapFailed, venueFailed, transitFailed, expectedStatus] of scenarios) {
@@ -775,7 +775,7 @@ describe('navigation session', () => {
 
       expect(session.getState()).toMatchObject({
         mapError: 'Unable to load map tiles',
-        status: 'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+        status: 'Unable to load map tiles; 1 venues · 2 bus stops · 1 bus routes loaded',
         resourceStatus: {
           venue: { status: 'loaded', value: 1 },
           transit: { status: 'loaded', value: { stopCount: 2, routeCount: 1 } },
@@ -786,7 +786,7 @@ describe('navigation session', () => {
       await laterMapError.start(new AbortController().signal)
       laterMapError.reportMapError(new Error('tiles unavailable'))
       expect(laterMapError.getState().status).toBe(
-        'Unable to load map tiles; 1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+        'Unable to load map tiles; 1 venues · 2 bus stops · 1 bus routes loaded',
       )
     } finally {
       consoleError.mockRestore()
@@ -837,7 +837,7 @@ describe('navigation session', () => {
 
         await start
         expect(session.getState().status).toBe(
-          'Unable to load map tiles; Unable to load venue data; Unable to load shuttle route data',
+          'Unable to load map tiles; Unable to load venue data; Unable to load bus route data',
         )
       }
     } finally {
@@ -854,7 +854,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: 'A1',
       rememberedMobileRouteId: 'A1',
-      exploreView: { mode: 'shuttle' },
+      exploreState: { mode: 'bus-routes' },
     })
 
     session.selectMobileRoute('A1')
@@ -876,7 +876,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: null,
       rememberedMobileRouteId: 'A1',
-      exploreView: { mode: 'shuttle' },
+      exploreState: { mode: 'bus-routes' },
     })
     expect(dependencies.map.setRouteSelection).toHaveBeenLastCalledWith({
       route: null,
@@ -889,7 +889,7 @@ describe('navigation session', () => {
     expect(session.getState()).toMatchObject({
       selectedRouteId: null,
       rememberedMobileRouteId: 'A1',
-      exploreView: { mode: 'neutral' },
+      exploreState: { mode: 'neutral' },
     })
   })
 
@@ -964,8 +964,8 @@ describe('navigation session', () => {
     expect(loadedState.transitIndex).toBe(dependencies.transit.index)
     expect(Object.isFrozen(loadedState.transitIndex)).toBe(true)
     expect(Object.isFrozen(loadedState)).toBe(true)
-    expect(Object.isFrozen(loadedState.exploreView)).toBe(true)
-    expect(Object.isFrozen(loadedState.exploreView.history)).toBe(true)
+    expect(Object.isFrozen(loadedState.exploreState)).toBe(true)
+    expect(Object.isFrozen(loadedState.exploreState.history)).toBe(true)
     expect(Object.isFrozen(loadedState.tripRequest)).toBe(true)
     expect(Object.isFrozen(loadedState.resourceStatus)).toBe(true)
     expect(Object.isFrozen(loadedState.resourceStatus.venue)).toBe(true)
@@ -988,15 +988,15 @@ describe('navigation session', () => {
 
     session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
     session.selectVenue({ code: 'COM1', venue: canonicalVenues.COM1 })
-    const selectedVenue = session.getState().exploreView.selectedVenue
+    const selectedVenue = session.getState().exploreState.selectedVenue
     expect(selectedVenue?.venue).toBe(canonicalVenues.COM1)
     expect(Object.isFrozen(selectedVenue)).toBe(true)
     expect(Object.isFrozen(selectedVenue?.venue)).toBe(true)
-    expect(Object.isFrozen(session.getState().exploreView.history)).toBe(true)
-    expect(session.getState().exploreView.history).toHaveLength(2)
-    expect(session.getState().exploreView.history.every((entry) => Object.isFrozen(entry))).toBe(true)
-    expect(Object.isFrozen(session.getState().exploreView.history[1]?.selectedVenue)).toBe(true)
-    expect(session.getState().exploreView.history[1]?.selectedVenue?.venue).toBe(canonicalVenues.COM1)
+    expect(Object.isFrozen(session.getState().exploreState.history)).toBe(true)
+    expect(session.getState().exploreState.history).toHaveLength(2)
+    expect(session.getState().exploreState.history.every((entry) => Object.isFrozen(entry))).toBe(true)
+    expect(Object.isFrozen(session.getState().exploreState.history[1]?.selectedVenue)).toBe(true)
+    expect(session.getState().exploreState.history[1]?.selectedVenue?.venue).toBe(canonicalVenues.COM1)
   })
 
   it('freezes pending and failed resource branches', async () => {
@@ -1040,7 +1040,7 @@ describe('navigation session', () => {
     expect(dependencies.map.selectVenue).not.toHaveBeenCalled()
 
     session.selectVenue(venueResult)
-    expect(session.getState().exploreView.selectedVenue).toEqual({
+    expect(session.getState().exploreState.selectedVenue).toEqual({
       code: 'COM1',
       venue: dependencies.venues.venues.COM1,
     })
@@ -1062,13 +1062,13 @@ describe('navigation session', () => {
       code: 'UNMAPPED',
       venue: { roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
     })
-    expect(unmappedSession.getState().exploreView.selectedVenue).toBeNull()
+    expect(unmappedSession.getState().exploreState.selectedVenue).toBeNull()
 
     unmappedSession.selectVenue({
       code: 'UNMAPPED',
       venue: unmappedData.venues.UNMAPPED,
     })
-    expect(unmappedSession.getState().exploreView.selectedVenue).toEqual({
+    expect(unmappedSession.getState().exploreState.selectedVenue).toEqual({
       code: 'UNMAPPED',
       venue: unmappedData.venues.UNMAPPED,
     })
@@ -1100,20 +1100,20 @@ describe('navigation session', () => {
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
-    session.setExploreViewQuery('COM1')
+    session.setExploreQuery('COM1')
     session.selectVenue(venueResult)
-    expect(session.getState().exploreView).toMatchObject({
+    expect(session.getState().exploreState).toMatchObject({
       mode: 'venue-detail',
       query: 'COM1',
       selectedVenue: venueResult,
     })
     expect(dependencies.map.selectVenue).toHaveBeenCalledWith(venueResult.venue)
 
-    session.setExploreViewQuery('COM1-0210')
-    expect(session.getState().exploreView.query).toBe('COM1-0210')
+    session.setExploreQuery('COM1-0210')
+    expect(session.getState().exploreState.query).toBe('COM1-0210')
 
     session.back()
-    expect(session.getState().exploreView).toMatchObject({
+    expect(session.getState().exploreState).toMatchObject({
       mode: 'neutral',
       query: 'COM1',
       selectedVenue: null,
@@ -1121,13 +1121,13 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.enterMobileRoutes()
-    expect(session.getState().exploreView.mode).toBe('shuttle')
+    expect(session.getState().exploreState.mode).toBe('bus-routes')
     session.back()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
 
     session.selectVenue(venueResult)
     session.handleMapClick()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -1137,18 +1137,18 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
 
     session.selectVenue(venueResult)
-    const history = session.getState().exploreView.history
+    const history = session.getState().exploreState.history
 
     session.focusStop('STOP-A')
 
     expect(dependencies.map.focusStop).toHaveBeenCalledWith('STOP-A')
-    expect(session.getState().exploreView).toMatchObject({
+    expect(session.getState().exploreState).toMatchObject({
       mode: 'venue-detail',
       selectedVenue: venueResult,
       history,
     })
     session.back()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
   })
 
   it('clears the selected route when leaving mobile routes', async () => {
@@ -1166,7 +1166,7 @@ describe('navigation session', () => {
 
     expect(dependencies.map.dismissPopup).not.toHaveBeenCalled()
     expect(session.getState()).toMatchObject({
-      exploreView: { mode: 'neutral' },
+      exploreState: { mode: 'neutral' },
       selectedRouteId: null,
       selectedRouteColor: null,
     })
@@ -1189,7 +1189,7 @@ describe('navigation session', () => {
     session.closeToRoot()
 
     expect(session.getState()).toMatchObject({
-      exploreView: {
+      exploreState: {
         mode: 'neutral',
         selectedVenue: venueResult,
         history: [],
@@ -1214,17 +1214,17 @@ describe('navigation session', () => {
 
     session.selectVenue(venueResult)
     session.escape()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.selectVenue(venueResult)
     session.enterMobileRoutes()
     session.escape()
-    expect(session.getState().exploreView.mode).toBe('venue-detail')
+    expect(session.getState().exploreState.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.back()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -1270,11 +1270,11 @@ describe('navigation session', () => {
     session.selectVenue(venueResult)
     session.enterMobileRoutes()
     session.escape()
-    expect(session.getState().exploreView.mode).toBe('venue-detail')
+    expect(session.getState().exploreState.mode).toBe('venue-detail')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.escape()
-    expect(session.getState().exploreView.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 
@@ -1386,7 +1386,7 @@ describe('navigation session', () => {
       name: 'Saga College',
       locations: [{ x: 103.774, y: 1.295 }, { x: 103.775, y: 1.296 }],
     })
-    expect(session.getState().exploreView).toMatchObject({
+    expect(session.getState().exploreState).toMatchObject({
       mode: 'venue-detail',
       selectedBuildingId: 'saga-college',
       selectedVenue: null,
@@ -1394,7 +1394,7 @@ describe('navigation session', () => {
 
     session.back()
     expect(dependencies.map.clearVenue).toHaveBeenCalled()
-    expect(session.getState().exploreView.selectedBuildingId).toBeNull()
+    expect(session.getState().exploreState.selectedBuildingId).toBeNull()
   })
 
   it('rejects a building endpoint when the catalogue could not be loaded', async () => {
@@ -1584,19 +1584,19 @@ describe('navigation session', () => {
 
     session.subscribe(() => {
       events.push('first')
-      session.setExploreViewQuery('queued')
+      session.setExploreQuery('queued')
       session.dispose()
     })
     session.subscribe(() => {
       events.push('second')
     })
 
-    session.setExploreViewQuery('COM1')
+    session.setExploreQuery('COM1')
 
     expect(events).toEqual(['first'])
     expect(map.setTripRequest).not.toHaveBeenCalled()
     expect(map.dispose).toHaveBeenCalledOnce()
-    expect(session.getState().exploreView.query).toBe('COM1')
+    expect(session.getState().exploreState.query).toBe('COM1')
   })
 
   it('synchronizes loaded transit resources before a subscriber can dispose the session', async () => {
@@ -1690,7 +1690,7 @@ describe('navigation session', () => {
 
       await expect(start).rejects.toThrow('transit map installation failed')
       expect(session.getState().status).toBe(
-        '1 venues available; loading shuttle routes…',
+        '1 venues available; loading bus routes…',
       )
       expect(map.loadTransitData).toHaveBeenCalledOnce()
       session.dispose()
@@ -1713,7 +1713,7 @@ describe('navigation session', () => {
 
       await expect(start).rejects.toThrow('transit endpoint synchronization failed')
       expect(session.getState().status).toBe(
-        '1 venues available; loading shuttle routes…',
+        '1 venues available; loading bus routes…',
       )
       expect(map.setTripRequest).toHaveBeenCalledTimes(2)
       session.dispose()
@@ -1736,7 +1736,7 @@ describe('navigation session', () => {
 
       await expect(start).rejects.toThrow('venue subscriber failed')
       expect(session.getState().status).toBe(
-        '1 venues available; loading shuttle routes…',
+        '1 venues available; loading bus routes…',
       )
       session.dispose()
       transit.resolve(createDependencies().transit)
@@ -1756,7 +1756,7 @@ describe('navigation session', () => {
 
       await expect(start).rejects.toThrow('transit subscriber failed')
       expect(session.getState().status).toBe(
-        '1 venues · 2 shuttle stops · 1 shuttle routes loaded',
+        '1 venues · 2 bus stops · 1 bus routes loaded',
       )
       session.dispose()
     }
@@ -1782,7 +1782,7 @@ describe('navigation session', () => {
 
     await expect(session.start(new AbortController().signal)).rejects.toThrow('map startup failed')
     expect(session.getState().resourceStatus.transit).toEqual({ status: 'pending' })
-    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+    expect(session.getState().status).not.toContain('Unable to load bus route data')
   })
 
   it('keeps map-readiness failures distinct across venue completion orderings', async () => {
@@ -1792,12 +1792,12 @@ describe('navigation session', () => {
         {
           venueFailed: false,
           readinessFirst: false,
-          expectedStatus: '1 venues available; loading shuttle routes…',
+          expectedStatus: '1 venues available; loading bus routes…',
         },
         {
           venueFailed: false,
           readinessFirst: true,
-          expectedStatus: '1 venues available; loading shuttle routes…',
+          expectedStatus: '1 venues available; loading bus routes…',
         },
         {
           venueFailed: true,
@@ -1871,7 +1871,7 @@ describe('navigation session', () => {
       transit: { status: 'loaded' },
     })
     expect(session.getState().status).not.toContain('Unable to load venue data')
-    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+    expect(session.getState().status).not.toContain('Unable to load bus route data')
   })
 
   it('does not label subscriber failures as data load failures', async () => {
@@ -1882,13 +1882,13 @@ describe('navigation session', () => {
       throw new Error('subscriber failed')
     })
 
-    expect(() => session.setExploreViewQuery('COM1')).toThrow('subscriber failed')
+    expect(() => session.setExploreQuery('COM1')).toThrow('subscriber failed')
     expect(session.getState().resourceStatus).toMatchObject({
       venue: { status: 'loaded' },
       transit: { status: 'loaded' },
     })
     expect(session.getState().status).not.toContain('Unable to load venue data')
-    expect(session.getState().status).not.toContain('Unable to load shuttle route data')
+    expect(session.getState().status).not.toContain('Unable to load bus route data')
   })
 
   it('stores startup failure without re-running map effects or propagating listener errors', async () => {
@@ -2160,12 +2160,12 @@ describe('navigation session', () => {
         {
           venueFailed: false,
           transitFailed: true,
-          expectedStatus: '1 venues available; Unable to load shuttle route data',
+          expectedStatus: '1 venues available; Unable to load bus route data',
         },
         {
           venueFailed: true,
           transitFailed: false,
-          expectedStatus: '2 shuttle stops · 1 shuttle routes loaded; Unable to load venue data',
+          expectedStatus: '2 bus stops · 1 bus routes loaded; Unable to load venue data',
         },
       ] as const
       const completionOrders = [

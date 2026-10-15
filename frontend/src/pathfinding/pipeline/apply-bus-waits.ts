@@ -321,7 +321,7 @@ export async function applyBusWaits(
       serviceWindows = await dependencies.getServiceWindows(routeIds, dependencies.signal)
     } catch (error: unknown) {
       if (dependencies.signal.aborted || isAbortError(error)) throw createAbortError()
-      console.warn('Shuttle service-hour data is unavailable; removing shuttle options.', error)
+      console.warn('bus service-hour data is unavailable; removing bus options.', error)
       return { search: walkingOnlySearch(search), unavailableService: null }
     }
     if (!routeIds.every((routeId) => serviceWindows?.[routeId] !== undefined)) {

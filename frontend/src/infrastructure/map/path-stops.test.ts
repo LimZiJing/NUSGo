@@ -22,7 +22,7 @@ function createShuttleLeg(
 }
 
 describe('getBusPathLegStopIds', () => {
-  it('returns the inclusive ordered stop segment for a shuttle leg', () => {
+  it('returns the inclusive ordered stop segment for a bus leg', () => {
     expect(getBusPathLegStopIds(
       createShuttleLeg('STOP-A', 'STOP-B'),
       route,

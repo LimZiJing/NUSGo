@@ -873,7 +873,7 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
-  it('highlights only stops traversed by each shuttle leg with its Route color', async () => {
+  it('highlights only stops traversed by each bus leg with its Route color', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -909,7 +909,7 @@ describe('MapSession', () => {
       'linear-gradient(#123456, #123456)',
     )
     expect(markerByStopId.get('STOP-A')?.attributes.get('aria-label')).toBe(
-      'Stop A shuttle stop on Journey Route A1',
+      'Stop A bus stop on Journey Route A1',
     )
     expect(markerByStopId.get('STOP-MIDDLE')?.style.setProperty).toHaveBeenCalledWith(
       '--bus-stop-journey-color',
@@ -924,7 +924,7 @@ describe('MapSession', () => {
       'conic-gradient(#123456 0deg 180deg, #654321 180deg 360deg)',
     )
     expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
-      'Stop B shuttle stop on Journey Routes A1, B1',
+      'Stop B bus stop on Journey Routes A1, B1',
     )
     expect(markerByStopId.get('STOP-AFTER')?.attributes.get('title')).toBeUndefined()
 
@@ -937,7 +937,7 @@ describe('MapSession', () => {
       'linear-gradient(#654321, #654321)',
     )
     expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
-      'Stop B shuttle stop on Journey Route B1',
+      'Stop B bus stop on Journey Route B1',
     )
 
     setSingleJourney(session, null)
@@ -948,7 +948,7 @@ describe('MapSession', () => {
       '',
     )
     expect(markerByStopId.get('STOP-B')?.attributes.get('aria-label')).toBe(
-      'Stop B shuttle stop',
+      'Stop B bus stop',
     )
     expect(markerByStopId.get('STOP-B')?.attributes.get('title')).toBeUndefined()
 

@@ -1,6 +1,6 @@
 # Interface controls
 
-This is the spec for NavUS buttons, chips, and pills (issue #333). Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
+This is the specification for NavUS buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
 
 ## Primitives
 
@@ -93,7 +93,7 @@ Each item is one small pull request, and each lowers the matching counts in the 
 - [ ] Stops (also remove `ghost-back-button.css` and the `.stop-opposite` rule in `navigate-button.css`)
 - [x] Explore
 - [x] Plan
-- [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling from #343; only a dead `.location-control-popover button` rule was removed)
+- [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling; only a dead `.location-control-popover button` rule was removed)
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
 - [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)

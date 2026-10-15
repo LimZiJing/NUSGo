@@ -9,7 +9,7 @@ import {
   type RefObject,
 } from 'react'
 import type { LocationTrackingStatus } from '../../domain/location/types'
-import type { ExploreViewState } from '../../features/explore-view/state'
+import type { ExploreState } from '../../features/explore/state/explore-state'
 import type { NavigationSessionCommands } from '../navigation-session-mount'
 import {
   createInitialNavigationState,
@@ -37,7 +37,7 @@ export interface UseAppNavigationOptions {
     | 'escape'
   >
   readonly isMobileViewport: boolean
-  readonly exploreView: Pick<ExploreViewState, 'mode' | 'selectedVenue' | 'selectedBuildingId'>
+  readonly exploreState: Pick<ExploreState, 'mode' | 'selectedVenue' | 'selectedBuildingId'>
   readonly locationStatus: LocationTrackingStatus
   readonly pendingViewFocusRef: RefObject<NavigationView | null>
   readonly pendingExploreReturnFocusRef: RefObject<HTMLElement | null>
@@ -87,7 +87,7 @@ export function useAppNavigation({
   dispatch,
   commands,
   isMobileViewport,
-  exploreView,
+  exploreState,
   locationStatus,
   pendingViewFocusRef,
   pendingExploreReturnFocusRef,
@@ -100,7 +100,7 @@ export function useAppNavigation({
     readonly sequence: number
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
-  const previousExploreViewRef = useRef<Pick<ExploreViewState, 'mode' | 'selectedVenue' | 'selectedBuildingId'> | null>(null)
+  const previousExploreStateRef = useRef<Pick<ExploreState, 'mode' | 'selectedVenue' | 'selectedBuildingId'> | null>(null)
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
 
   const activeView = state.activeView
@@ -180,9 +180,9 @@ export function useAppNavigation({
       if (switchingView && currentNavigation.sheets[currentNavigation.activeView].search) {
         dispatch({ type: 'dismiss-search', view: currentNavigation.activeView })
       }
-      if (switchingView && currentNavigation.activeView === 'explore' && exploreView.mode === 'shuttle') {
+      if (switchingView && currentNavigation.activeView === 'explore' && exploreState.mode === 'bus-routes') {
         commands.suspendMobileRoutes()
-      } else if (switchingView && view === 'explore' && exploreView.mode === 'shuttle') {
+      } else if (switchingView && view === 'explore' && exploreState.mode === 'bus-routes') {
         commands.enterMobileRoutes()
       }
     }
@@ -194,7 +194,7 @@ export function useAppNavigation({
     activeSheetDetent,
     commands,
     dispatch,
-    exploreView.mode,
+    exploreState.mode,
     isMobileViewport,
     locationStatus,
     state,
@@ -281,19 +281,19 @@ export function useAppNavigation({
   }, [activeSheetExpanded, activeView, commands, dispatch, isMobileViewport])
 
   useEffect(() => {
-    const previous = previousExploreViewRef.current
-    previousExploreViewRef.current = exploreView
+    const previous = previousExploreStateRef.current
+    previousExploreStateRef.current = exploreState
     if (!previous) return
-    const modeChanged = previous.mode !== exploreView.mode
-    const venueChanged = previous.selectedVenue?.code !== exploreView.selectedVenue?.code ||
-      previous.selectedBuildingId !== exploreView.selectedBuildingId
+    const modeChanged = previous.mode !== exploreState.mode
+    const venueChanged = previous.selectedVenue?.code !== exploreState.selectedVenue?.code ||
+      previous.selectedBuildingId !== exploreState.selectedBuildingId
     if (
       (modeChanged || venueChanged) && isMobileViewport &&
       state.activeView === 'explore' && state.sheets.explore.detent === 'collapsed'
     ) {
       dispatch({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
     }
-  }, [dispatch, exploreView, isMobileViewport, state.activeView, state.sheets.explore.detent])
+  }, [dispatch, exploreState, isMobileViewport, state.activeView, state.sheets.explore.detent])
 
   useLayoutEffect(() => {
     commands.setStopsPinVisible(activeView === 'stops')

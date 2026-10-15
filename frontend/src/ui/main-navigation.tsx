@@ -28,7 +28,7 @@ export function MainNavigation({
   return (
     <nav
       className="main-navigation"
-      aria-label="Map views"
+      aria-label="Map navigation tabs"
       ref={containerRef}
     >
       {NAVIGATION_VIEWS.map(({ id, label, panelId }) => (

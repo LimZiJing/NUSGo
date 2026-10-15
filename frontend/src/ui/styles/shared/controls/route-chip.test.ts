@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const styles = readFileSync(resolve(stylesDirectory, 'route-chip.css'), 'utf8')
 
-describe('shuttle route scrolling styles', () => {
+describe('bus route scrolling styles', () => {
   it('hides the native scrollbar while preserving smooth native scrolling', () => {
     expect(styles).toMatch(/\.route-chip-list\s*{[^}]*scroll-behavior:\s*smooth;/s)
     expect(styles).toMatch(/\.route-chip-list\s*{[^}]*scrollbar-width:\s*none;/s)

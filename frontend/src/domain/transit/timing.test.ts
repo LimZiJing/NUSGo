@@ -37,7 +37,7 @@ function createTimingGeometry(): BusRouteGeometry {
   }
 }
 
-describe('shuttle timing', () => {
+describe('bus timing', () => {
   it('generates directed geometry-based estimates with uncertainty bounds', () => {
     const network = createTimingNetwork()
     const geometry = createTimingGeometry()

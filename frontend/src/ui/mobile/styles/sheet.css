@@ -203,8 +203,8 @@
     display: contents;
   }
 
-  .mobile-sheet-content > .plan-view,
-  .mobile-sheet-content > .explore-view,
+  .mobile-sheet-content > .plan-content,
+  .mobile-sheet-content > .explore-content,
   .mobile-sheet-content > .stops-content {
     height: auto;
     min-height: 0;

@@ -45,7 +45,7 @@ function Probe({
 }) {
   const mapShellRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLDivElement>(null)
-  const exploreViewRef = useRef<HTMLDivElement>(null)
+  const explorePanelRef = useRef<HTMLDivElement>(null)
   const stopsSheetRef = useRef<HTMLDivElement>(null)
   const mainNavigationRef = useRef<HTMLDivElement>(null)
   const navigationColumnRef = useRef<HTMLDivElement>(null)
@@ -56,7 +56,7 @@ function Probe({
     navigation: navigationState,
     mapShellRef,
     tripControlsRef,
-    exploreViewRef,
+    explorePanelRef,
     stopsSheetRef,
     mainNavigationRef,
     navigationColumnRef,
@@ -70,7 +70,7 @@ function Probe({
         ref={setBounds(mapShellRef, { top: 0, right: 390, bottom: 844, left: 0, width: 390, height: 844 } as DOMRect)}
       />
       <div ref={setBounds(tripControlsRef, { top: 20, right: 390, bottom: 112, left: 0, width: 390, height: 92 } as DOMRect)} />
-      <div className={sheetClassName} ref={setBounds(exploreViewRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
+      <div className={sheetClassName} ref={setBounds(explorePanelRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
       <div ref={setBounds(navigationColumnRef, { top: 0, right: 390, bottom: 844, left: 30, width: 360, height: 844 } as DOMRect)} />

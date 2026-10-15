@@ -288,7 +288,7 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
     )
   })
 
-  it('exposes a safe action for assigning a shuttle stop as the destination', () => {
+  it('exposes a safe action for assigning a bus stop as the destination', () => {
     const documentStub = {
       createElement: (tagName: string) => new FakeElement(tagName),
     }
@@ -398,7 +398,7 @@ describe('bus-stop presentation', () => {
     expect(adapter.setStopsPin('STOP-A', true)).toBe(true)
     expect(element.classes.has('bus-stop-marker-selected')).toBe(true)
     expect(element.className).toBe('bus-stop-marker')
-    expect(element.attributes.get('aria-label')).toBe('Central Library shuttle stop')
+    expect(element.attributes.get('aria-label')).toBe('Central Library bus stop')
     adapter.setStopsPin('STOP-A', false)
     expect(element.classes.has('bus-stop-marker-selected')).toBe(false)
     adapter.setStopsPin('STOP-A', true)
@@ -618,10 +618,10 @@ describe('bus-stop presentation', () => {
       'linear-gradient(#123456, #123456)',
     )
     expect(elements[0].attributes.get('aria-label')).toBe(
-      'Central Library shuttle stop on Journey Route A1',
+      'Central Library bus stop on Journey Route A1',
     )
     expect(elements[0].attributes.get('title')).toBe(
-      'Central Library shuttle stop on Journey Route A1',
+      'Central Library bus stop on Journey Route A1',
     )
     expect(elements[1].disabled).toBe(true)
     expect(elements[1].tabIndex).toBe(-1)
@@ -661,7 +661,7 @@ describe('bus-stop presentation', () => {
       '--bus-stop-journey-color',
       '',
     )
-    expect(elements[0].attributes.get('aria-label')).toBe('Central Library shuttle stop')
+    expect(elements[0].attributes.get('aria-label')).toBe('Central Library bus stop')
     expect(elements[0].attributes.get('title')).toBeUndefined()
     adapter.dispose()
     vi.unstubAllGlobals()

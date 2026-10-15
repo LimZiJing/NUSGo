@@ -6,7 +6,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
 - `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications. `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
-- `frontend/src/features` owns user workflows such as the Explore, Stops, and Plan views, including their workflow state, intent commands, feature components, and feature-specific styles.
+- `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
 - `frontend/src/pathfinding` owns the provider-injected Path model, bounded search, ordered planning pipeline, and its walking provider boundary. The app composition supplies validated transit data, timing callbacks, clocks, cooperative yields, and cancellation; Plan presentation and MapLibre rendering stay outside this folder.
@@ -54,7 +54,7 @@ The diagram describes allowed ownership and dependency direction; it does not re
 - `NavigationPanelShell` keeps the desktop/mobile presentation seam. The app-owned `MobileSheet` module under `frontend/src/ui/mobile/` contains the Base UI Drawer integration; application navigation owns detents, and feature views receive state and callbacks without importing the library.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
-The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider because those effects move with the engine in #233. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
+The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider so walking effects stay with the pathfinding engine. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
 
 ## Migration map and order
 
@@ -63,18 +63,19 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Current area | Target owner |
 | --- | --- |
 | Reusable transit and venue types and validation shared by the backend | `shared/src` |
-| Frontend-only transit indexes and transformations, plus location, trip, and pure Explore view state | `frontend/src/domain` |
+| Frontend-only transit indexes and transformations, plus location and trip models | `frontend/src/domain` |
+| Explore workflow state | `frontend/src/features/explore/state` |
 | Feature-specific components and React state currently under `frontend/src/components` | `frontend/src/features` |
-| Explore route browsing and venue workflows | `frontend/src/features/explore-view` |
+| Explore route browsing and venue workflows | `frontend/src/features/explore` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops` |
-| Trip endpoints and Path presentation | `frontend/src/features/plan-view` |
+| Trip endpoints and Path presentation | `frontend/src/features/plan` |
 | Path model, search, ordered planning stages, and walking boundary | `frontend/src/pathfinding` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
 | Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |
 | `frontend/src/app/app.tsx` and composition in `frontend/src/main.tsx` | `frontend/src/app` |
 
-Apply the architecture work in this exact order: **#38 → #39 → #34 → #35 → #30 → #40 → #36 → #37**. Complete **#30 before starting #40 or #36**. Move imports atomically with each step and keep one canonical source of truth.
+Make architecture changes in small, behavior-preserving steps. Move imports atomically with each boundary change and keep one canonical source of truth.
 
 ## Refactor gates
 

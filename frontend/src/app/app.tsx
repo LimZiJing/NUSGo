@@ -52,6 +52,7 @@ function App() {
   const tripControlsRef = useRef<HTMLElement>(null)
   const explorePanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
+  const mobileDetailOverlayRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
@@ -118,6 +119,15 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const mobileDetailOverlayActive = isMobileViewport && (
+    (activeView === 'stops' && stopsWorkflow.selectedStop !== null) ||
+    (activeView === 'explore' &&
+      state.exploreState.mode === 'venue-detail' &&
+      state.exploreState.selectedVenue !== null)
+  )
+  const mobileDetailIdentity = activeView === 'stops'
+    ? stopsWorkflow.selectedStop?.id ?? null
+    : state.exploreState.selectedVenue?.code ?? null
   // Feature hooks own view behavior; App wires their bindings into the content components.
   const explorePanelFocus = useExplorePanelFocus({
     state: state.exploreState,
@@ -168,6 +178,8 @@ function App() {
     commands,
     isMobileViewport,
     navigation,
+    mobileDetailOverlayActive,
+    mobileDetailOverlayRef,
     mapShellRef,
     sheetPortalContainer,
     tripControlsRef,
@@ -218,16 +230,23 @@ function App() {
   useLayoutEffect(() => {
     if (pendingViewFocusRef.current !== activeView) return
     pendingViewFocusRef.current = null
-    const root = activeView === 'explore'
-      ? explorePanelRef.current
-      : activeView === 'stops'
-        ? stopsSheetRef.current
-        : tripControlsRef.current
+    const root = mobileDetailOverlayActive
+      ? mobileDetailOverlayRef.current
+      : activeView === 'explore'
+        ? explorePanelRef.current
+        : activeView === 'stops'
+          ? stopsSheetRef.current
+          : tripControlsRef.current
     const target = root?.querySelector<HTMLElement>(
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
-  }, [activeView])
+  }, [activeView, mobileDetailOverlayActive])
+
+  useLayoutEffect(() => {
+    if (!mobileDetailOverlayActive) return
+    mobileDetailOverlayRef.current?.querySelector<HTMLElement>('h2[tabindex="-1"], h3[tabindex="-1"]')?.focus()
+  }, [mobileDetailIdentity, mobileDetailOverlayActive])
 
   useLayoutEffect(() => {
     if (activeView !== 'explore') return
@@ -393,6 +412,7 @@ function App() {
   return (
     <main
       className="map-shell"
+      data-mobile-detail-overlay={mobileDetailOverlayActive ? 'true' : undefined}
       ref={assignMapShellRef}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
@@ -460,6 +480,7 @@ function App() {
         <AppViews
           isMobileViewport={isMobileViewport}
           sheetPortalContainer={sheetPortalContainer}
+          mobileDetailOverlayRef={mobileDetailOverlayRef}
           navigation={navigation}
           onSelectView={selectView}
           shells={{

@@ -17,6 +17,8 @@ export interface UseMapOverlayLayoutOptions {
   readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets'>
   readonly isMobileViewport: boolean
   readonly navigation: NavigationState
+  readonly mobileDetailOverlayActive: boolean
+  readonly mobileDetailOverlayRef: RefObject<HTMLElement | null>
   readonly mapShellRef: RefObject<HTMLElement | null>
   readonly sheetPortalContainer?: HTMLElement | null
   readonly tripControlsRef: RefObject<HTMLElement | null>
@@ -37,6 +39,8 @@ export function useMapOverlayLayout({
   commands,
   isMobileViewport,
   navigation,
+  mobileDetailOverlayActive,
+  mobileDetailOverlayRef,
   mapShellRef,
   sheetPortalContainer,
   tripControlsRef,
@@ -48,6 +52,7 @@ export function useMapOverlayLayout({
 }: UseMapOverlayLayoutOptions): MapOverlayLayout {
   const refs = useMemo(() => ({
     mapShell: mapShellRef,
+    mobileDetailOverlay: mobileDetailOverlayRef,
     tripControls: tripControlsRef,
     explorePanel: explorePanelRef,
     stopsSheet: stopsSheetRef,
@@ -57,6 +62,7 @@ export function useMapOverlayLayout({
     explorePanelRef,
     mainNavigationRef,
     mapShellRef,
+    mobileDetailOverlayRef,
     navigationColumnRef,
     stopsSheetRef,
     tripControlsRef,
@@ -131,12 +137,22 @@ export function useMapOverlayLayout({
       const tabBarInset = metrics?.tabBarInset ?? 0
       // A mobile sheet is sized from its detent: its bounds are still mid-transition when
       // the detent has only just changed, which would leave the map inset one step behind.
-      const activeSheetHeight = metrics && activeSheet?.classList.contains('mobile-sheet-popup')
-        ? Math.max(0, getMobileSheetOccupiedHeight(
-          navigation.sheets[activeView].detent,
-          createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
-        ) - tabBarInset)
-        : activeSheetBounds?.height ?? 0
+      const mobileDetailBottom = mobileDetailOverlayActive
+        ? refs.mobileDetailOverlay.current?.querySelector<HTMLElement>('.mobile-detail-bottom')
+        : null
+      const mobileDetailBottomBounds = mobileDetailBottom?.getBoundingClientRect()
+      const mapShellBottom = mapShellElement?.getBoundingClientRect().bottom ?? viewportHeight
+      const mobileDetailBottomHeight = mobileDetailBottomBounds
+        ? Math.max(0, mapShellBottom - mobileDetailBottomBounds.top)
+        : 0
+      const activeSheetHeight = mobileDetailOverlayActive
+        ? mobileDetailBottomHeight
+        : metrics && activeSheet?.classList.contains('mobile-sheet-popup')
+          ? Math.max(0, getMobileSheetOccupiedHeight(
+            navigation.sheets[activeView].detent,
+            createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
+          ) - tabBarInset)
+          : activeSheetBounds?.height ?? 0
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
@@ -167,6 +183,10 @@ export function useMapOverlayLayout({
     if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current)
     if (refs.explorePanel.current) resizeObserver?.observe(refs.explorePanel.current)
     if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current)
+    const mobileDetailBottom = mobileDetailOverlayActive
+      ? refs.mobileDetailOverlay.current?.querySelector<HTMLElement>('.mobile-detail-bottom')
+      : null
+    if (mobileDetailBottom) resizeObserver?.observe(mobileDetailBottom)
     if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current)
     if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current)
 
@@ -179,6 +199,7 @@ export function useMapOverlayLayout({
   }, [
     commands,
     isMobileViewport,
+    mobileDetailOverlayActive,
     navigation.activeView,
     navigation.sheets,
     sheetPortalContainer,

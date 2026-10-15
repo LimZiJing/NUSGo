@@ -22,6 +22,7 @@ type ExploreContentProps = Omit<ComponentProps<typeof ExploreContent>, 'sheetDet
 export interface AppViewsProps {
   readonly isMobileViewport: boolean
   readonly sheetPortalContainer: HTMLElement | null
+  readonly mobileDetailOverlayRef: Ref<HTMLElement>
   readonly navigation: NavigationState
   readonly onSelectView: ComponentProps<typeof MainNavigation>['onSelectView']
   readonly shells: {
@@ -41,6 +42,7 @@ export interface AppViewsProps {
 export function AppViews({
   isMobileViewport,
   sheetPortalContainer,
+  mobileDetailOverlayRef,
   navigation,
   onSelectView,
   shells: {
@@ -63,6 +65,10 @@ export function AppViews({
 }: AppViewsProps) {
   const selectedRoute = views.explore.transitIndex?.routes
     .find((route) => route.id === views.explore.selectedRouteId) ?? null
+  const showVenueDetailOverlay = isMobileViewport &&
+    views.explore.state.mode === 'venue-detail' &&
+    views.explore.state.selectedVenue !== null
+  const showStopDetailOverlay = isMobileViewport && views.stops.selectedStop !== null
 
   return (
     <aside
@@ -88,41 +94,63 @@ export function AppViews({
           </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="explore-panel" active={navigation.activeView === 'explore'}>
-          <NavigationPanelShell
-            className="explore-sheet"
-            label="Explore panel"
-            summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
-            controlsId="explore-content-panel"
-            detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
-            enabled={isMobileViewport}
-            active={navigation.activeView === 'explore'}
-            portalContainer={sheetPortalContainer}
-            onDetentChange={onExploreDetentChange}
-            sectionProps={{ 'aria-labelledby': 'explore-content-heading' }}
-            shellRef={exploreSheetRef}
-          >
-            <ExploreContent
-              {...views.explore}
-              sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
-            />
-          </NavigationPanelShell>
+          {showVenueDetailOverlay ? (
+            <div
+              className="mobile-map-detail-layer"
+              ref={navigation.activeView === 'explore' ? mobileDetailOverlayRef : null}
+            >
+              <ExploreContent
+                {...views.explore}
+                mobileMapDetailOverlay
+                sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
+              />
+            </div>
+          ) : (
+            <NavigationPanelShell
+              className="explore-sheet"
+              label="Explore panel"
+              summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
+              controlsId="explore-content-panel"
+              detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
+              enabled={isMobileViewport}
+              active={navigation.activeView === 'explore'}
+              portalContainer={sheetPortalContainer}
+              onDetentChange={onExploreDetentChange}
+              sectionProps={{ 'aria-labelledby': 'explore-content-heading' }}
+              shellRef={exploreSheetRef}
+            >
+              <ExploreContent
+                {...views.explore}
+                sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
+              />
+            </NavigationPanelShell>
+          )}
         </NavigationViewShell>
         <NavigationViewShell id="stops-panel" active={navigation.activeView === 'stops'}>
-          <NavigationPanelShell
-            className="stops-sheet"
-            label="Stops panel"
-            summary={getStopsSheetSummary(views.stops)}
-            controlsId="stops-content"
-            detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
-            enabled={isMobileViewport}
-            active={navigation.activeView === 'stops'}
-            portalContainer={sheetPortalContainer}
-            onDetentChange={onStopsDetentChange}
-            sectionProps={{ 'aria-label': 'Stops' }}
-            shellRef={stopsSheetRef}
-          >
-            <StopsContent {...views.stops} />
-          </NavigationPanelShell>
+          {showStopDetailOverlay ? (
+            <div
+              className="mobile-map-detail-layer"
+              ref={navigation.activeView === 'stops' ? mobileDetailOverlayRef : null}
+            >
+              <StopsContent {...views.stops} mobileMapDetailOverlay />
+            </div>
+          ) : (
+            <NavigationPanelShell
+              className="stops-sheet"
+              label="Stops panel"
+              summary={getStopsSheetSummary(views.stops)}
+              controlsId="stops-content"
+              detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
+              enabled={isMobileViewport}
+              active={navigation.activeView === 'stops'}
+              portalContainer={sheetPortalContainer}
+              onDetentChange={onStopsDetentChange}
+              sectionProps={{ 'aria-label': 'Stops' }}
+              shellRef={stopsSheetRef}
+            >
+              <StopsContent {...views.stops} />
+            </NavigationPanelShell>
+          )}
         </NavigationViewShell>
       </div>
       <MainNavigation

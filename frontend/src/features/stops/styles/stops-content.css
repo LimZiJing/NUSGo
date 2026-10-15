@@ -362,6 +362,12 @@
     font: 500 var(--font-size-xs)/1.2 var(--sans);
   }
 
+  .stop-reachable-more[aria-expanded='true'] .stop-reachable-more-label {
+    color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
   .stop-reachable-more:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-ring-offset);

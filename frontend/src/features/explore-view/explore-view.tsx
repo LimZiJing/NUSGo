@@ -471,6 +471,10 @@ export function ExploreView({
     ? findNearbyShuttleStops(selectedVenueLocation, transitIndex)
     : []
   const buildingRoomCount = selectedBuilding ? buildingLinks.roomCountByBuildingId.get(selectedBuilding.id) ?? 0 : 0
+  const sharedBuildingAddress = selectedBuilding && selectedBuilding.parts[0].address
+    && selectedBuilding.parts.every((part) => part.address === selectedBuilding.parts[0].address)
+    ? selectedBuilding.parts[0].address
+    : null
   const buildingDetailSummary = selectedBuilding
     ? [
       selectedBuilding.parts.length > 1 ? `${selectedBuilding.parts.length} buildings` : null,
@@ -665,15 +669,18 @@ export function ExploreView({
                   <BuildingIcon className="location-identity-icon location-identity-icon--building" />
                   {selectedBuilding.name}
                 </h3>
-                {selectedBuilding.parts.length === 1 && selectedBuilding.parts[0].address && (
-                  <p className="venue-detail-name">{selectedBuilding.parts[0].address}</p>
+                {sharedBuildingAddress && (
+                  <p className="venue-detail-name">{sharedBuildingAddress}</p>
                 )}
               </div>
               <p className="venue-detail-location">
                 <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
                 <span>{buildingDetailSummary}</span>
               </p>
-              {selectedBuilding.parts.length > 1 && (
+              {selectedBuilding.parts.length > 1 && sharedBuildingAddress && (
+                <p className="venue-building-parts-note">Each building is marked on the map.</p>
+              )}
+              {selectedBuilding.parts.length > 1 && !sharedBuildingAddress && (
                 <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
                   <h4 id="venue-building-parts-heading">Buildings in this group</h4>
                   <ul>

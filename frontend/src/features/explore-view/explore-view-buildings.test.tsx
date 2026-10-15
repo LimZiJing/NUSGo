@@ -26,6 +26,9 @@ const buildings = buildBuildingIndex([
   building({ id: 'lt-17', name: 'LT 17', aliases: ['LT17'], roomCodePrefixes: ['LT17'] }),
   building({ id: 'saga-1', name: 'Saga College', groupKey: 'saga', address: '8 College Avenue West', roomCodePrefixes: ['RC1'] }),
   building({ id: 'saga-2', name: 'Saga College', groupKey: 'saga', address: '10 College Avenue West', roomCodePrefixes: ['RC1'] }),
+  building({ id: 'elm-1', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
+  building({ id: 'elm-2', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
+  building({ id: 'elm-3', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
 ])
 const venues: VenueLocationMap = {
   'COM1-0210': { roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 } },
@@ -122,6 +125,15 @@ describe('ExploreView building details', () => {
     expect(markup).toContain('Part 2 · 10 College Avenue West')
     expect(markup).toContain('1 room')
     expect(markup).not.toContain('1 rooms')
+  })
+
+  it('states a shared group address once instead of repeating it for every part', () => {
+    const markup = render(viewing('elm'))
+
+    expect(markup.match(/3 Elm Road/g)).toHaveLength(1)
+    expect(markup).toContain('3 buildings')
+    expect(markup).not.toContain('Part 1')
+    expect(markup).toContain('Each building is marked on the map')
   })
 
   it('never describes the location as an entrance', () => {

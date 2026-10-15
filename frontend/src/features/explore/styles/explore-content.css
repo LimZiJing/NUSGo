@@ -264,12 +264,32 @@
   height: auto;
 }
 
-.venue-nearby-stops {
+.venue-nearby-stops,
+.venue-building-parts {
   display: grid;
   gap: 6px;
 }
 
-.venue-nearby-stops h4 {
+.venue-building-parts ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+}
+
+.venue-building-parts-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: left;
+}
+
+.venue-nearby-stops h4,
+.venue-building-parts h4 {
   display: flex;
   align-items: center;
   gap: 7px;

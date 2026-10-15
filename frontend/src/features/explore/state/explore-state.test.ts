@@ -24,6 +24,37 @@ describe('exploreReducer', () => {
       mode: 'neutral',
       query: '',
       selectedVenue: null,
+      selectedBuildingId: null,
+    })
+  })
+
+  it('opens a building detail view without a selected venue, and goes back to the search', () => {
+    const searchState = { ...createVenueSearchState(), query: 'saga' }
+
+    const detail = exploreReducer(searchState, { type: 'select-building', buildingId: 'saga-college' })
+
+    expect(detail).toMatchObject({
+      mode: 'venue-detail',
+      query: 'saga',
+      selectedVenue: null,
+      selectedBuildingId: 'saga-college',
+    })
+    expect(exploreReducer(detail, { type: 'back' })).toMatchObject({
+      mode: 'venue-search',
+      selectedBuildingId: null,
+    })
+    expect(exploreReducer(detail, { type: 'map-click' })).toMatchObject({
+      mode: 'neutral',
+      selectedBuildingId: null,
+    })
+  })
+
+  it('clears a selected building when a venue is selected', () => {
+    const detail = exploreReducer(createVenueSearchState(), { type: 'select-building', buildingId: 'com1' })
+
+    expect(exploreReducer(detail, { type: 'select-venue', result: selectedVenue })).toMatchObject({
+      selectedVenue,
+      selectedBuildingId: null,
     })
   })
 

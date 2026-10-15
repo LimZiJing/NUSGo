@@ -24,6 +24,7 @@ export interface ExplorePanelFocusOptions {
   readonly active: boolean
   readonly busRoutesAvailable: boolean
   readonly onVenueSelect: (result: VenueSearchResult) => void
+  readonly onBuildingSelect?: (buildingId: string) => void
   readonly onOpenBusRoutes: () => void
   readonly onLeaveMobileRoutes?: () => void
   readonly onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
@@ -43,6 +44,10 @@ export interface ExplorePanelFocusBindings {
   readonly onFocusCapture: () => void
   readonly onVenueSelect: (
     result: VenueSearchResult,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void
+  readonly onBuildingSelect: (
+    buildingId: string,
     event: MouseEvent<HTMLButtonElement>,
   ) => void
   readonly onBack: () => void
@@ -66,6 +71,7 @@ export function useExplorePanelFocus({
   active,
   busRoutesAvailable,
   onVenueSelect,
+  onBuildingSelect,
   onOpenBusRoutes,
   onLeaveMobileRoutes,
   onFocusStop,
@@ -302,6 +308,15 @@ export function useExplorePanelFocus({
     onVenueSelect(result)
   }
 
+  const handleBuildingSelect = (
+    buildingId: string,
+    event: MouseEvent<HTMLButtonElement>,
+  ): void => {
+    rememberCurrentControl(event, 'venue-search-opener')
+    onSearchResult?.()
+    onBuildingSelect?.(buildingId)
+  }
+
   const handleBack = (): void => {
     rememberExploreBackFocus()
     onBack()
@@ -349,6 +364,7 @@ export function useExplorePanelFocus({
     firstRouteCardRef,
     onFocusCapture: handleExploreFocusCapture,
     onVenueSelect: handleVenueSelect,
+    onBuildingSelect: handleBuildingSelect,
     onBack: handleBack,
     onSelectVenueSearch: handleSelectVenueSearch,
     onSelectBusRoutes: handleSelectBusRoutes,

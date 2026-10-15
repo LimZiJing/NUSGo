@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Compass,
   CircleDot,
+  DoorOpen,
   EllipsisVertical,
   Footprints,
   MapPin,
@@ -43,6 +44,10 @@ export function ArrowLeftIcon(props: IconProps) {
 
 export function BuildingIcon(props: IconProps) {
   return renderDecorativeIcon(Building2, props)
+}
+
+export function RoomIcon(props: IconProps) {
+  return renderDecorativeIcon(DoorOpen, props)
 }
 
 export function BusIcon(props: IconProps) {

@@ -4,11 +4,14 @@ import type {
   TransitNetwork,
   BusRouteGeometry,
 } from '@navus/shared/transit/types'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 export interface LoadedVenueData {
   readonly venues: VenueLocationMap
   readonly venueCount: number
+  /** Supplemental buildings; empty when the catalogue could not be loaded. */
+  readonly buildings?: BuildingIndex
 }
 
 export interface LoadedTransitData {

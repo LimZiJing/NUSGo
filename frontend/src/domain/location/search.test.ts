@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { getTripEndpointLabel, searchTripLocations } from './search'
+import type { Building } from '@navus/shared/venue/buildings'
 import type { TransitStop } from '@navus/shared/transit/types'
+import { buildBuildingIndex } from '../venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {
@@ -138,6 +140,15 @@ describe('getTripEndpointLabel', () => {
     )
   })
 
+  it('labels a building by its name and falls back to its ID when the catalogue is unavailable', () => {
+    const index = buildBuildingIndex([
+      { id: 'com3', name: 'COM3', aliases: [], elementId: 'way/1', location: { x: 103.77, y: 1.29 }, roomCodePrefixes: [], sourceRefs: [] },
+    ])
+
+    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops, index)).toBe('COM3')
+    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops)).toBe('com3')
+  })
+
   it('falls back to the stable endpoint ID when data is unavailable', () => {
     expect(getTripEndpointLabel({ kind: 'venue', id: 'MISSING' }, venues, stops)).toBe('MISSING')
     expect(getTripEndpointLabel({ kind: 'stop', id: 'MISSING' }, venues, stops)).toBe('MISSING')
@@ -148,5 +159,63 @@ describe('getTripEndpointLabel', () => {
       kind: 'current-location',
       coordinate: { longitude: 103.78, latitude: 1.29 },
     }, venues, stops)).toBe('Current location')
+  })
+})
+
+describe('searchTripLocations with buildings', () => {
+  const makeBuilding = (id: string, name: string, extra: Partial<Building> = {}): Building => ({
+    id,
+    name,
+    aliases: [],
+    elementId: `way/${id}`,
+    location: { x: 103.775, y: 1.295 },
+    locationKind: 'centroid',
+    roomCodePrefixes: [],
+    sourceRefs: [],
+    ...extra,
+  })
+  const buildings = buildBuildingIndex([
+    makeBuilding('com3', 'COM3', { aliases: ['COM 3', 'Computing 3'], address: '13 Computing Drive' }),
+    makeBuilding('biz-2', 'BIZ 2', { aliases: ['BIZ2'] }),
+    makeBuilding('elm-college-2', 'Elm College', { groupKey: 'elm-college' }),
+    makeBuilding('elm-college-1', 'Elm College', { groupKey: 'elm-college' }),
+    makeBuilding('elm-college-3', 'Elm College', { groupKey: 'elm-college' }),
+  ])
+  const venuesWithCom3: VenueLocationMap = {
+    'COM3-0201': { roomName: 'Computing room', location: { x: 103.775, y: 1.295 } },
+  }
+  const stopsWithCom3: TransitStop[] = [
+    { id: 'COM3', longName: 'COM3', shortName: 'COM3', latitude: 1.2944, longitude: 103.7752, services: ['A1'] },
+  ]
+  const search = (query: string) =>
+    searchTripLocations(venuesWithCom3, stopsWithCom3, query, 8, buildings)
+
+  it.each(['COM3', 'com 3', 'computing 3', 'COM 3'])('finds the COM3 building for "%s"', (query) => {
+    expect(search(query).map((result) => result.endpoint)).toContainEqual({ kind: 'building', id: 'com3' })
+  })
+
+  it('lists the building and its bus stop as separate results with their own identities', () => {
+    expect(search('com3').map((result) => result.endpoint)).toEqual([
+      { kind: 'building', id: 'com3' },
+      { kind: 'stop', id: 'COM3' },
+      { kind: 'venue', id: 'COM3-0201' },
+    ])
+  })
+
+  it('ranks buildings and stops ahead of rooms and labels a building by name with its address', () => {
+    const results = search('com')
+    expect(results.at(-1)?.endpoint).toEqual({ kind: 'venue', id: 'COM3-0201' })
+    expect(results.find((result) => result.endpoint.kind === 'building')).toMatchObject({
+      label: 'COM3',
+      detail: '13 Computing Drive',
+    })
+  })
+
+  it('shows a repeated-name group as one result that keeps the group identity', () => {
+    const results = searchTripLocations({}, [], 'elm college', 8, buildings)
+
+    expect(results).toEqual([
+      { endpoint: { kind: 'building', id: 'elm-college' }, label: 'Elm College', detail: '3 buildings' },
+    ])
   })
 })

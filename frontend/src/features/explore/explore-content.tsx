@@ -1,4 +1,7 @@
+import { useMemo } from 'react'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
+import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'
 import { GhostBackButton } from '../../ui/ghost-back-button.tsx'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
@@ -7,7 +10,7 @@ import type { ExplorePanelFocusBindings } from './hooks/use-explore-panel-focus.
 import type { ExploreMode, ExploreState } from './state/explore-state.ts'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 import { BusRouteList } from './components/bus-route-list.tsx'
-import { VenueDetails } from './components/venue-details.tsx'
+import { BuildingDetails, VenueDetails } from './components/venue-details.tsx'
 import { VenueSearch } from './components/venue-search.tsx'
 import './styles/explore-content.css'
 
@@ -26,6 +29,7 @@ function getVenueDetailReturnLabel(state: ExploreState): string {
 interface ExploreContentProps {
   state: ExploreState
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   transitIndex?: TransitIndex | null
   sheetDetent?: MobileSheetDetent
   onRestore?: () => void
@@ -34,6 +38,7 @@ interface ExploreContentProps {
   onRouteSelect: (routeId: string) => void
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
+  onNavigateToBuilding?: (buildingId: string) => void
   onSearchFocus?: () => void
   focus: ExplorePanelFocusBindings
 }
@@ -44,8 +49,9 @@ function getExplorePanelHeading(state: ExploreState): string {
   return 'Find a venue'
 }
 
-function getExplorePanelAnnouncement(state: ExploreState): string | null {
+function getExplorePanelAnnouncement(state: ExploreState, buildingName?: string): string | null {
   if (state.mode === 'bus-routes') return null
+  if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {
     return `Venue details opened for ${state.selectedVenue.code}.`
   }
@@ -58,6 +64,7 @@ function getExplorePanelAnnouncement(state: ExploreState): string | null {
 export function ExploreContent({
   state,
   venues,
+  buildings = null,
   transitIndex = null,
   sheetDetent = 'partial',
   onRestore,
@@ -66,6 +73,7 @@ export function ExploreContent({
   onRouteSelect,
   onQueryChange,
   onNavigateToVenue,
+  onNavigateToBuilding,
   onSearchFocus,
   focus: {
     panelHeadingRef,
@@ -74,15 +82,24 @@ export function ExploreContent({
     firstRouteCardRef,
     onFocusCapture,
     onVenueSelect,
+    onBuildingSelect,
     onBack,
     onSelectVenueSearch,
     onSelectBusRoutes,
     onFocusStop,
   },
 }: ExploreContentProps) {
+  const buildingIndex = buildings ?? EMPTY_BUILDING_INDEX
+  const buildingLinks = useMemo(
+    () => linkVenuesToBuildings(venues ?? {}, buildingIndex),
+    [venues, buildingIndex],
+  )
+  const selectedBuilding = state.selectedBuildingId
+    ? buildingIndex.byId.get(state.selectedBuildingId) ?? null
+    : null
   const minimized = sheetDetent === 'collapsed'
   const explorePanelHeading = getExplorePanelHeading(state)
-  const explorePanelAnnouncement = getExplorePanelAnnouncement(state)
+  const explorePanelAnnouncement = getExplorePanelAnnouncement(state, selectedBuilding?.name)
   const explorePanelStatus = status?.kind === 'success' ? null : status ?? null
   const showVenueSearch = state.mode === 'neutral' || state.mode === 'venue-search'
   const showExploreSegments = showVenueSearch || state.mode === 'bus-routes'
@@ -129,12 +146,15 @@ export function ExploreContent({
           <VenueSearch
             query={state.query}
             venues={venues}
+            buildings={buildingIndex}
+            buildingLinks={buildingLinks}
             minimized={minimized}
             inputRef={searchInputRef}
             onRestore={onRestore}
             onSearchFocus={onSearchFocus}
             onQueryChange={onQueryChange}
             onSelect={onVenueSelect}
+            onBuildingSelect={onBuildingSelect}
           />
         )}
 
@@ -144,6 +164,17 @@ export function ExploreContent({
             transitIndex={transitIndex}
             headingRef={detailHeadingRef}
             onNavigateToVenue={onNavigateToVenue}
+            onFocusStop={onFocusStop}
+          />
+        )}
+
+        {state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
+          <BuildingDetails
+            building={selectedBuilding}
+            roomCount={buildingLinks.roomCountByBuildingId.get(selectedBuilding.id) ?? 0}
+            transitIndex={transitIndex}
+            headingRef={detailHeadingRef}
+            onNavigateToBuilding={onNavigateToBuilding}
             onFocusStop={onFocusStop}
           />
         )}

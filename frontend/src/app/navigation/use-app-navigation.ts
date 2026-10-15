@@ -37,7 +37,7 @@ export interface UseAppNavigationOptions {
     | 'escape'
   >
   readonly isMobileViewport: boolean
-  readonly exploreState: Pick<ExploreState, 'mode' | 'selectedVenue'>
+  readonly exploreState: Pick<ExploreState, 'mode' | 'selectedVenue' | 'selectedBuildingId'>
   readonly locationStatus: LocationTrackingStatus
   readonly pendingViewFocusRef: RefObject<NavigationView | null>
   readonly pendingExploreReturnFocusRef: RefObject<HTMLElement | null>
@@ -58,6 +58,7 @@ export interface AppNavigation {
   readonly handleMapStopInteraction: (stopId: string) => void
   readonly selectView: (view: NavigationView, stopsList?: 'nearby' | 'favourites') => void
   readonly navigateToVenue: (venueCode: string) => void
+  readonly navigateToBuilding: (buildingId: string) => void
   readonly navigateToStop: (stopId: string) => void
   readonly openPlan: () => void
   readonly selectRouteFromStops: (routeId: string) => void
@@ -99,7 +100,7 @@ export function useAppNavigation({
     readonly sequence: number
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
-  const previousExploreStateRef = useRef<Pick<ExploreState, 'mode' | 'selectedVenue'> | null>(null)
+  const previousExploreStateRef = useRef<Pick<ExploreState, 'mode' | 'selectedVenue' | 'selectedBuildingId'> | null>(null)
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
 
   const activeView = state.activeView
@@ -217,6 +218,10 @@ export function useAppNavigation({
     navigateToEndpoint({ kind: 'venue', id: venueCode })
   }, [navigateToEndpoint])
 
+  const navigateToBuilding = useCallback((buildingId: string): void => {
+    navigateToEndpoint({ kind: 'building', id: buildingId })
+  }, [navigateToEndpoint])
+
   const navigateToStop = useCallback((stopId: string): void => {
     navigateToEndpoint({ kind: 'stop', id: stopId })
   }, [navigateToEndpoint])
@@ -280,7 +285,8 @@ export function useAppNavigation({
     previousExploreStateRef.current = exploreState
     if (!previous) return
     const modeChanged = previous.mode !== exploreState.mode
-    const venueChanged = previous.selectedVenue?.code !== exploreState.selectedVenue?.code
+    const venueChanged = previous.selectedVenue?.code !== exploreState.selectedVenue?.code ||
+      previous.selectedBuildingId !== exploreState.selectedBuildingId
     if (
       (modeChanged || venueChanged) && isMobileViewport &&
       state.activeView === 'explore' && state.sheets.explore.detent === 'collapsed'
@@ -321,6 +327,7 @@ export function useAppNavigation({
     handleMapStopInteraction,
     selectView,
     navigateToVenue,
+    navigateToBuilding,
     navigateToStop,
     openPlan,
     selectRouteFromStops,

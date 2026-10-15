@@ -34,6 +34,7 @@ function createMapDouble(): MapSession {
     zoomOut: vi.fn(),
     resetView: vi.fn(),
     selectVenue: vi.fn(),
+    selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
     dispose: vi.fn(),
   }
@@ -59,6 +60,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     clearTrip: vi.fn(),
     setExploreQuery: vi.fn(),
     selectVenue: vi.fn(),
+    selectBuilding: vi.fn(),
     enterMobileRoutes: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     leaveMobileRoutes: vi.fn(),

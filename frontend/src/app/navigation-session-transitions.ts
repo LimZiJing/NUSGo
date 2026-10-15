@@ -1,5 +1,7 @@
 import { exploreReducer, type ExploreAction, type ExploreState } from '../features/explore/state/explore-state'
 import type { VenueSearchResult } from '../domain/venue/search'
+import type { BuildingIndex } from '../domain/venue/building-index'
+import type { MapBuildingSelection } from './contracts/map'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createVenueSearchResultSnapshot,
@@ -50,6 +52,8 @@ interface NavigationSessionPanelHost {
   readonly getVenues: () => VenueLocationMap | null
   readonly setExploreState: (panel: ExploreState) => void
   readonly selectVenue: (venue: VenueLocation) => void
+  readonly getBuildings: () => BuildingIndex | null
+  readonly selectBuilding: (building: MapBuildingSelection) => void
   readonly clearVenue: () => void
 }
 
@@ -80,6 +84,19 @@ export function createNavigationSessionPanelTransitions(
           type: 'select-venue',
           result: createVenueSearchResultSnapshot(result.code, venue),
         })
+      })
+    },
+
+    selectBuilding(buildingId: string): void {
+      host.enqueue(() => {
+        if (host.isDisposed()) return
+        const entry = typeof buildingId === 'string' ? host.getBuildings()?.byId.get(buildingId) : undefined
+        if (!entry) return
+        host.selectBuilding({
+          name: entry.name,
+          locations: entry.parts.map((part) => part.location),
+        })
+        updatePanel({ type: 'select-building', buildingId: entry.id })
       })
     },
 

@@ -103,7 +103,7 @@ describe('ExploreContent', () => {
         code: 'COM1-0210',
         venue: venues['COM1-0210'],
       },
-      history: [{ mode: 'bus-routes' as const, query: '', selectedVenue: null }],
+      history: [{ mode: 'bus-routes' as const, query: '', selectedVenue: null, selectedBuildingId: null }],
     }
 
     const markup = renderPanel(state)

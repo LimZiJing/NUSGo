@@ -1,8 +1,9 @@
-import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import type { TransitIndex } from '../../domain/transit'
+import { getTripEndpointCoordinate, type TripEndpointLocationSources } from '../../domain/trip/endpoint-location'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import type { TripEndpoint } from '../../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { PathEndpointLocation } from '../path'
 
 export interface ResolvedPathLocation extends PathEndpointLocation {
@@ -23,31 +24,11 @@ function toCoordinate(longitude: number, latitude: number) {
 
 function resolveEndpoint(
   endpoint: TripEndpoint,
-  venues: VenueLocationMap,
-  transit: TransitIndex,
+  sources: TripEndpointLocationSources,
 ): ResolvedPathLocation | null {
-  if (endpoint.kind === 'current-location') {
-    const { longitude, latitude } = endpoint.coordinate
-    if (!isValidLocationCoordinates(longitude, latitude)) return null
-    // Current location carries the frozen fix captured when the endpoint was chosen.
-    return {
-      key: getTripEndpointKey(endpoint),
-      endpoint,
-      coordinate: { longitude, latitude },
-    }
-  }
-
-  if (endpoint.kind === 'venue') {
-    const location = venues[endpoint.id]?.location
-    const coordinate = location ? toCoordinate(location.x, location.y) : null
-    if (!coordinate) return null
-    return { key: getTripEndpointKey(endpoint), endpoint, coordinate }
-  }
-
-  const stop = transit.stopById.get(endpoint.id)
-  const coordinate = stop ? toCoordinate(stop.longitude, stop.latitude) : null
-  if (!coordinate) return null
-  return { key: getTripEndpointKey(endpoint), endpoint, coordinate }
+  // Current location carries the frozen fix captured when the endpoint was chosen.
+  const coordinate = getTripEndpointCoordinate(endpoint, sources)
+  return coordinate ? { key: getTripEndpointKey(endpoint), endpoint, coordinate } : null
 }
 
 function addLocation(
@@ -62,9 +43,11 @@ export function resolvePathEndpoints(
   destinationEndpoint: TripEndpoint,
   venues: VenueLocationMap,
   transit: TransitIndex,
+  buildings: BuildingIndex | null = null,
 ): ResolvedPathEndpoints | null {
-  const origin = resolveEndpoint(originEndpoint, venues, transit)
-  const destination = resolveEndpoint(destinationEndpoint, venues, transit)
+  const sources = { venues, buildings, transitIndex: transit }
+  const origin = resolveEndpoint(originEndpoint, sources)
+  const destination = resolveEndpoint(destinationEndpoint, sources)
   if (!origin || !destination || origin.key === destination.key) return null
 
   const locations = new Map<string, ResolvedPathLocation>()

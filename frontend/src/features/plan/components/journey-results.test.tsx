@@ -7,6 +7,7 @@ import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import type { Path } from '../../../pathfinding/path'
 import type { ScoredPathCandidate } from '../../../pathfinding/path'
+import { buildBuildingIndex } from '../../../domain/venue/building-index'
 import { getJourneyCompactSummary, getJourneyTimelineEntries } from '../data/journey-display-data'
 import { JourneyResults } from './journey-results'
 
@@ -472,19 +473,21 @@ describe('JourneyResults', () => {
     })
   })
 
-  it('lists only forward intermediate stops when a ride ends at the first stop of a loop Route', () => {
-    const loopNetwork = structuredClone(network)
-    loopNetwork.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B', 'STOP-A']
-    const loopIndex = createTransitIndex(loopNetwork)
-    const loopPath: Path = {
-      ...path,
-      legs: path.legs.map((leg) => (leg.mode === 'shuttle'
-        ? { ...leg, from: { kind: 'stop', id: 'STOP-MID' }, to: { kind: 'stop', id: 'STOP-A' }, boardingStopId: 'STOP-MID', alightingStopId: 'STOP-A' }
-        : leg)),
-    }
+  it('names a building endpoint in the timeline and keeps it distinct from a stop', () => {
+    const buildings = buildBuildingIndex([{
+      id: 'com3',
+      name: 'COM3',
+      aliases: [],
+      elementId: 'way/1',
+      location: { x: 103.775, y: 1.295 },
+      roomCodePrefixes: [],
+      sourceRefs: [],
+    }])
+    const buildingPath: Path = { ...path, origin: { kind: 'building', id: 'com3' } }
 
-    expect(getJourneyTimelineEntries(loopPath, venues, loopIndex).find((entry) => entry.kind === 'bus'))
-      .toMatchObject({ intermediateStops: [{ id: 'STOP-B', label: 'B' }] })
+    const [first] = getJourneyTimelineEntries(buildingPath, venues, networkIndex, buildings)
+
+    expect(first).toMatchObject({ kind: 'location', label: 'COM3', locationKind: 'building' })
   })
 
   it('keeps a venue and bus stop distinct when their journey names match', () => {

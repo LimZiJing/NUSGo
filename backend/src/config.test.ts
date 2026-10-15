@@ -69,3 +69,54 @@ describe('loadBackendConfig', () => {
     }), /HTTPS/)
   })
 })
+
+describe('backend live-data settings', () => {
+  it('uses bounded defaults and lets the process start without provider credentials', () => {
+    const config = loadBackendConfig({}, 'C:/navus/backend')
+
+    assert.equal(config.liveData.shuttleRefreshIntervalMs, 30_000)
+    assert.equal(config.liveData.requestTimeoutMs, 5_000)
+    assert.equal(config.liveData.maxConcurrency, 6)
+    assert.equal(config.liveData.retryAttempts, 1)
+    assert.equal(config.liveData.nusProvider, null)
+    assert.equal(config.liveData.ltaAccountKey, '')
+  })
+
+  it('loads NUS and LTA secrets only into backend configuration', () => {
+    const config = loadBackendConfig({
+      NUS_BUS_PROXY_BASE_URL: 'https://bus-proxy.nus.example',
+      NUS_X_HTD_API: 'secret-htd',
+      NUS_X_APP_API: 'secret-app',
+      NUS_X_API_KEY: 'secret-key',
+      NUS_DEVICE_ID: 'backend-device',
+      NUS_UNIVUS_JWT: 'private-token',
+      NUS_USER_ID: 'private-user',
+      LTA_ACCOUNT_KEY: 'private-lta-key',
+      NUS_SHUTTLE_REFRESH_INTERVAL_MS: '45000',
+      LIVE_DATA_REQUEST_TIMEOUT_MS: '9000',
+      LIVE_DATA_MAX_CONCURRENCY: '4',
+      LIVE_DATA_RETRY_ATTEMPTS: '2',
+    })
+
+    assert.equal(config.liveData.shuttleRefreshIntervalMs, 45_000)
+    assert.equal(config.liveData.requestTimeoutMs, 9_000)
+    assert.equal(config.liveData.maxConcurrency, 4)
+    assert.equal(config.liveData.retryAttempts, 2)
+    assert.equal(config.liveData.nusProvider?.deviceId, 'backend-device')
+    assert.equal(config.liveData.nusProvider?.initialToken, 'private-token')
+    assert.equal(config.liveData.ltaAccountKey, 'private-lta-key')
+    assert.throws(() => loadBackendConfig({
+      NUS_BUS_PROXY_BASE_URL: 'http://bus-proxy.nus.example',
+      NUS_X_HTD_API: 'htd',
+      NUS_X_APP_API: 'app',
+      NUS_X_API_KEY: 'key',
+    }), /HTTPS URL/)
+  })
+
+  it('rejects partial NUS credentials and unbounded live-data settings', () => {
+    assert.throws(() => loadBackendConfig({ NUS_X_HTD_API: 'partial' }), /NUS live-data configuration/)
+    assert.throws(() => loadBackendConfig({ NUS_SHUTTLE_REFRESH_INTERVAL_MS: '999' }), /NUS_SHUTTLE_REFRESH_INTERVAL_MS/)
+    assert.throws(() => loadBackendConfig({ LIVE_DATA_MAX_CONCURRENCY: '17' }), /LIVE_DATA_MAX_CONCURRENCY/)
+    assert.throws(() => loadBackendConfig({ LIVE_DATA_RETRY_ATTEMPTS: '4' }), /LIVE_DATA_RETRY_ATTEMPTS/)
+  })
+})

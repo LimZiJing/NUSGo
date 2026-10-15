@@ -17,6 +17,6 @@
     "dev": "node --env-file-if-exists=.env --experimental-strip-types --watch src/server.ts",
     "start": "node --env-file-if-exists=.env --experimental-strip-types src/server.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --experimental-strip-types --test src/config.test.ts src/data.test.ts src/server.test.ts"
+    "test": "node --experimental-strip-types --test src/config.test.ts src/data.test.ts src/server.test.ts src/live-data/concurrency.test.ts src/live-data/retry.test.ts src/live-data/timeouts.test.ts src/live-data/nus-client.test.ts"
   }
 }

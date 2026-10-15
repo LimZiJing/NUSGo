@@ -94,7 +94,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
     height: var(--mobile-tab-bar-pill-height);
-    padding: 6px 8px;
+    padding: var(--space-2) 8px;
     border-radius: var(--radius-pill);
     background: var(--surface-raised);
     box-shadow: var(--shadow-lg);

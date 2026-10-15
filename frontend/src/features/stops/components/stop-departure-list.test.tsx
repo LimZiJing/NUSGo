@@ -56,6 +56,33 @@ describe('StopDepartureList', () => {
     expect(within(destinations).queryByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })).toBeNull()
   })
 
+  it('renders the popover inside the list scroll container so it scrolls and clips with the cards', async () => {
+    const user = userEvent.setup()
+    render(
+      <div className="navigation-panel-scroll-content" data-testid="scroller">
+        <StopDepartureList
+          departures={[{
+            routeId: 'A2',
+            routeName: 'A2',
+            routeColor: '#123456',
+            timings: ['9m', '11m', '13m'],
+            reachableFavouriteStops: [
+              { id: 'STOP-LIBRARY', name: 'Library', isOpposite: false },
+              { id: 'STOP-HALL', name: 'Hall', isOpposite: true },
+            ],
+          }]}
+          publicServices={[]}
+          onSelectRoute={vi.fn()}
+        />
+      </div>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Show 1 more reachable favourite bus stop' }))
+
+    const hall = await screen.findByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })
+    expect(screen.getByTestId('scroller').contains(hall)).toBe(true)
+  })
+
   it('has no more button when there is a single reachable favourite', () => {
     render(
       <StopDepartureList

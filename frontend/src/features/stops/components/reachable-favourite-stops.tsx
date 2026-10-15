@@ -1,4 +1,5 @@
 import { Popover } from '@base-ui/react/popover'
+import { useCallback, useState } from 'react'
 import { FavoriteIcon } from '../../../ui/icons'
 import type { StopFavouriteDestination } from '../data/stop-timing-data'
 
@@ -22,6 +23,12 @@ export function ReachableFavouriteStops({
 }: {
   readonly stops: readonly StopFavouriteDestination[]
 }) {
+  // The popover renders inside the list's scroll container, not on the page body, so it scrolls with the cards
+  // and is clipped with them instead of floating above the rest of the sheet.
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null)
+  const findScrollContainer = useCallback((trigger: HTMLElement | null) => {
+    setScrollContainer(trigger?.closest<HTMLElement>('.navigation-panel-scroll-content') ?? null)
+  }, [])
   const [first, ...others] = stops
   if (!first) return null
 
@@ -34,12 +41,13 @@ export function ReachableFavouriteStops({
       {others.length > 0 && (
         <Popover.Root>
           <Popover.Trigger
+            ref={findScrollContainer}
             className="stop-reachable-more"
             aria-label={`Show ${others.length} more reachable favourite bus ${others.length === 1 ? 'stop' : 'stops'}`}
           >
             <span className="stop-reachable-more-label" aria-hidden="true">+{others.length}</span>
           </Popover.Trigger>
-          <Popover.Portal>
+          <Popover.Portal container={scrollContainer ?? undefined}>
             <Popover.Positioner className="stop-reachable-positioner" sideOffset={4} collisionPadding={8}>
               <Popover.Popup className="stop-reachable-popup" aria-label="More reachable favourite bus stops">
                 <span role="list" className="stop-reachable-popup-list">

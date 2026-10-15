@@ -1,7 +1,7 @@
 import type { Path } from '../../pathfinding/path'
 import { formatDuration } from '../../domain/trip/duration-format'
 import type { TripRequest } from '../../domain/trip/types'
-import type { ExploreViewState } from '../../features/explore-view/state'
+import type { ExploreState } from '../../features/explore/state/explore-state'
 import type { JourneyState } from '../journey-state'
 
 // One-line text shown on a collapsed mobile sheet so each tab says what it holds.
@@ -58,12 +58,12 @@ export function getPlanSheetSummary(
 }
 
 export function getExploreSheetSummary(
-  state: Pick<ExploreViewState, 'mode' | 'selectedVenue'>,
+  state: Pick<ExploreState, 'mode' | 'selectedVenue'>,
   selectedRoute: { readonly id: string, readonly name: string } | null,
 ): string {
   if (state.mode === 'venue-detail' && state.selectedVenue) return `Explore · ${state.selectedVenue.code}`
-  if (state.mode === 'shuttle') {
-    return selectedRoute ? `Explore · Route ${selectedRoute.id}` : 'Explore · Shuttle routes'
+  if (state.mode === 'bus-routes') {
+    return selectedRoute ? `Explore · Route ${selectedRoute.id}` : 'Explore · Bus routes'
   }
   return 'Explore · Search venues'
 }

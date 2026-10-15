@@ -1,4 +1,4 @@
-import { exploreViewReducer, type ExploreViewAction, type ExploreViewState } from '../features/explore-view/state'
+import { exploreReducer, type ExploreAction, type ExploreState } from '../features/explore/state/explore-state'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import {
@@ -46,9 +46,9 @@ export function createNavigationSessionTransitionQueue(
 interface NavigationSessionPanelHost {
   readonly isDisposed: () => boolean
   readonly enqueue: (transition: () => void) => void
-  readonly getExploreView: () => ExploreViewState
+  readonly getExploreState: () => ExploreState
   readonly getVenues: () => VenueLocationMap | null
-  readonly setExploreView: (panel: ExploreViewState) => void
+  readonly setExploreState: (panel: ExploreState) => void
   readonly selectVenue: (venue: VenueLocation) => void
   readonly clearVenue: () => void
 }
@@ -56,13 +56,13 @@ interface NavigationSessionPanelHost {
 export function createNavigationSessionPanelTransitions(
   host: NavigationSessionPanelHost,
 ) {
-  const updatePanel = (action: ExploreViewAction): void => {
+  const updatePanel = (action: ExploreAction): void => {
     if (host.isDisposed()) return
-    host.setExploreView(exploreViewReducer(host.getExploreView(), action))
+    host.setExploreState(exploreReducer(host.getExploreState(), action))
   }
 
   return {
-    setExploreViewQuery(query: string): void {
+    setExploreQuery(query: string): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
         updatePanel({ type: 'set-query', query })
@@ -83,17 +83,17 @@ export function createNavigationSessionPanelTransitions(
       })
     },
 
-    openShuttle(): void {
+    openBusRoutes(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        updatePanel({ type: 'open-shuttle' })
+        updatePanel({ type: 'open-bus-routes' })
       })
     },
 
     back(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        const panel = host.getExploreView()
+        const panel = host.getExploreState()
         const previousState = panel.history.at(-1)
         if (panel.mode === 'venue-detail' && previousState?.mode !== 'venue-detail') {
           host.clearVenue()
@@ -105,7 +105,7 @@ export function createNavigationSessionPanelTransitions(
     escape(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        const panel = host.getExploreView()
+        const panel = host.getExploreState()
         const previousState = panel.history.at(-1)
         if (
           !previousState ||
@@ -127,7 +127,7 @@ export function createNavigationSessionPanelTransitions(
     handleMapClick(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return
-        if (host.getExploreView().mode !== 'venue-detail') return
+        if (host.getExploreState().mode !== 'venue-detail') return
         host.clearVenue()
         updatePanel({ type: 'map-click' })
       })

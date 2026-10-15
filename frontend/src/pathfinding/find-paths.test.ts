@@ -492,7 +492,7 @@ describe('findPaths', () => {
     expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
   })
 
-  it('keeps a selected stop fixed when considering one-shuttle options', async () => {
+  it('keeps a selected stop fixed when considering one-bus options', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => []),
@@ -1135,7 +1135,7 @@ describe('findPaths', () => {
     ))).toBe(true)
   })
 
-  it('uses a complete one-shuttle route with a walking leg after alighting', async () => {
+  it('uses a complete one-bus route with a walking leg after alighting', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = createAlternativeRouteEngine()
     routeEngine.matrixWalking.mockResolvedValue([
@@ -1284,7 +1284,7 @@ describe('findPaths', () => {
       signal: new AbortController().signal,
     })).rejects.toMatchObject({
       name: 'NoPathAvailableError',
-      message: 'Shuttle service has ended for today. It resumes tomorrow at 7:15 AM.',
+      message: 'bus service has ended for today. It resumes tomorrow at 7:15 AM.',
     })
   })
 

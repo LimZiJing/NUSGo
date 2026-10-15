@@ -34,7 +34,7 @@ export function StopDetails({
           <h2
             id="stops-content-heading"
             className="stop-selection-name"
-            aria-label={`${stop.longName}, shuttle stop`}
+            aria-label={`${stop.longName}, bus stop`}
           >
             <BusIcon className="location-identity-icon location-identity-icon--stop" />
             <span>{stop.longName}</span>
@@ -44,7 +44,7 @@ export function StopDetails({
         <IconButton
           className="stop-favorite"
           variant="plain"
-          label={`${favorite ? 'Remove' : 'Add'} ${stop.longName}, shuttle stop ${favorite ? 'from' : 'to'} favourites`}
+          label={`${favorite ? 'Remove' : 'Add'} ${stop.longName}, bus stop ${favorite ? 'from' : 'to'} favourites`}
           icon={<FavoriteIcon filled={favorite} />}
           pressed={favorite}
           onClick={() => onToggleFavorite(stop.id)}
@@ -61,7 +61,7 @@ export function StopDetails({
             variant="secondary"
             label="Opposite stop"
             trailingIcon={<ChevronRightIcon />}
-            ariaLabel={`Opposite shuttle stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
+            ariaLabel={`Opposite bus stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
             onClick={() => onSelectOppositeStop(oppositeStop.id)}
           />
         ) : null}

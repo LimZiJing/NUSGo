@@ -65,7 +65,7 @@ describe('findNearbyShuttleStops', () => {
     ])
   })
 
-  it('returns no nearby stops when coordinates are missing or no shuttle stop qualifies', () => {
+  it('returns no nearby stops when coordinates are missing or no bus stop qualifies', () => {
     expect(findNearbyShuttleStops(undefined, index)).toEqual([])
     expect(findNearbyShuttleStops({ x: 103, y: 1 }, index)).toEqual([])
   })

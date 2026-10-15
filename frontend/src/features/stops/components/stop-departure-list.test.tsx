@@ -37,9 +37,9 @@ describe('StopDepartureList', () => {
       />,
     )
 
-    const destinations = screen.getByRole('list', { name: 'Reachable favourite shuttle stops' })
-    expect(within(destinations).getByRole('listitem', { name: 'Library, shuttle stop, STOP-LIBRARY' })).toBeTruthy()
-    expect(within(destinations).getByRole('listitem', { name: 'Hall, shuttle stop, STOP-HALL' })).toBeTruthy()
+    const destinations = screen.getByRole('list', { name: 'Reachable favourite bus stops' })
+    expect(within(destinations).getByRole('listitem', { name: 'Library, bus stop, STOP-LIBRARY' })).toBeTruthy()
+    expect(within(destinations).getByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })).toBeTruthy()
     expect(screen.getByText('→')).toBeTruthy()
     expect(screen.getByText('Library')).toBeTruthy()
     expect(screen.getByText('Hall')).toBeTruthy()

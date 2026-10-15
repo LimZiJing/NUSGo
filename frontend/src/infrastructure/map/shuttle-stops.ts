@@ -144,7 +144,7 @@ function createBusStopMarkerElement(stop: TransitStop): HTMLButtonElement {
   const element = document.createElement('button')
   element.type = 'button'
   element.className = 'bus-stop-marker'
-  element.setAttribute('aria-label', `${stop.longName} shuttle stop`)
+  element.setAttribute('aria-label', `${stop.longName} bus stop`)
   return element
 }
 
@@ -244,7 +244,7 @@ function updateBusStopMarkerElement(
   button.disabled = isDisabled
   button.tabIndex = isDisabled ? -1 : 0
   element.setAttribute('aria-disabled', String(isDisabled))
-  const stopLabel = `${element.dataset.stopName ?? ''} shuttle stop`
+  const stopLabel = `${element.dataset.stopName ?? ''} bus stop`
   const routeNames = journeyRoutes?.map(({ routeName }) => routeName) ?? []
   const journeyLabel = routeNames.length === 0
     ? stopLabel

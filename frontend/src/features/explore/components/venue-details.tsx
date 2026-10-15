@@ -1,0 +1,126 @@
+import type { RefObject } from 'react'
+import type { VenueSearchResult } from '../../../domain/venue/search'
+import { findNearbyShuttleStops, type TransitIndex } from '../../../domain/transit'
+import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
+import { getRouteContrastTextColor } from '../../../domain/transit/route-color'
+import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
+import { NavigateButton } from '../../../ui/navigate-button'
+import { BuildingIcon, BusIcon, ChevronRightIcon } from '../../../ui/icons'
+
+interface VenueDetailsProps {
+  readonly venue: VenueSearchResult
+  readonly transitIndex: TransitIndex | null
+  readonly headingRef: RefObject<HTMLHeadingElement | null>
+  readonly onNavigateToVenue?: (venueCode: string) => void
+  readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
+}
+
+export function VenueDetails({
+  venue,
+  transitIndex,
+  headingRef,
+  onNavigateToVenue,
+  onFocusStop,
+}: VenueDetailsProps) {
+  const hasCoordinates = hasVenueCoordinates(venue.venue)
+  const transitAvailable = transitIndex !== null
+  const floorAndBuilding = formatVenueFloorAndBuilding(
+    venue.venue.floor,
+    getVenueBuildingName(venue.code),
+  )
+  const venueLocation = venue.venue.location
+  const nearbyStops = hasCoordinates && venueLocation && transitIndex
+    ? findNearbyShuttleStops(venueLocation, transitIndex)
+    : []
+
+  return (
+    <div
+      id="explore-content-panel"
+      className="navigation-panel-content navigation-panel-scroll-content explore-content-panel explore-content-detail"
+    >
+      <div className="venue-detail-identity">
+        <h3
+          id="explore-venue-detail-heading"
+          ref={headingRef}
+          tabIndex={-1}
+          aria-label={`${venue.code}, venue`}
+        >
+          <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+          {venue.code}
+        </h3>
+        <p className="venue-detail-name">{venue.venue.roomName}</p>
+      </div>
+      {floorAndBuilding && (
+        <p className="venue-detail-location">
+          <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
+          <span>{floorAndBuilding}</span>
+        </p>
+      )}
+      <div className="venue-detail-actions">
+        <NavigateButton
+          disabled={!hasCoordinates}
+          onClick={() => onNavigateToVenue?.(venue.code)}
+        />
+        <a
+          className="venue-detail-action venue-detail-nusmods"
+          href={`https://nusmods.com/venues/${encodeURIComponent(venue.code)}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span>View in</span>
+          <img src={nusmodsLogoUrl} alt="NUSMods" />
+        </a>
+      </div>
+      {hasCoordinates && (
+        <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
+          <h4 id="venue-nearby-stops-heading">
+            <BusIcon />
+            Nearby bus stops within 500 m
+          </h4>
+          {!transitAvailable ? (
+            <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
+          ) : nearbyStops.length === 0 ? (
+            <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
+          ) : (
+            <div className="venue-nearby-stop-list">
+              {nearbyStops.map(({ stop, services }) => (
+                <button
+                  key={stop.id}
+                  className="nearby-stop-row"
+                  type="button"
+                  data-stop-id={stop.id}
+                  aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+                  onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
+                >
+                  <span className="nearby-stop-identity">
+                    <span className="nearby-stop-name">
+                      <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                      <strong>{stop.longName}</strong>
+                    </span>
+                    <small>{stop.id}</small>
+                  </span>
+                  <span className="nearby-stop-services" aria-hidden="true">
+                    {services.map((route) => (
+                      <span
+                        key={route.id}
+                        className="venue-detail-service-badge"
+                        data-service-id={route.id}
+                        style={{
+                          backgroundColor: route.color,
+                          color: getRouteContrastTextColor(route.color),
+                        }}
+                      >
+                        {route.id}
+                      </span>
+                    ))}
+                  </span>
+                  <ChevronRightIcon className="nearby-stop-arrow" />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  )
+}

@@ -176,7 +176,7 @@ describe('mobile location control integration', () => {
     const { rerender } = render(<App />)
 
     await vi.waitFor(() => expect(appHarness.session.locateUser).toHaveBeenCalledOnce())
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
 
     appHarness.state = {
       ...initialState,
@@ -195,10 +195,10 @@ describe('mobile location control integration', () => {
       appHarness.onMapCenterChange?.(STOP_A_MAP_CENTRE)
     })
 
-    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy())
+    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Collapse Stop A, bus stop arrival times' })).toBeTruthy())
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
 
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
   })
 
   it('opens stops that become Nearby after the location-driven recenter completes', async () => {
@@ -233,7 +233,7 @@ describe('mobile location control integration', () => {
     })
 
     await vi.waitFor(() => expect(
-      screen.getByRole('button', { name: 'Collapse Stop B, shuttle stop bus timings' }),
+      screen.getByRole('button', { name: 'Collapse Stop B, bus stop arrival times' }),
     ).toBeTruthy())
   })
 
@@ -256,13 +256,13 @@ describe('mobile location control integration', () => {
 
     render(<App />)
 
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Show my location' }))
     await act(async () => {
       appHarness.onMapCenterChange?.(STOP_A_MAP_CENTRE)
     })
 
-    expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Collapse Stop A, bus stop arrival times' })).toBeTruthy()
     expect(appHarness.commandLocateUser).toHaveBeenCalledOnce()
   })
 
@@ -286,12 +286,12 @@ describe('mobile location control integration', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
-    await user.click(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' }))
-    expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
+    expect(screen.getByRole('button', { name: 'Collapse Stop A, bus stop arrival times' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Show my location' }))
 
-    expect(screen.getByRole('button', { name: 'Collapse Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Collapse Stop A, bus stop arrival times' })).toBeTruthy()
   })
 
   it('keeps Nearby timings closed when the automatic location request fails', async () => {
@@ -306,7 +306,7 @@ describe('mobile location control integration', () => {
     const { rerender } = render(<App />)
 
     await vi.waitFor(() => expect(appHarness.session.locateUser).toHaveBeenCalledOnce())
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
 
     appHarness.state = {
       ...initialState,
@@ -314,7 +314,7 @@ describe('mobile location control integration', () => {
     }
     rerender(<App />)
 
-    expect(screen.getByRole('button', { name: 'Expand Stop A, shuttle stop bus timings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
   })
 
   it('groups desktop map controls into one layout stack', () => {

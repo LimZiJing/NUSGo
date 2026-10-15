@@ -32,7 +32,7 @@
 
 .explore-content-result,
 .nearby-stop-row {
-  padding: 5px 8px;
+  padding: var(--space-1) 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -64,7 +64,7 @@
 .explore-content-search-row {
   position: relative;
   display: flex;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .explore-content-search-row input {
@@ -131,7 +131,7 @@
 .explore-content-result-identity {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .explore-content-result span {
@@ -174,7 +174,7 @@
 .explore-content-detail h3 {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--text-primary);
   font: 600 20px/1.2 var(--sans);
@@ -212,7 +212,7 @@
 .venue-detail-location {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   color: var(--text-primary);
   text-align: left;
 }
@@ -244,7 +244,7 @@
   width: auto;
   min-height: var(--control-height-sm);
   box-sizing: border-box;
-  padding: 7px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);
@@ -266,13 +266,13 @@
 
 .venue-nearby-stops {
   display: grid;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .venue-nearby-stops h4 {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--text-primary);
   font: 600 14px/1.3 var(--sans);
@@ -291,7 +291,7 @@
 
 .venue-nearby-stop-list {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .explore-content-detail .nearby-stop-row {
@@ -316,7 +316,7 @@
 .nearby-stop-name {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -353,7 +353,7 @@
   align-items: center;
   min-height: 18px;
   box-sizing: border-box;
-  padding: 2px 5px;
+  padding: 2px var(--space-1);
   border-radius: var(--radius-pill);
   font-size: 10px;
   font-weight: 700;
@@ -401,7 +401,7 @@
     min-height: 0;
     align-content: start;
     grid-auto-rows: max-content;
-    gap: 14px;
+    gap: var(--space-3);
   }
 
   .explore-content-header {

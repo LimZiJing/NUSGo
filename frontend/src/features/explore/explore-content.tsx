@@ -28,6 +28,7 @@ interface ExploreContentProps {
   venues: VenueLocationMap | null
   transitIndex?: TransitIndex | null
   sheetDetent?: MobileSheetDetent
+  mobileMapDetailOverlay?: boolean
   onRestore?: () => void
   status?: ExplorePanelStatus | null
   selectedRouteId?: string | null
@@ -60,6 +61,7 @@ export function ExploreContent({
   venues,
   transitIndex = null,
   sheetDetent = 'partial',
+  mobileMapDetailOverlay = false,
   onRestore,
   status,
   selectedRouteId = null,
@@ -88,7 +90,7 @@ export function ExploreContent({
   const showExploreSegments = showVenueSearch || state.mode === 'bus-routes'
   const contentClassName = `explore-content explore-content-${state.mode}${
     showVenueSearch ? ' explore-content-venue-search' : ''
-  }`
+  }${mobileMapDetailOverlay ? ' explore-content-map-detail-overlay' : ''}`
 
   return (
     <div className={contentClassName}>
@@ -112,7 +114,7 @@ export function ExploreContent({
               }}
             />
           )}
-          {state.mode === 'venue-detail' && !minimized && (
+          {state.mode === 'venue-detail' && !minimized && !mobileMapDetailOverlay && (
             <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
@@ -145,6 +147,9 @@ export function ExploreContent({
             headingRef={detailHeadingRef}
             onNavigateToVenue={onNavigateToVenue}
             onFocusStop={onFocusStop}
+            mobileMapDetailOverlay={mobileMapDetailOverlay}
+            backLabel={getVenueDetailReturnLabel(state)}
+            onBack={onBack}
           />
         )}
 

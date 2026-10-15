@@ -35,6 +35,15 @@
     pointer-events: none;
   }
 
+  .map-shell[data-mobile-detail-overlay='true']::after,
+  .map-shell[data-mobile-detail-overlay='true'] .main-navigation,
+  .map-shell[data-mobile-detail-overlay='true'] .theme-toggle,
+  .map-shell[data-mobile-detail-overlay='true'] .location-control,
+  .map-shell[data-mobile-detail-overlay='true'] .fit-routes-control,
+  .map-shell[data-mobile-detail-overlay='true'] .journey-test-time-control {
+    display: none;
+  }
+
   .map-overlay-right {
     display: contents;
     pointer-events: none;

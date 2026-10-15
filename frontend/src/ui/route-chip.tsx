@@ -1,4 +1,4 @@
-import type { Ref } from 'react'
+import type { CSSProperties, Ref } from 'react'
 import { getRouteContrastTextColor } from '../domain/transit/route-color'
 import { Chip } from './chip'
 
@@ -43,6 +43,30 @@ export function RouteChip({
       dataAttributes={{ 'data-route-id': routeId, 'data-focus-id': focusId }}
       onClick={onClick}
     />
+  )
+}
+
+/** A non-interactive route chip for display inside another interactive control. */
+export function RouteChipBadge({
+  routeId,
+  routeColor,
+  size = 'compact',
+}: {
+  readonly routeId: string
+  readonly routeColor: string
+  readonly size?: RouteChipSize
+}) {
+  const tone = getRouteContrastTextColor(routeColor)
+
+  return (
+    <span
+      className="chip route-chip route-chip-static"
+      data-size={size === 'compact' ? 'sm' : 'lg'}
+      data-selected="true"
+      style={{ '--chip-tone': routeColor, '--chip-tone-text': tone } as CSSProperties}
+    >
+      {routeId}
+    </span>
   )
 }
 

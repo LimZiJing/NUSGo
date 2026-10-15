@@ -7,6 +7,7 @@ import './styles/stops-content.css'
 
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null
+  readonly mobileMapDetailOverlay?: boolean
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
@@ -25,6 +26,7 @@ interface StopsContentProps {
 
 export function StopsContent({
   selectedStop,
+  mobileMapDetailOverlay = false,
   onBackToStops,
   onSelectOppositeStop,
   onSelectRoute,
@@ -41,10 +43,10 @@ export function StopsContent({
   onDismissLocationNotice,
 }: StopsContentProps) {
   return (
-    <div className="stops-content">
+    <div className={`stops-content${mobileMapDetailOverlay ? ' stops-content-map-detail' : ''}`}>
       <div
         id="stops-content"
-        className={`navigation-panel-content stops-content-panel${selectedStop ? ' navigation-panel-scroll-content' : ''}`}
+        className={`navigation-panel-content stops-content-panel${selectedStop ? ' navigation-panel-scroll-content' : ''}${mobileMapDetailOverlay ? ' stops-content-panel-map-detail' : ''}`}
         data-content-state={selectedStop ? 'stop-details' : 'stop-list'}
       >
         {selectedStop ? (
@@ -52,6 +54,7 @@ export function StopsContent({
             stop={selectedStop}
             favorite={selectedStopFavorite}
             liveArrivalMessage={liveArrivalMessage}
+            mobileMapDetailOverlay={mobileMapDetailOverlay}
             onBackToStops={onBackToStops}
             onSelectOppositeStop={onSelectOppositeStop}
             onSelectRoute={onSelectRoute}

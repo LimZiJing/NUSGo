@@ -131,6 +131,18 @@ button.route-chip:active {
   font-size: 12px;
 }
 
+.chip.route-chip-static {
+  cursor: inherit;
+}
+
+.chip.route-chip-static:not(:disabled):not([aria-pressed='true']):hover {
+  filter: none;
+}
+
+.chip.route-chip-static:active:not(:disabled) {
+  transform: none;
+}
+
 /* Map popup chips are plain elements; React RouteChips use the Chip primitive's selected tone. */
 .route-chip[data-active='true'] {
   border-color: var(--route-color);

@@ -1,0 +1,320 @@
+.explore-content-detail {
+  align-content: start;
+}
+
+.explore-content-detail h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 20px/1.2 var(--sans);
+  text-align: left;
+}
+
+.venue-detail-identity > h3:focus {
+  outline: none;
+}
+
+.venue-detail-identity {
+  display: grid;
+  gap: 2px;
+}
+
+.venue-detail-name {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.venue-detail-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.venue-detail-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.venue-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.explore-content-detail .venue-detail-action,
+.mobile-detail-header-action .venue-detail-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: flex-start;
+  gap: 8px;
+  width: auto;
+  min-height: var(--control-height-sm);
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  font: 600 14px/1.2 var(--sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.explore-content-detail .venue-detail-action:not([aria-disabled='true']):hover {
+  filter: brightness(0.85);
+}
+
+.explore-content-detail .venue-detail-nusmods img {
+  display: block;
+  width: 72px;
+  height: auto;
+}
+
+.venue-nearby-stops {
+  display: grid;
+  gap: 6px;
+}
+
+.venue-nearby-stops h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 14px/1.3 var(--sans);
+}
+
+.venue-nearby-stops h4 svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.venue-nearby-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.venue-nearby-stop-list {
+  display: grid;
+  gap: 5px;
+}
+
+.nearby-stop-row {
+  padding: 5px 8px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.explore-content-detail .nearby-stop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border-radius: var(--radius-panel);
+  text-align: left;
+  background: var(--surface-raised);
+}
+
+.nearby-stop-identity {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+}
+
+.nearby-stop-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.nearby-stop-name .location-identity-icon {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+
+.nearby-stop-identity strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nearby-stop-identity small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.nearby-stop-services {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.nearby-stop-arrow {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.explore-content-detail strong {
+  color: var(--text-primary);
+}
+
+.explore-content .nearby-stop-row:hover,
+.explore-content .nearby-stop-row:focus-visible {
+  border-color: var(--border-focus);
+}
+
+.explore-content .nearby-stop-row:focus-visible {
+  background: var(--surface-subtle);
+}
+
+@media (max-width: 768px) {
+  .explore-content-map-detail-overlay {
+    display: contents;
+  }
+
+  .mobile-detail-header-action .venue-detail-action {
+    min-height: 40px;
+    max-width: min(96px, 28vw);
+    min-width: 0;
+    box-sizing: border-box;
+    gap: 4px;
+    overflow: hidden;
+    padding: 6px 5px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .mobile-detail-header-action .venue-detail-nusmods img {
+    flex: 0 0 auto;
+    width: 44px;
+  }
+
+  .mobile-detail-header-action .venue-detail-nusmods span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .venue-nearby-stop-content,
+  .venue-nearby-stop-list {
+    min-width: 0;
+  }
+
+  .venue-nearby-stop-list {
+    display: grid;
+    gap: 6px;
+  }
+
+  .mobile-detail-bottom-content .venue-nearby-empty {
+    padding: 4px 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .explore-content-detail .nearby-stop-row,
+  .venue-nearby-stop-content .nearby-stop-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 60px;
+  }
+
+  .nearby-stop-identity {
+    grid-column: 1 / -1;
+    gap: 2px;
+  }
+
+  .nearby-stop-name .location-identity-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .nearby-stop-name strong {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .nearby-stop-name small {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .nearby-stop-services {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+    align-self: center;
+  }
+
+  .nearby-stop-arrow {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+  }
+
+  .explore-content-map-detail-overlay .explore-content-status {
+    display: none;
+  }
+
+  .explore-content .nearby-stop-row:focus-visible {
+    outline: 3px solid var(--focus-ring-strong);
+    outline-offset: 2px;
+  }
+
+  .explore-content-venue-detail .explore-content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .explore-content-venue-detail {
+    grid-template-rows: max-content minmax(0, 1fr);
+  }
+
+  .explore-content-detail h3 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-detail-header-action .venue-detail-nusmods span {
+    display: none;
+  }
+}

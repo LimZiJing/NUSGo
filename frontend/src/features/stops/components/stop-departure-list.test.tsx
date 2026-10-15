@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopDepartureList } from './stop-departure-list'
 
@@ -19,7 +20,8 @@ describe('StopDepartureList', () => {
     expect(screen.getByText('No bus timings available.').className).toBe('stop-departure-list-empty')
   })
 
-  it('shows reachable favourite stop nicknames beside an internal route', () => {
+  it('shows the first reachable favourite beside an internal route and the rest in a popover', async () => {
+    const user = userEvent.setup()
     render(
       <StopDepartureList
         departures={[{
@@ -39,19 +41,37 @@ describe('StopDepartureList', () => {
 
     const destinations = screen.getByRole('list', { name: 'Reachable favourite bus stops' })
     expect(within(destinations).getByRole('listitem', { name: 'Library, bus stop, STOP-LIBRARY' })).toBeTruthy()
-    expect(within(destinations).getByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })).toBeTruthy()
     expect(screen.getByText('→')).toBeTruthy()
-    expect(screen.getByText('Library')).toBeTruthy()
-    expect(screen.getByText('Hall')).toBeTruthy()
     expect(screen.getByText('9m')).toBeTruthy()
     expect(screen.getByText('11m')).toBeTruthy()
     expect(screen.getByText('13m')).toBeTruthy()
+    expect(document.querySelectorAll('.stop-reachable-favourite')).toHaveLength(1)
+    expect(document.querySelector('.stop-reachable-favourite')?.getAttribute('data-opposite')).toBeNull()
+    expect(screen.queryByText('Hall')).toBeNull()
 
-    const destinationBadges = document.querySelectorAll('.stop-reachable-favourite')
-    expect(destinationBadges).toHaveLength(2)
-    expect(destinationBadges[0]?.getAttribute('data-opposite')).toBeNull()
-    expect(destinationBadges[1]?.getAttribute('data-opposite')).toBe('true')
-    expect(destinationBadges[0]?.querySelector('.location-identity-icon--stop')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Show 1 more reachable favourite bus stop' }))
+
+    const hall = await screen.findByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })
+    expect(hall.getAttribute('data-opposite')).toBe('true')
+    expect(within(destinations).queryByRole('listitem', { name: 'Hall, bus stop, STOP-HALL' })).toBeNull()
+  })
+
+  it('has no more button when there is a single reachable favourite', () => {
+    render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          timings: ['9m', '11m', '13m'],
+          reachableFavouriteStops: [{ id: 'STOP-LIBRARY', name: 'Library', isOpposite: false }],
+        }]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: /more reachable favourite/ })).toBeNull()
   })
 
   it('uses the same status row for scheduled routes and public services', () => {

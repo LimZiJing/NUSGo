@@ -322,11 +322,15 @@
 
   .stop-reachable-favourites {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
     min-width: 0;
     overflow: hidden;
+  }
+
+  .stop-reachable-favourites-list {
+    display: flex;
+    min-width: 0;
   }
 
   .stop-reachable-favourites-arrow {
@@ -334,6 +338,52 @@
     color: var(--text-muted);
     font-size: var(--font-size-lg);
     line-height: 1;
+  }
+
+  .stop-reachable-more {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--control-height-sm);
+    min-height: var(--control-height-sm);
+    margin: 0 -4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .stop-reachable-more-label {
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    font: 500 var(--font-size-xs)/1.2 var(--sans);
+  }
+
+  .stop-reachable-more:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .stop-reachable-positioner {
+    z-index: 30;
+  }
+
+  .stop-reachable-popup {
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .stop-reachable-popup-list {
+    display: grid;
+    gap: 6px;
+    justify-items: start;
   }
 
   .stop-reachable-favourite {

@@ -106,7 +106,7 @@
     justify-content: center;
     gap: 8px;
     padding-inline: 16px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     line-height: 16px;
     white-space: nowrap;
   }

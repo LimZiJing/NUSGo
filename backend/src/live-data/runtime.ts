@@ -104,6 +104,67 @@ async function readLtaMappings(dataDirectory: string): Promise<unknown> {
   }
 }
 
+function parseNusProviderStops(
+  input: unknown,
+  canonicalStops: readonly ShuttleArrivalStop[],
+): readonly ShuttleArrivalStop[] {
+  if (!Array.isArray(input)) throw new Error('NUS provider stop names are invalid')
+
+  const canonicalStopIds = new Set(canonicalStops.map(({ stopId }) => stopId))
+  const providerNames = new Map<string, string>()
+  for (const [index, item] of input.entries()) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      throw new Error(`NUS provider stop at index ${index} is invalid`)
+    }
+    const record = item as Record<string, unknown>
+    if (typeof record.name !== 'string' || typeof record.longName !== 'string') {
+      throw new Error(`NUS provider stop at index ${index} is missing its name`)
+    }
+
+    const stopId = record.name.trim()
+    const stopName = record.longName.trim()
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(stopId) || stopName.length === 0 || stopName.length > 160) {
+      throw new Error(`NUS provider stop at index ${index} has an invalid name`)
+    }
+    if (!canonicalStopIds.has(stopId)) continue
+    if (providerNames.has(stopId)) throw new Error(`Duplicate NUS provider stop: ${stopId}`)
+    providerNames.set(stopId, stopName)
+  }
+
+  const missingStopIds = canonicalStops
+    .filter(({ stopId }) => !providerNames.has(stopId))
+    .map(({ stopId }) => stopId)
+  if (missingStopIds.length > 0) {
+    throw new Error('NUS provider stop names are missing canonical stops: ' + missingStopIds.join(', '))
+  }
+
+  return canonicalStops.map(({ stopId }) => {
+    const stopName = providerNames.get(stopId)
+    if (!stopName) throw new Error(`NUS provider stop name is missing: ${stopId}`)
+    return { stopId, stopName }
+  })
+}
+
+async function readNusProviderStops(
+  dataDirectory: string,
+  canonicalStops: readonly ShuttleArrivalStop[],
+): Promise<readonly ShuttleArrivalStop[]> {
+  let text: string
+  try {
+    text = await readFile(join(dataDirectory, 'bus-stops.json'), 'utf8')
+  } catch {
+    throw new Error('NUS provider stop names could not be read')
+  }
+
+  let input: unknown
+  try {
+    input = JSON.parse(text) as unknown
+  } catch {
+    throw new Error('NUS provider stop names are not valid JSON')
+  }
+  return parseNusProviderStops(input, canonicalStops)
+}
+
 function createBusProxyRequest(
   provider: NonNullable<BackendConfig['liveData']['nusProvider']>,
   session: NusApiSession,
@@ -179,6 +240,7 @@ export async function createBackendLiveData(
 ): Promise<BackendLiveData> {
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch
+  const providerConfig = config.liveData.nusProvider
   const canonicalStops: readonly ShuttleArrivalStop[] = data.network.stops.map((stop) => ({
     stopId: stop.id,
     stopName: stop.longName,
@@ -186,6 +248,9 @@ export async function createBackendLiveData(
   if (canonicalStops.length !== 33) {
     throw new Error('The live shuttle provider requires exactly 33 canonical stops')
   }
+  const providerStops = providerConfig
+    ? await readNusProviderStops(config.dataDirectory, canonicalStops)
+    : canonicalStops
   const routeIds = data.network.routes.map((route) => route.id)
   const canonicalRouteIds = new Set(routeIds)
   const mappings = options.ltaMappings ?? parseLtaPublicBusStopMapping(
@@ -196,7 +261,6 @@ export async function createBackendLiveData(
     throw new Error('LTA public bus mappings must reference canonical bus stops')
   }
 
-  const providerConfig = config.liveData.nusProvider
   const deviceId = providerConfig?.deviceId || randomUUID()
   const nusClient = providerConfig
     ? createNusAuthenticatedClient({
@@ -239,7 +303,7 @@ export async function createBackendLiveData(
   }
 
   const snapshotStore = createShuttleArrivalSnapshotStore({
-    stops: canonicalStops,
+    stops: providerStops,
     loadStop,
     refreshIntervalMs: config.liveData.shuttleRefreshIntervalMs,
     maxConcurrency: config.liveData.maxConcurrency,

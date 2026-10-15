@@ -1,8 +1,8 @@
 # NUS shuttle API contract
 
 Status: implementation contract verified from the checked-in adapter and test
-fixtures. A live smoke test against the private upstream service has not been
-performed; it requires an authorized, controlled test environment.
+fixtures. A controlled live check on 2026-10-16 confirmed the provider stop name
+needed for Botanic Gardens MRT; the private API wire format is not public.
 
 ## What the upstream service provides
 
@@ -14,9 +14,9 @@ evidence, not as a public NUS API specification.
 
 ## Server-side request contract
 
-The Vite server middleware owns all NUS requests. The browser calls only the
-same-origin `/api/shuttle-arrivals` and `/api/shuttle-service-windows`
-endpoints.
+Express owns all NUS requests. The browser calls the `/api/shuttle-arrivals`
+and `/api/shuttle-service-windows` endpoints; Vite proxies those paths to
+Express during local development.
 
 | Operation | Upstream request | Normalized result |
 | --- | --- | --- |
@@ -29,9 +29,15 @@ The common upstream request includes `deviceid`, `domain`, `ipaddr`, `token`,
 `X-APP-API`, and `X-API-KEY` headers. Shuttle requests also send
 `Authorization: Bearer <token>`.
 
-These details are implemented in [vite.config.ts](../../vite.config.ts),
-[nus-api/client.ts](../../frontend/src/infrastructure/nus-api/client.ts), and the
-command-line probe in [nus-bus-stops.ps1](../../scripts/nus-bus-stops.ps1).
+The `busstopname` value comes from `bus-stops.json`, matched by its `name` ID.
+This is the NUS provider label; it can differ from the display label in
+`shuttle-network.json`. For example, NUS expects `Botanic Gardens MRT (PUDO)`
+for `BG-MRT`. Sending the network display label `Botanic Gardens MRT` returns
+`Record not found`, which prevents the first complete snapshot from publishing.
+
+These details are implemented in the [Express live-data runtime](../../backend/src/live-data/runtime.ts),
+[NUS client](../../backend/src/live-data/nus-client.ts), and the command-line
+probe in [nus-bus-stops.ps1](../../scripts/nus-bus-stops.ps1).
 
 ## Authentication and retries
 

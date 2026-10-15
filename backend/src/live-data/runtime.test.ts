@@ -125,6 +125,45 @@ async function waitForSnapshot(liveData: Awaited<ReturnType<typeof createBackend
 }
 
 describe('Express live transit API', () => {
+  it('uses NUS provider stop names when loading the initial shuttle snapshot', async () => {
+    const receivedStopNames: string[] = []
+    const fetcher: typeof fetch = async (input, init) => {
+      const url = String(input)
+      if (url.endsWith('/shuttle-service')) {
+        const requestBody = typeof init?.body === 'string'
+          ? JSON.parse(init.body) as { busstopname?: unknown }
+          : null
+        if (typeof requestBody?.busstopname !== 'string') {
+          throw new Error('Expected a NUS provider stop name')
+        }
+        receivedStopNames.push(requestBody.busstopname)
+        if (requestBody.busstopname === 'Botanic Gardens MRT') {
+          return jsonResponse({
+            code: '10001',
+            msg: 'Record not found.',
+            data: { error: 'Record not found.' },
+          })
+        }
+        return jsonResponse({ data: [] })
+      }
+      throw new Error('Unexpected upstream request: ' + url)
+    }
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher,
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+      assert.ok(receivedStopNames.includes('Botanic Gardens MRT (PUDO)'))
+      assert.equal(receivedStopNames.length, backendData.network.stops.length)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
   it('reports live readiness and serves validated shuttle, service-window, and public-bus contracts', async () => {
     const config = createConfig()
     const firstStop = backendData.network.stops[0]

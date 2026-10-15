@@ -3,7 +3,7 @@
    feature stylesheets' bare button rules; remove this file when Stops and Explore migrate. */
 .button.ghost-back-button {
   min-height: 0;
-  gap: 5px;
+  gap: var(--space-1);
   padding: 3px;
   border: 0;
 }

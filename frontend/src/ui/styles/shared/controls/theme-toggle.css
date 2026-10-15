@@ -9,7 +9,7 @@
   place-items: center;
   padding: 0;
   border: 1px solid var(--border-control);
-  border-radius: 6px;
+  border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-md);

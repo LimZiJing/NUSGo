@@ -3,8 +3,8 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopsContent } from './stops-content'
-import type { StopDetailsModel } from '../data/stop-details-model'
+import { StopsContent } from './stops-content.tsx'
+import type { StopDetailsModel } from './data/stop-details-model.ts'
 
 afterEach(cleanup)
 

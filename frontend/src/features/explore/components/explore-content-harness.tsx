@@ -4,7 +4,7 @@ import {
   useExplorePanelFocus,
   type ExplorePanelFocusOptions,
 } from '../hooks/use-explore-panel-focus'
-import { ExploreContent } from './explore-content'
+import { ExploreContent } from '../explore-content.tsx'
 
 type ExplorePanelCallbacks = Partial<Pick<
   ExplorePanelFocusOptions,

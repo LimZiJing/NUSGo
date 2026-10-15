@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { createApp } from './app.ts'
 import { loadBackendConfig } from './config.ts'
 import { loadCanonicalData } from './data.ts'
+import { createBackendLiveData } from './live-data/runtime.ts'
 import type { BackendConfig } from './config.ts'
 
 export function listenHttpServer(
@@ -39,7 +40,9 @@ export function closeHttpServer(server: Server, timeoutMs = 10_000): Promise<voi
 async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
-  const server = await listenHttpServer(createApp(config, data), config.host, config.port)
+  const liveData = await createBackendLiveData(config, data)
+  const server = await listenHttpServer(createApp(config, data, liveData), config.host, config.port)
+  liveData.start()
   console.info('NavUS Express API is listening.', {
     host: config.host,
     port: config.port,
@@ -51,7 +54,7 @@ async function startBackend(): Promise<void> {
     if (shuttingDown) return
     shuttingDown = true
     console.info(`NavUS Express API received ${signal}; closing gracefully.`)
-    void closeHttpServer(server).catch((error: unknown) => {
+    void Promise.all([closeHttpServer(server), liveData.stop()]).catch((error: unknown) => {
       console.error('NavUS Express API shutdown failed.', error instanceof Error ? error.name : typeof error)
       process.exitCode = 1
     })

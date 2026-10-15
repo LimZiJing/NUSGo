@@ -1,6 +1,13 @@
 export { parseApiOrigin, parseCorsOrigins } from './http/api-origin.ts'
 export { LOCAL_DATA_VERSION, parseDataVersion, assertCompatibleDataVersion } from './http/data-version.ts'
-export type { ApiHealthResponse, ApiReadyResponse, ApiErrorResponse } from './http/api-contracts.ts'
+export type {
+  ApiHealthResponse,
+  ApiReadyResponse,
+  ApiNotReadyResponse,
+  ApiReadinessResponse,
+  ApiErrorResponse,
+  ApiErrorCode,
+} from './http/api-contracts.ts'
 export type {
   ApiStopSelection,
   ApiShuttleArrivalsRequest,

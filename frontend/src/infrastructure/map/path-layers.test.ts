@@ -14,6 +14,7 @@ import {
   JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID,
   JOURNEY_ALTERNATIVE_WALKING_LAYER_ID,
   JOURNEY_SELECTED_CASING_LAYER_ID,
+  JOURNEY_SELECTED_DIRECTION_LAYER_ID,
   JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
   JOURNEY_SELECTED_WALKING_LAYER_ID,
 } from './path-layers'
@@ -62,6 +63,7 @@ function createFakeMap(failingLayerId?: string): {
   readonly map: Map
   readonly sources: globalThis.Map<string, unknown>
   readonly layers: Set<string>
+  readonly images: Set<string>
   readonly addedSources: Array<{ id: string; source: unknown }>
   readonly addedLayers: Array<Record<string, unknown>>
   readonly removedSources: string[]
@@ -77,6 +79,7 @@ function createFakeMap(failingLayerId?: string): {
 } {
   const sources = new globalThis.Map<string, unknown>()
   const layers = new Set<string>()
+  const images = new Set<string>()
   const addedSources: Array<{ id: string; source: unknown }> = []
   const addedLayers: Array<Record<string, unknown>> = []
   const removedSources: string[] = []
@@ -115,6 +118,13 @@ function createFakeMap(failingLayerId?: string): {
       layers.delete(id)
       removedLayers.push(id)
     }),
+    hasImage: vi.fn((id: string) => images.has(id)),
+    addImage: vi.fn((id: string) => {
+      images.add(id)
+    }),
+    removeImage: vi.fn((id: string) => {
+      images.delete(id)
+    }),
     setFilter: vi.fn((id: string, filter: unknown) => filters.push({ id, filter })),
     setPaintProperty: vi.fn((id: string, name: string, value: unknown) => (
       paintProperties.push({ id, name, value })
@@ -135,6 +145,7 @@ function createFakeMap(failingLayerId?: string): {
     map,
     sources,
     layers,
+    images,
     addedSources,
     addedLayers,
     removedSources,
@@ -207,8 +218,10 @@ describe('journey route layer adapter', () => {
       JOURNEY_SELECTED_CASING_LAYER_ID,
       JOURNEY_SELECTED_WALKING_LAYER_ID,
       JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
+      JOURNEY_SELECTED_DIRECTION_LAYER_ID,
     ]))
-    expect(state.addedLayers).toHaveLength(6)
+    expect(state.addedLayers).toHaveLength(7)
+    expect(state.addedLayers.at(-1)?.id).toBe(JOURNEY_SELECTED_DIRECTION_LAYER_ID)
     expect(state.sources.has(JOURNEY_ROUTE_SOURCE_ID)).toBe(true)
     const features = (state.sourceData.get(JOURNEY_ROUTE_SOURCE_ID)?.data as {
       features: Array<{ properties: Record<string, unknown>; geometry: { type: string } }>
@@ -280,7 +293,7 @@ describe('journey route layer adapter', () => {
     expect(labelMarkers[2]?.element.classList.contains('journey-duration-marker-selected')).toBe(true)
     expect(state.removedLayers).toEqual([])
     expect(state.removedSources).toEqual([])
-    expect(state.filters.at(-1)).toMatchObject({ id: JOURNEY_SELECTED_SHUTTLE_LAYER_ID })
+    expect(state.filters.at(-1)).toMatchObject({ id: JOURNEY_SELECTED_DIRECTION_LAYER_ID })
 
     const changedOptions = options.map((option) => ({
       ...option,
@@ -404,8 +417,34 @@ describe('journey route layer adapter', () => {
       .toThrow(`Unable to add ${JOURNEY_SELECTED_WALKING_LAYER_ID}`)
     expect(state.sources.size).toBe(0)
     expect(state.layers.size).toBe(0)
+    expect(state.images.size).toBe(0)
     expect(state.removedLayers).toContain(JOURNEY_ALTERNATIVE_CASING_LAYER_ID)
     expect(state.removedSources).toEqual([JOURNEY_ROUTE_SOURCE_ID])
+  })
+
+  it('adds a lane-offset shuttle with a direction chevron layer for the selected journey only', () => {
+    const state = createFakeMap()
+    const layers = createJourneyRouteLayers(state.map, null)
+
+    layers.setJourneyOptions([
+      { candidateKey: 'option-1', path: createPath('A1') },
+      { candidateKey: 'option-2', path: createPath('B1') },
+    ], 'option-2')
+
+    const layerById = new globalThis.Map(state.addedLayers.map((layer) => [layer.id, layer]))
+    expect(layerById.get(JOURNEY_SELECTED_DIRECTION_LAYER_ID)).toMatchObject({
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: { 'line-pattern': 'journey-route-direction-chevron' },
+    })
+    expect(layerById.get(JOURNEY_SELECTED_SHUTTLE_LAYER_ID)?.paint).toHaveProperty('line-offset')
+    expect(state.images.has('journey-route-direction-chevron')).toBe(true)
+    expect(JSON.stringify(
+      state.filters.find(({ id }) => id === JOURNEY_SELECTED_DIRECTION_LAYER_ID)?.filter,
+    )).toContain('"option-2"')
+
+    layers.dispose()
+    expect(state.removedLayers).toContain(JOURNEY_SELECTED_DIRECTION_LAYER_ID)
+    expect(state.images.size).toBe(0)
   })
 
   it('cleans up duration markers added before a later marker fails', () => {

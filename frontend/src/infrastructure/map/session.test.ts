@@ -676,11 +676,12 @@ describe('MapSession', () => {
       'journey-selected-casing',
       'journey-selected-walking-lines',
       'journey-selected-shuttle-lines',
+      'journey-selected-shuttle-directions',
     ]))
 
     setSingleJourney(session, null)
     expect(map.layers).toEqual(new Set())
-    expect(map.removedLayers).toHaveLength(6)
+    expect(map.removedLayers).toHaveLength(7)
     expect(map.removedSources).toEqual(['journey-route-geometry'])
 
     session.dispose()
@@ -715,7 +716,7 @@ describe('MapSession', () => {
       [[103, 1], [103.2, 1.2]],
       { duration: 500, maxZoom: 17, padding: { top: 80, right: 60, bottom: 232, left: 68 } },
     )
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
     const source = map.sourceData.get('journey-route-geometry')
 
     session.setJourneyOptions(options, 'walking')
@@ -723,7 +724,7 @@ describe('MapSession', () => {
     expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(source?.setData).not.toHaveBeenCalled()
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
 
     session.fitJourneyRoutes()
     expect(map.fitBounds).toHaveBeenCalledTimes(2)
@@ -759,7 +760,7 @@ describe('MapSession', () => {
     session.setJourneyOptions(options, 'bus')
     const endpointMarkers = [...map.addedMarkers]
     expect(endpointMarkers.length).toBeGreaterThan(0)
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
 
     session.setPlanLayersVisible(false)
 
@@ -773,7 +774,7 @@ describe('MapSession', () => {
 
     session.setPlanLayersVisible(true)
 
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
     expect(map.addedMarkers.length).toBe(markerCountWhileHidden + endpointMarkers.length)
 
     session.dispose()

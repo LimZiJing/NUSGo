@@ -97,15 +97,13 @@ function getBusIntermediateStops(
   const route = networkIndex.routeById.get(leg.routeId)
   if (!route) return []
 
+  // Shuttles only ride forward; a loop Route repeats its first stop at the end.
   const boardingIndex = route.stopIds.indexOf(leg.boardingStopId)
-  const alightingIndex = route.stopIds.indexOf(leg.alightingStopId)
-  if (boardingIndex < 0 || alightingIndex < 0) return []
+  if (boardingIndex < 0) return []
+  const alightingIndex = route.stopIds.indexOf(leg.alightingStopId, boardingIndex + 1)
+  if (alightingIndex < 0) return []
 
-  const stopIds = boardingIndex <= alightingIndex
-    ? route.stopIds.slice(boardingIndex, alightingIndex + 1)
-    : route.stopIds.slice(alightingIndex, boardingIndex + 1).reverse()
-
-  return stopIds
+  return route.stopIds.slice(boardingIndex, alightingIndex + 1)
     .slice(1, -1)
     .map((stopId) => ({
       id: stopId,

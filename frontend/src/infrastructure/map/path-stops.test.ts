@@ -29,6 +29,15 @@ describe('getBusPathLegStopIds', () => {
     )).toEqual(['STOP-A', 'STOP-MIDDLE', 'STOP-B'])
   })
 
+  it('resolves a ride ending at a repeated first stop of a loop Route forward', () => {
+    const loopRoute: BusRoute = { ...route, stopIds: ['STOP-A', 'STOP-MIDDLE', 'STOP-B', 'STOP-AFTER', 'STOP-A'] }
+
+    expect(getBusPathLegStopIds(
+      createShuttleLeg('STOP-B', 'STOP-A'),
+      loopRoute,
+    )).toEqual(['STOP-B', 'STOP-AFTER', 'STOP-A'])
+  })
+
   it('returns null when the Route or forward ordered segment cannot be resolved', () => {
     expect(getBusPathLegStopIds(createShuttleLeg('STOP-A', 'STOP-B'), null)).toBeNull()
     expect(getBusPathLegStopIds(createShuttleLeg('STOP-B', 'STOP-A'), route)).toBeNull()

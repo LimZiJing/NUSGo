@@ -7,9 +7,11 @@ export function getBusPathLegStopIds(
 ): readonly string[] | null {
   if (!route || route.id !== leg.routeId) return null
 
+  // Search forward from boarding so a loop Route's repeated first stop resolves to its final visit.
   const boardingIndex = route.stopIds.indexOf(leg.boardingStopId)
-  const alightingIndex = route.stopIds.indexOf(leg.alightingStopId)
-  if (boardingIndex < 0 || alightingIndex < boardingIndex) return null
+  if (boardingIndex < 0) return null
+  const alightingIndex = route.stopIds.indexOf(leg.alightingStopId, boardingIndex + 1)
+  if (alightingIndex < 0) return null
 
   // The map highlights every ordered stop between this Path leg's boarding and alighting stops.
   return route.stopIds.slice(boardingIndex, alightingIndex + 1)

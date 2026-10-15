@@ -472,6 +472,21 @@ describe('JourneyResult', () => {
     })
   })
 
+  it('lists only forward intermediate stops when a ride ends at the first stop of a loop Route', () => {
+    const loopNetwork = structuredClone(network)
+    loopNetwork.routes[0].stopIds = ['STOP-A', 'STOP-MID', 'STOP-B', 'STOP-A']
+    const loopIndex = createTransitIndex(loopNetwork)
+    const loopPath: Path = {
+      ...path,
+      legs: path.legs.map((leg) => (leg.mode === 'shuttle'
+        ? { ...leg, from: { kind: 'stop', id: 'STOP-MID' }, to: { kind: 'stop', id: 'STOP-A' }, boardingStopId: 'STOP-MID', alightingStopId: 'STOP-A' }
+        : leg)),
+    }
+
+    expect(getJourneyTimelineEntries(loopPath, venues, loopIndex).find((entry) => entry.kind === 'shuttle'))
+      .toMatchObject({ intermediateStops: [{ id: 'STOP-B', label: 'B' }] })
+  })
+
   it('keeps a venue and shuttle stop distinct when their journey names match', () => {
     const collidingVenues = {
       ...venues,

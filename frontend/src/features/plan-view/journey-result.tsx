@@ -5,7 +5,7 @@ import type { Path } from '../../pathfinding/path'
 import type { ScoredPathCandidate } from '../../pathfinding/path'
 import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { BuildingIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
+import { BuildingIcon, RoomIcon, BusIcon, FootprintsIcon } from '../../ui/icons'
 import { DisclosureChevron } from '../../ui/disclosure-chevron'
 import {
   formatDistance,
@@ -137,7 +137,7 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
       <li className="journey-timeline-item journey-timeline-location" key={entry.id}>
         <span className="journey-timeline-marker" aria-hidden="true" />
         <span className="journey-location-name">
-          {identityKind === 'venue' && <BuildingIcon className="location-identity-icon location-identity-icon--venue" />}
+          {identityKind === 'venue' && <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
           {identityKind === 'building' && <BuildingIcon className="location-identity-icon location-identity-icon--building" />}
           {identityKind === 'stop' && <BusIcon className="location-identity-icon location-identity-icon--stop" />}
           <strong aria-label={identityLabel}>{entry.label}</strong>

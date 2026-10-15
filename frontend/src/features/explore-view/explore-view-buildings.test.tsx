@@ -92,6 +92,16 @@ describe('ExploreView search with buildings', () => {
     expect(markup).toContain('aria-label="COM1-0210, venue, Seminar Room 10"')
   })
 
+  it('marks buildings and rooms with different icons', () => {
+    const markup = render(searching('com1'))
+    const buildingRow = markup.slice(markup.indexOf('building-result-com1'), markup.indexOf('venue-result-COM1-0210'))
+    const roomRow = markup.slice(markup.indexOf('venue-result-COM1-0210'), markup.indexOf('venue-result-COM1-0211'))
+
+    expect(buildingRow).toContain('lucide-building-2')
+    expect(roomRow).toContain('lucide-door-open')
+    expect(roomRow).not.toContain('lucide-building-2')
+  })
+
   it('shows a repeated-name group as one result and a whole-building venue only as its building', () => {
     const group = render(searching('saga'))
     const theatre = render(searching('lecture theatre 17'))
@@ -134,6 +144,18 @@ describe('ExploreView building details', () => {
     expect(markup).toContain('3 buildings')
     expect(markup).not.toContain('Part 1')
     expect(markup).toContain('Each building is marked on the map')
+  })
+
+  it('uses the room icon for a selected venue and the building icon for its building line', () => {
+    const state = exploreViewReducer(
+      createInitialExploreViewState(),
+      { type: 'select-venue', result: { code: 'COM1-0210', venue: venues['COM1-0210'] } },
+    )
+    const markup = render(state)
+    const heading = markup.slice(markup.indexOf('aria-label="COM1-0210, venue"'))
+
+    expect(heading.slice(0, heading.indexOf('</h3>'))).toContain('lucide-door-open')
+    expect(heading).toContain('lucide-building-2')
   })
 
   it('never describes the location as an entrance', () => {

@@ -30,6 +30,7 @@ import { SegmentedControl } from '../../ui/segmented-control'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import {
   BuildingIcon,
+  RoomIcon,
   BusIcon,
   ChevronRightIcon,
   CloseIcon,
@@ -593,7 +594,7 @@ export function ExploreView({
                         aria-label={`${result.code}, venue, ${result.venue.roomName}`}
                       >
                         <span className="explore-view-result-identity">
-                          <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                          <RoomIcon className="location-identity-icon location-identity-icon--venue" />
                           <strong>{result.code}</strong>
                         </span>
                         <span>{result.venue.roomName}</span>
@@ -628,7 +629,7 @@ export function ExploreView({
                 tabIndex={-1}
                 aria-label={`${selectedVenue.code}, venue`}
               >
-                <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                <RoomIcon className="location-identity-icon location-identity-icon--venue" />
                 {selectedVenue.code}
               </h3>
               <p className="venue-detail-name">{selectedVenue.venue.roomName}</p>

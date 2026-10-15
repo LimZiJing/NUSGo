@@ -14,6 +14,7 @@ import { ScrollArea } from '../../ui/scroll-area'
 import { SearchField } from '../../ui/search-field'
 import {
   BuildingIcon,
+  RoomIcon,
   BusIcon,
   CircleDotIcon,
   CloseIcon,
@@ -165,7 +166,7 @@ export function PlanEndpointControl({
         <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
         <div className="plan-endpoint-input-row">
           {endpointIdentityKind === 'venue' && (
-            <BuildingIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--venue" />
+            <RoomIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--venue" />
           )}
           {endpointIdentityKind === 'building' && (
             <BuildingIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--building" />
@@ -269,7 +270,7 @@ export function PlanEndpointControl({
                   {result.endpoint.kind !== 'current-location' && (
                     <span className="plan-endpoint-result-identity">
                       {result.endpoint.kind === 'venue' && (
-                        <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+                        <RoomIcon className="location-identity-icon location-identity-icon--venue" />
                       )}
                       {result.endpoint.kind === 'building' && (
                         <BuildingIcon className="location-identity-icon location-identity-icon--building" />

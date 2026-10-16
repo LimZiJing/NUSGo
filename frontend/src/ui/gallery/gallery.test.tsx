@@ -42,7 +42,7 @@ describe('controls gallery', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('renders a frame for each of the four themes on the gallery page', () => {
+  it('renders a frame for each theme on the gallery page', () => {
     const { container } = render(<Gallery />)
 
     expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src'))).toEqual([
@@ -50,10 +50,11 @@ describe('controls gallery', () => {
       expect.stringContaining('frame=dark'),
       expect.stringContaining('frame=matcha'),
       expect.stringContaining('frame=sakura'),
+      expect.stringContaining('frame=nus'),
     ])
   })
 
-  it.each(['matcha', 'sakura'] as const)('applies the %s theme through data-theme', (theme) => {
+  it.each(['matcha', 'sakura', 'nus'] as const)('applies the %s theme through data-theme', (theme) => {
     render(<GalleryPanel theme={theme} />)
 
     expect(document.documentElement.dataset.theme).toBe(theme)

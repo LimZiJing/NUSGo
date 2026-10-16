@@ -43,10 +43,16 @@ function toHexColor(channels: readonly number[]): string {
   return `#${channels.map((channel) => Math.round(channel * 255).toString(16).padStart(2, '0')).join('')}`
 }
 
-/* Resolves a theme token to a hex colour, following the simple `color-mix(in srgb, var(--a) N%, var(--b))`
-   form used by --control-border. Mixing happens in sRGB, matching the CSS the browser evaluates. */
+/* Resolves simple token references and `color-mix(in srgb, var(--a) N%, var(--b))` values used
+   by the themes. Mixing happens in sRGB, matching the CSS the browser evaluates. */
 function resolveColour(styles: string, token: string): string {
   const value = readCustomPropertyValue(styles, token)
+  const reference = value.match(/^var\((--[\w-]+)\)$/)
+
+  if (reference) {
+    return resolveColour(styles, reference[1])
+  }
+
   const mix = value.match(/^color-mix\(in srgb,\s*var\((--[\w-]+)\)\s+([\d.]+)%,\s*var\((--[\w-]+)\)\)$/)
 
   if (!mix) {
@@ -102,16 +108,22 @@ describe('semantic theme tokens', () => {
     ]))
   })
 
-  it('loads both themes from the shared style entrypoint', () => {
+  it('loads every theme from the shared style entrypoint', () => {
     const indexStyles = readStyleFile('index.css')
 
     expect(indexStyles).toContain('@import \'./themes/light.css\';')
     expect(indexStyles).toContain('@import \'./themes/dark.css\';')
+    expect(indexStyles).toContain('@import \'./themes/matcha.css\';')
+    expect(indexStyles).toContain('@import \'./themes/sakura.css\';')
+    expect(indexStyles).toContain('@import \'./themes/nus.css\';')
   })
 
   it.each([
     ['light', 'themes/light.css'],
     ['dark', 'themes/dark.css'],
+    ['matcha', 'themes/matcha.css'],
+    ['sakura', 'themes/sakura.css'],
+    ['nus', 'themes/nus.css'],
   ])('keeps key theme text pairs readable in the %s theme', (_themeName, fileName) => {
     const styles = readStyleFile(fileName)
     const pairs = [
@@ -127,10 +139,7 @@ describe('semantic theme tokens', () => {
     ] as const
 
     for (const [foregroundToken, backgroundToken] of pairs) {
-      const ratio = contrastRatio(
-        readCustomPropertyValue(styles, foregroundToken),
-        readCustomPropertyValue(styles, backgroundToken),
-      )
+      const ratio = contrastRatio(resolveColour(styles, foregroundToken), resolveColour(styles, backgroundToken))
 
       expect(ratio, `${foregroundToken} on ${backgroundToken}`).toBeGreaterThanOrEqual(4.5)
     }
@@ -138,7 +147,7 @@ describe('semantic theme tokens', () => {
 })
 
 describe('control token contrast', () => {
-  const themes = ['light', 'dark', 'matcha', 'sakura'] as const
+  const themes = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
 
   it.each(themes)('keeps the soft tonal control colours accessible in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)

@@ -64,8 +64,7 @@ export function StopDetails({
             </div>
           </div>
         )}
-        trailingAction={favoriteButton}
-        navigateAction={(
+        headerAction={(
           <NavigateButton
             ariaLabel="Navigate to this stop"
             onClick={() => onNavigateToStop(stop.id)}
@@ -78,16 +77,19 @@ export function StopDetails({
               <BusIcon />
               Bus departures
             </h4>
-            {oppositeStop && (
-              <Button
-                className="stop-opposite"
-                variant="secondary"
-                label="Opp."
-                trailingIcon={<ChevronRightIcon />}
-                ariaLabel={`Opposite bus stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
-                onClick={() => onSelectOppositeStop(oppositeStop.id)}
-              />
-            )}
+            <div className="stop-detail-bottom-actions">
+              {oppositeStop && (
+                <Button
+                  className="stop-opposite"
+                  variant="secondary"
+                  label="Opp."
+                  trailingIcon={<ChevronRightIcon />}
+                  ariaLabel={`Opposite bus stop: ${oppositeStop.longName}, ${oppositeStop.id}`}
+                  onClick={() => onSelectOppositeStop(oppositeStop.id)}
+                />
+              )}
+              {favoriteButton}
+            </div>
           </div>
         )}
         bottom={(

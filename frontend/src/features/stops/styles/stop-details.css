@@ -109,11 +109,26 @@
     flex: 1 1 auto;
   }
 
+  .stop-detail-bottom-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+  }
+
   .stop-detail-bottom-heading-row .stop-opposite {
     flex: 0 0 auto;
-    min-height: 32px;
+    min-height: 36px;
     padding-inline: 9px;
     font-size: 11px;
+  }
+
+  .stop-detail-bottom-heading-row .stop-favorite {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
   }
 
   .stop-detail-map-departures .stop-departure-list-empty {

@@ -89,6 +89,64 @@ describe('StopsContent', () => {
     expect(onSelectOppositeStop).toHaveBeenCalledWith('SR8')
   })
 
+  it('places mobile Navigate in the header and the favourite star beside the opposite stop action', () => {
+    render(
+      <StopsContent
+        selectedStop={selectedStop}
+        selectedStopFavorite
+        mobileMapDetailOverlay
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
+      />,
+    )
+
+    const detail = screen.getByRole('region', { name: 'Stop details for University Hall' })
+    const header = detail.querySelector('header')
+    const actions = detail.querySelector('.stop-detail-bottom-actions')
+
+    expect(header).not.toBeNull()
+    expect(within(header as HTMLElement).getByRole('button', { name: 'Navigate to this stop' }))
+      .toBeTruthy()
+    expect(within(header as HTMLElement).queryByRole('button', { name: /favourites/ }))
+      .toBeNull()
+    expect(actions).not.toBeNull()
+    expect(within(actions as HTMLElement).getAllByRole('button').map((button) => button.getAttribute('aria-label')))
+      .toEqual([
+        'Opposite bus stop: University Hall (Opposite), SR8',
+        'Remove University Hall, bus stop from favourites',
+      ])
+  })
+
+  it('keeps the favourite star in the opposite stop action position when no opposite stop exists', () => {
+    render(
+      <StopsContent
+        selectedStop={{ ...selectedStop, oppositeStop: null }}
+        mobileMapDetailOverlay
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onNavigateToStop={vi.fn()}
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
+      />,
+    )
+
+    const detail = screen.getByRole('region', { name: 'Stop details for University Hall' })
+    const actions = detail.querySelector('.stop-detail-bottom-actions')
+
+    expect(actions).not.toBeNull()
+    expect(within(actions as HTMLElement).getAllByRole('button').map((button) => button.getAttribute('aria-label')))
+      .toEqual(['Add University Hall, bus stop to favourites'])
+  })
+
   it('shows the favourites empty state with a Browse stops action that switches to Nearby', async () => {
     const user = userEvent.setup()
     const onSelectStopList = vi.fn()

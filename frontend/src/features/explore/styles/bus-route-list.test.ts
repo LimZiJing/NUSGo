@@ -18,7 +18,7 @@ describe('route browser visual contracts', () => {
   })
 
   it('keeps route browser stop geometry specific to its button host', () => {
-    expect(routeListStyles).toMatch(/\.explore-content \.explore-bus-route-list-stop\s*{[^}]*padding:\s*8px 14px 8px 20px;[^}]*border:\s*0;[^}]*background:\s*transparent;/s)
+    expect(routeListStyles).toMatch(/\.explore-content \.explore-bus-route-list-stop\s*{[^}]*padding:\s*8px var\(--space-4\) 8px 20px;[^}]*border:\s*0;[^}]*background:\s*transparent;/s)
     expect(routeListStyles).toMatch(/\.explore-bus-route-list-stop-list::before\s*{[^}]*left:\s*25px;[^}]*width:\s*3px;/s)
   })
 

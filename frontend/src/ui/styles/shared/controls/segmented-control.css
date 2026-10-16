@@ -18,7 +18,7 @@
   min-height: var(--control-height-lg);
   padding: 8px 10px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-control);
   color: var(--text-secondary);
   background: transparent;
   font: 600 var(--font-size-md)/1.2 var(--sans);
@@ -33,7 +33,7 @@
   position: absolute;
   z-index: -1;
   inset: 3px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   box-shadow: var(--shadow-soft);
   content: '';

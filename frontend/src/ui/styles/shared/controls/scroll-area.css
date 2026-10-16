@@ -35,12 +35,12 @@
 }
 
 *::-webkit-scrollbar-track {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ui-scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ui-scrollbar-thumb);
 }
 

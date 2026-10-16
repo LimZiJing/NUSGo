@@ -10,6 +10,13 @@
   overscroll-behavior: contain;
 }
 
+.ui-scroll-area-panel-gutter {
+  box-sizing: border-box;
+  margin-inline-end: var(--space-1);
+  padding-inline-end: var(--space-2);
+  touch-action: auto;
+}
+
 .ui-scroll-area-vertical {
   overflow-y: auto;
   scrollbar-gutter: stable;

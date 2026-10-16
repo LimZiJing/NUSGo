@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { IconButton } from '../button'
 import { ArrowLeftIcon } from '../icons'
+import { ScrollArea } from '../scroll-area'
 
 interface MobileMapDetailOverlayProps {
   readonly label: string
@@ -56,7 +57,9 @@ export function MobileMapDetailOverlay({
             <div className="mobile-detail-bottom-heading">{bottomHeading}</div>
           )}
           {bottom !== undefined && bottom !== null && (
-            <div className="mobile-detail-bottom-content">{bottom}</div>
+            <ScrollArea className="mobile-detail-bottom-content ui-scroll-area-panel-gutter">
+              {bottom}
+            </ScrollArea>
           )}
         </section>
       )}

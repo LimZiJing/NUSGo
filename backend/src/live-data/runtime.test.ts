@@ -221,7 +221,7 @@ describe('Express live transit API', () => {
     })
 
     try {
-      const result = await liveData.getPublicBusArrivals(JSON.stringify(['KR-MRT']))
+      const result = await liveData.getPublicBusArrivals(['KR-MRT'])
       assert.equal(result.stops['KR-MRT']?.services['95']?.status, 'provider-error')
     } finally {
       await liveData.stop()

@@ -14,7 +14,6 @@ import type { BackendData } from '../data.ts'
 import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './nus-client.ts'
 import { createShuttleArrivalSnapshotStore, type ShuttleArrivalStop, type ShuttleArrivalStopResult } from './snapshot.ts'
 import { parseShuttleServiceResponse } from './shuttle-response.ts'
-import { parseRequestedStops } from './shuttle-request.ts'
 import { parseRouteServiceWindows } from './service-window-response.ts'
 import { mapWithConcurrency } from './concurrency.ts'
 import { fetchWithRetry } from './retry.ts'
@@ -33,9 +32,10 @@ interface CachedServiceWindows {
 
 export interface BackendLiveData {
   isSnapshotReady(): boolean
-  getShuttleArrivals(stopsQuery: string | null): ApiShuttleArrivalsResponse
-  getServiceWindows(routesQuery: string | null): Promise<ApiShuttleServiceWindowsResponse>
-  getPublicBusArrivals(stopsQuery: string | null): Promise<ApiPublicBusArrivalsResponse>
+  getPublicBusStopIds(): readonly string[]
+  getBusArrivals(stopIds: readonly string[]): ApiShuttleArrivalsResponse
+  getServiceWindows(routeIds: readonly string[]): Promise<ApiShuttleServiceWindowsResponse>
+  getPublicBusArrivals(stopIds: readonly string[]): Promise<ApiPublicBusArrivalsResponse>
   start(): void
   stop(): Promise<void>
 }
@@ -72,21 +72,6 @@ function requestError(error: unknown, fallback: string): LiveDataRequestError {
     'invalid_request',
     error instanceof Error ? error.message : fallback,
   )
-}
-
-function parseRouteIds(value: string | null, canonicalRouteIds: readonly string[]): readonly string[] {
-  if (!value) throw new Error('The routes query is required')
-  const parts = value.split(',').map((routeId) => routeId.trim())
-  if (parts.length === 0 || parts.length > 16 || parts.some((routeId) => !/^[A-Za-z0-9_-]{1,40}$/.test(routeId))) {
-    throw new Error('The routes query must contain between 1 and 16 valid route IDs')
-  }
-
-  const canonical = new Set(canonicalRouteIds)
-  const unique = [...new Set(parts)]
-  for (const routeId of unique) {
-    if (!canonical.has(routeId)) throw new Error('Unknown canonical bus route: ' + routeId)
-  }
-  return unique
 }
 
 async function readLtaMappings(dataDirectory: string): Promise<unknown> {
@@ -408,39 +393,28 @@ export async function createBackendLiveData(
     isSnapshotReady() {
       return snapshotStore.getSnapshot() !== null
     },
-    getShuttleArrivals(stopsQuery) {
-      const stops = (() => {
-        try {
-          return parseRequestedStops(stopsQuery, canonicalStops)
-        } catch (error: unknown) {
-          throw requestError(error, 'Invalid shuttle arrival request')
-        }
-      })()
+    getPublicBusStopIds() {
+      return mappings.map(({ stopId }) => stopId)
+    },
+    getBusArrivals(stopIds) {
       const snapshot = snapshotStore.getSnapshot()
       if (!snapshot) {
         throw new LiveDataRequestError(503, 'not_ready', 'Shuttle arrival snapshot is not ready')
       }
       const selected = {
         ...snapshot,
-        stops: Object.fromEntries(stops.map((stop) => [
-          stop.stopId,
-          snapshot.stops[stop.stopId] ?? {},
+        stops: Object.fromEntries(stopIds.map((stopId) => [
+          stopId,
+          snapshot.stops[stopId] ?? {},
         ])),
-        stopObservations: Object.fromEntries(stops.flatMap((stop) => {
-          const observation = snapshot.stopObservations?.[stop.stopId]
-          return observation ? [[stop.stopId, observation]] : []
+        stopObservations: Object.fromEntries(stopIds.flatMap((stopId) => {
+          const observation = snapshot.stopObservations?.[stopId]
+          return observation ? [[stopId, observation]] : []
         })),
       } satisfies ApiShuttleArrivalsResponse
       return selected
     },
-    getServiceWindows(routesQuery) {
-      const routes = (() => {
-        try {
-          return parseRouteIds(routesQuery, routeIds)
-        } catch (error: unknown) {
-          throw requestError(error, 'Invalid shuttle service-window request')
-        }
-      })()
+    getServiceWindows(routes) {
       const signal = shutdownController.signal
       const operation = (async (): Promise<ApiShuttleServiceWindowsResponse> => {
         const entries = await mapWithConcurrency(routes, config.liveData.maxConcurrency, async (routeId) => ({
@@ -461,10 +435,10 @@ export async function createBackendLiveData(
       })()
       return track(operation)
     },
-    getPublicBusArrivals(stopsQuery) {
+    getPublicBusArrivals(stopIds) {
       const stops = (() => {
         try {
-          return parseRequestedLtaStops(stopsQuery, mappings)
+          return parseRequestedLtaStops(stopIds, mappings)
         } catch (error: unknown) {
           throw requestError(error, 'Invalid public bus arrival request')
         }

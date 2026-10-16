@@ -4,13 +4,7 @@ import { parseLtaPublicBusStopMapping } from './lta/mapping.ts'
 import { parseRequestedLtaStops } from './lta/request.ts'
 import { parseLtaBusArrivalResponse } from './lta/response.ts'
 import { parseRouteServiceWindows } from './service-window-response.ts'
-import { parseRequestedStops } from './shuttle-request.ts'
 import { parseShuttleServiceResponse } from './shuttle-response.ts'
-
-const canonicalStops = [
-  { stopId: 'STOP-A', stopName: 'Canonical Stop A' },
-  { stopId: 'STOP-B', stopName: 'Canonical Stop B' },
-] as const
 
 const ltaMappings = [
   { stopId: 'STOP-A', busStopCode: '12345', services: ['95', '151'] },
@@ -41,16 +35,6 @@ describe('backend provider boundaries', () => {
     assert.deepEqual(parseShuttleServiceResponse({ data: [] }), [])
   })
 
-  it('accepts canonical stop IDs and ignores untrusted names from the request', () => {
-    assert.deepEqual(parseRequestedStops(JSON.stringify([
-      'STOP-A',
-      { stopId: 'STOP-B', stopName: 'Untrusted browser name' },
-    ]), canonicalStops), canonicalStops)
-    assert.deepEqual(parseRequestedStops(JSON.stringify(['STOP-A', 'STOP-A']), canonicalStops), [canonicalStops[0]])
-    assert.throws(() => parseRequestedStops('{', canonicalStops), /valid JSON/)
-    assert.throws(() => parseRequestedStops(JSON.stringify(['UNKNOWN']), canonicalStops), /Unknown canonical bus stop/)
-  })
-
   it('validates and normalizes NUS service-window payloads', () => {
     assert.deepEqual(parseRouteServiceWindows({
       data: {
@@ -79,9 +63,9 @@ describe('backend provider boundaries', () => {
         { stopId: 'STOP-A', busStopCode: '54321', services: ['96'] },
       ],
     }), /Duplicate/)
-    assert.deepEqual(parseRequestedLtaStops(JSON.stringify(['STOP-A']), ltaMappings), [ltaMappings[0]])
-    assert.deepEqual(parseRequestedLtaStops(JSON.stringify(['STOP-A', 'STOP-A']), ltaMappings), [ltaMappings[0]])
-    assert.throws(() => parseRequestedLtaStops(JSON.stringify(['UNMAPPED']), ltaMappings), /Unknown mapped/)
+    assert.deepEqual(parseRequestedLtaStops(['STOP-A'], ltaMappings), [ltaMappings[0]])
+    assert.deepEqual(parseRequestedLtaStops(['STOP-A', 'STOP-A'], ltaMappings), [ltaMappings[0]])
+    assert.throws(() => parseRequestedLtaStops(['UNMAPPED'], ltaMappings), /Unknown mapped/)
     assert.throws(() => parseLtaBusArrivalResponse({
       Services: [{ ServiceNo: '95', NextBus: { EstimatedArrival: 'not a date', Monitored: 1 } }],
     }, ['95']), /invalid estimated arrival/)

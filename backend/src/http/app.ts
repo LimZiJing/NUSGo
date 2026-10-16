@@ -77,7 +77,7 @@ export function createApp(
   app.use('/api', express.json({ limit: BODY_LIMIT, strict: true }))
 
   registerHealthRoutes(app, config, data, liveData)
-  registerLiveDataRoutes(app, liveData)
+  registerLiveDataRoutes(app, data, liveData)
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

@@ -19,6 +19,7 @@ function snapshotPanelSnapshot(snapshot: ExploreSnapshot): ExploreSnapshot {
     mode: snapshot.mode,
     query: snapshot.query,
     selectedVenue: snapshotVenueResult(snapshot.selectedVenue),
+    selectedBuildingId: snapshot.selectedBuildingId,
   })
 }
 
@@ -27,6 +28,7 @@ function snapshotExploreState(panel: ExploreState): ExploreState {
     mode: panel.mode,
     query: panel.query,
     selectedVenue: snapshotVenueResult(panel.selectedVenue),
+    selectedBuildingId: panel.selectedBuildingId,
     history: freeze(panel.history.map(snapshotPanelSnapshot)),
   })
 }

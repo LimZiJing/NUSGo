@@ -7,7 +7,7 @@
   padding: 0;
   color: var(--text-muted);
   background-color: transparent;
-  font: 10px/14px var(--sans);
+  font: var(--font-size-xs)/14px var(--sans);
 }
 
 .map .maplibregl-ctrl-bottom-right > .navus-map-attribution {
@@ -89,7 +89,7 @@
   color: var(--text-primary);
   background: var(--surface-overlay-soft);
   box-shadow: var(--shadow-panel);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
 }
 
 .legend-marker {
@@ -127,7 +127,7 @@
   color: var(--text-primary);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-md);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
   cursor: pointer;
 }
 
@@ -281,7 +281,7 @@
   color: var(--text-muted);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-md);
-  font: 600 12px/1 var(--sans);
+  font: 600 var(--font-size-xs)/1 var(--sans);
   cursor: pointer;
   appearance: none;
   white-space: nowrap;
@@ -325,7 +325,7 @@
   color: var(--text-primary);
   background: var(--surface-overlay-soft);
   box-shadow: var(--shadow-panel);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
   pointer-events: auto;
 }
 
@@ -387,7 +387,7 @@
   color: var(--text-primary);
   background: var(--surface-overlay-strong);
   box-shadow: var(--shadow-lg);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
 }
 
 .map .maplibregl-popup-anchor-top .maplibregl-popup-tip {
@@ -427,7 +427,7 @@
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   background: transparent;
-  font: 20px/1 var(--sans);
+  font: var(--font-size-2xl)/1 var(--sans);
 }
 
 .map .maplibregl-popup-close-button:hover {
@@ -448,12 +448,12 @@
 .map .map-popup-title {
   display: block;
   color: var(--text-heading);
-  font: 500 15px/1.1 var(--heading);
+  font: 500 var(--font-size-lg)/1.1 var(--heading);
 }
 
 .map .map-popup-detail {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
 }
 
 .map .bus-stop-popup-header {
@@ -498,7 +498,7 @@
   justify-content: center;
   color: var(--text-primary);
   background: var(--surface-muted);
-  font: 500 13px/1.1 var(--sans);
+  font: 500 var(--font-size-sm)/1.1 var(--sans);
   cursor: pointer;
   border-color: var(--accent);
   color: var(--accent-contrast);

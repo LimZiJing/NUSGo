@@ -1,7 +1,7 @@
 import type { ComponentProps, Ref } from 'react'
-import { ExploreContent } from '../../features/explore/components/explore-content'
-import { PlanContent } from '../../features/plan/components/plan-content'
-import { StopsContent } from '../../features/stops/components/stops-content'
+import { ExploreContent } from '../../features/explore/explore-content.tsx'
+import { PlanContent } from '../../features/plan/plan-content.tsx'
+import { StopsContent } from '../../features/stops/stops-content.tsx'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
@@ -91,7 +91,13 @@ export function AppViews({
           <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
-            summary={getExploreSheetSummary(views.explore.state, selectedRoute)}
+            summary={getExploreSheetSummary(
+              views.explore.state,
+              selectedRoute,
+              views.explore.state.selectedBuildingId
+                ? views.explore.buildings?.byId.get(views.explore.state.selectedBuildingId)?.name
+                : undefined,
+            )}
             controlsId="explore-content-panel"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             enabled={isMobileViewport}

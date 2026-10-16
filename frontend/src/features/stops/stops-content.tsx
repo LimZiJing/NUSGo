@@ -1,9 +1,9 @@
-import { SegmentedControl } from '../../../ui/segmented-control'
-import type { StopDetailsModel } from '../data/stop-details-model'
-import type { StopListEntry } from '../data/stop-list-data'
-import { StopDetails } from './stop-details'
-import { StopList } from './stop-list'
-import '../styles/stops-content.css'
+import { SegmentedControl } from '../../ui/segmented-control.tsx'
+import type { StopDetailsModel } from './data/stop-details-model.ts'
+import type { StopListEntry } from './data/stop-list-data.ts'
+import { StopDetails } from './components/stop-details.tsx'
+import { StopList } from './components/stop-list.tsx'
+import './styles/stops-content.css'
 
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null

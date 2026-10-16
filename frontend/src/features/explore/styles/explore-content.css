@@ -7,7 +7,7 @@
   min-height: 0;
   overflow: hidden;
   color: var(--text-primary);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
   box-sizing: border-box;
   pointer-events: auto;
 }
@@ -27,7 +27,7 @@
 .explore-content-header h2 {
   margin: 0;
   color: var(--text-primary);
-  font: 600 18px/1.2 var(--sans);
+  font: 600 var(--font-size-xl)/1.2 var(--sans);
 }
 
 .explore-content-result,
@@ -136,7 +136,7 @@
 
 .explore-content-result span {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .explore-content-status {
@@ -146,7 +146,7 @@
 .explore-content-status-success {
   margin: 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
 }
 
 .explore-content-status-loading {
@@ -177,7 +177,7 @@
   gap: 7px;
   margin: 0;
   color: var(--text-primary);
-  font: 600 20px/1.2 var(--sans);
+  font: 600 var(--font-size-2xl)/1.2 var(--sans);
   text-align: left;
 }
 
@@ -204,7 +204,7 @@
 
 .venue-detail-name {
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--font-size-md);
   line-height: 1.3;
   text-align: left;
 }
@@ -249,7 +249,7 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-raised);
-  font: 600 14px/1.2 var(--sans);
+  font: 600 var(--font-size-md)/1.2 var(--sans);
   text-decoration: none;
   cursor: pointer;
 }
@@ -264,18 +264,38 @@
   height: auto;
 }
 
-.venue-nearby-stops {
+.venue-nearby-stops,
+.venue-building-parts {
   display: grid;
   gap: 6px;
 }
 
-.venue-nearby-stops h4 {
+.venue-building-parts ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+}
+
+.venue-building-parts-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: left;
+}
+
+.venue-nearby-stops h4,
+.venue-building-parts h4 {
   display: flex;
   align-items: center;
   gap: 7px;
   margin: 0;
   color: var(--text-primary);
-  font: 600 14px/1.3 var(--sans);
+  font: 600 var(--font-size-md)/1.3 var(--sans);
 }
 
 .venue-nearby-stops h4 svg {
@@ -286,7 +306,7 @@
 
 .venue-nearby-empty {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .venue-nearby-stop-list {
@@ -329,7 +349,7 @@
 .nearby-stop-identity strong {
   overflow: hidden;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -337,7 +357,7 @@
 
 .nearby-stop-identity small {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--font-size-xs);
 }
 
 .nearby-stop-services {
@@ -355,7 +375,7 @@
   box-sizing: border-box;
   padding: 2px 5px;
   border-radius: var(--radius-pill);
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   line-height: 1;
 }
@@ -409,7 +429,7 @@
   }
 
   .explore-content-header h2 {
-    font-size: 20px;
+    font-size: var(--font-size-2xl);
     letter-spacing: -0.2px;
   }
 
@@ -484,7 +504,7 @@
     justify-items: center;
     gap: 10px;
     color: var(--text-muted);
-    font: 600 16px/1.3 var(--sans);
+    font: 600 var(--font-size-lg)/1.3 var(--sans);
   }
 
   .explore-content-search-prompt svg {
@@ -532,7 +552,7 @@
   }
 
   .explore-content-detail h3 {
-    font-size: 24px;
+    font-size: var(--font-size-3xl);
   }
 
   .explore-content .segmented-control-option:focus-visible,
@@ -630,7 +650,7 @@
     justify-content: center;
     gap: 10px;
     color: var(--text-muted);
-    font: 600 16px/1.3 var(--sans);
+    font: 600 var(--font-size-lg)/1.3 var(--sans);
   }
 
   .navigation-column .explore-content-search-prompt svg {

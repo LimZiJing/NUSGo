@@ -2,7 +2,7 @@
 .navigation-panel {
   box-sizing: border-box;
   color: var(--text-primary);
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
 }
 
 .navigation-panel-content {

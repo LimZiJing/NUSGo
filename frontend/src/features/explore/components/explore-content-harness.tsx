@@ -4,11 +4,12 @@ import {
   useExplorePanelFocus,
   type ExplorePanelFocusOptions,
 } from '../hooks/use-explore-panel-focus'
-import { ExploreContent } from './explore-content'
+import { ExploreContent } from '../explore-content.tsx'
 
 type ExplorePanelCallbacks = Partial<Pick<
   ExplorePanelFocusOptions,
   | 'onVenueSelect'
+  | 'onBuildingSelect'
   | 'onOpenBusRoutes'
   | 'onLeaveMobileRoutes'
   | 'onFocusStop'
@@ -36,6 +37,7 @@ export function ExploreContentHarness({
   mobileSheet = true,
   sheetDetent = 'partial',
   onVenueSelect = () => undefined,
+  onBuildingSelect,
   onOpenBusRoutes = () => undefined,
   onBack = () => undefined,
   onEscape = () => undefined,
@@ -55,6 +57,7 @@ export function ExploreContentHarness({
     active,
     busRoutesAvailable: (contentProps.transitIndex?.routes.length ?? 0) > 0,
     onVenueSelect,
+    onBuildingSelect,
     onOpenBusRoutes,
     onLeaveMobileRoutes,
     onFocusStop,

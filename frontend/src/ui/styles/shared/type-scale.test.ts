@@ -24,6 +24,18 @@ describe('type scale', () => {
     expect(steps).toEqual({ xs: 12, sm: 13, md: 14, lg: 16, xl: 18, '2xl': 20, '3xl': 24 })
   })
 
+  it('uses the font-size tokens instead of literal sizes up to 24px', () => {
+    const offenders = cssFiles(srcDir)
+      .filter((path) => !path.endsWith('tokens.css'))
+      .flatMap((path) => readFileSync(path, 'utf8').split(/\r?\n/).flatMap((line, index) => {
+        const declaration = line.match(/^\s*(?:font-size|font):(.*)$/)
+        const size = declaration?.[1].match(/(?<![\d.\w/-])(\d+(?:\.\d+)?)px/)
+        return size && Number(size[1]) <= 24 ? [`${path.slice(srcDir.length + 1)}:${index + 1} ${line.trim()}`] : []
+      }))
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps the font family in one token instead of per-rule stacks', () => {
     const offenders = cssFiles(srcDir)
       .filter((path) => !path.endsWith('tokens.css') && readFileSync(path, 'utf8').includes('system-ui'))

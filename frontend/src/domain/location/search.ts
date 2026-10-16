@@ -5,50 +5,21 @@ import type {
   TripLocationSearchResult,
 } from '../trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
+import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../venue/building-index'
 
 const MAX_RESULTS = 8
 
-// Venue data holds rooms only (no building records), so bus stops, which
-// are named after the main buildings they serve, rank ahead of rooms.
-const STOP_ORDER = 0
+// Venue data holds rooms only, so bus stops and buildings, which stops are often named after,
+// rank ahead of rooms.
+const STOP_AND_BUILDING_ORDER = 0
 const ROOM_ORDER = 1
 
 interface SearchCandidate {
   result: TripLocationSearchResult
   fields: string[]
   kindOrder: number
-}
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase()
-}
-
-function getMatchPriority(fields: string[], query: string): number | null {
-  let priority: number | null = null
-
-  for (const field of fields) {
-    const normalizedField = normalize(field)
-    const fieldPriority = normalizedField === query
-      ? 0
-      : normalizedField.startsWith(query)
-        ? 1
-        : normalizedField.includes(query)
-          ? 2
-          : null
-
-    if (fieldPriority !== null && (priority === null || fieldPriority < priority)) {
-      priority = fieldPriority
-    }
-  }
-
-  return priority
-}
-
-function compareText(first: string, second: string): number {
-  if (first < second) return -1
-  if (first > second) return 1
-  return 0
 }
 
 function getResultLimit(limit: number): number {
@@ -70,8 +41,10 @@ export function getTripEndpointLabel(
   endpoint: TripEndpoint,
   venues: VenueLocationMap,
   stops: TransitStopSource,
+  buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): string {
   if (endpoint.kind === 'current-location') return 'Current location'
+  if (endpoint.kind === 'building') return buildings.byId.get(endpoint.id)?.name ?? endpoint.id
   if (endpoint.kind === 'venue') {
     return venues[endpoint.id]?.roomName ?? endpoint.id
   }
@@ -84,6 +57,7 @@ export function searchTripLocations(
   stops: TransitStopSource,
   query: string,
   limit = MAX_RESULTS,
+  buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): TripLocationSearchResult[] {
   const normalizedQuery = normalize(query)
   if (!normalizedQuery) return []
@@ -114,7 +88,21 @@ export function searchTripLocations(
         detail: normalize(stop.shortName) === normalize(stop.id) ? '' : `${stop.shortName} (${stop.id})`,
       },
       fields: [stop.id, stop.longName, stop.shortName],
-      kindOrder: STOP_ORDER,
+      kindOrder: STOP_AND_BUILDING_ORDER,
+    })
+  }
+
+  for (const building of buildings.entries) {
+    candidates.push({
+      result: {
+        endpoint: { kind: 'building', id: building.id },
+        label: building.name,
+        detail: building.parts.length > 1
+          ? `${building.parts.length} buildings`
+          : building.parts[0].address ?? '',
+      },
+      fields: [building.name, ...building.aliases],
+      kindOrder: STOP_AND_BUILDING_ORDER,
     })
   }
 

@@ -18,6 +18,7 @@
   }
 
   .stops-card-list {
+    position: relative;
     display: grid;
     flex: 1 1 auto;
     align-content: start;
@@ -37,13 +38,13 @@
     justify-content: space-between;
     gap: 8px;
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 
   .stop-live-arrival-message {
     margin: 0;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 
   .stops-empty {
@@ -69,7 +70,7 @@
     gap: 10px;
     color: var(--text-muted);
     text-align: center;
-    font: 600 16px/1.3 var(--sans);
+    font: 600 var(--font-size-lg)/1.3 var(--sans);
   }
 
   .stops-empty-icon {
@@ -114,15 +115,16 @@
     flex: 0 1 auto;
     overflow: hidden;
     color: var(--text-contrast);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     line-height: 1.4;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .stop-card-live {
+  .pill.info-pill.stop-card-live {
     grid-column: 2;
+    padding-right: calc(6px - 0.04em);
     letter-spacing: 0.04em;
   }
 
@@ -207,7 +209,7 @@
   .stop-card .stop-departure-list-empty {
     padding: 0 7px 6px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 
   .stop-card .stop-departure-row:last-child {
@@ -226,7 +228,7 @@
     gap: 8px;
     margin: 0;
     color: var(--text-primary);
-    font: 600 24px/1.2 var(--sans);
+    font: 600 var(--font-size-3xl)/1.2 var(--sans);
     text-align: left;
   }
 
@@ -249,7 +251,7 @@
 
   .stop-id {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 
   .stop-favorite {
@@ -277,7 +279,7 @@
   .stop-selection h3 {
     margin: 0 0 8px;
     color: var(--text-primary);
-    font: 600 14px/1.2 var(--sans);
+    font: 600 var(--font-size-md)/1.2 var(--sans);
     text-align: left;
   }
 
@@ -315,7 +317,7 @@
   .stop-departure-status {
     grid-column: 2 / -1;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     line-height: 1.25;
   }
 
@@ -327,11 +329,68 @@
     overflow: hidden;
   }
 
+  .stop-reachable-favourites-list {
+    display: flex;
+    min-width: 0;
+  }
+
   .stop-reachable-favourites-arrow {
     flex: 0 0 auto;
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: var(--font-size-lg);
     line-height: 1;
+  }
+
+  .stop-reachable-more {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--control-height-sm);
+    min-height: var(--control-height-sm);
+    margin: 0 -4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .stop-reachable-more-label {
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    font: 500 var(--font-size-xs)/1.2 var(--sans);
+  }
+
+  .stop-reachable-more[aria-expanded='true'] .stop-reachable-more-label {
+    color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  .stop-reachable-more:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .stop-reachable-positioner {
+    z-index: 30;
+  }
+
+  .stop-reachable-popup {
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .stop-reachable-popup-list {
+    display: grid;
+    gap: 6px;
+    justify-items: start;
   }
 
   .stop-reachable-favourite {
@@ -340,14 +399,14 @@
     align-items: center;
     gap: 3px;
     min-width: 0;
-    max-width: 7rem;
+    max-width: 100%;
     padding: 2px 6px;
     overflow: hidden;
     border: 1px solid var(--border-warning);
     border-radius: var(--radius-pill);
     color: var(--status-warning);
     background: var(--status-warning-surface);
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -357,6 +416,12 @@
     border-color: var(--border-info);
     color: var(--status-info);
     background: var(--status-info-surface);
+  }
+
+  .stop-reachable-favourite > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stop-reachable-favourite svg {
@@ -374,7 +439,7 @@
 
   .stop-departure-time {
     color: var(--text-strong);
-    font: 600 13px/1 var(--sans);
+    font: 600 var(--font-size-sm)/1 var(--sans);
     text-align: right;
   }
 
@@ -405,7 +470,7 @@
     overflow: hidden;
     scrollbar-gutter: auto;
     color: var(--text-primary);
-    font: 14px/1.2 var(--sans);
+    font: var(--font-size-md)/1.2 var(--sans);
     box-sizing: border-box;
     pointer-events: auto;
   }

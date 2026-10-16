@@ -127,6 +127,7 @@ function App() {
     active: activeView === 'explore',
     busRoutesAvailable: (state.transitIndex?.routes.length ?? 0) > 0,
     onVenueSelect: commands.selectVenue,
+    onBuildingSelect: commands.selectBuilding,
     onOpenBusRoutes: () => {
       if (isMobileViewport) {
         appNavigation.dismissMobileSearch('explore')
@@ -340,6 +341,7 @@ function App() {
   const planContentProps: AppViewsProps['views']['plan'] = {
     tripRequest: state.tripRequest,
     venues: state.venues,
+    buildings: state.buildings,
     networkIndex: state.transitIndex,
     form: planTripForm,
     originLocationRequest: state.originLocationRequest,
@@ -355,12 +357,14 @@ function App() {
   const exploreContentProps: AppViewsProps['views']['explore'] = {
     state: state.exploreState,
     venues: state.venues,
+    buildings: state.buildings,
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
     onRouteSelect: commands.selectMobileRoute,
     focus: explorePanelFocus,
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
+    onNavigateToBuilding: appNavigation.navigateToBuilding,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
       type: 'set-sheet-detent',

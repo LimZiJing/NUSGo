@@ -1,5 +1,5 @@
 import type { TransitGeoJsonPosition } from '@navus/shared/transit/types'
-import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
+import { placeRouteStopsOnLine, type ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import { getTripEndpointKey } from '../../domain/trip/endpoints'
 import type { TripEndpoint } from '../../domain/trip/types'
 import type { BusPathLeg, PathEndpointLocation, PathGeometry, WalkingPathLeg } from '../path'
@@ -137,8 +137,14 @@ function sliceRouteGeometry(
     ) selected = { from: closestForwardFrom, to }
   }
   if (!selected) return null
+  return sliceBetweenProjections(line, selected.from, selected.to)
+}
 
-  const { from, to } = selected
+function sliceBetweenProjections(
+  line: readonly TransitGeoJsonPosition[],
+  from: ProjectedPoint,
+  to: ProjectedPoint,
+): { readonly geometry: PathGeometry; readonly distanceMeters: number } | null {
   const coordinates = withoutDuplicateCoordinates([
     from.coordinate,
     ...line.slice(from.segmentIndex, to.segmentIndex),
@@ -353,6 +359,8 @@ export function* buildSearchIndexSteps(
           routeId: route.id,
           fromStopId,
           toStopId,
+          fromStopIndex: fromIndex,
+          toStopIndex: toIndex,
           traversedStopIds: new Set(traversedStopIds),
           rideSeconds: record.rideSeconds,
           record,
@@ -422,19 +430,32 @@ export function* buildSearchIndexSteps(
     projectionsByRouteStopKey.set(key, projections)
     return projections
   }
+  const placedStopsByRouteId = new Map<string, readonly ProjectedPoint[] | null>()
+  const getPlacedStops = (routeId: string, line: readonly TransitGeoJsonPosition[]) => {
+    if (placedStopsByRouteId.has(routeId)) return placedStopsByRouteId.get(routeId) ?? null
+    const route = input.transitIndex.routeById.get(routeId)
+    const placed = route ? placeRouteStopsOnLine(route.stopIds, input.transitIndex.stopById, line) : null
+    placedStopsByRouteId.set(routeId, placed)
+    return placed
+  }
   const getRideGeometry = (ride: ShuttleRideDefinition) => {
     const key = getTimingKey(ride.routeId, ride.fromStopId, ride.toStopId)
     if (geometryByRideKey.has(key)) return geometryByRideKey.get(key) ?? null
-    const fromCandidates = getStopProjections(ride.routeId, ride.geometryLine, ride.fromStopId)
-    const toCandidates = getStopProjections(ride.routeId, ride.geometryLine, ride.toStopId)
     const startedAt = now()
-    const geometry = fromCandidates.length > 0 && toCandidates.length > 0
-      ? sliceRouteGeometry(
-        ride.geometryLine,
-        fromCandidates,
-        toCandidates,
-      )
-      : null
+    // Prefer the Route-ordered stop placement that ride timing uses; it keeps loop Routes on the right pass.
+    const placedStops = getPlacedStops(ride.routeId, ride.geometryLine)
+    const placedFrom = placedStops?.[ride.fromStopIndex]
+    const placedTo = placedStops?.[ride.toStopIndex]
+    let geometry: ReturnType<typeof sliceRouteGeometry>
+    if (placedFrom && placedTo) {
+      geometry = sliceBetweenProjections(ride.geometryLine, placedFrom, placedTo)
+    } else {
+      const fromCandidates = getStopProjections(ride.routeId, ride.geometryLine, ride.fromStopId)
+      const toCandidates = getStopProjections(ride.routeId, ride.geometryLine, ride.toStopId)
+      geometry = fromCandidates.length > 0 && toCandidates.length > 0
+        ? sliceRouteGeometry(ride.geometryLine, fromCandidates, toCandidates)
+        : null
+    }
     geometrySliceCount += 1
     geometrySliceDurationMs += now() - startedAt
     geometryByRideKey.set(key, geometry)

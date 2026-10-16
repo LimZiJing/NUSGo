@@ -111,9 +111,11 @@ function distanceBetween(
   return Math.hypot(secondMeters[0] - firstMeters[0], secondMeters[1] - firstMeters[1])
 }
 
-interface LineProjection {
+export interface LineProjection {
+  readonly segmentIndex: number
   readonly distanceAlongLine: number
   readonly distanceToLine: number
+  readonly coordinate: TransitGeoJsonPosition
 }
 
 function projectPointOntoLine(
@@ -148,8 +150,10 @@ function projectPointOntoLine(
       start[1] + (end[1] - start[1]) * ratio,
     ]
     projections.push({
+      segmentIndex: index,
       distanceAlongLine: distanceAlongLine + segmentLength * ratio,
       distanceToLine: distanceBetween(point, projected),
+      coordinate: projected,
     })
     distanceAlongLine += segmentLength
   }
@@ -182,18 +186,29 @@ function selectOrderedProjections(
   return null
 }
 
-function routeProjections(
-  route: BusRoute,
-  network: TransitNetwork,
+/**
+ * Places every stop of a Route on its line in Route order, one projection per stop index.
+ * Loop Routes pass near some stops more than once, so nearest-point matching alone can pick the wrong pass.
+ */
+export function placeRouteStopsOnLine(
+  stopIds: readonly string[],
+  stopsById: ReadonlyMap<string, { readonly longitude: number; readonly latitude: number }>,
   line: readonly TransitGeoJsonPosition[],
 ): readonly LineProjection[] | null {
-  const stopsById = new Map(network.stops.map((stop) => [stop.id, stop]))
-  const candidatesByStop = route.stopIds.map((stopId) => {
+  const candidatesByStop = stopIds.map((stopId) => {
     const stop = stopsById.get(stopId)
     if (!stop) return []
     return projectPointOntoLine([stop.longitude, stop.latitude], line)
   })
   return selectOrderedProjections(candidatesByStop, 0, Number.NEGATIVE_INFINITY)
+}
+
+function routeProjections(
+  route: BusRoute,
+  network: TransitNetwork,
+  line: readonly TransitGeoJsonPosition[],
+): readonly LineProjection[] | null {
+  return placeRouteStopsOnLine(route.stopIds, new Map(network.stops.map((stop) => [stop.id, stop])), line)
 }
 
 function createUnavailableRecord(

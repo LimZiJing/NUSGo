@@ -1,19 +1,21 @@
-import { getTripEndpointKey } from '../../../domain/trip/endpoints'
-import type { TransitIndex } from '../../../domain/transit'
-import type { TripRequest } from '../../../domain/trip/types'
+import { getTripEndpointKey } from '../../domain/trip/endpoints.ts'
+import type { TransitIndex } from '../../domain/transit'
+import type { TripRequest } from '../../domain/trip/types.ts'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { PlanEndpointControl, type OriginLocationRequestState } from './plan-endpoint-control'
-import { JourneyResults, type JourneyResultsState } from './journey-results'
-import { TripActionsMenu } from './trip-actions-menu'
-import { formatSingaporeDateTime } from '../../../domain/trip/simulated-time'
-import { ArrowDownUpIcon, ArrowRightIcon } from '../../../ui/icons'
-import { IconButton } from '../../../ui/button'
-import type { PlanTripFormBindings } from '../hooks/use-plan-trip-form'
-import '../styles/plan-content.css'
+import { PlanEndpointControl, type OriginLocationRequestState } from './components/plan-endpoint-control.tsx'
+import { JourneyResults, type JourneyResultsState } from './components/journey-results.tsx'
+import { TripActionsMenu } from './components/trip-actions-menu.tsx'
+import { formatSingaporeDateTime } from '../../domain/trip/simulated-time.ts'
+import { ArrowDownUpIcon, ArrowRightIcon } from '../../ui/icons'
+import { IconButton } from '../../ui/button.tsx'
+import type { PlanTripFormBindings } from './hooks/use-plan-trip-form.ts'
+import './styles/plan-content.css'
 
 interface PlanContentProps {
   tripRequest: TripRequest
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   form: PlanTripFormBindings
   onSearchFocus?: () => void
@@ -33,6 +35,7 @@ const PLAN_CONTENT_PANEL_ID = 'plan-content-panel'
 export function PlanContent({
   tripRequest,
   venues,
+  buildings = null,
   networkIndex,
   form,
   onSearchFocus,
@@ -66,6 +69,7 @@ export function PlanContent({
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
+          buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={form.searchQueries.origin}
             onSearchQueryChange={(query) => form.onSearchQueryChange('origin', query)}
@@ -83,6 +87,7 @@ export function PlanContent({
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
+          buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={form.searchQueries.destination}
             onSearchQueryChange={(query) => form.onSearchQueryChange('destination', query)}
@@ -127,6 +132,7 @@ export function PlanContent({
         <JourneyResults
           state={path}
           venues={venues}
+          buildings={buildings}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
           onSelectCandidate={onSelectJourneyOption}

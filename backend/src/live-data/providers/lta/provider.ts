@@ -1,4 +1,4 @@
-import { mapWithConcurrency } from '../../concurrency.ts'
+import { mapWithConcurrency } from '../../upstream/concurrency.ts'
 import type {
   PublicBusArrivalSnapshot,
   PublicBusEstimatedArrival,

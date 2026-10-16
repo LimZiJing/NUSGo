@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from './timeouts.ts'
+import { fetchWithTimeout } from './timeout.ts'
 
 export interface UpstreamRetryOptions {
   readonly timeoutMs: number

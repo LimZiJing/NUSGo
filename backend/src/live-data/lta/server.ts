@@ -103,6 +103,10 @@ export function createLtaPublicBusArrivalProvider(
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') throw error
+      console.warn('LTA public bus arrival lookup failed.', {
+        stopId: mapping.stopId,
+        errorType: error instanceof Error ? error.name : typeof error,
+      })
       const observedAt = toIso(now())
       return {
         observedAt,

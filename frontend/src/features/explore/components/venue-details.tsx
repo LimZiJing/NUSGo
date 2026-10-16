@@ -5,6 +5,7 @@ import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates 
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { BuildingIcon, BusIcon, ChevronRightIcon } from '../../../ui/icons'
 import { MobileMapDetailOverlay } from '../../../ui/mobile/mobile-map-detail-overlay'
+import { GroupedList } from '../../../ui/grouped-list'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { RouteChipBadge } from '../../../ui/route-chip'
 import '../styles/venue-details.css'
@@ -71,36 +72,37 @@ export function VenueDetails({
   ) : nearbyStops.length === 0 ? (
     <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
   ) : (
-    <div className="venue-nearby-stop-list">
+    <GroupedList ariaLabel="Nearby bus stops" className="venue-nearby-stop-list">
       {nearbyStops.map(({ stop, services }) => (
-        <button
-          key={stop.id}
-          className={`nearby-stop-row${mobileMapDetailOverlay ? ' mobile-detail-card' : ''}`}
-          type="button"
-          data-stop-id={stop.id}
-          aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
-          onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
-        >
-          <span className="nearby-stop-identity">
-            <span className="nearby-stop-name">
-              <BusIcon className="location-identity-icon location-identity-icon--stop" />
-              <strong>{stop.longName}</strong>
-              <small>{stop.id}</small>
+        <li key={stop.id}>
+          <button
+            className="nearby-stop-row"
+            type="button"
+            data-stop-id={stop.id}
+            aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+            onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
+          >
+            <span className="nearby-stop-identity">
+              <span className="nearby-stop-name">
+                <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                <strong>{stop.longName}</strong>
+                <small>{stop.id}</small>
+              </span>
             </span>
-          </span>
-          <span className="nearby-stop-services" aria-hidden="true">
-            {services.map((route) => (
-              <RouteChipBadge
-                key={route.id}
-                routeId={route.id}
-                routeColor={route.color}
-              />
-            ))}
-          </span>
-          <ChevronRightIcon className="nearby-stop-arrow" />
-        </button>
+            <span className="nearby-stop-services" aria-hidden="true">
+              {services.map((route) => (
+                <RouteChipBadge
+                  key={route.id}
+                  routeId={route.id}
+                  routeColor={route.color}
+                />
+              ))}
+            </span>
+            <ChevronRightIcon className="nearby-stop-arrow" />
+          </button>
+        </li>
       ))}
-    </div>
+    </GroupedList>
   )
 
   if (mobileMapDetailOverlay) {

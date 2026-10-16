@@ -6,6 +6,7 @@
 @import './themes/sakura.css';
 @import './map.css';
 @import './navigation.css';
+@import './grouped-list.css';
 @import './panels/navigation-panel.css';
 @import './controls/button.css';
 @import './controls/chip.css';

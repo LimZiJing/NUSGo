@@ -202,6 +202,10 @@
 
   .stop-card .stop-departure-list {
     margin: 0 7px 6px;
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    background: transparent;
   }
 
   .stop-card .stop-departure-list-empty {
@@ -210,16 +214,11 @@
     font-size: 12px;
   }
 
-  .stop-card .stop-departure-row:last-child {
-    border-bottom: 0;
-  }
-
   .stop-departure-list {
     display: grid;
     gap: 0;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--border-subtle);
     list-style: none;
   }
 
@@ -230,8 +229,11 @@
     gap: 6px;
     min-height: var(--control-height-sm);
     box-sizing: border-box;
-    padding: 2px 4px;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: var(--grouped-list-row-padding-block) var(--grouped-list-row-padding-inline);
+  }
+
+  .stop-card .stop-departure-row {
+    padding: 3px 8px;
   }
 
   .stop-departure-row .route-chip {

@@ -1,3 +1,4 @@
+import { GroupedList } from '../../../ui/grouped-list'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -41,20 +42,16 @@ export function StopDepartureList({
   liveArrivalMessage = null,
   publicServices,
   onSelectRoute,
-  rowClassName,
 }: {
   readonly departures: readonly StopDeparture[]
   readonly scheduledDepartures?: readonly StopScheduledDeparture[]
   readonly liveArrivalMessage?: string | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
-  readonly rowClassName?: string
 }) {
   if (departures.length === 0 && scheduledDepartures.length === 0 && publicServices.length === 0) {
     return <p className="stop-departure-list-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
-
-  const itemClassName = ['stop-departure-row', rowClassName].filter(Boolean).join(' ')
 
   return (
     <>
@@ -63,9 +60,9 @@ export function StopDepartureList({
           {liveArrivalMessage}
         </p>
       )}
-      <ul className="stop-departure-list" aria-label="Bus timings">
+      <GroupedList ariaLabel="Bus timings" className="stop-departure-list">
         {departures.map((departure) => (
-          <li key={departure.routeId} className={itemClassName}>
+          <li key={departure.routeId} className="stop-departure-row">
             <RouteChip
               routeId={departure.routeId}
               routeColor={departure.routeColor}
@@ -80,7 +77,7 @@ export function StopDepartureList({
           </li>
         ))}
         {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (
-          <li key={`scheduled-${routeId}`} className={itemClassName}>
+          <li key={`scheduled-${routeId}`} className="stop-departure-row">
             <RouteChip
               routeId={routeId}
               routeColor={routeColor}
@@ -94,14 +91,14 @@ export function StopDepartureList({
           </li>
         ))}
         {publicServices.map(({ serviceNumber, timings, status }) => (
-          <li key={`public-${serviceNumber}`} className={itemClassName}>
+          <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
               <span className="stop-departure-status">{publicTimingMessage(status)}</span>
             )}
           </li>
         ))}
-      </ul>
+      </GroupedList>
     </>
   )
 }

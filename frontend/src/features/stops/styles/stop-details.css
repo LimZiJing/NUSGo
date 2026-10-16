@@ -86,11 +86,8 @@
   }
 
   .stop-detail-map-departures .stop-departure-list {
-    display: grid;
-    gap: 6px;
     max-height: none;
     overflow: visible;
-    border-top: 0;
   }
 
   .stop-detail-map-departures .stop-departure-row {

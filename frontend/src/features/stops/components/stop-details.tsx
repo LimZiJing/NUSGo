@@ -106,7 +106,6 @@ export function StopDetails({
                 liveArrivalMessage={stop.liveArrivalMessage}
                 publicServices={stop.publicServices}
                 onSelectRoute={onSelectRoute}
-                rowClassName="mobile-detail-card"
               />
             </div>
           </div>

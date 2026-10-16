@@ -1,0 +1,19 @@
+.grouped-list {
+  --grouped-list-row-padding-block: 8px;
+  --grouped-list-row-padding-inline: 12px;
+
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  list-style: none;
+}
+
+.grouped-list > li + li {
+  border-top: 1px solid var(--border-subtle);
+}

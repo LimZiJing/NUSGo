@@ -104,6 +104,22 @@
   background: #64748b;
 }
 
+.venue-floor-map-label {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-md);
+  font: 600 11px/1 var(--sans);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .bus-marker {
   background: #64748b;
 }

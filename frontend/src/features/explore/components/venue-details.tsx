@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { findNearbyShuttleStops, type TransitIndex } from '../../../domain/transit'
-import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
+import { getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { BuildingIcon, BusIcon, ChevronRightIcon } from '../../../ui/icons'
 import { MobileMapDetailOverlay } from '../../../ui/mobile/mobile-map-detail-overlay'
@@ -33,15 +33,12 @@ export function VenueDetails({
 }: VenueDetailsProps) {
   const hasCoordinates = hasVenueCoordinates(venue.venue)
   const transitAvailable = transitIndex !== null
-  const floorAndBuilding = formatVenueFloorAndBuilding(
-    venue.venue.floor,
-    getVenueBuildingName(venue.code),
-  )
+  const venueBuildingName = getVenueBuildingName(venue.code)
   const venueLocation = venue.venue.location
   const nearbyStops = hasCoordinates && venueLocation && transitIndex
     ? findNearbyShuttleStops(venueLocation, transitIndex)
     : []
-  const venueSubtitle = [venue.venue.roomName, floorAndBuilding].filter(Boolean).join(' · ')
+  const venueSubtitle = [venue.venue.roomName, venueBuildingName].filter(Boolean).join(' · ')
   const venueHeading = (
     <h3
       id="explore-venue-detail-heading"
@@ -155,10 +152,10 @@ export function VenueDetails({
         {venueHeading}
         <p className="venue-detail-name">{venue.venue.roomName}</p>
       </div>
-      {floorAndBuilding && (
+      {venueBuildingName && (
         <p className="venue-detail-location">
           <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
-          <span>{floorAndBuilding}</span>
+          <span>{venueBuildingName}</span>
         </p>
       )}
       <div className="venue-detail-actions">

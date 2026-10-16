@@ -2,10 +2,38 @@ import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from '@navus/shared'
+import type { NusProviderConfig } from '../../../config.ts'
+import type { BusArrivalStop, BusArrivalStopResult } from '../../bus-arrivals/snapshot.ts'
+import {
+  createNusBusProxyRequest,
+  retryNusRequest,
+  type NusAuthenticatedClient,
+} from './client.ts'
+
+const NUS_BUS_ARRIVAL_ENDPOINT = 'shuttle-service'
 
 export interface ParsedNusBusArrivalRoute {
   readonly routeId: string
   readonly arrival: ShuttleRouteArrivalData
+}
+
+export interface NusBusArrivalProvider {
+  loadStop(stop: BusArrivalStop, signal: AbortSignal): Promise<BusArrivalStopResult>
+}
+
+interface NusBusArrivalProviderOptions {
+  readonly provider: NusProviderConfig
+  readonly client: NusAuthenticatedClient
+  readonly deviceId: string
+  readonly canonicalRouteIds: ReadonlySet<string>
+  readonly refreshIntervalMs: number
+  readonly retryAttempts: number
+  readonly retryBaseDelayMs: number
+  readonly now?: () => number
+}
+
+function toIso(timestampMs: number): string {
+  return new Date(timestampMs).toISOString()
 }
 
 interface RecordValue {
@@ -203,4 +231,32 @@ export function parseNusBusArrivalResponse(input: unknown): readonly ParsedNusBu
   const byRoute = new Map<string, ParsedNusBusArrivalRoute>()
   for (const route of parsed) byRoute.set(route.routeId, route)
   return [...byRoute.values()]
+}
+
+export function createNusBusArrivalProvider(
+  options: NusBusArrivalProviderOptions,
+): NusBusArrivalProvider {
+  const now = options.now ?? Date.now
+
+  return {
+    async loadStop(stop, signal) {
+      const payload = await retryNusRequest(() => options.client.requestJson((session) => createNusBusProxyRequest(
+        options.provider,
+        session,
+        options.deviceId,
+        NUS_BUS_ARRIVAL_ENDPOINT,
+        { busstopname: stop.stopName },
+      ), NUS_BUS_ARRIVAL_ENDPOINT, signal), signal, options.retryAttempts, options.retryBaseDelayMs)
+      const parsed = parseNusBusArrivalResponse(payload)
+      const routes = Object.fromEntries(parsed
+        .filter(({ routeId }) => options.canonicalRouteIds.has(routeId))
+        .map(({ routeId, arrival }) => [routeId, arrival]))
+      const observedAtMs = now()
+      return {
+        observedAt: toIso(observedAtMs),
+        expiresAt: toIso(observedAtMs + options.refreshIntervalMs),
+        routes,
+      }
+    },
+  }
 }

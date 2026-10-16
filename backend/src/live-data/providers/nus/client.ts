@@ -1,4 +1,5 @@
 import { fetchWithTimeout, UpstreamTimeoutError } from '../../timeouts.ts'
+import type { NusProviderConfig } from '../../../config.ts'
 export interface NusApiSession {
   readonly token: string
   readonly userId: string
@@ -8,6 +9,37 @@ export interface NusApiSession {
 export interface NusApiRequest {
   readonly url: string
   readonly init: RequestInit
+}
+
+export function createNusBusProxyRequest(
+  provider: NusProviderConfig,
+  session: NusApiSession,
+  deviceId: string,
+  endpoint: string,
+  extraBody: Record<string, string>,
+): NusApiRequest {
+  return {
+    url: provider.busProxyBaseUrl + '/univus/api/bus-proxy/' + endpoint,
+    init: {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + session.token,
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-HTD-API': provider.htdApi,
+        'X-APP-API': provider.appApi,
+        'X-API-KEY': provider.apiKey,
+      },
+      body: JSON.stringify({
+        ...extraBody,
+        deviceid: deviceId,
+        domain: session.domain,
+        ipaddr: provider.ipaddr,
+        token: session.token,
+        userid: session.userId,
+        version: provider.version,
+      }),
+    },
+  }
 }
 
 export interface NusAuthenticatedClient {
@@ -53,6 +85,43 @@ export class NusSessionExpiredError extends NusRequestError {
   constructor(message = 'The NUS session remained expired after refreshing the token') {
     super(message)
     this.name = 'NusSessionExpiredError'
+  }
+}
+
+function isRetryableNusError(error: unknown): boolean {
+  if (!(error instanceof NusRequestError)) return false
+  return error.status === null || error.status === 429 || error.status >= 500
+}
+
+export async function retryNusRequest<T>(
+  operation: () => Promise<T>,
+  signal: AbortSignal,
+  attempts: number,
+  baseDelayMs: number,
+): Promise<T> {
+  let retries = 0
+  while (true) {
+    try {
+      return await operation()
+    } catch (error: unknown) {
+      if (!isRetryableNusError(error) || retries >= attempts || signal.aborted) throw error
+      const delayMs = baseDelayMs * (2 ** retries)
+      retries += 1
+      if (delayMs === 0) continue
+      await new Promise<void>((resolveDelay, rejectDelay) => {
+        const timer = setTimeout(() => {
+          signal.removeEventListener('abort', abort)
+          resolveDelay()
+        }, delayMs)
+        timer.unref?.()
+        const abort = () => {
+          clearTimeout(timer)
+          signal.removeEventListener('abort', abort)
+          rejectDelay(signal.reason ?? new DOMException('The operation was aborted', 'AbortError'))
+        }
+        signal.addEventListener('abort', abort, { once: true })
+      })
+    }
   }
 }
 

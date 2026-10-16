@@ -7,28 +7,20 @@ import type {
   ApiShuttleArrivalsResponse,
   ApiShuttleServiceWindowsResponse,
   PublicBusArrivalSnapshot,
-  ShuttleServiceWindow,
 } from '@navus/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
-import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './providers/nus/client.ts'
-import { createBusArrivalSnapshotStore, type BusArrivalStop, type BusArrivalStopResult } from './bus-arrivals/snapshot.ts'
-import { parseNusBusArrivalResponse } from './providers/nus/bus-arrivals.ts'
-import { parseNusServiceWindows } from './providers/nus/service-windows.ts'
+import { createNusAuthenticatedClient } from './providers/nus/client.ts'
+import { createNusBusArrivalProvider } from './providers/nus/bus-arrivals.ts'
+import { loadNusBusStopMapping } from './providers/nus/bus-stop-mapping.ts'
+import { createNusServiceWindowsProvider } from './providers/nus/service-windows.ts'
+import { createBusArrivalSnapshotStore, type BusArrivalStop } from './bus-arrivals/snapshot.ts'
 import { mapWithConcurrency } from './concurrency.ts'
 import { fetchWithRetry } from './retry.ts'
 import { createLtaPublicBusArrivalProvider } from './lta/server.ts'
 import { parseLtaPublicBusStopMapping, type LtaPublicBusStopMapping } from './lta/mapping.ts'
 import { parseRequestedLtaStops } from './lta/request.ts'
 import { createLtaScheduleLoader } from './lta/schedule.ts'
-
-const SERVICE_WINDOWS_CACHE_TTL_MS = 600_000
-
-interface CachedServiceWindows {
-  readonly observedAt: string
-  readonly expiresAt: string
-  readonly windows: readonly ShuttleServiceWindow[]
-}
 
 export interface BackendLiveData {
   isSnapshotReady(): boolean
@@ -62,10 +54,6 @@ function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
 }
 
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError'
-}
-
 function requestError(error: unknown, fallback: string): LiveDataRequestError {
   return new LiveDataRequestError(
     400,
@@ -89,135 +77,6 @@ async function readLtaMappings(dataDirectory: string): Promise<unknown> {
   }
 }
 
-function parseNusProviderStops(
-  input: unknown,
-  canonicalStops: readonly BusArrivalStop[],
-): readonly BusArrivalStop[] {
-  if (!Array.isArray(input)) throw new Error('NUS provider stop names are invalid')
-
-  const canonicalStopIds = new Set(canonicalStops.map(({ stopId }) => stopId))
-  const providerNames = new Map<string, string>()
-  for (const [index, item] of input.entries()) {
-    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-      throw new Error(`NUS provider stop at index ${index} is invalid`)
-    }
-    const record = item as Record<string, unknown>
-    if (typeof record.name !== 'string' || typeof record.longName !== 'string') {
-      throw new Error(`NUS provider stop at index ${index} is missing its name`)
-    }
-
-    const stopId = record.name.trim()
-    const stopName = record.longName.trim()
-    if (!/^[A-Za-z0-9._-]{1,80}$/.test(stopId) || stopName.length === 0 || stopName.length > 160) {
-      throw new Error(`NUS provider stop at index ${index} has an invalid name`)
-    }
-    if (!canonicalStopIds.has(stopId)) continue
-    if (providerNames.has(stopId)) throw new Error(`Duplicate NUS provider stop: ${stopId}`)
-    providerNames.set(stopId, stopName)
-  }
-
-  const missingStopIds = canonicalStops
-    .filter(({ stopId }) => !providerNames.has(stopId))
-    .map(({ stopId }) => stopId)
-  if (missingStopIds.length > 0) {
-    throw new Error('NUS provider stop names are missing canonical stops: ' + missingStopIds.join(', '))
-  }
-
-  return canonicalStops.map(({ stopId }) => {
-    const stopName = providerNames.get(stopId)
-    if (!stopName) throw new Error(`NUS provider stop name is missing: ${stopId}`)
-    return { stopId, stopName }
-  })
-}
-
-async function readNusProviderStops(
-  dataDirectory: string,
-  canonicalStops: readonly BusArrivalStop[],
-): Promise<readonly BusArrivalStop[]> {
-  let text: string
-  try {
-    text = await readFile(join(dataDirectory, 'bus-stops.json'), 'utf8')
-  } catch {
-    throw new Error('NUS provider stop names could not be read')
-  }
-
-  let input: unknown
-  try {
-    input = JSON.parse(text) as unknown
-  } catch {
-    throw new Error('NUS provider stop names are not valid JSON')
-  }
-  return parseNusProviderStops(input, canonicalStops)
-}
-
-function createBusProxyRequest(
-  provider: NonNullable<BackendConfig['liveData']['nusProvider']>,
-  session: NusApiSession,
-  deviceId: string,
-  endpoint: string,
-  extraBody: Record<string, string>,
-): NusApiRequest {
-  return {
-    url: provider.busProxyBaseUrl + '/univus/api/bus-proxy/' + endpoint,
-    init: {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + session.token,
-        'Content-Type': 'application/json; charset=utf-8',
-        'X-HTD-API': provider.htdApi,
-        'X-APP-API': provider.appApi,
-        'X-API-KEY': provider.apiKey,
-      },
-      body: JSON.stringify({
-        ...extraBody,
-        deviceid: deviceId,
-        domain: session.domain,
-        ipaddr: provider.ipaddr,
-        token: session.token,
-        userid: session.userId,
-        version: provider.version,
-      }),
-    },
-  }
-}
-
-function isRetryableNusError(error: unknown): boolean {
-  if (!(error instanceof NusRequestError)) return false
-  return error.status === null || error.status === 429 || error.status >= 500
-}
-
-async function retryNusRequest<T>(
-  operation: () => Promise<T>,
-  signal: AbortSignal,
-  attempts: number,
-  baseDelayMs: number,
-): Promise<T> {
-  let retries = 0
-  while (true) {
-    try {
-      return await operation()
-    } catch (error: unknown) {
-      if (!isRetryableNusError(error) || retries >= attempts || signal.aborted) throw error
-      const delayMs = baseDelayMs * (2 ** retries)
-      retries += 1
-      if (delayMs === 0) continue
-      await new Promise<void>((resolveDelay, rejectDelay) => {
-        const timer = setTimeout(() => {
-          signal.removeEventListener('abort', abort)
-          resolveDelay()
-        }, delayMs)
-        timer.unref?.()
-        const abort = () => {
-          clearTimeout(timer)
-          signal.removeEventListener('abort', abort)
-          rejectDelay(signal.reason ?? new DOMException('The operation was aborted', 'AbortError'))
-        }
-        signal.addEventListener('abort', abort, { once: true })
-      })
-    }
-  }
-}
-
 export async function createBackendLiveData(
   config: BackendConfig,
   data: BackendData,
@@ -234,7 +93,7 @@ export async function createBackendLiveData(
     throw new Error('The live shuttle provider requires exactly 33 canonical stops')
   }
   const providerStops = providerConfig
-    ? await readNusProviderStops(config.dataDirectory, canonicalStops)
+    ? await loadNusBusStopMapping(config.dataDirectory, canonicalStops)
     : canonicalStops
   const routeIds = data.network.routes.map((route) => route.id)
   const canonicalRouteIds = new Set(routeIds)
@@ -263,33 +122,35 @@ export async function createBackendLiveData(
     })
     : null
 
-  const loadStop = async (
-    stop: BusArrivalStop,
-    signal: AbortSignal,
-  ): Promise<BusArrivalStopResult> => {
-    if (!nusClient || !providerConfig) throw new Error('NUS live-data provider is not configured')
-    const payload = await retryNusRequest(() => nusClient.requestJson((session) => createBusProxyRequest(
-      providerConfig,
-      session,
+  const nusBusArrivals = providerConfig && nusClient
+    ? createNusBusArrivalProvider({
+      provider: providerConfig,
+      client: nusClient,
       deviceId,
-      'shuttle-service',
-      { busstopname: stop.stopName },
-    ), 'shuttle-service', signal), signal, config.liveData.retryAttempts, config.liveData.retryBaseDelayMs)
-    const parsed = parseNusBusArrivalResponse(payload)
-    const routes = Object.fromEntries(parsed
-      .filter(({ routeId }) => canonicalRouteIds.has(routeId))
-      .map(({ routeId, arrival }) => [routeId, arrival]))
-    const observedAtMs = now()
-    return {
-      observedAt: toIso(observedAtMs),
-      expiresAt: toIso(observedAtMs + config.liveData.shuttleRefreshIntervalMs),
-      routes,
-    }
-  }
+      canonicalRouteIds,
+      refreshIntervalMs: config.liveData.shuttleRefreshIntervalMs,
+      retryAttempts: config.liveData.retryAttempts,
+      retryBaseDelayMs: config.liveData.retryBaseDelayMs,
+      now,
+    })
+    : null
+  const nusServiceWindows = providerConfig && nusClient
+    ? createNusServiceWindowsProvider({
+      provider: providerConfig,
+      client: nusClient,
+      deviceId,
+      retryAttempts: config.liveData.retryAttempts,
+      retryBaseDelayMs: config.liveData.retryBaseDelayMs,
+      now,
+    })
+    : null
 
   const snapshotStore = createBusArrivalSnapshotStore({
     stops: providerStops,
-    loadStop,
+    loadStop(stop, signal) {
+      if (!nusBusArrivals) throw new Error('NUS live-data provider is not configured')
+      return nusBusArrivals.loadStop(stop, signal)
+    },
     refreshIntervalMs: config.liveData.shuttleRefreshIntervalMs,
     maxConcurrency: config.liveData.maxConcurrency,
     now,
@@ -305,56 +166,11 @@ export async function createBackendLiveData(
   })
 
   const shutdownController = new AbortController()
-  const serviceWindowCache = new Map<string, CachedServiceWindows>()
-  // Shared cache loads outlive individual callers and are cancelled when Express stops.
-  const serviceWindowInFlight = new Map<string, Promise<CachedServiceWindows | null>>()
   const activeOperations = new Set<Promise<unknown>>()
   const track = <Value>(operation: Promise<Value>): Promise<Value> => {
     activeOperations.add(operation)
     void operation.finally(() => activeOperations.delete(operation)).catch(() => undefined)
     return operation
-  }
-
-  const loadServiceWindows = (
-    routeId: string,
-    signal: AbortSignal,
-  ): Promise<CachedServiceWindows | null> => {
-    const cached = serviceWindowCache.get(routeId)
-    if (cached && Date.parse(cached.expiresAt) > now()) return Promise.resolve(cached)
-    const existing = serviceWindowInFlight.get(routeId)
-    if (existing) return existing
-    if (!nusClient || !providerConfig) return Promise.resolve(null)
-
-    const request = (async (): Promise<CachedServiceWindows | null> => {
-      try {
-        const payload = await retryNusRequest(() => nusClient.requestJson((session) => createBusProxyRequest(
-          providerConfig,
-          session,
-          deviceId,
-          'route-min-max-time',
-          { route_code: routeId },
-        ), 'route-min-max-time', signal), signal, config.liveData.retryAttempts, config.liveData.retryBaseDelayMs)
-        const observedAtMs = now()
-        const entry = {
-          observedAt: toIso(observedAtMs),
-          expiresAt: toIso(observedAtMs + SERVICE_WINDOWS_CACHE_TTL_MS),
-          windows: parseNusServiceWindows(payload, routeId),
-        }
-        serviceWindowCache.set(routeId, entry)
-        return entry
-      } catch (error: unknown) {
-        if (isAbortError(error)) throw error
-        console.warn('NUS route service-hour data unavailable.', {
-          routeId,
-          errorType: error instanceof Error ? error.name : typeof error,
-        })
-        return null
-      } finally {
-        serviceWindowInFlight.delete(routeId)
-      }
-    })()
-    serviceWindowInFlight.set(routeId, request)
-    return request
   }
 
   const publicBusFetcher: typeof fetch = (input, init) => fetchWithRetry(
@@ -419,7 +235,9 @@ export async function createBackendLiveData(
       const operation = (async (): Promise<ApiShuttleServiceWindowsResponse> => {
         const entries = await mapWithConcurrency(routes, config.liveData.maxConcurrency, async (routeId) => ({
           routeId,
-          data: await loadServiceWindows(routeId, signal),
+          data: nusServiceWindows
+            ? await nusServiceWindows.load(routeId, signal)
+            : null,
         }))
         if (entries.some(({ data: entry }) => entry === null)) {
           throw new LiveDataRequestError(503, 'provider_unavailable', 'Shuttle service-window data is unavailable')

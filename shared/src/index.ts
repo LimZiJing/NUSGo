@@ -1,6 +1,23 @@
 export { parseApiOrigin, parseCorsOrigins } from './http/api-origin.ts'
 export { LOCAL_DATA_VERSION, parseDataVersion, assertCompatibleDataVersion } from './http/data-version.ts'
-export type { ApiHealthResponse, ApiReadyResponse, ApiErrorResponse } from './http/api-contracts.ts'
+export type {
+  ApiHealthResponse,
+  ApiReadyResponse,
+  ApiNotReadyResponse,
+  ApiReadinessResponse,
+  ApiErrorResponse,
+  ApiErrorCode,
+} from './http/api-contracts.ts'
+export type {
+  ApiStopSelection,
+  ApiShuttleArrivalsRequest,
+  ApiShuttleArrivalsResponse,
+  ApiPublicBusArrivalsRequest,
+  ApiPublicBusArrivalsResponse,
+  ApiShuttleServiceWindowsRequest,
+  ApiShuttleServiceWindowsResponse,
+  ApiRequestOptions,
+} from './http/live-data-contracts.ts'
 
 export {
   TransitValidationError,
@@ -47,3 +64,28 @@ export type {
 export { WALKING_STOP_GRAPH_VERSION, validateWalkingStopGraph } from './routing/walking-stop-graph.ts'
 export type { WalkingStopGraph } from './routing/walking-stop-graph.ts'
 export type { WalkingConnection } from './routing/walking-connection.ts'
+export type {
+  DataFreshness,
+  ShuttleArrivalObservation,
+  ShuttleHeadwaySeconds,
+  ShuttleRouteArrivalData,
+  ShuttleArrivalSnapshot,
+} from './transit/live-arrivals.ts'
+export {
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+  SHUTTLE_ARRIVAL_FRESHNESS_MS,
+  SHUTTLE_ARRIVAL_MAX_AGE_MS,
+} from './transit/live-arrivals.ts'
+export type {
+  PublicBusServiceArrivalStatus,
+  PublicBusEstimatedArrival,
+  PublicBusServiceArrival,
+  PublicBusStopArrivalData,
+  PublicBusArrivalSnapshot,
+} from './transit/public-bus-arrivals.ts'
+export {
+  PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS,
+  PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
+  PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
+} from './transit/public-bus-arrivals.ts'
+export type { ShuttleServiceWindow } from './transit/service-hours.ts'

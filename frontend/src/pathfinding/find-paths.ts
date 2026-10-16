@@ -2,6 +2,7 @@ import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { TransitIndex } from '../domain/transit'
 import type { TripEndpoint } from '../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { BuildingIndex } from '../domain/venue/building-index'
 import type { ShuttleTimingData } from '@navus/shared/transit/timing'
 import type { BusRouteGeometry } from '@navus/shared/transit/types'
 import type { ShuttleServiceWindow } from '../domain/transit/service-hours'
@@ -36,6 +37,7 @@ export interface FindPathsRequest {
   readonly origin: TripEndpoint
   readonly destination: TripEndpoint
   readonly venues: VenueLocationMap
+  readonly buildings?: BuildingIndex | null
   readonly transit: {
     readonly index: TransitIndex
     readonly geometry: BusRouteGeometry
@@ -121,6 +123,7 @@ export async function findPaths(
     request.destination,
     request.venues,
     request.transit.index,
+    request.buildings ?? null,
   )
   if (!endpoints) return null
 

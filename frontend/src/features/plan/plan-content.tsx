@@ -1,6 +1,7 @@
 import { getTripEndpointKey } from '../../domain/trip/endpoints.ts'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripRequest } from '../../domain/trip/types.ts'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { PlanEndpointControl, type OriginLocationRequestState } from './components/plan-endpoint-control.tsx'
 import { JourneyResults, type JourneyResultsState } from './components/journey-results.tsx'
@@ -14,6 +15,7 @@ import './styles/plan-content.css'
 interface PlanContentProps {
   tripRequest: TripRequest
   venues: VenueLocationMap | null
+  buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   form: PlanTripFormBindings
   onSearchFocus?: () => void
@@ -33,6 +35,7 @@ const PLAN_CONTENT_PANEL_ID = 'plan-content-panel'
 export function PlanContent({
   tripRequest,
   venues,
+  buildings = null,
   networkIndex,
   form,
   onSearchFocus,
@@ -66,6 +69,7 @@ export function PlanContent({
             role="origin"
             endpoint={tripRequest.origin}
             venues={venues}
+          buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={form.searchQueries.origin}
             onSearchQueryChange={(query) => form.onSearchQueryChange('origin', query)}
@@ -83,6 +87,7 @@ export function PlanContent({
             role="destination"
             endpoint={tripRequest.destination}
             venues={venues}
+          buildings={buildings}
             networkIndex={networkIndex}
             searchQuery={form.searchQueries.destination}
             onSearchQueryChange={(query) => form.onSearchQueryChange('destination', query)}
@@ -127,6 +132,7 @@ export function PlanContent({
         <JourneyResults
           state={path}
           venues={venues}
+          buildings={buildings}
           networkIndex={networkIndex}
           simulated={simulatedAtMs !== null}
           onSelectCandidate={onSelectJourneyOption}

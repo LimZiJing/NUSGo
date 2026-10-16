@@ -9,7 +9,7 @@
   color: var(--text-primary);
   background: transparent;
   box-shadow: none;
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
 }
 
 .explore-bus-route-list .route-scroll-arrow {
@@ -71,7 +71,7 @@
   border-radius: 0;
   color: var(--text-contrast);
   background: transparent;
-  font: 14px/1.2 var(--sans);
+  font: var(--font-size-md)/1.2 var(--sans);
   text-align: left;
   cursor: pointer;
 }
@@ -123,18 +123,18 @@
 
 .explore-bus-route-list-stop-text small {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
 }
 
 .explore-bus-route-list-chevron {
   color: var(--text-muted);
-  font-size: 23px;
+  font-size: var(--font-size-3xl);
 }
 
 .explore-bus-route-list-selection-status {
   margin: 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   line-height: 1.4;
 }
 

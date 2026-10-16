@@ -1,5 +1,10 @@
 import { resolve } from 'node:path'
-import { LOCAL_DATA_VERSION, parseCorsOrigins, parseDataVersion } from '@navus/shared'
+import {
+  LOCAL_DATA_VERSION,
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+  parseCorsOrigins,
+  parseDataVersion,
+} from '@navus/shared'
 
 const PAGES_ORIGIN = 'https://limzijing.github.io'
 const DEVELOPMENT_ORIGINS = Object.freeze([
@@ -7,6 +12,22 @@ const DEVELOPMENT_ORIGINS = Object.freeze([
   'http://127.0.0.1:5173',
   PAGES_ORIGIN,
 ])
+const DEFAULT_ACCESS_TOKEN_URL = 'https://myizaac2.nus.edu.sg/univus-public/mobile/get-access-token'
+const DEFAULT_NUS_APP_VERSION = 'univus_android_2.59.2_140'
+
+export interface NusProviderConfig {
+  readonly busProxyBaseUrl: string
+  readonly accessTokenUrl: string
+  readonly htdApi: string
+  readonly appApi: string
+  readonly apiKey: string
+  readonly deviceId: string
+  readonly ipaddr: string
+  readonly version: string
+  readonly initialToken?: string
+  readonly initialUserId?: string
+  readonly initialDomain?: string
+}
 
 export interface BackendConfig {
   readonly environment: 'development' | 'test' | 'production'
@@ -15,16 +36,37 @@ export interface BackendConfig {
   readonly corsOrigins: readonly string[]
   readonly dataVersion: string
   readonly dataDirectory: string
+  readonly liveData: {
+    readonly shuttleRefreshIntervalMs: number
+    readonly requestTimeoutMs: number
+    readonly maxConcurrency: number
+    readonly retryAttempts: number
+    readonly retryBaseDelayMs: number
+    readonly nusProvider: NusProviderConfig | null
+    readonly ltaAccountKey: string
+  }
+}
+
+function parseInteger(
+  value: string | undefined,
+  fallback: number,
+  name: string,
+  minimum: number,
+  maximum: number,
+): number {
+  if (value === undefined || value.trim() === '') return fallback
+  if (!/^\d+$/.test(value.trim())) {
+    throw new Error(name + ' must be an integer from ' + minimum + ' to ' + maximum)
+  }
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw new Error(name + ' must be an integer from ' + minimum + ' to ' + maximum)
+  }
+  return parsed
 }
 
 function parsePort(value: string | undefined): number {
-  if (value === undefined) return 3001
-  if (!/^\d+$/.test(value.trim())) throw new Error('PORT must be an integer from 1 to 65535')
-  const port = Number(value)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('PORT must be an integer from 1 to 65535')
-  }
-  return port
+  return parseInteger(value, 3001, 'PORT', 1, 65535)
 }
 
 function parseEnvironment(value: string | undefined): BackendConfig['environment'] {
@@ -33,6 +75,61 @@ function parseEnvironment(value: string | undefined): BackendConfig['environment
     throw new Error('NODE_ENV must be development, test, or production')
   }
   return environment
+}
+
+function optionalText(environment: Record<string, string | undefined>, name: string): string {
+  return environment[name]?.trim() ?? ''
+}
+
+function parseNusProviderConfig(
+  environment: Record<string, string | undefined>,
+): NusProviderConfig | null {
+  const required = {
+    busProxyBaseUrl: optionalText(environment, 'NUS_BUS_PROXY_BASE_URL').replace(/\/+$/, ''),
+    htdApi: optionalText(environment, 'NUS_X_HTD_API'),
+    appApi: optionalText(environment, 'NUS_X_APP_API'),
+    apiKey: optionalText(environment, 'NUS_X_API_KEY'),
+  }
+  const values = Object.values(required)
+  if (values.every((value) => value.length === 0)) return null
+  if (values.some((value) => value.length === 0)) {
+    throw new Error('NUS live-data configuration requires NUS_BUS_PROXY_BASE_URL, NUS_X_HTD_API, NUS_X_APP_API, and NUS_X_API_KEY')
+  }
+
+  let baseUrl: URL
+  try {
+    baseUrl = new URL(required.busProxyBaseUrl)
+  } catch {
+    throw new Error('NUS_BUS_PROXY_BASE_URL must be an HTTPS URL')
+  }
+  if (baseUrl.protocol !== 'https:') {
+    throw new Error('NUS_BUS_PROXY_BASE_URL must be an HTTPS URL')
+  }
+
+  const accessTokenUrl = optionalText(environment, 'NUS_ACCESS_TOKEN_URL') || DEFAULT_ACCESS_TOKEN_URL
+  let tokenUrl: URL
+  try {
+    tokenUrl = new URL(accessTokenUrl)
+  } catch {
+    throw new Error('NUS_ACCESS_TOKEN_URL must be an HTTPS URL')
+  }
+  if (tokenUrl.protocol !== 'https:') throw new Error('NUS_ACCESS_TOKEN_URL must use HTTPS')
+
+  const deviceId = optionalText(environment, 'NUS_DEVICE_ID')
+  const initialToken = optionalText(environment, 'NUS_UNIVUS_JWT')
+  const initialUserId = optionalText(environment, 'NUS_USER_ID')
+  const initialDomain = optionalText(environment, 'NUS_DOMAIN')
+
+  return Object.freeze({
+    ...required,
+    accessTokenUrl,
+    deviceId,
+    ipaddr: optionalText(environment, 'NUS_IPADDR') || '0.0.0.0',
+    version: optionalText(environment, 'NUS_APP_VERSION') || DEFAULT_NUS_APP_VERSION,
+    ...(initialToken ? { initialToken } : {}),
+    ...(initialUserId ? { initialUserId } : {}),
+    ...(initialDomain ? { initialDomain } : {}),
+  })
 }
 
 export function loadBackendConfig(
@@ -56,7 +153,7 @@ export function loadBackendConfig(
 
   if (mode === 'production') {
     if (!corsOrigins.includes(PAGES_ORIGIN)) {
-      throw new Error(`API_CORS_ORIGINS must include ${PAGES_ORIGIN}`)
+      throw new Error('API_CORS_ORIGINS must include ' + PAGES_ORIGIN)
     }
     if (corsOrigins.some((origin) => !origin.startsWith('https://'))) {
       throw new Error('Production API_CORS_ORIGINS entries must use HTTPS')
@@ -78,5 +175,32 @@ export function loadBackendConfig(
     corsOrigins,
     dataVersion,
     dataDirectory: resolve(workingDirectory, dataPath),
+    liveData: Object.freeze({
+      shuttleRefreshIntervalMs: parseInteger(
+        environment.NUS_SHUTTLE_REFRESH_INTERVAL_MS,
+        SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+        'NUS_SHUTTLE_REFRESH_INTERVAL_MS',
+        1_000,
+        300_000,
+      ),
+      requestTimeoutMs: parseInteger(
+        environment.LIVE_DATA_REQUEST_TIMEOUT_MS,
+        5_000,
+        'LIVE_DATA_REQUEST_TIMEOUT_MS',
+        250,
+        60_000,
+      ),
+      maxConcurrency: parseInteger(
+        environment.LIVE_DATA_MAX_CONCURRENCY,
+        6,
+        'LIVE_DATA_MAX_CONCURRENCY',
+        1,
+        16,
+      ),
+      retryAttempts: parseInteger(environment.LIVE_DATA_RETRY_ATTEMPTS, 1, 'LIVE_DATA_RETRY_ATTEMPTS', 0, 3),
+      retryBaseDelayMs: parseInteger(environment.LIVE_DATA_RETRY_BASE_DELAY_MS, 200, 'LIVE_DATA_RETRY_BASE_DELAY_MS', 0, 5_000),
+      nusProvider: parseNusProviderConfig(environment),
+      ltaAccountKey: optionalText(environment, 'LTA_ACCOUNT_KEY'),
+    }),
   })
 }

@@ -10,6 +10,8 @@ export interface ExploreState {
   readonly mode: ExploreMode
   readonly query: string
   readonly selectedVenue: VenueSearchResult | null
+  /** A selected building or repeated-name group; never set together with selectedVenue. */
+  readonly selectedBuildingId: string | null
   readonly history: readonly ExploreSnapshot[]
 }
 
@@ -17,11 +19,13 @@ export interface ExploreSnapshot {
   readonly mode: ExploreMode
   readonly query: string
   readonly selectedVenue: VenueSearchResult | null
+  readonly selectedBuildingId: string | null
 }
 
 export type ExploreAction =
   | { type: 'set-query'; query: string }
   | { type: 'select-venue'; result: VenueSearchResult }
+  | { type: 'select-building'; buildingId: string }
   | { type: 'open-bus-routes' }
   | { type: 'back' }
   | { type: 'escape' }
@@ -33,6 +37,7 @@ export function createInitialExploreState(): ExploreState {
     mode: 'neutral',
     query: '',
     selectedVenue: null,
+    selectedBuildingId: null,
     history: [],
   }
 }
@@ -42,6 +47,7 @@ function createSnapshot(state: ExploreState): ExploreSnapshot {
     mode: state.mode,
     query: state.query,
     selectedVenue: state.selectedVenue,
+    selectedBuildingId: state.selectedBuildingId,
   }
 }
 
@@ -60,6 +66,7 @@ function closePanel(state: ExploreState): ExploreState {
     mode: 'neutral',
     query: state.query,
     selectedVenue: null,
+    selectedBuildingId: null,
     history: [],
   }
 }
@@ -86,6 +93,14 @@ export function exploreReducer(
         mode: 'venue-detail',
         query: state.query,
         selectedVenue: action.result,
+        selectedBuildingId: null,
+      })
+    case 'select-building':
+      return pushCurrentState(state, {
+        mode: 'venue-detail',
+        query: state.query,
+        selectedVenue: null,
+        selectedBuildingId: action.buildingId,
       })
     case 'open-bus-routes':
       if (state.mode === 'bus-routes') return state
@@ -93,6 +108,7 @@ export function exploreReducer(
         mode: 'bus-routes',
         query: state.query,
         selectedVenue: null,
+        selectedBuildingId: null,
       })
     case 'back':
       return goBack(state)

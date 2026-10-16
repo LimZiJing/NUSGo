@@ -219,8 +219,9 @@ export function createShuttleArrivalClient(
       if (cached && cached.cacheExpiresAt > now() && hasStops(cached.snapshot, stops)) return
     }
 
+    const requestedStopIds = stops.map(({ stopId }) => stopId)
     const request = fetcher(
-      `${endpoint}?stops=${encodeURIComponent(JSON.stringify(stops))}`,
+      `${endpoint}?stops=${encodeURIComponent(JSON.stringify(requestedStopIds))}`,
       { signal },
     )
       .then(async (response) => {

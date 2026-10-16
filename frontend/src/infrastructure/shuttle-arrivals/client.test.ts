@@ -48,10 +48,7 @@ describe('createShuttleArrivalClient', () => {
 
     expect(fetcher).toHaveBeenCalledOnce()
     const requestUrl = new URL(String(fetcher.mock.calls[0][0]), 'http://localhost')
-    expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual([
-      { stopId: 'PGP', stopName: 'PGP' },
-      { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
-    ])
+    expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual(['PGP', 'KR-MRT'])
     expect(Object.keys(result.stops)).toEqual(['PGP', 'KR-MRT'])
   })
 
@@ -74,6 +71,35 @@ describe('createShuttleArrivalClient', () => {
 
     expect(fetcher).toHaveBeenCalledOnce()
     expect(Object.keys(result.stops)).toHaveLength(17)
+  })
+
+  it('requests 33 stops without exceeding the API URL limit', async () => {
+    const stops = Array.from({ length: 33 }, (_, index) => ({
+      stopId: `STOP-${String(index).padStart(2, '0')}`,
+      stopName: `Campus stop ${index} with a longer display name`,
+    }))
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: Object.fromEntries(stops.map(({ stopId }, index) => [
+        stopId,
+        index === 0
+          ? { A1: { nextArrivalSeconds: 120, upcomingArrivalSeconds: [120], headwaySeconds: null } }
+          : {},
+      ])),
+    }), { status: 200 }))
+
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals(
+      stops,
+      new AbortController().signal,
+    )
+
+    expect(fetcher).toHaveBeenCalledOnce()
+    const requestUrl = new URL(String(fetcher.mock.calls[0][0]), 'http://localhost')
+    expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual(stops.map(({ stopId }) => stopId))
+    expect(`${requestUrl.pathname}${requestUrl.search}`.length).toBeLessThanOrEqual(2048)
+    expect(result.stops['STOP-00']?.A1.nextArrivalSeconds).toBe(120)
+    expect(Object.keys(result.stops)).toHaveLength(33)
   })
 
   it('reuses cached stop data and shares an in-progress request', async () => {
@@ -184,11 +210,11 @@ describe('createShuttleArrivalClient', () => {
   it('keeps each stop observation and provider expiry when combining cached stops', async () => {
     let now = nowMs
     const fetcher = vi.fn<typeof fetch>(async (input) => {
-      const requestedStops = JSON.parse(
+      const requestedStopIds = JSON.parse(
         new URL(String(input), 'http://localhost').searchParams.get('stops') ?? '[]',
-      ) as { stopId: string }[]
-      const stops = Object.fromEntries(requestedStops.map(({ stopId }) => [stopId, {}]))
-      const stopObservations = Object.fromEntries(requestedStops.map(({ stopId }) => [stopId, {
+      ) as string[]
+      const stops = Object.fromEntries(requestedStopIds.map((stopId) => [stopId, {}]))
+      const stopObservations = Object.fromEntries(requestedStopIds.map((stopId) => [stopId, {
         observedAt: stopId === 'PGP' ? '2026-09-23T13:48:26+08:00' : '2026-09-23T13:49:26+08:00',
         expiresAt: stopId === 'PGP' ? '2026-09-23T13:49:26+08:00' : '2026-09-23T13:50:26+08:00',
       }]))

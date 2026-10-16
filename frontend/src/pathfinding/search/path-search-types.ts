@@ -104,6 +104,9 @@ export interface ShuttleRideDefinition {
   readonly routeId: string
   readonly fromStopId: string
   readonly toStopId: string
+  /** Positions in the Route's stop order; a loop Route repeats its first stop id at the end. */
+  readonly fromStopIndex: number
+  readonly toStopIndex: number
   readonly traversedStopIds: ReadonlySet<string>
   readonly rideSeconds: number
   readonly record: ShuttleTimingRecord

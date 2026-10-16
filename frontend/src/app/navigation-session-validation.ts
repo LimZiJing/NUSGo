@@ -1,5 +1,6 @@
 import type { TransitIndex } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
+import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
@@ -25,6 +26,7 @@ export function canonicalizeTripEndpoint(
   endpoint: unknown,
   venues: VenueLocationMap | null,
   transitIndex: TransitIndex | null,
+  buildings: BuildingIndex | null = null,
 ): TripEndpoint | null {
   if (!isRecord(endpoint)) return null
   if (endpoint.kind === 'current-location') {
@@ -33,6 +35,9 @@ export function canonicalizeTripEndpoint(
   if (typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return null
   if (endpoint.kind === 'venue' && hasMappedLocation(venues?.[endpoint.id])) {
     return { kind: 'venue', id: endpoint.id }
+  }
+  if (endpoint.kind === 'building' && buildings?.byId.has(endpoint.id)) {
+    return { kind: 'building', id: endpoint.id }
   }
   if (endpoint.kind === 'stop' && transitIndex?.stopById.has(endpoint.id)) {
     return { kind: 'stop', id: endpoint.id }

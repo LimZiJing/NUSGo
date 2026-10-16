@@ -56,4 +56,4 @@ Use `var(--sans)` for all text (`font: 600 14px/1.2 var(--sans)`). Do not write 
 
 ## Migration
 
-Existing stylesheets move onto the scale one at a time, with the nearest step chosen for off-scale values (10px and 11px become 12px; 15px becomes 14px or 16px; 17px becomes 16px or 18px; 23px becomes 24px). Radius and spacing follow the rules in their sections above.
+Font sizes are on the scale in every stylesheet. Off-scale values moved to the nearest step: 10px and 11px became 12px, 15px and 17px became 16px, and 23px became 24px. `type-scale.test.ts` fails on a literal `font` or `font-size` of 24px or less outside `tokens.css`. Radius and spacing follow the rules in their sections above.

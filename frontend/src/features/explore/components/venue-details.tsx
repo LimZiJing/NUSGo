@@ -5,7 +5,9 @@ import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates 
 import { getRouteContrastTextColor } from '../../../domain/transit/route-color'
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
-import { BuildingIcon, BusIcon, ChevronRightIcon } from '../../../ui/icons'
+import type { BuildingEntry } from '../../../domain/venue/building-index'
+import type { VenueLocation } from '@navus/shared/venue/types'
+import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
 
 interface VenueDetailsProps {
   readonly venue: VenueSearchResult
@@ -13,6 +15,68 @@ interface VenueDetailsProps {
   readonly headingRef: RefObject<HTMLHeadingElement | null>
   readonly onNavigateToVenue?: (venueCode: string) => void
   readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
+}
+
+interface NearbyStopsProps {
+  readonly location: VenueLocation['location']
+  readonly transitIndex: TransitIndex | null
+  readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
+}
+
+function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) {
+  const transitAvailable = transitIndex !== null
+  const nearbyStops = transitIndex ? findNearbyShuttleStops(location, transitIndex) : []
+
+  return (
+    <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
+      <h4 id="venue-nearby-stops-heading">
+        <BusIcon />
+        Nearby bus stops within 500 m
+      </h4>
+      {!transitAvailable ? (
+        <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
+      ) : nearbyStops.length === 0 ? (
+        <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
+      ) : (
+        <div className="venue-nearby-stop-list">
+          {nearbyStops.map(({ stop, services }) => (
+            <button
+              key={stop.id}
+              className="nearby-stop-row"
+              type="button"
+              data-stop-id={stop.id}
+              aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+              onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
+            >
+              <span className="nearby-stop-identity">
+                <span className="nearby-stop-name">
+                  <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                  <strong>{stop.longName}</strong>
+                </span>
+                <small>{stop.id}</small>
+              </span>
+              <span className="nearby-stop-services" aria-hidden="true">
+                {services.map((route) => (
+                  <span
+                    key={route.id}
+                    className="venue-detail-service-badge"
+                    data-service-id={route.id}
+                    style={{
+                      backgroundColor: route.color,
+                      color: getRouteContrastTextColor(route.color),
+                    }}
+                  >
+                    {route.id}
+                  </span>
+                ))}
+              </span>
+              <ChevronRightIcon className="nearby-stop-arrow" />
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  )
 }
 
 export function VenueDetails({
@@ -23,15 +87,11 @@ export function VenueDetails({
   onFocusStop,
 }: VenueDetailsProps) {
   const hasCoordinates = hasVenueCoordinates(venue.venue)
-  const transitAvailable = transitIndex !== null
   const floorAndBuilding = formatVenueFloorAndBuilding(
     venue.venue.floor,
     getVenueBuildingName(venue.code),
   )
   const venueLocation = venue.venue.location
-  const nearbyStops = hasCoordinates && venueLocation && transitIndex
-    ? findNearbyShuttleStops(venueLocation, transitIndex)
-    : []
 
   return (
     <div
@@ -45,7 +105,7 @@ export function VenueDetails({
           tabIndex={-1}
           aria-label={`${venue.code}, venue`}
         >
-          <BuildingIcon className="location-identity-icon location-identity-icon--venue" />
+          <RoomIcon className="location-identity-icon location-identity-icon--venue" />
           {venue.code}
         </h3>
         <p className="venue-detail-name">{venue.venue.roomName}</p>
@@ -71,56 +131,78 @@ export function VenueDetails({
           <img src={nusmodsLogoUrl} alt="NUSMods" />
         </a>
       </div>
-      {hasCoordinates && (
-        <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
-          <h4 id="venue-nearby-stops-heading">
-            <BusIcon />
-            Nearby bus stops within 500 m
-          </h4>
-          {!transitAvailable ? (
-            <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
-          ) : nearbyStops.length === 0 ? (
-            <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
-          ) : (
-            <div className="venue-nearby-stop-list">
-              {nearbyStops.map(({ stop, services }) => (
-                <button
-                  key={stop.id}
-                  className="nearby-stop-row"
-                  type="button"
-                  data-stop-id={stop.id}
-                  aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
-                  onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
-                >
-                  <span className="nearby-stop-identity">
-                    <span className="nearby-stop-name">
-                      <BusIcon className="location-identity-icon location-identity-icon--stop" />
-                      <strong>{stop.longName}</strong>
-                    </span>
-                    <small>{stop.id}</small>
-                  </span>
-                  <span className="nearby-stop-services" aria-hidden="true">
-                    {services.map((route) => (
-                      <span
-                        key={route.id}
-                        className="venue-detail-service-badge"
-                        data-service-id={route.id}
-                        style={{
-                          backgroundColor: route.color,
-                          color: getRouteContrastTextColor(route.color),
-                        }}
-                      >
-                        {route.id}
-                      </span>
-                    ))}
-                  </span>
-                  <ChevronRightIcon className="nearby-stop-arrow" />
-                </button>
-              ))}
-            </div>
-          )}
+      {hasCoordinates && venueLocation && (
+        <NearbyStops location={venueLocation} transitIndex={transitIndex} onFocusStop={onFocusStop} />
+      )}
+    </div>
+  )
+}
+
+interface BuildingDetailsProps {
+  readonly building: BuildingEntry
+  readonly roomCount: number
+  readonly transitIndex: TransitIndex | null
+  readonly headingRef: RefObject<HTMLHeadingElement | null>
+  readonly onNavigateToBuilding?: (buildingId: string) => void
+  readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
+}
+
+export function BuildingDetails({
+  building,
+  roomCount,
+  transitIndex,
+  headingRef,
+  onNavigateToBuilding,
+  onFocusStop,
+}: BuildingDetailsProps) {
+  const { parts } = building
+  // Parts that share one address would only repeat it, so say it once.
+  const sharedAddress = parts[0].address && parts.every((part) => part.address === parts[0].address)
+    ? parts[0].address
+    : null
+  const summary = [
+    parts.length > 1 ? `${parts.length} buildings` : null,
+    `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`,
+  ].filter((part): part is string => part !== null).join(' · ')
+
+  return (
+    <div
+      id="explore-content-panel"
+      className="navigation-panel-content navigation-panel-scroll-content explore-content-panel explore-content-detail"
+    >
+      <div className="venue-detail-identity">
+        <h3
+          id="explore-venue-detail-heading"
+          ref={headingRef}
+          tabIndex={-1}
+          aria-label={`${building.name}, building`}
+        >
+          <BuildingIcon className="location-identity-icon location-identity-icon--building" />
+          {building.name}
+        </h3>
+        {sharedAddress && <p className="venue-detail-name">{sharedAddress}</p>}
+      </div>
+      <p className="venue-detail-location">
+        <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
+        <span>{summary}</span>
+      </p>
+      {parts.length > 1 && sharedAddress && (
+        <p className="venue-building-parts-note">Each building is marked on the map.</p>
+      )}
+      {parts.length > 1 && !sharedAddress && (
+        <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
+          <h4 id="venue-building-parts-heading">Buildings in this group</h4>
+          <ul>
+            {parts.map((part, index) => (
+              <li key={part.id}>{`Part ${index + 1}${part.address ? ` · ${part.address}` : ''}`}</li>
+            ))}
+          </ul>
         </section>
       )}
+      <div className="venue-detail-actions">
+        <NavigateButton onClick={() => onNavigateToBuilding?.(building.id)} />
+      </div>
+      <NearbyStops location={building.location} transitIndex={transitIndex} onFocusStop={onFocusStop} />
     </div>
   )
 }

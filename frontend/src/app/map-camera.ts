@@ -3,6 +3,8 @@ import type { TransitIndex } from '../domain/transit'
 import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { TripRequest } from '../domain/trip/types'
+import { getTripEndpointCoordinate, type TripEndpointLocationSources } from '../domain/trip/endpoint-location'
+import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type {
@@ -51,6 +53,7 @@ export interface ResetTargetContext {
   readonly selectedRouteId: string | null
   readonly tripRequest: TripRequest
   readonly venues: VenueLocationMap | null
+  readonly buildings?: BuildingIndex | null
   readonly transitIndex: TransitIndex | null
 }
 
@@ -78,29 +81,13 @@ export function calculateMapOverlayInsets(
   }
 }
 
-function getVenueCoordinate(
-  id: string,
-  venues: VenueLocationMap | null,
-): MapCoordinate | null {
-  const location = venues?.[id]?.location
-  if (!location || !Number.isFinite(location.x) || !Number.isFinite(location.y)) return null
-  return [location.x, location.y]
-}
-
 function getEndpointCoordinate(
-  request: TripRequest['origin'],
-  venues: VenueLocationMap | null,
-  transitIndex: TransitIndex | null,
+  endpoint: TripRequest['origin'],
+  sources: TripEndpointLocationSources,
 ): MapCoordinate | null {
-  if (!request) return null
-  if (request.kind === 'current-location') {
-    const { longitude, latitude } = request.coordinate
-    return isValidLocationCoordinates(longitude, latitude) ? [longitude, latitude] : null
-  }
-  if (request.kind === 'venue') return getVenueCoordinate(request.id, venues)
-  const stop = transitIndex?.stopById.get(request.id)
-  if (!stop || !Number.isFinite(stop.longitude) || !Number.isFinite(stop.latitude)) return null
-  return [stop.longitude, stop.latitude]
+  if (!endpoint) return null
+  const coordinate = getTripEndpointCoordinate(endpoint, sources)
+  return coordinate ? [coordinate.longitude, coordinate.latitude] : null
 }
 
 export function getResetTarget(context: ResetTargetContext): MapResetTarget {
@@ -126,9 +113,14 @@ export function getResetTarget(context: ResetTargetContext): MapResetTarget {
     return { kind: 'route', routeId: context.selectedRouteId }
   }
 
+  const sources = {
+    venues: context.venues,
+    buildings: context.buildings ?? null,
+    transitIndex: context.transitIndex,
+  }
   const coordinates = [
-    getEndpointCoordinate(context.tripRequest.origin, context.venues, context.transitIndex),
-    getEndpointCoordinate(context.tripRequest.destination, context.venues, context.transitIndex),
+    getEndpointCoordinate(context.tripRequest.origin, sources),
+    getEndpointCoordinate(context.tripRequest.destination, sources),
   ].filter((coordinate): coordinate is MapCoordinate => coordinate !== null)
   if (coordinates.length > 0) return { kind: 'trip', coordinates }
 

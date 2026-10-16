@@ -7,6 +7,7 @@ import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import type { Path } from '../../../pathfinding/path'
 import type { ScoredPathCandidate } from '../../../pathfinding/path'
+import { buildBuildingIndex } from '../../../domain/venue/building-index'
 import { getJourneyCompactSummary, getJourneyTimelineEntries } from '../data/journey-display-data'
 import { JourneyResults } from './journey-results'
 
@@ -470,6 +471,23 @@ describe('JourneyResults', () => {
       routeColor: route.color,
       intermediateStops: [{ id: 'STOP-MID', label: 'MID' }],
     })
+  })
+
+  it('names a building endpoint in the timeline and keeps it distinct from a stop', () => {
+    const buildings = buildBuildingIndex([{
+      id: 'com3',
+      name: 'COM3',
+      aliases: [],
+      elementId: 'way/1',
+      location: { x: 103.775, y: 1.295 },
+      roomCodePrefixes: [],
+      sourceRefs: [],
+    }])
+    const buildingPath: Path = { ...path, origin: { kind: 'building', id: 'com3' } }
+
+    const [first] = getJourneyTimelineEntries(buildingPath, venues, networkIndex, buildings)
+
+    expect(first).toMatchObject({ kind: 'location', label: 'COM3', locationKind: 'building' })
   })
 
   it('keeps a venue and bus stop distinct when their journey names match', () => {

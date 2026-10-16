@@ -1,11 +1,5 @@
-export interface ShuttleServiceWindow {
-  readonly routeId: string
-  readonly firstTime: string
-  readonly lastTime: string
-  readonly dayType: string
-  readonly dates: readonly string[]
-}
-
+import type { ShuttleServiceWindow } from '@navus/shared'
+export type { ShuttleServiceWindow } from '@navus/shared'
 export type ShuttleServiceStatus = 'active' | 'before-start' | 'after-end' | 'unavailable'
 
 export interface ShuttleServiceEvaluation {

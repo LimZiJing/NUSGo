@@ -3,8 +3,9 @@ import type { TransitIndex } from '../../../domain/transit'
 import { formatDuration } from '../../../domain/trip/duration-format'
 import type { Path } from '../../../pathfinding/path'
 import type { ScoredPathCandidate } from '../../../pathfinding/path'
+import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { BuildingIcon, BusIcon, FootprintsIcon } from '../../../ui/icons'
+import { BuildingIcon, BusIcon, FootprintsIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 import {
   formatDistance,
@@ -31,6 +32,7 @@ interface JourneyResultsProps {
   readonly state: JourneyResultsState
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
+  readonly buildings?: BuildingIndex | null
   readonly simulated?: boolean
   readonly onSelectCandidate?: (candidateKey: string) => void
 }
@@ -126,14 +128,17 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
     const identityKind = entry.locationKind === 'current-location' ? null : entry.locationKind
     const identityLabel = identityKind === 'venue'
       ? `${entry.label}, venue`
-      : identityKind === 'stop'
+      : identityKind === 'building'
+        ? `${entry.label}, building`
+        : identityKind === 'stop'
         ? `${entry.label}, bus stop`
         : entry.label
     return (
       <li className="journey-timeline-item journey-timeline-location" key={entry.id}>
         <span className="journey-timeline-marker" aria-hidden="true" />
         <span className="journey-location-name">
-          {identityKind === 'venue' && <BuildingIcon className="location-identity-icon location-identity-icon--venue" />}
+          {identityKind === 'venue' && <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
+          {identityKind === 'building' && <BuildingIcon className="location-identity-icon location-identity-icon--building" />}
           {identityKind === 'stop' && <BusIcon className="location-identity-icon location-identity-icon--stop" />}
           <strong aria-label={identityLabel}>{entry.label}</strong>
         </span>
@@ -193,6 +198,7 @@ export function JourneyResults({
   state,
   networkIndex,
   venues,
+  buildings = null,
   simulated = false,
   onSelectCandidate,
 }: JourneyResultsProps) {
@@ -281,7 +287,7 @@ export function JourneyResults({
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
                     >
-                      {getJourneyTimelineEntries(path, venues, networkIndex).map(renderJourneyTimelineEntry)}
+                      {getJourneyTimelineEntries(path, venues, networkIndex, buildings).map(renderJourneyTimelineEntry)}
                     </ol>
                   </>
                 )}

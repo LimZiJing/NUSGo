@@ -40,7 +40,7 @@ function createOptions(isMobileViewport: boolean, activeView: NavigationState['a
     dispatch,
     commands,
     isMobileViewport,
-    exploreState: { mode: 'neutral' as const, selectedVenue: null },
+    exploreState: { mode: 'neutral' as const, selectedVenue: null, selectedBuildingId: null },
     locationStatus: 'disabled' as const,
     pendingViewFocusRef,
     pendingExploreReturnFocusRef,
@@ -57,6 +57,16 @@ describe('useAppNavigation', () => {
 
     expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'venue', id: 'COM1' })
     expect(options.pendingViewFocusRef.current).toBe('plan')
+    expect(options.dispatch).toHaveBeenCalledWith({ type: 'open-plan' })
+  })
+
+  it('navigates to a building as its own endpoint and opens Plan', () => {
+    const options = createOptions(true, 'explore')
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.navigateToBuilding('com3'))
+
+    expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith({ kind: 'building', id: 'com3' })
     expect(options.dispatch).toHaveBeenCalledWith({ type: 'open-plan' })
   })
 
@@ -160,7 +170,7 @@ describe('map popup dismissal', () => {
       ({ activeView, exploreMode }: TestProps) => useAppNavigation({
         ...options,
         state: { ...options.state, activeView },
-        exploreState: { mode: exploreMode, selectedVenue: null },
+        exploreState: { mode: exploreMode, selectedVenue: null, selectedBuildingId: null },
       }),
       { initialProps },
     )

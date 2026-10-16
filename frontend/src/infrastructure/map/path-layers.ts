@@ -9,6 +9,12 @@ import type { MapJourneyOption } from '../../app/contracts/map'
 import type { Path } from '../../pathfinding/path'
 import type { TransitIndex } from '../../domain/transit'
 import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './path-duration-markers'
+import {
+  SELECTED_ROUTE_LANE_STOPS,
+  DIRECTION_IMAGE_PIXEL_RATIO,
+  createDirectionChevronImage,
+  type LineWidthSpecification,
+} from './route-lanes'
 
 export const JOURNEY_ROUTE_SOURCE_ID = 'journey-route-geometry'
 export const JOURNEY_ALTERNATIVE_CASING_LAYER_ID = 'journey-alternative-casing'
@@ -17,7 +23,9 @@ export const JOURNEY_ALTERNATIVE_SHUTTLE_LAYER_ID = 'journey-alternative-shuttle
 export const JOURNEY_SELECTED_CASING_LAYER_ID = 'journey-selected-casing'
 export const JOURNEY_SELECTED_WALKING_LAYER_ID = 'journey-selected-walking-lines'
 export const JOURNEY_SELECTED_SHUTTLE_LAYER_ID = 'journey-selected-shuttle-lines'
+export const JOURNEY_SELECTED_DIRECTION_LAYER_ID = 'journey-selected-shuttle-directions'
 
+const JOURNEY_DIRECTION_IMAGE_ID = 'journey-route-direction-chevron'
 const SELECTED_FILTER_SENTINEL = '__no_selected_journey_option__'
 const JOURNEY_ALTERNATIVE_COLOR = '#64748b'
 const JOURNEY_ALTERNATIVE_WALKING_COLOR = '#94a3b8'
@@ -84,6 +92,15 @@ function getLineLayout(): LineLayerSpecification['layout'] {
   }
 }
 
+function laneStops(key: 'width' | 'arrowWidth' | 'casingWidth' | 'offset'): LineWidthSpecification {
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    ...SELECTED_ROUTE_LANE_STOPS.flatMap((stop) => [stop.zoom, stop[key]]),
+  ] as LineWidthSpecification
+}
+
 function createAlternativeCasingLayer(): LineLayerSpecification {
   return {
     id: JOURNEY_ALTERNATIVE_CASING_LAYER_ID,
@@ -94,7 +111,7 @@ function createAlternativeCasingLayer(): LineLayerSpecification {
     paint: {
       'line-color': '#ffffff',
       'line-opacity': 0.45,
-      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 5, 15, 6, 18, 7],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 4, 15, 6, 18, 8],
     },
   }
 }
@@ -125,7 +142,7 @@ function createAlternativeShuttleLayer(): LineLayerSpecification {
     paint: {
       'line-color': JOURNEY_ALTERNATIVE_COLOR,
       'line-opacity': 0.68,
-      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 15, 4, 18, 5],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 15, 3, 18, 4.5],
     },
   }
 }
@@ -140,7 +157,8 @@ function createSelectedCasingLayer(selectedCandidateKey: string | null): LineLay
     paint: {
       'line-color': '#ffffff',
       'line-opacity': 0.98,
-      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 10, 15, 12, 18, 14],
+      'line-width': laneStops('casingWidth'),
+      'line-offset': laneStops('offset'),
     },
   }
 }
@@ -171,7 +189,26 @@ function createSelectedShuttleLayer(selectedCandidateKey: string | null): LineLa
     paint: {
       'line-color': ['coalesce', ['get', 'routeColor'], JOURNEY_SHUTTLE_FALLBACK_COLOR],
       'line-opacity': 1,
-      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 6, 15, 8, 18, 10],
+      'line-width': laneStops('width'),
+      'line-offset': laneStops('offset'),
+    },
+  }
+}
+
+function createSelectedDirectionLayer(selectedCandidateKey: string | null): LineLayerSpecification {
+  return {
+    id: JOURNEY_SELECTED_DIRECTION_LAYER_ID,
+    type: 'line',
+    source: JOURNEY_ROUTE_SOURCE_ID,
+    filter: getCandidateFilter('shuttle', selectedCandidateKey ?? SELECTED_FILTER_SENTINEL),
+    layout: {
+      'line-cap': 'butt',
+      'line-join': 'round',
+    },
+    paint: {
+      'line-pattern': JOURNEY_DIRECTION_IMAGE_ID,
+      'line-width': laneStops('arrowWidth'),
+      'line-offset': laneStops('offset'),
     },
   }
 }
@@ -186,6 +223,7 @@ function createJourneyLayers(
     createSelectedCasingLayer(selectedCandidateKey),
     createSelectedWalkingLayer(selectedCandidateKey),
     createSelectedShuttleLayer(selectedCandidateKey),
+    createSelectedDirectionLayer(selectedCandidateKey),
   ]
 }
 
@@ -256,6 +294,7 @@ export function createPathLayers(
     JOURNEY_SELECTED_CASING_LAYER_ID,
     JOURNEY_SELECTED_WALKING_LAYER_ID,
     JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
+    JOURNEY_SELECTED_DIRECTION_LAYER_ID,
   ]
 
   const handleRouteClick = (event: MapMouseEvent): void => {
@@ -297,6 +336,7 @@ export function createPathLayers(
   const clearInstalledJourney = (): void => {
     detachRouteClickListener()
     const layerIds = [
+      JOURNEY_SELECTED_DIRECTION_LAYER_ID,
       JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
       JOURNEY_SELECTED_WALKING_LAYER_ID,
       JOURNEY_SELECTED_CASING_LAYER_ID,
@@ -307,6 +347,7 @@ export function createPathLayers(
     layerIds.forEach((id) => {
       if (map.getLayer(id)) map.removeLayer(id)
     })
+    if (map.hasImage(JOURNEY_DIRECTION_IMAGE_ID)) map.removeImage(JOURNEY_DIRECTION_IMAGE_ID)
     if (map.getSource(JOURNEY_ROUTE_SOURCE_ID)) map.removeSource(JOURNEY_ROUTE_SOURCE_ID)
     durationMarkers.setJourneyOptions([], null)
     installed = false
@@ -339,6 +380,10 @@ export function createPathLayers(
       JOURNEY_SELECTED_SHUTTLE_LAYER_ID,
       getCandidateFilter('shuttle', selectedKey),
     )
+    map.setFilter(
+      JOURNEY_SELECTED_DIRECTION_LAYER_ID,
+      getCandidateFilter('shuttle', selectedKey),
+    )
 
     durationMarkers.setJourneyOptions(currentOptions, selectedCandidateKey)
   }
@@ -349,6 +394,11 @@ export function createPathLayers(
   ): void => {
     const data = createJourneyRouteGeometry(options, transitIndex)
     map.addSource(JOURNEY_ROUTE_SOURCE_ID, { type: 'geojson', data })
+    if (!map.hasImage(JOURNEY_DIRECTION_IMAGE_ID)) {
+      map.addImage(JOURNEY_DIRECTION_IMAGE_ID, createDirectionChevronImage(), {
+        pixelRatio: DIRECTION_IMAGE_PIXEL_RATIO,
+      })
+    }
     for (const layer of createJourneyLayers(selectedCandidateKey)) {
       map.addLayer(layer)
     }

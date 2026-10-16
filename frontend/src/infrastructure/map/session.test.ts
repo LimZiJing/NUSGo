@@ -676,11 +676,12 @@ describe('MapSession', () => {
       'journey-selected-casing',
       'journey-selected-walking-lines',
       'journey-selected-shuttle-lines',
+      'journey-selected-shuttle-directions',
     ]))
 
     setSingleJourney(session, null)
     expect(map.layers).toEqual(new Set())
-    expect(map.removedLayers).toHaveLength(6)
+    expect(map.removedLayers).toHaveLength(7)
     expect(map.removedSources).toEqual(['journey-route-geometry'])
 
     session.dispose()
@@ -715,7 +716,7 @@ describe('MapSession', () => {
       [[103, 1], [103.2, 1.2]],
       { duration: 500, maxZoom: 17, padding: { top: 80, right: 60, bottom: 232, left: 68 } },
     )
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
     const source = map.sourceData.get('journey-route-geometry')
 
     session.setJourneyOptions(options, 'walking')
@@ -723,7 +724,7 @@ describe('MapSession', () => {
     expect(map.fitBounds).toHaveBeenCalledOnce()
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(source?.setData).not.toHaveBeenCalled()
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
 
     session.fitJourneyRoutes()
     expect(map.fitBounds).toHaveBeenCalledTimes(2)
@@ -759,7 +760,7 @@ describe('MapSession', () => {
     session.setJourneyOptions(options, 'bus')
     const endpointMarkers = [...map.addedMarkers]
     expect(endpointMarkers.length).toBeGreaterThan(0)
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
 
     session.setPlanLayersVisible(false)
 
@@ -773,7 +774,7 @@ describe('MapSession', () => {
 
     session.setPlanLayersVisible(true)
 
-    expect(map.layers.size).toBe(6)
+    expect(map.layers.size).toBe(7)
     expect(map.addedMarkers.length).toBe(markerCountWhileHidden + endpointMarkers.length)
 
     session.dispose()
@@ -1181,6 +1182,42 @@ describe('MapSession', () => {
     session.dispose()
     session.setViewportInsets({ top: 100, right: 12, bottom: 220, left: 12 })
     expect(map.flyTo).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('marks every part of a selected building and fits the camera to all of them once insets are known', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{ coordinate: unknown; remove: ReturnType<typeof vi.fn> }>
+      fitBounds: ReturnType<typeof vi.fn>
+      flyTo: ReturnType<typeof vi.fn>
+    }
+
+    await session.ready
+    session.selectBuilding({
+      name: 'Saga College',
+      locations: [{ x: 103.7745, y: 1.2951 }, { x: 103.7752, y: 1.2943 }, { x: 103.7749, y: 1.2956 }],
+    })
+    expect(map.addedMarkers).toHaveLength(3)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+
+    session.setViewportInsets({ top: 88, right: 12, bottom: 196, left: 12 })
+    expect(map.fitBounds).toHaveBeenCalledWith(
+      [[103.7745, 1.2943], [103.7752, 1.2956]],
+      expect.objectContaining({ maxZoom: 17, padding: { top: 88, right: 12, bottom: 196, left: 12 } }),
+    )
+
+    session.clearVenue()
+    expect(map.addedMarkers.every((marker) => marker.remove.mock.calls.length === 1)).toBe(true)
+
+    session.selectBuilding({ name: 'COM3', locations: [{ x: 103.775, y: 1.295 }] })
+    session.setViewportInsets({ top: 88, right: 12, bottom: 196, left: 12 })
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [103.775, 1.295], zoom: 17 }))
     vi.unstubAllGlobals()
   })
 

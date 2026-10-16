@@ -1,9 +1,10 @@
 import { Marker, Popup, type Map } from 'maplibre-gl'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
-import type { TripEndpoint, TripRequest } from '../../domain/trip/types'
+import type { TripRequest } from '../../domain/trip/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { isValidLocationCoordinates } from '../../domain/location/coordinates'
+import { getTripEndpointCoordinate } from '../../domain/trip/endpoint-location'
+import type { BuildingIndex } from '../../domain/venue/building-index'
 import { createPopupContent } from './popup'
 
 export interface TripEndpointMarkers {
@@ -26,33 +27,12 @@ function createTripEndpointMarkerElement(
   return element
 }
 
-function getTripEndpointCoordinate(
-  endpoint: TripEndpoint,
-  venues: VenueLocationMap,
-  transitIndex: TransitIndex | null,
-): [number, number] | null {
-  if (endpoint.kind === 'current-location') {
-    const { longitude, latitude } = endpoint.coordinate
-    return isValidLocationCoordinates(longitude, latitude) ? [longitude, latitude] : null
-  }
-  if (endpoint.kind === 'venue') {
-    const location = venues[endpoint.id]?.location
-    return location && Number.isFinite(location.x) && Number.isFinite(location.y)
-      ? [location.x, location.y]
-      : null
-  }
-
-  const stop = transitIndex?.stopById.get(endpoint.id)
-  return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
-    ? [stop.longitude, stop.latitude]
-    : null
-}
-
 export function createTripEndpointMarkers(
   map: Map,
   request: TripRequest,
   venues: VenueLocationMap,
   transitIndex: TransitIndex | null,
+  buildings: BuildingIndex | null = null,
 ): TripEndpointMarkers {
   const markers: Array<{ marker: Marker; popup: Popup; popupContent: ReturnType<typeof createPopupContent> }> = []
 
@@ -62,10 +42,11 @@ export function createTripEndpointMarkers(
   ] as const) {
     if (!endpoint) continue
 
-    const coordinate = getTripEndpointCoordinate(endpoint, venues, transitIndex)
-    if (!coordinate) continue
+    const resolved = getTripEndpointCoordinate(endpoint, { venues, buildings, transitIndex })
+    if (!resolved) continue
+    const coordinate: [number, number] = [resolved.longitude, resolved.latitude]
 
-    const label = getTripEndpointLabel(endpoint, venues, transitIndex)
+    const label = getTripEndpointLabel(endpoint, venues, transitIndex, buildings ?? undefined)
     const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
     const details = endpoint.kind === 'current-location'
       ? [label]

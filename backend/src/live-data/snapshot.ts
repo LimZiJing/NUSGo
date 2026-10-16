@@ -34,6 +34,7 @@ export interface RefreshShuttleArrivalSnapshotOptions {
   readonly previousSnapshot?: ShuttleArrivalSnapshot | null
   readonly snapshotVersion: string
   readonly refreshIntervalMs: number
+  readonly nextRefreshAtMs?: number
   readonly maxConcurrency: number
   readonly now?: () => number
   readonly signal?: AbortSignal
@@ -168,12 +169,14 @@ export async function refreshShuttleArrivalSnapshot(
     if (previousObservation) stopObservations[stop.stopId] = previousObservation
   }
 
-  const refreshedAt = toIso(now())
-  const nextRefreshAt = toIso(Date.parse(refreshedAt) + options.refreshIntervalMs)
+  const refreshedAtMs = now()
+  const refreshedAt = toIso(refreshedAtMs)
+  const nextRefreshAtMs = Math.max(refreshedAtMs, options.nextRefreshAtMs ?? refreshedAtMs + options.refreshIntervalMs)
+  const nextRefreshAt = toIso(nextRefreshAtMs)
   const observationTimes = Object.values(stopObservations).map(({ observedAt }) => observedAt)
   const snapshot: ShuttleArrivalSnapshot = {
     observedAt: earliestTimestamp(observationTimes, refreshedAt),
-    expiresAt: nextRefreshAt,
+    expiresAt: toIso(refreshedAtMs + options.refreshIntervalMs),
     snapshotVersion: options.snapshotVersion,
     refreshedAt,
     nextRefreshAt,
@@ -200,10 +203,10 @@ export function createShuttleArrivalSnapshotStore(
   let started = false
   let generation = 0
 
-  const scheduleNextRefresh = (): void => {
+  const scheduleNextRefresh = (delayMs: number): void => {
     if (!started) return
     if (refreshTimer) clearTimeout(refreshTimer)
-    refreshTimer = setTimeout(() => { void refreshNow().catch(logRefreshError) }, options.refreshIntervalMs)
+    refreshTimer = setTimeout(() => { void refreshNow().catch(logRefreshError) }, delayMs)
     refreshTimer.unref?.()
   }
 
@@ -222,6 +225,7 @@ export function createShuttleArrivalSnapshotStore(
         previousSnapshot: currentSnapshot,
         snapshotVersion,
         refreshIntervalMs: options.refreshIntervalMs,
+        nextRefreshAtMs: startedAtMs + options.refreshIntervalMs,
         maxConcurrency: options.maxConcurrency,
         now,
         signal: controller.signal,
@@ -244,7 +248,7 @@ export function createShuttleArrivalSnapshotStore(
     refreshInFlight = refresh.finally(() => {
       refreshInFlight = null
       if (activeController === controller) activeController = null
-      scheduleNextRefresh()
+      scheduleNextRefresh(Math.max(0, options.refreshIntervalMs - Math.max(0, now() - startedAtMs)))
     })
     return refreshInFlight
   }

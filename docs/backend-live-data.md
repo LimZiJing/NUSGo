@@ -20,7 +20,7 @@ The health route reports process health. The ready route returns 503 until canon
 
 One Express process owns the in-memory snapshot. Run one backend instance for a deployment. If multiple instances are needed, they must coordinate through a shared snapshot store or distributed lock; independent in-memory snapshots would poll NUS separately and could serve inconsistent data.
 
-The process starts its first refresh immediately, then starts the next cycle 30 seconds after the previous cycle finishes by default. Stop requests are limited to six concurrent requests. Each upstream request has a five-second timeout and one retry by default, with a 200 ms exponential backoff. The refresh has one in-flight cycle at a time.
+The process starts its first refresh immediately, then targets a 30-second start-to-start interval by default. It keeps one cycle in flight; if a cycle runs past the next interval, the following cycle starts as soon as the current one finishes. Stop requests are limited to six concurrent requests. Each upstream request has a five-second timeout and one retry by default, with a 200 ms exponential backoff.
 
 Express publishes a generation only after the cycle settles. Successful stops replace their own value and observation time. A failed stop keeps its last good value and original observation time. Before the first complete generation, any partial cycle is discarded and readiness remains false. After a complete generation exists, a failed stop keeps its last good value and original observation time. If all stops fail, the previous generation stays in place.
 

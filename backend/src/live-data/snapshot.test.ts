@@ -111,6 +111,41 @@ describe('refreshShuttleArrivalSnapshot', () => {
 })
 
 describe('createShuttleArrivalSnapshotStore', () => {
+  it('starts the next refresh 30 seconds after the previous cycle started', async (context) => {
+    context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: Date.parse('2026-10-10T10:00:00.000Z') })
+    let loadCount = 0
+    const firstCycleResolvers: Array<(value: ShuttleArrivalStopResult) => void> = []
+    const store = createShuttleArrivalSnapshotStore({
+      stops,
+      refreshIntervalMs: 30_000,
+      maxConcurrency: 3,
+      loadStop: (stop) => {
+        loadCount += 1
+        if (loadCount <= stops.length) {
+          return new Promise<ShuttleArrivalStopResult>((resolve) => firstCycleResolvers.push(resolve))
+        }
+        return Promise.resolve(resultFor(stop.stopId))
+      },
+    })
+
+    store.start()
+    const firstCycle = store.refreshNow()
+    assert.equal(loadCount, stops.length)
+
+    context.mock.timers.tick(12_000)
+    for (const resolve of firstCycleResolvers) resolve(resultFor('first-cycle'))
+    await firstCycle
+    assert.equal(store.getSnapshot()?.nextRefreshAt, '2026-10-10T10:00:30.000Z')
+    assert.equal(store.getSnapshot()?.expiresAt, '2026-10-10T10:00:42.000Z')
+
+    context.mock.timers.tick(17_999)
+    assert.equal(loadCount, stops.length)
+    context.mock.timers.tick(1)
+    assert.equal(loadCount, stops.length * 2)
+
+    await store.stop()
+  })
+
   it('shares one in-flight refresh and never exposes a partial generation', async () => {
     let releaseSlowStop: (value: ShuttleArrivalStopResult) => void = () => undefined
     const store = createShuttleArrivalSnapshotStore({

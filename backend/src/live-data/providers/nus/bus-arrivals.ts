@@ -3,7 +3,7 @@ import type {
   ShuttleRouteArrivalData,
 } from '@navus/shared'
 
-export interface ParsedShuttleServiceRoute {
+export interface ParsedNusBusArrivalRoute {
   readonly routeId: string
   readonly arrival: ShuttleRouteArrivalData
 }
@@ -132,7 +132,7 @@ function routeIdFrom(record: RecordValue, routeHint: string | null): string | nu
 function parseCandidate(
   record: RecordValue,
   routeHint: string | null,
-): ParsedShuttleServiceRoute | null {
+): ParsedNusBusArrivalRoute | null {
   const routeId = routeIdFrom(record, routeHint)
   const nextArrivalSeconds = parseArrivalSeconds(record)
   const upcoming = [
@@ -159,7 +159,7 @@ function isLikelyRouteKey(key: string): boolean {
 function collectRoutes(
   value: unknown,
   routeHint: string | null,
-  output: ParsedShuttleServiceRoute[],
+  output: ParsedNusBusArrivalRoute[],
 ): boolean {
   if (Array.isArray(value)) {
     if (value.length === 0) return routeHint !== null
@@ -189,18 +189,18 @@ function hasNonEmptyData(value: RecordValue | readonly unknown[]): boolean {
   return Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0
 }
 
-export function parseShuttleServiceResponse(input: unknown): readonly ParsedShuttleServiceRoute[] {
+export function parseNusBusArrivalResponse(input: unknown): readonly ParsedNusBusArrivalRoute[] {
   if (!isRecord(input) || !('data' in input) ||
     (!Array.isArray(input.data) && !isRecord(input.data))) {
     throw new Error('NUS shuttle-service response was invalid')
   }
 
-  const parsed: ParsedShuttleServiceRoute[] = []
+  const parsed: ParsedNusBusArrivalRoute[] = []
   const hasRecognizedRoute = collectRoutes(input.data, null, parsed)
   if (hasNonEmptyData(input.data) && !hasRecognizedRoute) {
     throw new Error('NUS shuttle-service response was invalid')
   }
-  const byRoute = new Map<string, ParsedShuttleServiceRoute>()
+  const byRoute = new Map<string, ParsedNusBusArrivalRoute>()
   for (const route of parsed) byRoute.set(route.routeId, route)
   return [...byRoute.values()]
 }

@@ -24,7 +24,7 @@ function parseDates(value: unknown): readonly string[] {
     .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
 }
 
-export function parseRouteServiceWindows(
+export function parseNusServiceWindows(
   input: unknown,
   routeId: string,
 ): readonly ShuttleServiceWindow[] {

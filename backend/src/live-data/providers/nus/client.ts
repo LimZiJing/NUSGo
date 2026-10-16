@@ -1,4 +1,4 @@
-import { fetchWithTimeout, UpstreamTimeoutError } from './timeouts.ts'
+import { fetchWithTimeout, UpstreamTimeoutError } from '../../timeouts.ts'
 export interface NusApiSession {
   readonly token: string
   readonly userId: string

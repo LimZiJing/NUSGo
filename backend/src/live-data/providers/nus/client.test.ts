@@ -4,7 +4,7 @@ import {
   createNusAuthenticatedClient,
   NusSessionExpiredError,
   parseNusAccessTokenResponse,
-} from './nus-client.ts'
+} from './client.ts'
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {

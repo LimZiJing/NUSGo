@@ -11,10 +11,10 @@ import type {
 } from '@navus/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
-import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './nus-client.ts'
+import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './providers/nus/client.ts'
 import { createBusArrivalSnapshotStore, type BusArrivalStop, type BusArrivalStopResult } from './bus-arrivals/snapshot.ts'
-import { parseShuttleServiceResponse } from './shuttle-response.ts'
-import { parseRouteServiceWindows } from './service-window-response.ts'
+import { parseNusBusArrivalResponse } from './providers/nus/bus-arrivals.ts'
+import { parseNusServiceWindows } from './providers/nus/service-windows.ts'
 import { mapWithConcurrency } from './concurrency.ts'
 import { fetchWithRetry } from './retry.ts'
 import { createLtaPublicBusArrivalProvider } from './lta/server.ts'
@@ -275,7 +275,7 @@ export async function createBackendLiveData(
       'shuttle-service',
       { busstopname: stop.stopName },
     ), 'shuttle-service', signal), signal, config.liveData.retryAttempts, config.liveData.retryBaseDelayMs)
-    const parsed = parseShuttleServiceResponse(payload)
+    const parsed = parseNusBusArrivalResponse(payload)
     const routes = Object.fromEntries(parsed
       .filter(({ routeId }) => canonicalRouteIds.has(routeId))
       .map(({ routeId, arrival }) => [routeId, arrival]))
@@ -338,7 +338,7 @@ export async function createBackendLiveData(
         const entry = {
           observedAt: toIso(observedAtMs),
           expiresAt: toIso(observedAtMs + SERVICE_WINDOWS_CACHE_TTL_MS),
-          windows: parseRouteServiceWindows(payload, routeId),
+          windows: parseNusServiceWindows(payload, routeId),
         }
         serviceWindowCache.set(routeId, entry)
         return entry

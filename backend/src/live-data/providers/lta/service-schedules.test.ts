@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createLtaScheduleLoader, isLtaServiceOperating, parseLtaServiceSchedule } from './schedule.ts'
+import { createLtaScheduleLoader, isLtaServiceOperating, parseLtaServiceSchedule } from './service-schedules.ts'
 
 const mappings = [{ stopId: 'STOP-A', busStopCode: '12345', services: ['95'] }]
 

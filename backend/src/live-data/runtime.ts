@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type {
   ApiErrorCode,
   ApiPublicBusArrivalsResponse,
@@ -10,6 +8,11 @@ import type {
 } from '@navus/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
+import {
+  loadLtaPublicBusStopMapping,
+  validateLtaPublicBusStopMappings,
+  type LtaPublicBusStopMapping,
+} from './providers/lta/bus-stop-mapping.ts'
 import { createNusAuthenticatedClient } from './providers/nus/client.ts'
 import { createNusBusArrivalProvider } from './providers/nus/bus-arrivals.ts'
 import { loadNusBusStopMapping } from './providers/nus/bus-stop-mapping.ts'
@@ -17,10 +20,8 @@ import { createNusServiceWindowsProvider } from './providers/nus/service-windows
 import { createBusArrivalSnapshotStore, type BusArrivalStop } from './bus-arrivals/snapshot.ts'
 import { mapWithConcurrency } from './concurrency.ts'
 import { fetchWithRetry } from './retry.ts'
-import { createLtaPublicBusArrivalProvider } from './lta/server.ts'
-import { parseLtaPublicBusStopMapping, type LtaPublicBusStopMapping } from './lta/mapping.ts'
-import { parseRequestedLtaStops } from './lta/request.ts'
-import { createLtaScheduleLoader } from './lta/schedule.ts'
+import { createLtaPublicBusArrivalProvider } from './providers/lta/provider.ts'
+import { createLtaScheduleLoader } from './providers/lta/service-schedules.ts'
 
 export interface BackendLiveData {
   isSnapshotReady(): boolean
@@ -54,29 +55,6 @@ function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
 }
 
-function requestError(error: unknown, fallback: string): LiveDataRequestError {
-  return new LiveDataRequestError(
-    400,
-    'invalid_request',
-    error instanceof Error ? error.message : fallback,
-  )
-}
-
-async function readLtaMappings(dataDirectory: string): Promise<unknown> {
-  let text: string
-  try {
-    text = await readFile(join(dataDirectory, 'lta-public-bus-stops.json'), 'utf8')
-  } catch {
-    throw new Error('Canonical LTA public bus mapping could not be read')
-  }
-
-  try {
-    return JSON.parse(text) as unknown
-  } catch {
-    throw new Error('Canonical LTA public bus mapping is not valid JSON')
-  }
-}
-
 export async function createBackendLiveData(
   config: BackendConfig,
   data: BackendData,
@@ -97,13 +75,10 @@ export async function createBackendLiveData(
     : canonicalStops
   const routeIds = data.network.routes.map((route) => route.id)
   const canonicalRouteIds = new Set(routeIds)
-  const mappings = options.ltaMappings ?? parseLtaPublicBusStopMapping(
-    await readLtaMappings(config.dataDirectory),
-  )
   const canonicalStopIds = new Set(canonicalStops.map(({ stopId }) => stopId))
-  if (mappings.some(({ stopId }) => !canonicalStopIds.has(stopId))) {
-    throw new Error('LTA public bus mappings must reference canonical bus stops')
-  }
+  const mappings = options.ltaMappings
+    ? validateLtaPublicBusStopMappings(options.ltaMappings, canonicalStopIds)
+    : await loadLtaPublicBusStopMapping(config.dataDirectory, canonicalStopIds)
 
   const deviceId = providerConfig?.deviceId || randomUUID()
   const nusClient = providerConfig
@@ -210,7 +185,7 @@ export async function createBackendLiveData(
       return snapshotStore.getSnapshot() !== null
     },
     getPublicBusStopIds() {
-      return mappings.map(({ stopId }) => stopId)
+      return ltaProvider.getSupportedStopIds()
     },
     getBusArrivals(stopIds) {
       const snapshot = snapshotStore.getSnapshot()
@@ -254,17 +229,10 @@ export async function createBackendLiveData(
       return track(operation)
     },
     getPublicBusArrivals(stopIds) {
-      const stops = (() => {
-        try {
-          return parseRequestedLtaStops(stopIds, mappings)
-        } catch (error: unknown) {
-          throw requestError(error, 'Invalid public bus arrival request')
-        }
-      })()
       if (!config.liveData.ltaAccountKey) {
         throw new LiveDataRequestError(503, 'provider_unavailable', 'LTA DataMall account key is not configured')
       }
-      const operation = ltaProvider.getArrivals(stops, shutdownController.signal) as Promise<PublicBusArrivalSnapshot>
+      const operation = ltaProvider.getArrivals(stopIds, shutdownController.signal) as Promise<PublicBusArrivalSnapshot>
       return track(operation)
     },
     start() {

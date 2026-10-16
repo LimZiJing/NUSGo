@@ -119,21 +119,25 @@ export function VenueDetails({
             </div>
           </div>
         )}
-        trailingAction={nusmodsLink}
-        navigateAction={(
+        headerAction={(
           <NavigateButton
             ariaLabel="Navigate to this venue"
             disabled={!hasCoordinates}
             onClick={() => onNavigateToVenue?.(venue.code)}
           />
         )}
-        bottomLabel="Nearby bus stops"
-        bottomHeading={hasCoordinates ? (
-          <h4 id="venue-nearby-stops-heading">
-            <BusIcon />
-            Nearby bus stops · 500 m
-          </h4>
-        ) : undefined}
+        bottomLabel={hasCoordinates ? 'Nearby bus stops' : 'Venue actions'}
+        bottomHeading={(
+          <div className="venue-detail-bottom-heading-row">
+            {hasCoordinates && (
+              <h4 id="venue-nearby-stops-heading">
+                <BusIcon />
+                Nearby bus stops · 500 m
+              </h4>
+            )}
+            {nusmodsLink}
+          </div>
+        )}
         bottom={hasCoordinates ? (
           <section className="venue-nearby-stop-content" aria-labelledby="venue-nearby-stops-heading">
             {nearbyStopsContent}

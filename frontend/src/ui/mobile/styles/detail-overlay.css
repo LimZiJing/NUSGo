@@ -15,8 +15,6 @@
     --mobile-detail-bottom-inset: max(12px, env(safe-area-inset-bottom, 0px));
     --mobile-detail-header-height: clamp(52px, 9.9dvh, 76px);
     --mobile-detail-header-gap: 8px;
-    --mobile-detail-navigation-height: clamp(40px, 5.8dvh, 44px);
-    --mobile-detail-navigation-gap: 8px;
     pointer-events: none;
   }
 
@@ -75,10 +73,29 @@
     max-width: 100%;
   }
 
-  .mobile-detail-header-action > .button {
+  .mobile-detail-header-action > .button.icon-button {
     width: 40px;
     height: 40px;
     min-height: 40px;
+  }
+
+  .mobile-detail-header-action > .navigate-button {
+    width: auto;
+    max-width: min(104px, 32vw);
+    height: 40px;
+    min-height: 40px;
+    min-width: 0;
+    gap: 6px;
+    padding-inline: 9px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .mobile-detail-header-action > .navigate-button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mobile-detail-identity {
@@ -134,31 +151,6 @@
     white-space: nowrap;
   }
 
-  .mobile-detail-navigate {
-    position: absolute;
-    z-index: 2;
-    top: calc(
-      var(--mobile-detail-top-inset) +
-      var(--mobile-detail-header-height) +
-      var(--mobile-detail-header-gap)
-    );
-    right: max(16px, env(safe-area-inset-right, 0px));
-    left: max(16px, env(safe-area-inset-left, 0px));
-    display: flex;
-    justify-content: flex-end;
-    pointer-events: auto;
-  }
-
-  .mobile-detail-navigate .navigate-button {
-    max-width: 100%;
-    min-width: 0;
-    height: var(--mobile-detail-navigation-height);
-    min-height: var(--mobile-detail-navigation-height);
-    padding-inline: 14px;
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-  }
-
   .mobile-detail-bottom {
     right: var(--mobile-detail-right-inset);
     bottom: var(--mobile-detail-bottom-inset);
@@ -173,8 +165,6 @@
           var(--mobile-detail-top-inset) -
           var(--mobile-detail-header-height) -
           var(--mobile-detail-header-gap) -
-          var(--mobile-detail-navigation-height) -
-          var(--mobile-detail-navigation-gap) -
           var(--mobile-detail-bottom-inset)
         )
       )
@@ -185,6 +175,12 @@
     overflow: hidden;
     padding: 10px;
     border-radius: 20px;
+  }
+
+  .mobile-detail-bottom--heading-only {
+    height: auto;
+    gap: 0;
+    padding: 6px;
   }
 
   .mobile-detail-bottom-heading {

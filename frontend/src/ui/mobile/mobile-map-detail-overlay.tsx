@@ -7,8 +7,7 @@ interface MobileMapDetailOverlayProps {
   readonly backLabel: string
   readonly onBack: () => void
   readonly identity: ReactNode
-  readonly trailingAction: ReactNode
-  readonly navigateAction: ReactNode
+  readonly headerAction: ReactNode
   readonly bottomLabel?: string
   readonly bottomHeading?: ReactNode
   readonly bottom?: ReactNode
@@ -21,8 +20,7 @@ export function MobileMapDetailOverlay({
   backLabel,
   onBack,
   identity,
-  trailingAction,
-  navigateAction,
+  headerAction,
   bottomLabel,
   bottomHeading,
   bottom,
@@ -47,15 +45,19 @@ export function MobileMapDetailOverlay({
           onClick={onBack}
         />
         <div className="mobile-detail-header-identity">{identity}</div>
-        <div className="mobile-detail-header-action">{trailingAction}</div>
+        <div className="mobile-detail-header-action">{headerAction}</div>
       </header>
-      <div className="mobile-detail-navigate">{navigateAction}</div>
-      {bottom !== undefined && bottom !== null && (
-        <section className="mobile-detail-bottom" aria-label={bottomLabel}>
+      {(bottomHeading || (bottom !== undefined && bottom !== null)) && (
+        <section
+          className={`mobile-detail-bottom${bottom === undefined || bottom === null ? ' mobile-detail-bottom--heading-only' : ''}`}
+          aria-label={bottomLabel}
+        >
           {bottomHeading && (
             <div className="mobile-detail-bottom-heading">{bottomHeading}</div>
           )}
-          <div className="mobile-detail-bottom-content">{bottom}</div>
+          {bottom !== undefined && bottom !== null && (
+            <div className="mobile-detail-bottom-content">{bottom}</div>
+          )}
         </section>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { createRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from '../../../domain/transit'
@@ -6,6 +7,7 @@ import type { TransitNetworkInput } from '@navus/shared/transit/types'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import { exploreReducer, createInitialExploreState } from '../state/explore-state'
 import { ExploreContentHarness as ExploreContent } from './explore-content-harness'
+import { VenueDetails } from './venue-details'
 
 const venue: VenueLocation = {
   roomName: 'Seminar Room 3',
@@ -86,6 +88,27 @@ function renderVenueDetails({
   )
 }
 
+function renderMobileVenueDetails({
+  code = 'COM1-0212',
+  selectedVenue = venue,
+  transitIndex = createNearbyTransitIndex(),
+}: {
+  code?: string
+  selectedVenue?: VenueLocation
+  transitIndex?: ReturnType<typeof createNearbyTransitIndex> | null
+} = {}): string {
+  return renderToStaticMarkup(
+    <VenueDetails
+      venue={{ code, venue: selectedVenue }}
+      transitIndex={transitIndex}
+      headingRef={createRef<HTMLHeadingElement>()}
+      onNavigateToVenue={() => undefined}
+      onFocusStop={() => undefined}
+      mobileMapDetailOverlay
+    />,
+  )
+}
+
 describe('ExploreContent venue details', () => {
   it('shows code-first venue identity, building, actions, and nearby stops in order', () => {
     const markup = renderVenueDetails()
@@ -125,6 +148,7 @@ describe('ExploreContent venue details', () => {
     expect(markup).not.toContain('venue-detail-coordinates')
     expect(markup).not.toContain('Nearby bus stops')
     expect(markup).toContain('disabled=""')
+    expect(markup).toContain('href="https://nusmods.com/venues/AS7-0214"')
   })
 
   it('omits the floor and building line when neither is confirmed', () => {
@@ -150,6 +174,39 @@ describe('ExploreContent venue details', () => {
     expect(markup).toContain('rel="noreferrer"')
     expect(markup).toContain('<span>View in</span>')
     expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
+  })
+
+  it('places mobile Navigate in the header and NUSMods beside the nearby stops heading', () => {
+    const markup = renderMobileVenueDetails()
+    const headerStart = markup.indexOf('<header class="mobile-detail-header">')
+    const headerEnd = markup.indexOf('</header>', headerStart)
+    const bottomHeadingStart = markup.indexOf('<div class="mobile-detail-bottom-heading">')
+    const bottomHeadingEnd = markup.indexOf('</div>', bottomHeadingStart)
+    const header = markup.slice(headerStart, headerEnd)
+    const bottomHeading = markup.slice(bottomHeadingStart, bottomHeadingEnd)
+
+    expect(header).toContain('aria-label="Navigate to this venue"')
+    expect(header).not.toContain('nusmods-logo.svg')
+    expect(bottomHeading).toContain('Nearby bus stops · 500 m')
+    expect(bottomHeading).toContain('href="https://nusmods.com/venues/COM1-0212"')
+  })
+
+  it('keeps NUSMods in the bottom action position when a mobile venue has no coordinates', () => {
+    const unlocatedVenue: VenueLocation = { roomName: 'Tutorial Room' }
+    const markup = renderMobileVenueDetails({
+      code: 'AS7-0214',
+      selectedVenue: unlocatedVenue,
+    })
+    const headerStart = markup.indexOf('<header class="mobile-detail-header">')
+    const headerEnd = markup.indexOf('</header>', headerStart)
+    const bottomHeadingStart = markup.indexOf('<div class="mobile-detail-bottom-heading">')
+    const bottomHeadingEnd = markup.indexOf('</div>', bottomHeadingStart)
+
+    expect(markup).not.toContain('Nearby bus stops')
+    expect(markup.slice(headerStart, headerEnd)).toContain('aria-label="Navigate to this venue"')
+    expect(markup.slice(headerStart, headerEnd)).not.toContain('nusmods-logo.svg')
+    expect(markup.slice(bottomHeadingStart, bottomHeadingEnd))
+      .toContain('href="https://nusmods.com/venues/AS7-0214"')
   })
 
   it('renders nearby buttons with internal route badges and excludes public services', () => {

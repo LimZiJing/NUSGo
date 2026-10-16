@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import type { AddressInfo } from 'node:net'
 import { after, describe, it } from 'node:test'
-import { createApp } from './app.ts'
+import { createApp } from './http/app.ts'
 import { closeHttpServer, listenHttpServer } from './server.ts'
 
 const origin = 'http://localhost:5173'

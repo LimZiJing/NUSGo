@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
-import { createApp } from './app.ts'
+import { createApp } from './http/app.ts'
 import { loadBackendConfig } from './config.ts'
 import { loadCanonicalData } from './data.ts'
 import { createBackendLiveData } from './live-data/runtime.ts'

@@ -1,33 +1,17 @@
-export interface ShuttleHeadwaySeconds {
-  readonly min: number
-  readonly max: number
-  readonly median: number
-}
+import type { ShuttleArrivalSnapshot } from '@navus/shared'
 
-export interface ShuttleRouteArrivalData {
-  readonly nextArrivalSeconds: number
-  readonly upcomingArrivalSeconds: readonly number[]
-  readonly headwaySeconds: ShuttleHeadwaySeconds | null
-}
-
-export interface ShuttleArrivalSnapshot {
-  readonly observedAt: string
-  readonly expiresAt: string
-  readonly snapshotVersion?: string
-  readonly refreshedAt?: string
-  readonly nextRefreshAt?: string
-  readonly stops: Readonly<Record<string, Readonly<Record<string, ShuttleRouteArrivalData>>>>
-  readonly stopObservations?: Readonly<Record<string, ShuttleArrivalObservation>>
-}
-
-export interface ShuttleArrivalObservation {
-  readonly observedAt: string
-  readonly expiresAt: string
-}
-
-export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000
-export const SHUTTLE_ARRIVAL_FRESHNESS_MS = 30_000
-export const SHUTTLE_ARRIVAL_MAX_AGE_MS = 120_000
+export type {
+  DataFreshness,
+  ShuttleArrivalObservation,
+  ShuttleHeadwaySeconds,
+  ShuttleRouteArrivalData,
+  ShuttleArrivalSnapshot,
+} from '@navus/shared'
+export {
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+  SHUTTLE_ARRIVAL_FRESHNESS_MS,
+  SHUTTLE_ARRIVAL_MAX_AGE_MS,
+} from '@navus/shared'
 
 function parseSnapshotVersion(version: string): { readonly timestampMs: number; readonly generation: number } | null {
   const match = version.match(/^(.*)-(\d+)$/)

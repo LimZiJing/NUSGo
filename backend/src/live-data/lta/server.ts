@@ -1,13 +1,14 @@
+import { mapWithConcurrency } from '../concurrency.ts'
 import type {
   PublicBusArrivalSnapshot,
   PublicBusEstimatedArrival,
   PublicBusServiceArrival,
   PublicBusStopArrivalData,
-} from '../../domain/transit/public-bus-arrivals.js'
-import { PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS } from '../../domain/transit/public-bus-arrivals.js'
-import type { LtaPublicBusStopMapping } from './mapping.js'
-import { parseLtaBusArrivalResponse } from './response.js'
-import { type LtaScheduleLoader } from './schedule.js'
+} from '@navus/shared'
+import { PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS } from '@navus/shared'
+import type { LtaPublicBusStopMapping } from './mapping.ts'
+import { parseLtaBusArrivalResponse } from './response.ts'
+import { type LtaScheduleLoader } from './schedule.ts'
 
 export interface LtaPublicBusArrivalProvider {
   getArrivals(
@@ -30,6 +31,7 @@ interface LtaPublicBusArrivalProviderOptions {
   readonly errorCacheTtlMs?: number
   readonly now?: () => number
   readonly fetcher?: typeof fetch
+  readonly maxConcurrency?: number
 }
 
 function toIso(timestampMs: number): string {
@@ -54,6 +56,7 @@ export function createLtaPublicBusArrivalProvider(
   const errorCacheTtlMs = options.errorCacheTtlMs ?? 10_000
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch
+  const maxConcurrency = options.maxConcurrency ?? 4
   const scheduleLoader = options.scheduleLoader
   const cache = new Map<string, CachedStop>()
   const inFlight = new Map<string, Promise<PublicBusStopArrivalData>>()
@@ -62,7 +65,7 @@ export function createLtaPublicBusArrivalProvider(
     mapping: LtaPublicBusStopMapping,
     signal: AbortSignal,
   ): Promise<PublicBusStopArrivalData> => {
-    const startedAt = now()
+    const requestStartedAt = now()
     try {
       if (!options.accountKey.trim()) throw new Error('LTA DataMall account key is not configured')
       const response = await fetcher(`${baseUrl}?BusStopCode=${encodeURIComponent(mapping.busStopCode)}`, {
@@ -73,31 +76,41 @@ export function createLtaPublicBusArrivalProvider(
       const parsed = parseLtaBusArrivalResponse(await response.json() as unknown, mapping.services)
       const parsedByService = new Map(parsed.map((service) => [service.serviceNumber, service.arrivals]))
       const serviceEntries = await Promise.all(mapping.services.map(async (serviceNumber) => {
-        const arrivals = asFutureArrivals(parsedByService.get(serviceNumber) ?? [], startedAt)
+        const arrivals = asFutureArrivals(parsedByService.get(serviceNumber) ?? [], requestStartedAt)
         if (arrivals.length > 0) {
           return [serviceNumber, { status: 'live', arrivals }] as const
         }
         if (!scheduleLoader) return [serviceNumber, emptyService('no-estimate')] as const
-        let operating: boolean | null = null
         try {
-          operating = await scheduleLoader(serviceNumber, mapping.busStopCode, startedAt, signal)
+          const operating = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
+          return [serviceNumber, emptyService(operating === false ? 'not-in-operation' : 'no-estimate')] as const
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') throw error
+          console.warn('LTA public bus schedule lookup failed.', {
+            stopId: mapping.stopId,
+            serviceNumber,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+          return [serviceNumber, emptyService('provider-error')] as const
         }
-        return [serviceNumber, emptyService(operating === false ? 'not-in-operation' : 'no-estimate')] as const
       }))
-      const observedAt = toIso(startedAt)
+      const observedAtMs = now()
+      const observedAt = toIso(observedAtMs)
       return {
         observedAt,
-        expiresAt: toIso(startedAt + cacheTtlMs),
+        expiresAt: toIso(observedAtMs + cacheTtlMs),
         services: Object.fromEntries(serviceEntries),
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') throw error
-      const observedAt = toIso(startedAt)
+      console.warn('LTA public bus arrival lookup failed.', {
+        stopId: mapping.stopId,
+        errorType: error instanceof Error ? error.name : typeof error,
+      })
+      const observedAt = toIso(now())
       return {
         observedAt,
-        expiresAt: toIso(startedAt + errorCacheTtlMs),
+        expiresAt: toIso(Date.parse(observedAt) + errorCacheTtlMs),
         services: Object.fromEntries(mapping.services.map((service) => [service, emptyService('provider-error')])),
       }
     }
@@ -121,7 +134,7 @@ export function createLtaPublicBusArrivalProvider(
   return {
     async getArrivals(stops, signal) {
       if (stops.length === 0) throw new Error('At least one public bus stop is required')
-      const loaded = await Promise.all(stops.map((stop) => getStop(stop, signal)))
+      const loaded = await mapWithConcurrency(stops, maxConcurrency, (stop) => getStop(stop, signal))
       const refreshedAt = toIso(now())
       const observationTimes = loaded.map(({ observedAt }) => Date.parse(observedAt))
       const expiryTimes = loaded.map(({ expiresAt }) => Date.parse(expiresAt))

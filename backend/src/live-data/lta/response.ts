@@ -1,4 +1,4 @@
-import type { PublicBusEstimatedArrival } from '../../domain/transit/public-bus-arrivals.js'
+import type { PublicBusEstimatedArrival } from '@navus/shared'
 
 export interface ParsedLtaServiceArrival {
   readonly serviceNumber: string

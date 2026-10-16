@@ -1,3 +1,4 @@
+import { fetchWithTimeout, UpstreamTimeoutError } from './timeouts.ts'
 export interface NusApiSession {
   readonly token: string
   readonly userId: string
@@ -13,6 +14,7 @@ export interface NusAuthenticatedClient {
   requestJson(
     requestFactory: (session: NusApiSession) => NusApiRequest,
     resourceName: string,
+    signal?: AbortSignal,
   ): Promise<unknown>
 }
 
@@ -27,6 +29,7 @@ export interface NusAuthenticatedClientOptions {
   readonly initialUserId?: string
   readonly initialDomain?: string
   readonly fetcher?: typeof fetch
+  readonly requestTimeoutMs?: number
 }
 
 export class NusAuthenticationError extends Error {
@@ -105,34 +108,43 @@ async function readJsonResponse(
   fetcher: typeof fetch,
   request: NusApiRequest,
   resourceName: string,
+  timeoutMs: number,
+  signal?: AbortSignal,
 ): Promise<NUSResponse> {
   let response: Response
   try {
-    response = await fetcher(request.url, request.init)
+    response = await fetchWithTimeout(fetcher, request.url, request.init, timeoutMs, signal)
   } catch (error: unknown) {
-    if (isAbortError(error)) throw error
-    throw new NusRequestError(`NUS ${resourceName} request failed`)
+    if (error instanceof UpstreamTimeoutError) {
+      throw new NusRequestError('NUS ' + resourceName + ' request timed out')
+    }
+    if (isAbortError(error) && signal?.aborted) throw error
+    throw new NusRequestError('NUS ' + resourceName + ' request failed')
   }
 
   let payload: unknown
   try {
     payload = await response.json() as unknown
-  } catch {
-    throw new NusRequestError(`NUS ${resourceName} response was not valid JSON`, response.status)
+  } catch (error: unknown) {
+    if (error instanceof UpstreamTimeoutError) {
+      throw new NusRequestError('NUS ' + resourceName + ' request timed out')
+    }
+    if (isAbortError(error) && signal?.aborted) throw error
+    throw new NusRequestError('NUS ' + resourceName + ' response was not valid JSON', response.status)
   }
 
   if (!response.ok && !isNusSessionExpiredResponse(payload)) {
-    throw new NusRequestError(`NUS ${resourceName} request failed: ${response.status}`, response.status)
+    throw new NusRequestError('NUS ' + resourceName + ' request failed: ' + response.status, response.status)
   }
 
   return { payload, status: response.status }
 }
-
 export function createNusAuthenticatedClient(
   options: NusAuthenticatedClientOptions,
 ): NusAuthenticatedClient {
   const accessTokenUrl = options.accessTokenUrl.trim()
   const fetcher = options.fetcher ?? fetch
+  const requestTimeoutMs = options.requestTimeoutMs ?? 8_000
   let session: NusApiSession | null = options.initialToken?.trim() && options.initialUserId?.trim()
     ? {
       token: options.initialToken.trim(),
@@ -144,7 +156,7 @@ export function createNusAuthenticatedClient(
 
   if (!accessTokenUrl) throw new NusAuthenticationError('NUS access-token URL is required')
 
-  const refreshSession = async (expiredToken?: string): Promise<NusApiSession> => {
+  const refreshSession = async (expiredToken?: string, signal?: AbortSignal): Promise<NusApiSession> => {
     if (expiredToken && session && session.token !== expiredToken) return session
     if (refreshInFlight) return refreshInFlight
 
@@ -165,7 +177,7 @@ export function createNusAuthenticatedClient(
             version: options.version,
           }),
         },
-      }, 'access-token')
+      }, 'access-token', requestTimeoutMs, signal)
 
       try {
         const parsed = parseNusAccessTokenResponse(response.payload)
@@ -185,23 +197,27 @@ export function createNusAuthenticatedClient(
     }
   }
 
-  const getSession = async (): Promise<NusApiSession> => session ?? refreshSession()
+  const getSession = async (signal?: AbortSignal): Promise<NusApiSession> => session ?? refreshSession(undefined, signal)
 
   return {
-    async requestJson(requestFactory, resourceName) {
-      const initialSession = await getSession()
+    async requestJson(requestFactory, resourceName, signal) {
+      const initialSession = await getSession(signal)
       const firstResponse = await readJsonResponse(
         fetcher,
         requestFactory(initialSession),
         resourceName,
+        requestTimeoutMs,
+        signal,
       )
       if (!isNusSessionExpiredResponse(firstResponse.payload)) return firstResponse.payload
 
-      const refreshedSession = await refreshSession(initialSession.token)
+      const refreshedSession = await refreshSession(initialSession.token, signal)
       const retryResponse = await readJsonResponse(
         fetcher,
         requestFactory(refreshedSession),
         resourceName,
+        requestTimeoutMs,
+        signal,
       )
       if (isNusSessionExpiredResponse(retryResponse.payload)) {
         throw new NusSessionExpiredError()

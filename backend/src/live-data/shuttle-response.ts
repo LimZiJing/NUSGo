@@ -1,7 +1,7 @@
 import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
-} from '../../domain/transit/arrivals.js'
+} from '@navus/shared'
 
 export interface ParsedShuttleServiceRoute {
   readonly routeId: string
@@ -160,28 +160,46 @@ function collectRoutes(
   value: unknown,
   routeHint: string | null,
   output: ParsedShuttleServiceRoute[],
-): void {
+): boolean {
   if (Array.isArray(value)) {
-    for (const item of value) collectRoutes(item, routeHint, output)
-    return
+    if (value.length === 0) return routeHint !== null
+    let recognized = false
+    for (const item of value) {
+      recognized = collectRoutes(item, routeHint, output) || recognized
+    }
+    return recognized
   }
-  if (!isRecord(value)) return
+  if (!isRecord(value)) return false
 
   const candidate = parseCandidate(value, routeHint)
   if (candidate) {
     output.push(candidate)
-    return
+    return true
   }
 
+  let recognized = routeIdFrom(value, routeHint) !== null
   for (const [key, child] of Object.entries(value)) {
     const childRouteHint = isLikelyRouteKey(key) ? key.trim() : routeHint
-    if (child !== value) collectRoutes(child, childRouteHint, output)
+    if (child !== value) recognized = collectRoutes(child, childRouteHint, output) || recognized
   }
+  return recognized
+}
+
+function hasNonEmptyData(value: RecordValue | readonly unknown[]): boolean {
+  return Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0
 }
 
 export function parseShuttleServiceResponse(input: unknown): readonly ParsedShuttleServiceRoute[] {
+  if (!isRecord(input) || !('data' in input) ||
+    (!Array.isArray(input.data) && !isRecord(input.data))) {
+    throw new Error('NUS shuttle-service response was invalid')
+  }
+
   const parsed: ParsedShuttleServiceRoute[] = []
-  collectRoutes(input, null, parsed)
+  const hasRecognizedRoute = collectRoutes(input.data, null, parsed)
+  if (hasNonEmptyData(input.data) && !hasRecognizedRoute) {
+    throw new Error('NUS shuttle-service response was invalid')
+  }
   const byRoute = new Map<string, ParsedShuttleServiceRoute>()
   for (const route of parsed) byRoute.set(route.routeId, route)
   return [...byRoute.values()]

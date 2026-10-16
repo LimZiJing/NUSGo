@@ -28,7 +28,13 @@ describe('Express API foundation', () => {
     assert.equal(health.status, 200)
     assert.deepEqual(await health.json(), { status: 'ok', dataVersion: 'development' })
     assert.equal(ready.status, 503)
-    assert.deepEqual(await ready.json(), { error: 'Canonical data is not ready' })
+    assert.deepEqual(await ready.json(), {
+      status: 'not-ready',
+      dataVersion: 'development',
+      canonicalDataReady: false,
+      liveSnapshotReady: false,
+      error: 'Canonical data is not ready',
+    })
   })
 
   it('answers only allowed CORS preflights and rejects unknown origins', async () => {
@@ -78,7 +84,7 @@ describe('Express API foundation', () => {
     const response = await fetch(`${baseUrl}/api/private-details`)
 
     assert.equal(response.status, 404)
-    assert.deepEqual(await response.json(), { error: 'API route not found' })
+    assert.deepEqual(await response.json(), { error: 'API route not found', code: 'invalid_request' })
     assert.equal(response.headers.get('x-powered-by'), null)
   })
 

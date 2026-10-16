@@ -1,20 +1,43 @@
-import express, { type ErrorRequestHandler, type Express, type RequestHandler } from 'express'
-import type { ApiErrorResponse, ApiHealthResponse, ApiReadyResponse } from '@navus/shared'
+import express, {
+  type ErrorRequestHandler,
+  type Express,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express'
+import type {
+  ApiErrorCode,
+  ApiErrorResponse,
+  ApiHealthResponse,
+  ApiNotReadyResponse,
+  ApiReadinessResponse,
+  ApiReadyResponse,
+} from '@navus/shared'
 import type { BackendConfig } from './config.ts'
 import type { BackendData } from './data.ts'
+import { LiveDataRequestError, type BackendLiveData } from './live-data/runtime.ts'
 
 const BODY_LIMIT = '32kb'
 const MAX_URL_LENGTH = 2048
 const ALLOWED_METHODS = 'GET, HEAD, POST, OPTIONS'
 const ALLOWED_HEADERS = new Set(['accept', 'content-type'])
 
-function sendError(response: express.Response, status: number, error: string): void {
-  const body: ApiErrorResponse = { error }
+function sendError(
+  response: Response,
+  status: number,
+  error: string,
+  code?: ApiErrorCode,
+): void {
+  const body: ApiErrorResponse = { error, ...(code ? { code } : {}) }
   response.status(status).json(body)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
 }
 
 function corsMiddleware(origins: readonly string[]): RequestHandler {
@@ -86,9 +109,60 @@ function errorHandler(): ErrorRequestHandler {
   }
 }
 
+function queryValue(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function liveDataHandler(
+  liveData: BackendLiveData | null,
+  selectQuery: (request: Request) => unknown,
+  load: (liveData: BackendLiveData, query: string | null, signal: AbortSignal) => unknown | Promise<unknown>,
+): RequestHandler {
+  return (request, response, next) => {
+    if (!liveData) {
+      sendError(response, 503, 'Live transit data is not ready', 'not_ready')
+      return
+    }
+
+    const controller = new AbortController()
+    const abortWhenDisconnected = () => {
+      if (!response.writableEnded) controller.abort()
+    }
+    const onRequestAborted = () => controller.abort()
+    request.once('aborted', onRequestAborted)
+    response.once('close', abortWhenDisconnected)
+
+    void Promise.resolve()
+      .then(() => load(liveData, queryValue(selectQuery(request)), controller.signal))
+      .then((body) => {
+        if (!controller.signal.aborted && !response.writableEnded) response.json(body)
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted || isAbortError(error)) return
+        if (error instanceof LiveDataRequestError) {
+          sendError(response, error.status, error.message, error.code)
+          return
+        }
+        next(error)
+      })
+      .finally(() => {
+        request.removeListener('aborted', onRequestAborted)
+        response.removeListener('close', abortWhenDisconnected)
+      })
+  }
+}
+
+function methodNotAllowed(): RequestHandler {
+  return (_request, response) => {
+    response.setHeader('Allow', 'GET, HEAD, OPTIONS')
+    sendError(response, 405, 'Only GET is supported', 'invalid_request')
+  }
+}
+
 export function createApp(
   config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'>,
   data: BackendData | null,
+  liveData: BackendLiveData | null = null,
 ): Express {
   const app = express()
   app.disable('x-powered-by')
@@ -100,7 +174,7 @@ export function createApp(
   app.use('/api', corsMiddleware(config.corsOrigins))
   app.use('/api', (request, response, next) => {
     if (request.originalUrl.length > MAX_URL_LENGTH) {
-      sendError(response, 414, 'Request URL is too long')
+      sendError(response, 414, 'Request URL is too long', 'invalid_request')
       return
     }
     next()
@@ -112,24 +186,47 @@ export function createApp(
     response.json(body)
   })
   app.get('/api/ready', (_request, response) => {
-    if (!data) {
-      sendError(response, 503, 'Canonical data is not ready')
+    const canonicalDataReady = data !== null
+    const liveSnapshotReady = liveData?.isSnapshotReady() === true
+    if (!canonicalDataReady || !liveSnapshotReady) {
+      const body: ApiNotReadyResponse = {
+        status: 'not-ready',
+        dataVersion: data?.dataVersion ?? config.dataVersion,
+        canonicalDataReady,
+        liveSnapshotReady,
+        error: canonicalDataReady
+          ? 'Live transit snapshot is not ready'
+          : 'Canonical data is not ready',
+      }
+      response.status(503).json(body)
       return
     }
 
     const body: ApiReadyResponse = {
       status: 'ready',
       dataVersion: data.dataVersion,
+      canonicalDataReady: true,
+      liveSnapshotReady: true,
       venueCount: data.counts.venues,
       routeCount: data.counts.routes,
       stopCount: data.counts.stops,
       walkingConnectionCount: data.counts.walkingConnections,
     }
-    response.json(body)
+    response.json(body satisfies ApiReadinessResponse)
   })
 
+  app.route('/api/shuttle-arrivals')
+    .get(liveDataHandler(liveData, (request) => request.query.stops, (service, query) => service.getShuttleArrivals(query)))
+    .all(methodNotAllowed())
+  app.route('/api/shuttle-service-windows')
+    .get(liveDataHandler(liveData, (request) => request.query.routes, (service, query) => service.getServiceWindows(query)))
+    .all(methodNotAllowed())
+  app.route('/api/public-bus-arrivals')
+    .get(liveDataHandler(liveData, (request) => request.query.stops, (service, query) => service.getPublicBusArrivals(query)))
+    .all(methodNotAllowed())
+
   app.use('/api', (_request, response) => {
-    sendError(response, 404, 'API route not found')
+    sendError(response, 404, 'API route not found', 'invalid_request')
   })
   app.use(errorHandler())
   return app

@@ -1,4 +1,4 @@
-import type { LtaPublicBusStopMapping } from './mapping.js'
+import type { LtaPublicBusStopMapping } from './mapping.ts'
 
 export interface LtaServiceOperatingWindow {
   readonly firstBus: string

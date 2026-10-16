@@ -5,10 +5,12 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 ## Ownership
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
-- `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications. `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
+- `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications.
+- `backend/src` owns the Express API, server-only NUS and LTA provider adapters, and live-data lifecycle; provider credentials stay in backend configuration.
+- `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
 - `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
-- `frontend/src/infrastructure` owns MapLibre and network/data adapters, static-data loading, map lifecycle, markers, layers, popups, and other external side effects.
+- `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
 - `frontend/src/pathfinding` owns the provider-injected Path model, bounded search, ordered planning pipeline, and its walking provider boundary. The app composition supplies validated transit data, timing callbacks, clocks, cooperative yields, and cancellation; Plan presentation and MapLibre rendering stay outside this folder.
 
 `frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.

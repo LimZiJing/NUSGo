@@ -1,4 +1,4 @@
-import type { ShuttleServiceWindow } from '../../domain/transit/service-hours.js'
+import type { ShuttleServiceWindow } from '@navus/shared'
 
 interface RecordValue {
   readonly [key: string]: unknown

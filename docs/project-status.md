@@ -14,7 +14,7 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 
 ## Current implementation
 
-- The Express foundation exposes process health and canonical-data readiness on loopback, applies exact-origin CORS and bounded JSON request parsing, and validates venue, transit, route geometry, walking graph, and generated timing inputs at startup. The root development command starts Express, Vite, and local Valhalla with shutdown cleanup. Some live-data handlers and browser clients still run through Vite and remain to be migrated to Express.
+- Express owns process health, readiness, NUS shuttle arrivals and service windows, LTA public-bus arrivals, and the single-process 33-stop shuttle snapshot poller. It applies exact-origin CORS and bounded JSON parsing, validates canonical inputs at startup, keeps provider credentials in backend configuration, and stops upstream work during shutdown. Vite serves the browser and proxies the existing /api paths to Express during development; #232 owns the later browser API-origin cutover. The root development command starts Express, Vite, and local Valhalla with shutdown cleanup.
 
 - Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style, with bus POI labels suppressed and low-priority local POIs reduced while rail, airport, and major campus context remain visible.
 - Map attribution remains visible as a small, readable footer without the expanded disclosure control, preserving the OpenFreeMap and OpenStreetMap credits on mobile and desktop.

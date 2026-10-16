@@ -162,14 +162,8 @@ export async function createBackendLiveData(
 
   const scheduleLoader = createLtaScheduleLoader({
     mappings,
-    fetcher: async (url, signal) => {
-      const response = await publicBusFetcher(url, {
-        headers: { Accept: 'application/json', AccountKey: config.liveData.ltaAccountKey },
-        signal,
-      })
-      if (!response.ok) throw new Error('LTA DataMall route request failed: ' + response.status)
-      return response.json() as Promise<unknown>
-    },
+    accountKey: config.liveData.ltaAccountKey,
+    fetcher: publicBusFetcher,
   })
   const ltaProvider = createLtaPublicBusArrivalProvider({
     accountKey: config.liveData.ltaAccountKey,

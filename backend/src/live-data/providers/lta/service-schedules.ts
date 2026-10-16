@@ -13,8 +13,6 @@ export interface LtaServiceSchedule {
   readonly sunday: LtaServiceOperatingWindow | null
 }
 
-export type LtaScheduleFetcher = (url: string, signal: AbortSignal) => Promise<unknown>
-
 export type LtaScheduleLoader = (
   serviceNumber: string,
   busStopCode: string,
@@ -114,7 +112,8 @@ function scheduleKey(serviceNumber: string, busStopCode: string): string {
 }
 
 export function createLtaScheduleLoader(options: {
-  readonly fetcher: LtaScheduleFetcher
+  readonly accountKey: string
+  readonly fetcher: typeof fetch
   readonly baseUrl?: string
   readonly mappings: readonly LtaPublicBusStopMapping[]
 }): LtaScheduleLoader {
@@ -125,7 +124,12 @@ export function createLtaScheduleLoader(options: {
   const loadAll = async (signal: AbortSignal): Promise<ReadonlyMap<string, readonly LtaServiceSchedule[]>> => {
     const schedules = new Map<string, LtaServiceSchedule[]>()
     for (let skip = 0; ; skip += 500) {
-      const input = await options.fetcher(`${baseUrl}?$skip=${skip}`, signal)
+      const response = await options.fetcher(`${baseUrl}?$skip=${skip}`, {
+        headers: { Accept: 'application/json', AccountKey: options.accountKey },
+        signal,
+      })
+      if (!response.ok) throw new Error('LTA DataMall route request failed: ' + response.status)
+      const input = await response.json() as unknown
       if (!isRecord(input) || !Array.isArray(input.value)) throw new Error('LTA bus route response was invalid')
       for (const record of input.value) {
         const schedule = parseLtaServiceSchedule(record)

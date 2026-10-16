@@ -10,7 +10,7 @@ import type {
   ShuttleServiceWindow,
 } from '@navus/shared'
 import type { BackendConfig } from '../config.ts'
-import type { BackendData } from '../data.ts'
+import type { BackendData } from '../canonical-data.ts'
 import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './nus-client.ts'
 import { createShuttleArrivalSnapshotStore, type ShuttleArrivalStop, type ShuttleArrivalStopResult } from './snapshot.ts'
 import { parseShuttleServiceResponse } from './shuttle-response.ts'

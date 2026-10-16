@@ -9,7 +9,7 @@ import {
   validateTransitMapData,
 } from '@navus/shared'
 import { describe, it } from 'node:test'
-import { loadCanonicalData, validateCanonicalData } from './data.ts'
+import { loadCanonicalData, validateCanonicalData } from './canonical-data.ts'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const sourceData = resolve(repositoryRoot, 'frontend/public/data')

@@ -6,7 +6,7 @@ import { before, describe, it } from 'node:test'
 import { generateShuttleTimingData, validateTransitMapData } from '@navus/shared'
 import { createApp } from '../http/app.ts'
 import { loadBackendConfig } from '../config.ts'
-import { validateCanonicalData, type BackendData } from '../data.ts'
+import { validateCanonicalData, type BackendData } from '../canonical-data.ts'
 import { closeHttpServer, listenHttpServer } from '../server.ts'
 import { createBackendLiveData } from './runtime.ts'
 

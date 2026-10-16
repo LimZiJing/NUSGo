@@ -1,5 +1,5 @@
 import type { Express, Request, RequestHandler } from 'express'
-import type { BackendData } from '../../data.ts'
+import type { BackendData } from '../../canonical-data.ts'
 import { LiveDataRequestError, type BackendLiveData } from '../../live-data/runtime.ts'
 import { sendApiError } from '../error-response.ts'
 import { InvalidSelectionError, parseBusRouteSelection, parseBusStopSelection } from '../validation/stop-selection.ts'

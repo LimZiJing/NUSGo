@@ -1,6 +1,6 @@
 import express, { type Express, type RequestHandler } from 'express'
 import type { BackendConfig } from '../config.ts'
-import type { BackendData } from '../data.ts'
+import type { BackendData } from '../canonical-data.ts'
 import type { BackendLiveData } from '../live-data/runtime.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'

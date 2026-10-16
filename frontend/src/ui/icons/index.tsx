@@ -11,6 +11,7 @@ import {
   CircleDot,
   EllipsisVertical,
   Footprints,
+  Layers,
   MapPin,
   LocateFixed,
   Navigation,
@@ -75,6 +76,10 @@ export function FootprintsIcon(props: IconProps) {
 
 export function LocateIcon(props: IconProps) {
   return renderDecorativeIcon(LocateFixed, props)
+}
+
+export function LayersIcon(props: IconProps) {
+  return renderDecorativeIcon(Layers, props)
 }
 
 export function MapPinIcon(props: IconProps) {

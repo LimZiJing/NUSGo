@@ -164,6 +164,70 @@ describe('Express live transit API', () => {
     }
   })
 
+  it('retries a transient NUS stop failure before publishing the first snapshot', async () => {
+    const targetProviderStopName = 'Botanic Gardens MRT (PUDO)'
+    const attemptsByStopName = new Map<string, number>()
+    const config = createConfig()
+    const retryConfig = {
+      ...config,
+      liveData: {
+        ...config.liveData,
+        retryAttempts: 1,
+        retryBaseDelayMs: 0,
+      },
+    }
+    const fetcher: typeof fetch = async (input, init) => {
+      if (!String(input).endsWith('/shuttle-service')) {
+        throw new Error('Unexpected upstream request: ' + String(input))
+      }
+
+      const body = typeof init?.body === 'string'
+        ? JSON.parse(init.body) as { busstopname?: unknown }
+        : null
+      if (typeof body?.busstopname !== 'string') throw new Error('Expected a NUS provider stop name')
+      const stopName = body.busstopname
+      const attempts = (attemptsByStopName.get(stopName) ?? 0) + 1
+      attemptsByStopName.set(stopName, attempts)
+      if (stopName === targetProviderStopName && attempts === 1) {
+        return jsonResponse({ error: 'temporarily unavailable' }, 503)
+      }
+      return jsonResponse({ data: [] })
+    }
+    const liveData = await createBackendLiveData(retryConfig, backendData, {
+      fetcher,
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+      assert.equal(attemptsByStopName.get(targetProviderStopName), 2)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('reports a provider error when an LTA schedule lookup fails', async () => {
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: async (input) => {
+        const url = String(input)
+        if (url.includes('/BusArrival?')) return jsonResponse({ Services: [] })
+        if (url.includes('/BusRoutes?')) return jsonResponse({ invalid: true })
+        throw new Error('Unexpected upstream request: ' + url)
+      },
+      now: () => fixedNow,
+      ltaMappings: [{ stopId: 'KR-MRT', busStopCode: '18331', services: ['95'] }],
+    })
+
+    try {
+      const result = await liveData.getPublicBusArrivals(JSON.stringify(['KR-MRT']))
+      assert.equal(result.stops['KR-MRT']?.services['95']?.status, 'provider-error')
+    } finally {
+      await liveData.stop()
+    }
+  })
+
   it('reports live readiness and serves validated shuttle, service-window, and public-bus contracts', async () => {
     const config = createConfig()
     const firstStop = backendData.network.stops[0]

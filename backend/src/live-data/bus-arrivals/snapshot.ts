@@ -4,33 +4,33 @@ import type {
   ShuttleRouteArrivalData,
 } from '@navus/shared'
 
-export interface ShuttleArrivalStop {
+export interface BusArrivalStop {
   readonly stopId: string
   readonly stopName: string
 }
 
-export interface ShuttleArrivalStopResult extends DataFreshness {
+export interface BusArrivalStopResult extends DataFreshness {
   readonly routes: Readonly<Record<string, ShuttleRouteArrivalData>>
 }
 
-export type ShuttleArrivalStopLoader = (
-  stop: ShuttleArrivalStop,
+export type BusArrivalStopLoader = (
+  stop: BusArrivalStop,
   signal: AbortSignal,
-) => Promise<ShuttleArrivalStopResult>
+) => Promise<BusArrivalStopResult>
 
-export interface ShuttleArrivalStopFailure {
+export interface BusArrivalStopFailure {
   readonly stopId: string
   readonly error: unknown
 }
 
-export interface ShuttleArrivalSnapshotRefreshResult {
+export interface BusArrivalSnapshotRefreshResult {
   readonly snapshot: ShuttleArrivalSnapshot | null
   readonly published: boolean
   readonly successfulStopIds: readonly string[]
-  readonly failures: readonly ShuttleArrivalStopFailure[]
+  readonly failures: readonly BusArrivalStopFailure[]
 }
 
-export interface RefreshShuttleArrivalSnapshotOptions {
+export interface RefreshBusArrivalSnapshotOptions {
   readonly previousSnapshot?: ShuttleArrivalSnapshot | null
   readonly snapshotVersion: string
   readonly refreshIntervalMs: number
@@ -40,7 +40,7 @@ export interface RefreshShuttleArrivalSnapshotOptions {
   readonly signal?: AbortSignal
 }
 
-export interface ShuttleArrivalRefreshLog {
+export interface BusArrivalRefreshLog {
   readonly startedAt: string
   readonly completedAt: string
   readonly durationMs: number
@@ -50,22 +50,22 @@ export interface ShuttleArrivalRefreshLog {
   readonly published: boolean
 }
 
-export interface ShuttleArrivalSnapshotStoreOptions {
-  readonly stops: readonly ShuttleArrivalStop[]
-  readonly loadStop: ShuttleArrivalStopLoader
+export interface BusArrivalSnapshotStoreOptions {
+  readonly stops: readonly BusArrivalStop[]
+  readonly loadStop: BusArrivalStopLoader
   readonly refreshIntervalMs: number
   readonly maxConcurrency: number
   readonly now?: () => number
   readonly onRefreshComplete?: (
-    log: ShuttleArrivalRefreshLog,
-    failures: readonly ShuttleArrivalStopFailure[],
+    log: BusArrivalRefreshLog,
+    failures: readonly BusArrivalStopFailure[],
   ) => void
 }
 
-export interface ShuttleArrivalSnapshotStore {
+export interface BusArrivalSnapshotStore {
   start(): void
   stop(): Promise<void>
-  refreshNow(): Promise<ShuttleArrivalSnapshotRefreshResult>
+  refreshNow(): Promise<BusArrivalSnapshotRefreshResult>
   getSnapshot(): ShuttleArrivalSnapshot | null
 }
 
@@ -82,12 +82,12 @@ function abortError(signal: AbortSignal): unknown {
 }
 
 async function loadStopsWithLimit(
-  stops: readonly ShuttleArrivalStop[],
-  loadStop: ShuttleArrivalStopLoader,
+  stops: readonly BusArrivalStop[],
+  loadStop: BusArrivalStopLoader,
   signal: AbortSignal,
   maxConcurrency: number,
-): Promise<readonly PromiseSettledResult<ShuttleArrivalStopResult>[]> {
-  const settled: PromiseSettledResult<ShuttleArrivalStopResult>[] = new Array(stops.length)
+): Promise<readonly PromiseSettledResult<BusArrivalStopResult>[]> {
+  const settled: PromiseSettledResult<BusArrivalStopResult>[] = new Array(stops.length)
   let nextIndex = 0
 
   const worker = async (): Promise<void> => {
@@ -114,11 +114,11 @@ async function loadStopsWithLimit(
   return settled
 }
 
-export async function refreshShuttleArrivalSnapshot(
-  stops: readonly ShuttleArrivalStop[],
-  loadStop: ShuttleArrivalStopLoader,
-  options: RefreshShuttleArrivalSnapshotOptions,
-): Promise<ShuttleArrivalSnapshotRefreshResult> {
+export async function refreshBusArrivalSnapshot(
+  stops: readonly BusArrivalStop[],
+  loadStop: BusArrivalStopLoader,
+  options: RefreshBusArrivalSnapshotOptions,
+): Promise<BusArrivalSnapshotRefreshResult> {
   if (!Number.isInteger(options.maxConcurrency) || options.maxConcurrency < 1) {
     throw new Error('Snapshot maxConcurrency must be a positive integer')
   }
@@ -126,8 +126,8 @@ export async function refreshShuttleArrivalSnapshot(
   const signal = options.signal ?? new AbortController().signal
   const settled = await loadStopsWithLimit(stops, loadStop, signal, options.maxConcurrency)
   const successfulStopIds: string[] = []
-  const failures: ShuttleArrivalStopFailure[] = []
-  const loaded = new Map<string, ShuttleArrivalStopResult>()
+  const failures: BusArrivalStopFailure[] = []
+  const loaded = new Map<string, BusArrivalStopResult>()
 
   settled.forEach((result, index) => {
     const stop = stops[index]
@@ -192,13 +192,13 @@ export async function refreshShuttleArrivalSnapshot(
   }
 }
 
-export function createShuttleArrivalSnapshotStore(
-  options: ShuttleArrivalSnapshotStoreOptions,
-): ShuttleArrivalSnapshotStore {
+export function createBusArrivalSnapshotStore(
+  options: BusArrivalSnapshotStoreOptions,
+): BusArrivalSnapshotStore {
   const now = options.now ?? Date.now
   let currentSnapshot: ShuttleArrivalSnapshot | null = null
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
-  let refreshInFlight: Promise<ShuttleArrivalSnapshotRefreshResult> | null = null
+  let refreshInFlight: Promise<BusArrivalSnapshotRefreshResult> | null = null
   let activeController: AbortController | null = null
   let started = false
   let generation = 0
@@ -210,7 +210,7 @@ export function createShuttleArrivalSnapshotStore(
     refreshTimer.unref?.()
   }
 
-  const refreshNow = (): Promise<ShuttleArrivalSnapshotRefreshResult> => {
+  const refreshNow = (): Promise<BusArrivalSnapshotRefreshResult> => {
     if (refreshInFlight) return refreshInFlight
 
     const startedAtMs = now()
@@ -220,8 +220,8 @@ export function createShuttleArrivalSnapshotStore(
     const controller = new AbortController()
     activeController = controller
 
-    const refresh = (async (): Promise<ShuttleArrivalSnapshotRefreshResult> => {
-      const result = await refreshShuttleArrivalSnapshot(options.stops, options.loadStop, {
+    const refresh = (async (): Promise<BusArrivalSnapshotRefreshResult> => {
+      const result = await refreshBusArrivalSnapshot(options.stops, options.loadStop, {
         previousSnapshot: currentSnapshot,
         snapshotVersion,
         refreshIntervalMs: options.refreshIntervalMs,
@@ -274,5 +274,5 @@ export function createShuttleArrivalSnapshotStore(
 }
 
 function logRefreshError(error: unknown): void {
-  console.error('NUS shuttle snapshot refresh failed unexpectedly.', error instanceof Error ? error.name : typeof error)
+  console.error('Bus-arrival snapshot refresh failed unexpectedly.', error instanceof Error ? error.name : typeof error)
 }

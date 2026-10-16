@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
-  createShuttleArrivalSnapshotStore,
-  refreshShuttleArrivalSnapshot,
-  type ShuttleArrivalStop,
-  type ShuttleArrivalStopResult,
+  createBusArrivalSnapshotStore,
+  refreshBusArrivalSnapshot,
+  type BusArrivalStop,
+  type BusArrivalStopResult,
 } from './snapshot.ts'
 
-const stops: readonly ShuttleArrivalStop[] = [
+const stops: readonly BusArrivalStop[] = [
   { stopId: 'STOP-A', stopName: 'Stop A' },
   { stopId: 'STOP-B', stopName: 'Stop B' },
   { stopId: 'STOP-C', stopName: 'Stop C' },
 ]
 
-function resultFor(_stopId: string, observedAt = '2026-10-10T10:00:00.000Z'): ShuttleArrivalStopResult {
+function resultFor(_stopId: string, observedAt = '2026-10-10T10:00:00.000Z'): BusArrivalStopResult {
   return {
     observedAt,
     expiresAt: '2026-10-10T10:00:30.000Z',
@@ -40,9 +40,9 @@ const previousSnapshot = {
   }])),
 } as const
 
-describe('refreshShuttleArrivalSnapshot', () => {
+describe('refreshBusArrivalSnapshot', () => {
   it('waits for a complete first generation before publishing any stops', async () => {
-    const result = await refreshShuttleArrivalSnapshot(stops, async (stop) => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
       if (stop.stopId === 'STOP-B') throw new Error('NUS unavailable')
       return resultFor(stop.stopId)
     }, {
@@ -59,7 +59,7 @@ describe('refreshShuttleArrivalSnapshot', () => {
   it('publishes every canonical stop after bounded requests settle', async () => {
     let active = 0
     let maximumActive = 0
-    const result = await refreshShuttleArrivalSnapshot(stops, async (stop) => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
       active += 1
       maximumActive = Math.max(maximumActive, active)
       await Promise.resolve()
@@ -79,7 +79,7 @@ describe('refreshShuttleArrivalSnapshot', () => {
   })
 
   it('retains a failed stop value and its original observation time', async () => {
-    const result = await refreshShuttleArrivalSnapshot(stops, async (stop) => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
       if (stop.stopId === 'STOP-B') throw new Error('NUS unavailable')
       return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
     }, {
@@ -95,7 +95,7 @@ describe('refreshShuttleArrivalSnapshot', () => {
   })
 
   it('retains the last good generation when every provider request fails', async () => {
-    const result = await refreshShuttleArrivalSnapshot(stops, async () => {
+    const result = await refreshBusArrivalSnapshot(stops, async () => {
       throw new Error('NUS unavailable')
     }, {
       previousSnapshot,
@@ -110,19 +110,19 @@ describe('refreshShuttleArrivalSnapshot', () => {
   })
 })
 
-describe('createShuttleArrivalSnapshotStore', () => {
+describe('createBusArrivalSnapshotStore', () => {
   it('starts the next refresh 30 seconds after the previous cycle started', async (context) => {
     context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: Date.parse('2026-10-10T10:00:00.000Z') })
     let loadCount = 0
-    const firstCycleResolvers: Array<(value: ShuttleArrivalStopResult) => void> = []
-    const store = createShuttleArrivalSnapshotStore({
+    const firstCycleResolvers: Array<(value: BusArrivalStopResult) => void> = []
+    const store = createBusArrivalSnapshotStore({
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 3,
       loadStop: (stop) => {
         loadCount += 1
         if (loadCount <= stops.length) {
-          return new Promise<ShuttleArrivalStopResult>((resolve) => firstCycleResolvers.push(resolve))
+          return new Promise<BusArrivalStopResult>((resolve) => firstCycleResolvers.push(resolve))
         }
         return Promise.resolve(resultFor(stop.stopId))
       },
@@ -147,14 +147,14 @@ describe('createShuttleArrivalSnapshotStore', () => {
   })
 
   it('shares one in-flight refresh and never exposes a partial generation', async () => {
-    let releaseSlowStop: (value: ShuttleArrivalStopResult) => void = () => undefined
-    const store = createShuttleArrivalSnapshotStore({
+    let releaseSlowStop: (value: BusArrivalStopResult) => void = () => undefined
+    const store = createBusArrivalSnapshotStore({
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 3,
       loadStop: async (stop) => {
         if (stop.stopId === 'STOP-C') {
-          return new Promise<ShuttleArrivalStopResult>((resolveResult) => {
+          return new Promise<BusArrivalStopResult>((resolveResult) => {
             releaseSlowStop = resolveResult
           })
         }
@@ -175,13 +175,13 @@ describe('createShuttleArrivalSnapshotStore', () => {
   it('starts a refresh immediately and aborts in-flight work on stop', async () => {
     let started = 0
     let aborted = false
-    const store = createShuttleArrivalSnapshotStore({
+    const store = createBusArrivalSnapshotStore({
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
       loadStop: (_stop, signal) => {
         started += 1
-        return new Promise<ShuttleArrivalStopResult>((_resolve, reject) => {
+        return new Promise<BusArrivalStopResult>((_resolve, reject) => {
           signal.addEventListener('abort', () => {
             aborted = true
             reject(new DOMException('Aborted', 'AbortError'))

@@ -12,7 +12,7 @@ import type {
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
 import { createNusAuthenticatedClient, NusRequestError, type NusApiRequest, type NusApiSession } from './nus-client.ts'
-import { createShuttleArrivalSnapshotStore, type ShuttleArrivalStop, type ShuttleArrivalStopResult } from './snapshot.ts'
+import { createBusArrivalSnapshotStore, type BusArrivalStop, type BusArrivalStopResult } from './bus-arrivals/snapshot.ts'
 import { parseShuttleServiceResponse } from './shuttle-response.ts'
 import { parseRouteServiceWindows } from './service-window-response.ts'
 import { mapWithConcurrency } from './concurrency.ts'
@@ -91,8 +91,8 @@ async function readLtaMappings(dataDirectory: string): Promise<unknown> {
 
 function parseNusProviderStops(
   input: unknown,
-  canonicalStops: readonly ShuttleArrivalStop[],
-): readonly ShuttleArrivalStop[] {
+  canonicalStops: readonly BusArrivalStop[],
+): readonly BusArrivalStop[] {
   if (!Array.isArray(input)) throw new Error('NUS provider stop names are invalid')
 
   const canonicalStopIds = new Set(canonicalStops.map(({ stopId }) => stopId))
@@ -132,8 +132,8 @@ function parseNusProviderStops(
 
 async function readNusProviderStops(
   dataDirectory: string,
-  canonicalStops: readonly ShuttleArrivalStop[],
-): Promise<readonly ShuttleArrivalStop[]> {
+  canonicalStops: readonly BusArrivalStop[],
+): Promise<readonly BusArrivalStop[]> {
   let text: string
   try {
     text = await readFile(join(dataDirectory, 'bus-stops.json'), 'utf8')
@@ -226,7 +226,7 @@ export async function createBackendLiveData(
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch
   const providerConfig = config.liveData.nusProvider
-  const canonicalStops: readonly ShuttleArrivalStop[] = data.network.stops.map((stop) => ({
+  const canonicalStops: readonly BusArrivalStop[] = data.network.stops.map((stop) => ({
     stopId: stop.id,
     stopName: stop.longName,
   }))
@@ -264,9 +264,9 @@ export async function createBackendLiveData(
     : null
 
   const loadStop = async (
-    stop: ShuttleArrivalStop,
+    stop: BusArrivalStop,
     signal: AbortSignal,
-  ): Promise<ShuttleArrivalStopResult> => {
+  ): Promise<BusArrivalStopResult> => {
     if (!nusClient || !providerConfig) throw new Error('NUS live-data provider is not configured')
     const payload = await retryNusRequest(() => nusClient.requestJson((session) => createBusProxyRequest(
       providerConfig,
@@ -287,16 +287,16 @@ export async function createBackendLiveData(
     }
   }
 
-  const snapshotStore = createShuttleArrivalSnapshotStore({
+  const snapshotStore = createBusArrivalSnapshotStore({
     stops: providerStops,
     loadStop,
     refreshIntervalMs: config.liveData.shuttleRefreshIntervalMs,
     maxConcurrency: config.liveData.maxConcurrency,
     now,
     onRefreshComplete(log, failures) {
-      console.info('NUS shuttle arrival refresh completed.', log)
+      console.info('NUS bus-arrival refresh completed.', log)
       if (failures.length > 0) {
-        console.warn('NUS shuttle arrival refresh had failed stops.', {
+        console.warn('NUS bus-arrival refresh had failed stops.', {
           stopIds: failures.map(({ stopId }) => stopId),
           failureCount: failures.length,
         })

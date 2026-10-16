@@ -6,7 +6,12 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
 - `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications.
-- `backend/src` owns the Express API, server-only NUS and LTA provider adapters, and live-data lifecycle; provider credentials stay in backend configuration.
+- `backend/src/server.ts` owns process startup and shutdown, while `backend/src/config.ts` and `backend/src/canonical-data.ts` own backend settings and canonical data loading.
+- `backend/src/http` owns Express middleware, route registration, and external request validation. Health and live-data handlers live in `http/routes/`; `http/routes/journeys.ts` is reserved for #233 and should be added with its implementation.
+- `backend/src/live-data/runtime.ts` composes live-data adapters, owns snapshot lifecycle, and exposes backend live-data operations without Express response construction.
+- `backend/src/live-data/bus-arrivals/snapshot.ts` owns provider-independent arrival snapshot generations and freshness.
+- `backend/src/live-data/providers/nus` and `backend/src/live-data/providers/lta` own provider authentication, mappings, requests, payload parsing, and provider caches. Provider credentials stay in backend configuration.
+- `backend/src/live-data/upstream` owns reusable concurrency, retry, and timeout controls used by provider modules.
 - `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
 - `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
@@ -47,6 +52,8 @@ The intended direction is:
 - UI modules must not reach into application internals or infrastructure. They receive state and callbacks through props or small framework-free interfaces.
 
 The diagram describes allowed ownership and dependency direction; it does not require every module to import every lower layer.
+
+Backend dependencies flow from HTTP routes and validation to the live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules.
 
 ## State, callbacks, and seams
 

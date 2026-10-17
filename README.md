@@ -31,7 +31,7 @@ The root command starts Vite, Express, and local Valhalla. On the first run, Doc
 
 ## Optional live data
 
-Copy `.env.example` to `.env` and `backend/.env.example` to `backend/.env` to configure local providers. Keep credentials server-side; variables prefixed with `VITE_` are included in the browser build.
+Copy `.env.example` to `.env` for frontend settings and `backend/.env.example` to `backend/.env` for Express settings and provider credentials. Keep credentials server-side; variables prefixed with `VITE_` are included in the browser build.
 
 ## Useful commands
 

@@ -1,3 +1,4 @@
+import { buildApiUrl } from '../api/api-url'
 import type { ShuttleServiceWindow } from '../../domain/transit/service-hours'
 
 export interface ShuttleServiceHoursClient {
@@ -8,6 +9,7 @@ export interface ShuttleServiceHoursClient {
 }
 
 interface ShuttleServiceHoursClientOptions {
+  readonly apiOrigin?: string
   readonly endpoint?: string
   readonly fetcher?: typeof fetch
 }
@@ -39,7 +41,7 @@ function parseResponse(input: unknown): Readonly<Record<string, readonly Shuttle
 export function createShuttleServiceHoursClient(
   options: ShuttleServiceHoursClientOptions = {},
 ): ShuttleServiceHoursClient {
-  const endpoint = options.endpoint ?? `${import.meta.env.BASE_URL}api/shuttle-service-windows`
+  const endpoint = options.endpoint ?? buildApiUrl('/api/shuttle-service-windows', options.apiOrigin)
   const fetcher = options.fetcher ?? fetch
   return {
     async getServiceWindows(routeIds, signal) {

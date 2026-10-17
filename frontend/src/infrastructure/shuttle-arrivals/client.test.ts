@@ -52,6 +52,21 @@ describe('createShuttleArrivalClient', () => {
     expect(Object.keys(result.stops)).toEqual(['PGP', 'KR-MRT'])
   })
 
+  it('requests arrivals from the configured API origin', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => responseFor('PGP'))
+    const client = createShuttleArrivalClient({
+      apiOrigin: 'https://api.example.test',
+      fetcher,
+      now: () => nowMs,
+    })
+
+    await client.getArrivals([{ stopId: 'PGP', stopName: 'PGP' }], new AbortController().signal)
+
+    const requestUrl = new URL(String(fetcher.mock.calls[0]?.[0]))
+    expect(requestUrl.origin).toBe('https://api.example.test')
+    expect(requestUrl.pathname).toBe('/api/shuttle-arrivals')
+    expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual(['PGP'])
+  })
   it('requests more than 16 stops in one snapshot read', async () => {
     const stops = Array.from({ length: 17 }, (_, index) => ({
       stopId: `STOP-${index}`,

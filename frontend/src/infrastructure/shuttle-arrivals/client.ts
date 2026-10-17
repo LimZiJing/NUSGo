@@ -1,3 +1,4 @@
+import { buildApiUrl } from '../api/api-url'
 import type {
   ShuttleArrivalObservation,
   ShuttleArrivalSnapshot,
@@ -26,6 +27,7 @@ interface CachedSnapshot {
 }
 
 interface ShuttleArrivalClientOptions {
+  readonly apiOrigin?: string
   readonly endpoint?: string
   readonly cacheTtlMs?: number
   readonly now?: () => number
@@ -203,7 +205,7 @@ function cacheExpiryMs(snapshot: ShuttleArrivalSnapshot, now: () => number, cach
 export function createShuttleArrivalClient(
   options: ShuttleArrivalClientOptions = {},
 ): ShuttleArrivalClient {
-  const endpoint = options.endpoint ?? `${import.meta.env.BASE_URL}api/shuttle-arrivals`
+  const endpoint = options.endpoint ?? buildApiUrl('/api/shuttle-arrivals', options.apiOrigin)
   const cacheTtlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch

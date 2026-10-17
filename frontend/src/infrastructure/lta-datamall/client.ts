@@ -1,3 +1,4 @@
+import { buildApiUrl } from '../api/api-url'
 import type {
   PublicBusArrivalSnapshot,
   PublicBusEstimatedArrival,
@@ -20,7 +21,8 @@ export class PublicBusArrivalFetchError extends Error {
   }
 }
 
-interface ClientOptions {
+interface PublicBusArrivalClientOptions {
+  readonly apiOrigin?: string
   readonly endpoint?: string
   readonly cacheTtlMs?: number
   readonly now?: () => number
@@ -100,8 +102,10 @@ function mergeSnapshot(current: PublicBusArrivalSnapshot | null, incoming: Publi
   return { ...incoming, stops: { ...current.stops, ...incoming.stops } }
 }
 
-export function createPublicBusArrivalClient(options: ClientOptions = {}): PublicBusArrivalClient {
-  const endpoint = options.endpoint ?? `${import.meta.env.BASE_URL}api/public-bus-arrivals`
+export function createPublicBusArrivalClient(
+  options: PublicBusArrivalClientOptions = {},
+): PublicBusArrivalClient {
+  const endpoint = options.endpoint ?? buildApiUrl('/api/public-bus-arrivals', options.apiOrigin)
   const cacheTtlMs = options.cacheTtlMs ?? PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS
   const now = options.now ?? Date.now
   const fetcher = options.fetcher ?? fetch

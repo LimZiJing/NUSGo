@@ -1,3 +1,4 @@
+import { buildApiUrl } from './api-url'
 import { assertCompatibleDataVersion, parseDataVersion } from '@navus/shared/http/data-version'
 import type { ApiHealthResponse } from '@navus/shared/http/api-contracts'
 
@@ -22,7 +23,7 @@ export async function checkApiDataVersion(
   fetcher: typeof fetch = fetch,
 ): Promise<void> {
   const expectedVersion = parseDataVersion(expectedDataVersion, 'Frontend data version')
-  const healthUrl = apiOrigin ? new URL('/api/health', apiOrigin).toString() : '/api/health'
+  const healthUrl = buildApiUrl('/api/health', apiOrigin)
   const response = await fetcher(healthUrl, { headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error(`Backend health check returned HTTP ${response.status}`)
 

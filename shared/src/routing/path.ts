@@ -82,7 +82,7 @@ export type ApiJourneyPlanningResponse =
       readonly message?: string
     }
 
-export type ApiJourneyPlanningErrorCode = 'invalid_request' | 'not_ready' | 'provider_unavailable'
+export type ApiJourneyPlanningErrorCode = 'invalid_request' | 'not_ready' | 'provider_unavailable' | 'rate_limited'
 
 export interface ApiJourneyPlanningError {
   readonly error: string

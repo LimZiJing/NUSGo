@@ -68,6 +68,19 @@ describe('Journey planning client', () => {
       })
   })
 
+  it('preserves rate-limit failures as a distinct server error', async () => {
+    const client = createJourneyPlanningClient({
+      endpoint: '/api/journeys',
+      fetcher: async () => response({
+        error: 'Journey planning rate limit reached',
+        code: 'rate_limited',
+      }, 429),
+    })
+
+    await expect(client(request, { signal: new AbortController().signal }))
+      .rejects.toMatchObject({ status: 429, code: 'rate_limited' })
+  })
+
   it('passes through aborts and rejects malformed success responses', async () => {
     const abort = new Error('aborted')
     abort.name = 'AbortError'
@@ -84,5 +97,74 @@ describe('Journey planning client', () => {
     })
     await expect(malformed(request, { signal: new AbortController().signal }))
       .rejects.toThrow('Journey planning response was invalid')
+  })
+
+  it('rejects incomplete candidates before their geometry reaches the map', async () => {
+    const client = createJourneyPlanningClient({
+      endpoint: '/api/journeys',
+      fetcher: async () => response({
+        outcome: 'paths',
+        searchStatus: 'complete',
+        candidates: [{
+          candidateKey: 'walking:COM1>COM3',
+          adjustedDurationSeconds: 10,
+          score: 0.1,
+          path: {
+            origin: request.origin,
+            destination: { kind: 'venue', id: 'COM3' },
+            legs: [{
+              mode: 'walking',
+              from: request.origin,
+              to: { kind: 'venue', id: 'COM3' },
+              durationSeconds: 10,
+              distanceMeters: 20,
+              geometry: { type: 'LineString', coordinates: [[103.78, 1.29], ['bad', 1]] },
+            }],
+            totalDurationSeconds: 10,
+            totalDistanceMeters: 20,
+            estimateStatus: 'estimated',
+            planningQuality: 'exact',
+          },
+        }],
+      }),
+    })
+
+    await expect(client(request, { signal: new AbortController().signal }))
+      .rejects.toThrow('Journey planning response was invalid')
+  })
+
+  it('restores the planner score serialized as null for a zero-duration Path', async () => {
+    const client = createJourneyPlanningClient({
+      endpoint: '/api/journeys',
+      fetcher: async () => response({
+        outcome: 'paths',
+        searchStatus: 'complete',
+        candidates: [{
+          candidateKey: 'walking:COM1>COM3',
+          adjustedDurationSeconds: 0,
+          score: null,
+          path: {
+            origin: request.origin,
+            destination: { kind: 'venue', id: 'COM3' },
+            legs: [{
+              mode: 'walking',
+              from: request.origin,
+              to: { kind: 'venue', id: 'COM3' },
+              durationSeconds: 0,
+              distanceMeters: 0,
+              geometry: { type: 'LineString', coordinates: [[103.78, 1.29], [103.78, 1.29]] },
+            }],
+            totalDurationSeconds: 0,
+            totalDistanceMeters: 0,
+            estimateStatus: 'estimated',
+            planningQuality: 'exact',
+          },
+        }],
+      }),
+    })
+
+    const result = await client(request, { signal: new AbortController().signal })
+    expect(result.outcome).toBe('paths')
+    if (result.outcome === 'paths') expect(result.candidates[0]?.score).toBe(Number.POSITIVE_INFINITY)
   })
 })

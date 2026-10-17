@@ -95,10 +95,7 @@ export function hasCanonicalEndpoint(
   endpoint: TripEndpoint,
   sources: { readonly venues: VenueLocationMap; readonly buildings: BuildingIndex; readonly transit: TransitIndex },
 ): boolean {
-  if (endpoint.kind === 'current-location') return isCoordinate(endpoint.coordinate)
-  if (endpoint.kind === 'venue') return Object.hasOwn(sources.venues, endpoint.id)
-  if (endpoint.kind === 'building') return sources.buildings.byId.has(endpoint.id)
-  return sources.transit.stopById.has(endpoint.id)
+  return getTripEndpointCoordinate(endpoint, sources) !== null
 }
 
 export interface ResolvedPathLocation extends PathEndpointLocation {

@@ -57,13 +57,18 @@ function corsMiddleware(origins: readonly string[]): RequestHandler {
 }
 
 export function createApp(
-  config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'> & { readonly environment?: BackendConfig['environment'] },
+  config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'> & {
+    readonly environment?: BackendConfig['environment']
+    readonly journeyRequestTimeoutMs?: BackendConfig['journeyRequestTimeoutMs']
+  },
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
   planner: PathfindingService | null = null,
 ): Express {
   const app = express()
   app.disable('x-powered-by')
+  // The API is loopback-bound behind a local TLS proxy in production; trust only that proxy hop for per-client limits.
+  app.set('trust proxy', 'loopback')
   app.use('/api', (_request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff')
     response.setHeader('Cache-Control', 'no-store')
@@ -81,7 +86,12 @@ export function createApp(
 
   registerHealthRoutes(app, config, data, liveData)
   registerLiveDataRoutes(app, data, liveData)
-  registerJourneyRoutes(app, config.environment ?? 'production', planner)
+  registerJourneyRoutes(
+    app,
+    config.environment ?? 'production',
+    planner,
+    config.journeyRequestTimeoutMs,
+  )
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

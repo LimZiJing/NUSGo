@@ -3,6 +3,7 @@ import type {
   ApiJourneyPlanningRequest,
   ApiJourneyPlanningResponse,
 } from '@navus/shared/routing/path'
+import { parseApiJourneyPlanningResponse } from '@navus/shared/routing/validation'
 import { buildApiUrl } from '../api/api-url.ts'
 
 export interface JourneyPlanningClientOptions {
@@ -33,26 +34,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function parseResponse(value: unknown): ApiJourneyPlanningResponse {
-  if (!isRecord(value)) throw new Error('Journey planning response was invalid')
-  if (value.outcome === 'no-path' && (
-    value.message === undefined || typeof value.message === 'string'
-  )) {
-    return value as ApiJourneyPlanningResponse
-  }
-  if (value.outcome === 'paths' && Array.isArray(value.candidates) &&
-    (value.searchStatus === 'complete' || value.searchStatus === 'budget-exceeded')) {
-    return value as ApiJourneyPlanningResponse
-  }
-  throw new Error('Journey planning response was invalid')
-}
-
 async function parseError(response: Response): Promise<JourneyPlanningRequestError> {
   let body: ApiJourneyPlanningError | null = null
   try {
     const value: unknown = await response.json()
     if (isRecord(value) && typeof value.error === 'string') {
-      body = value as unknown as ApiJourneyPlanningError
+      const code = value.code
+      body = {
+        error: value.error,
+        ...(code === 'invalid_request' || code === 'not_ready' || code === 'provider_unavailable' || code === 'rate_limited'
+          ? { code }
+          : {}),
+      }
     }
   } catch {
     // Preserve a stable error when the server's error body cannot be read.
@@ -92,7 +85,12 @@ export function createJourneyPlanningClient(
 
     if (!response.ok) throw await parseError(response)
     try {
-      return parseResponse(await response.json() as unknown)
+      const value: unknown = await response.json()
+      const parsed = parseApiJourneyPlanningResponse(value)
+      if (!parsed) {
+        throw new Error('Journey planning response was invalid')
+      }
+      return parsed
     } catch (error) {
       if (error instanceof JourneyPlanningRequestError) throw error
       throw new JourneyPlanningRequestError(response.status, 'Journey planning response was invalid')

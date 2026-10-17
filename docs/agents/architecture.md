@@ -7,7 +7,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
 - shared/src owns transport contracts, Path and Journey HTTP types, and reusable Node-free transit, venue, walking-graph, service-hours, and transit-index modules used by both applications.
 - `backend/src/server.ts` owns process startup and shutdown, while `backend/src/config.ts` and `backend/src/canonical-data.ts` own backend settings and canonical data loading.
-- backend/src/http owns Express middleware, route registration, and external request validation. Health, live-data, and Journey handlers live in http/routes/. POST /api/journeys validates endpoint references and maps planner outcomes to the HTTP contract.
+- backend/src/http owns Express middleware, route registration, and external request validation. Health, live-data, and Journey handlers live in http/routes/. POST /api/journeys validates endpoint references, applies a bounded deadline and per-client rate limit, and maps planner outcomes to the HTTP contract.
 - backend/src/pathfinding owns canonical endpoint resolution, the Pathfinding pipeline, and the server-side Valhalla adapter. Its service receives validated canonical data and live-data operations; HTTP routes do not construct planner inputs themselves.
 - backend/src/live-data/runtime.ts composes live-data adapters, owns snapshot lifecycle, and exposes backend live-data operations without Express response construction.
 - `backend/src/live-data/bus-arrivals/snapshot.ts` owns provider-independent arrival snapshot generations and freshness.
@@ -17,7 +17,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
-- frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the top-level response shape. It does not resolve canonical data or call Valhalla.
+- frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
 
 `frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.
 

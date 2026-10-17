@@ -106,6 +106,7 @@ export type {
   ScoredPathCandidate,
   PathEndpointLocation,
 } from './routing/path.ts'
+export { parseApiJourneyPlanningResponse } from './routing/validation.ts'
 
 export { createTransitIndex, createTransitNetworkIndex, TransitIndexPreconditionError } from './transit/index.ts'
 export type { TransitIndex, TransitNetworkIndex } from './transit/index.ts'

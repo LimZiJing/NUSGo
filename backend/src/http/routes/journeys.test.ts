@@ -71,10 +71,12 @@ interface Planner {
 async function withServer(
   planner: Planner | null,
   run: (baseUrl: string) => Promise<void>,
+  journeyRequestTimeoutMs = 10_000,
 ): Promise<void> {
   const config = loadBackendConfig({
     NODE_ENV: 'test',
     API_CORS_ORIGINS: 'http://localhost:5173',
+    JOURNEY_REQUEST_TIMEOUT_MS: String(journeyRequestTimeoutMs),
   })
   const server = await listenHttpServer(createApp(config, null, null, planner), '127.0.0.1', 0)
   const address = server.address()
@@ -131,6 +133,53 @@ describe('POST /api/journeys', () => {
         code: 'provider_unavailable',
       })
     })
+  })
+
+  it('aborts overdue planner work and reports a provider timeout', async () => {
+    let aborted = false
+    await withServer({
+      plan(_planningRequest, signal) {
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => {
+            aborted = true
+            const error = new Error('aborted')
+            error.name = 'AbortError'
+            reject(error)
+          }, { once: true })
+        })
+      },
+    }, async (baseUrl) => {
+      const response = await post(baseUrl, request)
+      assert.equal(response.status, 504)
+      assert.deepEqual(await response.json(), {
+        error: 'Journey planning timed out',
+        code: 'provider_unavailable',
+      })
+    }, 100)
+    assert.equal(aborted, true)
+  })
+
+  it('limits Journey requests per client and returns a retry delay', async () => {
+    let plannerCalls = 0
+    await withServer({
+      async plan() {
+        plannerCalls += 1
+        return { outcome: 'no-path' }
+      },
+    }, async (baseUrl) => {
+      for (let requestNumber = 1; requestNumber <= 20; requestNumber += 1) {
+        const response = await post(baseUrl, request)
+        assert.equal(response.status, 200)
+      }
+      const limited = await post(baseUrl, request)
+      assert.equal(limited.status, 429)
+      assert.equal(limited.headers.get('retry-after'), '60')
+      assert.deepEqual(await limited.json(), {
+        error: 'Journey planning rate limit reached',
+        code: 'rate_limited',
+      })
+    })
+    assert.equal(plannerCalls, 20)
   })
 
   it('rejects unknown canonical references and reports not-ready separately', async () => {

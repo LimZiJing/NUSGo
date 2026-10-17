@@ -9,13 +9,13 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$envPath = Join-Path $projectRoot '.env'
+$envPath = Join-Path (Join-Path $projectRoot 'backend') '.env'
 $dotenv = @{}
 $script:nusSession = $null
 $script:nusDeviceId = $null
 
-# Keep credentials out of the client bundle. Process environment variables take
-# precedence over .env values so CI and deployment settings can override local
+# Keep provider credentials in the backend environment. Process environment
+# variables take precedence so CI and deployment settings can override local
 # development defaults.
 if (Test-Path -LiteralPath $envPath) {
     foreach ($line in Get-Content -LiteralPath $envPath) {
@@ -45,7 +45,7 @@ function Get-Setting([string] $Name, [string] $Fallback = '') {
 function Require-Setting([string] $Name) {
     $value = Get-Setting $Name
     if ([string]::IsNullOrWhiteSpace($value)) {
-        throw "Missing $Name. Copy .env.example to .env and fill in the required values."
+        throw "Missing $Name. Copy backend/.env.example to backend/.env and fill in the required values."
     }
     return $value
 }

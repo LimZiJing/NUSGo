@@ -4,6 +4,8 @@ import type { BackendData } from '../canonical-data.ts'
 import type { BackendLiveData } from '../live-data/runtime.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'
+import { registerJourneyRoutes } from './routes/journeys.ts'
+import type { PathfindingService } from '../pathfinding/service.ts'
 import { createApiErrorHandler, sendApiError } from './error-response.ts'
 
 const BODY_LIMIT = '32kb'
@@ -55,9 +57,10 @@ function corsMiddleware(origins: readonly string[]): RequestHandler {
 }
 
 export function createApp(
-  config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'>,
+  config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'> & { readonly environment?: BackendConfig['environment'] },
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
+  planner: PathfindingService | null = null,
 ): Express {
   const app = express()
   app.disable('x-powered-by')
@@ -78,6 +81,7 @@ export function createApp(
 
   registerHealthRoutes(app, config, data, liveData)
   registerLiveDataRoutes(app, data, liveData)
+  registerJourneyRoutes(app, config.environment ?? 'production', planner)
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

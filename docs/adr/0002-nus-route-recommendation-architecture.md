@@ -157,8 +157,8 @@ Costs and limitations:
 ## Implementation boundaries
 
 - `docs/shuttle-timing.md` owns the timing policy; the linked research note records NUS provider normalization.
-- `frontend/src/pathfinding/walking/` owns the walking provider boundary and connection selection.
-- `frontend/src/pathfinding/search/` owns pure candidate generation, scoring, and budget control.
+- `backend/src/pathfinding/walking/` owns the walking provider boundary and connection selection.
+- `backend/src/pathfinding/search/` owns pure candidate generation, scoring, and budget control.
 - `frontend/src/app/navigation-session.ts` owns request identity and cancellation.
 - MapLibre rendering and Plan presentation remain outside pure pathfinding.
 

@@ -36,6 +36,7 @@ export interface BackendConfig {
   readonly corsOrigins: readonly string[]
   readonly dataVersion: string
   readonly dataDirectory: string
+  readonly valhallaBaseUrl: string
   readonly liveData: {
     readonly shuttleRefreshIntervalMs: number
     readonly requestTimeoutMs: number
@@ -132,6 +133,19 @@ function parseNusProviderConfig(
   })
 }
 
+function parseValhallaBaseUrl(value: string | undefined): string {
+  const configured = value?.trim() || 'http://127.0.0.1:8002'
+  let url: URL
+  try {
+    url = new URL(configured)
+  } catch {
+    throw new Error('VALHALLA_BASE_URL must be a valid HTTP or HTTPS URL')
+  }
+  if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password || url.search || url.hash) {
+    throw new Error('VALHALLA_BASE_URL must be an HTTP or HTTPS URL without credentials or query data')
+  }
+  return configured.replace(/\/+$/, '')
+}
 export function loadBackendConfig(
   environment: Record<string, string | undefined> = process.env,
   workingDirectory = process.cwd(),
@@ -175,6 +189,7 @@ export function loadBackendConfig(
     corsOrigins,
     dataVersion,
     dataDirectory: resolve(workingDirectory, dataPath),
+    valhallaBaseUrl: parseValhallaBaseUrl(environment.VALHALLA_BASE_URL),
     liveData: Object.freeze({
       shuttleRefreshIntervalMs: parseInteger(
         environment.NUS_SHUTTLE_REFRESH_INTERVAL_MS,

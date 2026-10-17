@@ -93,7 +93,7 @@ Journey.
 
 ## Safe configuration
 
-Configuration names and local setup are listed in [.env.example](../../.env.example).
+Configuration names and local NUS provider setup are listed in [backend/.env.example](../../backend/.env.example).
 Secret values must stay in the local environment or approved private test
 environment. They must not be committed, placed in `VITE_*` variables, sent to
 the browser, or recorded in an issue or research note.

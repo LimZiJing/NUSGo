@@ -39,11 +39,11 @@ describe('Express API foundation', () => {
 
   it('answers only allowed CORS preflights and rejects unknown origins', async () => {
     const { baseUrl } = await start()
-    const preflight = await fetch(`${baseUrl}/api/ready`, {
+    const preflight = await fetch(`${baseUrl}/api/shuttle-arrivals`, {
       method: 'OPTIONS',
       headers: {
         Origin: origin,
-        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Method': 'GET',
         'Access-Control-Request-Headers': 'content-type',
       },
     })
@@ -53,10 +53,21 @@ describe('Express API foundation', () => {
 
     assert.equal(preflight.status, 204)
     assert.equal(preflight.headers.get('access-control-allow-origin'), origin)
-    assert.match(preflight.headers.get('access-control-allow-methods') ?? '', /POST/)
+    assert.match(preflight.headers.get('access-control-allow-methods') ?? '', /GET/)
     assert.equal(blocked.status, 403)
     assert.equal(blocked.headers.get('access-control-allow-origin'), null)
     assert.deepEqual(await blocked.json(), { error: 'Origin is not allowed' })
+    const liveDataUnavailable = await fetch(
+      baseUrl + '/api/shuttle-arrivals?stops=%5B%22PGP%22%5D',
+      { headers: { Origin: origin } },
+    )
+
+    assert.equal(liveDataUnavailable.status, 503)
+    assert.equal(liveDataUnavailable.headers.get('access-control-allow-origin'), origin)
+    assert.deepEqual(await liveDataUnavailable.json(), {
+      error: 'Live transit data is not ready',
+      code: 'not_ready',
+    })
   })
 
   it('returns safe JSON errors with CORS headers for malformed and oversized bodies', async () => {

@@ -4,9 +4,9 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { before, describe, it } from 'node:test'
 import { generateShuttleTimingData, validateTransitMapData } from '@navus/shared'
-import { createApp } from '../app.ts'
+import { createApp } from '../http/app.ts'
 import { loadBackendConfig } from '../config.ts'
-import { validateCanonicalData, type BackendData } from '../data.ts'
+import { validateCanonicalData, type BackendData } from '../canonical-data.ts'
 import { closeHttpServer, listenHttpServer } from '../server.ts'
 import { createBackendLiveData } from './runtime.ts'
 
@@ -221,7 +221,7 @@ describe('Express live transit API', () => {
     })
 
     try {
-      const result = await liveData.getPublicBusArrivals(JSON.stringify(['KR-MRT']))
+      const result = await liveData.getPublicBusArrivals(['KR-MRT'])
       assert.equal(result.stops['KR-MRT']?.services['95']?.status, 'provider-error')
     } finally {
       await liveData.stop()

@@ -2,10 +2,38 @@ import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
 } from '@navus/shared'
+import type { NusProviderConfig } from '../../../config.ts'
+import type { BusArrivalStop, BusArrivalStopResult } from '../../bus-arrivals/snapshot.ts'
+import {
+  createNusBusProxyRequest,
+  retryNusRequest,
+  type NusAuthenticatedClient,
+} from './client.ts'
 
-export interface ParsedShuttleServiceRoute {
+const NUS_BUS_ARRIVAL_ENDPOINT = 'shuttle-service'
+
+export interface ParsedNusBusArrivalRoute {
   readonly routeId: string
   readonly arrival: ShuttleRouteArrivalData
+}
+
+export interface NusBusArrivalProvider {
+  loadStop(stop: BusArrivalStop, signal: AbortSignal): Promise<BusArrivalStopResult>
+}
+
+interface NusBusArrivalProviderOptions {
+  readonly provider: NusProviderConfig
+  readonly client: NusAuthenticatedClient
+  readonly deviceId: string
+  readonly canonicalRouteIds: ReadonlySet<string>
+  readonly refreshIntervalMs: number
+  readonly retryAttempts: number
+  readonly retryBaseDelayMs: number
+  readonly now?: () => number
+}
+
+function toIso(timestampMs: number): string {
+  return new Date(timestampMs).toISOString()
 }
 
 interface RecordValue {
@@ -132,7 +160,7 @@ function routeIdFrom(record: RecordValue, routeHint: string | null): string | nu
 function parseCandidate(
   record: RecordValue,
   routeHint: string | null,
-): ParsedShuttleServiceRoute | null {
+): ParsedNusBusArrivalRoute | null {
   const routeId = routeIdFrom(record, routeHint)
   const nextArrivalSeconds = parseArrivalSeconds(record)
   const upcoming = [
@@ -159,7 +187,7 @@ function isLikelyRouteKey(key: string): boolean {
 function collectRoutes(
   value: unknown,
   routeHint: string | null,
-  output: ParsedShuttleServiceRoute[],
+  output: ParsedNusBusArrivalRoute[],
 ): boolean {
   if (Array.isArray(value)) {
     if (value.length === 0) return routeHint !== null
@@ -189,18 +217,46 @@ function hasNonEmptyData(value: RecordValue | readonly unknown[]): boolean {
   return Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0
 }
 
-export function parseShuttleServiceResponse(input: unknown): readonly ParsedShuttleServiceRoute[] {
+export function parseNusBusArrivalResponse(input: unknown): readonly ParsedNusBusArrivalRoute[] {
   if (!isRecord(input) || !('data' in input) ||
     (!Array.isArray(input.data) && !isRecord(input.data))) {
     throw new Error('NUS shuttle-service response was invalid')
   }
 
-  const parsed: ParsedShuttleServiceRoute[] = []
+  const parsed: ParsedNusBusArrivalRoute[] = []
   const hasRecognizedRoute = collectRoutes(input.data, null, parsed)
   if (hasNonEmptyData(input.data) && !hasRecognizedRoute) {
     throw new Error('NUS shuttle-service response was invalid')
   }
-  const byRoute = new Map<string, ParsedShuttleServiceRoute>()
+  const byRoute = new Map<string, ParsedNusBusArrivalRoute>()
   for (const route of parsed) byRoute.set(route.routeId, route)
   return [...byRoute.values()]
+}
+
+export function createNusBusArrivalProvider(
+  options: NusBusArrivalProviderOptions,
+): NusBusArrivalProvider {
+  const now = options.now ?? Date.now
+
+  return {
+    async loadStop(stop, signal) {
+      const payload = await retryNusRequest(() => options.client.requestJson((session) => createNusBusProxyRequest(
+        options.provider,
+        session,
+        options.deviceId,
+        NUS_BUS_ARRIVAL_ENDPOINT,
+        { busstopname: stop.stopName },
+      ), NUS_BUS_ARRIVAL_ENDPOINT, signal), signal, options.retryAttempts, options.retryBaseDelayMs)
+      const parsed = parseNusBusArrivalResponse(payload)
+      const routes = Object.fromEntries(parsed
+        .filter(({ routeId }) => options.canonicalRouteIds.has(routeId))
+        .map(({ routeId, arrival }) => [routeId, arrival]))
+      const observedAtMs = now()
+      return {
+        observedAt: toIso(observedAtMs),
+        expiresAt: toIso(observedAtMs + options.refreshIntervalMs),
+        routes,
+      }
+    },
+  }
 }

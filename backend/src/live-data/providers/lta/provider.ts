@@ -1,4 +1,4 @@
-import { mapWithConcurrency } from '../concurrency.ts'
+import { mapWithConcurrency } from '../../upstream/concurrency.ts'
 import type {
   PublicBusArrivalSnapshot,
   PublicBusEstimatedArrival,
@@ -6,13 +6,15 @@ import type {
   PublicBusStopArrivalData,
 } from '@navus/shared'
 import { PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS } from '@navus/shared'
-import type { LtaPublicBusStopMapping } from './mapping.ts'
+import type { LtaPublicBusStopMapping } from './bus-stop-mapping.ts'
 import { parseLtaBusArrivalResponse } from './response.ts'
-import { type LtaScheduleLoader } from './schedule.ts'
+import { type LtaScheduleLoader } from './service-schedules.ts'
+import { parseRequestedLtaStops } from './request.ts'
 
 export interface LtaPublicBusArrivalProvider {
+  getSupportedStopIds(): readonly string[]
   getArrivals(
-    stops: readonly LtaPublicBusStopMapping[],
+    stopIds: readonly string[],
     signal: AbortSignal,
   ): Promise<PublicBusArrivalSnapshot>
 }
@@ -58,8 +60,10 @@ export function createLtaPublicBusArrivalProvider(
   const fetcher = options.fetcher ?? fetch
   const maxConcurrency = options.maxConcurrency ?? 4
   const scheduleLoader = options.scheduleLoader
+  const mappings = options.mappings
   const cache = new Map<string, CachedStop>()
   const inFlight = new Map<string, Promise<PublicBusStopArrivalData>>()
+  const supportedStopIds = Object.freeze(mappings.map(({ stopId }) => stopId))
 
   const loadStop = async (
     mapping: LtaPublicBusStopMapping,
@@ -132,7 +136,11 @@ export function createLtaPublicBusArrivalProvider(
   }
 
   return {
-    async getArrivals(stops, signal) {
+    getSupportedStopIds() {
+      return supportedStopIds
+    },
+    async getArrivals(stopIds, signal) {
+      const stops = parseRequestedLtaStops(stopIds, mappings)
       if (stops.length === 0) throw new Error('At least one public bus stop is required')
       const loaded = await mapWithConcurrency(stops, maxConcurrency, (stop) => getStop(stop, signal))
       const refreshedAt = toIso(now())

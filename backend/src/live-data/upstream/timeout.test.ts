@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { fetchWithTimeout, UpstreamTimeoutError } from './timeouts.ts'
+import { fetchWithTimeout, UpstreamTimeoutError } from './timeout.ts'
 
 describe('fetchWithTimeout', () => {
   it('aborts an upstream request that exceeds its time limit', async () => {

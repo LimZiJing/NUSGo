@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createLtaPublicBusArrivalProvider } from './server.ts'
-import type { LtaPublicBusStopMapping } from './mapping.ts'
+import { createLtaPublicBusArrivalProvider } from './provider.ts'
+import type { LtaPublicBusStopMapping } from './bus-stop-mapping.ts'
 
 const mappings: readonly LtaPublicBusStopMapping[] = [
   { stopId: 'STOP-A', busStopCode: '12345', services: ['95', '151', '96'] },
@@ -36,8 +36,9 @@ describe('LTA public bus arrival provider', () => {
       },
     })
 
-    const first = await provider.getArrivals(mappings, new AbortController().signal)
-    const second = await provider.getArrivals(mappings, new AbortController().signal)
+    const stopIds = mappings.map(({ stopId }) => stopId)
+    const first = await provider.getArrivals(stopIds, new AbortController().signal)
+    const second = await provider.getArrivals(stopIds, new AbortController().signal)
 
     assert.deepEqual(first.stops['STOP-A']?.services['95'], {
       status: 'live',
@@ -56,7 +57,7 @@ describe('LTA public bus arrival provider', () => {
       fetcher: async () => jsonResponse({ Services: 'invalid' }, 200),
     })
 
-    const result = await provider.getArrivals(mappings, new AbortController().signal)
+    const result = await provider.getArrivals(mappings.map(({ stopId }) => stopId), new AbortController().signal)
     assert.equal(result.stops['STOP-A']?.services['95']?.status, 'provider-error')
     assert.equal(result.stops['STOP-A']?.services['151']?.status, 'provider-error')
   })
@@ -82,7 +83,7 @@ describe('LTA public bus arrival provider', () => {
       },
     })
 
-    await provider.getArrivals(manyMappings, new AbortController().signal)
+    await provider.getArrivals(manyMappings.map(({ stopId }) => stopId), new AbortController().signal)
     assert.equal(maximumActive, 2)
   })
 })

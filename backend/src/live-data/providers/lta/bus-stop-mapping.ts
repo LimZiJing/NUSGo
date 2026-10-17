@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+
 export interface LtaPublicBusStopMapping {
   readonly stopId: string
   readonly busStopCode: string
@@ -46,4 +49,34 @@ export function parseLtaPublicBusStopMapping(input: unknown): readonly LtaPublic
   }
 
   return mappings
+}
+
+export function validateLtaPublicBusStopMappings(
+  mappings: readonly LtaPublicBusStopMapping[],
+  canonicalStopIds: ReadonlySet<string>,
+): readonly LtaPublicBusStopMapping[] {
+  if (mappings.some(({ stopId }) => !canonicalStopIds.has(stopId))) {
+    throw new Error('LTA public bus mappings must reference canonical bus stops')
+  }
+  return mappings
+}
+
+export async function loadLtaPublicBusStopMapping(
+  dataDirectory: string,
+  canonicalStopIds: ReadonlySet<string>,
+): Promise<readonly LtaPublicBusStopMapping[]> {
+  let text: string
+  try {
+    text = await readFile(join(dataDirectory, 'lta-public-bus-stops.json'), 'utf8')
+  } catch {
+    throw new Error('Canonical LTA public bus mapping could not be read')
+  }
+
+  let input: unknown
+  try {
+    input = JSON.parse(text) as unknown
+  } catch {
+    throw new Error('Canonical LTA public bus mapping is not valid JSON')
+  }
+  return validateLtaPublicBusStopMappings(parseLtaPublicBusStopMapping(input), canonicalStopIds)
 }

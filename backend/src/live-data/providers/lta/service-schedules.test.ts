@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createLtaScheduleLoader, isLtaServiceOperating, parseLtaServiceSchedule } from './schedule.ts'
+import { createLtaScheduleLoader, isLtaServiceOperating, parseLtaServiceSchedule } from './service-schedules.ts'
 
 const mappings = [{ stopId: 'STOP-A', busStopCode: '12345', services: ['95'] }]
 
@@ -43,9 +43,12 @@ describe('LTA service schedules', () => {
     let calls = 0
     const loader = createLtaScheduleLoader({
       mappings,
-      fetcher: async () => {
+      accountKey: 'test-account-key',
+      fetcher: async (input, init) => {
         calls += 1
-        return {
+        assert.equal(input, 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusRoutes?$skip=0')
+        assert.deepEqual(init?.headers, { Accept: 'application/json', AccountKey: 'test-account-key' })
+        return new Response(JSON.stringify({
           value: [
             {
               ServiceNo: '95',
@@ -64,7 +67,7 @@ describe('LTA service schedules', () => {
               WD_LastBus: '2400',
             },
           ],
-        }
+        }))
       },
     })
     const signal = new AbortController().signal

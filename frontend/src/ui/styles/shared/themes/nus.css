@@ -1,0 +1,88 @@
+:root[data-theme='nus'] {
+  --brand-blue: #003d7c;
+  --brand-orange: #ef7c00;
+
+  --surface: #fff3e7;
+  --surface-raised: #fffaf4;
+  --surface-muted: #f9dfc2;
+  --surface-subtle: #f5d1aa;
+  --surface-inverse: var(--brand-blue);
+  --surface-overlay: rgb(255 250 244 / 95%);
+  --surface-overlay-strong: rgb(255 250 244 / 98%);
+  --surface-overlay-soft: rgb(255 250 244 / 90%);
+  --surface-overlay-panel: rgb(255 250 244 / 96%);
+  --surface-neutral: #f4e5d4;
+  --surface-faint: #fff8ef;
+  --surface-info-soft: #e4edf7;
+  --surface-control: #f5d1aa;
+  --surface-warning: #fff1cc;
+  --surface-segmented-control: #f7e1c8;
+  --surface-card: #fff8f0;
+  --surface-handle: #c59769;
+  --surface-journey-step: #7a4e2b;
+
+  --text-primary: #3c2f25;
+  --text-secondary: #635449;
+  --text-body: #62584f;
+  --text-heading: var(--brand-blue);
+  --text-muted: #755f4e;
+  --text-inverse: #fff;
+  --text-contrast: #173a5e;
+  --text-strong: #4a382a;
+  --text-secondary-strong: #62503f;
+  --text-disabled: #a6988a;
+  --text-warning: #7a5410;
+  --text-success-strong: #286448;
+  --text-error-strong: #9b3d48;
+  --text-favorite: #9c6500;
+  --bus-stop-default-color: var(--brand-blue);
+
+  --border-default: #ead6bf;
+  --border-subtle: #f0dfcc;
+  --border-strong: #d2b18e;
+  --border-inverse: #7990a3;
+  --border-control: #c9ad8f;
+  --control-border: color-mix(in srgb, var(--text-primary) 58%, var(--surface));
+  --border-muted: #dfc5a7;
+  --border-faint: #f3e6d7;
+  --border-success: #98d3b1;
+  --border-warning: #efd28a;
+  --border-info: #9dbbde;
+  --border-focus: #bb4a00;
+  --border-card: #efdfce;
+
+  /* NUS Orange is the bright brand highlight; the deeper accent keeps control text readable. */
+  --accent: #bb4a00;
+  --accent-hover: #9e3d00;
+  --accent-contrast: #fff;
+  --accent-soft: color-mix(in srgb, var(--brand-orange) 18%, var(--surface));
+  --focus-ring: #bb4a00;
+  --focus-ring-soft: rgb(187 74 0 / 45%);
+  --focus-ring-strong: rgb(187 74 0 / 55%);
+  --focus-ring-neutral: rgb(187 74 0 / 25%);
+
+  --status-success: #2f6b4b;
+  --status-success-surface: #dff0e4;
+  --status-success-strong: #286448;
+  --status-warning: #7a5410;
+  --status-warning-surface: #fff1cc;
+  --status-warning-strong: #a56b08;
+  --status-error: #9b3d48;
+  --status-error-surface: #fbe5e6;
+  --status-error-strong: #a33e48;
+  --status-info: var(--brand-blue);
+  --status-info-surface: #e4edf7;
+  --status-marker-origin: #286448;
+  --status-marker-destination: #b44a51;
+
+  --shadow-sm: 0 1px 3px rgb(55 43 32 / 10%);
+  --shadow-md: 0 1px 4px rgb(55 43 32 / 25%);
+  --shadow-lg: 0 8px 24px rgb(55 43 32 / 12%);
+  --shadow-panel: 0 1px 4px rgb(55 43 32 / 25%);
+  --shadow-card-strong: 0 1px 3px rgb(55 43 32 / 30%);
+  --shadow-chip: 0 2px 7px rgb(55 43 32 / 18%);
+  --shadow-sheet: 0 -6px 22px rgb(55 43 32 / 14%);
+  --shadow-soft: 0 1px 4px rgb(55 43 32 / 20%);
+  --shadow-results: 0 4px 12px rgb(55 43 32 / 12%);
+  --shadow-marker: 0 1px 3px rgb(55 43 32 / 40%);
+}

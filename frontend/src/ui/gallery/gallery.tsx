@@ -13,15 +13,16 @@ type SampleState = (typeof STATES)[number]
 const VARIANTS: readonly ButtonVariant[] = ['primary', 'secondary', 'ghost']
 const ICON_VARIANTS: readonly IconButtonVariant[] = [...VARIANTS, 'plain']
 const SIZES: readonly ControlSize[] = ['sm', 'lg']
-/* The app theme type covers Light and Dark only; Matcha and Sakura exist as data-theme values in
-   the shared theme stylesheets, so the gallery sets data-theme directly to review all four. */
-const THEMES = ['light', 'dark', 'matcha', 'sakura'] as const
+/* The app theme type covers Light and Dark only; the gallery sets data-theme directly to review
+   every palette in the shared theme stylesheets. */
+const THEMES = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
 type GalleryTheme = (typeof THEMES)[number]
 const THEME_NAMES: Readonly<Record<GalleryTheme, string>> = {
   light: 'Light',
   dark: 'Dark',
   matcha: 'Matcha',
   sakura: 'Sakura',
+  nus: 'NUS',
 }
 const SAMPLE_ROUTE_COLOUR = '#fb0101'
 

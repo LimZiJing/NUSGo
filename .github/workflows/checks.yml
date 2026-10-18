@@ -38,7 +38,8 @@ jobs:
 
       - name: Build
         env:
-          # Vite embeds this public service address in the frontend bundle.
-          VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN }}
+          # PR checks do not publish this bundle, so they can use a reserved HTTPS
+          # address when deployment configuration is not available.
+          VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN || 'https://api.example.invalid' }}
           VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build

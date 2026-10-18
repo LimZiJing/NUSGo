@@ -60,7 +60,7 @@ export function StopsContent({
           />
         ) : stopListEntries ? (
           <div className="stops-list-panel">
-            <div className="stops-list-region navigation-panel-scroll-content stops-list-selector-region">
+            <div className="stops-list-region stops-list-selector-region">
               <SegmentedControl
                 className="stops-list-selector"
                 label="Stop list"

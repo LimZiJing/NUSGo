@@ -38,6 +38,7 @@ jobs:
 
       - name: Build
         env:
+          # Vite embeds this public service address in the frontend bundle.
           VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN }}
           VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build

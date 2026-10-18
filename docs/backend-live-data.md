@@ -2,7 +2,7 @@
 
 Express owns provider calls and live transit state. HTTP routes and request validation live in `backend/src/http`. `backend/src/live-data/runtime.ts` composes the providers and manages snapshot lifecycle; provider-independent snapshot generations live in `live-data/bus-arrivals/snapshot.ts`. NUS authentication, mappings, bus-arrival parsing, and service-window loading live in `live-data/providers/nus`; LTA mappings, request selection, response parsing, arrivals, and service schedules live in `live-data/providers/lta`. Reusable concurrency, retry, and timeout controls live in `live-data/upstream`. Shared request and response types live in shared source.
 
-During local development, Vite forwards /api requests to Express at http://127.0.0.1:3001. Vite does not poll NUS or LTA. The browser keeps using the existing same-origin API paths until issue #232 moves it to an explicit API origin.
+During local development, Vite forwards `/api` requests to Express at `http://127.0.0.1:3001`; the proxy only forwards requests and contains no API handlers. The browser's arrival clients call the Express endpoints, and Express alone polls NUS or LTA. A separately served frontend uses its configured `VITE_API_ORIGIN` directly. See the [local services guide](local-services.md) for process and data setup.
 
 ## Endpoints
 

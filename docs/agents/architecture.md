@@ -18,6 +18,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
 - frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
+- Vite builds and serves frontend assets. Its development `/api` proxy only forwards requests to Express; API handlers, provider calls, and polling belong to the backend.
 
 `frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.
 

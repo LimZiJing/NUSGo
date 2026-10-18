@@ -43,6 +43,7 @@ jobs:
 
       - name: Build
         env:
+          # Vite embeds this public service address in the frontend bundle.
           VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN }}
           VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build
@@ -53,6 +54,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Publish only the hosted build; local rehearsal output has a separate directory.
           path: ./frontend/dist
 
       - name: Deploy to GitHub Pages

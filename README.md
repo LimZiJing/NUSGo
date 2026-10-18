@@ -1,12 +1,12 @@
 # NavUS
 
-An experimental campus-navigation prototype for the National University of Singapore. Explore venues and shuttle routes, plan estimated walking-and-bus journeys, and check shuttle arrivals.
+An experimental campus-navigation prototype for the National University of Singapore. Explore venues and bus routes, plan estimated walking-and-bus journeys, and check bus arrivals.
 
-Journey planning needs a running Valhalla service. Live shuttle arrivals need server-side NUS settings. See [project status](docs/project-status.md) for current capabilities and limitations.
+The website is a static frontend. Journey planning needs the Express API and a private Valhalla service; live arrivals need provider settings in Express. See [project status](docs/project-status.md) for current capabilities and limitations.
 
 ## Demo
 
-Try the [static GitHub Pages demo](https://limzijing.github.io/NavUS/). It uses static shuttle timing estimates; live arrivals require server-side NUS settings.
+Try the [GitHub Pages frontend](https://limzijing.github.io/NavUS/). It is built separately from Express; live features depend on the API origin configured for that build and the availability of its backend services.
 
 ## Screenshots
 
@@ -27,11 +27,11 @@ npm install
 npm run dev
 ```
 
-The root command starts Vite, Express, and local Valhalla. On the first run, Docker downloads map data and builds routing tiles; this can take several minutes and use local disk space.
+The root command starts Vite, Express, and local Valhalla together for convenience. On the first run, Docker downloads map data and builds routing tiles; this can take several minutes and use local disk space. To run the services separately or rehearse a built frontend against local Express, follow the [local services guide](docs/local-services.md).
 
 ## Optional live data
 
-Copy `.env.example` to `.env` for frontend settings and `backend/.env.example` to `backend/.env` for Express settings and provider credentials. Keep credentials server-side; variables prefixed with `VITE_` are included in the browser build.
+Copy `.env.example` to `.env` for frontend settings and `backend/.env.example` to `backend/.env` for Express settings and provider credentials. Keep credentials in `backend/.env`; variables prefixed with `VITE_` are included in the public browser build. The local development frontend can leave `VITE_API_ORIGIN` blank to use Vite's proxy, while hosted builds require an explicit HTTPS API origin.
 
 ## Useful commands
 
@@ -39,8 +39,12 @@ Copy `.env.example` to `.env` for frontend settings and `backend/.env.example` t
 npm test
 npm run lint
 npm run build
+npm run build:local-rehearsal
+npm run preview:local-rehearsal
 npm run preview
 ```
+
+`npm run build` creates the hosted frontend and requires `VITE_API_ORIGIN`. The local rehearsal commands use the checked-in loopback profile and write to a separate output directory, so the Pages workflow does not publish that build.
 
 For detailed arrival timing behavior, see [shuttle timing](docs/shuttle-timing.md). The [manual smoke checklist](docs/qa/manual-smoke-check.md) covers the main user flows.
 

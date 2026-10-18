@@ -8,8 +8,10 @@
     "dev": "vite",
     "prebuild": "npm --prefix .. run shuttle:timing:generate:geometry",
     "build": "tsc -b && vite build",
+    "build:local-rehearsal": "npm run prebuild && tsc -b && vite build --mode local-rehearsal",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:local-rehearsal": "vite preview --outDir dist-local-rehearsal --host 127.0.0.1 --port 5173",
     "test": "vitest run --passWithNoTests",
     "benchmark:pathfinding": "node scripts/benchmark-pathfinding.mjs"
   },

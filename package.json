@@ -23,6 +23,8 @@
     "test": "npm --workspace @navus/frontend run test && npm --workspace @navus/backend run test",
     "benchmark:pathfinding": "npm --workspace @navus/frontend run benchmark:pathfinding --",
     "dev:frontend": "npm --workspace @navus/frontend run dev",
-    "dev:backend": "npm --workspace @navus/backend run dev"
+    "dev:backend": "npm --workspace @navus/backend run dev",
+    "build:local-rehearsal": "npm --workspace @navus/shared run typecheck && npm --workspace @navus/backend run typecheck && npm --workspace @navus/frontend run build:local-rehearsal",
+    "preview:local-rehearsal": "npm --workspace @navus/frontend run preview:local-rehearsal"
   }
 }

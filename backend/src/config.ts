@@ -206,6 +206,8 @@ export function loadBackendConfig(
     throw new Error('NAVUS_DATA_VERSION must be the deployed source commit in production')
   }
 
+  // Resolve relative paths from the backend process so Express can load a mounted
+  // canonical-data directory without Vite.
   const dataPath = environment.NAVUS_DATA_DIR?.trim() || '../frontend/public/data'
   return Object.freeze({
     environment: mode,

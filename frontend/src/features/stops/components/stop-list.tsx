@@ -45,7 +45,7 @@ export function StopList({
         </div>
       )}
       {entries.length ? (
-        <div className="navigation-panel-scroll-content stops-card-list">
+        <div className="stops-list-region navigation-panel-scroll-content stops-card-list">
           {entries.map(({ stop, distanceMeters, favorite, expanded }) => (
             <StopCard
               key={stop.id}
@@ -66,7 +66,7 @@ export function StopList({
           ))}
         </div>
       ) : selectedStopList === 'favourites' && !loading ? (
-        <div className="stops-empty stops-empty--favourites">
+        <div className="stops-empty stops-list-region navigation-panel-scroll-content stops-empty--favourites">
           <FavoriteIcon filled={false} className="stops-empty-icon" />
           <p>No favourites? Use the Star icon to favourite stops.</p>
           <Button
@@ -76,7 +76,7 @@ export function StopList({
           />
         </div>
       ) : (
-        <p className="stops-empty">
+        <p className="stops-empty stops-list-region">
           {loading ? 'Loading stops…' : 'No stops available.'}
         </p>
       )}

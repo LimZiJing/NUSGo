@@ -60,16 +60,18 @@ export function StopsContent({
           />
         ) : stopListEntries ? (
           <div className="stops-list-panel">
-            <SegmentedControl
-              className="stops-list-selector"
-              label="Stop list"
-              options={[
-                { value: 'nearby', label: 'Nearby' },
-                { value: 'favourites', label: 'Favourites' },
-              ]}
-              value={selectedStopList}
-              onValueChange={onSelectStopList}
-            />
+            <div className="stops-list-region navigation-panel-scroll-content stops-list-selector-region">
+              <SegmentedControl
+                className="stops-list-selector"
+                label="Stop list"
+                options={[
+                  { value: 'nearby', label: 'Nearby' },
+                  { value: 'favourites', label: 'Favourites' },
+                ]}
+                value={selectedStopList}
+                onValueChange={onSelectStopList}
+              />
+            </div>
             <StopList
               entries={stopListEntries}
               selectedStopList={selectedStopList}

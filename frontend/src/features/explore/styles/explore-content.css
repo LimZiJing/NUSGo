@@ -601,10 +601,6 @@
     overflow: hidden;
   }
 
-  .navigation-column .explore-mode-selector {
-    width: 100%;
-  }
-
   .navigation-column .explore-content-venue-search {
     display: flex;
     flex-direction: column;

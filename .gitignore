@@ -76,6 +76,7 @@ web_modules/
 .env
 .env.*
 !.env.example
+!.env.local-rehearsal
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -88,6 +89,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+/frontend/dist-local-rehearsal/
 .output
 
 # Gatsby files

@@ -92,7 +92,7 @@ refresh interval and the server's upstream refresh interval stay aligned. The
 120-second limit is a maximum stale-data boundary, not permission to claim that
 a stale arrival is live.
 
-The local Vite server owns one scheduled snapshot for all canonical stops. It
+One Express process owns the scheduled snapshot for all canonical stops. It
 refreshes immediately on startup and then refreshes every 30 seconds by
 default. `NUS_SHUTTLE_REFRESH_INTERVAL_MS` can override that interval with a
 positive integer number of milliseconds. Each generation is published only
@@ -100,7 +100,8 @@ after every stop request has settled. A failed stop keeps its previous value;
 if it has no previous value, that stop is unavailable. If every stop fails,
 the previous generation remains published. The HTTP endpoint is read-only and
 returns the latest complete generation, or `503` while the first generation is
-still unavailable.
+still unavailable. Vite only forwards browser requests to Express during
+development; it does not own the poller or snapshot.
 
 The browser adapter reads the server snapshot and caches it until the next
 refresh boundary. Stops and Journey planning share that reader, apply only

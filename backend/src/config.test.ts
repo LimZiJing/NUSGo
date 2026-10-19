@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { resolve } from 'node:path'
 import { parseApiOrigin } from '@navus/shared'
 import { loadBackendConfig } from './config.ts'
 
@@ -18,6 +19,13 @@ describe('parseApiOrigin', () => {
 })
 
 describe('loadBackendConfig', () => {
+  it('resolves a supplied canonical data directory from the backend working directory', () => {
+    const workingDirectory = resolve('navus-backend')
+    const config = loadBackendConfig({ NAVUS_DATA_DIR: './data' }, workingDirectory)
+
+    assert.equal(config.dataDirectory, resolve(workingDirectory, 'data'))
+  })
+
   it('uses loopback and exact local origins by default', () => {
     const config = loadBackendConfig({}, 'C:/navus/backend')
 

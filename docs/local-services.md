@@ -70,7 +70,7 @@ Relative `NAVUS_DATA_DIR` paths resolve from the backend process working directo
 
 ## API addresses and credentials
 
-The root `.env.example` contains frontend settings only. `VITE_API_ORIGIN` is public because Vite embeds it in the browser files. Leave it blank for the Vite development server, which forwards `/api` requests to Express. Hosted production builds require an explicit HTTPS API origin; GitHub Actions reads it from the `NAVUS_API_ORIGIN` repository variable.
+The root `.env.example` contains frontend settings only. `VITE_API_ORIGIN` is public because Vite embeds it in the browser files. Leave it blank for the Vite development server, which forwards `/api` requests to Express. Hosted production builds require an explicit HTTPS API origin; GitHub Actions reads it from the `NAVUS_API_ORIGIN` repository variable. Until the API is deployed, the Development Pages workflow uses a reserved `.invalid` origin so the frontend can still build and deploy; API-backed features such as live shuttle timings and pathfinding remain unavailable until the real API origin is configured.
 
 The local rehearsal uses `.env.local-rehearsal`, which points only to loopback Express. Its build mode accepts HTTP on a loopback address and writes to a separate output directory. The GitHub Pages workflow uploads only `frontend/dist`, the hosted build output.
 

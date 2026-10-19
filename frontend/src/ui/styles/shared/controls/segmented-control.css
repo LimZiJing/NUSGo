@@ -3,6 +3,7 @@
   z-index: 2;
   flex: 0 0 auto;
   display: grid;
+  width: 100%;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   gap: 0;

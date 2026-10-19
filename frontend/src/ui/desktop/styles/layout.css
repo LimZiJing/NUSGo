@@ -20,8 +20,8 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
     height: 56px;
-    margin: 16px;
-    padding: var(--space-2) 8px;
+    margin: 16px 8px;
+    padding: var(--space-2) 4px;
     border: 0;
     border-radius: var(--radius-pill);
     background: var(--surface-raised);

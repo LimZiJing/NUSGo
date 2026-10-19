@@ -12,23 +12,32 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
     height: 100%;
     min-height: 0;
     min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .stops-list-region {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .stops-list-selector-region {
+    flex: 0 0 auto;
   }
 
   .stops-card-list {
     position: relative;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     flex: 1 1 auto;
     align-content: start;
     grid-auto-rows: max-content;
     gap: var(--space-1);
     min-height: 0;
-    min-width: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable both-edges;
   }
 
   .stops-location-notice {
@@ -62,7 +71,6 @@
   .stops-empty--favourites {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
     display: grid;
     align-content: center;
     align-content: safe center;
@@ -81,6 +89,7 @@
   }
 
   .stop-card {
+    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--border-card);
     border-radius: var(--radius-card);
@@ -500,5 +509,10 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .navigation-column .stops-content > .stops-content-panel {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }

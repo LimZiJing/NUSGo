@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Building } from '@navus/shared/venue/buildings'
 import { buildBuildingIndex } from '../../domain/venue/building-index'
-import { createBlockLabelGeoJson } from './block-labels'
+import { createBlockLabelGeoJson, createGroupLabelGeoJson } from './block-labels'
 
 function createBuilding(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -96,3 +96,23 @@ describe('createBlockLabelGeoJson', () => {
     })
   })
 })
+
+describe('createGroupLabelGeoJson', () => {
+  it('labels only groups of several buildings, at the entry location, with the group name', () => {
+    const index = buildBuildingIndex([
+      createBuilding({ id: 'hall-a', name: 'Hall', groupKey: 'hall', partLabel: 'Block A', blocks: ['A'], location: { x: 103.71, y: 1.31 } }),
+      createBuilding({ id: 'hall-b', name: 'Hall', groupKey: 'hall', partLabel: 'Block B', blocks: ['B'], location: { x: 103.72, y: 1.32 } }),
+      createBuilding({ id: 'lone', name: 'Lone Hall', groupKey: 'lone', partLabel: 'Block A', blocks: ['A'] }),
+      createBuilding({ id: 'library', name: 'Central Library' }),
+    ])
+
+    const features = createGroupLabelGeoJson(index.entries).features
+
+    expect(features.map((feature) => feature.properties.label)).toEqual(['Hall'])
+    expect(features[0].geometry.coordinates).toEqual(index.byId.get('hall')?.location && [
+      index.byId.get('hall')!.location.x,
+      index.byId.get('hall')!.location.y,
+    ])
+  })
+})
+

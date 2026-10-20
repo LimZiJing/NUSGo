@@ -26,6 +26,30 @@ export interface BlockLabels {
   dispose(): void
 }
 
+export const GROUP_LABEL_MIN_ZOOM = 15
+export const GROUP_LABEL_SOURCE_ID = 'building-group-labels'
+export const GROUP_LABEL_LAYER_ID = 'building-group-label-layer'
+
+// Below the block-label zoom, a group shows only its name; at BLOCK_LABEL_MIN_ZOOM the block ranges take over.
+const GROUP_LABEL_LAYER: SymbolLayerSpecification = {
+  id: GROUP_LABEL_LAYER_ID,
+  type: 'symbol',
+  source: GROUP_LABEL_SOURCE_ID,
+  minzoom: GROUP_LABEL_MIN_ZOOM,
+  maxzoom: BLOCK_LABEL_MIN_ZOOM,
+  layout: {
+    'text-field': ['get', 'label'],
+    'text-font': ['Noto Sans Regular'],
+    'text-size': 12,
+    'text-allow-overlap': false,
+  },
+  paint: {
+    'text-color': '#0f172a',
+    'text-halo-color': '#ffffff',
+    'text-halo-width': 2,
+  },
+}
+
 const BLOCK_LABEL_LAYER: SymbolLayerSpecification = {
   id: BLOCK_LABEL_LAYER_ID,
   type: 'symbol',
@@ -67,25 +91,55 @@ export function createBlockLabelGeoJson(entries: readonly BuildingEntry[]): Bloc
   }
 }
 
+function installLabelLayer(
+  map: Map,
+  sourceId: string,
+  layer: SymbolLayerSpecification,
+  geoJson: BlockLabelGeoJson,
+): BlockLabels {
+  const ownsSource = !map.getSource(sourceId)
+  const ownsLayer = !map.getLayer(layer.id)
+
+  if (ownsSource) {
+    map.addSource(sourceId, { type: 'geojson', data: geoJson })
+  } else {
+    (map.getSource(sourceId) as GeoJSONSource).setData(geoJson)
+  }
+  if (ownsLayer) map.addLayer(layer)
+
+  return {
+    dispose() {
+      if (ownsLayer && map.getLayer(layer.id)) map.removeLayer(layer.id)
+      if (ownsSource && map.getSource(sourceId)) map.removeSource(sourceId)
+    },
+  }
+}
+
 /**
  * Adds the block-label source and layer, or replaces the data when they already exist.
  * The returned handle removes only what this call added.
  */
 export function installBlockLabels(map: Map, geoJson: BlockLabelGeoJson): BlockLabels {
-  const ownsSource = !map.getSource(BLOCK_LABEL_SOURCE_ID)
-  const ownsLayer = !map.getLayer(BLOCK_LABEL_LAYER_ID)
+  return installLabelLayer(map, BLOCK_LABEL_SOURCE_ID, BLOCK_LABEL_LAYER, geoJson)
+}
 
-  if (ownsSource) {
-    map.addSource(BLOCK_LABEL_SOURCE_ID, { type: 'geojson', data: geoJson })
-  } else {
-    (map.getSource(BLOCK_LABEL_SOURCE_ID) as GeoJSONSource).setData(geoJson)
-  }
-  if (ownsLayer) map.addLayer(BLOCK_LABEL_LAYER)
-
+/** One point per group of several buildings, labelled with the group name. */
+export function createGroupLabelGeoJson(entries: readonly BuildingEntry[]): BlockLabelGeoJson {
   return {
-    dispose() {
-      if (ownsLayer && map.getLayer(BLOCK_LABEL_LAYER_ID)) map.removeLayer(BLOCK_LABEL_LAYER_ID)
-      if (ownsSource && map.getSource(BLOCK_LABEL_SOURCE_ID)) map.removeSource(BLOCK_LABEL_SOURCE_ID)
-    },
+    type: 'FeatureCollection',
+    features: entries.flatMap((entry) => {
+      const { x, y } = entry.location
+      if (entry.buildings.length < 2 || !Number.isFinite(x) || !Number.isFinite(y)) return []
+      return [{
+        type: 'Feature' as const,
+        properties: { label: entry.name },
+        geometry: { type: 'Point' as const, coordinates: [x, y] as [number, number] },
+      }]
+    }),
   }
+}
+
+/** Same lifecycle as installBlockLabels, for the group-name layer. */
+export function installGroupLabels(map: Map, geoJson: BlockLabelGeoJson): BlockLabels {
+  return installLabelLayer(map, GROUP_LABEL_SOURCE_ID, GROUP_LABEL_LAYER, geoJson)
 }

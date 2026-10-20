@@ -29,7 +29,9 @@ import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-i
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createBlockLabelGeoJson,
+  createGroupLabelGeoJson,
   installBlockLabels,
+  installGroupLabels,
   type BlockLabels,
 } from './block-labels'
 
@@ -82,6 +84,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentTransitIndex: TransitIndex | null = null
   let buildingLabelEntries: readonly BuildingEntry[] = []
   let buildingLabels: BlockLabels | null = null
+  let groupLabels: BlockLabels | null = null
   let styleReady = false
   let stopsPinStopId: string | null = null
   let stopsPinVisible = false
@@ -115,11 +118,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const applyBuildingLabels = (): void => {
     if (disposed || !styleReady) return
     const geoJson = createBlockLabelGeoJson(buildingLabelEntries)
+    const groupGeoJson = createGroupLabelGeoJson(buildingLabelEntries)
     // Skip creating an empty source and layer; once installed, empty data simply clears the labels.
     if (buildingLabels === null && geoJson.features.length === 0) return
     // Only the first handle owns the source and layer; later calls just refresh the data.
     const handle = installBlockLabels(map, geoJson)
     buildingLabels ??= handle
+    const groupHandle = installGroupLabels(map, groupGeoJson)
+    groupLabels ??= groupHandle
   }
   void lifecycle.ready.then(() => {
     styleReady = true
@@ -670,6 +676,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentLocationMarker.dispose()
       buildingLabels?.dispose()
       buildingLabels = null
+      groupLabels?.dispose()
+      groupLabels = null
       lifecycle.dispose()
     },
   }

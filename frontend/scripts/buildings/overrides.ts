@@ -8,6 +8,9 @@
  * roomCodePrefixes replaces the computed links for that building; location replaces the API
  * centroid (and drops the centroid marker); entrance (x, y, osmNode) replaces it with a provisional
  * OpenStreetMap entrance and cannot be combined with location; aliases replaces the derived search aliases.
+ * mergeInto folds a duplicate API record into the surviving record named by its elementId: the
+ * duplicate writes no building and its name becomes a search alias of the survivor. A mergeInto
+ * override carries no other decisions and its target cannot itself be merged.
  */
 export type BuildingOverride = {
   readonly name?: string
@@ -23,6 +26,8 @@ export type BuildingOverride = {
   readonly blocks?: readonly string[]
   /** 'entrance' marks the group's main entrance record, which is not a building chip. */
   readonly groupRole?: 'entrance'
+  /** elementId of the record that survives; this record is folded into it and writes no building. */
+  readonly mergeInto?: string
 }
 
 /** Hand-edited decisions keyed by API elementId. */
@@ -30,8 +35,12 @@ export type BuildingOverrides = Readonly<Record<string, BuildingOverride>>
 
 const FILE_FIELDS = new Set(['version', '$comment', 'overrides', 'unlinkedPrefixes'])
 const OVERRIDE_FIELDS = new Set([
-  'name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', 'partLabel', 'blocks', 'groupRole', '$comment',
+  'name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', 'partLabel', 'blocks', 'groupRole', 'mergeInto', '$comment',
 ])
+/** Decisions a merged record may not carry: its name and aliases fold into the survivor instead. */
+const MERGE_EXCLUSIVE_FIELDS = [
+  'groupKey', 'partLabel', 'blocks', 'groupRole', 'roomCodePrefixes', 'location', 'entrance', 'name', 'aliases',
+] as const
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -69,7 +78,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   for (const field of Object.keys(value)) {
     if (!OVERRIDE_FIELDS.has(field)) issues.push(`Override ${elementId} has unknown field ${field}`)
   }
-  const { name, aliases, roomCodePrefixes, location, entrance, groupKey, partLabel, blocks, groupRole } = value
+  const { name, aliases, roomCodePrefixes, location, entrance, groupKey, partLabel, blocks, groupRole, mergeInto } = value
   if (name !== undefined && !isNonEmptyString(name)) issues.push(`Override ${elementId} name must be a non-empty string`)
   if (aliases !== undefined && !isStringArray(aliases)) {
     issues.push(`Override ${elementId} aliases must be an array of non-empty strings`)
@@ -98,6 +107,17 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   if (groupRole !== undefined && groupRole !== 'entrance') {
     issues.push(`Override ${elementId} groupRole must be "entrance"`)
   }
+  if (mergeInto !== undefined) {
+    if (!isNonEmptyString(mergeInto)) {
+      issues.push(`Override ${elementId} mergeInto must be a non-empty elementId string`)
+    } else if (mergeInto === elementId) {
+      issues.push(`Override ${elementId} cannot merge into itself`)
+    }
+    const clashing = MERGE_EXCLUSIVE_FIELDS.filter((field) => value[field] !== undefined)
+    if (clashing.length > 0) {
+      issues.push(`Override ${elementId} with mergeInto cannot also set ${clashing.join(', ')}`)
+    }
+  }
   return {
     ...(name === undefined ? {} : { name: name as string }),
     ...(aliases === undefined ? {} : { aliases: [...aliases as string[]] }),
@@ -108,6 +128,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
     ...(partLabel === undefined ? {} : { partLabel: partLabel as string }),
     ...(blocks === undefined ? {} : { blocks: [...blocks as string[]] }),
     ...(groupRole === undefined ? {} : { groupRole: 'entrance' as const }),
+    ...(mergeInto === undefined ? {} : { mergeInto: mergeInto as string }),
   }
 }
 
@@ -149,6 +170,15 @@ export function parseOverrides(input: unknown, knownElementIds: ReadonlySet<stri
       if (!knownElementIds.has(elementId)) issues.push(`Override ${elementId} is not an elementId in the snapshot`)
       const override = parseOverride(elementId, value, issues)
       if (override) overrides[elementId] = override
+    }
+    for (const [elementId, override] of Object.entries(overrides)) {
+      const target = override.mergeInto
+      if (target === undefined || target === elementId) continue
+      if (!knownElementIds.has(target)) {
+        issues.push(`Override ${elementId} mergeInto ${target} is not an elementId in the snapshot`)
+      } else if (overrides[target]?.mergeInto !== undefined) {
+        issues.push(`Override ${elementId} mergeInto ${target}, which is itself merged; merge chains are not allowed`)
+      }
     }
   }
 

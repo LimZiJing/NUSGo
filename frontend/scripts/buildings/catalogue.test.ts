@@ -345,6 +345,53 @@ describe('buildCatalogue rule chain', () => {
     expect(result.findings.counts.roomsUnlinked).toBe(1)
   })
 
+  it('folds a mergeInto record into its survivor: no building, its name becomes an alias, other ids unchanged', () => {
+    const result = build({
+      apiBuildings: [
+        api('300', 'Cendana College', 1.30814, 103.77248),
+        api('100', 'Cendana Block', 1.30812, 103.77221),
+        api('15347235', 'AS6', 1.29557, 103.77322),
+      ],
+      overrides: { 100: { mergeInto: '300' } },
+    })
+
+    expect(result.catalogue.buildings.map(({ id, elementId, aliases }) => ({ id, elementId, aliases }))).toEqual([
+      { id: 'as6', elementId: '15347235', aliases: ['AS 6'] },
+      { id: 'cendana-college', elementId: '300', aliases: ['Cendana Block'] },
+    ])
+    expect(result.findings.merged).toEqual([{ name: 'Cendana Block', elementId: '100', buildingId: 'cendana-college' }])
+    expect(result.findings.counts).toMatchObject({ apiRecords: 3, buildingsWritten: 2 })
+  })
+
+  it('appends merged names to overridden aliases and drops same-name grouping for the survivor', () => {
+    const result = build({
+      apiBuildings: [
+        api('732229053', 'Cendana College', 1.30814, 103.77248),
+        api('732229037', 'Cendana College', 1.30812, 103.77221),
+        api('5', 'Cendana Block', 1.3, 103.7),
+      ],
+      overrides: {
+        732229053: { aliases: ['Cendana Hall'] },
+        732229037: { mergeInto: '732229053' },
+        5: { mergeInto: '732229053' },
+      },
+    })
+
+    expect(result.catalogue.buildings).toEqual([
+      expect.objectContaining({
+        id: 'cendana-college-2',
+        elementId: '732229053',
+        aliases: ['Cendana Block', 'Cendana Hall'],
+      }),
+    ])
+    expect('groupKey' in result.catalogue.buildings[0]).toBe(false)
+    expect(result.findings.repeatedNames).toEqual([])
+    expect(result.findings.merged).toEqual([
+      { name: 'Cendana Block', elementId: '5', buildingId: 'cendana-college-2' },
+      { name: 'Cendana College', elementId: '732229037', buildingId: 'cendana-college-2' },
+    ])
+  })
+
   it('produces identical output for the same input', () => {
     const input = {
       apiBuildings: [api('2', 'COM2', 1.29397, 103.77413), api('1', 'COM1', 1.29502, 103.77391)],

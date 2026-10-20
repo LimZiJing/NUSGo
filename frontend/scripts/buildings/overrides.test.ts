@@ -77,6 +77,33 @@ describe('parseOverrides', () => {
       .toThrow('54619721 groupRole must be "entrance"')
   })
 
+  it('accepts a mergeInto override that points at a surviving record', () => {
+    const merge = { mergeInto: '140087398', $comment: 'Duplicate of the annexe.' }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: merge } }, KNOWN)['54619721'])
+      .toEqual({ mergeInto: '140087398' })
+  })
+
+  it('rejects mergeInto targets that are unknown, self-referencing, chained or combined with other decisions', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: 'way/9' } } }, KNOWN))
+      .toThrow('54619721 mergeInto way/9 is not an elementId in the snapshot')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: '54619721' } } }, KNOWN))
+      .toThrow('54619721 cannot merge into itself')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: '' } } }, KNOWN))
+      .toThrow('54619721 mergeInto must be a non-empty elementId string')
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: {
+        54619721: { mergeInto: '140087398' },
+        140087398: { mergeInto: '54619721' },
+      },
+    }, KNOWN)).toThrow(/54619721 mergeInto 140087398, which is itself merged.*140087398 mergeInto 54619721/)
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: { 54619721: { mergeInto: '140087398', groupKey: 'computing', aliases: ['COM1'], location: { x: 103.7739, y: 1.295 } } },
+    }, KNOWN)).toThrow('54619721 with mergeInto cannot also set groupKey, location, aliases')
+  })
+
   it('fails on unknown elementIds, unknown fields and malformed values', () => {
     expect(() => parseOverrides({ version: 2, overrides: {} }, KNOWN)).toThrow('version must be 1')
     expect(() => parseOverrides({ version: 1, overrides: {}, extra: true }, KNOWN)).toThrow('unknown field extra')

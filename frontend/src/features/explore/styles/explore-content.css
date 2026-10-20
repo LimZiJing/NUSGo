@@ -235,6 +235,10 @@
   gap: 8px;
 }
 
+.venue-detail-actions .venue-building-picker {
+  flex: 1 1 8rem;
+}
+
 .explore-content-detail .venue-detail-action {
   display: inline-flex;
   align-items: center;

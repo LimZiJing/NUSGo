@@ -167,11 +167,6 @@ export function BuildingDetails({
   const sharedAddress = buildings[0]?.address && buildings.every((part) => part.address === buildings[0].address)
     ? buildings[0].address
     : null
-  const summary = [
-    buildings.length > 1 ? `${buildings.length} buildings` : null,
-    buildings.length > 1 ? building.blockLabel ?? null : null,
-    `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`,
-  ].filter((part): part is string => part !== null).join(' · ')
   const navigationTarget = selectedPart ?? null
 
   return (
@@ -191,27 +186,8 @@ export function BuildingDetails({
         </h3>
         {sharedAddress && <p className="venue-detail-name">{sharedAddress}</p>}
       </div>
-      <p className="venue-detail-location">
-        <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
-        <span>{summary}</span>
-      </p>
-      {hasChips && (
-        <Select
-          label="Building"
-          value={selectedPartId ?? ''}
-          options={[
-            { value: '', label: 'All buildings' },
-            ...buildings.map((part) => ({ value: part.id, label: part.partLabel ?? part.name })),
-          ]}
-          onChange={(value) => {
-            const partId = value || null
-            setSelectedPartId(partId)
-            onSelectPart?.(partId)
-          }}
-        />
-      )}
       {!hasChips && buildings.length > 1 && sharedAddress && (
-        <p className="venue-building-parts-note">Each building is marked on the map.</p>
+        <p className="venue-building-parts-note">{`${buildings.length} buildings, each marked on the map.`}</p>
       )}
       {!hasChips && buildings.length > 1 && !sharedAddress && (
         <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
@@ -223,15 +199,32 @@ export function BuildingDetails({
           </ul>
         </section>
       )}
-      {selectedPart && (
-        <p className="venue-building-parts-note">
-          {!sharedAddress && selectedPart.address ? `${selectedPart.address}. ` : ''}
-          Rooms and facilities are not added yet.
-        </p>
-      )}
       <div className="venue-detail-actions">
+        {hasChips && (
+          <Select
+            className="venue-building-picker"
+            label="Building"
+            hideLabel
+            value={selectedPartId ?? ''}
+            options={[
+              { value: '', label: 'All buildings' },
+              ...buildings.map((part) => ({ value: part.id, label: part.partLabel ?? part.name })),
+            ]}
+            onChange={(value) => {
+              const partId = value || null
+              setSelectedPartId(partId)
+              onSelectPart?.(partId)
+            }}
+          />
+        )}
         <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />
       </div>
+      <p className="venue-building-parts-note">
+        {selectedPart && !sharedAddress && selectedPart.address ? `${selectedPart.address}. ` : ''}
+        {selectedPart || roomCount === 0
+          ? 'Rooms and facilities are not added yet.'
+          : `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`}
+      </p>
       <NearbyStops location={selectedPart?.location ?? building.location} transitIndex={transitIndex} onFocusStop={onFocusStop} />
     </div>
   )

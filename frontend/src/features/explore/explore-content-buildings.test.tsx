@@ -131,7 +131,6 @@ describe('ExploreContent building details', () => {
     const markup = render(viewing('saga'))
 
     expect(markup).toContain('aria-label="Saga College, building"')
-    expect(markup).toContain('2 buildings')
     expect(markup).toContain('Part 1 · 8 College Avenue West')
     expect(markup).toContain('Part 2 · 10 College Avenue West')
     expect(markup).toContain('1 room')
@@ -142,9 +141,8 @@ describe('ExploreContent building details', () => {
     const markup = render(viewing('elm'))
 
     expect(markup.match(/3 Elm Road/g)).toHaveLength(1)
-    expect(markup).toContain('3 buildings')
     expect(markup).not.toContain('Part 1')
-    expect(markup).toContain('Each building is marked on the map')
+    expect(markup).toContain('3 buildings, each marked on the map.')
   })
 
   it('uses the room icon for a selected venue and the building icon for its building line', () => {
@@ -184,6 +182,6 @@ describe('ExploreContent labelled building groups', () => {
     expect(markup).toContain('aria-expanded="false"')
     expect(markup).toContain('<span class="select-trigger-value">All buildings</span>')
     expect(markup).not.toContain('role="listbox"')
-    expect(markup).toContain('2 buildings · Blocks 15-19')
+    expect(markup).toContain('Rooms and facilities are not added yet.')
   })
 })

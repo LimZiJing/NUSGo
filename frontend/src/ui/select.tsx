@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { joinClassNames } from './class-names'
 import { DisclosureChevron } from './disclosure-chevron'
 import { CheckIcon } from './icons'
@@ -21,9 +22,30 @@ interface SelectProps {
   readonly className?: string
 }
 
+const LIST_MAX_HEIGHT = 224
+const LIST_GAP = 4
+const VIEWPORT_MARGIN = 8
+
+/** Fixed position for the list: under the trigger, or above it when there is more room there. */
+function placeList(trigger: HTMLElement): CSSProperties {
+  const rect = trigger.getBoundingClientRect()
+  const below = window.innerHeight - rect.bottom - LIST_GAP - VIEWPORT_MARGIN
+  const above = rect.top - LIST_GAP - VIEWPORT_MARGIN
+  const openAbove = below < Math.min(LIST_MAX_HEIGHT, 160) && above > below
+  const left = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, window.innerWidth - rect.width - VIEWPORT_MARGIN))
+  return {
+    left,
+    width: rect.width,
+    maxHeight: Math.max(96, Math.min(LIST_MAX_HEIGHT, openAbove ? above : below)),
+    ...(openAbove
+      ? { bottom: window.innerHeight - rect.top + LIST_GAP }
+      : { top: rect.bottom + LIST_GAP }),
+  }
+}
+
 /**
- * A themed dropdown. The option list renders in normal flow under the trigger rather than
- * in a popover, so scroll containers and bottom sheets never clip it.
+ * A themed dropdown. The option list floats over the page in a portal (fixed to the trigger), so
+ * it never pushes other content down and no scroll container or bottom sheet clips it.
  */
 export function Select({ label, value, options, onChange, id, hideLabel, className }: SelectProps) {
   const generatedId = useId()
@@ -36,10 +58,26 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
   const listRef = useRef<HTMLUListElement>(null)
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [listStyle, setListStyle] = useState<CSSProperties>({})
 
   const selectedIndex = options.findIndex((option) => option.value === value)
   const selectedLabel = options[selectedIndex]?.label ?? ''
   const lastIndex = Math.max(options.length - 1, 0)
+
+  // The list is fixed to the viewport, so it follows the trigger through scrolls and resizes.
+  useLayoutEffect(() => {
+    if (!open) return
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const update = () => setListStyle(placeList(trigger))
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [open])
 
   // Focus moves into the list when it opens, so arrow keys and Escape work straight away.
   useEffect(() => {
@@ -120,7 +158,8 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
   // Closes the list when focus leaves the component, which covers clicks outside and Tab.
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
     const next = event.relatedTarget
-    if (next instanceof Node && event.currentTarget.contains(next)) return
+    // The list lives in a portal, so containment is checked against both elements, not the wrapper.
+    if (next instanceof Node && (triggerRef.current?.contains(next) || listRef.current?.contains(next))) return
     setOpen(false)
   }
 
@@ -147,11 +186,12 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
         <span className="select-trigger-value">{selectedLabel}</span>
         <DisclosureChevron expanded={open} className="select-trigger-chevron" />
       </button>
-      {open && (
+      {open && createPortal(
         <ul
           ref={listRef}
           id={listId}
           className="select-list"
+          style={listStyle}
           role="listbox"
           tabIndex={-1}
           aria-labelledby={labelId}
@@ -176,7 +216,8 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
               </li>
             )
           })}
-        </ul>
+        </ul>,
+        document.body,
       )}
     </div>
   )

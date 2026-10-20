@@ -43,16 +43,17 @@
 }
 
 .select-list {
+  position: fixed;
+  z-index: 30;
   box-sizing: border-box;
-  width: 100%;
-  max-height: min(14rem, 40vh);
   margin: 0;
   padding: var(--space-1);
   overflow-y: auto;
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   color: var(--text-primary);
   background: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
   list-style: none;
 }
 

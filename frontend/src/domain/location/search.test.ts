@@ -130,6 +130,24 @@ describe('searchTripLocations grouping', () => {
   })
 })
 
+describe('getTripEndpointLabel for a building of a group', () => {
+  const helix = (overrides: Partial<Building> & Pick<Building, 'id'>): Building => ({
+    name: 'Helix House', aliases: [], elementId: `way/${overrides.id}`, location: { x: 103.78, y: 1.29 },
+    locationKind: 'centroid', roomCodePrefixes: [], sourceRefs: [], groupKey: 'helix-house', ...overrides,
+  })
+  const index = buildBuildingIndex([
+    helix({ id: 'helix-house', groupRole: 'entrance' }),
+    helix({ id: 'helix-18-19', partLabel: 'Blocks 18-19', blocks: ['18', '19'] }),
+  ])
+
+  it('names the group alone for the group and adds the block label for one of its buildings', () => {
+    expect(getTripEndpointLabel({ kind: 'building', id: 'helix-house' }, venues, stops, index)).toBe('Helix House')
+    expect(getTripEndpointLabel({ kind: 'building', id: 'helix-18-19' }, venues, stops, index)).toBe(
+      'Helix House · Blocks 18-19',
+    )
+  })
+})
+
 describe('getTripEndpointLabel', () => {
   it('resolves known endpoints to readable labels', () => {
     expect(getTripEndpointLabel({ kind: 'venue', id: 'LT17' }, venues, stops)).toBe(

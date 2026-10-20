@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
-import { buildBuildingIndex, describeBuildingEntry, formatBlockLabel, searchBuildings } from './building-index'
+import { buildBuildingIndex, describeBuildingEntry, formatBlockLabel, resolveBuildingLocation, searchBuildings } from './building-index'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -118,6 +118,18 @@ describe('building groups with labels and an entrance', () => {
     expect(searchBuildings(index, 'Block 16').map((entry) => entry.id)).toEqual(['helix-house'])
     expect(searchBuildings(index, 'helix house block 19').map((entry) => entry.id)).toEqual(['helix-house'])
     expect(searchBuildings(index, 'Block 20')).toEqual([])
+  })
+
+  it('resolves each building of a group by its own ID, and the group to its entrance', () => {
+    const index = buildBuildingIndex(helix)
+
+    expect(index.byPartId.get('helix-b')?.entry.id).toBe('helix-house')
+    expect(index.byPartId.get('helix-b')?.part.partLabel).toBe('Blocks 18-19')
+    // The entrance record shares the group's ID, so it resolves as the entry, not as a part.
+    expect(index.byPartId.has('helix-house')).toBe(false)
+    expect(resolveBuildingLocation(index, 'helix-b')).toEqual({ x: 103.2, y: 1.2 })
+    expect(resolveBuildingLocation(index, 'helix-house')).toEqual({ x: 103.0, y: 1.0 })
+    expect(resolveBuildingLocation(index, 'missing')).toBeUndefined()
   })
 
   it('formats block ranges', () => {

@@ -28,6 +28,24 @@ const sources = {
   transitIndex: { stopById: new Map([[com3Stop.id, com3Stop]]) },
 }
 
+describe('getTripEndpointCoordinate for a building of a group', () => {
+  const group = buildBuildingIndex([
+    { ...com3, id: 'hall', name: 'Hall', groupKey: 'hall', groupRole: 'entrance', location: { x: 103.7, y: 1.2 } },
+    { ...com3, id: 'hall-a', name: 'Hall', elementId: 'way/2', groupKey: 'hall', partLabel: 'Block A', blocks: ['A'], location: { x: 103.71, y: 1.21 } },
+  ])
+
+  it('resolves a part ID to that building and the group ID to its entrance', () => {
+    expect(getTripEndpointCoordinate({ kind: 'building', id: 'hall-a' }, { ...sources, buildings: group })).toEqual({
+      longitude: 103.71,
+      latitude: 1.21,
+    })
+    expect(getTripEndpointCoordinate({ kind: 'building', id: 'hall' }, { ...sources, buildings: group })).toEqual({
+      longitude: 103.7,
+      latitude: 1.2,
+    })
+  })
+})
+
 describe('getTripEndpointCoordinate', () => {
   it('resolves a building to its own location and a stop with the same name to its boarding location', () => {
     expect(getTripEndpointCoordinate({ kind: 'building', id: 'com3' }, sources)).toEqual({

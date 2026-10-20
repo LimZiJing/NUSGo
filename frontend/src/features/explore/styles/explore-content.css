@@ -301,7 +301,11 @@
 .venue-nearby-stops h4 svg {
   width: 18px;
   height: 18px;
-  fill: currentColor;
+  /* Functional icons are stroke-only; filling them turns the outline into a solid blob. */
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .venue-nearby-empty {

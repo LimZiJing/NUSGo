@@ -220,11 +220,10 @@ export function BuildingDetails({
         </section>
       )}
       {selectedPart && (
-        <section className="venue-building-part-detail" aria-label={`${selectedPart.partLabel} details`}>
-          <h4>{selectedPart.partLabel}</h4>
-          {!sharedAddress && selectedPart.address && <p className="venue-building-parts-note">{selectedPart.address}</p>}
-          <p className="venue-building-parts-note">Rooms and facilities for this building have not been added yet.</p>
-        </section>
+        <p className="venue-building-parts-note">
+          {!sharedAddress && selectedPart.address ? `${selectedPart.address}. ` : ''}
+          Rooms and facilities are not added yet.
+        </p>
       )}
       <div className="venue-detail-actions">
         <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />

@@ -176,13 +176,14 @@ describe('ExploreContent labelled building groups', () => {
     expect(render(searching('block 16'))).toContain('building-result-helix-house')
   })
 
-  it('offers a select with every building but not the entrance, starting on all buildings', () => {
+  it('offers a building select that starts closed on all buildings', () => {
     const markup = render(viewing('helix-house'))
 
-    expect(markup).toContain('>Blocks 15-17</option>')
-    expect(markup).toContain('>Blocks 18-19</option>')
-    expect(markup.match(/<option/g)).toHaveLength(3)
-    expect(markup).toContain('>All buildings</option>')
+    expect(markup).toContain('>Building</label>')
+    expect(markup).toContain('aria-haspopup="listbox"')
+    expect(markup).toContain('aria-expanded="false"')
+    expect(markup).toContain('<span class="select-trigger-value">All buildings</span>')
+    expect(markup).not.toContain('role="listbox"')
     expect(markup).toContain('2 buildings · Blocks 15-19')
   })
 })

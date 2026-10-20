@@ -288,27 +288,6 @@
   text-align: left;
 }
 
-.venue-building-select {
-  display: grid;
-  gap: var(--space-1);
-  text-align: left;
-}
-
-.venue-building-select label {
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.venue-building-select select {
-  min-height: var(--control-height-md);
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  background: var(--surface-muted);
-  font: inherit;
-}
-
 .venue-nearby-stops h4,
 .venue-building-parts h4 {
   display: flex;

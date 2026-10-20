@@ -5,6 +5,7 @@ import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates 
 import { getRouteContrastTextColor } from '../../../domain/transit/route-color'
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
+import { Select } from '../../../ui/select'
 import type { BuildingEntry } from '../../../domain/venue/building-index'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
@@ -195,23 +196,19 @@ export function BuildingDetails({
         <span>{summary}</span>
       </p>
       {hasChips && (
-        <div className="venue-building-select">
-          <label htmlFor="venue-building-select">Building</label>
-          <select
-            id="venue-building-select"
-            value={selectedPartId ?? ''}
-            onChange={(event) => {
-              const partId = event.target.value || null
-              setSelectedPartId(partId)
-              onSelectPart?.(partId)
-            }}
-          >
-            <option value="">All buildings</option>
-            {buildings.map((part) => (
-              <option key={part.id} value={part.id}>{part.partLabel}</option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Building"
+          value={selectedPartId ?? ''}
+          options={[
+            { value: '', label: 'All buildings' },
+            ...buildings.map((part) => ({ value: part.id, label: part.partLabel ?? part.name })),
+          ]}
+          onChange={(value) => {
+            const partId = value || null
+            setSelectedPartId(partId)
+            onSelectPart?.(partId)
+          }}
+        />
       )}
       {!hasChips && buildings.length > 1 && sharedAddress && (
         <p className="venue-building-parts-note">Each building is marked on the map.</p>

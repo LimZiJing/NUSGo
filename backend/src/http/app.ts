@@ -7,6 +7,7 @@ import { registerLiveDataRoutes } from './routes/live-data.ts'
 import { registerJourneyRoutes } from './routes/journeys.ts'
 import type { PathfindingService } from '../pathfinding/service.ts'
 import { createApiErrorHandler, sendApiError } from './error-response.ts'
+import { createClientRateLimiter } from './request-limits.ts'
 
 const BODY_LIMIT = '32kb'
 const MAX_URL_LENGTH = 2048
@@ -57,7 +58,15 @@ function corsMiddleware(origins: readonly string[]): RequestHandler {
 }
 
 export function createApp(
-  config: Pick<BackendConfig, 'corsOrigins' | 'dataVersion'> & {
+  config: Pick<
+    BackendConfig,
+    | 'apiRateLimitMaxRequests'
+    | 'apiRateLimitWindowMs'
+    | 'corsOrigins'
+    | 'dataVersion'
+    | 'journeyMaxConcurrentRequests'
+    | 'journeyRateLimitMaxRequests'
+  > & {
     readonly environment?: BackendConfig['environment']
     readonly journeyRequestTimeoutMs?: BackendConfig['journeyRequestTimeoutMs']
   },
@@ -67,13 +76,18 @@ export function createApp(
 ): Express {
   const app = express()
   app.disable('x-powered-by')
-  // The API is loopback-bound behind a local TLS proxy in production; trust only that proxy hop for per-client limits.
+  // cloudflared connects over loopback; request-limits trusts its client-IP header only for that local peer.
   app.set('trust proxy', 'loopback')
   app.use('/api', (_request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff')
     response.setHeader('Cache-Control', 'no-store')
     next()
   })
+  app.use('/api', createClientRateLimiter({
+    windowMs: config.apiRateLimitWindowMs,
+    maxRequests: config.apiRateLimitMaxRequests,
+    message: 'API request rate limit reached',
+  }))
   app.use('/api', corsMiddleware(config.corsOrigins))
   app.use('/api', (request, response, next) => {
     if (request.originalUrl.length > MAX_URL_LENGTH) {
@@ -90,7 +104,12 @@ export function createApp(
     app,
     config.environment ?? 'production',
     planner,
-    config.journeyRequestTimeoutMs,
+    {
+      requestTimeoutMs: config.journeyRequestTimeoutMs,
+      apiRateLimitWindowMs: config.apiRateLimitWindowMs,
+      journeyRateLimitMaxRequests: config.journeyRateLimitMaxRequests,
+      journeyMaxConcurrentRequests: config.journeyMaxConcurrentRequests,
+    },
   )
 
   app.use('/api', (_request, response) => {

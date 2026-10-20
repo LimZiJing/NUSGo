@@ -38,6 +38,10 @@ export interface BackendConfig {
   readonly dataVersion: string
   readonly dataDirectory: string
   readonly valhallaBaseUrl: string
+  readonly apiRateLimitWindowMs: number
+  readonly apiRateLimitMaxRequests: number
+  readonly journeyRateLimitMaxRequests: number
+  readonly journeyMaxConcurrentRequests: number
   readonly journeyRequestTimeoutMs: number
   readonly liveData: {
     readonly shuttleRefreshIntervalMs: number
@@ -178,7 +182,7 @@ export function loadBackendConfig(
   const mode = parseEnvironment(environment.NODE_ENV)
   const host = environment.HOST?.trim() || '127.0.0.1'
   if (mode === 'production' && host !== '127.0.0.1' && host !== '::1') {
-    throw new Error('HOST must use loopback in production so the TLS proxy owns public traffic')
+    throw new Error('HOST must use loopback in production so public traffic reaches Express through a local proxy')
   }
 
   let corsOrigins: readonly string[]
@@ -217,6 +221,34 @@ export function loadBackendConfig(
     dataVersion,
     dataDirectory: resolve(workingDirectory, dataPath),
     valhallaBaseUrl: parseValhallaBaseUrl(environment.VALHALLA_BASE_URL),
+    apiRateLimitWindowMs: parseInteger(
+      environment.API_RATE_LIMIT_WINDOW_MS,
+      60_000,
+      'API_RATE_LIMIT_WINDOW_MS',
+      1_000,
+      3_600_000,
+    ),
+    apiRateLimitMaxRequests: parseInteger(
+      environment.API_RATE_LIMIT_MAX_REQUESTS,
+      120,
+      'API_RATE_LIMIT_MAX_REQUESTS',
+      1,
+      10_000,
+    ),
+    journeyRateLimitMaxRequests: parseInteger(
+      environment.JOURNEY_RATE_LIMIT_MAX_REQUESTS,
+      20,
+      'JOURNEY_RATE_LIMIT_MAX_REQUESTS',
+      1,
+      1_000,
+    ),
+    journeyMaxConcurrentRequests: parseInteger(
+      environment.JOURNEY_MAX_CONCURRENT_REQUESTS,
+      4,
+      'JOURNEY_MAX_CONCURRENT_REQUESTS',
+      1,
+      16,
+    ),
     journeyRequestTimeoutMs: parseInteger(
       environment.JOURNEY_REQUEST_TIMEOUT_MS,
       10_000,

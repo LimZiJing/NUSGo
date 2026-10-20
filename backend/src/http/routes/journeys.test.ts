@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import type { Request } from 'express'
 import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
 import { loadBackendConfig } from '../../config.ts'
 import { createApp } from '../app.ts'
@@ -7,6 +8,7 @@ import { closeHttpServer, listenHttpServer } from '../../server.ts'
 import { InvalidJourneyEndpointError } from '../../pathfinding/service.ts'
 import { ValhallaRouteError } from '../../pathfinding/walking/valhalla-walking-client.ts'
 import { InvalidJourneyRequestError, parseJourneyPlanningRequest } from './journeys.ts'
+import { getRateLimitClientAddress } from '../request-limits.ts'
 
 const request = {
   origin: { kind: 'venue', id: 'COM1' },
@@ -72,11 +74,13 @@ async function withServer(
   planner: Planner | null,
   run: (baseUrl: string) => Promise<void>,
   journeyRequestTimeoutMs = 10_000,
+  environment: Record<string, string | undefined> = {},
 ): Promise<void> {
   const config = loadBackendConfig({
     NODE_ENV: 'test',
     API_CORS_ORIGINS: 'http://localhost:5173',
     JOURNEY_REQUEST_TIMEOUT_MS: String(journeyRequestTimeoutMs),
+    ...environment,
   })
   const server = await listenHttpServer(createApp(config, null, null, planner), '127.0.0.1', 0)
   const address = server.address()
@@ -88,14 +92,121 @@ async function withServer(
   }
 }
 
-async function post(baseUrl: string, body: unknown, signal?: AbortSignal): Promise<Response> {
+async function post(
+  baseUrl: string,
+  body: unknown,
+  signal?: AbortSignal,
+  headers: Record<string, string> = {},
+): Promise<Response> {
   return fetch(baseUrl + '/api/journeys', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
     signal,
   })
 }
+
+async function get(baseUrl: string, path: string, headers: Record<string, string> = {}): Promise<Response> {
+  return fetch(baseUrl + path, { headers })
+}
+
+describe('API request limits', () => {
+  it('ignores Cloudflare client headers from a non-loopback peer', () => {
+    const request = {
+      socket: { remoteAddress: '203.0.113.10' },
+      ip: '198.51.100.10',
+      get: () => '192.0.2.10',
+    } as unknown as Request
+
+    assert.equal(getRateLimitClientAddress(request), '203.0.113.10')
+  })
+
+  it('limits requests across public data and Journey routes', async () => {
+    let plannerCalls = 0
+    await withServer({
+      async plan() {
+        plannerCalls += 1
+        return { outcome: 'no-path' }
+      },
+    }, async (baseUrl) => {
+      assert.equal((await get(baseUrl, '/api/health')).status, 200)
+      assert.equal((await get(baseUrl, '/api/shuttle-arrivals')).status, 503)
+
+      const limited = await post(baseUrl, request)
+      assert.equal(limited.status, 429)
+      assert.ok(Number(limited.headers.get('retry-after')) > 0)
+      assert.deepEqual(await limited.json(), {
+        error: 'API request rate limit reached',
+        code: 'rate_limited',
+      })
+    }, 10_000, { API_RATE_LIMIT_MAX_REQUESTS: '2' })
+    assert.equal(plannerCalls, 0)
+  })
+
+  it('applies the shared API limit to every public route', async () => {
+    const routes = [
+      { path: '/api/health', method: 'GET' },
+      { path: '/api/ready', method: 'GET' },
+      { path: '/api/shuttle-arrivals', method: 'GET' },
+      { path: '/api/shuttle-service-windows', method: 'GET' },
+      { path: '/api/public-bus-arrivals', method: 'GET' },
+      { path: '/api/journeys', method: 'POST' },
+    ] as const
+
+    await withServer(null, async (baseUrl) => {
+      for (const [index, route] of routes.entries()) {
+        const clientIp = `203.0.113.${index + 1}`
+        const headers = { 'CF-Connecting-IP': clientIp }
+        const first = route.method === 'POST'
+          ? await post(baseUrl, request, undefined, headers)
+          : await get(baseUrl, route.path, headers)
+        assert.notEqual(first.status, 429, `${route.path} is available within the client budget`)
+
+        const nextRoute = routes[(index + 1) % routes.length]!
+        const limited = nextRoute.method === 'POST'
+          ? await post(baseUrl, request, undefined, headers)
+          : await get(baseUrl, nextRoute.path, headers)
+        assert.equal(limited.status, 429, `${nextRoute.path} shares the API client budget`)
+      }
+    }, 10_000, { API_RATE_LIMIT_MAX_REQUESTS: '1' })
+  })
+
+  it('uses the Cloudflare client address for requests through the loopback tunnel', async () => {
+    await withServer(null, async (baseUrl) => {
+      const first = await get(baseUrl, '/api/health', {
+        'CF-Connecting-IP': '203.0.113.10',
+        'X-Forwarded-For': '198.51.100.10',
+      })
+      assert.equal(first.status, 200)
+
+      const sameClient = await get(baseUrl, '/api/health', {
+        'CF-Connecting-IP': '203.0.113.10',
+        'X-Forwarded-For': '198.51.100.11',
+      })
+      assert.equal(sameClient.status, 429)
+
+      const differentClient = await get(baseUrl, '/api/health', {
+        'CF-Connecting-IP': '203.0.113.11',
+      })
+      assert.equal(differentClient.status, 200)
+    }, 10_000, { API_RATE_LIMIT_MAX_REQUESTS: '1' })
+  })
+
+  it('counts requests rejected by CORS against the API budget', async () => {
+    await withServer(null, async (baseUrl) => {
+      const rejectedOrigin = await get(baseUrl, '/api/health', {
+        Origin: 'https://untrusted.example',
+        'CF-Connecting-IP': '203.0.113.10',
+      })
+      assert.equal(rejectedOrigin.status, 403)
+
+      const withoutOrigin = await get(baseUrl, '/api/health', {
+        'CF-Connecting-IP': '203.0.113.10',
+      })
+      assert.equal(withoutOrigin.status, 429)
+    }, 10_000, { API_RATE_LIMIT_MAX_REQUESTS: '1' })
+  })
+})
 
 describe('POST /api/journeys', () => {
   it('passes only endpoint references to the planner and returns complete options', async () => {
@@ -182,6 +293,58 @@ describe('POST /api/journeys', () => {
     assert.equal(plannerCalls, 20)
   })
 
+  it('rejects Journey work at the process concurrency cap and frees the slot on completion', async () => {
+    let markStarted = (): void => {}
+    let finishFirst: (response: ApiJourneyPlanningResponse) => void = () => {}
+    const started = new Promise<void>((resolve) => { markStarted = resolve })
+    let plannerCalls = 0
+    await withServer({
+      plan() {
+        plannerCalls += 1
+        if (plannerCalls === 1) {
+          markStarted()
+          return new Promise<ApiJourneyPlanningResponse>((resolve) => { finishFirst = resolve })
+        }
+        return Promise.resolve({ outcome: 'no-path' })
+      },
+    }, async (baseUrl) => {
+      const firstPromise = post(baseUrl, request)
+      await started
+
+      const busy = await post(baseUrl, request)
+      assert.equal(busy.status, 429)
+      assert.equal(busy.headers.get('retry-after'), '1')
+
+      finishFirst({ outcome: 'paths', candidates: [], searchStatus: 'complete' })
+      assert.equal((await firstPromise).status, 200)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
+    })
+    assert.equal(plannerCalls, 2)
+  })
+
+  it('releases a Journey slot when planning returns an error', async () => {
+    let plannerCalls = 0
+    await withServer({
+      async plan() {
+        plannerCalls += 1
+        if (plannerCalls === 1) throw new ValhallaRouteError('upstream details stay private')
+        return { outcome: 'no-path' }
+      },
+    }, async (baseUrl) => {
+      assert.equal((await post(baseUrl, request)).status, 503)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
+    })
+    assert.equal(plannerCalls, 2)
+  })
+
   it('rejects unknown canonical references and reports not-ready separately', async () => {
     await withServer({
       async plan() { throw new InvalidJourneyEndpointError('unknown endpoint') },
@@ -208,8 +371,11 @@ describe('POST /api/journeys', () => {
     let markAborted = (): void => {}
     const started = new Promise<void>((resolve) => { markStarted = resolve })
     const aborted = new Promise<void>((resolve) => { markAborted = resolve })
+    let plannerCalls = 0
     await withServer({
       plan(_planningRequest, signal) {
+        plannerCalls += 1
+        if (plannerCalls > 1) return Promise.resolve({ outcome: 'no-path' })
         markStarted()
         return new Promise((_resolve, reject) => {
           signal.addEventListener('abort', () => {
@@ -224,12 +390,19 @@ describe('POST /api/journeys', () => {
       const controller = new AbortController()
       const response = post(baseUrl, request, controller.signal).catch(() => null)
       await started
+      const busy = await post(baseUrl, request)
       controller.abort()
       await Promise.race([
         aborted,
         new Promise<never>((_, reject) => { const timeout = setTimeout(() => reject(new Error('Planner did not observe disconnect')), 2_000); timeout.unref() }),
       ])
       await response
+      assert.equal(busy.status, 429)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
     })
   })
 })

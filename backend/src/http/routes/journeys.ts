@@ -5,16 +5,18 @@ import { LiveDataRequestError } from '../../live-data/runtime.ts'
 import { InvalidJourneyEndpointError, type PathfindingService } from '../../pathfinding/service.ts'
 import { ValhallaRouteError } from '../../pathfinding/walking/valhalla-walking-client.ts'
 import { sendApiError } from '../error-response.ts'
+import { createClientRateLimiter, createConcurrencyLimiter } from '../request-limits.ts'
 import { InvalidJourneyRequestError, parseJourneyPlanningRequest } from './journey-request.ts'
 
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_REQUESTS = 20
-const MAX_RATE_LIMIT_CLIENTS = 10_000
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000
 
-interface ClientRateWindow {
-  readonly startedAtMs: number
-  requestCount: number
+interface JourneyRouteLimits {
+  readonly requestTimeoutMs?: number
+  readonly apiRateLimitWindowMs?: number
+  readonly journeyRateLimitMaxRequests?: number
+  readonly journeyMaxConcurrentRequests?: number
 }
 
 function isAbortError(error: unknown): boolean {
@@ -32,37 +34,7 @@ function journeyHandler(
   planner: PathfindingService | null,
   requestTimeoutMs: number,
 ): RequestHandler {
-  // Keep only short-lived per-client counts, and cap entries so spoofed source IPs cannot grow this map forever.
-  const clients = new Map<string, ClientRateWindow>()
-
   return (request, response, next) => {
-    const now = Date.now()
-    const clientKey = request.ip || request.socket.remoteAddress || 'unknown'
-    let clientWindow = clients.get(clientKey)
-    if (!clientWindow || now - clientWindow.startedAtMs >= RATE_LIMIT_WINDOW_MS) {
-      if (!clientWindow && clients.size >= MAX_RATE_LIMIT_CLIENTS) {
-        for (const [key, window] of clients) {
-          if (now - window.startedAtMs >= RATE_LIMIT_WINDOW_MS) clients.delete(key)
-        }
-      }
-      if (!clientWindow && clients.size >= MAX_RATE_LIMIT_CLIENTS) {
-        response.setHeader('Retry-After', '60')
-        sendApiError(response, 429, 'Journey planning rate limit reached', 'rate_limited')
-        return
-      }
-      clientWindow = { startedAtMs: now, requestCount: 0 }
-      clients.set(clientKey, clientWindow)
-    }
-    if (clientWindow.requestCount >= RATE_LIMIT_REQUESTS) {
-      const retryAfterSeconds = Math.max(1, Math.ceil(
-        (clientWindow.startedAtMs + RATE_LIMIT_WINDOW_MS - now) / 1000,
-      ))
-      response.setHeader('Retry-After', String(retryAfterSeconds))
-      sendApiError(response, 429, 'Journey planning rate limit reached', 'rate_limited')
-      return
-    }
-    clientWindow.requestCount += 1
-
     if (!planner) {
       sendApiError(response, 503, 'Journey planning is not ready', 'not_ready')
       return
@@ -156,9 +128,17 @@ export function registerJourneyRoutes(
   app: Express,
   environment: BackendConfig['environment'],
   planner: PathfindingService | null,
-  requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+  limits: JourneyRouteLimits = {},
 ): void {
   app.route('/api/journeys')
-    .post(journeyHandler(environment, planner, requestTimeoutMs))
+    .post(
+      createClientRateLimiter({
+        windowMs: limits.apiRateLimitWindowMs ?? RATE_LIMIT_WINDOW_MS,
+        maxRequests: limits.journeyRateLimitMaxRequests ?? RATE_LIMIT_REQUESTS,
+        message: 'Journey planning rate limit reached',
+      }),
+      createConcurrencyLimiter(limits.journeyMaxConcurrentRequests ?? 4, 'Journey planning is at capacity'),
+      journeyHandler(environment, planner, limits.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS),
+    )
     .all(methodNotAllowed())
 }

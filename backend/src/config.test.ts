@@ -32,6 +32,10 @@ describe('loadBackendConfig', () => {
     assert.equal(config.host, '127.0.0.1')
     assert.equal(config.port, 3001)
     assert.equal(config.valhallaBaseUrl, 'http://127.0.0.1:8002')
+    assert.equal(config.apiRateLimitWindowMs, 60_000)
+    assert.equal(config.apiRateLimitMaxRequests, 120)
+    assert.equal(config.journeyRateLimitMaxRequests, 20)
+    assert.equal(config.journeyMaxConcurrentRequests, 4)
     assert.equal(config.journeyRequestTimeoutMs, 10_000)
     assert.equal(config.dataVersion, 'development')
     assert.deepEqual(config.corsOrigins, [
@@ -67,6 +71,24 @@ describe('loadBackendConfig', () => {
     assert.equal(privateNetwork.valhallaBaseUrl, 'http://10.0.0.12:8002')
     assert.equal(privateDns.valhallaBaseUrl, 'http://valhalla:8002')
     assert.equal(localDns.valhallaBaseUrl, 'http://routing.local:8002')
+  })
+
+  it('loads bounded API and Journey request limits', () => {
+    const config = loadBackendConfig({
+      API_RATE_LIMIT_WINDOW_MS: '30000',
+      API_RATE_LIMIT_MAX_REQUESTS: '45',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '7',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '3',
+    })
+
+    assert.equal(config.apiRateLimitWindowMs, 30_000)
+    assert.equal(config.apiRateLimitMaxRequests, 45)
+    assert.equal(config.journeyRateLimitMaxRequests, 7)
+    assert.equal(config.journeyMaxConcurrentRequests, 3)
+    assert.throws(() => loadBackendConfig({ API_RATE_LIMIT_WINDOW_MS: '999' }), /API_RATE_LIMIT_WINDOW_MS/)
+    assert.throws(() => loadBackendConfig({ API_RATE_LIMIT_MAX_REQUESTS: '0' }), /API_RATE_LIMIT_MAX_REQUESTS/)
+    assert.throws(() => loadBackendConfig({ JOURNEY_RATE_LIMIT_MAX_REQUESTS: '1001' }), /JOURNEY_RATE_LIMIT_MAX_REQUESTS/)
+    assert.throws(() => loadBackendConfig({ JOURNEY_MAX_CONCURRENT_REQUESTS: '17' }), /JOURNEY_MAX_CONCURRENT_REQUESTS/)
   })
 
   it('rejects invalid provider URLs and other invalid backend settings', () => {

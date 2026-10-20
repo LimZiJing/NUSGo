@@ -1,0 +1,97 @@
+/* Select primitive: a themed dropdown with an inline listbox. See docs/ui/controls.md for the spec. */
+.select {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.select-label {
+  color: var(--text-muted);
+  font: 600 var(--font-size-label)/1.3 var(--sans);
+  text-align: left;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--control-height-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  font: 600 var(--font-size-control)/1.3 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-trigger-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-trigger:focus-visible,
+.select-list:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.select-list {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: min(14rem, 40vh);
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  list-style: none;
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font: 500 var(--font-size-control)/1.3 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-option[data-active='true'] {
+  background: var(--accent-soft);
+}
+
+.select-option[aria-selected='true'] {
+  font-weight: 700;
+}
+
+.select-option-check {
+  flex: 0 0 auto;
+  visibility: hidden;
+}
+
+.select-option[aria-selected='true'] .select-option-check {
+  visibility: visible;
+}
+
+.select-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .select-trigger:hover {
+    border-color: var(--border-focus);
+  }
+}

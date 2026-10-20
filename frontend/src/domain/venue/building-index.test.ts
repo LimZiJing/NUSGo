@@ -188,6 +188,12 @@ describe('the real catalogue', () => {
     }
   })
 
+  it('shows University Hall once, as two wings reached through the main record', () => {
+    const entry = index.byId.get('university-hall')
+    expect(entry?.entrance?.id).toBe('university-hall')
+    expect(entry?.buildings.map((part) => part.partLabel)).toEqual(['Lee Kong Chian Wing', 'Tan Chin Tuan Wing'])
+  })
+
   it('has no two entries with the same name and address', () => {
     const seen = new Map<string, string>()
     const clashes: string[] = []

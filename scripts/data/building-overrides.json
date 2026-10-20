@@ -64,6 +64,22 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11224826735 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "140087580": {
+      "groupKey": "university-hall",
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Lee Kong Chian Wing)"
+      ],
+      "partLabel": "Lee Kong Chian Wing"
+    },
+    "140087584": {
+      "groupKey": "university-hall",
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Tan Chin Tuan Wing)"
+      ],
+      "partLabel": "Tan Chin Tuan Wing"
+    },
     "141906506": {
       "entrance": {
         "x": 103.7802176,
@@ -1087,6 +1103,10 @@
     },
     "PGP_RESIDENCE_2": {
       "groupKey": "pgp-residence-2",
+      "groupRole": "entrance"
+    },
+    "UNIVERSITY_HALL": {
+      "groupKey": "university-hall",
       "groupRole": "entrance"
     }
   },

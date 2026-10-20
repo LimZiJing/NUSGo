@@ -5928,6 +5928,8 @@
       "name": "University Hall",
       "aliases": [],
       "elementId": "UNIVERSITY_HALL",
+      "groupKey": "university-hall",
+      "groupRole": "entrance",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {
@@ -5945,9 +5947,13 @@
     },
     {
       "id": "university-hall-lee-kong-chian-wing",
-      "name": "University Hall (Lee Kong Chian Wing)",
-      "aliases": [],
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Lee Kong Chian Wing)"
+      ],
       "elementId": "140087580",
+      "groupKey": "university-hall",
+      "partLabel": "Lee Kong Chian Wing",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {
@@ -5965,9 +5971,13 @@
     },
     {
       "id": "university-hall-tan-chin-tuan-wing",
-      "name": "University Hall (Tan Chin Tuan Wing)",
-      "aliases": [],
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Tan Chin Tuan Wing)"
+      ],
       "elementId": "140087584",
+      "groupKey": "university-hall",
+      "partLabel": "Tan Chin Tuan Wing",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {

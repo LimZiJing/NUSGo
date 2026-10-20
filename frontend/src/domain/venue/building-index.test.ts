@@ -75,7 +75,7 @@ describe('buildBuildingIndex', () => {
     )
 
     expect(partCounts).toMatchObject({ 'cendana-college': 5, 'saga-college': 6, 'elm-college': 3 })
-    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(258)
+    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(251)
   })
 })
 
@@ -210,6 +210,17 @@ describe('the real catalogue', () => {
     expect(index.byId.has('pgp-foyer')).toBe(false)
     const matches = searchBuildings(index, 'PGP Foyer')
     expect(matches.map((entry) => entry.id)).toContain('pgp-residence-2')
+  })
+
+  it('shows blocks that share one building as a single building', () => {
+    const residence2 = index.byId.get('pgp-residence-2')
+    expect(residence2?.entrance?.id).toBe('pgp-residence-2')
+    expect(residence2?.buildings.map((part) => part.partLabel)).toEqual(['Blocks 5-8'])
+    expect(index.byId.get('pgp-residence-3')?.buildings.map((part) => part.blocks)).toEqual([['9', '10', '11', '12']])
+    expect(index.byId.get('lighthouse')?.buildings.map((part) => part.partLabel)).toEqual(['Blocks 26-28', 'Blocks 29-30'])
+    // Each residence-1 block is its own building on the map.
+    expect(index.byId.get('pgp-residence-1')?.buildings).toHaveLength(4)
+    expect(searchBuildings(index, 'Block 7').map((entry) => entry.id)).toContain('pgp-residence-2')
   })
 
   it('has no two entries with the same name and address', () => {

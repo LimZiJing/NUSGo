@@ -3,15 +3,7 @@
   "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, partLabel (for example \"Blocks 15-17\"), blocks (block numbers or letters), groupRole (\"entrance\" marks a group main-entrance record), and $comment for the reason. unlinkedPrefixes ({prefix: reason}) lists room code prefixes deliberately left unlinked. Unknown elementIds or fields fail the import.",
   "overrides": {
     "1084099106": {
-      "groupKey": "pgp-residence-2",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 8"
-      ],
-      "partLabel": "Block 8",
-      "blocks": [
-        "8"
-      ]
+      "mergeInto": "238932778"
     },
     "1084196072": {
       "entrance": {
@@ -390,37 +382,13 @@
       ]
     },
     "238932775": {
-      "groupKey": "pgp-residence-2",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 7"
-      ],
-      "partLabel": "Block 7",
-      "blocks": [
-        "7"
-      ]
+      "mergeInto": "238932778"
     },
     "238932776": {
-      "groupKey": "pgp-residence-3",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 12"
-      ],
-      "partLabel": "Block 12",
-      "blocks": [
-        "12"
-      ]
+      "mergeInto": "238932782"
     },
     "238932777": {
-      "groupKey": "pgp-residence-3",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 10"
-      ],
-      "partLabel": "Block 10",
-      "blocks": [
-        "10"
-      ]
+      "mergeInto": "238932782"
     },
     "238932778": {
       "groupKey": "pgp-residence-2",
@@ -428,32 +396,23 @@
       "aliases": [
         "PGP Residence 2 Block 5"
       ],
-      "partLabel": "Block 5",
+      "partLabel": "Blocks 5-8",
       "blocks": [
-        "5"
-      ]
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "location": {
+        "x": 103.7813275,
+        "y": 1.2908925
+      }
     },
     "238932780": {
-      "groupKey": "pgp-residence-2",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 6"
-      ],
-      "partLabel": "Block 6",
-      "blocks": [
-        "6"
-      ]
+      "mergeInto": "238932778"
     },
     "238932781": {
-      "groupKey": "pgp-residence-3",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 11"
-      ],
-      "partLabel": "Block 11",
-      "blocks": [
-        "11"
-      ]
+      "mergeInto": "238932782"
     },
     "238932782": {
       "groupKey": "pgp-residence-3",
@@ -461,10 +420,17 @@
       "aliases": [
         "PGP Residence 3 Block 9"
       ],
-      "partLabel": "Block 9",
+      "partLabel": "Blocks 9-12",
       "blocks": [
-        "9"
-      ]
+        "9",
+        "10",
+        "11",
+        "12"
+      ],
+      "location": {
+        "x": 103.78029,
+        "y": 1.291365
+      }
     },
     "238932783": {
       "groupKey": "pgp-residence-1",
@@ -505,10 +471,16 @@
       "aliases": [
         "LightHouse Block 26"
       ],
-      "partLabel": "Block 26",
+      "partLabel": "Blocks 26-28",
       "blocks": [
-        "26"
-      ]
+        "26",
+        "27",
+        "28"
+      ],
+      "location": {
+        "x": 103.781635,
+        "y": 1.290455
+      }
     },
     "238932792": {
       "groupKey": "pgp-residence-1",
@@ -522,16 +494,7 @@
       ]
     },
     "238932793": {
-      "groupKey": "lighthouse",
-      "name": "LightHouse",
-      "aliases": [
-        "LightHouse Block 27 and 28"
-      ],
-      "partLabel": "Blocks 27-28",
-      "blocks": [
-        "27",
-        "28"
-      ]
+      "mergeInto": "238932790"
     },
     "238932794": {
       "groupKey": "lighthouse",

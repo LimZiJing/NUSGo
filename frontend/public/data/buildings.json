@@ -2373,54 +2373,28 @@
       "id": "lighthouse-block-26",
       "name": "LightHouse",
       "aliases": [
-        "LightHouse Block 26"
+        "LightHouse Block 26",
+        "LightHouse Block 27 and 28"
       ],
       "elementId": "238932790",
       "groupKey": "lighthouse",
-      "partLabel": "Block 26",
+      "partLabel": "Blocks 26-28",
       "blocks": [
-        "26"
-      ],
-      "address": "24 Prince George's Park",
-      "postal": "118424",
-      "location": {
-        "x": 103.78158,
-        "y": 1.29062
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932790"
-        }
-      ]
-    },
-    {
-      "id": "lighthouse-block-27-and-28",
-      "name": "LightHouse",
-      "aliases": [
-        "LightHouse Block 27 and 28"
-      ],
-      "elementId": "238932793",
-      "groupKey": "lighthouse",
-      "partLabel": "Blocks 27-28",
-      "blocks": [
+        "26",
         "27",
         "28"
       ],
       "address": "24 Prince George's Park",
       "postal": "118424",
       "location": {
-        "x": 103.78169,
-        "y": 1.29029
+        "x": 103.781635,
+        "y": 1.290455
       },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
-          "elementId": "238932793"
+          "elementId": "238932790"
         }
       ]
     },
@@ -3839,21 +3813,26 @@
       "id": "pgp-residence-2-block-5",
       "name": "PGP Residence 2",
       "aliases": [
-        "PGP Residence 2 Block 5"
+        "PGP Residence 2 Block 5",
+        "PGP Residence 2 Block 6",
+        "PGP Residence 2 Block 7",
+        "PGP Residence 2 Block 8"
       ],
       "elementId": "238932778",
       "groupKey": "pgp-residence-2",
-      "partLabel": "Block 5",
+      "partLabel": "Blocks 5-8",
       "blocks": [
-        "5"
+        "5",
+        "6",
+        "7",
+        "8"
       ],
       "address": "27 Prince George's Park",
       "postal": "118425",
       "location": {
-        "x": 103.78176,
-        "y": 1.29101
+        "x": 103.7813275,
+        "y": 1.2908925
       },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
@@ -3863,186 +3842,29 @@
       ]
     },
     {
-      "id": "pgp-residence-2-block-6",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 6"
-      ],
-      "elementId": "238932780",
-      "groupKey": "pgp-residence-2",
-      "partLabel": "Block 6",
-      "blocks": [
-        "6"
-      ],
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78148,
-        "y": 1.29088
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932780"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-block-7",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 7"
-      ],
-      "elementId": "238932775",
-      "groupKey": "pgp-residence-2",
-      "partLabel": "Block 7",
-      "blocks": [
-        "7"
-      ],
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78121,
-        "y": 1.29083
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932775"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-block-8",
-      "name": "PGP Residence 2",
-      "aliases": [
-        "PGP Residence 2 Block 8"
-      ],
-      "elementId": "1084099106",
-      "groupKey": "pgp-residence-2",
-      "partLabel": "Block 8",
-      "blocks": [
-        "8"
-      ],
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78086,
-        "y": 1.29085
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "1084099106"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-10",
+      "id": "pgp-residence-3-block-9",
       "name": "PGP Residence 3",
       "aliases": [
-        "PGP Residence 3 Block 10"
+        "PGP Residence 3 Block 10",
+        "PGP Residence 3 Block 11",
+        "PGP Residence 3 Block 12",
+        "PGP Residence 3 Block 9"
       ],
-      "elementId": "238932777",
+      "elementId": "238932782",
       "groupKey": "pgp-residence-3",
-      "partLabel": "Block 10",
+      "partLabel": "Blocks 9-12",
       "blocks": [
-        "10"
-      ],
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78032,
-        "y": 1.29119
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932777"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-11",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 11"
-      ],
-      "elementId": "238932781",
-      "groupKey": "pgp-residence-3",
-      "partLabel": "Block 11",
-      "blocks": [
-        "11"
-      ],
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78017,
-        "y": 1.29148
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932781"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-12",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 12"
-      ],
-      "elementId": "238932776",
-      "groupKey": "pgp-residence-3",
-      "partLabel": "Block 12",
-      "blocks": [
+        "9",
+        "10",
+        "11",
         "12"
       ],
       "address": "29 Prince George's Park",
       "postal": "118426",
       "location": {
-        "x": 103.78011,
-        "y": 1.29181
+        "x": 103.78029,
+        "y": 1.291365
       },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932776"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-9",
-      "name": "PGP Residence 3",
-      "aliases": [
-        "PGP Residence 3 Block 9"
-      ],
-      "elementId": "238932782",
-      "groupKey": "pgp-residence-3",
-      "partLabel": "Block 9",
-      "blocks": [
-        "9"
-      ],
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78056,
-        "y": 1.29098
-      },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {

@@ -15,6 +15,8 @@ interface SelectProps {
   readonly options: readonly SelectOption[]
   readonly onChange: (value: string) => void
   readonly id?: string
+  /** Hides the label visually (it stays the accessible name) when the context already says what the control is. */
+  readonly hideLabel?: boolean
   /** Layout only, such as width or margins; the look comes from the tokens. */
   readonly className?: string
 }
@@ -23,7 +25,7 @@ interface SelectProps {
  * A themed dropdown. The option list renders in normal flow under the trigger rather than
  * in a popover, so scroll containers and bottom sheets never clip it.
  */
-export function Select({ label, value, options, onChange, id, className }: SelectProps) {
+export function Select({ label, value, options, onChange, id, hideLabel, className }: SelectProps) {
   const generatedId = useId()
   const baseId = id ?? `select-${generatedId}`
   const labelId = `${baseId}-label`
@@ -124,7 +126,7 @@ export function Select({ label, value, options, onChange, id, className }: Selec
 
   return (
     <div className={joinClassNames('select', className)} onBlur={handleBlur}>
-      <label id={labelId} htmlFor={baseId} className="select-label">
+      <label id={labelId} htmlFor={baseId} className={joinClassNames('select-label', hideLabel ? 'visually-hidden' : undefined)}>
         {label}
       </label>
       <button

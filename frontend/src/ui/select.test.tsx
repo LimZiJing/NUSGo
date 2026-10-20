@@ -28,6 +28,13 @@ describe('Select', () => {
     expect(screen.queryByRole('listbox')).toBeNull()
   })
 
+  it('hides the label visually but keeps it as the accessible name', () => {
+    render(<Select label="Building" value="" options={options} onChange={vi.fn()} hideLabel />)
+
+    expect(screen.getByText('Building').className).toContain('visually-hidden')
+    expect(screen.getByRole('button', { name: /Building/ })).toBeTruthy()
+  })
+
   it('opens and lists all options', async () => {
     const user = userEvent.setup()
     const { trigger } = renderSelect()

@@ -113,6 +113,7 @@ type Draft = {
   readonly groupKey: string | undefined
   readonly partLabel: string | undefined
   readonly blocks: readonly string[] | undefined
+  readonly blockLocations: BuildingOverride['blockLocations']
   readonly groupRole: 'entrance' | undefined
   readonly codes: readonly string[]
   readonly location: Point
@@ -232,6 +233,7 @@ function createDrafts(input: BuildCatalogueInput, merges: readonly MergeAway[], 
     groupKey: override?.groupKey ?? ((nameCounts.get(normalisedName) ?? 0) > 1 ? slugify(name) : undefined),
     partLabel: override?.partLabel,
     blocks: override?.blocks,
+    blockLocations: override?.blockLocations,
     groupRole: override?.groupRole,
     codes: candidateCodes(name),
     location: override?.entrance
@@ -348,6 +350,7 @@ function toBuilding(draft: Draft): Building {
     ...(draft.groupKey === undefined ? {} : { groupKey: draft.groupKey }),
     ...(draft.partLabel === undefined ? {} : { partLabel: draft.partLabel }),
     ...(draft.blocks === undefined ? {} : { blocks: [...draft.blocks] }),
+    ...(draft.blockLocations === undefined ? {} : { blockLocations: { ...draft.blockLocations } }),
     ...(draft.groupRole === undefined ? {} : { groupRole: draft.groupRole }),
     ...(address === undefined ? {} : { address }),
     ...(postal === undefined ? {} : { postal }),

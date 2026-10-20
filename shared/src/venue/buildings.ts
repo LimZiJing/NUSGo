@@ -17,6 +17,8 @@ export type Building = {
   readonly partLabel?: string
   /** Block numbers this part covers, for example ["15", "16", "17"]. Needs a groupKey. */
   readonly blocks?: readonly string[]
+  /** Where each block sits (x: longitude, y: latitude), keyed by a name in blocks. Not every block needs one. */
+  readonly blockLocations?: Readonly<Record<string, { readonly x: number, readonly y: number }>>
   /** 'entrance' marks the group's main entrance record, which is not a building chip. Needs a groupKey. */
   readonly groupRole?: 'entrance'
   readonly address?: string

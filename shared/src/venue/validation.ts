@@ -120,6 +120,23 @@ function validateBuildingLocation(label: string, value: unknown, issues: string[
   }
 }
 
+function validateBlockLocations(label: string, value: unknown, blocks: unknown, issues: string[]): void {
+  if (!isRecord(value)) {
+    issues.push(`${label} blockLocations must be an object when provided`)
+    return
+  }
+  if (!isStringArray(blocks)) {
+    issues.push(`${label} blockLocations requires blocks`)
+    return
+  }
+  for (const [block, location] of Object.entries(value)) {
+    if (!blocks.includes(block)) {
+      issues.push(`${label} blockLocations["${block}"] must match a block listed in blocks`)
+    }
+    validateBuildingLocation(`${label} blockLocations["${block}"]`, location, issues)
+  }
+}
+
 function validateBuilding(index: number, value: unknown, issues: string[]): void {
   if (!isRecord(value)) {
     issues.push(`Building #${index + 1} must be an object`)
@@ -139,6 +156,9 @@ function validateBuilding(index: number, value: unknown, issues: string[]): void
   }
   if (value.blocks !== undefined && !isUniqueStringArray(value.blocks)) {
     issues.push(`${label} blocks must be an array of non-empty strings with no duplicates when provided`)
+  }
+  if (value.blockLocations !== undefined) {
+    validateBlockLocations(label, value.blockLocations, value.blocks, issues)
   }
   if (value.groupRole !== undefined && value.groupRole !== 'entrance') {
     issues.push(`${label} groupRole must be "entrance" when provided`)

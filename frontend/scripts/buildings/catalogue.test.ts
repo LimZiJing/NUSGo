@@ -332,6 +332,24 @@ describe('buildCatalogue rule chain', () => {
     expect(byId['cendana-college']).not.toHaveProperty('groupRole')
   })
 
+  it('carries block locations from overrides onto the building, and omits them otherwise', () => {
+    const blockLocations = { 15: { x: 103.7739, y: 1.295 } }
+    const result = build({
+      apiBuildings: [
+        api('10', 'Saga College Block 15', 1.2950, 103.7739),
+        api('11', 'Saga College Block 18', 1.2951, 103.7740),
+      ],
+      overrides: {
+        10: { groupKey: 'saga', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], blockLocations },
+        11: { groupKey: 'saga', partLabel: 'Blocks 18-20', blocks: ['18'] },
+      },
+    })
+
+    const byId = Object.fromEntries(result.catalogue.buildings.map((building) => [building.id, building]))
+    expect(byId['saga-college-block-15']).toMatchObject({ blocks: ['15', '16', '17'], blockLocations })
+    expect(byId['saga-college-block-18']).not.toHaveProperty('blockLocations')
+  })
+
   it('reports a deliberately unlinked prefix with its reason and no nearest-building hint', () => {
     const result = build({
       apiBuildings: [api('1', 'Elm College', 1.30654, 103.77214)],

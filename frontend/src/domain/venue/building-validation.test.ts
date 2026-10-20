@@ -151,6 +151,36 @@ describe('validateBuildingCatalogue', () => {
     ])
   })
 
+  it('accepts block locations keyed by listed blocks, with some blocks left out', () => {
+    const result = validateBuildingCatalogue(catalogue([
+      building({
+        groupKey: 'saga',
+        blocks: ['5', '6', '7', '8'],
+        blockLocations: { 5: { x: 103.7739, y: 1.295 }, 8: { x: 103.774, y: 1.2951 } },
+      }),
+    ]))
+
+    expect(result.buildings[0]?.blockLocations).toEqual({ 5: { x: 103.7739, y: 1.295 }, 8: { x: 103.774, y: 1.2951 } })
+  })
+
+  it('rejects block locations that are not objects, name an unlisted block or have bad coordinates', () => {
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: ['5'], blockLocations: [] })]))).toEqual([
+      'Building com1 blockLocations must be an object when provided',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: ['5'], blockLocations: { 9: { x: 103.7739, y: 1.295 } } })]))).toEqual([
+      'Building com1 blockLocations["9"] must match a block listed in blocks',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: ['5'], blockLocations: { 5: { x: 200, y: 1.295 } } })]))).toEqual([
+      'Building com1 blockLocations["5"] has invalid longitude: 200',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: ['5'], blockLocations: { 5: { x: 103.7739, y: 91 } } })]))).toEqual([
+      'Building com1 blockLocations["5"] has invalid latitude: 91',
+    ])
+    expect(issuesFor(catalogue([building({ blockLocations: { 5: { x: 103.7739, y: 1.295 } } })]))).toEqual([
+      'Building com1 blockLocations requires blocks',
+    ])
+  })
+
   it('requires a groupKey for partLabel, blocks and groupRole', () => {
     expect(issuesFor(catalogue([building({ partLabel: 'Blocks 15-17', blocks: ['15'], groupRole: 'entrance' })]))).toEqual([
       'Building com1 partLabel requires a groupKey',

@@ -10,7 +10,9 @@
  * OpenStreetMap entrance and cannot be combined with location; aliases replaces the derived search aliases.
  * mergeInto folds a duplicate API record into the surviving record named by its elementId: the
  * duplicate writes no building and its name becomes a search alias of the survivor. A mergeInto
- * override carries no other decisions and its target cannot itself be merged.
+ * override carries no other decisions and its target cannot itself be merged. blockLocations
+ * records where each block sits ({ x, y } keyed by a block name); catalogue validation checks
+ * that each key is listed in blocks.
  */
 export type BuildingOverride = {
   readonly name?: string
@@ -24,6 +26,8 @@ export type BuildingOverride = {
   readonly partLabel?: string
   /** Block numbers this part covers, for example ["15", "16", "17"]. */
   readonly blocks?: readonly string[]
+  /** Where each block sits (x: longitude, y: latitude), keyed by a name in blocks. */
+  readonly blockLocations?: Readonly<Record<string, { readonly x: number, readonly y: number }>>
   /** 'entrance' marks the group's main entrance record, which is not a building chip. */
   readonly groupRole?: 'entrance'
   /** elementId of the record that survives; this record is folded into it and writes no building. */
@@ -35,11 +39,11 @@ export type BuildingOverrides = Readonly<Record<string, BuildingOverride>>
 
 const FILE_FIELDS = new Set(['version', '$comment', 'overrides', 'unlinkedPrefixes'])
 const OVERRIDE_FIELDS = new Set([
-  'name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', 'partLabel', 'blocks', 'groupRole', 'mergeInto', '$comment',
+  'name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', 'partLabel', 'blocks', 'blockLocations', 'groupRole', 'mergeInto', '$comment',
 ])
 /** Decisions a merged record may not carry: its name and aliases fold into the survivor instead. */
 const MERGE_EXCLUSIVE_FIELDS = [
-  'groupKey', 'partLabel', 'blocks', 'groupRole', 'roomCodePrefixes', 'location', 'entrance', 'name', 'aliases',
+  'groupKey', 'partLabel', 'blocks', 'blockLocations', 'groupRole', 'roomCodePrefixes', 'location', 'entrance', 'name', 'aliases',
 ] as const
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,6 +64,16 @@ function isLocation(value: unknown): value is { x: number, y: number } {
     typeof value.y === 'number' && Number.isFinite(value.y) && Math.abs(value.y) <= 90
 }
 
+function isBlockLocations(value: unknown): value is Record<string, { x: number, y: number }> {
+  return isRecord(value) && Object.values(value).every(isLocation)
+}
+
+function copyBlockLocations(value: unknown): Record<string, { x: number, y: number }> {
+  return Object.fromEntries(
+    Object.entries(value as Record<string, { x: number, y: number }>).map(([block, { x, y }]) => [block, { x, y }]),
+  )
+}
+
 function isEntrance(value: unknown): value is { x: number, y: number, osmNode: string } {
   if (!isLocation(value)) return false
   const { osmNode } = value as { osmNode?: unknown }
@@ -78,7 +92,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   for (const field of Object.keys(value)) {
     if (!OVERRIDE_FIELDS.has(field)) issues.push(`Override ${elementId} has unknown field ${field}`)
   }
-  const { name, aliases, roomCodePrefixes, location, entrance, groupKey, partLabel, blocks, groupRole, mergeInto } = value
+  const { name, aliases, roomCodePrefixes, location, entrance, groupKey, partLabel, blocks, blockLocations, groupRole, mergeInto } = value
   if (name !== undefined && !isNonEmptyString(name)) issues.push(`Override ${elementId} name must be a non-empty string`)
   if (aliases !== undefined && !isStringArray(aliases)) {
     issues.push(`Override ${elementId} aliases must be an array of non-empty strings`)
@@ -104,6 +118,9 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   if (blocks !== undefined && !isUniqueStringArray(blocks)) {
     issues.push(`Override ${elementId} blocks must be an array of non-empty strings with no duplicates`)
   }
+  if (blockLocations !== undefined && !isBlockLocations(blockLocations)) {
+    issues.push(`Override ${elementId} blockLocations must be an object of { x: longitude, y: latitude } within range`)
+  }
   if (groupRole !== undefined && groupRole !== 'entrance') {
     issues.push(`Override ${elementId} groupRole must be "entrance"`)
   }
@@ -127,6 +144,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
     ...(groupKey === undefined ? {} : { groupKey: groupKey as string }),
     ...(partLabel === undefined ? {} : { partLabel: partLabel as string }),
     ...(blocks === undefined ? {} : { blocks: [...blocks as string[]] }),
+    ...(blockLocations === undefined ? {} : { blockLocations: copyBlockLocations(blockLocations) }),
     ...(groupRole === undefined ? {} : { groupRole: 'entrance' as const }),
     ...(mergeInto === undefined ? {} : { mergeInto: mergeInto as string }),
   }

@@ -68,6 +68,29 @@ describe('parseOverrides', () => {
       .toEqual({ partLabel: 'Blocks 15-17' })
   })
 
+  it('accepts block locations and copies them out of the file', () => {
+    const blockLocations = { 15: { x: 103.7739, y: 1.295 }, 16: { x: 103.774, y: 1.2951 } }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: { blocks: ['15', '16', '17'], blockLocations } } }, KNOWN)['54619721'])
+      .toEqual({ blocks: ['15', '16', '17'], blockLocations })
+  })
+
+  it('rejects block locations that are not objects or hold out-of-range coordinates', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: [] } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: { 15: { x: 200, y: 1.295 } } } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: { 15: { x: 103.7739, y: -91 } } } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+  })
+
+  it('rejects a mergeInto override that also sets blockLocations', () => {
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: { 54619721: { mergeInto: '140087398', blockLocations: { 15: { x: 103.7739, y: 1.295 } } } },
+    }, KNOWN)).toThrow('54619721 with mergeInto cannot also set blockLocations')
+  })
+
   it('rejects an empty partLabel, repeated blocks and an unknown groupRole', () => {
     expect(() => parseOverrides({ version: 1, overrides: { 54619721: { partLabel: '' } } }, KNOWN))
       .toThrow('54619721 partLabel must be a non-empty string')

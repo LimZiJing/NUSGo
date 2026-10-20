@@ -140,6 +140,7 @@ describe('building groups with labels and an entrance', () => {
   it('formats block ranges', () => {
     expect(formatBlockLabel([])).toBeUndefined()
     expect(formatBlockLabel(['5'])).toBe('Block 5')
+    expect(formatBlockLabel(['1', '2'])).toBe('Blocks 1-2')
     expect(formatBlockLabel(['1', '3'])).toBe('Blocks 1, 3')
     expect(formatBlockLabel(['1', '2', '3', '7'])).toBe('Blocks 1-3, 7')
     expect(formatBlockLabel(['A', 'B', 'C', 'D'])).toBe('Blocks A-D')

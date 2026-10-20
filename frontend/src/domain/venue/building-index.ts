@@ -69,7 +69,7 @@ export function formatBlockLabel(blocks: readonly string[]): string | undefined 
     if (run && previous !== undefined && code(block) === code(previous) + 1 && /^\d+$/.test(block) === /^\d+$/.test(previous)) run.push(block)
     else runs.push([block])
   }
-  const text = runs.map((run) => (run.length > 2 ? `${run[0]}-${run[run.length - 1]}` : run.join(', '))).join(', ')
+  const text = runs.map((run) => (run.length > 1 ? `${run[0]}-${run[run.length - 1]}` : run.join(', '))).join(', ')
   return `${blocks.length === 1 ? 'Block' : 'Blocks'} ${text}`
 }
 

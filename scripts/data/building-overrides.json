@@ -598,6 +598,7 @@
       ]
     },
     "241265458": {
+      "roomCodePrefixes": ["RH"],
       "groupKey": "raffles-hall",
       "name": "Raffles Hall",
       "aliases": [
@@ -799,6 +800,7 @@
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
     },
     "546382548": {
+      "roomCodePrefixes": ["RVR"],
       "groupKey": "ridge-view-residential-college",
       "name": "Ridge View Residential College",
       "aliases": [

@@ -17,9 +17,9 @@ export type BuildingAlias = {
  * until an override picks a record.
  *
  * Deliberately not aliased, because the data does not settle them: EH (rooms sit at Kent Ridge
- * Hall, not Eusoff Hall), I4 (rooms about 350 m from Innovation 4.0), RH (no
- * hall-level record, only blocks and a communal hall), RVR (seven blocks and a tower), RC4 and
- * TC (several college records), USP, AC, EC, WC and UT (no API name matches).
+ * Hall, not Eusoff Hall), I4 (rooms about 350 m from Innovation 4.0), RC4 and
+ * TC (several college records), USP, AC, EC, WC and UT (no API name matches). KEVII, RH and RVR
+ * have no hall-level API record, so building-overrides.json links them to one record of the group.
  */
 export const BUILDING_ALIASES: readonly BuildingAlias[] = [
   { prefix: 'CAPT', name: 'College of Alice & Peter Tan', evidence: 'Initialism; room names say "College of Alice and Peter Tan".' },

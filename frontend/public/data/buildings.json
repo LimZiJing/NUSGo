@@ -4222,7 +4222,9 @@
         "y": 1.29989
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RH"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4559,7 +4561,9 @@
         "y": 1.29739
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RVR"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",

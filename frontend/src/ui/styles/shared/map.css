@@ -35,33 +35,17 @@
   pointer-events: none;
 }
 
+/* Open plus: four 2px round-capped arms with a 6px empty gap at the centre. */
 .nearby-crosshair {
-  position: relative;
-  width: 24px;
-  height: 24px;
-}
-
-.nearby-crosshair::before,
-.nearby-crosshair::after {
-  content: "";
-  position: absolute;
-  background-color: var(--accent);
-}
-
-.nearby-crosshair::before {
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  transform: translateY(-50%);
-}
-
-.nearby-crosshair::after {
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 100%;
-  transform: translateX(-50%);
+  display: block;
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  overflow: visible;
 }
 
 .map-control-stack {
@@ -306,8 +290,9 @@
 
 /* Placed before selected and journey rules so route and journey colours still win. */
 .bus-stop-marker-nearby {
-  border-width: 3px;
+  border-width: 2px;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .bus-stop-marker-selected {

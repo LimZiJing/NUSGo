@@ -111,6 +111,11 @@ describe('building groups with labels and an entrance', () => {
 
     const [single] = buildBuildingIndex([building({ id: 'com1', name: 'COM1', address: '13 Computing Drive' })]).entries
     expect(describeBuildingEntry(single)).toBe('13 Computing Drive')
+
+    const [spanning] = buildBuildingIndex([
+      building({ id: 'res-5', name: 'Residence', address: '27 Park', groupKey: 'res', partLabel: 'Blocks 5-8', blocks: ['5', '6', '7', '8'] }),
+    ]).entries
+    expect(describeBuildingEntry(spanning)).toBe('Blocks 5-8 · 27 Park')
   })
 
   it('finds a group by block number and by name with block number', () => {

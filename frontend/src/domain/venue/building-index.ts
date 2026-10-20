@@ -133,14 +133,16 @@ export function resolveBuildingLocation(index: BuildingIndex, id: string): Build
   return index.byId.get(id)?.location ?? index.byPartId.get(id)?.part.location
 }
 
-/** Secondary line for a result: the building count and block range for a group, else the address. */
+/** Secondary line for a result: the building count and block range for a group, else the address (after any block range). */
 export function describeBuildingEntry(entry: BuildingEntry): string {
   if (entry.buildings.length > 1) {
     return entry.blockLabel === undefined
       ? `${entry.buildings.length} buildings`
       : `${entry.buildings.length} buildings · ${entry.blockLabel}`
   }
-  return entry.buildings[0]?.address ?? entry.entrance?.address ?? ''
+  const address = entry.buildings[0]?.address ?? entry.entrance?.address ?? ''
+  // A single building that spans several blocks (for example Blocks 5-8) still names them.
+  return entry.blockLabel === undefined ? address : [entry.blockLabel, address].filter(Boolean).join(' · ')
 }
 
 const MAX_RESULTS = 8

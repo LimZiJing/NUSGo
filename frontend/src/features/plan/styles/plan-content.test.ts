@@ -15,7 +15,7 @@ describe('mobile Plan panel scrolling styles', () => {
       /\.plan-endpoint-picker\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*var\(--space-2\)\s+0;/s,
     )
     expect(styles).toMatch(
-      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100vw\s*-\s*88px\);[^}]*margin-inline-start:\s*32px;[^}]*box-sizing:\s*border-box;/s,
+      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100%\s*-\s*52px\);[^}]*margin-inline-start:\s*32px;[^}]*box-sizing:\s*border-box;/s,
     )
   })
 })

@@ -921,8 +921,13 @@
   }
 
   .navigation-panel .plan-content-panel .journey-results {
-    /* The 32px offset plus the 12px sheet inset leaves symmetric 44px viewport gutters. */
-    width: calc(100vw - 88px);
+    /*
+     * 32px on each side of the sheet's content box: 32px start margin, and 20px here plus
+     * the scroll panel's 12px end padding and margin. Sizing from the panel rather than
+     * the viewport keeps the results inside the sheet when landscape safe-area insets
+     * widen its padding.
+     */
+    width: calc(100% - 52px);
     margin-inline-start: 32px;
     box-sizing: border-box;
   }

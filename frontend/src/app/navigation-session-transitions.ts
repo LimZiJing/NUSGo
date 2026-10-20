@@ -100,6 +100,21 @@ export function createNavigationSessionPanelTransitions(
       })
     },
 
+    /** Highlights one building part on the map. Leaves the explore panel state untouched. */
+    selectBuildingPart(buildingId: string, partId: string | null): void {
+      host.enqueue(() => {
+        if (host.isDisposed()) return
+        const entry = typeof buildingId === 'string' ? host.getBuildings()?.byId.get(buildingId) : undefined
+        if (!entry) return
+        const part = typeof partId === 'string' ? entry.buildings.find((candidate) => candidate.id === partId) : undefined
+        host.selectBuilding({
+          name: entry.name,
+          locations: entry.parts.map((candidate) => candidate.location),
+          highlighted: part?.location,
+        })
+      })
+    },
+
     openBusRoutes(): void {
       host.enqueue(() => {
         if (host.isDisposed()) return

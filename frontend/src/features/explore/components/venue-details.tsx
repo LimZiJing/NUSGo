@@ -144,6 +144,8 @@ interface BuildingDetailsProps {
   readonly transitIndex: TransitIndex | null
   readonly headingRef: RefObject<HTMLHeadingElement | null>
   readonly onNavigateToBuilding?: (buildingId: string, partId?: string) => void
+  /** Called when the Building select changes; null means "All buildings". */
+  readonly onSelectPart?: (partId: string | null) => void
   readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
@@ -153,6 +155,7 @@ export function BuildingDetails({
   transitIndex,
   headingRef,
   onNavigateToBuilding,
+  onSelectPart,
   onFocusStop,
 }: BuildingDetailsProps) {
   const { buildings } = building
@@ -197,7 +200,11 @@ export function BuildingDetails({
           <select
             id="venue-building-select"
             value={selectedPartId ?? ''}
-            onChange={(event) => setSelectedPartId(event.target.value || null)}
+            onChange={(event) => {
+              const partId = event.target.value || null
+              setSelectedPartId(partId)
+              onSelectPart?.(partId)
+            }}
           >
             <option value="">All buildings</option>
             {buildings.map((part) => (

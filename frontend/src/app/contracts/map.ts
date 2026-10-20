@@ -12,6 +12,8 @@ import type { LoadedTransitData } from './data'
 export interface MapBuildingSelection {
   readonly name: string
   readonly locations: readonly NonNullable<VenueLocation['location']>[]
+  /** The one location to mark distinctly and fit the camera to, when a single building part is chosen. */
+  readonly highlighted?: NonNullable<VenueLocation['location']>
 }
 
 export interface MapSessionOptions {

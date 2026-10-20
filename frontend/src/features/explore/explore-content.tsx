@@ -39,6 +39,7 @@ interface ExploreContentProps {
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
   onNavigateToBuilding?: (buildingId: string, partId?: string) => void
+  onSelectBuildingPart?: (buildingId: string, partId: string | null) => void
   onSearchFocus?: () => void
   focus: ExplorePanelFocusBindings
 }
@@ -74,6 +75,7 @@ export function ExploreContent({
   onQueryChange,
   onNavigateToVenue,
   onNavigateToBuilding,
+  onSelectBuildingPart,
   onSearchFocus,
   focus: {
     panelHeadingRef,
@@ -176,6 +178,7 @@ export function ExploreContent({
             transitIndex={transitIndex}
             headingRef={detailHeadingRef}
             onNavigateToBuilding={onNavigateToBuilding}
+            onSelectPart={(partId) => onSelectBuildingPart?.(selectedBuilding.id, partId)}
             onFocusStop={onFocusStop}
           />
         )}

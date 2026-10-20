@@ -365,6 +365,7 @@ function App() {
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
     onNavigateToBuilding: appNavigation.navigateToBuilding,
+    onSelectBuildingPart: commands.selectBuildingPart,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
       type: 'set-sheet-detent',

@@ -21,7 +21,7 @@ import {
   type ShuttleStopMarkers,
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
-import { createVenueMarker, type VenueMarker } from './venue-markers'
+import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
@@ -630,8 +630,15 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
 
       clearVenueMarker()
+      const { highlighted } = building
+      const isHighlighted = (location: NonNullable<VenueLocation['location']>) =>
+        highlighted !== undefined && location.x === highlighted.x && location.y === highlighted.y
       const markers = building.locations.flatMap((location) => {
-        const marker = createVenueMarker(map, { roomName: building.name, location })
+        const marker = createVenueMarker(
+          map,
+          { roomName: building.name, location },
+          isHighlighted(location) ? BUILDING_PART_HIGHLIGHT_COLOR : undefined,
+        )
         return marker ? [marker] : []
       })
       if (markers.length === 0) return
@@ -641,7 +648,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           for (const marker of markers) marker.dispose()
         },
       }
-      pendingCameraFit = { kind: 'building', locations: building.locations }
+      pendingCameraFit = {
+        kind: 'building',
+        locations: highlighted ? [highlighted] : building.locations,
+      }
     },
 
     clearVenue() {

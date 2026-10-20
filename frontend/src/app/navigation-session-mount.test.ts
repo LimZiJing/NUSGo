@@ -62,6 +62,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setExploreQuery: vi.fn(),
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
+    selectBuildingPart: vi.fn(),
     enterMobileRoutes: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     leaveMobileRoutes: vi.fn(),

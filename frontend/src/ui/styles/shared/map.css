@@ -23,6 +23,47 @@
   text-decoration: underline;
 }
 
+.nearby-crosshair-area {
+  position: absolute;
+  top: var(--nearby-crosshair-top, 0px);
+  right: var(--nearby-crosshair-right, 0px);
+  bottom: var(--nearby-crosshair-bottom, 0px);
+  left: var(--nearby-crosshair-left, 0px);
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.nearby-crosshair {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.nearby-crosshair::before,
+.nearby-crosshair::after {
+  content: "";
+  position: absolute;
+  background-color: var(--accent);
+}
+
+.nearby-crosshair::before {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.nearby-crosshair::after {
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
 .map-control-stack {
   position: absolute;
   z-index: 13;

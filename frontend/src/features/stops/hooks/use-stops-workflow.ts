@@ -36,6 +36,8 @@ export interface StopsWorkflow {
   readonly stopListLoading: boolean
   /** Stop IDs within the Nearby radius of the settled map centre; empty outside Stops -> Nearby. */
   readonly nearbyHighlightStopIds: readonly string[]
+  /** True only while Stops is the active view and Nearby is the selected list. */
+  readonly showNearbyCrosshair: boolean
   readonly selectedStopFavorite: boolean
   readonly locationNotice: string | null
   readonly liveArrivalMessage: string | null
@@ -219,6 +221,7 @@ export function useStopsWorkflow({
     stopListEntries,
     stopListLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
     nearbyHighlightStopIds,
+    showNearbyCrosshair: active && state.list === 'nearby',
     selectedStopFavorite: focusedStop ? state.favoriteStopIds.includes(focusedStop.id) : false,
     locationNotice,
     liveArrivalMessage,

@@ -10,6 +10,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { LocationControl } from '../ui/location-control'
+import { NearbyCrosshair } from '../ui/nearby-crosshair'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
@@ -409,6 +410,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
+        {stopsWorkflow.showNearbyCrosshair && <NearbyCrosshair insets={mapInsets} />}
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {navigation.activeView === 'plan' &&

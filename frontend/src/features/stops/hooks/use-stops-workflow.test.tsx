@@ -137,6 +137,25 @@ describe('useStopsWorkflow', () => {
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
   })
 
+  it('shows the Nearby crosshair only while Stops is active and Nearby is the selected list', () => {
+    const options = createOptions()
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
+      { initialProps: options },
+    )
+
+    expect(result.current.showNearbyCrosshair).toBe(true)
+
+    act(() => result.current.selectStopList('favourites'))
+    expect(result.current.showNearbyCrosshair).toBe(false)
+
+    act(() => result.current.selectStopList('nearby'))
+    expect(result.current.showNearbyCrosshair).toBe(true)
+
+    rerender({ ...options, active: false })
+    expect(result.current.showNearbyCrosshair).toBe(false)
+  })
+
   it('highlights Nearby stops within the radius only while Nearby is active, regardless of card toggles', async () => {
     const options = createOptions()
     const { result, rerender } = renderHook(

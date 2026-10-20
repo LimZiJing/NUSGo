@@ -34,6 +34,8 @@ describe('controls gallery', () => {
     const pills = screen.getByRole('region', { name: 'Pill' })
     expect(within(pills).getByText('Neutral').getAttribute('data-tone')).toBe('neutral')
     expect(within(pills).getByText('Success').getAttribute('data-tone')).toBe('success')
+    expect(within(screen.getByRole('region', { name: 'Select' })).getByRole('button').getAttribute('aria-haspopup'))
+      .toBe('listbox')
   })
 
   it('applies the panel theme through the existing data-theme mechanism', () => {

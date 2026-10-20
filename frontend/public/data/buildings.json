@@ -3659,26 +3659,6 @@
       ]
     },
     {
-      "id": "pgp-foyer",
-      "name": "PGP Foyer",
-      "aliases": [],
-      "elementId": "251677507",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78114,
-        "y": 1.29097
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "251677507"
-        }
-      ]
-    },
-    {
       "id": "pgp-gym",
       "name": "PGP Gym",
       "aliases": [],
@@ -3833,7 +3813,10 @@
     {
       "id": "pgp-residence-2",
       "name": "PGP Residence 2",
-      "aliases": [],
+      "aliases": [
+        "PGP Foyer",
+        "PGP Residence 2, Foyer and Canteen"
+      ],
       "elementId": "PGP_RESIDENCE_2",
       "groupKey": "pgp-residence-2",
       "groupRole": "entrance",
@@ -3957,26 +3940,6 @@
         {
           "source": "nus-digital-twin",
           "elementId": "1084099106"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-foyer-and-canteen",
-      "name": "PGP Residence 2, Foyer and Canteen",
-      "aliases": [],
-      "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78114,
-        "y": 1.29097
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER"
         }
       ]
     },

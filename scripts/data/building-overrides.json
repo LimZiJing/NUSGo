@@ -701,6 +701,9 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 5250150676 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "251677507": {
+      "mergeInto": "PGP_RESIDENCE_2"
+    },
     "427077072": {
       "entrance": {
         "x": 103.7768934,
@@ -1104,6 +1107,9 @@
     "PGP_RESIDENCE_2": {
       "groupKey": "pgp-residence-2",
       "groupRole": "entrance"
+    },
+    "PGP_RESIDENCE_2_CANTEEN_FOYER": {
+      "mergeInto": "PGP_RESIDENCE_2"
     },
     "UNIVERSITY_HALL": {
       "groupKey": "university-hall",

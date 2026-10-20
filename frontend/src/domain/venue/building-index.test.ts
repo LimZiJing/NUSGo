@@ -75,7 +75,7 @@ describe('buildBuildingIndex', () => {
     )
 
     expect(partCounts).toMatchObject({ 'cendana-college': 5, 'saga-college': 6, 'elm-college': 3 })
-    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(260)
+    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(258)
   })
 })
 
@@ -192,6 +192,12 @@ describe('the real catalogue', () => {
     const entry = index.byId.get('university-hall')
     expect(entry?.entrance?.id).toBe('university-hall')
     expect(entry?.buildings.map((part) => part.partLabel)).toEqual(['Lee Kong Chian Wing', 'Tan Chin Tuan Wing'])
+  })
+
+  it('folds the PGP Foyer duplicates into PGP Residence 2 and keeps them searchable', () => {
+    expect(index.byId.has('pgp-foyer')).toBe(false)
+    const matches = searchBuildings(index, 'PGP Foyer')
+    expect(matches.map((entry) => entry.id)).toContain('pgp-residence-2')
   })
 
   it('has no two entries with the same name and address', () => {

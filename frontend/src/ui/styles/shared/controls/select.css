@@ -17,13 +17,13 @@
   gap: var(--space-2);
   box-sizing: border-box;
   width: 100%;
-  min-height: var(--control-height-lg);
-  padding: 0 var(--space-3);
+  min-height: var(--control-height-sm);
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--control-border);
-  border-radius: var(--radius-control-lg);
+  border-radius: var(--radius-control);
   color: var(--text-primary);
   background: var(--surface-control);
-  font: 600 var(--font-size-control-lg)/1.2 var(--sans);
+  font: 500 var(--font-size-control)/1.2 var(--sans);
   text-align: left;
   cursor: pointer;
 }

@@ -22,6 +22,10 @@ vi.mock('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url', () => ({
   default: 'worker.js',
 }))
 
+vi.mock('./basemap-theme', () => ({
+  watchBasemapTheme: () => () => undefined,
+}))
+
 vi.mock('maplibre-gl', () => {
   class FakeMap {
     readonly sources = new Set<string>()

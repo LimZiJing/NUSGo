@@ -6,6 +6,7 @@ import {
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
 import type { TransitStop } from '@navus/shared/transit/types'
+import { getOverlayPalette } from './overlay-theme'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
 import {
   createBusStopPopupContent,
@@ -83,18 +84,20 @@ export const BUS_STOP_LABEL_PAINT: SymbolLayerSpecification['paint'] = {
 }
 
 function createBusStopLabelLayer(id: string): SymbolLayerSpecification {
+  const palette = getOverlayPalette()
   return {
     id,
     type: 'symbol',
     source: BUS_STOP_LABEL_SOURCE_ID,
     layout: BUS_STOP_LABEL_LAYOUT,
     minzoom: BUS_STOP_MIN_ZOOM,
-    paint: BUS_STOP_LABEL_PAINT,
+    paint: {
+      ...BUS_STOP_LABEL_PAINT,
+      'text-color': palette.stopText,
+      'text-halo-color': palette.stopHalo,
+    },
   }
 }
-
-const BUS_STOP_ACTIVE_LABEL_LAYER = createBusStopLabelLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)
-const BUS_STOP_INACTIVE_LABEL_LAYER = createBusStopLabelLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
 
 type BusStopLabelFeature = {
   type: 'Feature'
@@ -166,6 +169,8 @@ export interface ShuttleStopMarkers {
   setStopsPin(stopId: string | null, visible: boolean): boolean
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
   setJourneyStops(stopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null): void
+  /** Recolours the label layers after the document theme changes. */
+  refreshTheme(): void
   dispose(): void
 }
 
@@ -274,6 +279,7 @@ function getJourneyStopColor(routes: readonly JourneyStopRoute[] | null): string
 }
 
 function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
+  const palette = getOverlayPalette()
   const prominentStopIds = state.journeyStopRoutes === null
     ? state.selectedStopIds
     : new Set(state.journeyStopRoutes.keys())
@@ -301,12 +307,12 @@ function updateBusStopLabelPresentation(state: ShuttleStopMarkerState): void {
     state.map.setPaintProperty(
       BUS_STOP_INACTIVE_LABEL_LAYER_ID,
       'text-color',
-      state.journeyStopRoutes === null ? '#0f172a' : '#64748b',
+      state.journeyStopRoutes === null ? palette.stopText : palette.stopTextMuted,
     )
     state.map.setPaintProperty(
       BUS_STOP_INACTIVE_LABEL_LAYER_ID,
       'text-halo-color',
-      inactiveOpacity === 1 ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+      inactiveOpacity === 1 ? palette.stopHalo : palette.stopHaloFaded,
     )
   }
 }
@@ -386,8 +392,8 @@ export function createShuttleStopMarkers(
       data: createBusStopLabelGeoJson(busStops),
     })
   }
-  if (ownsInactiveLayer) map.addLayer(BUS_STOP_INACTIVE_LABEL_LAYER)
-  if (ownsActiveLayer) map.addLayer(BUS_STOP_ACTIVE_LABEL_LAYER)
+  if (ownsInactiveLayer) map.addLayer(createBusStopLabelLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID))
+  if (ownsActiveLayer) map.addLayer(createBusStopLabelLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID))
   if (ownsObstacleImage) {
     map.addImage(BUS_STOP_OBSTACLE_IMAGE_ID, createTransparentObstacleImage())
   }
@@ -483,6 +489,15 @@ export function createShuttleStopMarkers(
       state.selectedStopIds = selectedStopIds === null ? null : new Set(selectedStopIds)
       state.selectedRouteColor = selectedRouteColor
       updateBusStopMarkerPresentation(state)
+    },
+    refreshTheme() {
+      if (disposed) return
+      const palette = getOverlayPalette()
+      if (map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
+        map.setPaintProperty(BUS_STOP_ACTIVE_LABEL_LAYER_ID, 'text-color', palette.stopText)
+        map.setPaintProperty(BUS_STOP_ACTIVE_LABEL_LAYER_ID, 'text-halo-color', palette.stopHalo)
+      }
+      updateBusStopLabelPresentation(state)
     },
     setJourneyStops(stopRoutes) {
       if (disposed) return

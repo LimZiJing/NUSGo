@@ -195,6 +195,68 @@
         "A"
       ]
     },
+    "142221851": {
+      "groupKey": "temasek-hall",
+      "groupRole": "entrance",
+      "roomCodePrefixes": [
+        "TH"
+      ]
+    },
+    "142221852": {
+      "groupKey": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
+    "142221853": {
+      "groupKey": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ]
+    },
+    "142221858": {
+      "groupKey": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block C"
+      ],
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ]
+    },
+    "142221863": {
+      "groupKey": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block E"
+      ],
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ]
+    },
+    "142221865": {
+      "groupKey": "temasek-hall",
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block B"
+      ],
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ]
+    },
     "15347235": {
       "entrance": {
         "x": 103.7735602,
@@ -479,7 +541,9 @@
       ]
     },
     "238933471": {
-      "roomCodePrefixes": ["KEVII"],
+      "roomCodePrefixes": [
+        "KEVII"
+      ],
       "groupKey": "king-edward-vii-hall",
       "name": "King Edward VII Hall",
       "aliases": [
@@ -598,7 +662,9 @@
       ]
     },
     "241265458": {
-      "roomCodePrefixes": ["RH"],
+      "roomCodePrefixes": [
+        "RH"
+      ],
       "groupKey": "raffles-hall",
       "name": "Raffles Hall",
       "aliases": [
@@ -702,6 +768,17 @@
         "A"
       ]
     },
+    "455250294": {
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
     "455250295": {
       "groupKey": "kent-ridge-hall",
       "name": "Kent Ridge Hall",
@@ -744,6 +821,28 @@
       "partLabel": "Block B",
       "blocks": [
         "B"
+      ]
+    },
+    "455250299": {
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block C"
+      ],
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ]
+    },
+    "455250300": {
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
       ]
     },
     "503403831": {
@@ -803,7 +902,9 @@
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
     },
     "546382548": {
-      "roomCodePrefixes": ["RVR"],
+      "roomCodePrefixes": [
+        "RVR"
+      ],
       "groupKey": "ridge-view-residential-college",
       "name": "Ridge View Residential College",
       "aliases": [
@@ -815,21 +916,51 @@
       ]
     },
     "627395978": {
-      "roomCodePrefixes": ["KRH"],
+      "roomCodePrefixes": [
+        "KRH"
+      ],
       "groupKey": "kent-ridge-hall",
       "groupRole": "entrance"
+    },
+    "627395979": {
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block B"
+      ],
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ]
+    },
+    "639080232": {
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block E"
+      ],
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ]
     },
     "639258228": {
       "roomCodePrefixes": [
         "SH"
       ],
-      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found."
+      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found.",
+      "groupKey": "sheares-hall",
+      "groupRole": "entrance"
     },
     "640840065": {
       "roomCodePrefixes": [
         "SH"
       ],
-      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found."
+      "$comment": "Room code SH-SR1 links to both Sheares Hall records (maintainer decision, 13/10/2026). Evidence is inferred, not confirmed: SH is the usual short form of Sheares Hall and the room lies 19 to 76 m from Sheares Hall and Blocks A to E. No source confirming the room was found.",
+      "groupKey": "sheares-hall",
+      "name": "Sheares Hall",
+      "aliases": [],
+      "partLabel": "Main building"
     },
     "732229037": {
       "roomCodePrefixes": [

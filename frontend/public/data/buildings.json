@@ -5287,9 +5287,16 @@
     },
     {
       "id": "sheares-block-a",
-      "name": "Sheares Block A",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block A"
+      ],
       "elementId": "455250294",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5307,9 +5314,16 @@
     },
     {
       "id": "sheares-block-b",
-      "name": "Sheares Block B",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block B"
+      ],
       "elementId": "627395979",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5327,9 +5341,16 @@
     },
     {
       "id": "sheares-block-c",
-      "name": "Sheares Block C",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block C"
+      ],
       "elementId": "455250299",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5347,9 +5368,16 @@
     },
     {
       "id": "sheares-block-d",
-      "name": "Sheares Block D",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block D"
+      ],
       "elementId": "455250300",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5367,9 +5395,16 @@
     },
     {
       "id": "sheares-block-e",
-      "name": "Sheares Block E",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block E"
+      ],
       "elementId": "639080232",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5391,6 +5426,7 @@
       "aliases": [],
       "elementId": "639258228",
       "groupKey": "sheares-hall",
+      "groupRole": "entrance",
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5414,6 +5450,7 @@
       "aliases": [],
       "elementId": "640840065",
       "groupKey": "sheares-hall",
+      "partLabel": "Main building",
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5542,10 +5579,10 @@
     {
       "id": "temasek-hall",
       "name": "Temasek Hall",
-      "aliases": [
-        "TH"
-      ],
+      "aliases": [],
       "elementId": "142221851",
+      "groupKey": "temasek-hall",
+      "groupRole": "entrance",
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5565,9 +5602,16 @@
     },
     {
       "id": "temasek-hall-block-a",
-      "name": "Temasek Hall Block A",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block A"
+      ],
       "elementId": "142221852",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5585,9 +5629,16 @@
     },
     {
       "id": "temasek-hall-block-b",
-      "name": "Temasek Hall Block B",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block B"
+      ],
       "elementId": "142221865",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5605,9 +5656,16 @@
     },
     {
       "id": "temasek-hall-block-c",
-      "name": "Temasek Hall Block C",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block C"
+      ],
       "elementId": "142221858",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5625,9 +5683,16 @@
     },
     {
       "id": "temasek-hall-block-d",
-      "name": "Temasek Hall Block D",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block D"
+      ],
       "elementId": "142221853",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5645,9 +5710,16 @@
     },
     {
       "id": "temasek-hall-block-e",
-      "name": "Temasek Hall Block E",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block E"
+      ],
       "elementId": "142221863",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {

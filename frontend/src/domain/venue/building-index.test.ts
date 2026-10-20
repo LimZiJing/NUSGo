@@ -180,6 +180,14 @@ describe('the real catalogue', () => {
     expect(entry?.buildings.map((part) => part.partLabel)).toContain('Tower (Block F)')
   })
 
+  it('shows Sheares Hall and Temasek Hall once each, with blocks A-E', () => {
+    for (const name of ['Sheares Hall', 'Temasek Hall']) {
+      const matches = searchBuildings(index, name).filter((entry) => entry.name === name)
+      expect(matches).toHaveLength(1)
+      expect(matches[0].blockLabel).toBe('Blocks A-E')
+    }
+  })
+
   it('has no two entries with the same name and address', () => {
     const seen = new Map<string, string>()
     const clashes: string[] = []

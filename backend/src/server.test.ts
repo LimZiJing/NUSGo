@@ -12,6 +12,7 @@ const appConfig = {
   dataVersion: 'development',
   journeyMaxConcurrentRequests: 4,
   journeyRateLimitMaxRequests: 20,
+  journeyRequestTimeoutMs: 10_000,
 }
 const listeningServers: Awaited<ReturnType<typeof listenHttpServer>>[] = []
 

@@ -5,19 +5,17 @@ import { LiveDataRequestError } from '../../live-data/runtime.ts'
 import { InvalidJourneyEndpointError, type PathfindingService } from '../../pathfinding/service.ts'
 import { ValhallaRouteError } from '../../pathfinding/walking/valhalla-walking-client.ts'
 import { sendApiError } from '../error-response.ts'
-import { createClientRateLimiter, createConcurrencyLimiter } from '../request-limits.ts'
+import { createConcurrencyLimiter } from '../concurrency-limiter.ts'
+import { createClientRateLimiter } from '../rate-limiter.ts'
 import { InvalidJourneyRequestError, parseJourneyPlanningRequest } from './journey-request.ts'
 
-const RATE_LIMIT_WINDOW_MS = 60_000
-const RATE_LIMIT_REQUESTS = 20
-const DEFAULT_REQUEST_TIMEOUT_MS = 10_000
-
-interface JourneyRouteLimits {
-  readonly requestTimeoutMs?: number
-  readonly apiRateLimitWindowMs?: number
-  readonly journeyRateLimitMaxRequests?: number
-  readonly journeyMaxConcurrentRequests?: number
-}
+type JourneyRouteLimits = Pick<
+  BackendConfig,
+  | 'apiRateLimitWindowMs'
+  | 'journeyMaxConcurrentRequests'
+  | 'journeyRateLimitMaxRequests'
+  | 'journeyRequestTimeoutMs'
+>
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
@@ -128,17 +126,17 @@ export function registerJourneyRoutes(
   app: Express,
   environment: BackendConfig['environment'],
   planner: PathfindingService | null,
-  limits: JourneyRouteLimits = {},
+  limits: JourneyRouteLimits,
 ): void {
   app.route('/api/journeys')
     .post(
       createClientRateLimiter({
-        windowMs: limits.apiRateLimitWindowMs ?? RATE_LIMIT_WINDOW_MS,
-        maxRequests: limits.journeyRateLimitMaxRequests ?? RATE_LIMIT_REQUESTS,
+        windowMs: limits.apiRateLimitWindowMs,
+        maxRequests: limits.journeyRateLimitMaxRequests,
         message: 'Journey planning rate limit reached',
       }),
-      createConcurrencyLimiter(limits.journeyMaxConcurrentRequests ?? 4, 'Journey planning is at capacity'),
-      journeyHandler(environment, planner, limits.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS),
+      createConcurrencyLimiter(limits.journeyMaxConcurrentRequests, 'Journey planning is at capacity'),
+      journeyHandler(environment, planner, limits.journeyRequestTimeoutMs),
     )
     .all(methodNotAllowed())
 }

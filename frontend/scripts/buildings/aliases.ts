@@ -17,7 +17,7 @@ export type BuildingAlias = {
  * until an override picks a record.
  *
  * Deliberately not aliased, because the data does not settle them: EH (rooms sit at Kent Ridge
- * Hall, not Eusoff Hall), I4 (rooms about 350 m from Innovation 4.0), KEVII and RH (no
+ * Hall, not Eusoff Hall), I4 (rooms about 350 m from Innovation 4.0), RH (no
  * hall-level record, only blocks and a communal hall), RVR (seven blocks and a tower), RC4 and
  * TC (several college records), USP, AC, EC, WC and UT (no API name matches).
  */

@@ -2291,7 +2291,9 @@
         "y": 1.29234
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "KEVII"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",

@@ -67,6 +67,8 @@ export interface MapSession {
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
   setStopsPinVisible(visible: boolean): void
+  /** Accents the bus-stop markers for these stop IDs; an empty list clears the accent. */
+  setNearbyStopHighlight(stopIds: readonly string[]): void
   /** Shows or hides the planned Journey layers and trip endpoint markers without discarding them. */
   setPlanLayersVisible(visible: boolean): void
   setTripRequest(

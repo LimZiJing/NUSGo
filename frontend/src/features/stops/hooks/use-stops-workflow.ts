@@ -34,6 +34,8 @@ export interface StopsWorkflow {
   readonly selectedStop: StopDetailsModel | null
   readonly stopListEntries: readonly StopListEntry[]
   readonly stopListLoading: boolean
+  /** Stop IDs within the Nearby radius of the settled map centre; empty outside Stops -> Nearby. */
+  readonly nearbyHighlightStopIds: readonly string[]
   readonly selectedStopFavorite: boolean
   readonly locationNotice: string | null
   readonly liveArrivalMessage: string | null
@@ -132,6 +134,10 @@ export function useStopsWorkflow({
   const selectedStop = focusedStop && transitIndex
     ? getStopDetailsModel(focusedStop, transitIndex, timingOptions)
     : null
+  // Uses the same settled centre and radius as the Nearby expansion, but ignores card expansion state.
+  const nearbyHighlightStopIds = useMemo(() => active && state.list === 'nearby'
+    ? getStopsWithinNearbyRadius(transitIndex, mapCenter).map(({ stop }) => stop.id)
+    : [], [active, mapCenter, state.list, transitIndex])
   const stopListEntries: readonly StopListEntry[] = transitIndex
     ? stopListData.map(({ stop, distanceMeters }) => ({
       stop: getStopDetailsModel(stop, transitIndex, timingOptions),
@@ -212,6 +218,7 @@ export function useStopsWorkflow({
     selectedStop,
     stopListEntries,
     stopListLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
+    nearbyHighlightStopIds,
     selectedStopFavorite: focusedStop ? state.favoriteStopIds.includes(focusedStop.id) : false,
     locationNotice,
     liveArrivalMessage,

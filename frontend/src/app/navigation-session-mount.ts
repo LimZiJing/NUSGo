@@ -110,6 +110,7 @@ export interface NavigationSessionCommands {
   readonly focusStop: (stopId: string) => void
   readonly focusStopInStopsTab: (stopId: string) => void
   readonly setStopsPinVisible: (visible: boolean) => void
+  readonly setNearbyStopHighlight: (stopIds: readonly string[]) => void
   readonly setPlanLayersVisible: (visible: boolean) => void
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
@@ -153,6 +154,7 @@ function createNavigationSessionCommands(
     focusStop: (stopId) => session?.focusStop(stopId),
     focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
+    setNearbyStopHighlight: (stopIds) => session?.setNearbyStopHighlight(stopIds),
     setPlanLayersVisible: (visible) => session?.setPlanLayersVisible(visible),
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),

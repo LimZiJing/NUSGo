@@ -263,6 +263,12 @@
   appearance: none;
 }
 
+/* Placed before selected and journey rules so route and journey colours still win. */
+.bus-stop-marker-nearby {
+  border-width: 3px;
+  border-color: var(--accent);
+}
+
 .bus-stop-marker-selected {
   border-color: var(--bus-stop-selected-color, #334155);
   background: #f1f5f9;

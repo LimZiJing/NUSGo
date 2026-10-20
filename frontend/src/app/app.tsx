@@ -106,6 +106,9 @@ function App() {
     locateFromControl: commands.locateUser,
     enableLocationTracking: commands.enableLocationTracking,
   })
+  useLayoutEffect(() => {
+    commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
+  }, [commands, stopsWorkflow.nearbyHighlightStopIds])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,

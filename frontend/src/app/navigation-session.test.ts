@@ -45,6 +45,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
+    setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),

@@ -468,6 +468,7 @@ export function createNavigationSession(
     const buildings = data.buildings ?? null
     syncTripRequest(state.tripRequest, data.venues, transitIndex, buildings)
     updateState({ venues: data.venues, buildings, resourceStatus })
+    dependencies.map.setBuildingLabels(buildings?.entries ?? [])
     requestJourneyPlanning()
   }
 

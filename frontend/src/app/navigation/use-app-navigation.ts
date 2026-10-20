@@ -58,7 +58,7 @@ export interface AppNavigation {
   readonly handleMapStopInteraction: (stopId: string) => void
   readonly selectView: (view: NavigationView, stopsList?: 'nearby' | 'favourites') => void
   readonly navigateToVenue: (venueCode: string) => void
-  readonly navigateToBuilding: (buildingId: string) => void
+  readonly navigateToBuilding: (buildingId: string, partId?: string) => void
   readonly navigateToStop: (stopId: string) => void
   readonly openPlan: () => void
   readonly selectRouteFromStops: (routeId: string) => void
@@ -218,8 +218,8 @@ export function useAppNavigation({
     navigateToEndpoint({ kind: 'venue', id: venueCode })
   }, [navigateToEndpoint])
 
-  const navigateToBuilding = useCallback((buildingId: string): void => {
-    navigateToEndpoint({ kind: 'building', id: buildingId })
+  const navigateToBuilding = useCallback((buildingId: string, partId?: string): void => {
+    navigateToEndpoint({ kind: 'building', id: partId ?? buildingId })
   }, [navigateToEndpoint])
 
   const navigateToStop = useCallback((stopId: string): void => {

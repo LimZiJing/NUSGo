@@ -29,6 +29,9 @@ const buildings = buildBuildingIndex([
   building({ id: 'elm-1', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
   building({ id: 'elm-2', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
   building({ id: 'elm-3', name: 'Elm College', groupKey: 'elm', address: '3 Elm Road' }),
+  building({ id: 'helix-house', name: 'Helix House', groupKey: 'helix-house', groupRole: 'entrance', address: "37 Prince George's Park" }),
+  building({ id: 'helix-15-17', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], address: "37 Prince George's Park" }),
+  building({ id: 'helix-18-19', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 18-19', blocks: ['18', '19'], address: "37 Prince George's Park" }),
 ])
 const venues: VenueLocationMap = {
   'COM1-0210': { roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 } },
@@ -158,5 +161,28 @@ describe('ExploreContent building details', () => {
 
   it('never describes the location as an entrance', () => {
     expect(render(viewing('com1')).toLowerCase()).not.toContain('entrance')
+  })
+})
+
+describe('ExploreContent labelled building groups', () => {
+  it('shows one search row with the building count and block range', () => {
+    const markup = render(searching('helix'))
+
+    expect(markup.match(/building-result-/g)).toHaveLength(1)
+    expect(markup).toContain('2 buildings · Blocks 15-19')
+  })
+
+  it('finds the group by block number', () => {
+    expect(render(searching('block 16'))).toContain('building-result-helix-house')
+  })
+
+  it('lists a chip per building, not for the entrance, and none is selected at first', () => {
+    const markup = render(viewing('helix-house'))
+
+    expect(markup).toContain('Blocks 15-17')
+    expect(markup).toContain('Blocks 18-19')
+    expect(markup.match(/class="venue-building-chip"/g)).toHaveLength(2)
+    expect(markup).not.toContain('aria-pressed="true"')
+    expect(markup).toContain('2 buildings · Blocks 15-19')
   })
 })

@@ -1,7 +1,18 @@
 {
   "version": 1,
-  "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, and $comment for the reason. unlinkedPrefixes ({prefix: reason}) lists room code prefixes deliberately left unlinked. Unknown elementIds or fields fail the import.",
+  "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, partLabel (for example \"Blocks 15-17\"), blocks (block numbers or letters), groupRole (\"entrance\" marks a group main-entrance record), and $comment for the reason. unlinkedPrefixes ({prefix: reason}) lists room code prefixes deliberately left unlinked. Unknown elementIds or fields fail the import.",
   "overrides": {
+    "1084099106": {
+      "groupKey": "pgp-residence-2",
+      "name": "PGP Residence 2",
+      "aliases": [
+        "PGP Residence 2 Block 8"
+      ],
+      "partLabel": "Block 8",
+      "blocks": [
+        "8"
+      ]
+    },
     "1084196072": {
       "entrance": {
         "x": 103.7756091,
@@ -25,6 +36,17 @@
         "osmNode": "11411601592"
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11411601592 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+    },
+    "1309257814": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 5"
+      ],
+      "partLabel": "Block 5",
+      "blocks": [
+        "5"
+      ]
     },
     "140084916": {
       "entrance": {
@@ -128,6 +150,51 @@
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11243901183 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
     },
+    "142219212": {
+      "groupKey": "eusoff-hall",
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ]
+    },
+    "142219213": {
+      "groupKey": "eusoff-hall",
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block E"
+      ],
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ]
+    },
+    "142219214": {
+      "groupKey": "eusoff-hall",
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block B and C"
+      ],
+      "partLabel": "Blocks B-C",
+      "blocks": [
+        "B",
+        "C"
+      ]
+    },
+    "142219217": {
+      "groupKey": "eusoff-hall",
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
     "15347235": {
       "entrance": {
         "x": 103.7735602,
@@ -135,6 +202,412 @@
         "osmNode": "10574167549"
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10574167549 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+    },
+    "15521864": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block G"
+      ],
+      "partLabel": "Block G",
+      "blocks": [
+        "G"
+      ]
+    },
+    "15521865": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block C"
+      ],
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ]
+    },
+    "15521866": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block B"
+      ],
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ]
+    },
+    "238932766": {
+      "groupKey": "helix-house",
+      "name": "Helix House",
+      "aliases": [
+        "Helix House Block 15 - 17",
+        "17"
+      ],
+      "partLabel": "Blocks 15-17",
+      "blocks": [
+        "15",
+        "16",
+        "17"
+      ]
+    },
+    "238932768": {
+      "groupKey": "pgr-graduate-student",
+      "name": "PGR Graduate Student",
+      "aliases": [
+        "PGR Graduate Student Block 13"
+      ],
+      "partLabel": "Block 13",
+      "blocks": [
+        "13"
+      ]
+    },
+    "238932769": {
+      "groupKey": "pgr-graduate-student",
+      "name": "PGR Graduate Student",
+      "aliases": [
+        "PGR Graduate Student Block 14"
+      ],
+      "partLabel": "Block 14",
+      "blocks": [
+        "14"
+      ]
+    },
+    "238932772": {
+      "groupKey": "pioneer-house",
+      "name": "Pioneer House",
+      "aliases": [
+        "Pioneer House Block 20 and 21"
+      ],
+      "partLabel": "Blocks 20-21",
+      "blocks": [
+        "20",
+        "21"
+      ]
+    },
+    "238932773": {
+      "groupKey": "helix-house",
+      "name": "Helix House",
+      "aliases": [
+        "Helix House Block 18 and 19"
+      ],
+      "partLabel": "Blocks 18-19",
+      "blocks": [
+        "18",
+        "19"
+      ]
+    },
+    "238932774": {
+      "groupKey": "pioneer-house",
+      "name": "Pioneer House",
+      "aliases": [
+        "Pioneer House Block 22 - 25",
+        "25"
+      ],
+      "partLabel": "Blocks 22-25",
+      "blocks": [
+        "22",
+        "23",
+        "24",
+        "25"
+      ]
+    },
+    "238932775": {
+      "groupKey": "pgp-residence-2",
+      "name": "PGP Residence 2",
+      "aliases": [
+        "PGP Residence 2 Block 7"
+      ],
+      "partLabel": "Block 7",
+      "blocks": [
+        "7"
+      ]
+    },
+    "238932776": {
+      "groupKey": "pgp-residence-3",
+      "name": "PGP Residence 3",
+      "aliases": [
+        "PGP Residence 3 Block 12"
+      ],
+      "partLabel": "Block 12",
+      "blocks": [
+        "12"
+      ]
+    },
+    "238932777": {
+      "groupKey": "pgp-residence-3",
+      "name": "PGP Residence 3",
+      "aliases": [
+        "PGP Residence 3 Block 10"
+      ],
+      "partLabel": "Block 10",
+      "blocks": [
+        "10"
+      ]
+    },
+    "238932778": {
+      "groupKey": "pgp-residence-2",
+      "name": "PGP Residence 2",
+      "aliases": [
+        "PGP Residence 2 Block 5"
+      ],
+      "partLabel": "Block 5",
+      "blocks": [
+        "5"
+      ]
+    },
+    "238932780": {
+      "groupKey": "pgp-residence-2",
+      "name": "PGP Residence 2",
+      "aliases": [
+        "PGP Residence 2 Block 6"
+      ],
+      "partLabel": "Block 6",
+      "blocks": [
+        "6"
+      ]
+    },
+    "238932781": {
+      "groupKey": "pgp-residence-3",
+      "name": "PGP Residence 3",
+      "aliases": [
+        "PGP Residence 3 Block 11"
+      ],
+      "partLabel": "Block 11",
+      "blocks": [
+        "11"
+      ]
+    },
+    "238932782": {
+      "groupKey": "pgp-residence-3",
+      "name": "PGP Residence 3",
+      "aliases": [
+        "PGP Residence 3 Block 9"
+      ],
+      "partLabel": "Block 9",
+      "blocks": [
+        "9"
+      ]
+    },
+    "238932783": {
+      "groupKey": "pgp-residence-1",
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 2"
+      ],
+      "partLabel": "Block 2",
+      "blocks": [
+        "2"
+      ]
+    },
+    "238932785": {
+      "groupKey": "pgp-residence-1",
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 3"
+      ],
+      "partLabel": "Block 3",
+      "blocks": [
+        "3"
+      ]
+    },
+    "238932786": {
+      "groupKey": "pgp-residence-1",
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 1"
+      ],
+      "partLabel": "Block 1",
+      "blocks": [
+        "1"
+      ]
+    },
+    "238932790": {
+      "groupKey": "lighthouse",
+      "name": "LightHouse",
+      "aliases": [
+        "LightHouse Block 26"
+      ],
+      "partLabel": "Block 26",
+      "blocks": [
+        "26"
+      ]
+    },
+    "238932792": {
+      "groupKey": "pgp-residence-1",
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 4"
+      ],
+      "partLabel": "Block 4",
+      "blocks": [
+        "4"
+      ]
+    },
+    "238932793": {
+      "groupKey": "lighthouse",
+      "name": "LightHouse",
+      "aliases": [
+        "LightHouse Block 27 and 28"
+      ],
+      "partLabel": "Blocks 27-28",
+      "blocks": [
+        "27",
+        "28"
+      ]
+    },
+    "238932794": {
+      "groupKey": "lighthouse",
+      "name": "LightHouse",
+      "aliases": [
+        "LightHouse Block 29 and 30"
+      ],
+      "partLabel": "Blocks 29-30",
+      "blocks": [
+        "29",
+        "30"
+      ]
+    },
+    "238933469": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
+    "238933471": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Communal Hall"
+      ],
+      "partLabel": "Communal Hall"
+    },
+    "238933473": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block F"
+      ],
+      "partLabel": "Block F (part 1)",
+      "blocks": [
+        "F"
+      ]
+    },
+    "238933477": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block E"
+      ],
+      "partLabel": "Block E (part 1)",
+      "blocks": [
+        "E"
+      ]
+    },
+    "238933479": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block E"
+      ],
+      "partLabel": "Block E (part 2)",
+      "blocks": [
+        "E"
+      ]
+    },
+    "238933482": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block F"
+      ],
+      "partLabel": "Block F (part 2)",
+      "blocks": [
+        "F"
+      ]
+    },
+    "238933484": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ]
+    },
+    "238933488": {
+      "groupKey": "king-edward-vii-hall",
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block H"
+      ],
+      "partLabel": "Block H",
+      "blocks": [
+        "H"
+      ]
+    },
+    "241265453": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 3"
+      ],
+      "partLabel": "Block 3",
+      "blocks": [
+        "3"
+      ]
+    },
+    "241265454": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 4"
+      ],
+      "partLabel": "Block 4",
+      "blocks": [
+        "4"
+      ]
+    },
+    "241265455": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 2"
+      ],
+      "partLabel": "Block 2",
+      "blocks": [
+        "2"
+      ]
+    },
+    "241265456": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 6"
+      ],
+      "partLabel": "Block 6",
+      "blocks": [
+        "6"
+      ]
+    },
+    "241265458": {
+      "groupKey": "raffles-hall",
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall (Block 1 / Communal Hall)",
+        "Block 1",
+        "Block1"
+      ],
+      "partLabel": "Block 1 and Communal Hall",
+      "blocks": [
+        "1"
+      ]
     },
     "241523920": {
       "entrance": {
@@ -150,7 +623,123 @@
         "y": 1.2977527,
         "osmNode": "11503213901"
       },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11503213901 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 11503213901 tagged entrance=yes on the building outline (single-entrance). Unverified on site.",
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Tower"
+      ],
+      "partLabel": "Tower"
+    },
+    "427077073": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
+    "427077076": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block C"
+      ],
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ]
+    },
+    "427077081": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block B"
+      ],
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ]
+    },
+    "427077083": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ]
+    },
+    "427077084": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block E"
+      ],
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ]
+    },
+    "455250293": {
+      "groupKey": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block A"
+      ],
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ]
+    },
+    "455250295": {
+      "groupKey": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block E"
+      ],
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ]
+    },
+    "455250296": {
+      "groupKey": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block D"
+      ],
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ]
+    },
+    "455250297": {
+      "groupKey": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block C"
+      ],
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ]
+    },
+    "455250298": {
+      "groupKey": "kent-ridge-hall",
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block B"
+      ],
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ]
     },
     "503403831": {
       "entrance": {
@@ -207,6 +796,22 @@
         "osmNode": "10821049775"
       },
       "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10821049775 tagged entrance=main on the building outline (main-tagged). Unverified on site."
+    },
+    "546382548": {
+      "groupKey": "ridge-view-residential-college",
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block G"
+      ],
+      "partLabel": "Block G",
+      "blocks": [
+        "G"
+      ]
+    },
+    "627395978": {
+      "roomCodePrefixes": ["KRH"],
+      "groupKey": "kent-ridge-hall",
+      "groupRole": "entrance"
     },
     "639258228": {
       "roomCodePrefixes": [
@@ -338,6 +943,14 @@
       "roomCodePrefixes": [
         "Frontier"
       ]
+    },
+    "HELIX_HOUSE": {
+      "groupKey": "helix-house",
+      "groupRole": "entrance"
+    },
+    "PGP_RESIDENCE_2": {
+      "groupKey": "pgp-residence-2",
+      "groupRole": "entrance"
     }
   },
   "unlinkedPrefixes": {

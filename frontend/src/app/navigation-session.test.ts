@@ -60,6 +60,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
+    setBuildingLabels: () => undefined,
     dispose: vi.fn(),
   }
 }

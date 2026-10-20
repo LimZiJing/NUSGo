@@ -17,9 +17,9 @@ Each room-code prefix is linked by the first confident rule: override, exact cod
 
 | Rule | Prefixes |
 |---|---|
-| override | 5 |
+| override | 6 |
 | code | 82 |
-| alias | 14 |
+| alias | 13 |
 | name | 0 |
 
 Links not made by exact code:
@@ -33,7 +33,7 @@ Links not made by exact code:
 | ERC | Education Resource Centre (`education-resource-centre`) | alias | 11 | Initialism; room names begin "Education Resource Centre". |
 | Frontier | Frontier (`frontier-2`) | override | 1 | |
 | HSS | Hon Sui Sen Memorial Library (`hon-sui-sen-memorial-library`) | alias | 11 | Initials of Hon Sui Sen; rooms within 10 m of the centroid. |
-| KRH | Kent Ridge Hall (`kent-ridge-hall`) | alias | 1 | Initialism; one hall-level record, rooms beside it. |
+| KRH | Kent Ridge Hall (`kent-ridge-hall`) | override | 1 | Initialism; one hall-level record, rooms beside it. |
 | NAK | Ngee Ann Kongsi Auditorium (`ngee-ann-kongsi-auditorium`) | alias | 1 | Room name "Ngee Ann Kongsi Auditorium". |
 | RC1 | Saga College (`saga-college-6`) | override | 8 | Room names begin "Saga" (classrooms, lecture theatre). |
 | RC2 | Elm College (`elm-college-3`) | override | 5 | Room names begin "Elm" (classrooms, lecture theatre). |
@@ -98,7 +98,7 @@ The nearest building is a review hint only; it is never used as a link.
 | Influence | 1 | | Institute of Systems Science (`institute-of-systems-science`), 10 m |
 | Integration | 1 | | Institute of Systems Science (`institute-of-systems-science`), 7 m |
 | Interaction | 1 | | Institute of Systems Science (`institute-of-systems-science`), 8 m |
-| KEVII | 1 | | King Edward VII Hall Communal Hall (`king-edward-vii-hall-communal-hall`), 20 m |
+| KEVII | 1 | | King Edward VII Hall (`king-edward-vii-hall-communal-hall`), 20 m |
 | LAW | 15 | | Medicine + Science Library (`medicine-science-library`), 4605 m |
 | LKY | 2 | | Medicine + Science Library (`medicine-science-library`), 4689 m |
 | LT35 | 1 | | MD6 (`md6`), 30 m |
@@ -108,12 +108,12 @@ The nearest building is a review hint only; it is never used as a link.
 | LT7A | 1 | | EA (`ea`), 21 m |
 | MD11CRCAUD | 1 | begins with building code MD11; probably a room code | MD11 (`md11`), 13 m |
 | Momemtum | 1 | | Institute of Systems Science (`institute-of-systems-science`), 10 m |
-| PGPH | 1 | | PGP Residence 3 Block 9 (`pgp-residence-3-block-9`), 9 m |
+| PGPH | 1 | | PGP Residence 3 (`pgp-residence-3-block-9`), 9 m |
 | Pinnacle | 1 | | Institute of Systems Science (`institute-of-systems-science`), 8 m |
 | RC4 | 5 | | RC4 Multi-Purpose Hall (`rc4-multi-purpose-hall`), 16 m |
-| RH | 1 | | Raffles Hall (Block 1 / Communal Hall) (`raffles-hall-block-1-communal-hall`), 16 m |
+| RH | 1 | | Raffles Hall (`raffles-hall-block-1-communal-hall`), 16 m |
 | RMI | 1 | | i3 (`i3`), 36 m |
-| RVR | 7 | | Ridge View Residential College Block G (`ridge-view-residential-college-block-g`), 3 m |
+| RVR | 7 | | Ridge View Residential College (`ridge-view-residential-college-block-g`), 3 m |
 | SDE | 6 | | SDE2 (`sde2`), 15 m |
 | SPSWETLAB | 1 | | LT 31 (`lt-31`), 10 m |
 | SR | 1 | | LT 19 (`lt-19`), 9 m |
@@ -124,13 +124,13 @@ The nearest building is a review hint only; it is never used as a link.
 | WC | 9 | | Yale-NUS College Arts Centre (`yale-nus-college-arts-centre`), 15 m |
 | WS2 | 2 | | E8 (`e8`), 33 m |
 | WT | 1 | | SDE2 (`sde2`), 8 m |
-| Y | 44 | Left unlinked on purpose: Yale-NUS classroom code whose rooms are spread across several buildings (Saga, Cendana, Elm, East Core, West Core, Black Box Theatre); maintainer decision of 13/10/2026 to leave it unlinked. Room-level links, if wanted, require a separate review. | |
+| Y | 44 | Left unlinked on purpose: Yale-NUS classroom code whose rooms are spread across several buildings (Saga, Cendana, Elm, East Core, West Core, Black Box Theatre); maintainer decision of 13/10/2026 to leave it unlinked. Room-level links, if wanted, belong in #261. | |
 
 ## API buildings with no linked rooms
 
 148 of 260 API buildings have no linked rooms (expected for residences, halls and facilities without teaching rooms):
 
-C J Koh Law Library (Elm Wing); Central Library Annexe; Central Water Tank; Centre for Protective Technology; Chinese Library; Chua Thian Poh Hall; Cinnamon College; Cinnamon South Learn Lobe; College of Alice & Peter Tan Multi-Purpose Hall; Create; Create Tower; Dining Hall; Dining Hall; Director Administration Conference Room; E5A / T-Lab; E6; E7; Eusoff Hall Block A; Eusoff Hall Block B and C; Eusoff Hall Block D; Eusoff Hall Block E; EW1A; Greenhouse; Greenhouse; Greenhouse; Helix House; Helix House Block 15 - 17; Helix House Block 18 and 19; IMS Auditorium; Information Technology; Innovation 4.0; Institute for Math and Science; Institute for Math and Science; Institute of Systems Science; Investigation Division Multi-Purpose Room; Kent Ridge Guild House; Kent Ridge Guild House Extension; Kent Ridge Hall Block A; Kent Ridge Hall Block B; Kent Ridge Hall Block C; Kent Ridge Hall Block D; Kent Ridge Hall Block E; King Edward VII Hall Block A; King Edward VII Hall Block B; King Edward VII Hall Block C; King Edward VII Hall Block D; King Edward VII Hall Block E; King Edward VII Hall Block E; King Edward VII Hall Block F; King Edward VII Hall Block F; King Edward VII Hall Block G; King Edward VII Hall Block H; King Edward VII Hall Communal Hall; Kuok Foundation House (Block 7 & 8); Lee Kong Chian Natural History Museum; LightHouse Block 26; LightHouse Block 27 and 28; LightHouse Block 29 and 30; MD2; MD4A; MD5; Medicine + Science Library; MPSH 1 - 4; MPSH 5; MPSH 6; NUS College Office; NUS Enterprise Incubator; NUS Museum; NUS Staff Club; OCS Command Centre; Office of Safety, Health and Environment; PGP Amphitheatre; PGP Canteen; PGP Foyer; PGP Gym; PGP MPSH / Minimart; PGP Residence 1 Block 1; PGP Residence 1 Block 2; PGP Residence 1 Block 3; PGP Residence 1 Block 4; PGP Residence 2; PGP Residence 2 Block 5; PGP Residence 2 Block 6; PGP Residence 2 Block 7; PGP Residence 2 Block 8; PGP Residence 2, Foyer and Canteen; PGP Residence 3 Block 10; PGP Residence 3 Block 11; PGP Residence 3 Block 12; PGP Residence 3 Block 9; PGR Graduate Student Block 13; PGR Graduate Student Block 14; Pioneer House Block 20 and 21; Pioneer House Block 22 - 25; Raffles Hall (Block 1 / Communal Hall); Raffles Hall Block 2; Raffles Hall Block 3; Raffles Hall Block 4; Raffles Hall Block 5; Raffles Hall Block 6; RC4 Multi-Purpose Hall; RC4 Tower; Ridge View Residential College Block A; Ridge View Residential College Block B; Ridge View Residential College Block C; Ridge View Residential College Block D; Ridge View Residential College Block E; Ridge View Residential College Block G; Ridge View Tower; Runme Shaw CFA Studios; S10; S15; S3; S7; S9 - Wet Science Building; Sheares Block A; Sheares Block B; Sheares Block C; Sheares Block D; Sheares Block E; Singapore Synchrotron Light Source; Singapore Wind Tunnel Facility; Techno Edge; Technology Centre for Offshore and Marine, Singapore; Temasek Hall Block A; Temasek Hall Block B; Temasek Hall Block C; Temasek Hall Block D; Temasek Hall Block E; Temasek Life Sciences Laboratory; Tembusu Multi-Purpose Hall; Tembusu Tower; Tembusu West Learn Lobe; The Deck; Tropical Marine Science Institute; University Cultural Centre; University Cultural Centre / NUS Museum; University Hall; University Hall (Lee Kong Chian Wing); University Hall (Tan Chin Tuan Wing); University Health Centre; University Sports Centre; UTown Residence North Tower; UTown Residence South Tower; Ventus; Yale-NUS College; Yale-NUS College Arts Centre; Yale-NUS College Reception and Admissions.
+C J Koh Law Library (Elm Wing); Central Library Annexe; Central Water Tank; Centre for Protective Technology; Chinese Library; Chua Thian Poh Hall; Cinnamon College; Cinnamon South Learn Lobe; College of Alice & Peter Tan Multi-Purpose Hall; Create; Create Tower; Dining Hall; Dining Hall; Director Administration Conference Room; E5A / T-Lab; E6; E7; Eusoff Hall; Eusoff Hall; Eusoff Hall; Eusoff Hall; EW1A; Greenhouse; Greenhouse; Greenhouse; Helix House; Helix House; Helix House; IMS Auditorium; Information Technology; Innovation 4.0; Institute for Math and Science; Institute for Math and Science; Institute of Systems Science; Investigation Division Multi-Purpose Room; Kent Ridge Guild House; Kent Ridge Guild House Extension; Kent Ridge Hall; Kent Ridge Hall; Kent Ridge Hall; Kent Ridge Hall; Kent Ridge Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; King Edward VII Hall; Kuok Foundation House (Block 7 & 8); Lee Kong Chian Natural History Museum; LightHouse; LightHouse; LightHouse; MD2; MD4A; MD5; Medicine + Science Library; MPSH 1 - 4; MPSH 5; MPSH 6; NUS College Office; NUS Enterprise Incubator; NUS Museum; NUS Staff Club; OCS Command Centre; Office of Safety, Health and Environment; PGP Amphitheatre; PGP Canteen; PGP Foyer; PGP Gym; PGP MPSH / Minimart; PGP Residence 1; PGP Residence 1; PGP Residence 1; PGP Residence 1; PGP Residence 2; PGP Residence 2; PGP Residence 2; PGP Residence 2; PGP Residence 2; PGP Residence 2, Foyer and Canteen; PGP Residence 3; PGP Residence 3; PGP Residence 3; PGP Residence 3; PGR Graduate Student; PGR Graduate Student; Pioneer House; Pioneer House; Raffles Hall; Raffles Hall; Raffles Hall; Raffles Hall; Raffles Hall; Raffles Hall; RC4 Multi-Purpose Hall; RC4 Tower; Ridge View Residential College; Ridge View Residential College; Ridge View Residential College; Ridge View Residential College; Ridge View Residential College; Ridge View Residential College; Ridge View Residential College; Runme Shaw CFA Studios; S10; S15; S3; S7; S9 - Wet Science Building; Sheares Block A; Sheares Block B; Sheares Block C; Sheares Block D; Sheares Block E; Singapore Synchrotron Light Source; Singapore Wind Tunnel Facility; Techno Edge; Technology Centre for Offshore and Marine, Singapore; Temasek Hall Block A; Temasek Hall Block B; Temasek Hall Block C; Temasek Hall Block D; Temasek Hall Block E; Temasek Life Sciences Laboratory; Tembusu Multi-Purpose Hall; Tembusu Tower; Tembusu West Learn Lobe; The Deck; Tropical Marine Science Institute; University Cultural Centre; University Cultural Centre / NUS Museum; University Hall; University Hall (Lee Kong Chian Wing); University Hall (Tan Chin Tuan Wing); University Health Centre; University Sports Centre; UTown Residence North Tower; UTown Residence South Tower; Ventus; Yale-NUS College; Yale-NUS College Arts Centre; Yale-NUS College Reception and Admissions.
 
 ## Repeated API names
 
@@ -141,11 +141,21 @@ Each record stays a separate building; records sharing a normalised name share a
 | Cendana College | `cendana-college` | 5 | 28 College Avenue West |
 | Dining Hall | `dining-hall` | 2 | 22 College Ave East; 8 College Avenue East |
 | Elm College | `elm-college` | 3 | 16 College Ave West |
+| Eusoff Hall | `eusoff-hall` | 4 | 10 Kent Ridge Drive |
 | Frontier | `frontier` | 2 | 12 Science Drive 2 |
 | Greenhouse | `greenhouse` | 3 | 1 Research Link |
+| Helix House | `helix-house` | 3 | 37 Prince George's Park |
 | Institute for Math and Science | `institute-for-math-and-science` | 2 | 3 Prince George's Park; 4 Prince George's Park |
-| King Edward VII Hall Block E | `king-edward-vii-hall-block-e` | 2 | 1A Kent Ridge Road |
-| King Edward VII Hall Block F | `king-edward-vii-hall-block-f` | 2 | 1A Kent Ridge Road |
+| Kent Ridge Hall | `kent-ridge-hall` | 6 | 10 Heng Mui Keng Ter |
+| King Edward VII Hall | `king-edward-vii-hall` | 11 | 1A Kent Ridge Road |
+| LightHouse | `lighthouse` | 3 | 24 Prince George's Park |
+| PGP Residence 1 | `pgp-residence-1` | 4 | 21 Prince George's Park |
+| PGP Residence 2 | `pgp-residence-2` | 5 | 27 Prince George's Park |
+| PGP Residence 3 | `pgp-residence-3` | 4 | 29 Prince George's Park |
+| PGR Graduate Student | `pgr-graduate-student` | 2 | 39 Prince George's Park |
+| Pioneer House | `pioneer-house` | 2 | 35 Prince George's Park |
+| Raffles Hall | `raffles-hall` | 6 | 19 Kent Ridge Crescent |
+| Ridge View Residential College | `ridge-view-residential-college` | 7 | 25 Lower Kent Ridge Road |
 | Saga College | `saga-college` | 6 | 16 College Ave West |
 | Sheares Hall | `sheares-hall` | 2 | 20 Heng Mui Keng Ter |
 
@@ -158,7 +168,7 @@ Each record stays a separate building; records sharing a normalised name share a
 
 ## Standalone-venue candidates
 
-Venues whose code equals a building code, or that have no room structure (candidates for future search integration).
+Venues whose code equals a building code, or that have no room structure (input for #261).
 
 | Venue | Reason |
 |---|---|

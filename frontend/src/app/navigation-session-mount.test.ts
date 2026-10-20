@@ -36,6 +36,7 @@ function createMapDouble(): MapSession {
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
+    setBuildingLabels: () => undefined,
     dispose: vi.fn(),
   }
 }

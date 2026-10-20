@@ -102,6 +102,9 @@ type Draft = {
   readonly name: string
   readonly normalisedName: string
   readonly groupKey: string | undefined
+  readonly partLabel: string | undefined
+  readonly blocks: readonly string[] | undefined
+  readonly groupRole: 'entrance' | undefined
   readonly codes: readonly string[]
   readonly location: Point
   readonly prefixes: Set<string>
@@ -195,6 +198,9 @@ function createDrafts(input: BuildCatalogueInput): Draft[] {
     name,
     normalisedName,
     groupKey: override?.groupKey ?? ((nameCounts.get(normalisedName) ?? 0) > 1 ? slugify(name) : undefined),
+    partLabel: override?.partLabel,
+    blocks: override?.blocks,
+    groupRole: override?.groupRole,
     codes: candidateCodes(name),
     location: override?.entrance
       ? { x: override.entrance.x, y: override.entrance.y }
@@ -306,6 +312,9 @@ function toBuilding(draft: Draft): Building {
     aliases: uniqueSorted(aliases, draft.name),
     elementId: api.elementId,
     ...(draft.groupKey === undefined ? {} : { groupKey: draft.groupKey }),
+    ...(draft.partLabel === undefined ? {} : { partLabel: draft.partLabel }),
+    ...(draft.blocks === undefined ? {} : { blocks: [...draft.blocks] }),
+    ...(draft.groupRole === undefined ? {} : { groupRole: draft.groupRole }),
     ...(address === undefined ? {} : { address }),
     ...(postal === undefined ? {} : { postal }),
     location: { x: draft.location.x, y: draft.location.y },

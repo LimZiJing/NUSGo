@@ -60,6 +60,23 @@ describe('parseOverrides', () => {
       .toThrow('unlinkedPrefixes must be an object')
   })
 
+  it('accepts part labels, blocks and an entrance role without requiring a groupKey', () => {
+    const part = { partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], groupRole: 'entrance' }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: part } }, KNOWN)['54619721']).toEqual(part)
+    expect(parseOverrides({ version: 1, overrides: { 54619721: { partLabel: 'Blocks 15-17' } } }, KNOWN)['54619721'])
+      .toEqual({ partLabel: 'Blocks 15-17' })
+  })
+
+  it('rejects an empty partLabel, repeated blocks and an unknown groupRole', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { partLabel: '' } } }, KNOWN))
+      .toThrow('54619721 partLabel must be a non-empty string')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blocks: ['15', '15'] } } }, KNOWN))
+      .toThrow('54619721 blocks must be an array of non-empty strings with no duplicates')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { groupRole: 'lobby' } } }, KNOWN))
+      .toThrow('54619721 groupRole must be "entrance"')
+  })
+
   it('fails on unknown elementIds, unknown fields and malformed values', () => {
     expect(() => parseOverrides({ version: 2, overrides: {} }, KNOWN)).toThrow('version must be 1')
     expect(() => parseOverrides({ version: 1, overrides: {}, extra: true }, KNOWN)).toThrow('unknown field extra')

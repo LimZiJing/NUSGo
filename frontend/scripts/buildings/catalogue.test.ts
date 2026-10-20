@@ -302,6 +302,36 @@ describe('buildCatalogue rule chain', () => {
     })
   })
 
+  it('carries part labels, blocks and entrance roles from overrides onto the building, and omits them otherwise', () => {
+    const result = build({
+      apiBuildings: [
+        api('10', 'Saga College Block 15', 1.2950, 103.7739),
+        api('11', 'Saga College Block 18', 1.2951, 103.7740),
+        api('12', 'Saga College Main Entrance', 1.2952, 103.7741),
+        api('13', 'Cendana College', 1.2960, 103.7750),
+      ],
+      overrides: {
+        10: { groupKey: 'saga', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'] },
+        11: { groupKey: 'saga', partLabel: 'Blocks 18-20', blocks: ['18'] },
+        12: { groupKey: 'saga', groupRole: 'entrance' },
+      },
+    })
+
+    const byId = Object.fromEntries(result.catalogue.buildings.map((building) => [building.id, building]))
+    expect(byId['saga-college-block-15']).toMatchObject({
+      groupKey: 'saga',
+      partLabel: 'Blocks 15-17',
+      blocks: ['15', '16', '17'],
+    })
+    expect(byId['saga-college-block-18']).toMatchObject({ partLabel: 'Blocks 18-20', blocks: ['18'] })
+    expect(byId['saga-college-main-entrance']).toMatchObject({ groupKey: 'saga', groupRole: 'entrance' })
+    expect(byId['saga-college-main-entrance']).not.toHaveProperty('partLabel')
+    expect(byId['saga-college-main-entrance']).not.toHaveProperty('blocks')
+    expect(byId['cendana-college']).not.toHaveProperty('partLabel')
+    expect(byId['cendana-college']).not.toHaveProperty('blocks')
+    expect(byId['cendana-college']).not.toHaveProperty('groupRole')
+  })
+
   it('reports a deliberately unlinked prefix with its reason and no nearest-building hint', () => {
     const result = build({
       apiBuildings: [api('1', 'Elm College', 1.30654, 103.77214)],

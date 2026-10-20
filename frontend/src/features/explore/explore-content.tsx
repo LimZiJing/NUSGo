@@ -38,7 +38,7 @@ interface ExploreContentProps {
   onRouteSelect: (routeId: string) => void
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
-  onNavigateToBuilding?: (buildingId: string) => void
+  onNavigateToBuilding?: (buildingId: string, partId?: string) => void
   onSearchFocus?: () => void
   focus: ExplorePanelFocusBindings
 }
@@ -170,6 +170,7 @@ export function ExploreContent({
 
         {state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
           <BuildingDetails
+            key={selectedBuilding.id}
             building={selectedBuilding}
             roomCount={buildingLinks.roomCountByBuildingId.get(selectedBuilding.id) ?? 0}
             transitIndex={transitIndex}

@@ -13,6 +13,12 @@ export type Building = {
   readonly elementId: string
   /** Shared by parts that have the same normalised name (for example Cendana College). */
   readonly groupKey?: string
+  /** Label for this part of a group, for example "Blocks 15-17". Needs a groupKey. */
+  readonly partLabel?: string
+  /** Block numbers this part covers, for example ["15", "16", "17"]. Needs a groupKey. */
+  readonly blocks?: readonly string[]
+  /** 'entrance' marks the group's main entrance record, which is not a building chip. Needs a groupKey. */
+  readonly groupRole?: 'entrance'
   readonly address?: string
   readonly postal?: string
   /** API centroid (x: longitude, y: latitude). Not a verified pedestrian entrance. */

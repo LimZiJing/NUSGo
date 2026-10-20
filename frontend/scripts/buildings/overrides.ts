@@ -17,13 +17,21 @@ export type BuildingOverride = {
   /** Accepted but unverified OpenStreetMap entrance; replaces the centroid and records the node. */
   readonly entrance?: { readonly x: number, readonly y: number, readonly osmNode: string }
   readonly groupKey?: string
+  /** Label for this part of a group, for example "Blocks 15-17". */
+  readonly partLabel?: string
+  /** Block numbers this part covers, for example ["15", "16", "17"]. */
+  readonly blocks?: readonly string[]
+  /** 'entrance' marks the group's main entrance record, which is not a building chip. */
+  readonly groupRole?: 'entrance'
 }
 
 /** Hand-edited decisions keyed by API elementId. */
 export type BuildingOverrides = Readonly<Record<string, BuildingOverride>>
 
 const FILE_FIELDS = new Set(['version', '$comment', 'overrides', 'unlinkedPrefixes'])
-const OVERRIDE_FIELDS = new Set(['name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', '$comment'])
+const OVERRIDE_FIELDS = new Set([
+  'name', 'aliases', 'roomCodePrefixes', 'location', 'entrance', 'groupKey', 'partLabel', 'blocks', 'groupRole', '$comment',
+])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -49,6 +57,10 @@ function isEntrance(value: unknown): value is { x: number, y: number, osmNode: s
   return typeof osmNode === 'string' && /^\d+$/.test(osmNode)
 }
 
+function isUniqueStringArray(value: unknown): value is string[] {
+  return isStringArray(value) && new Set(value).size === value.length
+}
+
 function parseOverride(elementId: string, value: unknown, issues: string[]): BuildingOverride | undefined {
   if (!isRecord(value)) {
     issues.push(`Override ${elementId} must be an object`)
@@ -57,7 +69,7 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   for (const field of Object.keys(value)) {
     if (!OVERRIDE_FIELDS.has(field)) issues.push(`Override ${elementId} has unknown field ${field}`)
   }
-  const { name, aliases, roomCodePrefixes, location, entrance, groupKey } = value
+  const { name, aliases, roomCodePrefixes, location, entrance, groupKey, partLabel, blocks, groupRole } = value
   if (name !== undefined && !isNonEmptyString(name)) issues.push(`Override ${elementId} name must be a non-empty string`)
   if (aliases !== undefined && !isStringArray(aliases)) {
     issues.push(`Override ${elementId} aliases must be an array of non-empty strings`)
@@ -77,6 +89,15 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
   if (groupKey !== undefined && !isNonEmptyString(groupKey)) {
     issues.push(`Override ${elementId} groupKey must be a non-empty string`)
   }
+  if (partLabel !== undefined && !isNonEmptyString(partLabel)) {
+    issues.push(`Override ${elementId} partLabel must be a non-empty string`)
+  }
+  if (blocks !== undefined && !isUniqueStringArray(blocks)) {
+    issues.push(`Override ${elementId} blocks must be an array of non-empty strings with no duplicates`)
+  }
+  if (groupRole !== undefined && groupRole !== 'entrance') {
+    issues.push(`Override ${elementId} groupRole must be "entrance"`)
+  }
   return {
     ...(name === undefined ? {} : { name: name as string }),
     ...(aliases === undefined ? {} : { aliases: [...aliases as string[]] }),
@@ -84,6 +105,9 @@ function parseOverride(elementId: string, value: unknown, issues: string[]): Bui
     ...(location === undefined ? {} : { location: { ...location as { x: number, y: number } } }),
     ...(entrance === undefined ? {} : { entrance: { ...entrance as { x: number, y: number, osmNode: string } } }),
     ...(groupKey === undefined ? {} : { groupKey: groupKey as string }),
+    ...(partLabel === undefined ? {} : { partLabel: partLabel as string }),
+    ...(blocks === undefined ? {} : { blocks: [...blocks as string[]] }),
+    ...(groupRole === undefined ? {} : { groupRole: 'entrance' as const }),
   }
 }
 

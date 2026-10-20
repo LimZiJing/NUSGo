@@ -1,7 +1,7 @@
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { TransitIndex } from '../transit'
 import { isValidLocationCoordinates } from '../location/coordinates'
-import type { BuildingIndex } from '../venue/building-index'
+import { resolveBuildingLocation, type BuildingIndex } from '../venue/building-index'
 import type { TripCoordinate, TripEndpoint } from './types'
 
 export interface TripEndpointLocationSources {
@@ -32,7 +32,7 @@ export function getTripEndpointCoordinate(
       return location ? toCoordinate(location.x, location.y) : null
     }
     case 'building': {
-      const location = sources.buildings?.byId.get(endpoint.id)?.location
+      const location = sources.buildings ? resolveBuildingLocation(sources.buildings, endpoint.id) : undefined
       return location ? toCoordinate(location.x, location.y) : null
     }
     case 'stop': {

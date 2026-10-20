@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { findNearbyShuttleStops, type TransitIndex } from '../../../domain/transit'
 import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
@@ -143,7 +143,7 @@ interface BuildingDetailsProps {
   readonly roomCount: number
   readonly transitIndex: TransitIndex | null
   readonly headingRef: RefObject<HTMLHeadingElement | null>
-  readonly onNavigateToBuilding?: (buildingId: string) => void
+  readonly onNavigateToBuilding?: (buildingId: string, partId?: string) => void
   readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
@@ -155,15 +155,20 @@ export function BuildingDetails({
   onNavigateToBuilding,
   onFocusStop,
 }: BuildingDetailsProps) {
-  const { parts } = building
-  // Parts that share one address would only repeat it, so say it once.
-  const sharedAddress = parts[0].address && parts.every((part) => part.address === parts[0].address)
-    ? parts[0].address
+  const { buildings } = building
+  const [selectedPartId, setSelectedPartId] = useState<string | null>(null)
+  const selectedPart = buildings.find((part) => part.id === selectedPartId) ?? null
+  const hasChips = buildings.length > 1 && buildings.every((part) => part.partLabel !== undefined)
+  // Buildings that share one address would only repeat it, so say it once.
+  const sharedAddress = buildings[0]?.address && buildings.every((part) => part.address === buildings[0].address)
+    ? buildings[0].address
     : null
   const summary = [
-    parts.length > 1 ? `${parts.length} buildings` : null,
+    buildings.length > 1 ? `${buildings.length} buildings` : null,
+    buildings.length > 1 ? building.blockLabel ?? null : null,
     `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`,
   ].filter((part): part is string => part !== null).join(' · ')
+  const navigationTarget = selectedPart ?? null
 
   return (
     <div
@@ -186,23 +191,48 @@ export function BuildingDetails({
         <BuildingIcon className="venue-detail-icon venue-detail-building-icon" />
         <span>{summary}</span>
       </p>
-      {parts.length > 1 && sharedAddress && (
+      {hasChips && (
+        <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
+          <h4 id="venue-building-parts-heading">Buildings</h4>
+          <div className="venue-building-chips">
+            {buildings.map((part) => (
+              <button
+                key={part.id}
+                type="button"
+                className="venue-building-chip"
+                aria-pressed={part.id === selectedPartId}
+                onClick={() => setSelectedPartId(part.id === selectedPartId ? null : part.id)}
+              >
+                {part.partLabel}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {!hasChips && buildings.length > 1 && sharedAddress && (
         <p className="venue-building-parts-note">Each building is marked on the map.</p>
       )}
-      {parts.length > 1 && !sharedAddress && (
+      {!hasChips && buildings.length > 1 && !sharedAddress && (
         <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
           <h4 id="venue-building-parts-heading">Buildings in this group</h4>
           <ul>
-            {parts.map((part, index) => (
+            {buildings.map((part, index) => (
               <li key={part.id}>{`Part ${index + 1}${part.address ? ` · ${part.address}` : ''}`}</li>
             ))}
           </ul>
         </section>
       )}
+      {selectedPart && (
+        <section className="venue-building-part-detail" aria-label={`${selectedPart.partLabel} details`}>
+          <h4>{selectedPart.partLabel}</h4>
+          {!sharedAddress && selectedPart.address && <p className="venue-building-parts-note">{selectedPart.address}</p>}
+          <p className="venue-building-parts-note">Rooms and facilities for this building have not been added yet.</p>
+        </section>
+      )}
       <div className="venue-detail-actions">
-        <NavigateButton onClick={() => onNavigateToBuilding?.(building.id)} />
+        <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />
       </div>
-      <NearbyStops location={building.location} transitIndex={transitIndex} onFocusStop={onFocusStop} />
+      <NearbyStops location={selectedPart?.location ?? building.location} transitIndex={transitIndex} onFocusStop={onFocusStop} />
     </div>
   )
 }

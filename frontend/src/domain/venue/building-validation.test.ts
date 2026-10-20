@@ -122,6 +122,79 @@ describe('validateBuildingCatalogue', () => {
     ])
   })
 
+  it('accepts part labels, blocks and an entrance role on grouped buildings', () => {
+    const result = validateBuildingCatalogue(catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], roomCodePrefixes: ['RC1'] }),
+      building({ id: 'saga-2', elementId: 'way/2', groupKey: 'saga', partLabel: 'Blocks 18-20', blocks: ['18'], roomCodePrefixes: ['RC2'] }),
+      building({ id: 'saga-entrance', elementId: 'way/3', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+    ]))
+
+    expect(result.buildings.map((item) => [item.id, item.partLabel, item.blocks, item.groupRole])).toEqual([
+      ['saga-1', 'Blocks 15-17', ['15', '16', '17'], undefined],
+      ['saga-2', 'Blocks 18-20', ['18'], undefined],
+      ['saga-entrance', undefined, undefined, 'entrance'],
+    ])
+  })
+
+  it('rejects an empty partLabel, malformed or repeated blocks, and an unknown groupRole', () => {
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', partLabel: ' ' })]))).toEqual([
+      'Building com1 partLabel must be a non-empty string when provided',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: ['15', '15'] })]))).toEqual([
+      'Building com1 blocks must be an array of non-empty strings with no duplicates when provided',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', blocks: [''] })]))).toEqual([
+      'Building com1 blocks must be an array of non-empty strings with no duplicates when provided',
+    ])
+    expect(issuesFor(catalogue([building({ groupKey: 'saga', groupRole: 'lobby' })]))).toEqual([
+      'Building com1 groupRole must be "entrance" when provided',
+    ])
+  })
+
+  it('requires a groupKey for partLabel, blocks and groupRole', () => {
+    expect(issuesFor(catalogue([building({ partLabel: 'Blocks 15-17', blocks: ['15'], groupRole: 'entrance' })]))).toEqual([
+      'Building com1 partLabel requires a groupKey',
+      'Building com1 blocks requires a groupKey',
+      'Building com1 groupRole requires a groupKey',
+    ])
+    expect(validateBuildingCatalogue(catalogue([building({ groupKey: 'saga', partLabel: 'Blocks 15-17' })])).buildings)
+      .toHaveLength(1)
+  })
+
+  it('allows at most one entrance record per group', () => {
+    expect(validateBuildingCatalogue(catalogue([
+      building({ id: 'saga-entrance', elementId: 'way/1', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+      building({ id: 'elm-entrance', elementId: 'way/2', groupKey: 'elm', groupRole: 'entrance', roomCodePrefixes: [] }),
+    ])).buildings).toHaveLength(2)
+
+    expect(issuesFor(catalogue([
+      building({ id: 'saga-entrance', elementId: 'way/1', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+      building({ id: 'saga-gate', elementId: 'way/2', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+    ]))).toEqual([
+      'Group saga has more than one entrance record (saga-entrance, saga-gate)',
+    ])
+  })
+
+  it('requires part labels on every non-entrance part of a group, or on none', () => {
+    expect(validateBuildingCatalogue(catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga', partLabel: 'Blocks 15-17', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'saga-2', elementId: 'way/2', groupKey: 'saga', partLabel: 'Blocks 18-20', roomCodePrefixes: ['RC2'] }),
+      building({ id: 'saga-entrance', elementId: 'way/3', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+    ])).buildings).toHaveLength(3)
+    expect(validateBuildingCatalogue(catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'saga-2', elementId: 'way/2', groupKey: 'saga', roomCodePrefixes: ['RC2'] }),
+    ])).buildings).toHaveLength(2)
+
+    expect(issuesFor(catalogue([
+      building({ id: 'saga-1', elementId: 'way/1', groupKey: 'saga', partLabel: 'Blocks 15-17', roomCodePrefixes: ['RC1'] }),
+      building({ id: 'saga-2', elementId: 'way/2', groupKey: 'saga', roomCodePrefixes: ['RC2'] }),
+      building({ id: 'saga-entrance', elementId: 'way/3', groupKey: 'saga', groupRole: 'entrance', roomCodePrefixes: [] }),
+    ]))).toEqual([
+      'Group saga must give partLabel to every non-entrance part or to none (missing: saga-2)',
+    ])
+  })
+
   it('rejects an unsupported version, missing source metadata and non-array buildings', () => {
     expect(issuesFor({ ...catalogue(), version: 2 })).toEqual([
       'Building catalogue version must be 1: 2',

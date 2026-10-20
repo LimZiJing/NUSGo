@@ -288,6 +288,39 @@
   text-align: left;
 }
 
+.venue-building-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.venue-building-chip {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.venue-building-chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.venue-building-part-detail {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.venue-building-part-detail h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 var(--font-size-md)/1.3 var(--sans);
+}
+
 .venue-nearby-stops h4,
 .venue-building-parts h4 {
   display: flex;

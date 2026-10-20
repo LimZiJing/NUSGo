@@ -26,6 +26,9 @@ export interface BlockLabels {
   dispose(): void
 }
 
+export const BLOCK_NUMBER_MIN_ZOOM = 18
+export const BLOCK_NUMBER_SOURCE_ID = 'building-block-numbers'
+export const BLOCK_NUMBER_LAYER_ID = 'building-block-number-layer'
 export const GROUP_LABEL_MIN_ZOOM = 15
 export const GROUP_LABEL_SOURCE_ID = 'building-group-labels'
 export const GROUP_LABEL_LAYER_ID = 'building-group-label-layer'
@@ -50,11 +53,31 @@ const GROUP_LABEL_LAYER: SymbolLayerSpecification = {
   },
 }
 
+const BLOCK_NUMBER_LAYER: SymbolLayerSpecification = {
+  id: BLOCK_NUMBER_LAYER_ID,
+  type: 'symbol',
+  source: BLOCK_NUMBER_SOURCE_ID,
+  minzoom: BLOCK_NUMBER_MIN_ZOOM,
+  layout: {
+    'text-field': ['get', 'label'],
+    'text-font': ['Noto Sans Regular'],
+    'text-size': 13,
+    'text-allow-overlap': false,
+  },
+  paint: {
+    'text-color': '#0f172a',
+    'text-halo-color': '#ffffff',
+    'text-halo-width': 2,
+  },
+}
+
 const BLOCK_LABEL_LAYER: SymbolLayerSpecification = {
   id: BLOCK_LABEL_LAYER_ID,
   type: 'symbol',
   source: BLOCK_LABEL_SOURCE_ID,
   minzoom: BLOCK_LABEL_MIN_ZOOM,
+  // From BLOCK_NUMBER_MIN_ZOOM the per-block numbers take over from the building's range.
+  maxzoom: BLOCK_NUMBER_MIN_ZOOM,
   layout: {
     'text-field': ['get', 'label'],
     'text-font': ['Noto Sans Regular'],
@@ -89,6 +112,43 @@ export function createBlockLabelGeoJson(entries: readonly BuildingEntry[]): Bloc
       }]
     })),
   }
+}
+
+/**
+ * One point per block position: each block at its own recorded location, with blocks that share a
+ * point (or have none recorded) grouped under the building's location as one range.
+ */
+export function createBlockNumberGeoJson(entries: readonly BuildingEntry[]): BlockLabelGeoJson {
+  const features: BlockLabelFeature[] = []
+  for (const entry of entries) {
+    for (const building of entry.buildings) {
+      const blocks = building.blocks ?? []
+      if (blocks.length === 0) continue
+      const atPoint: globalThis.Map<string, { point: { x: number; y: number }; blocks: string[] }> = new globalThis.Map()
+      for (const block of blocks) {
+        const point = building.blockLocations?.[block] ?? building.location
+        const key = `${point.x},${point.y}`
+        const group = atPoint.get(key) ?? { point, blocks: [] as string[] }
+        group.blocks.push(block)
+        atPoint.set(key, group)
+      }
+      for (const { point, blocks: grouped } of atPoint.values()) {
+        const label = toBlockRangeText(grouped)
+        if (label === undefined || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue
+        features.push({
+          type: 'Feature',
+          properties: { label },
+          geometry: { type: 'Point', coordinates: [point.x, point.y] },
+        })
+      }
+    }
+  }
+  return { type: 'FeatureCollection', features }
+}
+
+/** Same lifecycle as installBlockLabels, for the per-block number layer. */
+export function installBlockNumbers(map: Map, geoJson: BlockLabelGeoJson): BlockLabels {
+  return installLabelLayer(map, BLOCK_NUMBER_SOURCE_ID, BLOCK_NUMBER_LAYER, geoJson)
 }
 
 function installLabelLayer(

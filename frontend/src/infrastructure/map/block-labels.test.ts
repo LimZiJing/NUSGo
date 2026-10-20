@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Building } from '@navus/shared/venue/buildings'
 import { buildBuildingIndex } from '../../domain/venue/building-index'
-import { createBlockLabelGeoJson, createGroupLabelGeoJson } from './block-labels'
+import { createBlockLabelGeoJson, createBlockNumberGeoJson, createGroupLabelGeoJson } from './block-labels'
 
 function createBuilding(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -113,6 +113,40 @@ describe('createGroupLabelGeoJson', () => {
       index.byId.get('hall')!.location.x,
       index.byId.get('hall')!.location.y,
     ])
+  })
+})
+
+describe('createBlockNumberGeoJson', () => {
+  it('puts each block at its own location and groups blocks that share a point', () => {
+    const index = buildBuildingIndex([
+      createBuilding({
+        id: 'res-5',
+        name: 'Residence',
+        groupKey: 'res',
+        partLabel: 'Blocks 5-8',
+        blocks: ['5', '6', '7', '8'],
+        location: { x: 103.75, y: 1.25 },
+        blockLocations: {
+          '5': { x: 103.71, y: 1.21 },
+          '6': { x: 103.72, y: 1.22 },
+          '7': { x: 103.73, y: 1.23 },
+          '8': { x: 103.73, y: 1.23 },
+        },
+      }),
+      createBuilding({ id: 'plain', name: 'Plain', groupKey: 'plain', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], location: { x: 103.7, y: 1.2 } }),
+    ])
+
+    const labels = createBlockNumberGeoJson(index.entries).features.map((feature) => [
+      feature.properties.label,
+      feature.geometry.coordinates,
+    ])
+
+    expect(labels).toContainEqual(['5', [103.71, 1.21]])
+    expect(labels).toContainEqual(['6', [103.72, 1.22]])
+    expect(labels).toContainEqual(['7-8', [103.73, 1.23]])
+    // Without recorded block positions the range sits at the building.
+    expect(labels).toContainEqual(['15-17', [103.7, 1.2]])
+    expect(labels).toHaveLength(4)
   })
 })
 

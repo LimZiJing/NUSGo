@@ -29,8 +29,10 @@ import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-i
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import {
   createBlockLabelGeoJson,
+  createBlockNumberGeoJson,
   createGroupLabelGeoJson,
   installBlockLabels,
+  installBlockNumbers,
   installGroupLabels,
   type BlockLabels,
 } from './block-labels'
@@ -85,6 +87,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let buildingLabelEntries: readonly BuildingEntry[] = []
   let buildingLabels: BlockLabels | null = null
   let groupLabels: BlockLabels | null = null
+  let blockNumbers: BlockLabels | null = null
   let styleReady = false
   let stopsPinStopId: string | null = null
   let stopsPinVisible = false
@@ -126,6 +129,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     buildingLabels ??= handle
     const groupHandle = installGroupLabels(map, groupGeoJson)
     groupLabels ??= groupHandle
+    const numberHandle = installBlockNumbers(map, createBlockNumberGeoJson(buildingLabelEntries))
+    blockNumbers ??= numberHandle
   }
   void lifecycle.ready.then(() => {
     styleReady = true
@@ -678,6 +683,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       buildingLabels = null
       groupLabels?.dispose()
       groupLabels = null
+      blockNumbers?.dispose()
+      blockNumbers = null
       lifecycle.dispose()
     },
   }

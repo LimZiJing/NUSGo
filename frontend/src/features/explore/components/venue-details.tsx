@@ -200,6 +200,7 @@ export function BuildingDetails({
         </section>
       )}
       <div className="venue-detail-actions">
+        <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />
         {hasChips && (
           <Select
             className="venue-building-picker"
@@ -217,7 +218,6 @@ export function BuildingDetails({
             }}
           />
         )}
-        <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />
       </div>
       <p className="venue-building-parts-note">
         {selectedPart && !sharedAddress && selectedPart.address ? `${selectedPart.address}. ` : ''}

@@ -646,6 +646,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    padding-top: 0;
     color: var(--text-muted);
     font: 600 var(--font-size-lg)/1.3 var(--sans);
   }

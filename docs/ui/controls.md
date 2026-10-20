@@ -72,7 +72,7 @@ A neutral control sits on a similar neutral surface, so its border is what marks
 `Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible, above the trigger, and the listbox name), `value`, `options` (`{ value, label }[]`), `onChange(value)`, and optional `id` and `className` (layout only).
 
 - The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses the secondary look: `--border-control`, `--surface-muted`, 40px minimum height, one line with ellipsis. A chevron shows the open state.
-- The list renders **inline, directly under the trigger**, not in a popover or portal. Scroll containers and the mobile bottom sheet cannot clip it. It is capped at `min(14rem, 40vh)` and scrolls inside itself. Its trade-off is that it pushes content below it down while open, so use it for short lists only.
+- The list floats over the page in a **portal** on `document.body`, fixed to the trigger and as wide as it. It never pushes content down, and scroll containers and the mobile bottom sheet cannot clip it. It opens below the trigger, or above when there is more room there, is capped at 14rem (less when the viewport is short) and scrolls inside itself, and follows the trigger through scrolls and resizes.
 - The selected option has a check icon. The active option has an `--accent-soft` tint, and hover moves the active option.
 - `onChange` fires only when the value changes. Selecting closes the list and returns focus to the trigger.
 

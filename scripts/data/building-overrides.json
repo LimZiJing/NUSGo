@@ -631,7 +631,10 @@
       "aliases": [
         "Ridge View Tower"
       ],
-      "partLabel": "Tower"
+      "partLabel": "Tower (Block F)",
+      "blocks": [
+        "F"
+      ]
     },
     "427077073": {
       "groupKey": "ridge-view-residential-college",

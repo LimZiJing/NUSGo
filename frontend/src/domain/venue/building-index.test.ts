@@ -174,6 +174,12 @@ describe('the real catalogue', () => {
     expect(searchBuildings(index, 'Block 16').map((entry) => entry.id)).toContain('helix-house')
   })
 
+  it('summarises Ridge View as blocks A-G with the tower as block F', () => {
+    const entry = index.byId.get('ridge-view-residential-college')
+    expect(entry?.blockLabel).toBe('Blocks A-G')
+    expect(entry?.buildings.map((part) => part.partLabel)).toContain('Tower (Block F)')
+  })
+
   it('has no two entries with the same name and address', () => {
     const seen = new Map<string, string>()
     const clashes: string[] = []

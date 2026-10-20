@@ -4579,7 +4579,10 @@
       ],
       "elementId": "427077072",
       "groupKey": "ridge-view-residential-college",
-      "partLabel": "Tower",
+      "partLabel": "Tower (Block F)",
+      "blocks": [
+        "F"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {

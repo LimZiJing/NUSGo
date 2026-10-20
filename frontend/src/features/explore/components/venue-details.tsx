@@ -192,22 +192,19 @@ export function BuildingDetails({
         <span>{summary}</span>
       </p>
       {hasChips && (
-        <section className="venue-building-parts" aria-labelledby="venue-building-parts-heading">
-          <h4 id="venue-building-parts-heading">Buildings</h4>
-          <div className="venue-building-chips">
+        <div className="venue-building-select">
+          <label htmlFor="venue-building-select">Building</label>
+          <select
+            id="venue-building-select"
+            value={selectedPartId ?? ''}
+            onChange={(event) => setSelectedPartId(event.target.value || null)}
+          >
+            <option value="">All buildings</option>
             {buildings.map((part) => (
-              <button
-                key={part.id}
-                type="button"
-                className="venue-building-chip"
-                aria-pressed={part.id === selectedPartId}
-                onClick={() => setSelectedPartId(part.id === selectedPartId ? null : part.id)}
-              >
-                {part.partLabel}
-              </button>
+              <option key={part.id} value={part.id}>{part.partLabel}</option>
             ))}
-          </div>
-        </section>
+          </select>
+        </div>
       )}
       {!hasChips && buildings.length > 1 && sharedAddress && (
         <p className="venue-building-parts-note">Each building is marked on the map.</p>

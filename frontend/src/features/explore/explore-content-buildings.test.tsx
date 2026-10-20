@@ -176,13 +176,13 @@ describe('ExploreContent labelled building groups', () => {
     expect(render(searching('block 16'))).toContain('building-result-helix-house')
   })
 
-  it('lists a chip per building, not for the entrance, and none is selected at first', () => {
+  it('offers a select with every building but not the entrance, starting on all buildings', () => {
     const markup = render(viewing('helix-house'))
 
-    expect(markup).toContain('Blocks 15-17')
-    expect(markup).toContain('Blocks 18-19')
-    expect(markup.match(/class="venue-building-chip"/g)).toHaveLength(2)
-    expect(markup).not.toContain('aria-pressed="true"')
+    expect(markup).toContain('>Blocks 15-17</option>')
+    expect(markup).toContain('>Blocks 18-19</option>')
+    expect(markup.match(/<option/g)).toHaveLength(3)
+    expect(markup).toContain('>All buildings</option>')
     expect(markup).toContain('2 buildings · Blocks 15-19')
   })
 })

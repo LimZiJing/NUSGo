@@ -79,3 +79,9 @@ Put NUS and LTA credentials in `backend/.env`. Never add them to root `.env`, Vi
 ## Express readiness and process count
 
 Run one Express instance per environment. The shuttle snapshot and its refresh scheduler live in process memory, so multiple backend instances would poll providers separately and could serve different snapshots. `/api/health` reports that Express is running. `/api/ready` stays unavailable until canonical data is loaded and the first complete bus-arrival snapshot has been published. After that first complete snapshot, later partial refreshes can keep last-known arrivals for stops whose request failed. See [backend live-data behavior](backend-live-data.md) for refresh and freshness details.
+
+### API request limits
+
+Express applies a shared per-client budget to every `/api` route, defaulting to 120 requests per 60 seconds. Journey planning has an additional per-client limit of 20 requests per 60 seconds and defaults to at most four concurrent calculations. Configure these values with `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX_REQUESTS`, `JOURNEY_RATE_LIMIT_MAX_REQUESTS`, and `JOURNEY_MAX_CONCURRENT_REQUESTS` in `backend/.env`; see [the example](../backend/.env.example). Limited requests receive HTTP 429 with `Retry-After`.
+
+The counters and concurrency slots live in the Express process and reset when it restarts. Run one API instance. When requests arrive through Cloudflare Tunnel, the limiter uses `CF-Connecting-IP` only when the connection to Express comes from loopback; keep Express loopback-bound and run `cloudflared` on the same host. CORS does not authenticate API callers, so these controls reduce excess work while the API remains public.

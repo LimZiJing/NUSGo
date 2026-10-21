@@ -77,12 +77,6 @@ function createLocationTrackerDouble(): LocationTracker & {
       return () => listeners.delete(listener)
     },
     enable: vi.fn(),
-    requestCurrentLocation: vi.fn(async () => ({
-      longitude: 103,
-      latitude: 1,
-      accuracy: 10,
-      timestamp: 1_000,
-    })),
     disable: vi.fn(),
     dispose: vi.fn(),
     emit(nextState) {
@@ -377,7 +371,6 @@ describe('navigation session', () => {
     expect(onMapStopDestinationSet).toHaveBeenCalledOnce()
     expect(onMapStopDestinationSet).toHaveBeenCalledWith('STOP-A')
     expect(onMapStopInteraction).not.toHaveBeenCalled()
-    expect(dependencies.locationTracker.requestCurrentLocation).not.toHaveBeenCalled()
     expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
     expect(pathfinder).not.toHaveBeenCalled()
   })
@@ -2246,7 +2239,7 @@ describe('navigation session', () => {
     session.useCurrentLocationForOrigin()
     await Promise.resolve()
 
-    expect(dependencies.locationTracker.requestCurrentLocation).not.toHaveBeenCalled()
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
     const origin = session.getState().tripRequest.origin
     expect(origin).toEqual({
       kind: 'current-location',
@@ -2263,79 +2256,109 @@ describe('navigation session', () => {
     expect(session.getState().tripRequest.origin).toBe(origin)
   })
 
-  it('keeps the existing origin while requesting a fix, then uses its exact coordinates', async () => {
-    const locationRequest = createDeferred<{
-      readonly longitude: number
-      readonly latitude: number
-      readonly accuracy: number
-      readonly timestamp: number
-    }>()
+  it('waits for the first tracking fix, starts the marker, and captures that fix once', async () => {
     const dependencies = createDependencies()
-    vi.mocked(dependencies.locationTracker.requestCurrentLocation!).mockReturnValue(locationRequest.promise)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
 
     session.useCurrentLocationForOrigin()
 
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
+    expect(session.getState().locationMarkerVisible).toBe(true)
     expect(session.getState().originLocationRequest).toEqual({ status: 'requesting', error: null })
     expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
 
-    locationRequest.resolve({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
+    locationTracker.emit({ status: 'requesting', latestFix: null })
+    expect(session.getState().originLocationRequest).toEqual({ status: 'requesting', error: null })
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 },
+    })
     await waitForState(session, (state) => state.originLocationRequest.status === 'idle')
 
-    expect(session.getState().tripRequest.origin).toEqual({
+    const origin = session.getState().tripRequest.origin
+    expect(origin).toEqual({
       kind: 'current-location',
       coordinate: { longitude: 103.12345, latitude: 1.23456 },
     })
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103.9, latitude: 1.9, accuracy: 5, timestamp: 3_000 },
+    })
+    expect(session.getState().tripRequest.origin).toBe(origin)
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
   })
 
-  it('shows a retryable error and preserves the origin when location fails', async () => {
+  it.each([
+    {
+      status: 'denied' as const,
+      message: 'Location permission was denied. Please allow location access and try again.',
+    },
+    {
+      status: 'timeout' as const,
+      message: 'The location request timed out. Please try again.',
+    },
+    {
+      status: 'unavailable' as const,
+      message: 'Device location is unavailable. Please try again.',
+    },
+  ])('shows a retryable error and preserves the origin when tracking reports $status', async ({
+    status,
+    message,
+  }) => {
     const dependencies = createDependencies()
-    const request = vi.mocked(dependencies.locationTracker.requestCurrentLocation!)
-      .mockRejectedValueOnce({ status: 'denied' })
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
     session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
 
     session.useCurrentLocationForOrigin()
-    await waitForState(session, (state) => state.originLocationRequest.status === 'error')
+    locationTracker.emit({ status, latestFix: null })
 
-    expect(session.getState().originLocationRequest.error)
-      .toBe('Location permission was denied. Please allow location access and try again.')
+    expect(session.getState().originLocationRequest).toEqual({ status: 'error', error: message })
     expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
 
-    request.mockResolvedValueOnce({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
     session.useCurrentLocationForOrigin()
+    expect(dependencies.locationTracker.enable).toHaveBeenCalledTimes(2)
+    expect(session.getState().originLocationRequest).toEqual({ status: 'requesting', error: null })
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 },
+    })
     await waitForState(session, (state) => state.originLocationRequest.status === 'idle')
 
-    expect(request).toHaveBeenCalledTimes(2)
     expect(session.getState().tripRequest.origin).toEqual({
       kind: 'current-location',
       coordinate: { longitude: 103.12345, latitude: 1.23456 },
     })
   })
 
-  it('ignores a late location result after the origin workflow is cancelled', async () => {
-    const locationRequest = createDeferred<{
-      readonly longitude: number
-      readonly latitude: number
-      readonly accuracy: number
-      readonly timestamp: number
-    }>()
+  it('stops the origin capture on cancel but leaves tracking on, ignoring a later fix', async () => {
     const dependencies = createDependencies()
-    vi.mocked(dependencies.locationTracker.requestCurrentLocation!).mockReturnValue(locationRequest.promise)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
 
     session.useCurrentLocationForOrigin()
     session.cancelOriginLocationRequest()
-    locationRequest.resolve({ longitude: 103, latitude: 1, accuracy: 20, timestamp: 2_000 })
-    await Promise.resolve()
+
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+    expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
+
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103, latitude: 1, accuracy: 20, timestamp: 2_000 },
+    })
     await Promise.resolve()
 
     expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
     expect(session.getState().tripRequest.origin).toBeNull()
+    expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -2376,14 +2399,8 @@ describe('navigation session', () => {
     expectedOrigin,
     expectedDestination,
   }) => {
-    const locationRequest = createDeferred<{
-      readonly longitude: number
-      readonly latitude: number
-      readonly accuracy: number
-      readonly timestamp: number
-    }>()
     const dependencies = createDependencies()
-    vi.mocked(dependencies.locationTracker.requestCurrentLocation!).mockReturnValue(locationRequest.promise)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
     const session = createNavigationSession(dependencies)
     await session.start(new AbortController().signal)
     setup(session)
@@ -2394,7 +2411,10 @@ describe('navigation session', () => {
     cancel(session)
     expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
 
-    locationRequest.resolve({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 },
+    })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })

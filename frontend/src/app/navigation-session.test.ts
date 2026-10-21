@@ -2361,6 +2361,18 @@ describe('navigation session', () => {
     expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
   })
 
+  it('cancels a pending origin capture when location tracking is turned off', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.useCurrentLocationForOrigin()
+    session.disableLocationTracking()
+
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+    expect(dependencies.locationTracker.disable).toHaveBeenCalled()
+  })
+
   it.each([
     {
       name: 'swap',

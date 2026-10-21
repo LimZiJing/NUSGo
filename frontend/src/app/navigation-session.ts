@@ -791,6 +791,8 @@ export function createNavigationSession(
 
     disableLocationTracking() {
       if (disposed) return
+      // Turning tracking off would leave a pending origin capture waiting forever.
+      cancelOriginLocationRequest()
       dependencies.locationTracker.disable()
     },
 

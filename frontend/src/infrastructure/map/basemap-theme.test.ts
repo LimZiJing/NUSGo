@@ -32,7 +32,7 @@ function createFakeMap() {
     })),
     getLayer: vi.fn((id: string) => layers.find((layer) => layer.id === id)),
     // Like MapLibre, reject properties the layer does not have.
-    setPaintProperty: vi.fn((id: string, property: string) => {
+    setPaintProperty: vi.fn<(id: string, property: string, value?: unknown) => void>((id, property) => {
       const layer = layers.find((candidate) => candidate.id === id)
       if (layer?.type !== 'raster' && !(layer && property in layer.paint)) {
         throw new TypeError(`${id} has no ${property}`)
@@ -69,7 +69,7 @@ describe('applyBasemapTheme', () => {
     expect(calls.some(([id]) => id === 'route')).toBe(false)
     expect(calls.find(([id, prop]) => id === 'background' && prop === 'background-color')?.[2])
       .toMatch(/^hsla\(/)
-    const roadColor = calls.find(([id, prop]) => id === 'road' && prop === 'line-color')?.[2]
+    const roadColor = calls.find(([id, prop]) => id === 'road' && prop === 'line-color')?.[2] as unknown[]
     expect(roadColor[0]).toBe('interpolate')
     expect(roadColor[4]).toMatch(/^hsla\(/)
     expect(calls).toContainEqual(['natural', 'raster-brightness-max', 0.3])

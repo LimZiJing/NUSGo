@@ -165,10 +165,13 @@ function transformPaintValue(value: unknown, role: ColorRole): unknown {
   return value
 }
 
+type PaintPropertyName = Parameters<Map['setPaintProperty']>[1]
+type PaintValue = Parameters<Map['setPaintProperty']>[2]
+
 interface OriginalPaint {
   readonly layerId: string
-  readonly property: string
-  readonly value: unknown
+  readonly property: PaintPropertyName
+  readonly value: PaintValue
 }
 
 const originalPaintByMap = new WeakMap<Map, readonly OriginalPaint[]>()
@@ -191,7 +194,11 @@ function captureOriginalPaint(map: Map): readonly OriginalPaint[] {
       // Setting a property a layer type does not have throws, so only touch ones the style sets.
       // Raster brightness and saturation are valid on every raster layer, set or not.
       if (value === undefined && layer.type !== 'raster') continue
-      captured.push({ layerId: layer.id, property, value })
+      captured.push({
+        layerId: layer.id,
+        property: property as PaintPropertyName,
+        value: value as PaintValue,
+      })
     }
   }
   return captured
@@ -221,7 +228,11 @@ export function applyBasemapTheme(map: Map, theme: BasemapTheme): void {
         DARK_RASTER_PAINT[property as keyof typeof DARK_RASTER_PAINT],
       )
     } else {
-      map.setPaintProperty(layerId, property, transformPaintValue(value, COLOR_PROPERTY_ROLES[property]))
+      map.setPaintProperty(
+        layerId,
+        property,
+        transformPaintValue(value, COLOR_PROPERTY_ROLES[property]) as PaintValue,
+      )
     }
   }
 }

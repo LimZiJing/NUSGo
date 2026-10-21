@@ -162,6 +162,21 @@ export function getJourneyCompactSummary(
   }
 }
 
+/*
+ * The one-line fact that tells options apart: how far a walk is, or how long the
+ * first bus takes to arrive. A midnight search shows hours of wait here, which
+ * explains an otherwise surprising total.
+ */
+export function getJourneyOptionDetail(path: Path, summary: JourneyCompactSummary): string {
+  const firstBusLeg = path.legs.find((leg): leg is BusPathLeg => leg.mode === 'shuttle')
+  if (!firstBusLeg) return formatDistance(path.totalDistanceMeters)
+
+  const wait = firstBusLeg.waitingSeconds < 60
+    ? 'Bus arriving now'
+    : `Wait ${formatDuration(firstBusLeg.waitingSeconds)}`
+  return `${wait} · Walk ${summary.walkingDurationLabel}`
+}
+
 export function getJourneyOptionHeader(
   path: Path,
   optionIndex: number,

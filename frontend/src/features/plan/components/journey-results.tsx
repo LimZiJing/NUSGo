@@ -8,8 +8,8 @@ import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 import {
-  formatDistance,
   getJourneyCompactSummary,
+  getJourneyOptionDetail,
   getJourneyOptionHeader,
   getJourneyTimelineEntries,
   type JourneyCompactSummary,
@@ -173,6 +173,19 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
   )
 }
 
+// The trip card above already names the two ends, so the timeline starts and ends on a leg.
+function getJourneyLegEntries(
+  path: Path,
+  venues: VenueLocationMap | null,
+  networkIndex: TransitIndex | null,
+  buildings: BuildingIndex | null,
+): readonly JourneyTimelineEntry[] {
+  const entries = getJourneyTimelineEntries(path, venues, networkIndex, buildings)
+  return entries.filter((entry, index) => (
+    entry.kind !== 'location' || (index > 0 && index < entries.length - 1)
+  ))
+}
+
 function renderJourneyStatus(state: JourneyResultsState) {
   if (state.status === 'loading') {
     return <p className="journey-status" role="status" aria-live="polite">Calculating recommended Journey…</p>
@@ -255,15 +268,15 @@ export function JourneyResults({
                   onClick={() => onSelectCandidate?.(candidateKey)}
                 >
                   <span className="journey-option-summary-topline">
-                    {renderJourneyOptionHeader(path, index)}
+                    <span className="journey-option-duration">{formatDuration(path.totalDurationSeconds)}</span>
                     <span className="journey-option-estimate">
-                      <span className="journey-option-duration">{formatDuration(path.totalDurationSeconds)}</span>
+                      {renderJourneyModeSummary(summary)}
                       <DisclosureChevron expanded={selected} />
                     </span>
                   </span>
                   <span className="journey-option-summary-bottomline">
-                    {renderJourneyModeSummary(summary)}
-                    <span className="journey-option-walking-total">Walk {summary.walkingDurationLabel}</span>
+                    {renderJourneyOptionHeader(path, index)}
+                    <span className="journey-option-detail">{getJourneyOptionDetail(path, summary)}</span>
                   </span>
                 </button>
               </h3>
@@ -275,9 +288,6 @@ export function JourneyResults({
               >
                 {selected && (
                   <>
-                    <span className="journey-detail-distance">
-                      Total distance {formatDistance(path.totalDistanceMeters)}
-                    </span>
                     {journeyNotice && (
                       <p className="journey-notice" role="note">
                         {journeyNotice}
@@ -287,7 +297,7 @@ export function JourneyResults({
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
                     >
-                      {getJourneyTimelineEntries(path, venues, networkIndex, buildings).map(renderJourneyTimelineEntry)}
+                      {getJourneyLegEntries(path, venues, networkIndex, buildings).map(renderJourneyTimelineEntry)}
                     </ol>
                   </>
                 )}

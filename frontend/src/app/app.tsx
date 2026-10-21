@@ -342,7 +342,26 @@ function App() {
     })
   }, [])
 
+  // Favourite stops are shown in the trip search before anything is typed.
+  const planSearchSuggestions = useMemo(() => {
+    const { transitIndex } = state
+    if (!transitIndex) return []
+    return stopsWorkflow.state.favoriteStopIds.flatMap((stopId) => {
+      const stop = transitIndex.stopById.get(stopId)
+      return stop
+        ? [{
+          endpoint: { kind: 'stop' as const, id: stop.id },
+          label: stop.longName,
+          detail: stop.shortName.trim().toLowerCase() === stop.id.trim().toLowerCase()
+            ? ''
+            : `${stop.shortName} (${stop.id})`,
+        }]
+        : []
+    })
+  }, [state, stopsWorkflow.state.favoriteStopIds])
+
   const planContentProps: AppViewsProps['views']['plan'] = {
+    searchSuggestions: planSearchSuggestions,
     tripRequest: state.tripRequest,
     venues: state.venues,
     buildings: state.buildings,

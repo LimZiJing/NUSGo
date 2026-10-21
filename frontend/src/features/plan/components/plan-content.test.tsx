@@ -279,9 +279,9 @@ describe('PlanContent trip card', () => {
 
     rerender(<PlanContent
       {...controls}
-      originLocationRequest={{ status: 'error', error: 'Device location is unavailable. Please try again.' }}
+      originLocationRequest={{ status: 'error', error: 'Location is unavailable. Try again.' }}
     />)
-    expect(screen.getByText('Device location is unavailable. Please try again.')).toBeTruthy()
+    expect(screen.getByText('Location is unavailable. Try again.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry current location' })).toBeTruthy()
 
     rerender(<PlanContent

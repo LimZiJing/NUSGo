@@ -2339,7 +2339,7 @@ describe('navigation session', () => {
     await waitForState(session, (state) => state.originLocationRequest.status === 'error')
 
     expect(session.getState().originLocationRequest.error)
-      .toBe('Location permission was denied. Please allow location access and try again.')
+      .toBe('Location is off. Allow access to use it.')
     expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
 
     request.mockResolvedValueOnce({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })

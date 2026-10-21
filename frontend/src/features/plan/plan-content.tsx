@@ -64,55 +64,57 @@ export function PlanContent({
         className="navigation-panel-content navigation-panel-scroll-content plan-content-panel"
       >
         <div className="plan-endpoint-picker">
-          <PlanEndpointControl
-            key={`origin:${tripRequest.origin ? getTripEndpointKey(tripRequest.origin) : 'none'}`}
-            role="origin"
-            endpoint={tripRequest.origin}
-            venues={venues}
-          buildings={buildings}
-            networkIndex={networkIndex}
-            searchQuery={form.searchQueries.origin}
-            onSearchQueryChange={(query) => form.onSearchQueryChange('origin', query)}
-            onSearchFocus={onSearchFocus}
-            onSearchCancel={onSearchCancel}
-            onSearchResult={onSearchResult}
-            onSelect={(endpoint) => form.onSelectEndpoint('origin', endpoint)}
-            onClear={form.onClearOriginEndpoint}
-            originLocationRequest={originLocationRequest}
-            onUseCurrentLocation={onUseCurrentLocationForOrigin}
-            onCancelOriginLocationRequest={onCancelOriginLocationRequest}
-          />
-          <PlanEndpointControl
-            key={`destination:${tripRequest.destination ? getTripEndpointKey(tripRequest.destination) : 'none'}`}
-            role="destination"
-            endpoint={tripRequest.destination}
-            venues={venues}
-          buildings={buildings}
-            networkIndex={networkIndex}
-            searchQuery={form.searchQueries.destination}
-            onSearchQueryChange={(query) => form.onSearchQueryChange('destination', query)}
-            onSearchFocus={onSearchFocus}
-            onSearchCancel={onSearchCancel}
-            onSearchResult={onSearchResult}
-            onSelect={(endpoint) => form.onSelectEndpoint('destination', endpoint)}
-            onClear={form.onClearDestinationEndpoint}
-          />
-          <IconButton
-            variant="plain"
-            className="plan-endpoint-swap"
-            label="Swap origin and destination"
-            icon={<ArrowDownUpIcon />}
-            onClick={form.onSwap}
-            disabled={!tripRequest.origin || !tripRequest.destination}
-          />
+          <div className="plan-endpoint-rows">
+            <PlanEndpointControl
+              key={`origin:${tripRequest.origin ? getTripEndpointKey(tripRequest.origin) : 'none'}`}
+              role="origin"
+              endpoint={tripRequest.origin}
+              venues={venues}
+              buildings={buildings}
+              networkIndex={networkIndex}
+              searchQuery={form.searchQueries.origin}
+              onSearchQueryChange={(query) => form.onSearchQueryChange('origin', query)}
+              onSearchFocus={onSearchFocus}
+              onSearchCancel={onSearchCancel}
+              onSearchResult={onSearchResult}
+              onSelect={(endpoint) => form.onSelectEndpoint('origin', endpoint)}
+              onClear={form.onClearOriginEndpoint}
+              originLocationRequest={originLocationRequest}
+              onUseCurrentLocation={onUseCurrentLocationForOrigin}
+              onCancelOriginLocationRequest={onCancelOriginLocationRequest}
+            />
+            <PlanEndpointControl
+              key={`destination:${tripRequest.destination ? getTripEndpointKey(tripRequest.destination) : 'none'}`}
+              role="destination"
+              endpoint={tripRequest.destination}
+              venues={venues}
+              buildings={buildings}
+              networkIndex={networkIndex}
+              searchQuery={form.searchQueries.destination}
+              onSearchQueryChange={(query) => form.onSearchQueryChange('destination', query)}
+              onSearchFocus={onSearchFocus}
+              onSearchCancel={onSearchCancel}
+              onSearchResult={onSearchResult}
+              onSelect={(endpoint) => form.onSelectEndpoint('destination', endpoint)}
+              onClear={form.onClearDestinationEndpoint}
+            />
+            <IconButton
+              variant="plain"
+              className="plan-endpoint-swap"
+              label="Swap origin and destination"
+              icon={<ArrowDownUpIcon />}
+              onClick={form.onSwap}
+              disabled={!tripRequest.origin || !tripRequest.destination}
+            />
+          </div>
           <button
             type="button"
             className="plan-content-submit"
             onClick={form.onPlanJourney}
             disabled={path.status === 'loading'}
             aria-label="Get route"
-            title="Get route"
           >
+            <span>Get route</span>
             <ArrowRightIcon />
           </button>
         </div>

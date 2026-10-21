@@ -636,6 +636,38 @@
     overflow: visible;
   }
 
+  /* With a trip set, the trip card stays put and only the journey options scroll,
+     so the scrollbar starts at the options rather than at the top of the sheet. */
+  .navigation-panel .plan-content-panel-trip,
+  .navigation-panel[data-detent='full'] .plan-content-panel-trip {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .navigation-panel[data-detent='full'] .plan-content-panel-trip {
+    height: 100%;
+  }
+
+  .plan-content-panel-trip .plan-trip-pin {
+    position: static;
+    background: none;
+  }
+
+  .plan-results {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: start;
+    gap: var(--space-1);
+    min-height: 0;
+    /* Reaches into the panel's end padding so the scrollbar sits at the sheet's edge. */
+    margin-inline-end: calc(-1 * var(--space-2));
+    padding-inline-end: var(--space-2);
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
 }
 
 @media (min-width: 769px) {

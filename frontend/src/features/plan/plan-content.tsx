@@ -85,7 +85,7 @@ export function PlanContent({
     <div className="plan-content">
       <div
         id={PLAN_CONTENT_PANEL_ID}
-        className="navigation-panel-content navigation-panel-scroll-content plan-content-panel"
+        className={`navigation-panel-content navigation-panel-scroll-content plan-content-panel${searchRole ? '' : ' plan-content-panel-trip'}`}
       >
         <h2 className="visually-hidden">Plan trip</h2>
         {searchRole ? (
@@ -120,28 +120,31 @@ export function PlanContent({
             />
           </div>
         )}
-        {form.validationMessage && !searchRole && (
-          <div className="plan-content-footer">
-            <p className="plan-validation" role="status" aria-live="polite" aria-atomic="true">
-              {form.validationMessage}
-            </p>
-          </div>
-        )}
-        {simulatedAtMs !== null && !searchRole && (
-          <p className="journey-notice" role="note">
-            Simulated Journey at {formatSingaporeDateTime(simulatedAtMs).replace('T', ' ')} SGT.
-            Each bus boarding uses a 5-minute test wait; these are not live arrivals.
-          </p>
-        )}
         {!searchRole && (
-          <JourneyResults
-            state={path}
-            venues={venues}
-            buildings={buildings}
-            networkIndex={networkIndex}
-            simulated={simulatedAtMs !== null}
-            onSelectCandidate={onSelectJourneyOption}
-          />
+          // On the mobile sheet only this region scrolls, so the trip card stays put above it.
+          <div className="plan-results">
+            {form.validationMessage && (
+              <div className="plan-content-footer">
+                <p className="plan-validation" role="status" aria-live="polite" aria-atomic="true">
+                  {form.validationMessage}
+                </p>
+              </div>
+            )}
+            {simulatedAtMs !== null && (
+              <p className="journey-notice" role="note">
+                Simulated Journey at {formatSingaporeDateTime(simulatedAtMs).replace('T', ' ')} SGT.
+                Each bus boarding uses a 5-minute test wait; these are not live arrivals.
+              </p>
+            )}
+            <JourneyResults
+              state={path}
+              venues={venues}
+              buildings={buildings}
+              networkIndex={networkIndex}
+              simulated={simulatedAtMs !== null}
+              onSelectCandidate={onSelectJourneyOption}
+            />
+          </div>
         )}
       </div>
     </div>

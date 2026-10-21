@@ -890,7 +890,8 @@
   display: grid;
   gap: var(--space-2);
   padding-bottom: var(--space-1);
-  background: var(--surface-raised);
+  /* Matches the sheet's own tint so the pinned header does not read as a separate box. */
+  background: var(--surface-overlay-panel);
 }
 
 .plan-search-results {

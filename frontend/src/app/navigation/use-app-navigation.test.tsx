@@ -111,6 +111,26 @@ describe('useAppNavigation', () => {
     expect(options.dispatch).toHaveBeenLastCalledWith({ type: 'select-view', view: 'explore' })
   })
 
+  it('returns focus to a connected Explore stop result when Back is selected', () => {
+    const options = createOptions(true, 'explore')
+    const stopResultButton = document.createElement('button')
+    stopResultButton.dataset.focusId = 'stop-result-STOP-A'
+    document.body.appendChild(stopResultButton)
+    const backToStops = vi.fn()
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    try {
+      act(() => result.current.openStopFromExplore('STOP-A', stopResultButton))
+      act(() => result.current.backFromStopDetails(backToStops))
+
+      expect(backToStops).toHaveBeenCalledOnce()
+      expect(options.pendingExploreReturnFocusRef.current).toBe(stopResultButton)
+      expect(options.pendingExploreReturnFocusRef.current?.isConnected).toBe(true)
+    } finally {
+      stopResultButton.remove()
+    }
+  })
+
   it('keeps direct Stops details on the Stops list when Back is selected', () => {
     const options = createOptions(true, 'stops')
     const backToStops = vi.fn()

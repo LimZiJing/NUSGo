@@ -50,6 +50,10 @@ export interface ExplorePanelFocusBindings {
     buildingId: string,
     event: MouseEvent<HTMLButtonElement>,
   ) => void
+  readonly onStopSelect: (
+    stopId: string,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void
   readonly onBack: () => void
   readonly onSelectVenueSearch: () => void
   readonly onSelectBusRoutes: (event: MouseEvent<HTMLButtonElement>) => void
@@ -317,6 +321,12 @@ export function useExplorePanelFocus({
     onBuildingSelect?.(buildingId)
   }
 
+  // Stop details return to Find venue through App's return context, so no Explore focus history is pushed.
+  const handleStopSelect = (stopId: string, event: MouseEvent<HTMLButtonElement>): void => {
+    onSearchResult?.()
+    handleFocusStop(stopId, event.currentTarget)
+  }
+
   const handleBack = (): void => {
     rememberExploreBackFocus()
     onBack()
@@ -365,6 +375,7 @@ export function useExplorePanelFocus({
     onFocusCapture: handleExploreFocusCapture,
     onVenueSelect: handleVenueSelect,
     onBuildingSelect: handleBuildingSelect,
+    onStopSelect: handleStopSelect,
     onBack: handleBack,
     onSelectVenueSearch: handleSelectVenueSearch,
     onSelectBusRoutes: handleSelectBusRoutes,

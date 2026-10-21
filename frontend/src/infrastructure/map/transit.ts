@@ -5,6 +5,7 @@ import type {
   PaddingOptions,
 } from 'maplibre-gl'
 import type { MapViewportInsets } from '../../app/contracts/map'
+import { getOverlayPalette } from './overlay-theme'
 import type { TransitIndex } from '../../domain/transit'
 import { isMobileLayoutWidth } from '../../domain/layout-breakpoint'
 import type {
@@ -164,6 +165,8 @@ export function getTransitRouteFitPadding(
 export interface TransitRouteLayers {
   setSelection(routeId: string | null, overlappingRouteIds?: ReadonlySet<string>): void
   setJourneyActive(active: boolean): void
+  /** Recolours the route layers after the document theme changes. */
+  refreshTheme(): void
   fitRoute(
     index: TransitIndex,
     geometry: BusRouteGeometry,
@@ -240,7 +243,7 @@ function setTransitRouteSelection(
       map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-offset', 0)
     }
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-offset', 0)
-    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-color', BASE_ROUTE_LINE_COLOR)
+    map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-color', getOverlayPalette().routeBase)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', 0.55)
     map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', BASE_ROUTE_LINE_WIDTH)
     if (map.getLayer(TRANSIT_ROUTE_DIRECTION_LAYER_ID)) {
@@ -283,7 +286,7 @@ function setTransitRouteSelection(
   map.setPaintProperty(
     TRANSIT_ROUTE_LAYER_ID,
     'line-color',
-    ['case', routeMatch, ['get', 'color'], BASE_ROUTE_LINE_COLOR],
+    ['case', routeMatch, ['get', 'color'], getOverlayPalette().routeBase],
   )
   map.setPaintProperty(
     TRANSIT_ROUTE_LAYER_ID,
@@ -352,8 +355,19 @@ export function createTransitRouteLayers(
       data: geometry,
     })
   }
-  if (ownsCasingLayer) map.addLayer(TRANSIT_ROUTE_CASING_LAYER)
-  if (ownsRouteLayer) map.addLayer(TRANSIT_ROUTE_LAYER)
+  const palette = getOverlayPalette()
+  if (ownsCasingLayer) {
+    map.addLayer({
+      ...TRANSIT_ROUTE_CASING_LAYER,
+      paint: { ...TRANSIT_ROUTE_CASING_LAYER.paint, 'line-color': palette.routeCasing },
+    })
+  }
+  if (ownsRouteLayer) {
+    map.addLayer({
+      ...TRANSIT_ROUTE_LAYER,
+      paint: { ...TRANSIT_ROUTE_LAYER.paint, 'line-color': palette.routeBase },
+    })
+  }
   if (ownsDirectionImage) {
     map.addImage(TRANSIT_ROUTE_DIRECTION_IMAGE_ID, createDirectionChevronImage(), {
       pixelRatio: DIRECTION_IMAGE_PIXEL_RATIO,
@@ -384,6 +398,15 @@ export function createTransitRouteLayers(
 
       setTransitRouteSelection(map, selectedRouteId, selectedOverlappingRouteIds)
       setTransitRouteVisibility(map, true)
+    },
+    refreshTheme() {
+      if (disposed) return
+      if (map.getLayer(TRANSIT_ROUTE_CASING_LAYER_ID)) {
+        map.setPaintProperty(TRANSIT_ROUTE_CASING_LAYER_ID, 'line-color', getOverlayPalette().routeCasing)
+      }
+      if (!journeyActive) {
+        setTransitRouteSelection(map, selectedRouteId, selectedOverlappingRouteIds)
+      }
     },
     fitRoute(index, routeGeometry, routeId, viewportInsets) {
       if (disposed) return

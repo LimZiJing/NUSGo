@@ -13,6 +13,7 @@ import type { DeviceLocationFix } from '../../domain/location/types'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
+import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
 import {
@@ -67,6 +68,10 @@ function getJourneyFitInsets(
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
+  const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
+    transitRouteLayers?.refreshTheme()
+    shuttleStopMarkers?.refreshTheme()
+  })
   let selectedVenueMarker: VenueMarker | null = null
   let endpointMarkers: TripEndpointMarkers | null = null
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
@@ -693,6 +698,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       groupLabels = null
       blockNumbers?.dispose()
       blockNumbers = null
+      stopBasemapThemeWatch()
       lifecycle.dispose()
     },
   }

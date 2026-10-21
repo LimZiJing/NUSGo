@@ -162,14 +162,14 @@
   width: 24px;
   height: 24px;
   fill: none;
-  stroke: var(--text-secondary);
+  stroke: var(--text-primary);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
 }
 
 .location-control-icon circle:last-of-type {
-  fill: var(--text-secondary);
+  fill: var(--text-primary);
   stroke: none;
 }
 

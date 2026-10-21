@@ -2338,6 +2338,70 @@ describe('navigation session', () => {
     expect(session.getState().tripRequest.origin).toBeNull()
   })
 
+  it.each([
+    {
+      name: 'swap',
+      setup: (session: NavigationSession) => session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' }),
+      cancel: (session: NavigationSession) => session.swapTripEndpoints(),
+      expectedOrigin: null,
+      expectedDestination: { kind: 'venue', id: 'COM1' },
+    },
+    {
+      name: 'clear origin',
+      setup: (session: NavigationSession) => session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' }),
+      cancel: (session: NavigationSession) => session.clearTripEndpoint('origin'),
+      expectedOrigin: null,
+      expectedDestination: null,
+    },
+    {
+      name: 'Clear all',
+      setup: (session: NavigationSession) => {
+        session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+        session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+      },
+      cancel: (session: NavigationSession) => session.clearTrip(),
+      expectedOrigin: null,
+      expectedDestination: null,
+    },
+    {
+      name: 'Navigate',
+      setup: (session: NavigationSession) => session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' }),
+      cancel: (session: NavigationSession) => session.navigateTo({ kind: 'stop', id: 'STOP-A' }),
+      expectedOrigin: { kind: 'venue', id: 'COM1' },
+      expectedDestination: { kind: 'stop', id: 'STOP-A' },
+    },
+  ])('cancels a pending origin capture when $name changes the trip', async ({
+    setup,
+    cancel,
+    expectedOrigin,
+    expectedDestination,
+  }) => {
+    const locationRequest = createDeferred<{
+      readonly longitude: number
+      readonly latitude: number
+      readonly accuracy: number
+      readonly timestamp: number
+    }>()
+    const dependencies = createDependencies()
+    vi.mocked(dependencies.locationTracker.requestCurrentLocation!).mockReturnValue(locationRequest.promise)
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    setup(session)
+
+    session.useCurrentLocationForOrigin()
+    expect(session.getState().originLocationRequest).toEqual({ status: 'requesting', error: null })
+
+    cancel(session)
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+
+    locationRequest.resolve({ longitude: 103.12345, latitude: 1.23456, accuracy: 20, timestamp: 2_000 })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+    expect(session.getState().tripRequest.origin).toEqual(expectedOrigin)
+    expect(session.getState().tripRequest.destination).toEqual(expectedDestination)
+  })
+
   it('disables and disposes the location tracker through session commands', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

@@ -124,6 +124,68 @@ describe('PlanEndpointControl', () => {
     expect(markup).not.toContain('undefined')
   })
 
+  it('offers Use current location for an origin that is not yet a Current location', () => {
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={venues}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+        onUseCurrentLocation={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Use current location"')
+  })
+
+  it('hides Use current location when the origin is already a Current location', () => {
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={{
+          kind: 'current-location',
+          coordinate: { longitude: 103.78, latitude: 1.29 },
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+        onUseCurrentLocation={() => undefined}
+      />,
+    )
+
+    expect(markup).not.toContain('Use current location')
+    expect(markup).not.toContain('Retry current location')
+    expect(markup).toContain('aria-label="Clear origin"')
+  })
+
+  it('announces the busy state through the search status region while the origin is being located', () => {
+    const markup = renderToStaticMarkup(
+      <PlanEndpointControl
+        role="origin"
+        endpoint={null}
+        venues={venues}
+        networkIndex={networkIndex}
+        searchQuery=""
+        onSearchQueryChange={() => undefined}
+        onSelect={() => undefined}
+        onClear={() => undefined}
+        onUseCurrentLocation={() => undefined}
+        originLocationRequest={{ status: 'requesting', error: null }}
+      />,
+    )
+
+    expect(markup).toMatch(
+      /<p id="trip-origin-search-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*>Getting your location…<\/p>/,
+    )
+  })
+
   it('uses the shared location search model and shows stable venue and stop IDs', () => {
     const venueMarkup = renderToStaticMarkup(
       <PlanEndpointControl

@@ -698,6 +698,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       groupLabels = null
       blockNumbers?.dispose()
       blockNumbers = null
+      stopBasemapThemeWatch()
       lifecycle.dispose()
     },
   }

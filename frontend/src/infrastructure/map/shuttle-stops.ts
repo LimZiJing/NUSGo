@@ -516,6 +516,10 @@ export function createShuttleStopMarkers(
         ))
       updateBusStopMarkerPresentation(state)
     },
+    refreshTheme() {
+      if (disposed) return
+      updateBusStopMarkerPresentation(state)
+    },
     dispose() {
       if (disposed) return
       disposed = true

@@ -92,6 +92,8 @@ export function VenueSearch({
           <ScrollArea className="navigation-panel-scroll-content explore-content-results" aria-label="Venue search results">
             {searchState.results.length > 0 ? (
               searchState.results.map((item) => {
+                // Stop results are rendered in the next change; no caller passes stops yet.
+                if (item.kind === 'stop') return null
                 if (item.kind === 'building') {
                   const { entry } = item
                   const secondary = describeBuildingEntry(entry)

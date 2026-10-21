@@ -13,8 +13,11 @@ body {
   margin: 0;
 }
 
-button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not([data-hover-filter='none']):hover {
-  filter: brightness(0.85);
+/* Touch browsers keep :hover after a tap, which left tapped buttons dimmed until the next tap elsewhere. */
+@media (hover: hover) {
+  button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not([data-hover-filter='none']):hover {
+    filter: brightness(0.85);
+  }
 }
 
 h1,

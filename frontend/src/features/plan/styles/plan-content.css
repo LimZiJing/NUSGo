@@ -743,15 +743,12 @@
 
 .plan-trip-line-text {
   min-width: 0;
+  font-size: var(--font-size-md);
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
-.plan-trip-line-origin .plan-trip-line-text {
-  font-size: var(--font-size-sm);
-}
-
-.plan-trip-line-destination .plan-trip-line-text {
+.plan-trip-line-text {
   font-weight: 600;
 }
 

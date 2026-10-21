@@ -21,12 +21,21 @@ import {
   type ShuttleStopMarkers,
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
-import { createVenueMarker, type VenueMarker } from './venue-markers'
+import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import type { TransitIndex } from '../../domain/transit'
-import type { BuildingIndex } from '../../domain/venue/building-index'
+import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import {
+  createBlockLabelGeoJson,
+  createBlockNumberGeoJson,
+  createGroupLabelGeoJson,
+  installBlockLabels,
+  installBlockNumbers,
+  installGroupLabels,
+  type BlockLabels,
+} from './block-labels'
 
 const EMPTY_ROUTE_OVERLAP: ReadonlySet<string> = new Set()
 const EMPTY_VIEWPORT_INSETS: MapViewportInsets = {
@@ -75,6 +84,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentVenues: VenueLocationMap = {}
   let currentBuildings: BuildingIndex | null = null
   let currentTransitIndex: TransitIndex | null = null
+  let buildingLabelEntries: readonly BuildingEntry[] = []
+  let buildingLabels: BlockLabels | null = null
+  let groupLabels: BlockLabels | null = null
+  let blockNumbers: BlockLabels | null = null
+  let styleReady = false
   let stopsPinStopId: string | null = null
   let stopsPinVisible = false
   let nearbyStopIds: readonly string[] = []
@@ -103,6 +117,26 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   // The application observes `ready`; this handler also prevents an unobserved
   // style-load rejection when a session is disposed before consumers await it.
   void ready.catch(() => undefined)
+
+  // Block labels need the style, so they are installed once it loads and replaced on later calls.
+  const applyBuildingLabels = (): void => {
+    if (disposed || !styleReady) return
+    const geoJson = createBlockLabelGeoJson(buildingLabelEntries)
+    const groupGeoJson = createGroupLabelGeoJson(buildingLabelEntries)
+    // Skip creating an empty source and layer; once installed, empty data simply clears the labels.
+    if (buildingLabels === null && geoJson.features.length === 0) return
+    // Only the first handle owns the source and layer; later calls just refresh the data.
+    const handle = installBlockLabels(map, geoJson)
+    buildingLabels ??= handle
+    const groupHandle = installGroupLabels(map, groupGeoJson)
+    groupLabels ??= groupHandle
+    const numberHandle = installBlockNumbers(map, createBlockNumberGeoJson(buildingLabelEntries))
+    blockNumbers ??= numberHandle
+  }
+  void lifecycle.ready.then(() => {
+    styleReady = true
+    applyBuildingLabels()
+  }, () => undefined)
 
   const clearVenueMarker = () => {
     selectedVenueMarker?.dispose()
@@ -444,6 +478,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       syncEndpointMarkers()
     },
 
+    setBuildingLabels(entries: readonly BuildingEntry[]) {
+      if (disposed) return
+      buildingLabelEntries = entries
+      applyBuildingLabels()
+    },
+
     setPlanLayersVisible(visible: boolean) {
       if (disposed || planLayersVisible === visible) return
       planLayersVisible = visible
@@ -609,8 +649,15 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
 
       clearVenueMarker()
+      const { highlighted } = building
+      const isHighlighted = (location: NonNullable<VenueLocation['location']>) =>
+        highlighted !== undefined && location.x === highlighted.x && location.y === highlighted.y
       const markers = building.locations.flatMap((location) => {
-        const marker = createVenueMarker(map, { roomName: building.name, location })
+        const marker = createVenueMarker(
+          map,
+          { roomName: building.name, location },
+          isHighlighted(location) ? BUILDING_PART_HIGHLIGHT_COLOR : undefined,
+        )
         return marker ? [marker] : []
       })
       if (markers.length === 0) return
@@ -620,7 +667,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           for (const marker of markers) marker.dispose()
         },
       }
-      pendingCameraFit = { kind: 'building', locations: building.locations }
+      pendingCameraFit = {
+        kind: 'building',
+        locations: highlighted ? [highlighted] : building.locations,
+      }
     },
 
     clearVenue() {
@@ -637,6 +687,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
+      buildingLabels?.dispose()
+      buildingLabels = null
+      groupLabels?.dispose()
+      groupLabels = null
+      blockNumbers?.dispose()
+      blockNumbers = null
       lifecycle.dispose()
     },
   }

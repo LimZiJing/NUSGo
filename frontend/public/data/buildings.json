@@ -1261,9 +1261,16 @@
     },
     {
       "id": "eusoff-hall-block-a",
-      "name": "Eusoff Hall Block A",
-      "aliases": [],
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block A"
+      ],
       "elementId": "142219217",
+      "groupKey": "eusoff-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "10 Kent Ridge Drive",
       "postal": "119242",
       "location": {
@@ -1281,9 +1288,17 @@
     },
     {
       "id": "eusoff-hall-block-b-and-c",
-      "name": "Eusoff Hall Block B and C",
-      "aliases": [],
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block B and C"
+      ],
       "elementId": "142219214",
+      "groupKey": "eusoff-hall",
+      "partLabel": "Blocks B-C",
+      "blocks": [
+        "B",
+        "C"
+      ],
       "address": "10 Kent Ridge Drive",
       "postal": "119242",
       "location": {
@@ -1301,9 +1316,16 @@
     },
     {
       "id": "eusoff-hall-block-d",
-      "name": "Eusoff Hall Block D",
-      "aliases": [],
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block D"
+      ],
       "elementId": "142219212",
+      "groupKey": "eusoff-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "10 Kent Ridge Drive",
       "postal": "119242",
       "location": {
@@ -1321,9 +1343,16 @@
     },
     {
       "id": "eusoff-hall-block-e",
-      "name": "Eusoff Hall Block E",
-      "aliases": [],
+      "name": "Eusoff Hall",
+      "aliases": [
+        "Eusoff Hall Block E"
+      ],
       "elementId": "142219213",
+      "groupKey": "eusoff-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "10 Kent Ridge Drive",
       "postal": "119242",
       "location": {
@@ -1503,6 +1532,8 @@
       "name": "Helix House",
       "aliases": [],
       "elementId": "HELIX_HOUSE",
+      "groupKey": "helix-house",
+      "groupRole": "entrance",
       "address": "37 Prince George's Park",
       "postal": "118430",
       "location": {
@@ -1520,11 +1551,19 @@
     },
     {
       "id": "helix-house-block-15-17",
-      "name": "Helix House Block 15 - 17",
+      "name": "Helix House",
       "aliases": [
-        "17"
+        "17",
+        "Helix House Block 15 - 17"
       ],
       "elementId": "238932766",
+      "groupKey": "helix-house",
+      "partLabel": "Blocks 15-17",
+      "blocks": [
+        "15",
+        "16",
+        "17"
+      ],
       "address": "37 Prince George's Park",
       "postal": "118430",
       "location": {
@@ -1542,9 +1581,17 @@
     },
     {
       "id": "helix-house-block-18-and-19",
-      "name": "Helix House Block 18 and 19",
-      "aliases": [],
+      "name": "Helix House",
+      "aliases": [
+        "Helix House Block 18 and 19"
+      ],
       "elementId": "238932773",
+      "groupKey": "helix-house",
+      "partLabel": "Blocks 18-19",
+      "blocks": [
+        "18",
+        "19"
+      ],
       "address": "37 Prince George's Park",
       "postal": "118430",
       "location": {
@@ -1804,10 +1851,10 @@
     {
       "id": "kent-ridge-hall",
       "name": "Kent Ridge Hall",
-      "aliases": [
-        "KRH"
-      ],
+      "aliases": [],
       "elementId": "627395978",
+      "groupKey": "kent-ridge-hall",
+      "groupRole": "entrance",
       "address": "10 Heng Mui Keng Ter",
       "postal": "119617",
       "location": {
@@ -1827,9 +1874,16 @@
     },
     {
       "id": "kent-ridge-hall-block-a",
-      "name": "Kent Ridge Hall Block A",
-      "aliases": [],
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block A"
+      ],
       "elementId": "455250293",
+      "groupKey": "kent-ridge-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "10 Heng Mui Keng Ter",
       "postal": "119617",
       "location": {
@@ -1847,9 +1901,16 @@
     },
     {
       "id": "kent-ridge-hall-block-b",
-      "name": "Kent Ridge Hall Block B",
-      "aliases": [],
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block B"
+      ],
       "elementId": "455250298",
+      "groupKey": "kent-ridge-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "10 Heng Mui Keng Ter",
       "postal": "119617",
       "location": {
@@ -1867,9 +1928,16 @@
     },
     {
       "id": "kent-ridge-hall-block-c",
-      "name": "Kent Ridge Hall Block C",
-      "aliases": [],
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block C"
+      ],
       "elementId": "455250297",
+      "groupKey": "kent-ridge-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "10 Heng Mui Keng Ter",
       "postal": "119617",
       "location": {
@@ -1887,9 +1955,16 @@
     },
     {
       "id": "kent-ridge-hall-block-d",
-      "name": "Kent Ridge Hall Block D",
-      "aliases": [],
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block D"
+      ],
       "elementId": "455250296",
+      "groupKey": "kent-ridge-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "10 Heng Mui Keng Ter",
       "location": {
         "x": 103.77437,
@@ -1906,9 +1981,16 @@
     },
     {
       "id": "kent-ridge-hall-block-e",
-      "name": "Kent Ridge Hall Block E",
-      "aliases": [],
+      "name": "Kent Ridge Hall",
+      "aliases": [
+        "Kent Ridge Hall Block E"
+      ],
       "elementId": "455250295",
+      "groupKey": "kent-ridge-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "10 Heng Mui Keng Ter",
       "location": {
         "x": 103.77412,
@@ -1925,9 +2007,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-a",
-      "name": "King Edward VII Hall Block A",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block A"
+      ],
       "elementId": "238933469",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -1945,9 +2034,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-b",
-      "name": "King Edward VII Hall Block B",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block B"
+      ],
       "elementId": "15521866",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -1965,9 +2061,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-c",
-      "name": "King Edward VII Hall Block C",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block C"
+      ],
       "elementId": "15521865",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -1985,9 +2088,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-d",
-      "name": "King Edward VII Hall Block D",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block D"
+      ],
       "elementId": "238933484",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2005,10 +2115,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-e-1",
-      "name": "King Edward VII Hall Block E",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block E"
+      ],
       "elementId": "238933477",
-      "groupKey": "king-edward-vii-hall-block-e",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block E (part 1)",
+      "blocks": [
+        "E"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2026,10 +2142,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-e-2",
-      "name": "King Edward VII Hall Block E",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block E"
+      ],
       "elementId": "238933479",
-      "groupKey": "king-edward-vii-hall-block-e",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block E (part 2)",
+      "blocks": [
+        "E"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2047,10 +2169,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-f-1",
-      "name": "King Edward VII Hall Block F",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block F"
+      ],
       "elementId": "238933473",
-      "groupKey": "king-edward-vii-hall-block-f",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block F (part 1)",
+      "blocks": [
+        "F"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2068,10 +2196,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-f-2",
-      "name": "King Edward VII Hall Block F",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block F"
+      ],
       "elementId": "238933482",
-      "groupKey": "king-edward-vii-hall-block-f",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block F (part 2)",
+      "blocks": [
+        "F"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2089,9 +2223,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-g",
-      "name": "King Edward VII Hall Block G",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block G"
+      ],
       "elementId": "15521864",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block G",
+      "blocks": [
+        "G"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2109,9 +2250,16 @@
     },
     {
       "id": "king-edward-vii-hall-block-h",
-      "name": "King Edward VII Hall Block H",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Block H"
+      ],
       "elementId": "238933488",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Block H",
+      "blocks": [
+        "H"
+      ],
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2129,9 +2277,13 @@
     },
     {
       "id": "king-edward-vii-hall-communal-hall",
-      "name": "King Edward VII Hall Communal Hall",
-      "aliases": [],
+      "name": "King Edward VII Hall",
+      "aliases": [
+        "King Edward VII Hall Communal Hall"
+      ],
       "elementId": "238933471",
+      "groupKey": "king-edward-vii-hall",
+      "partLabel": "Communal Hall",
       "address": "1A Kent Ridge Road",
       "postal": "119224",
       "location": {
@@ -2139,7 +2291,9 @@
         "y": 1.29234
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "KEVII"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -2217,16 +2371,39 @@
     },
     {
       "id": "lighthouse-block-26",
-      "name": "LightHouse Block 26",
-      "aliases": [],
+      "name": "LightHouse",
+      "aliases": [
+        "LightHouse Block 26",
+        "LightHouse Block 27 and 28"
+      ],
       "elementId": "238932790",
+      "groupKey": "lighthouse",
+      "partLabel": "Blocks 26-28",
+      "blocks": [
+        "26",
+        "27",
+        "28"
+      ],
+      "blockLocations": {
+        "26": {
+          "x": 103.78158,
+          "y": 1.29062
+        },
+        "27": {
+          "x": 103.78169,
+          "y": 1.29029
+        },
+        "28": {
+          "x": 103.78169,
+          "y": 1.29029
+        }
+      },
       "address": "24 Prince George's Park",
       "postal": "118424",
       "location": {
-        "x": 103.78158,
-        "y": 1.29062
+        "x": 103.781635,
+        "y": 1.290455
       },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
@@ -2236,30 +2413,18 @@
       ]
     },
     {
-      "id": "lighthouse-block-27-and-28",
-      "name": "LightHouse Block 27 and 28",
-      "aliases": [],
-      "elementId": "238932793",
-      "address": "24 Prince George's Park",
-      "postal": "118424",
-      "location": {
-        "x": 103.78169,
-        "y": 1.29029
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932793"
-        }
-      ]
-    },
-    {
       "id": "lighthouse-block-29-and-30",
-      "name": "LightHouse Block 29 and 30",
-      "aliases": [],
+      "name": "LightHouse",
+      "aliases": [
+        "LightHouse Block 29 and 30"
+      ],
       "elementId": "238932794",
+      "groupKey": "lighthouse",
+      "partLabel": "Blocks 29-30",
+      "blocks": [
+        "29",
+        "30"
+      ],
       "address": "24 Prince George's Park",
       "postal": "118424",
       "location": {
@@ -3482,26 +3647,6 @@
       ]
     },
     {
-      "id": "pgp-foyer",
-      "name": "PGP Foyer",
-      "aliases": [],
-      "elementId": "251677507",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78114,
-        "y": 1.29097
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "251677507"
-        }
-      ]
-    },
-    {
       "id": "pgp-gym",
       "name": "PGP Gym",
       "aliases": [],
@@ -3547,9 +3692,16 @@
     },
     {
       "id": "pgp-residence-1-block-1",
-      "name": "PGP Residence 1 Block 1",
-      "aliases": [],
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 1"
+      ],
       "elementId": "238932786",
+      "groupKey": "pgp-residence-1",
+      "partLabel": "Block 1",
+      "blocks": [
+        "1"
+      ],
       "address": "21 Prince George's Park",
       "postal": "118420",
       "location": {
@@ -3567,9 +3719,16 @@
     },
     {
       "id": "pgp-residence-1-block-2",
-      "name": "PGP Residence 1 Block 2",
-      "aliases": [],
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 2"
+      ],
       "elementId": "238932783",
+      "groupKey": "pgp-residence-1",
+      "partLabel": "Block 2",
+      "blocks": [
+        "2"
+      ],
       "address": "21 Prince George's Park",
       "postal": "118420",
       "location": {
@@ -3587,9 +3746,16 @@
     },
     {
       "id": "pgp-residence-1-block-3",
-      "name": "PGP Residence 1 Block 3",
-      "aliases": [],
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 3"
+      ],
       "elementId": "238932785",
+      "groupKey": "pgp-residence-1",
+      "partLabel": "Block 3",
+      "blocks": [
+        "3"
+      ],
       "address": "21 Prince George's Park",
       "postal": "118420",
       "location": {
@@ -3607,9 +3773,16 @@
     },
     {
       "id": "pgp-residence-1-block-4",
-      "name": "PGP Residence 1 Block 4",
-      "aliases": [],
+      "name": "PGP Residence 1",
+      "aliases": [
+        "PGP Residence 1 Block 4"
+      ],
       "elementId": "238932792",
+      "groupKey": "pgp-residence-1",
+      "partLabel": "Block 4",
+      "blocks": [
+        "4"
+      ],
       "address": "21 Prince George's Park",
       "postal": "118420",
       "location": {
@@ -3628,8 +3801,13 @@
     {
       "id": "pgp-residence-2",
       "name": "PGP Residence 2",
-      "aliases": [],
+      "aliases": [
+        "PGP Foyer",
+        "PGP Residence 2, Foyer and Canteen"
+      ],
       "elementId": "PGP_RESIDENCE_2",
+      "groupKey": "pgp-residence-2",
+      "groupRole": "entrance",
       "address": "27 Prince George's Park",
       "postal": "118425",
       "location": {
@@ -3647,16 +3825,46 @@
     },
     {
       "id": "pgp-residence-2-block-5",
-      "name": "PGP Residence 2 Block 5",
-      "aliases": [],
+      "name": "PGP Residence 2",
+      "aliases": [
+        "PGP Residence 2 Block 5",
+        "PGP Residence 2 Block 6",
+        "PGP Residence 2 Block 7",
+        "PGP Residence 2 Block 8"
+      ],
       "elementId": "238932778",
+      "groupKey": "pgp-residence-2",
+      "partLabel": "Blocks 5-8",
+      "blocks": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "blockLocations": {
+        "5": {
+          "x": 103.78176,
+          "y": 1.29101
+        },
+        "6": {
+          "x": 103.78148,
+          "y": 1.29088
+        },
+        "7": {
+          "x": 103.78121,
+          "y": 1.29083
+        },
+        "8": {
+          "x": 103.78086,
+          "y": 1.29085
+        }
+      },
       "address": "27 Prince George's Park",
       "postal": "118425",
       "location": {
-        "x": 103.78176,
-        "y": 1.29101
+        "x": 103.7813275,
+        "y": 1.2908925
       },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
@@ -3666,157 +3874,47 @@
       ]
     },
     {
-      "id": "pgp-residence-2-block-6",
-      "name": "PGP Residence 2 Block 6",
-      "aliases": [],
-      "elementId": "238932780",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78148,
-        "y": 1.29088
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932780"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-block-7",
-      "name": "PGP Residence 2 Block 7",
-      "aliases": [],
-      "elementId": "238932775",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78121,
-        "y": 1.29083
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932775"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-block-8",
-      "name": "PGP Residence 2 Block 8",
-      "aliases": [],
-      "elementId": "1084099106",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78086,
-        "y": 1.29085
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "1084099106"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-2-foyer-and-canteen",
-      "name": "PGP Residence 2, Foyer and Canteen",
-      "aliases": [],
-      "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER",
-      "address": "27 Prince George's Park",
-      "postal": "118425",
-      "location": {
-        "x": 103.78114,
-        "y": 1.29097
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "PGP_RESIDENCE_2_CANTEEN_FOYER"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-10",
-      "name": "PGP Residence 3 Block 10",
-      "aliases": [],
-      "elementId": "238932777",
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78032,
-        "y": 1.29119
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932777"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-11",
-      "name": "PGP Residence 3 Block 11",
-      "aliases": [],
-      "elementId": "238932781",
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78017,
-        "y": 1.29148
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932781"
-        }
-      ]
-    },
-    {
-      "id": "pgp-residence-3-block-12",
-      "name": "PGP Residence 3 Block 12",
-      "aliases": [],
-      "elementId": "238932776",
-      "address": "29 Prince George's Park",
-      "postal": "118426",
-      "location": {
-        "x": 103.78011,
-        "y": 1.29181
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "238932776"
-        }
-      ]
-    },
-    {
       "id": "pgp-residence-3-block-9",
-      "name": "PGP Residence 3 Block 9",
-      "aliases": [],
+      "name": "PGP Residence 3",
+      "aliases": [
+        "PGP Residence 3 Block 10",
+        "PGP Residence 3 Block 11",
+        "PGP Residence 3 Block 12",
+        "PGP Residence 3 Block 9"
+      ],
       "elementId": "238932782",
+      "groupKey": "pgp-residence-3",
+      "partLabel": "Blocks 9-12",
+      "blocks": [
+        "9",
+        "10",
+        "11",
+        "12"
+      ],
+      "blockLocations": {
+        "9": {
+          "x": 103.78056,
+          "y": 1.29098
+        },
+        "10": {
+          "x": 103.78032,
+          "y": 1.29119
+        },
+        "11": {
+          "x": 103.78017,
+          "y": 1.29148
+        },
+        "12": {
+          "x": 103.78011,
+          "y": 1.29181
+        }
+      },
       "address": "29 Prince George's Park",
       "postal": "118426",
       "location": {
-        "x": 103.78056,
-        "y": 1.29098
+        "x": 103.78029,
+        "y": 1.291365
       },
-      "locationKind": "centroid",
       "roomCodePrefixes": [],
       "sourceRefs": [
         {
@@ -3827,9 +3925,16 @@
     },
     {
       "id": "pgr-graduate-student-block-13",
-      "name": "PGR Graduate Student Block 13",
-      "aliases": [],
+      "name": "PGR Graduate Student",
+      "aliases": [
+        "PGR Graduate Student Block 13"
+      ],
       "elementId": "238932768",
+      "groupKey": "pgr-graduate-student",
+      "partLabel": "Block 13",
+      "blocks": [
+        "13"
+      ],
       "address": "39 Prince George's Park",
       "postal": "118431",
       "location": {
@@ -3847,9 +3952,16 @@
     },
     {
       "id": "pgr-graduate-student-block-14",
-      "name": "PGR Graduate Student Block 14",
-      "aliases": [],
+      "name": "PGR Graduate Student",
+      "aliases": [
+        "PGR Graduate Student Block 14"
+      ],
       "elementId": "238932769",
+      "groupKey": "pgr-graduate-student",
+      "partLabel": "Block 14",
+      "blocks": [
+        "14"
+      ],
       "address": "39 Prince George's Park",
       "postal": "118431",
       "location": {
@@ -3867,9 +3979,17 @@
     },
     {
       "id": "pioneer-house-block-20-and-21",
-      "name": "Pioneer House Block 20 and 21",
-      "aliases": [],
+      "name": "Pioneer House",
+      "aliases": [
+        "Pioneer House Block 20 and 21"
+      ],
       "elementId": "238932772",
+      "groupKey": "pioneer-house",
+      "partLabel": "Blocks 20-21",
+      "blocks": [
+        "20",
+        "21"
+      ],
       "address": "35 Prince George's Park",
       "postal": "118429",
       "location": {
@@ -3887,11 +4007,20 @@
     },
     {
       "id": "pioneer-house-block-22-25",
-      "name": "Pioneer House Block 22 - 25",
+      "name": "Pioneer House",
       "aliases": [
-        "25"
+        "25",
+        "Pioneer House Block 22 - 25"
       ],
       "elementId": "238932774",
+      "groupKey": "pioneer-house",
+      "partLabel": "Blocks 22-25",
+      "blocks": [
+        "22",
+        "23",
+        "24",
+        "25"
+      ],
       "address": "35 Prince George's Park",
       "postal": "118429",
       "location": {
@@ -3909,13 +4038,18 @@
     },
     {
       "id": "raffles-hall-block-1-communal-hall",
-      "name": "Raffles Hall (Block 1 / Communal Hall)",
+      "name": "Raffles Hall",
       "aliases": [
         "Block 1",
         "Block1",
-        "Raffles Hall"
+        "Raffles Hall (Block 1 / Communal Hall)"
       ],
       "elementId": "241265458",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 1 and Communal Hall",
+      "blocks": [
+        "1"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -3923,7 +4057,9 @@
         "y": 1.29989
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RH"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -3933,9 +4069,16 @@
     },
     {
       "id": "raffles-hall-block-2",
-      "name": "Raffles Hall Block 2",
-      "aliases": [],
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 2"
+      ],
       "elementId": "241265455",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 2",
+      "blocks": [
+        "2"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -3953,9 +4096,16 @@
     },
     {
       "id": "raffles-hall-block-3",
-      "name": "Raffles Hall Block 3",
-      "aliases": [],
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 3"
+      ],
       "elementId": "241265453",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 3",
+      "blocks": [
+        "3"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -3973,9 +4123,16 @@
     },
     {
       "id": "raffles-hall-block-4",
-      "name": "Raffles Hall Block 4",
-      "aliases": [],
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 4"
+      ],
       "elementId": "241265454",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 4",
+      "blocks": [
+        "4"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -3993,9 +4150,16 @@
     },
     {
       "id": "raffles-hall-block-5",
-      "name": "Raffles Hall Block 5",
-      "aliases": [],
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 5"
+      ],
       "elementId": "1309257814",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 5",
+      "blocks": [
+        "5"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -4013,9 +4177,16 @@
     },
     {
       "id": "raffles-hall-block-6",
-      "name": "Raffles Hall Block 6",
-      "aliases": [],
+      "name": "Raffles Hall",
+      "aliases": [
+        "Raffles Hall Block 6"
+      ],
       "elementId": "241265456",
+      "groupKey": "raffles-hall",
+      "partLabel": "Block 6",
+      "blocks": [
+        "6"
+      ],
       "address": "19 Kent Ridge Crescent",
       "postal": "119278",
       "location": {
@@ -4073,9 +4244,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-a",
-      "name": "Ridge View Residential College Block A",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block A"
+      ],
       "elementId": "427077073",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4093,9 +4271,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-b",
-      "name": "Ridge View Residential College Block B",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block B"
+      ],
       "elementId": "427077081",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4113,9 +4298,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-c",
-      "name": "Ridge View Residential College Block C",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block C"
+      ],
       "elementId": "427077076",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4133,9 +4325,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-d",
-      "name": "Ridge View Residential College Block D",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block D"
+      ],
       "elementId": "427077083",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4153,9 +4352,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-e",
-      "name": "Ridge View Residential College Block E",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block E"
+      ],
       "elementId": "427077084",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4173,9 +4379,16 @@
     },
     {
       "id": "ridge-view-residential-college-block-g",
-      "name": "Ridge View Residential College Block G",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Residential College Block G"
+      ],
       "elementId": "546382548",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Block G",
+      "blocks": [
+        "G"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4183,7 +4396,9 @@
         "y": 1.29739
       },
       "locationKind": "centroid",
-      "roomCodePrefixes": [],
+      "roomCodePrefixes": [
+        "RVR"
+      ],
       "sourceRefs": [
         {
           "source": "nus-digital-twin",
@@ -4193,9 +4408,16 @@
     },
     {
       "id": "ridge-view-tower",
-      "name": "Ridge View Tower",
-      "aliases": [],
+      "name": "Ridge View Residential College",
+      "aliases": [
+        "Ridge View Tower"
+      ],
       "elementId": "427077072",
+      "groupKey": "ridge-view-residential-college",
+      "partLabel": "Tower (Block F)",
+      "blocks": [
+        "F"
+      ],
       "address": "25 Lower Kent Ridge Road",
       "postal": "119081",
       "location": {
@@ -4900,9 +5122,16 @@
     },
     {
       "id": "sheares-block-a",
-      "name": "Sheares Block A",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block A"
+      ],
       "elementId": "455250294",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -4920,9 +5149,16 @@
     },
     {
       "id": "sheares-block-b",
-      "name": "Sheares Block B",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block B"
+      ],
       "elementId": "627395979",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -4940,9 +5176,16 @@
     },
     {
       "id": "sheares-block-c",
-      "name": "Sheares Block C",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block C"
+      ],
       "elementId": "455250299",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -4960,9 +5203,16 @@
     },
     {
       "id": "sheares-block-d",
-      "name": "Sheares Block D",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block D"
+      ],
       "elementId": "455250300",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -4980,9 +5230,16 @@
     },
     {
       "id": "sheares-block-e",
-      "name": "Sheares Block E",
-      "aliases": [],
+      "name": "Sheares Hall",
+      "aliases": [
+        "Sheares Block E"
+      ],
       "elementId": "639080232",
+      "groupKey": "sheares-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5004,6 +5261,7 @@
       "aliases": [],
       "elementId": "639258228",
       "groupKey": "sheares-hall",
+      "groupRole": "entrance",
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5027,6 +5285,7 @@
       "aliases": [],
       "elementId": "640840065",
       "groupKey": "sheares-hall",
+      "partLabel": "Main building",
       "address": "20 Heng Mui Keng Ter",
       "postal": "119618",
       "location": {
@@ -5155,10 +5414,10 @@
     {
       "id": "temasek-hall",
       "name": "Temasek Hall",
-      "aliases": [
-        "TH"
-      ],
+      "aliases": [],
       "elementId": "142221851",
+      "groupKey": "temasek-hall",
+      "groupRole": "entrance",
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5178,9 +5437,16 @@
     },
     {
       "id": "temasek-hall-block-a",
-      "name": "Temasek Hall Block A",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block A"
+      ],
       "elementId": "142221852",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block A",
+      "blocks": [
+        "A"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5198,9 +5464,16 @@
     },
     {
       "id": "temasek-hall-block-b",
-      "name": "Temasek Hall Block B",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block B"
+      ],
       "elementId": "142221865",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block B",
+      "blocks": [
+        "B"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5218,9 +5491,16 @@
     },
     {
       "id": "temasek-hall-block-c",
-      "name": "Temasek Hall Block C",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block C"
+      ],
       "elementId": "142221858",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block C",
+      "blocks": [
+        "C"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5238,9 +5518,16 @@
     },
     {
       "id": "temasek-hall-block-d",
-      "name": "Temasek Hall Block D",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block D"
+      ],
       "elementId": "142221853",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block D",
+      "blocks": [
+        "D"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5258,9 +5545,16 @@
     },
     {
       "id": "temasek-hall-block-e",
-      "name": "Temasek Hall Block E",
-      "aliases": [],
+      "name": "Temasek Hall",
+      "aliases": [
+        "Temasek Hall Block E"
+      ],
       "elementId": "142221863",
+      "groupKey": "temasek-hall",
+      "partLabel": "Block E",
+      "blocks": [
+        "E"
+      ],
       "address": "12 Kent Ridge Drive",
       "postal": "119243",
       "location": {
@@ -5469,6 +5763,8 @@
       "name": "University Hall",
       "aliases": [],
       "elementId": "UNIVERSITY_HALL",
+      "groupKey": "university-hall",
+      "groupRole": "entrance",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {
@@ -5486,9 +5782,13 @@
     },
     {
       "id": "university-hall-lee-kong-chian-wing",
-      "name": "University Hall (Lee Kong Chian Wing)",
-      "aliases": [],
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Lee Kong Chian Wing)"
+      ],
       "elementId": "140087580",
+      "groupKey": "university-hall",
+      "partLabel": "Lee Kong Chian Wing",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {
@@ -5506,9 +5806,13 @@
     },
     {
       "id": "university-hall-tan-chin-tuan-wing",
-      "name": "University Hall (Tan Chin Tuan Wing)",
-      "aliases": [],
+      "name": "University Hall",
+      "aliases": [
+        "University Hall (Tan Chin Tuan Wing)"
+      ],
       "elementId": "140087584",
+      "groupKey": "university-hall",
+      "partLabel": "Tan Chin Tuan Wing",
       "address": "21 Lower Kent Ridge Road",
       "postal": "119077",
       "location": {

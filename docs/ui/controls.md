@@ -11,6 +11,7 @@ This is the specification for NavUS buttons, chips, and pills. Vocabulary is def
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
 | `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
 | `Pill` | A non-interactive status label | Tones `neutral` and `success`, optional leading dot. `InfoPill` is built on it. |
+| `Select` | Choosing one value from a short list, such as a building | Labelled dropdown with a `listbox`. See [Select](#select). |
 
 `NavigateButton` is a primary `Button` with the navigation icon. `GhostBackButton` is a ghost `Button` with the left arrow; it keeps its compact back-link geometry in `ghost-back-button.css` until Stops and Explore migrate.
 
@@ -65,6 +66,17 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per
 A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages above were chosen so it reaches at least 3:1 against `--surface` in all four themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
+
+## Select
+
+`Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible, above the trigger, and the listbox name), `value`, `options` (`{ value, label }[]`), `onChange(value)`, and optional `id` and `className` (layout only).
+
+- The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses the secondary look: `--border-control`, `--surface-muted`, 40px minimum height, one line with ellipsis. A chevron shows the open state.
+- The list floats over the page in a **portal** on `document.body`, fixed to the trigger and as wide as it. It never pushes content down, and scroll containers and the mobile bottom sheet cannot clip it. It opens below the trigger, or above when there is more room there, is capped at 14rem (less when the viewport is short) and scrolls inside itself, and follows the trigger through scrolls and resizes.
+- The selected option has a check icon. The active option has an `--accent-soft` tint, and hover moves the active option.
+- `onChange` fires only when the value changes. Selecting closes the list and returns focus to the trigger.
+
+Keyboard: Enter, Space or ArrowDown on the trigger opens the list with the selected option active. ArrowUp and ArrowDown move the active option, Home and End jump to the first and last. Enter or Space selects it. Escape closes without selecting and returns focus. Tab, or a click outside, closes the list.
 
 ## Documented exceptions
 

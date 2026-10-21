@@ -60,6 +60,73 @@ describe('parseOverrides', () => {
       .toThrow('unlinkedPrefixes must be an object')
   })
 
+  it('accepts part labels, blocks and an entrance role without requiring a groupKey', () => {
+    const part = { partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], groupRole: 'entrance' }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: part } }, KNOWN)['54619721']).toEqual(part)
+    expect(parseOverrides({ version: 1, overrides: { 54619721: { partLabel: 'Blocks 15-17' } } }, KNOWN)['54619721'])
+      .toEqual({ partLabel: 'Blocks 15-17' })
+  })
+
+  it('accepts block locations and copies them out of the file', () => {
+    const blockLocations = { 15: { x: 103.7739, y: 1.295 }, 16: { x: 103.774, y: 1.2951 } }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: { blocks: ['15', '16', '17'], blockLocations } } }, KNOWN)['54619721'])
+      .toEqual({ blocks: ['15', '16', '17'], blockLocations })
+  })
+
+  it('rejects block locations that are not objects or hold out-of-range coordinates', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: [] } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: { 15: { x: 200, y: 1.295 } } } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blockLocations: { 15: { x: 103.7739, y: -91 } } } } }, KNOWN))
+      .toThrow('54619721 blockLocations must be an object of { x: longitude, y: latitude } within range')
+  })
+
+  it('rejects a mergeInto override that also sets blockLocations', () => {
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: { 54619721: { mergeInto: '140087398', blockLocations: { 15: { x: 103.7739, y: 1.295 } } } },
+    }, KNOWN)).toThrow('54619721 with mergeInto cannot also set blockLocations')
+  })
+
+  it('rejects an empty partLabel, repeated blocks and an unknown groupRole', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { partLabel: '' } } }, KNOWN))
+      .toThrow('54619721 partLabel must be a non-empty string')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { blocks: ['15', '15'] } } }, KNOWN))
+      .toThrow('54619721 blocks must be an array of non-empty strings with no duplicates')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { groupRole: 'lobby' } } }, KNOWN))
+      .toThrow('54619721 groupRole must be "entrance"')
+  })
+
+  it('accepts a mergeInto override that points at a surviving record', () => {
+    const merge = { mergeInto: '140087398', $comment: 'Duplicate of the annexe.' }
+
+    expect(parseOverrides({ version: 1, overrides: { 54619721: merge } }, KNOWN)['54619721'])
+      .toEqual({ mergeInto: '140087398' })
+  })
+
+  it('rejects mergeInto targets that are unknown, self-referencing, chained or combined with other decisions', () => {
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: 'way/9' } } }, KNOWN))
+      .toThrow('54619721 mergeInto way/9 is not an elementId in the snapshot')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: '54619721' } } }, KNOWN))
+      .toThrow('54619721 cannot merge into itself')
+    expect(() => parseOverrides({ version: 1, overrides: { 54619721: { mergeInto: '' } } }, KNOWN))
+      .toThrow('54619721 mergeInto must be a non-empty elementId string')
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: {
+        54619721: { mergeInto: '140087398' },
+        140087398: { mergeInto: '54619721' },
+      },
+    }, KNOWN)).toThrow(/54619721 mergeInto 140087398, which is itself merged.*140087398 mergeInto 54619721/)
+    expect(() => parseOverrides({
+      version: 1,
+      overrides: { 54619721: { mergeInto: '140087398', groupKey: 'computing', aliases: ['COM1'], location: { x: 103.7739, y: 1.295 } } },
+    }, KNOWN)).toThrow('54619721 with mergeInto cannot also set groupKey, location, aliases')
+  })
+
   it('fails on unknown elementIds, unknown fields and malformed values', () => {
     expect(() => parseOverrides({ version: 2, overrides: {} }, KNOWN)).toThrow('version must be 1')
     expect(() => parseOverrides({ version: 1, overrides: {}, extra: true }, KNOWN)).toThrow('unknown field extra')

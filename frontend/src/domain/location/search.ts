@@ -7,7 +7,7 @@ import type {
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
-import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../venue/building-index'
+import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../venue/building-index'
 
 const MAX_RESULTS = 8
 
@@ -44,7 +44,12 @@ export function getTripEndpointLabel(
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): string {
   if (endpoint.kind === 'current-location') return 'Current location'
-  if (endpoint.kind === 'building') return buildings.byId.get(endpoint.id)?.name ?? endpoint.id
+  if (endpoint.kind === 'building') {
+    const entry = buildings.byId.get(endpoint.id)
+    if (entry) return entry.name
+    const found = buildings.byPartId.get(endpoint.id)
+    return found ? `${found.entry.name}${found.part.partLabel ? ` · ${found.part.partLabel}` : ''}` : endpoint.id
+  }
   if (endpoint.kind === 'venue') {
     return venues[endpoint.id]?.roomName ?? endpoint.id
   }
@@ -97,11 +102,9 @@ export function searchTripLocations(
       result: {
         endpoint: { kind: 'building', id: building.id },
         label: building.name,
-        detail: building.parts.length > 1
-          ? `${building.parts.length} buildings`
-          : building.parts[0].address ?? '',
+        detail: describeBuildingEntry(building),
       },
-      fields: [building.name, ...building.aliases],
+      fields: [building.name, ...building.aliases, ...building.blocks.flatMap((block) => [`Block ${block}`, `${building.name} Block ${block}`])],
       kindOrder: STOP_AND_BUILDING_ORDER,
     })
   }

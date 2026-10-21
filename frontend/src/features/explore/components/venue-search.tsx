@@ -1,7 +1,7 @@
 import { useMemo, type MouseEvent, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
-import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../../domain/venue/building-index'
+import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../../../domain/venue/building-index'
 import type { BuildingVenueLinks } from '../../../domain/venue/building-links'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import { BuildingIcon, CloseIcon, RoomIcon, SearchIcon } from '../../../ui/icons'
@@ -94,9 +94,7 @@ export function VenueSearch({
               searchState.results.map((item) => {
                 if (item.kind === 'building') {
                   const { entry } = item
-                  const secondary = entry.parts.length > 1
-                    ? `${entry.parts.length} buildings`
-                    : entry.parts[0].address ?? ''
+                  const secondary = describeBuildingEntry(entry)
                   return (
                     <button
                       className="explore-content-result"

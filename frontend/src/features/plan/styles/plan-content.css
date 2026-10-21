@@ -179,6 +179,39 @@
   display: none;
 }
 
+/* A chosen endpoint is drawn as wrapping text over the input, so long names stay readable.
+   The input keeps the value for assistive tech and still takes the click and focus. */
+.plan-endpoint-input-row[data-label-visible='true'] {
+  display: grid;
+}
+
+.plan-endpoint-input-row[data-label-visible='true'] .search-field {
+  display: block;
+  grid-area: 1 / 1;
+}
+
+.plan-endpoint-input-row[data-label-visible='true'] .search-field input {
+  height: 100%;
+  color: transparent;
+  caret-color: transparent;
+}
+
+.plan-endpoint-selected-text {
+  grid-area: 1 / 1;
+  z-index: 1;
+  align-self: center;
+  padding: 8px 86px 8px 10px;
+  color: var(--text-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-align: left;
+  pointer-events: none;
+}
+
+.plan-endpoint-control-has-identity .plan-endpoint-selected-text {
+  padding-left: 36px;
+}
+
 .plan-endpoint-control .search-field input {
   min-height: var(--control-height-md);
   padding: 8px 86px 8px 10px;

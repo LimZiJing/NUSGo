@@ -61,6 +61,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
+    setBuildingLabels: () => undefined,
     dispose: vi.fn(),
   }
 }
@@ -1382,6 +1383,42 @@ describe('navigation session', () => {
     session.back()
     expect(dependencies.map.clearVenue).toHaveBeenCalled()
     expect(session.getState().exploreState.selectedBuildingId).toBeNull()
+  })
+
+  it('highlights only the chosen building part without changing the explore panel', async () => {
+    const buildings = buildBuildingIndex([
+      { id: 'saga-1', name: 'Saga College', aliases: [], elementId: 'way/1', groupKey: 'saga-college', location: { x: 103.774, y: 1.295 }, roomCodePrefixes: [], sourceRefs: [] },
+      { id: 'saga-2', name: 'Saga College', aliases: [], elementId: 'way/2', groupKey: 'saga-college', location: { x: 103.775, y: 1.296 }, roomCodePrefixes: [], sourceRefs: [] },
+    ])
+    const base = createDependencies()
+    const dependencies = createDependencies({
+      loadVenues: vi.fn(async () => ({ ...base.venues, buildings })),
+    })
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    session.selectBuilding('saga-college')
+    vi.mocked(dependencies.map.selectBuilding).mockClear()
+    const panelBefore = session.getState().exploreState
+
+    session.selectBuildingPart('saga-college', 'saga-2')
+    expect(dependencies.map.selectBuilding).toHaveBeenLastCalledWith({
+      name: 'Saga College',
+      locations: [{ x: 103.774, y: 1.295 }, { x: 103.775, y: 1.296 }],
+      highlighted: { x: 103.775, y: 1.296 },
+    })
+
+    session.selectBuildingPart('saga-college', null)
+    expect(dependencies.map.selectBuilding).toHaveBeenLastCalledWith({
+      name: 'Saga College',
+      locations: [{ x: 103.774, y: 1.295 }, { x: 103.775, y: 1.296 }],
+      highlighted: undefined,
+    })
+
+    session.selectBuildingPart('saga-college', 'unknown-part')
+    expect(dependencies.map.selectBuilding).toHaveBeenLastCalledWith(
+      expect.objectContaining({ highlighted: undefined }),
+    )
+    expect(session.getState().exploreState).toBe(panelBefore)
   })
 
   it('rejects a building endpoint when the catalogue could not be loaded', async () => {

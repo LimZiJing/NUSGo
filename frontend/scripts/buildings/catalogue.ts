@@ -75,7 +75,16 @@ export type ImportFindings = {
   readonly sharedCoordinates: readonly (readonly string[])[]
   /** Alias entries that no longer fit the data (renamed building, retired prefix). */
   readonly staleAliases: readonly string[]
+  /** API records folded into another building by a mergeInto override; they write no building. */
+  readonly merged: readonly MergedRecord[]
   readonly dataIssues: readonly string[]
+}
+
+export type MergedRecord = {
+  readonly name: string
+  readonly elementId: string
+  /** Id of the surviving building the record was folded into. */
+  readonly buildingId: string
 }
 
 export type BuildCatalogueInput = {
@@ -102,11 +111,20 @@ type Draft = {
   readonly name: string
   readonly normalisedName: string
   readonly groupKey: string | undefined
+  readonly partLabel: string | undefined
+  readonly blocks: readonly string[] | undefined
+  readonly blockLocations: BuildingOverride['blockLocations']
+  readonly groupRole: 'entrance' | undefined
   readonly codes: readonly string[]
   readonly location: Point
+  /** Names of API records merged into this one; appended to its aliases, always. */
+  readonly mergedNames: readonly string[]
   readonly prefixes: Set<string>
   readonly linkedAliases: Set<string>
 }
+
+/** An API record with a mergeInto override, and the elementId it folds into. */
+type MergeAway = { readonly api: ApiBuilding, readonly targetElementId: string }
 
 type PrefixRooms = {
   readonly prefix: string
@@ -177,13 +195,31 @@ function assignIds(apiBuildings: readonly ApiBuilding[]): Map<string, string> {
   return ids
 }
 
-function createDrafts(input: BuildCatalogueInput): Draft[] {
-  const ids = assignIds(input.apiBuildings)
-  const named = input.apiBuildings.map((api) => {
+function mergeAways(input: BuildCatalogueInput): MergeAway[] {
+  return input.apiBuildings
+    .flatMap((api): MergeAway[] => {
+      const targetElementId = input.overrides[api.elementId]?.mergeInto
+      return targetElementId === undefined ? [] : [{ api, targetElementId }]
+    })
+    .sort((a, b) => byString(a.api.elementId, b.api.elementId))
+}
+
+/**
+ * Ids come from all API records so surviving ids never move when a duplicate is merged away.
+ * Merged records are left out before name counting, so they cannot create or keep a same-name group.
+ */
+function createDrafts(input: BuildCatalogueInput, merges: readonly MergeAway[], ids: ReadonlyMap<string, string>): Draft[] {
+  const mergedAway = new Set(merges.map((merge) => merge.api.elementId))
+  const named = input.apiBuildings.filter((api) => !mergedAway.has(api.elementId)).map((api) => {
     const override = input.overrides[api.elementId]
     const name = override?.name ?? api.name
     return { api, override, name, normalisedName: normaliseName(name) }
   })
+  for (const merge of merges) {
+    if (!named.some(({ api }) => api.elementId === merge.targetElementId)) {
+      throw new Error(`Override ${merge.api.elementId} merges into ${merge.targetElementId}, which is not a surviving building`)
+    }
+  }
   const nameCounts = new Map<string, number>()
   for (const { normalisedName } of named) {
     nameCounts.set(normalisedName, (nameCounts.get(normalisedName) ?? 0) + 1)
@@ -195,10 +231,15 @@ function createDrafts(input: BuildCatalogueInput): Draft[] {
     name,
     normalisedName,
     groupKey: override?.groupKey ?? ((nameCounts.get(normalisedName) ?? 0) > 1 ? slugify(name) : undefined),
+    partLabel: override?.partLabel,
+    blocks: override?.blocks,
+    blockLocations: override?.blockLocations,
+    groupRole: override?.groupRole,
     codes: candidateCodes(name),
     location: override?.entrance
       ? { x: override.entrance.x, y: override.entrance.y }
       : override?.location ?? { x: api.longitude, y: api.latitude },
+    mergedNames: merges.filter((merge) => merge.targetElementId === api.elementId).map((merge) => merge.api.name),
     prefixes: new Set(),
     linkedAliases: new Set(),
   }))
@@ -299,13 +340,18 @@ function toBuilding(draft: Draft): Building {
   const { api, override } = draft
   const postal = /^\d{6}$/.test(api.postal) ? api.postal : undefined
   const address = api.address.trim() || undefined
-  const aliases = override?.aliases ?? [...nameAliases(draft.name), ...draft.linkedAliases]
+  const ownAliases = override?.aliases ?? [...nameAliases(draft.name), ...draft.linkedAliases]
+  const aliases = [...ownAliases, ...draft.mergedNames.flatMap((name) => [name, ...nameAliases(name)])]
   return {
     id: draft.id,
     name: draft.name,
     aliases: uniqueSorted(aliases, draft.name),
     elementId: api.elementId,
     ...(draft.groupKey === undefined ? {} : { groupKey: draft.groupKey }),
+    ...(draft.partLabel === undefined ? {} : { partLabel: draft.partLabel }),
+    ...(draft.blocks === undefined ? {} : { blocks: [...draft.blocks] }),
+    ...(draft.blockLocations === undefined ? {} : { blockLocations: { ...draft.blockLocations } }),
+    ...(draft.groupRole === undefined ? {} : { groupRole: draft.groupRole }),
     ...(address === undefined ? {} : { address }),
     ...(postal === undefined ? {} : { postal }),
     location: { x: draft.location.x, y: draft.location.y },
@@ -391,8 +437,9 @@ function findStaleAliases(
   aliases: readonly BuildingAlias[],
   drafts: readonly Draft[],
   prefixRooms: readonly PrefixRooms[],
+  mergedNames: readonly string[],
 ): string[] {
-  const names = new Set(drafts.map((draft) => draft.normalisedName))
+  const names = new Set([...drafts.map((draft) => draft.normalisedName), ...mergedNames.map((name) => normaliseName(name))])
   const prefixes = new Set(prefixRooms.map((rooms) => compactName(rooms.prefix)))
   return [...aliases].sort((a, b) => byString(a.prefix, b.prefix)).flatMap((alias) => [
     ...(prefixes.has(compactName(alias.prefix)) ? [] : [`${alias.prefix}: no room code uses this prefix`]),
@@ -418,7 +465,9 @@ function findDataIssues(apiBuildings: readonly ApiBuilding[]): string[] {
  * ambiguous or unmatched is left unlinked and reported. Proximity never links.
  */
 export function buildCatalogue(input: BuildCatalogueInput): BuildCatalogueResult {
-  const drafts = createDrafts(input)
+  const ids = assignIds(input.apiBuildings)
+  const merges = mergeAways(input)
+  const drafts = createDrafts(input, merges, ids)
   const aliases = new Map(input.aliases.map((alias) => [compactName(alias.prefix), alias]))
 
   const links: PrefixLink[] = []
@@ -491,7 +540,12 @@ export function buildCatalogue(input: BuildCatalogueInput): BuildCatalogueResult
       standaloneCandidates: findStandaloneCandidates(input.venues, drafts),
       buildingsWithoutRooms: buildings.filter((b) => b.roomCodePrefixes.length === 0).map((b) => b.id),
       sharedCoordinates: findSharedCoordinates(drafts),
-      staleAliases: findStaleAliases(input.aliases, drafts, prefixRooms),
+      staleAliases: findStaleAliases(input.aliases, drafts, prefixRooms, merges.map((merge) => merge.api.name)),
+      merged: merges.map((merge) => ({
+        name: merge.api.name,
+        elementId: merge.api.elementId,
+        buildingId: ids.get(merge.targetElementId) as string,
+      })),
       dataIssues: findDataIssues(input.apiBuildings),
     },
   }

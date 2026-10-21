@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
 import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
 import { Pill } from '../pill'
+import { Select } from '../select'
 import './gallery.css'
 
 const STATES = ['default', 'hover', 'active', 'focus-visible', 'disabled', 'selected'] as const
@@ -27,6 +28,18 @@ const THEME_NAMES: Readonly<Record<GalleryTheme, string>> = {
 const SAMPLE_ROUTE_COLOUR = '#fb0101'
 
 const noop = () => {}
+
+const SELECT_SAMPLE_OPTIONS = [
+  { value: '', label: 'All buildings' },
+  { value: 'helix-a', label: 'Blocks 15-17' },
+  { value: 'helix-b', label: 'Blocks 18-19, with a longer label that wraps inside the open list' },
+]
+
+/* Select is controlled, so the sample keeps its own value to stay usable in the gallery. */
+function SelectSample() {
+  const [value, setValue] = useState('')
+  return <Select label="Building" value={value} options={SELECT_SAMPLE_OPTIONS} onChange={setValue} />
+}
 
 /* Hover, active and focus-visible cannot be real states for every sample at once, so the
    gallery CSS forces them from this data-state attribute. Disabled and selected are real. */
@@ -149,6 +162,12 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
           <Pill label="Neutral" tone="neutral" />
           <Pill label="Success" tone="success" />
           <Pill label="Live" tone="success" leadingDot />
+        </div>
+      </section>
+      <section className="gallery-section" aria-label="Select">
+        <h2>Select</h2>
+        <div className="gallery-select">
+          <SelectSample />
         </div>
       </section>
     </main>

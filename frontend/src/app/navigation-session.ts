@@ -127,6 +127,7 @@ export interface NavigationSession {
   setExploreQuery(query: string): void
   selectVenue(result: VenueSearchResult): void
   selectBuilding(buildingId: string): void
+  selectBuildingPart(buildingId: string, partId: string | null): void
   reportStartupFailure(): void
   back(): void
   escape(): void
@@ -469,6 +470,7 @@ export function createNavigationSession(
     const buildings = data.buildings ?? null
     syncTripRequest(state.tripRequest, data.venues, transitIndex, buildings)
     updateState({ venues: data.venues, buildings, resourceStatus })
+    dependencies.map.setBuildingLabels(buildings?.entries ?? [])
     requestJourneyPlanning()
   }
 
@@ -878,6 +880,7 @@ export function createNavigationSession(
     setExploreQuery: panelTransitions.setExploreQuery,
     selectVenue: panelTransitions.selectVenue,
     selectBuilding: panelTransitions.selectBuilding,
+    selectBuildingPart: panelTransitions.selectBuildingPart,
     back: panelTransitions.back,
     escape: panelTransitions.escape,
     closeToRoot: panelTransitions.closeToRoot,

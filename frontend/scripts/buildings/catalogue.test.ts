@@ -302,6 +302,54 @@ describe('buildCatalogue rule chain', () => {
     })
   })
 
+  it('carries part labels, blocks and entrance roles from overrides onto the building, and omits them otherwise', () => {
+    const result = build({
+      apiBuildings: [
+        api('10', 'Saga College Block 15', 1.2950, 103.7739),
+        api('11', 'Saga College Block 18', 1.2951, 103.7740),
+        api('12', 'Saga College Main Entrance', 1.2952, 103.7741),
+        api('13', 'Cendana College', 1.2960, 103.7750),
+      ],
+      overrides: {
+        10: { groupKey: 'saga', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'] },
+        11: { groupKey: 'saga', partLabel: 'Blocks 18-20', blocks: ['18'] },
+        12: { groupKey: 'saga', groupRole: 'entrance' },
+      },
+    })
+
+    const byId = Object.fromEntries(result.catalogue.buildings.map((building) => [building.id, building]))
+    expect(byId['saga-college-block-15']).toMatchObject({
+      groupKey: 'saga',
+      partLabel: 'Blocks 15-17',
+      blocks: ['15', '16', '17'],
+    })
+    expect(byId['saga-college-block-18']).toMatchObject({ partLabel: 'Blocks 18-20', blocks: ['18'] })
+    expect(byId['saga-college-main-entrance']).toMatchObject({ groupKey: 'saga', groupRole: 'entrance' })
+    expect(byId['saga-college-main-entrance']).not.toHaveProperty('partLabel')
+    expect(byId['saga-college-main-entrance']).not.toHaveProperty('blocks')
+    expect(byId['cendana-college']).not.toHaveProperty('partLabel')
+    expect(byId['cendana-college']).not.toHaveProperty('blocks')
+    expect(byId['cendana-college']).not.toHaveProperty('groupRole')
+  })
+
+  it('carries block locations from overrides onto the building, and omits them otherwise', () => {
+    const blockLocations = { 15: { x: 103.7739, y: 1.295 } }
+    const result = build({
+      apiBuildings: [
+        api('10', 'Saga College Block 15', 1.2950, 103.7739),
+        api('11', 'Saga College Block 18', 1.2951, 103.7740),
+      ],
+      overrides: {
+        10: { groupKey: 'saga', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], blockLocations },
+        11: { groupKey: 'saga', partLabel: 'Blocks 18-20', blocks: ['18'] },
+      },
+    })
+
+    const byId = Object.fromEntries(result.catalogue.buildings.map((building) => [building.id, building]))
+    expect(byId['saga-college-block-15']).toMatchObject({ blocks: ['15', '16', '17'], blockLocations })
+    expect(byId['saga-college-block-18']).not.toHaveProperty('blockLocations')
+  })
+
   it('reports a deliberately unlinked prefix with its reason and no nearest-building hint', () => {
     const result = build({
       apiBuildings: [api('1', 'Elm College', 1.30654, 103.77214)],
@@ -313,6 +361,53 @@ describe('buildCatalogue rule chain', () => {
       { prefix: 'Y', roomCount: 1, note: 'Left unlinked on purpose: Retired Yale-NUS code spread across several buildings.' },
     ])
     expect(result.findings.counts.roomsUnlinked).toBe(1)
+  })
+
+  it('folds a mergeInto record into its survivor: no building, its name becomes an alias, other ids unchanged', () => {
+    const result = build({
+      apiBuildings: [
+        api('300', 'Cendana College', 1.30814, 103.77248),
+        api('100', 'Cendana Block', 1.30812, 103.77221),
+        api('15347235', 'AS6', 1.29557, 103.77322),
+      ],
+      overrides: { 100: { mergeInto: '300' } },
+    })
+
+    expect(result.catalogue.buildings.map(({ id, elementId, aliases }) => ({ id, elementId, aliases }))).toEqual([
+      { id: 'as6', elementId: '15347235', aliases: ['AS 6'] },
+      { id: 'cendana-college', elementId: '300', aliases: ['Cendana Block'] },
+    ])
+    expect(result.findings.merged).toEqual([{ name: 'Cendana Block', elementId: '100', buildingId: 'cendana-college' }])
+    expect(result.findings.counts).toMatchObject({ apiRecords: 3, buildingsWritten: 2 })
+  })
+
+  it('appends merged names to overridden aliases and drops same-name grouping for the survivor', () => {
+    const result = build({
+      apiBuildings: [
+        api('732229053', 'Cendana College', 1.30814, 103.77248),
+        api('732229037', 'Cendana College', 1.30812, 103.77221),
+        api('5', 'Cendana Block', 1.3, 103.7),
+      ],
+      overrides: {
+        732229053: { aliases: ['Cendana Hall'] },
+        732229037: { mergeInto: '732229053' },
+        5: { mergeInto: '732229053' },
+      },
+    })
+
+    expect(result.catalogue.buildings).toEqual([
+      expect.objectContaining({
+        id: 'cendana-college-2',
+        elementId: '732229053',
+        aliases: ['Cendana Block', 'Cendana Hall'],
+      }),
+    ])
+    expect('groupKey' in result.catalogue.buildings[0]).toBe(false)
+    expect(result.findings.repeatedNames).toEqual([])
+    expect(result.findings.merged).toEqual([
+      { name: 'Cendana Block', elementId: '5', buildingId: 'cendana-college-2' },
+      { name: 'Cendana College', elementId: '732229037', buildingId: 'cendana-college-2' },
+    ])
   })
 
   it('produces identical output for the same input', () => {

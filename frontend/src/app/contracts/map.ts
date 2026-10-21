@@ -1,4 +1,4 @@
-import type { BuildingIndex } from '../../domain/venue/building-index'
+import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   BusRoute,
@@ -12,6 +12,8 @@ import type { LoadedTransitData } from './data'
 export interface MapBuildingSelection {
   readonly name: string
   readonly locations: readonly NonNullable<VenueLocation['location']>[]
+  /** The one location to mark distinctly and fit the camera to, when a single building part is chosen. */
+  readonly highlighted?: NonNullable<VenueLocation['location']>
 }
 
 export interface MapSessionOptions {
@@ -102,5 +104,7 @@ export interface MapSession {
   /** Marks every part of a building, or a repeated-name group, and fits the camera to all of them. */
   selectBuilding(building: MapBuildingSelection): void
   clearVenue(): void
+  /** Shows block-range labels for the buildings' navigable parts; replaces the previous set. */
+  setBuildingLabels(entries: readonly BuildingEntry[]): void
   dispose(): void
 }

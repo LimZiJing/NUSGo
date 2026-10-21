@@ -12,14 +12,10 @@ describe('mobile Plan panel scrolling styles', () => {
       /\.navigation-panel\s+\.plan-content-panel\s*{[^}]*overflow-x:\s*clip;[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*auto;/s,
     )
     expect(styles).toMatch(
-      /\.plan-location-search\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*var\(--space-2\)\s+0;/s,
-    )
-    // The trip card shares its edges with the journey options below it.
-    expect(styles).toMatch(
-      /\.navigation-panel\s+\.plan-trip-card\s*{[^}]*width:\s*calc\(100%\s*-\s*28px\);[^}]*margin-inline:\s*var\(--space-2\)\s+0;/s,
+      /\.plan-trip-card,\s*\.plan-location-search\s*{[^}]*width:\s*calc\(100%\s*-\s*var\(--space-3\)\);[^}]*margin-inline:\s*var\(--space-3\)\s+0;/s,
     )
     expect(styles).toMatch(
-      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100%\s*-\s*28px\);[^}]*margin-inline-start:\s*var\(--space-2\);[^}]*box-sizing:\s*border-box;/s,
+      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100%\s*-\s*var\(--space-3\)\);[^}]*margin-inline-start:\s*var\(--space-3\);[^}]*box-sizing:\s*border-box;/s,
     )
   })
 })

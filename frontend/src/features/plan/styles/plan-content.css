@@ -590,25 +590,20 @@
 
   .navigation-panel .plan-content-panel .journey-results {
     /*
-     * The same 8px start margin as the trip card, and 20px here plus the scroll
-     * panel's 12px end padding and margin. Sizing from the panel rather than
-     * the viewport keeps the results inside the sheet when landscape safe-area insets
-     * widen its padding.
+     * A start margin equal to the end gap left by the scroll panel's padding and margin,
+     * so the content has the same space on both sides of the sheet. Sizing from the
+     * panel rather than the viewport keeps the results inside the sheet when landscape
+     * safe-area insets widen its padding.
      */
-    width: calc(100% - 28px);
-    margin-inline-start: var(--space-2);
+    width: calc(100% - var(--space-3));
+    margin-inline-start: var(--space-3);
     box-sizing: border-box;
   }
 
+  .navigation-panel .plan-trip-card,
   .plan-location-search {
-    width: 100%;
-    margin-inline: var(--space-2) 0;
-  }
-
-  /* Same edges as the journey options below, clear of the scrollbar. */
-  .navigation-panel .plan-trip-card {
-    width: calc(100% - 28px);
-    margin-inline: var(--space-2) 0;
+    width: calc(100% - var(--space-3));
+    margin-inline: var(--space-3) 0;
   }
 
   .journey-option-summary,

@@ -101,6 +101,10 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(isNonEmptyString)
 }
 
+function isUniqueStringArray(value: unknown): value is string[] {
+  return isStringArray(value) && new Set(value).size === value.length
+}
+
 function validateBuildingLocation(label: string, value: unknown, issues: string[]): void {
   if (!isRecord(value)) {
     issues.push(`${label} location must be an object`)
@@ -113,6 +117,23 @@ function validateBuildingLocation(label: string, value: unknown, issues: string[
   }
   if (typeof latitude !== 'number' || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
     issues.push(`${label} has invalid latitude: ${String(latitude)}`)
+  }
+}
+
+function validateBlockLocations(label: string, value: unknown, blocks: unknown, issues: string[]): void {
+  if (!isRecord(value)) {
+    issues.push(`${label} blockLocations must be an object when provided`)
+    return
+  }
+  if (!isStringArray(blocks)) {
+    issues.push(`${label} blockLocations requires blocks`)
+    return
+  }
+  for (const [block, location] of Object.entries(value)) {
+    if (!blocks.includes(block)) {
+      issues.push(`${label} blockLocations["${block}"] must match a block listed in blocks`)
+    }
+    validateBuildingLocation(`${label} blockLocations["${block}"]`, location, issues)
   }
 }
 
@@ -129,6 +150,23 @@ function validateBuilding(index: number, value: unknown, issues: string[]): void
   if (!isStringArray(value.aliases)) issues.push(`${label} aliases must be an array of non-empty strings`)
   if (value.groupKey !== undefined && !isNonEmptyString(value.groupKey)) {
     issues.push(`${label} groupKey must be a non-empty string when provided`)
+  }
+  if (value.partLabel !== undefined && !isNonEmptyString(value.partLabel)) {
+    issues.push(`${label} partLabel must be a non-empty string when provided`)
+  }
+  if (value.blocks !== undefined && !isUniqueStringArray(value.blocks)) {
+    issues.push(`${label} blocks must be an array of non-empty strings with no duplicates when provided`)
+  }
+  if (value.blockLocations !== undefined) {
+    validateBlockLocations(label, value.blockLocations, value.blocks, issues)
+  }
+  if (value.groupRole !== undefined && value.groupRole !== 'entrance') {
+    issues.push(`${label} groupRole must be "entrance" when provided`)
+  }
+  if (value.groupKey === undefined) {
+    if (value.partLabel !== undefined) issues.push(`${label} partLabel requires a groupKey`)
+    if (value.blocks !== undefined) issues.push(`${label} blocks requires a groupKey`)
+    if (value.groupRole !== undefined) issues.push(`${label} groupRole requires a groupKey`)
   }
   if (value.address !== undefined && !isNonEmptyString(value.address)) {
     issues.push(`${label} address must be a non-empty string when provided`)
@@ -193,6 +231,30 @@ function validateBuildingUniqueness(buildings: readonly unknown[], issues: strin
   }
 }
 
+/** Checks rules that span the parts of one group: one entrance record, and all-or-none part labels. */
+function validateGroupParts(buildings: readonly unknown[], issues: string[]): void {
+  const groups = new Map<string, Record<string, unknown>[]>()
+  for (const value of buildings) {
+    if (!isRecord(value) || !isNonEmptyString(value.groupKey)) continue
+    groups.set(value.groupKey, [...(groups.get(value.groupKey) ?? []), value])
+  }
+  const idOf = (building: Record<string, unknown>) => (isNonEmptyString(building.id) ? building.id : '?')
+
+  for (const [groupKey, members] of groups) {
+    const entrances = members.filter((member) => member.groupRole === 'entrance')
+    if (entrances.length > 1) {
+      issues.push(`Group ${groupKey} has more than one entrance record (${entrances.map(idOf).join(', ')})`)
+    }
+    const parts = members.filter((member) => member.groupRole !== 'entrance')
+    const unlabelled = parts.filter((member) => member.partLabel === undefined)
+    if (unlabelled.length > 0 && unlabelled.length < parts.length) {
+      issues.push(
+        `Group ${groupKey} must give partLabel to every non-entrance part or to none (missing: ${unlabelled.map(idOf).join(', ')})`,
+      )
+    }
+  }
+}
+
 export function validateBuildingCatalogue(input: unknown): BuildingCatalogue {
   if (!isRecord(input)) {
     throw new VenueValidationError(['Building catalogue must be an object'])
@@ -218,6 +280,7 @@ export function validateBuildingCatalogue(input: unknown): BuildingCatalogue {
   } else {
     input.buildings.forEach((building, index) => validateBuilding(index, building, issues))
     validateBuildingUniqueness(input.buildings, issues)
+    validateGroupParts(input.buildings, issues)
   }
 
   if (issues.length > 0) throw new VenueValidationError(issues)

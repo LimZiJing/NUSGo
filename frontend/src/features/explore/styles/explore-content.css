@@ -235,6 +235,10 @@
   gap: 8px;
 }
 
+.venue-detail-actions .venue-building-picker {
+  flex: 1 1 8rem;
+}
+
 .explore-content-detail .venue-detail-action {
   display: inline-flex;
   align-items: center;
@@ -301,7 +305,11 @@
 .venue-nearby-stops h4 svg {
   width: 18px;
   height: 18px;
-  fill: currentColor;
+  /* Functional icons are stroke-only; filling them turns the outline into a solid blob. */
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .venue-nearby-empty {
@@ -500,9 +508,10 @@
 
   .explore-content-search-prompt {
     display: grid;
-    align-content: center;
+    align-content: start;
     justify-items: center;
     gap: 10px;
+    padding-top: 2.5rem;
     color: var(--text-muted);
     font: 600 var(--font-size-lg)/1.3 var(--sans);
   }
@@ -645,6 +654,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    padding-top: 0;
     color: var(--text-muted);
     font: 600 var(--font-size-lg)/1.3 var(--sans);
   }

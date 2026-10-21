@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Building2,
   BusFront,
+  Check,
   ChevronDown,
   ChevronRight,
   Compass,
@@ -60,6 +61,10 @@ export function ChevronDownIcon(props: IconProps) {
 
 export function ChevronRightIcon(props: IconProps) {
   return renderDecorativeIcon(ChevronRight, props)
+}
+
+export function CheckIcon(props: IconProps) {
+  return renderDecorativeIcon(Check, props)
 }
 
 export function CompassIcon(props: IconProps) {

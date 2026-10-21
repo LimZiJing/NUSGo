@@ -168,6 +168,7 @@ export interface ShuttleStopMarkers {
   dismissPopup(): boolean
   setStopsPin(stopId: string | null, visible: boolean): boolean
   setSelection(selectedStopIds: readonly string[] | null, selectedRouteColor?: string | null): void
+  setNearbyHighlight(stopIds: readonly string[]): void
   setJourneyStops(stopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null): void
   /** Recolours the label layers after the document theme changes. */
   refreshTheme(): void
@@ -179,6 +180,7 @@ type ShuttleStopMarkerState = {
   markers: Marker[]
   selectedStopIds: ReadonlySet<string> | null
   selectedRouteColor: string | null
+  nearbyStopIds: ReadonlySet<string>
   journeyStopRoutes: ReadonlyMap<string, readonly JourneyStopRoute[]> | null
   selectedStopId: string | null
   pinVisible: boolean
@@ -233,6 +235,7 @@ function updateBusStopMarkerElement(
   isDisabled: boolean,
   selectedRouteColor: string | null,
   journeyRoutes: readonly JourneyStopRoute[] | null,
+  isNearby: boolean,
 ): void {
   const element = marker.getElement()
   const button = element as HTMLButtonElement
@@ -241,6 +244,7 @@ function updateBusStopMarkerElement(
   element.classList.toggle('bus-stop-marker-selected', isSelected)
   element.classList.toggle('bus-stop-marker-journey', journeyRoutes !== null)
   element.classList.toggle('bus-stop-marker-dimmed', isDimmed)
+  element.classList.toggle('bus-stop-marker-nearby', isNearby)
   element.classList.toggle('bus-stop-marker-disabled', isDisabled)
   element.classList.toggle('bus-stop-marker-hidden', !isVisible)
   marker.setOpacity(isDimmed ? BUS_STOP_INACTIVE_OPACITY : 1)
@@ -349,6 +353,7 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
         ? null
         : state.selectedRouteColor,
       state.journeyStopRoutes?.get(stopId) ?? null,
+      state.nearbyStopIds.has(stopId),
     )
   }
 
@@ -374,6 +379,7 @@ export function createShuttleStopMarkers(
     markers,
     selectedStopIds: null,
     selectedRouteColor: null,
+    nearbyStopIds: new Set<string>(),
     journeyStopRoutes: null,
     selectedStopId: null,
     pinVisible: false,
@@ -490,14 +496,14 @@ export function createShuttleStopMarkers(
       state.selectedRouteColor = selectedRouteColor
       updateBusStopMarkerPresentation(state)
     },
-    refreshTheme() {
+    setNearbyHighlight(stopIds) {
       if (disposed) return
-      const palette = getOverlayPalette()
-      if (map.getLayer(BUS_STOP_ACTIVE_LABEL_LAYER_ID)) {
-        map.setPaintProperty(BUS_STOP_ACTIVE_LABEL_LAYER_ID, 'text-color', palette.stopText)
-        map.setPaintProperty(BUS_STOP_ACTIVE_LABEL_LAYER_ID, 'text-halo-color', palette.stopHalo)
-      }
-      updateBusStopLabelPresentation(state)
+      const nextIds = new Set(stopIds)
+      const unchanged = nextIds.size === state.nearbyStopIds.size &&
+        [...nextIds].every((stopId) => state.nearbyStopIds.has(stopId))
+      if (unchanged) return
+      state.nearbyStopIds = nextIds
+      updateBusStopMarkerPresentation(state)
     },
     setJourneyStops(stopRoutes) {
       if (disposed) return

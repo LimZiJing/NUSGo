@@ -3,6 +3,7 @@ import type {
   OpenMobileSheetDetent,
 } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 import type { NavigationView } from '../../ui/navigation-view'
+import { MOBILE_LAYOUT_MEDIA_QUERY } from '../../domain/layout-breakpoint'
 
 export type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 export type { NavigationView } from '../../ui/navigation-view'
@@ -22,8 +23,6 @@ export interface NavigationState {
   readonly activeView: NavigationView
   readonly sheets: Readonly<Record<NavigationView, NavigationSheetState>>
 }
-
-export const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 768px)'
 
 export type NavigationAction =
   | { readonly type: 'select-view'; readonly view: NavigationView }

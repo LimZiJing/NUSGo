@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
-import { buildBuildingIndex, searchBuildings } from './building-index'
+import { buildBuildingIndex, describeBuildingEntry, formatBlockLabel, resolveBuildingLocation, searchBuildings } from './building-index'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -27,6 +27,8 @@ describe('buildBuildingIndex', () => {
         name: 'COM1',
         aliases: ['COM 1'],
         parts: [com1],
+        buildings: [com1],
+        blocks: [],
         location: com1.location,
         locationKind: 'centroid',
       },
@@ -73,7 +75,75 @@ describe('buildBuildingIndex', () => {
     )
 
     expect(partCounts).toMatchObject({ 'cendana-college': 5, 'saga-college': 6, 'elm-college': 3 })
-    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(260)
+    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(251)
+  })
+})
+
+describe('building groups with labels and an entrance', () => {
+  const helix = [
+    building({ id: 'helix-house', name: 'Helix House', groupKey: 'helix-house', groupRole: 'entrance', location: { x: 103.0, y: 1.0 } }),
+    building({ id: 'helix-a', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], location: { x: 103.1, y: 1.1 } }),
+    building({ id: 'helix-b', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 18-19', blocks: ['18', '19'], location: { x: 103.2, y: 1.2 } }),
+  ]
+
+  it('excludes the entrance from the buildings, resolves to it and summarises every block', () => {
+    const entry = buildBuildingIndex(helix).entries[0]
+
+    expect(entry.parts).toHaveLength(3)
+    expect(entry.buildings.map((part) => part.id)).toEqual(['helix-a', 'helix-b'])
+    expect(entry.entrance?.id).toBe('helix-house')
+    expect(entry.location).toEqual({ x: 103.0, y: 1.0 })
+    expect(entry.blocks).toEqual(['15', '16', '17', '18', '19'])
+    expect(entry.blockLabel).toBe('Blocks 15-19')
+  })
+
+  it('falls back to the building nearest the centre when no entrance is marked', () => {
+    const entry = buildBuildingIndex(helix.slice(1)).entries[0]
+
+    expect(entry.entrance).toBeUndefined()
+    expect(entry.buildings).toHaveLength(2)
+    expect(entry.buildings.map((part) => part.location)).toContainEqual(entry.location)
+  })
+
+  it('describes a group by building count and block range, and a single building by address', () => {
+    const [entry] = buildBuildingIndex(helix).entries
+    expect(describeBuildingEntry(entry)).toBe('2 buildings · Blocks 15-19')
+
+    const [single] = buildBuildingIndex([building({ id: 'com1', name: 'COM1', address: '13 Computing Drive' })]).entries
+    expect(describeBuildingEntry(single)).toBe('13 Computing Drive')
+
+    const [spanning] = buildBuildingIndex([
+      building({ id: 'res-5', name: 'Residence', address: '27 Park', groupKey: 'res', partLabel: 'Blocks 5-8', blocks: ['5', '6', '7', '8'] }),
+    ]).entries
+    expect(describeBuildingEntry(spanning)).toBe('Blocks 5-8 · 27 Park')
+  })
+
+  it('finds a group by block number and by name with block number', () => {
+    const index = buildBuildingIndex(helix)
+    expect(searchBuildings(index, 'Block 16').map((entry) => entry.id)).toEqual(['helix-house'])
+    expect(searchBuildings(index, 'helix house block 19').map((entry) => entry.id)).toEqual(['helix-house'])
+    expect(searchBuildings(index, 'Block 20')).toEqual([])
+  })
+
+  it('resolves each building of a group by its own ID, and the group to its entrance', () => {
+    const index = buildBuildingIndex(helix)
+
+    expect(index.byPartId.get('helix-b')?.entry.id).toBe('helix-house')
+    expect(index.byPartId.get('helix-b')?.part.partLabel).toBe('Blocks 18-19')
+    // The entrance record shares the group's ID, so it resolves as the entry, not as a part.
+    expect(index.byPartId.has('helix-house')).toBe(false)
+    expect(resolveBuildingLocation(index, 'helix-b')).toEqual({ x: 103.2, y: 1.2 })
+    expect(resolveBuildingLocation(index, 'helix-house')).toEqual({ x: 103.0, y: 1.0 })
+    expect(resolveBuildingLocation(index, 'missing')).toBeUndefined()
+  })
+
+  it('formats block ranges', () => {
+    expect(formatBlockLabel([])).toBeUndefined()
+    expect(formatBlockLabel(['5'])).toBe('Block 5')
+    expect(formatBlockLabel(['1', '2'])).toBe('Blocks 1-2')
+    expect(formatBlockLabel(['1', '3'])).toBe('Blocks 1, 3')
+    expect(formatBlockLabel(['1', '2', '3', '7'])).toBe('Blocks 1-3, 7')
+    expect(formatBlockLabel(['A', 'B', 'C', 'D'])).toBe('Blocks A-D')
   })
 })
 
@@ -107,5 +177,67 @@ describe('searchBuildings', () => {
 
   it('honours the result limit', () => {
     expect(searchBuildings(index, 'com', 2)).toHaveLength(2)
+  })
+})
+
+describe('the real catalogue', () => {
+  const catalogue = JSON.parse(readFileSync('public/data/buildings.json', 'utf8')) as BuildingCatalogue
+  const index = buildBuildingIndex(catalogue.buildings)
+
+  it('shows Helix House once, as two buildings across blocks 15-19', () => {
+    const matches = searchBuildings(index, 'Helix House')
+    expect(matches).toHaveLength(1)
+    expect(describeBuildingEntry(matches[0])).toBe('2 buildings · Blocks 15-19')
+    expect(matches[0].buildings.map((part) => part.partLabel)).toEqual(['Blocks 15-17', 'Blocks 18-19'])
+    expect(searchBuildings(index, 'Block 16').map((entry) => entry.id)).toContain('helix-house')
+  })
+
+  it('summarises Ridge View as blocks A-G with the tower as block F', () => {
+    const entry = index.byId.get('ridge-view-residential-college')
+    expect(entry?.blockLabel).toBe('Blocks A-G')
+    expect(entry?.buildings.map((part) => part.partLabel)).toContain('Tower (Block F)')
+  })
+
+  it('shows Sheares Hall and Temasek Hall once each, with blocks A-E', () => {
+    for (const name of ['Sheares Hall', 'Temasek Hall']) {
+      const matches = searchBuildings(index, name).filter((entry) => entry.name === name)
+      expect(matches).toHaveLength(1)
+      expect(matches[0].blockLabel).toBe('Blocks A-E')
+    }
+  })
+
+  it('shows University Hall once, as two wings reached through the main record', () => {
+    const entry = index.byId.get('university-hall')
+    expect(entry?.entrance?.id).toBe('university-hall')
+    expect(entry?.buildings.map((part) => part.partLabel)).toEqual(['Lee Kong Chian Wing', 'Tan Chin Tuan Wing'])
+  })
+
+  it('folds the PGP Foyer duplicates into PGP Residence 2 and keeps them searchable', () => {
+    expect(index.byId.has('pgp-foyer')).toBe(false)
+    const matches = searchBuildings(index, 'PGP Foyer')
+    expect(matches.map((entry) => entry.id)).toContain('pgp-residence-2')
+  })
+
+  it('shows blocks that share one building as a single building', () => {
+    const residence2 = index.byId.get('pgp-residence-2')
+    expect(residence2?.entrance?.id).toBe('pgp-residence-2')
+    expect(residence2?.buildings.map((part) => part.partLabel)).toEqual(['Blocks 5-8'])
+    expect(index.byId.get('pgp-residence-3')?.buildings.map((part) => part.blocks)).toEqual([['9', '10', '11', '12']])
+    expect(index.byId.get('lighthouse')?.buildings.map((part) => part.partLabel)).toEqual(['Blocks 26-28', 'Blocks 29-30'])
+    // Each residence-1 block is its own building on the map.
+    expect(index.byId.get('pgp-residence-1')?.buildings).toHaveLength(4)
+    expect(searchBuildings(index, 'Block 7').map((entry) => entry.id)).toContain('pgp-residence-2')
+  })
+
+  it('has no two entries with the same name and address', () => {
+    const seen = new Map<string, string>()
+    const clashes: string[] = []
+    for (const entry of index.entries) {
+      const key = `${entry.name}|${describeBuildingEntry(entry)}`
+      const other = seen.get(key)
+      if (other) clashes.push(`${other} / ${entry.id}`)
+      seen.set(key, entry.id)
+    }
+    expect(clashes).toEqual([])
   })
 })

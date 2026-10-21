@@ -5,7 +5,15 @@ import { createApp } from './http/app.ts'
 import { closeHttpServer, listenHttpServer } from './server.ts'
 
 const origin = 'http://localhost:5173'
-const appConfig = { corsOrigins: [origin], dataVersion: 'development' }
+const appConfig = {
+  apiRateLimitMaxRequests: 120,
+  apiRateLimitWindowMs: 60_000,
+  corsOrigins: [origin],
+  dataVersion: 'development',
+  journeyMaxConcurrentRequests: 4,
+  journeyRateLimitMaxRequests: 20,
+  journeyRequestTimeoutMs: 10_000,
+}
 const listeningServers: Awaited<ReturnType<typeof listenHttpServer>>[] = []
 
 async function start(): Promise<{ baseUrl: string; server: Awaited<ReturnType<typeof listenHttpServer>> }> {

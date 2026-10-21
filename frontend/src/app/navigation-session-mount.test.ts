@@ -21,6 +21,7 @@ function createMapDouble(): MapSession {
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
+    setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
@@ -36,6 +37,7 @@ function createMapDouble(): MapSession {
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
+    setBuildingLabels: () => undefined,
     dispose: vi.fn(),
   }
 }
@@ -61,6 +63,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setExploreQuery: vi.fn(),
     selectVenue: vi.fn(),
     selectBuilding: vi.fn(),
+    selectBuildingPart: vi.fn(),
     enterMobileRoutes: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     leaveMobileRoutes: vi.fn(),
@@ -68,6 +71,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
     setStopsPinVisible: vi.fn(),
+    setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
     enableLocationTracking: vi.fn(),
     locateUser: vi.fn(),

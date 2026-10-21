@@ -523,6 +523,51 @@ describe('bus-stop presentation', () => {
     vi.unstubAllGlobals()
   })
 
+  it('accents only the nearby stop markers and clears the accent when told to', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const map = {
+      getSource: vi.fn(() => undefined),
+      getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
+      addSource: vi.fn(),
+      addLayer: vi.fn(),
+      removeSource: vi.fn(),
+      removeLayer: vi.fn(),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => 17),
+      on: vi.fn(),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const baseStop = {
+      shortName: 'Stop',
+      services: ['A1'],
+    }
+    const adapter = createShuttleStopMarkers(map, [
+      { ...baseStop, id: 'NEAR', longName: 'Near', latitude: 1.3, longitude: 103.77 },
+      { ...baseStop, id: 'FAR', longName: 'Far', latitude: 1.31, longitude: 103.78 },
+    ] as TransitStop[])
+    const [near, far] = adapter.markers.map((marker) => marker.getElement() as unknown as FakeElement)
+
+    adapter.setNearbyHighlight(['NEAR'])
+
+    expect(near.classes).toContain('bus-stop-marker-nearby')
+    expect(far.classes).not.toContain('bus-stop-marker-nearby')
+
+    adapter.setNearbyHighlight(['NEAR'])
+    expect(near.classes).toContain('bus-stop-marker-nearby')
+
+    adapter.setNearbyHighlight([])
+
+    expect(near.classes).not.toContain('bus-stop-marker-nearby')
+    expect(far.classes).not.toContain('bus-stop-marker-nearby')
+    adapter.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('applies and clears route selection through the public marker adapter', () => {
     vi.stubGlobal('document', {
       createElement: (tagName: string) => new FakeElement(tagName),

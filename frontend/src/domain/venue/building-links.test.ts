@@ -86,7 +86,7 @@ describe('linkVenuesToBuildings with the real data', () => {
     expect(links.roomCountByBuildingId.get('sheares-hall')).toBe(1)
   })
 
-  it('links 574 rooms in total, matching the import report', () => {
-    expect(links.buildingByVenueCode.size).toBe(574)
+  it('links 583 rooms in total, matching the import report', () => {
+    expect(links.buildingByVenueCode.size).toBe(583)
   })
 })

@@ -1,5 +1,6 @@
 import type { ExploreMode } from '../features/explore/state/explore-state'
 import type { TransitIndex } from '../domain/transit'
+import { isMobileLayoutWidth } from '../domain/layout-breakpoint'
 import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { TripRequest } from '../domain/trip/types'
@@ -13,7 +14,6 @@ import type {
   MapViewportInsets,
 } from './contracts/map'
 
-export const MOBILE_MAP_BREAKPOINT = 768
 export const MAP_OVERLAY_MARGIN = 12
 export const CAMPUS_RESET_CENTER: readonly [number, number] = [103.7844, 1.2933]
 // Keep a pre-load fallback that matches canonical KR-MRT in public/data/shuttle-network.json.
@@ -60,7 +60,7 @@ export interface ResetTargetContext {
 export function calculateMapOverlayInsets(
   measurements: MapOverlayMeasurements,
 ): MapViewportInsets {
-  if (measurements.viewportWidth > MOBILE_MAP_BREAKPOINT) {
+  if (!isMobileLayoutWidth(measurements.viewportWidth)) {
     return {
       top: 0,
       right: 0,

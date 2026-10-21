@@ -1,4 +1,4 @@
-import type { BuildingIndex } from '../../domain/venue/building-index'
+import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { TransitIndex } from '../../domain/transit'
 import type {
   BusRoute,
@@ -12,6 +12,8 @@ import type { LoadedTransitData } from './data'
 export interface MapBuildingSelection {
   readonly name: string
   readonly locations: readonly NonNullable<VenueLocation['location']>[]
+  /** The one location to mark distinctly and fit the camera to, when a single building part is chosen. */
+  readonly highlighted?: NonNullable<VenueLocation['location']>
 }
 
 export interface MapSessionOptions {
@@ -67,6 +69,8 @@ export interface MapSession {
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
   setStopsPinVisible(visible: boolean): void
+  /** Accents the bus-stop markers for these stop IDs; an empty list clears the accent. */
+  setNearbyStopHighlight(stopIds: readonly string[]): void
   /** Shows or hides the planned Journey layers and trip endpoint markers without discarding them. */
   setPlanLayersVisible(visible: boolean): void
   setTripRequest(
@@ -100,5 +104,7 @@ export interface MapSession {
   /** Marks every part of a building, or a repeated-name group, and fits the camera to all of them. */
   selectBuilding(building: MapBuildingSelection): void
   clearVenue(): void
+  /** Shows block-range labels for the buildings' navigable parts; replaces the previous set. */
+  setBuildingLabels(entries: readonly BuildingEntry[]): void
   dispose(): void
 }

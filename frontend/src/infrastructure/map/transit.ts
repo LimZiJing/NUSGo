@@ -7,6 +7,7 @@ import type {
 import type { MapViewportInsets } from '../../app/contracts/map'
 import { getOverlayPalette } from './overlay-theme'
 import type { TransitIndex } from '../../domain/transit'
+import { isMobileLayoutWidth } from '../../domain/layout-breakpoint'
 import type {
   TransitGeoJsonPosition,
   BusRouteGeometry,
@@ -153,7 +154,7 @@ export function getTransitRouteFitPadding(
     }
   }
 
-  if (viewportWidth <= 768) {
+  if (isMobileLayoutWidth(viewportWidth)) {
     return { top: 280, right: 24, bottom: 64, left: 24 }
   }
 

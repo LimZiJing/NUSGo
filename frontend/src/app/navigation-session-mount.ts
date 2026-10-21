@@ -100,6 +100,7 @@ export interface NavigationSessionCommands {
   readonly setExploreQuery: (query: string) => void
   readonly selectVenue: (result: Parameters<NavigationSession['selectVenue']>[0]) => void
   readonly selectBuilding: (buildingId: string) => void
+  readonly selectBuildingPart: (buildingId: string, partId: string | null) => void
   readonly back: () => void
   readonly closeToRoot: () => void
   readonly escape: () => void
@@ -110,6 +111,7 @@ export interface NavigationSessionCommands {
   readonly focusStop: (stopId: string) => void
   readonly focusStopInStopsTab: (stopId: string) => void
   readonly setStopsPinVisible: (visible: boolean) => void
+  readonly setNearbyStopHighlight: (stopIds: readonly string[]) => void
   readonly setPlanLayersVisible: (visible: boolean) => void
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
@@ -143,6 +145,7 @@ function createNavigationSessionCommands(
     setExploreQuery: (query) => session?.setExploreQuery(query),
     selectVenue: (result) => session?.selectVenue(result),
     selectBuilding: (buildingId) => session?.selectBuilding(buildingId),
+    selectBuildingPart: (buildingId, partId) => session?.selectBuildingPart(buildingId, partId),
     back: () => session?.back(),
     closeToRoot: () => session?.closeToRoot(),
     escape: () => session?.escape(),
@@ -153,6 +156,7 @@ function createNavigationSessionCommands(
     focusStop: (stopId) => session?.focusStop(stopId),
     focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
+    setNearbyStopHighlight: (stopIds) => session?.setNearbyStopHighlight(stopIds),
     setPlanLayersVisible: (visible) => session?.setPlanLayersVisible(visible),
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),

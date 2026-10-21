@@ -129,6 +129,9 @@ export function PlanEndpointControl({
     ? endpoint.kind
     : null
   const inputValue = endpoint && !editing && !searchQuery ? endpointLabel : searchQuery
+  // The chosen label is drawn as wrapping text so a long name stays readable; while editing,
+  // it stays visible as the placeholder instead of vanishing.
+  const showSelectedText = endpoint !== null && !editing && !searchQuery
   const isGettingCurrentLocation = originLocationRequest.status === 'requesting'
   const locationActionLabel = isGettingCurrentLocation
     ? 'Getting current location'
@@ -164,7 +167,7 @@ export function PlanEndpointControl({
       </span>
       <div className="plan-endpoint-field">
         <label id={`${inputId}-label`} className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>
-        <div className="plan-endpoint-input-row">
+        <div className="plan-endpoint-input-row" data-label-visible={showSelectedText}>
           {endpointIdentityKind === 'venue' && (
             <RoomIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--venue" />
           )}
@@ -174,10 +177,13 @@ export function PlanEndpointControl({
           {endpointIdentityKind === 'stop' && (
             <BusIcon className="plan-endpoint-selected-icon location-identity-icon location-identity-icon--stop" />
           )}
+          {showSelectedText && (
+            <span className="plan-endpoint-selected-text" aria-hidden="true">{endpointLabel}</span>
+          )}
           <SearchField
             id={inputId}
             value={inputValue}
-            placeholder={role === 'origin' ? 'Choose origin' : 'Choose destination'}
+            placeholder={endpoint && editing ? endpointLabel : role === 'origin' ? 'Choose origin' : 'Choose destination'}
             onFocus={() => {
               onCancelOriginLocationRequest?.()
               if (endpoint && !editing) {

@@ -36,7 +36,7 @@ export function canonicalizeTripEndpoint(
   if (endpoint.kind === 'venue' && hasMappedLocation(venues?.[endpoint.id])) {
     return { kind: 'venue', id: endpoint.id }
   }
-  if (endpoint.kind === 'building' && buildings?.byId.has(endpoint.id)) {
+  if (endpoint.kind === 'building' && (buildings?.byId.has(endpoint.id) || buildings?.byPartId.has(endpoint.id))) {
     return { kind: 'building', id: endpoint.id }
   }
   if (endpoint.kind === 'stop' && transitIndex?.stopById.has(endpoint.id)) {

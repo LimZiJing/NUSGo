@@ -72,11 +72,13 @@ async function withServer(
   planner: Planner | null,
   run: (baseUrl: string) => Promise<void>,
   journeyRequestTimeoutMs = 10_000,
+  environment: Record<string, string | undefined> = {},
 ): Promise<void> {
   const config = loadBackendConfig({
     NODE_ENV: 'test',
     API_CORS_ORIGINS: 'http://localhost:5173',
     JOURNEY_REQUEST_TIMEOUT_MS: String(journeyRequestTimeoutMs),
+    ...environment,
   })
   const server = await listenHttpServer(createApp(config, null, null, planner), '127.0.0.1', 0)
   const address = server.address()
@@ -88,10 +90,15 @@ async function withServer(
   }
 }
 
-async function post(baseUrl: string, body: unknown, signal?: AbortSignal): Promise<Response> {
+async function post(
+  baseUrl: string,
+  body: unknown,
+  signal?: AbortSignal,
+  headers: Record<string, string> = {},
+): Promise<Response> {
   return fetch(baseUrl + '/api/journeys', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
     signal,
   })
@@ -182,6 +189,58 @@ describe('POST /api/journeys', () => {
     assert.equal(plannerCalls, 20)
   })
 
+  it('rejects Journey work at the process concurrency cap and frees the slot on completion', async () => {
+    let markStarted = (): void => {}
+    let finishFirst: (response: ApiJourneyPlanningResponse) => void = () => {}
+    const started = new Promise<void>((resolve) => { markStarted = resolve })
+    let plannerCalls = 0
+    await withServer({
+      plan() {
+        plannerCalls += 1
+        if (plannerCalls === 1) {
+          markStarted()
+          return new Promise<ApiJourneyPlanningResponse>((resolve) => { finishFirst = resolve })
+        }
+        return Promise.resolve({ outcome: 'no-path' })
+      },
+    }, async (baseUrl) => {
+      const firstPromise = post(baseUrl, request)
+      await started
+
+      const busy = await post(baseUrl, request)
+      assert.equal(busy.status, 429)
+      assert.equal(busy.headers.get('retry-after'), '1')
+
+      finishFirst({ outcome: 'paths', candidates: [], searchStatus: 'complete' })
+      assert.equal((await firstPromise).status, 200)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
+    })
+    assert.equal(plannerCalls, 2)
+  })
+
+  it('releases a Journey slot when planning returns an error', async () => {
+    let plannerCalls = 0
+    await withServer({
+      async plan() {
+        plannerCalls += 1
+        if (plannerCalls === 1) throw new ValhallaRouteError('upstream details stay private')
+        return { outcome: 'no-path' }
+      },
+    }, async (baseUrl) => {
+      assert.equal((await post(baseUrl, request)).status, 503)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
+    })
+    assert.equal(plannerCalls, 2)
+  })
+
   it('rejects unknown canonical references and reports not-ready separately', async () => {
     await withServer({
       async plan() { throw new InvalidJourneyEndpointError('unknown endpoint') },
@@ -208,8 +267,11 @@ describe('POST /api/journeys', () => {
     let markAborted = (): void => {}
     const started = new Promise<void>((resolve) => { markStarted = resolve })
     const aborted = new Promise<void>((resolve) => { markAborted = resolve })
+    let plannerCalls = 0
     await withServer({
       plan(_planningRequest, signal) {
+        plannerCalls += 1
+        if (plannerCalls > 1) return Promise.resolve({ outcome: 'no-path' })
         markStarted()
         return new Promise((_resolve, reject) => {
           signal.addEventListener('abort', () => {
@@ -224,12 +286,19 @@ describe('POST /api/journeys', () => {
       const controller = new AbortController()
       const response = post(baseUrl, request, controller.signal).catch(() => null)
       await started
+      const busy = await post(baseUrl, request)
       controller.abort()
       await Promise.race([
         aborted,
         new Promise<never>((_, reject) => { const timeout = setTimeout(() => reject(new Error('Planner did not observe disconnect')), 2_000); timeout.unref() }),
       ])
       await response
+      assert.equal(busy.status, 429)
+      assert.equal((await post(baseUrl, request)).status, 200)
+    }, 1_000, {
+      API_RATE_LIMIT_MAX_REQUESTS: '100',
+      JOURNEY_RATE_LIMIT_MAX_REQUESTS: '10',
+      JOURNEY_MAX_CONCURRENT_REQUESTS: '1',
     })
   })
 })

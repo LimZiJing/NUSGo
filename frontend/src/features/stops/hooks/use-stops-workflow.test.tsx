@@ -137,6 +137,52 @@ describe('useStopsWorkflow', () => {
     await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-B']))
   })
 
+  it('shows the Nearby crosshair only while Stops is active and Nearby is the selected list', () => {
+    const options = createOptions()
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
+      { initialProps: options },
+    )
+
+    expect(result.current.showNearbyCrosshair).toBe(true)
+
+    act(() => result.current.selectStopList('favourites'))
+    expect(result.current.showNearbyCrosshair).toBe(false)
+
+    act(() => result.current.selectStopList('nearby'))
+    expect(result.current.showNearbyCrosshair).toBe(true)
+
+    rerender({ ...options, active: false })
+    expect(result.current.showNearbyCrosshair).toBe(false)
+  })
+
+  it('highlights Nearby stops within the radius only while Nearby is active, regardless of card toggles', async () => {
+    const options = createOptions()
+    const { result, rerender } = renderHook(
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
+      { initialProps: options },
+    )
+
+    await waitFor(() => expect(result.current.state.expandedStopIds.nearby).toEqual(['STOP-A']))
+    expect(result.current.nearbyHighlightStopIds).toEqual(['STOP-A'])
+
+    act(() => result.current.toggleExpanded('STOP-A'))
+    expect(result.current.state.expandedStopIds.nearby).toEqual([])
+    expect(result.current.nearbyHighlightStopIds).toEqual(['STOP-A'])
+
+    act(() => result.current.selectStopList('favourites'))
+    expect(result.current.nearbyHighlightStopIds).toEqual([])
+
+    act(() => result.current.selectStopList('nearby'))
+    expect(result.current.nearbyHighlightStopIds).toEqual(['STOP-A'])
+
+    rerender({ ...options, active: false })
+    expect(result.current.nearbyHighlightStopIds).toEqual([])
+
+    rerender({ ...options, active: true, mapCenter: { longitude: 103.1, latitude: 1.1 } })
+    await waitFor(() => expect(result.current.nearbyHighlightStopIds).toEqual(['STOP-B']))
+  })
+
   it('keeps Favourites expansion unchanged and applies a pending map move on return to Nearby', async () => {
     localStorage.setItem('navus:favorite-stops:v1', '["STOP-B"]')
     const options = createOptions()

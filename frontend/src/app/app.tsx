@@ -10,6 +10,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { LocationControl } from '../ui/location-control'
+import { NearbyCrosshair } from '../ui/nearby-crosshair'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
@@ -106,6 +107,9 @@ function App() {
     locateFromControl: commands.locateUser,
     enableLocationTracking: commands.enableLocationTracking,
   })
+  useLayoutEffect(() => {
+    commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
+  }, [commands, stopsWorkflow.nearbyHighlightStopIds])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -365,6 +369,7 @@ function App() {
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
     onNavigateToBuilding: appNavigation.navigateToBuilding,
+    onSelectBuildingPart: commands.selectBuildingPart,
     onNavigateToVenue: appNavigation.navigateToVenue,
     onRestore: () => appNavigation.dispatch({
       type: 'set-sheet-detent',
@@ -406,6 +411,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
+        {stopsWorkflow.showNearbyCrosshair && <NearbyCrosshair insets={mapInsets} />}
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {navigation.activeView === 'plan' &&

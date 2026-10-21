@@ -441,8 +441,9 @@
 
 .journey-option-heading-labels {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px 8px;
   min-width: 0;
 }
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen } from '@testing-library/react'
-import { useMemo, useRef, type RefCallback, type RefObject } from 'react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { useEffect, useMemo, useRef, useState, type RefCallback, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { NavigationState } from '../navigation/navigation-state'
 import { createInitialNavigationState } from '../navigation/navigation-state'
@@ -34,15 +34,24 @@ function Probe({
   isMobileViewport,
   navigationState = navigation,
   sheetClassName,
+  explorePanelMountsLate = false,
   setViewportInsets,
   onMeasurementsApplied,
 }: {
   readonly isMobileViewport: boolean
   readonly navigationState?: NavigationState
   readonly sheetClassName?: string
+  readonly explorePanelMountsLate?: boolean
   readonly setViewportInsets: (insets: { top: number; right: number; bottom: number; left: number }) => void
   readonly onMeasurementsApplied: () => void
 }) {
+  // Mirrors a sheet whose portalled popup mounts after the first commit, without a view change.
+  const [explorePanelMounted, setExplorePanelMounted] = useState(!explorePanelMountsLate)
+  useEffect(() => {
+    if (!explorePanelMountsLate) return
+    const timer = setTimeout(() => setExplorePanelMounted(true), 0)
+    return () => clearTimeout(timer)
+  }, [explorePanelMountsLate])
   const mapShellRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLDivElement>(null)
   const explorePanelRef = useRef<HTMLDivElement>(null)
@@ -68,9 +77,13 @@ function Probe({
       <div
         className="map-shell"
         ref={setBounds(mapShellRef, { top: 0, right: 390, bottom: 844, left: 0, width: 390, height: 844 } as DOMRect)}
-      />
+      >
+        {/* Like the real popup, the late sheet is portalled into the map shell. */}
+        {explorePanelMounted && (
+          <div className={sheetClassName} ref={setBounds(explorePanelRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
+        )}
+      </div>
       <div ref={setBounds(tripControlsRef, { top: 20, right: 390, bottom: 112, left: 0, width: 390, height: 92 } as DOMRect)} />
-      <div className={sheetClassName} ref={setBounds(explorePanelRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
       <div ref={setBounds(navigationColumnRef, { top: 0, right: 390, bottom: 844, left: 30, width: 360, height: 844 } as DOMRect)} />
@@ -165,5 +178,40 @@ describe('useMapOverlayLayout', () => {
     expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
     view.rerender(renderWith('full'))
     expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 856 }))
+  })
+
+  it('re-measures when the active sheet mounts after the first measurement', async () => {
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',
+    }))
+    vi.stubGlobal('innerHeight', 844)
+    vi.stubGlobal('innerWidth', 390)
+    vi.stubGlobal('ResizeObserver', class {
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    })
+    const setViewportInsets = vi.fn()
+    const explore: NavigationState = {
+      ...navigation,
+      activeView: 'explore',
+      sheets: { ...navigation.sheets, explore: { ...navigation.sheets.explore, detent: 'partial' } },
+    }
+
+    render(
+      <Probe
+        isMobileViewport
+        navigationState={explore}
+        sheetClassName="mobile-sheet-popup"
+        explorePanelMountsLate
+        setViewportInsets={setViewportInsets}
+        onMeasurementsApplied={vi.fn()}
+      />,
+    )
+
+    // Same partial-detent value the detent test expects once the sheet is measured.
+    await waitFor(() => {
+      expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
+    })
   })
 })

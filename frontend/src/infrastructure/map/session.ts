@@ -77,6 +77,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let currentTransitIndex: TransitIndex | null = null
   let stopsPinStopId: string | null = null
   let stopsPinVisible = false
+  let nearbyStopIds: readonly string[] = []
   let viewportInsets: MapViewportInsets = EMPTY_VIEWPORT_INSETS
   let pendingCameraFit: {
     readonly kind: 'venue'
@@ -361,6 +362,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         stopsPinStopId = null
         shuttleStopMarkers.setStopsPin(null, stopsPinVisible)
       }
+      shuttleStopMarkers.setNearbyHighlight(nearbyStopIds)
       currentRouteSelection = reconcileRouteSelection(selection)
       applyRouteSelection(currentRouteSelection)
       applyJourneyPresentation()
@@ -419,6 +421,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
       stopsPinVisible = visible
       shuttleStopMarkers?.setStopsPin(stopsPinStopId, visible)
+    },
+
+    setNearbyStopHighlight(stopIds: readonly string[]) {
+      if (disposed) return
+      nearbyStopIds = [...stopIds]
+      shuttleStopMarkers?.setNearbyHighlight(nearbyStopIds)
     },
 
     setTripRequest(

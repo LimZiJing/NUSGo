@@ -3,6 +3,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
   type Ref,
@@ -51,9 +52,15 @@ export function NavigationPanelShell({
   const assignHandleRef = useCallback((button: HTMLButtonElement | null): void => {
     handleRef.current = button
   }, [])
+  // The mobile popup mounts through a portal, possibly after this component's first render.
+  // Keeping the element in state re-runs the imperative handle below once it attaches.
+  const [panelElement, setPanelElement] = useState<HTMLElement | null>(null)
   const assignPanelRef = useCallback((panel: HTMLElement | null): void => {
     internalShellRef.current = panel
+    setPanelElement(panel)
   }, [])
+
+  useImperativeHandle(shellRef, () => panelElement as HTMLElement, [panelElement])
 
   useEffect(() => {
     const wasExpanded = previousDetentRef.current !== 'collapsed'
@@ -75,8 +82,6 @@ export function NavigationPanelShell({
     )
     target?.focus()
   }, [enabled])
-
-  useImperativeHandle(shellRef, () => internalShellRef.current as HTMLElement)
 
   if (enabled) {
     return (

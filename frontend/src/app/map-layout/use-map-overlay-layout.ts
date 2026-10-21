@@ -69,6 +69,7 @@ export function useMapOverlayLayout({
     bottom: 0,
     left: 0,
   })
+  const [sheetElementsRevision, setSheetElementsRevision] = useState(0)
 
   useLayoutEffect(() => {
     const shell = refs.mapShell.current
@@ -105,6 +106,28 @@ export function useMapOverlayLayout({
       shell.style.removeProperty('--mobile-tab-bar-height')
       shell.style.removeProperty('--mobile-viewport-offset-top')
     }
+  }, [isMobileViewport, refs])
+
+  useLayoutEffect(() => {
+    const shell = refs.mapShell.current
+    if (!shell || !isMobileViewport || typeof MutationObserver === 'undefined') return
+
+    // Sheet popups are portalled into the map shell and can mount after the first measurement.
+    // Nothing else re-runs the inset effect then, so bump a revision when a sheet element changes.
+    const sheetElements = (): (HTMLElement | null)[] => [
+      refs.tripControls.current,
+      refs.explorePanel.current,
+      refs.stopsSheet.current,
+    ]
+    const known = { elements: sheetElements() }
+    const observer = new MutationObserver(() => {
+      const current = sheetElements()
+      if (current.every((element, index) => element === known.elements[index])) return
+      known.elements = current
+      setSheetElementsRevision((revision) => revision + 1)
+    })
+    observer.observe(shell, { childList: true, subtree: true })
+    return () => observer.disconnect()
   }, [isMobileViewport, refs])
 
   useLayoutEffect(() => {
@@ -182,6 +205,7 @@ export function useMapOverlayLayout({
     navigation.activeView,
     navigation.sheets,
     sheetPortalContainer,
+    sheetElementsRevision,
     refs,
     onMeasurementsApplied,
   ])

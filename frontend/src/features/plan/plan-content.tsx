@@ -105,18 +105,20 @@ export function PlanContent({
             onUseCurrentLocation={onUseCurrentLocationForOrigin}
           />
         ) : (
-          <PlanTripCard
-            tripRequest={tripRequest}
-            venues={venues}
-            buildings={buildings}
-            networkIndex={networkIndex}
-            originLocationRequest={originLocationRequest}
-            planning={path.status === 'loading'}
-            onOpenSearch={openSearch}
-            onSwap={form.onSwap}
-            onPlanJourney={form.onPlanJourney}
-            onUseCurrentLocation={onUseCurrentLocationForOrigin}
-          />
+          <div className="plan-trip-pin">
+            <PlanTripCard
+              tripRequest={tripRequest}
+              venues={venues}
+              buildings={buildings}
+              networkIndex={networkIndex}
+              originLocationRequest={originLocationRequest}
+              planning={path.status === 'loading'}
+              onOpenSearch={openSearch}
+              onSwap={form.onSwap}
+              onPlanJourney={form.onPlanJourney}
+              onUseCurrentLocation={onUseCurrentLocationForOrigin}
+            />
+          </div>
         )}
         {form.validationMessage && !searchRole && (
           <div className="plan-content-footer">

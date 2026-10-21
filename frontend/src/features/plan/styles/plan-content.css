@@ -170,6 +170,7 @@
 }
 
 .journey-option-duration {
+  white-space: nowrap;
   color: var(--text-primary);
   font-size: var(--font-size-xl);
   font-weight: 600;
@@ -220,6 +221,11 @@
 
 .journey-option-bus {
   color: var(--journey-route-color, var(--text-secondary));
+}
+
+/* The footprints say "walk"; the word would crowd a transfer's four chips. */
+.journey-option-walking > span {
+  display: none;
 }
 
 .journey-result-details {
@@ -594,9 +600,14 @@
     box-sizing: border-box;
   }
 
-  .plan-trip-card,
   .plan-location-search {
     width: 100%;
+    margin-inline: var(--space-2) 0;
+  }
+
+  /* Same edges as the journey options below, clear of the scrollbar. */
+  .navigation-panel .plan-trip-card {
+    width: calc(100% - 28px);
     margin-inline: var(--space-2) 0;
   }
 

@@ -20,13 +20,18 @@ export function getVenueBuildingName(code: string): string | undefined {
   return BUILDING_NAMES_BY_PREFIX[prefix]
 }
 
+export function formatVenueFloor(floor: number | null | undefined): string | null {
+  if (floor === null || floor === undefined || !Number.isInteger(floor)) return null
+  if (floor < 0) return `Basement ${Math.abs(floor)}`
+  if (floor === 0) return 'Ground floor'
+  return `Floor ${floor}`
+}
+
 export function formatVenueFloorAndBuilding(
-  floor: number | string | null | undefined,
+  floor: number | null | undefined,
   buildingName: string | undefined,
 ): string | null {
-  const floorText = floor === null || floor === undefined || String(floor).trim() === ''
-    ? null
-    : `Floor ${String(floor).trim()}`
+  const floorText = formatVenueFloor(floor)
   const buildingText = buildingName?.trim() || null
   const details = [floorText, buildingText].filter((value): value is string => value !== null)
   return details.length > 0 ? details.join(' · ') : null

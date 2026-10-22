@@ -39,6 +39,9 @@ function parseStoredWaypoints(raw: string): StoredWaypoints {
   if (!isRecord(envelope) || typeof envelope.version !== 'number') {
     return { kind: 'invalid', reason: 'malformed-data' }
   }
+  if (Object.keys(envelope).some((field) => field !== 'version' && field !== 'waypoints')) {
+    return { kind: 'invalid', reason: 'malformed-data' }
+  }
   if (envelope.version !== PERSONAL_WAYPOINTS_VERSION) {
     return { kind: 'invalid', reason: 'unsupported-version' }
   }

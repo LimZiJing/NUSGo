@@ -64,6 +64,19 @@ describe('local personal waypoint store', () => {
     expect(storage.values.has(PERSONAL_WAYPOINTS_KEY)).toBe(false)
   })
 
+  it('preserves envelopes with unknown fields until explicit recovery', () => {
+    const stored = JSON.stringify({ version: 1, waypoints: [waypoint], futureField: true })
+    const storage = createMemoryStorage({ [PERSONAL_WAYPOINTS_KEY]: stored })
+    const store = createLocalPersonalWaypointStore(() => storage)
+    const result = store.read()
+
+    expect(result).toMatchObject({ kind: 'recovery-required', reason: 'malformed-data' })
+    if (result.kind === 'recovery-required') {
+      expect(store.replaceAll([], result.revision)).toEqual({ kind: 'recovery-required' })
+    }
+    expect(storage.values.get(PERSONAL_WAYPOINTS_KEY)).toBe(stored)
+  })
+
   it('preserves data from unsupported schema versions', () => {
     const stored = JSON.stringify({ version: 2, waypoints: [waypoint] })
     const storage = createMemoryStorage({ [PERSONAL_WAYPOINTS_KEY]: stored })

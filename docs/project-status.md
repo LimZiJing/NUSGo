@@ -18,6 +18,8 @@ The accepted route architecture uses a self-hosted Valhalla pedestrian service b
 
 The independent local run procedure, backend data files, data-version matching, and generated timing/walking-graph lifecycle are documented in [local services](local-services.md).
 
+- A local Express container rehearsal is available through `backend/Dockerfile` and `docker-compose.rehearsal.yml`, with runtime-only provider credentials, packaged canonical/provider data, and unpublished private Valhalla. Live NUS, Stops/Plan, routing failure/recovery, CORS and restart were exercised on 22 October 2026; measurements and remaining #236 verification are recorded in [local services](local-services.md#local-rehearsal-evidence--22-october-2026). LTA with a real key and production ingress remain unverified; the composition uses development settings and is not a hosted deployment recipe.
+
 - Detailed OpenStreetMap-based basemap using the OpenFreeMap Liberty MapLibre style, with bus POI labels suppressed and low-priority local POIs reduced while rail, airport, and major campus context remain visible.
 - Map attribution remains visible as a small, readable footer without the expanded disclosure control, preserving the OpenFreeMap and OpenStreetMap credits on mobile and desktop.
 - Map tile error reporting and MapLibre navigation controls.

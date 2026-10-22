@@ -129,23 +129,6 @@
   background: #64748b;
 }
 
-/* Keep the short floor label readable while compact beside the selected pin. */
-.venue-floor-map-label {
-  display: inline-flex;
-  min-height: 22px;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 8px;
-  border: 1px solid var(--border-control);
-  border-radius: 999px;
-  color: var(--text-primary);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
-  font: var(--font-size-xs)/1.2 var(--sans);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 .bus-marker {
   background: #64748b;
 }

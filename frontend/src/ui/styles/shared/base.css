@@ -20,10 +20,6 @@ body {
   }
 }
 
-button:not(:disabled):active {
-  filter: brightness(0.85);
-}
-
 h1,
 h2 {
   font-family: var(--heading);

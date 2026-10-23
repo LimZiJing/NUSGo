@@ -151,6 +151,20 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
         </div>
       </section>
 
+      <section className="settings-about-group" aria-labelledby="settings-about-credits-heading">
+        <h3 id="settings-about-credits-heading" className="settings-about-group-title">Credits</h3>
+        <div className="settings-about-card">
+          <AboutCardRow>
+            <h4>UI inspiration</h4>
+            <p className="settings-about-link-line">
+              <SourceLink href="https://bus.hewliyang.com/">NUS NextBus</SourceLink>
+              {' by '}
+              <SourceLink href="https://github.com/hewliyang/nus-nextbus-web">Hew Liyang</SourceLink>
+            </p>
+          </AboutCardRow>
+        </div>
+      </section>
+
     </div>
   )
 }

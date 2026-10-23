@@ -1001,7 +1001,8 @@
   gap: var(--space-2);
   min-width: 0;
   margin: 0;
-  padding: 0 var(--space-3);
+  /* Flush with the search bar's and the chips' left edge. */
+  padding: 0;
   font-size: var(--font-size-sm);
 }
 

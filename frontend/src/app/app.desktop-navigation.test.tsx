@@ -358,7 +358,7 @@ describe('desktop shared navigation shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
 
-    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
     mapMarker.remove()

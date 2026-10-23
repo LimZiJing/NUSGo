@@ -161,9 +161,7 @@ describe('JourneyResults', () => {
     expect(markup).toContain('>MID</span>')
     expect(markup).not.toContain('Middle Stop')
     expect(markup).toContain(`--journey-route-color:${route.color}`)
-    expect(markup).toContain('Wait Arriving now')
-    expect(markup).toContain('Arriving now')
-    expect(markup).toContain('Ride')
+    expect(markup).toContain('Due now · 5 min ride')
     // The trip card names both ends, so the timeline starts and ends on a leg.
     expect(markup).not.toContain('Origin venue')
     expect(markup).not.toContain('Destination venue')
@@ -574,14 +572,14 @@ describe('JourneyResults', () => {
   })
 
   it.each([
-    [0, 'Arriving now'],
-    [29, 'Arriving now'],
-    [60, '1 min'],
-    [119, '2 min'],
+    [0, 'Due now'],
+    [29, 'Due now'],
+    [60, 'Wait 1 min'],
+    [119, 'Wait 2 min'],
   ])('uses threshold wording for a %s-second wait', (waitingSeconds, expected) => {
     const markup = renderJourneyWithWaitingSeconds(waitingSeconds)
 
-    expect(markup).toContain(`Wait ${expected}`)
+    expect(markup).toContain(`>${expected} · `)
   })
 
   it.each([

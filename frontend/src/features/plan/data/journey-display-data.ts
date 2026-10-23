@@ -77,11 +77,9 @@ function getJourneyRoutePresentation(
   }
 }
 
-export function formatWaitDuration(seconds: number): string {
-  const nonNegativeSeconds = Math.max(0, seconds)
-  if (nonNegativeSeconds === 0) return 'Arriving now'
-  if (nonNegativeSeconds < 60) return 'Arriving now'
-  return formatDuration(nonNegativeSeconds)
+// Short enough to share a row with the route chip on a phone.
+export function formatWaitLabel(seconds: number): string {
+  return seconds < 60 ? 'Due now' : `Wait ${formatDuration(seconds)}`
 }
 
 export function formatDistance(meters: number): string {
@@ -134,8 +132,8 @@ function getLegEntry(
     // Route colors come from the validated transit index so the journey uses the same palette as the map.
     routeColor: routePresentation.routeColor,
     intermediateStops: getBusIntermediateStops(busLeg, networkIndex),
-    waitLabel: `Wait ${formatWaitDuration(busLeg.waitingSeconds)}`,
-    rideLabel: `Ride ${formatDuration(busLeg.rideSeconds)}`,
+    waitLabel: formatWaitLabel(busLeg.waitingSeconds),
+    rideLabel: `${formatDuration(busLeg.rideSeconds)} ride`,
   }
 }
 

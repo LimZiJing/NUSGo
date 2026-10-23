@@ -302,13 +302,13 @@ export function createNavigationSession(
     const status = isLocationRequestFailure(error) ? error.status : 'unavailable'
     switch (status) {
       case 'denied':
-        return 'Location permission was denied. Please allow location access and try again.'
+        return 'Location is off. Allow access to use it.'
       case 'timeout':
-        return 'The location request timed out. Please try again.'
+        return 'Location timed out. Try again.'
       case 'invalid':
-        return 'The device returned an invalid location. Please try again.'
+        return 'Location was invalid. Try again.'
       default:
-        return 'Device location is unavailable. Please try again.'
+        return 'Location is unavailable. Try again.'
     }
   }
 

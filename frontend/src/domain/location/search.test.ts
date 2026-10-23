@@ -229,6 +229,12 @@ describe('searchTripLocations with buildings', () => {
     })
   })
 
+  it('limits results to the requested kinds before applying the result cap', () => {
+    const results = searchTripLocations(venuesWithCom3, stopsWithCom3, 'com', 1, buildings, ['venue'])
+
+    expect(results.map((result) => result.endpoint)).toEqual([{ kind: 'venue', id: 'COM3-0201' }])
+  })
+
   it('shows a repeated-name group as one result that keeps the group identity', () => {
     const results = searchTripLocations({}, [], 'elm college', 8, buildings)
 

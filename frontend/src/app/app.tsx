@@ -264,7 +264,7 @@ function App() {
     if (!focusTripControlAfterOverlayRef.current) return
     focusTripControlAfterOverlayRef.current = false
     const focusTarget = tripControlsRef.current?.querySelector<HTMLElement>(
-      '.plan-content-panel input:not([disabled]), .plan-content-panel select:not([disabled]), .plan-content-panel textarea:not([disabled]), .mobile-sheet-handle',
+      '.plan-content-panel input:not([disabled]), .plan-trip-line-main, .plan-content-panel select:not([disabled]), .plan-content-panel textarea:not([disabled]), .mobile-sheet-handle',
     )
     focusTarget?.focus()
   }, [isMobileViewport, navigation.sheets.plan.detent])
@@ -361,7 +361,26 @@ function App() {
     })
   }, [])
 
+  // Favourite stops are shown in the trip search before anything is typed.
+  const planSearchSuggestions = useMemo(() => {
+    const { transitIndex } = state
+    if (!transitIndex) return []
+    return stopsWorkflow.state.favoriteStopIds.flatMap((stopId) => {
+      const stop = transitIndex.stopById.get(stopId)
+      return stop
+        ? [{
+          endpoint: { kind: 'stop' as const, id: stop.id },
+          label: stop.longName,
+          detail: stop.shortName.trim().toLowerCase() === stop.id.trim().toLowerCase()
+            ? ''
+            : `${stop.shortName} (${stop.id})`,
+        }]
+        : []
+    })
+  }, [state, stopsWorkflow.state.favoriteStopIds])
+
   const planContentProps: AppViewsProps['views']['plan'] = {
+    searchSuggestions: planSearchSuggestions,
     tripRequest: state.tripRequest,
     venues: state.venues,
     buildings: state.buildings,

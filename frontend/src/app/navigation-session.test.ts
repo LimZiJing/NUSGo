@@ -2373,15 +2373,15 @@ describe('navigation session', () => {
   it.each([
     {
       status: 'denied' as const,
-      message: 'Location permission was denied. Please allow location access and try again.',
+      message: 'Location is off. Allow access to use it.',
     },
     {
       status: 'timeout' as const,
-      message: 'The location request timed out. Please try again.',
+      message: 'Location timed out. Try again.',
     },
     {
       status: 'unavailable' as const,
-      message: 'Device location is unavailable. Please try again.',
+      message: 'Location is unavailable. Try again.',
     },
   ])('shows a retryable error and preserves the origin when tracking reports $status', async ({
     status,

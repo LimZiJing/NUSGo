@@ -63,6 +63,7 @@ export function searchTripLocations(
   query: string,
   limit = MAX_RESULTS,
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
+  kinds?: readonly TripEndpoint['kind'][],
 ): TripLocationSearchResult[] {
   const normalizedQuery = normalize(query)
   if (!normalizedQuery) return []
@@ -115,6 +116,8 @@ export function searchTripLocations(
       priority: getMatchPriority(candidate.fields, normalizedQuery),
     }))
     .filter((candidate): candidate is SearchCandidate & { priority: number } => candidate.priority !== null)
+    // Filtering before the cap keeps a narrow chip from being starved by other kinds.
+    .filter((candidate) => !kinds || kinds.includes(candidate.result.endpoint.kind))
     .sort((first, second) => {
       const kindDifference = first.kindOrder - second.kindOrder
       if (kindDifference !== 0) return kindDifference

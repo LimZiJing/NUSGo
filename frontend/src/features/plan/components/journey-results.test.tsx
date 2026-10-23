@@ -8,7 +8,7 @@ import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures
 import type { Path } from '@navus/shared/routing/path'
 import type { ScoredPathCandidate } from '@navus/shared/routing/path'
 import { buildBuildingIndex } from '../../../domain/venue/building-index'
-import { getJourneyCompactSummary, getJourneyTimelineEntries } from '../data/journey-display-data'
+import { getJourneyCompactSummary, getJourneyOptionDetail, getJourneyTimelineEntries } from '../data/journey-display-data'
 import { JourneyResults } from './journey-results'
 
 const network = createValidTransitNetwork()
@@ -148,7 +148,8 @@ describe('JourneyResults', () => {
     expect(markup).toContain('Recommended')
     expect(markup).not.toContain('Alternative 2')
     expect(markup).toContain('10 min')
-    expect(markup).toContain('2.6 km')
+    expect(markup).toContain('Bus arriving now · Walk 5 min')
+    expect(markup).not.toContain('Total distance')
     expect(markup).not.toMatch(/\b\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}\b/)
     expect(markup).toContain('Walk')
     expect(markup).toContain('journey-walking-icon')
@@ -160,14 +161,11 @@ describe('JourneyResults', () => {
     expect(markup).toContain('>MID</span>')
     expect(markup).not.toContain('Middle Stop')
     expect(markup).toContain(`--journey-route-color:${route.color}`)
-    expect(markup).toContain('Wait Arriving now')
-    expect(markup).toContain('Arriving now')
-    expect(markup).toContain('Ride')
-    expect(markup).toContain('Origin venue')
-    expect(markup).toContain('Destination venue')
-    expect(markup).toContain('location-identity-icon--venue')
+    expect(markup).toContain('Due now · 5 min ride')
+    // The trip card names both ends, so the timeline starts and ends on a leg.
+    expect(markup).not.toContain('Origin venue')
+    expect(markup).not.toContain('Destination venue')
     expect(markup).toContain('location-identity-icon--stop')
-    expect(markup).toContain('aria-label="Origin venue, venue"')
     expect(markup).toContain('aria-label="Stop A, bus stop"')
     expect(markup).toContain('aria-label="MID, bus stop, code STOP-MID"')
     expect(markup).toContain('aria-label="Journey details"')
@@ -373,8 +371,9 @@ describe('JourneyResults', () => {
     expect(firstOptionButton.textContent).toContain('10 min')
     expect(firstOptionButton.textContent).toContain('Walk 5 min')
     const summaryBottomRow = firstOptionButton.querySelector('.journey-option-summary-bottomline')
-    expect(summaryBottomRow?.children[0]?.classList.contains('journey-option-modes')).toBe(true)
-    expect(summaryBottomRow?.children[1]?.classList.contains('journey-option-walking-total')).toBe(true)
+    expect(summaryBottomRow?.children[0]?.classList.contains('journey-option-heading-labels')).toBe(true)
+    expect(summaryBottomRow?.children[1]?.classList.contains('journey-option-detail')).toBe(true)
+    expect(firstOptionButton.querySelector('.journey-option-estimate .journey-option-modes')).toBeTruthy()
     expect(firstOptionButton.getAttribute('aria-current')).toBe('true')
     expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(secondOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
@@ -509,7 +508,9 @@ describe('JourneyResults', () => {
       />,
     )
 
-    expect(markup).toContain('aria-label="COM 3, venue"')
+    expect(getJourneyTimelineEntries(path, collidingVenues, createTransitIndex(collidingNetwork))
+      .flatMap((entry) => entry.kind === 'location' && entry.label === 'COM 3' ? [entry.locationKind] : []))
+      .toEqual(['venue', 'stop'])
     expect(markup).toContain('aria-label="COM 3, bus stop"')
   })
 
@@ -522,6 +523,20 @@ describe('JourneyResults', () => {
         { kind: 'walking' },
       ],
     })
+  })
+
+  it('describes an option by its walking distance or its first bus wait', () => {
+    const busLeg = path.legs[1]
+    if (!busLeg || busLeg.mode !== 'shuttle') throw new Error('Test journey is missing its bus leg')
+    const waiting = { ...path, legs: [path.legs[0], { ...busLeg, waitingSeconds: 360 }, path.legs[2]] }
+    const walking: Path = { ...path, legs: [path.legs[0]], totalDistanceMeters: 979 }
+
+    expect(getJourneyOptionDetail(path, getJourneyCompactSummary(path, networkIndex)))
+      .toBe('Bus arriving now · Walk 5 min')
+    expect(getJourneyOptionDetail(waiting, getJourneyCompactSummary(waiting, networkIndex)))
+      .toBe('Wait 6 min · Walk 5 min')
+    expect(getJourneyOptionDetail(walking, getJourneyCompactSummary(walking, networkIndex)))
+      .toBe('979 m')
   })
 
   it('explains when the Journey was selected within a search budget', () => {
@@ -557,14 +572,14 @@ describe('JourneyResults', () => {
   })
 
   it.each([
-    [0, 'Arriving now'],
-    [29, 'Arriving now'],
-    [60, '1 min'],
-    [119, '2 min'],
+    [0, 'Due now'],
+    [29, 'Due now'],
+    [60, 'Wait 1 min'],
+    [119, 'Wait 2 min'],
   ])('uses threshold wording for a %s-second wait', (waitingSeconds, expected) => {
     const markup = renderJourneyWithWaitingSeconds(waitingSeconds)
 
-    expect(markup).toContain(`Wait ${expected}`)
+    expect(markup).toContain(`>${expected} · `)
   })
 
   it.each([

@@ -469,7 +469,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        {!isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
+        {!isMobileViewport && !isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
           <NearbyCrosshair insets={mapInsets} />
         )}
         <div className="map-control-stack">

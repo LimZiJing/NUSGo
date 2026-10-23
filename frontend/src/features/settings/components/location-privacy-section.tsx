@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { LocationPermissionState } from '../../../domain/location/types'
+import { ChevronRightIcon, MapPinIcon } from '../../../ui/icons'
 
 type PermissionStatus = LocationPermissionState | 'checking'
 
@@ -34,25 +35,25 @@ export function LocationPrivacySection({
   return (
     <section className="settings-section" aria-labelledby="settings-location-heading">
       <h3 id="settings-location-heading">Location &amp; privacy</h3>
-      <p>
-        Your live device location stays in this browser and is not sent to NavUS services. If you
-        choose Current location as a trip endpoint, its frozen coordinates are sent to the NavUS
-        routing service to calculate the route.
+      <p className="settings-section-subtitle">
+        Live location stays on your device; route requests send saved coordinates.
       </p>
-      <p>Clearing this fix does not change a trip endpoint already set to Current location.</p>
-      <dl className="settings-location-status">
-        <dt>Browser location permission</dt>
-        <dd aria-live="polite">{PERMISSION_LABELS[permissionStatus]}</dd>
-      </dl>
+      <p className="settings-location-permission">
+        Browser permission <span aria-live="polite">{PERMISSION_LABELS[permissionStatus]}</span>
+      </p>
       <button
-        className="settings-action-button"
+        className="settings-location-action"
         type="button"
         disabled={!hasLocationActivity}
         onClick={clearLocation}
       >
-        Clear current location
+        <MapPinIcon size={18} />
+        <span>Clear current location</span>
+        <ChevronRightIcon className="settings-row-chevron" size={18} />
       </button>
-      <p className="settings-status-message" role="status">{statusMessage}</p>
+      <p className="settings-status-message" role="status">
+        {statusMessage}
+      </p>
     </section>
   )
 }

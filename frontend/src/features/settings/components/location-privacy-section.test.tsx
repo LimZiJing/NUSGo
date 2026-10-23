@@ -20,10 +20,9 @@ describe('Location and privacy settings', () => {
     )
 
     expect(screen.getByText('Denied')).toBeTruthy()
-    expect(screen.getByText(/live device location stays in this browser and is not sent to NavUS services/))
-      .toBeTruthy()
-    expect(screen.getByText(/frozen coordinates are sent to the NavUS routing service/)).toBeTruthy()
-    expect(screen.getByText(/does not change a trip endpoint already set to Current location/)).toBeTruthy()
+    expect(screen.getByText(
+      'Live location stays on your device; route requests send saved coordinates.',
+    )).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Clear current location' }))
 

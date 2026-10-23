@@ -13,8 +13,11 @@ import {
   DoorOpen,
   EllipsisVertical,
   Footprints,
+  Info,
+  Map,
   MapPin,
   LocateFixed,
+  Monitor,
   Navigation,
   Moon,
   Route,
@@ -92,6 +95,10 @@ export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
 }
 
+export function MapIcon(props: IconProps) {
+  return renderDecorativeIcon(Map, props)
+}
+
 export function NavigationIcon(props: IconProps) {
   return renderDecorativeIcon(Navigation, props)
 }
@@ -102,6 +109,14 @@ export function RouteIcon(props: IconProps) {
 
 export function MoonIcon(props: IconProps) {
   return renderDecorativeIcon(Moon, props)
+}
+
+export function MonitorIcon(props: IconProps) {
+  return renderDecorativeIcon(Monitor, props)
+}
+
+export function InfoIcon(props: IconProps) {
+  return renderDecorativeIcon(Info, props)
 }
 
 export function SunIcon(props: IconProps) {

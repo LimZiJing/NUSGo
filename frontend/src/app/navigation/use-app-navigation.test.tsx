@@ -160,6 +160,25 @@ describe('useAppNavigation', () => {
     expect(options.pendingExploreReturnFocusRef.current).toBeNull()
   })
 
+  it('keeps the stop callbacks stable when the Explore mode changes', () => {
+    // App rebuilds the navigation session when these callbacks change, which resets Explore.
+    let options: UseAppNavigationOptions = createOptions(true, 'explore')
+    const { result, rerender } = renderHook(() => useAppNavigation(options))
+    const { handleStopSelected, handleMapStopInteraction } = result.current
+
+    options = {
+      ...options,
+      exploreState: { mode: 'bus-routes', selectedVenue: null, selectedBuildingId: null },
+    }
+    rerender()
+
+    expect(result.current.handleStopSelected).toBe(handleStopSelected)
+    expect(result.current.handleMapStopInteraction).toBe(handleMapStopInteraction)
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+    expect(result.current.stopReturnMode).toBe('bus-routes')
+  })
+
   it('exposes the Explore return target and mode until Back is selected', () => {
     const base = createOptions(false, 'explore')
     const options = {

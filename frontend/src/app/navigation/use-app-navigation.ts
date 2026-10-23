@@ -108,6 +108,8 @@ export function useAppNavigation({
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
   // Render-visible mirror of returnToExploreRef; set and cleared at the same points.
   const [stopReturn, setStopReturn] = useState<{ readonly mode: ExploreMode } | null>(null)
+  // Read through a ref so the stop callbacks stay stable; App rebuilds the navigation session when they change.
+  const exploreModeRef = useRef(exploreState.mode)
 
   const activeView = state.activeView
   const previousActiveViewRef = useRef(activeView)
@@ -117,7 +119,8 @@ export function useAppNavigation({
   useLayoutEffect(() => {
     navigationRef.current = state
     isMobileViewportRef.current = isMobileViewport
-  }, [isMobileViewport, state])
+    exploreModeRef.current = exploreState.mode
+  }, [exploreState.mode, isMobileViewport, state])
 
   const openStopInStops = useCallback((stopId: string): void => {
     const currentNavigation = navigationRef.current
@@ -142,9 +145,9 @@ export function useAppNavigation({
         : null
     )
     returnToExploreRef.current = { focusTarget: activeElement }
-    setStopReturn({ mode: exploreState.mode })
+    setStopReturn({ mode: exploreModeRef.current })
     openStopInStops(stopId)
-  }, [exploreState.mode, openStopInStops])
+  }, [openStopInStops])
 
   const handleStopSelected = useCallback((stopId: string): boolean => {
     const currentNavigation = navigationRef.current

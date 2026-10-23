@@ -79,6 +79,11 @@
     pointer-events: auto;
   }
 
+  /* With no location chip above it (Plan hides it above the collapsed detent), take the top row. */
+  .map-control-stack:not(:has(.location-control)) > .fit-routes-control {
+    top: var(--map-control-inset-top);
+  }
+
   .location-control-chip:focus-visible {
     outline: 3px solid var(--focus-ring);
     outline-offset: 2px;

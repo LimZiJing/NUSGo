@@ -158,6 +158,14 @@ function blockNames(entry: BuildingEntry): string[] {
   return entry.blocks.flatMap((block) => [`Block ${block}`, `${entry.name} Block ${block}`])
 }
 
+/** Every name a building entry can be found by: its name, aliases, block names and any extra names. */
+export function getBuildingSearchFields(
+  entry: BuildingEntry,
+  extraNames: ReadonlyMap<string, readonly string[]>,
+): string[] {
+  return [entry.name, ...entry.aliases, ...blockNames(entry), ...(extraNames.get(entry.id) ?? [])]
+}
+
 export function searchBuildings(
   index: BuildingIndex,
   query: string,
@@ -169,7 +177,7 @@ export function searchBuildings(
   if (!normalizedQuery) return []
 
   return index.entries
-    .map((entry) => ({ entry, priority: getMatchPriority([entry.name, ...entry.aliases, ...blockNames(entry), ...(extraNames.get(entry.id) ?? [])], normalizedQuery) }))
+    .map((entry) => ({ entry, priority: getMatchPriority(getBuildingSearchFields(entry, extraNames), normalizedQuery) }))
     .filter((match): match is { entry: BuildingEntry; priority: number } => match.priority !== null)
     .sort((first, second) => first.priority - second.priority || compareText(first.entry.id, second.entry.id))
     .slice(0, Math.max(0, limit))

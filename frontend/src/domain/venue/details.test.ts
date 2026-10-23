@@ -19,6 +19,14 @@ describe('venue details', () => {
     expect(formatVenueFloorAndBuilding(2, 'Computing 1')).toBe('Floor 2 · Computing 1')
   })
 
+  it.each([
+    [-1, 'Basement 1'],
+    [0, 'Ground floor'],
+    [1, 'Floor 1'],
+  ])('formats floor %i as %s', (floor, expected) => {
+    expect(formatVenueFloorAndBuilding(floor, undefined)).toBe(expected)
+  })
+
   it('omits a missing floor and keeps a confirmed building name', () => {
     expect(formatVenueFloorAndBuilding(null, 'The Shaw Foundation Building'))
       .toBe('The Shaw Foundation Building')

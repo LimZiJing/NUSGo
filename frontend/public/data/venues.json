@@ -1071,7 +1071,7 @@
   },
   "S13-M-08": {
     "roomName": "Computer Lab 2",
-    "floor": 105,
+    "floor": 1,
     "location": {
       "x": 103.77922139066418,
       "y": 1.2967170184504604
@@ -3261,7 +3261,7 @@
   },
   "Y-DanceStu": {
     "roomName": "West Core - Studio 1 (Dance Studio)",
-    "floor": "Ground"
+    "floor": 0
   },
   "Y-PerfHall": {
     "roomName": "West Core - Performance Hall",
@@ -3281,7 +3281,7 @@
   },
   "Y-Studio3": {
     "roomName": "West Core - Studio 3",
-    "floor": "Ground"
+    "floor": 0
   },
   "Y-Studio4": {
     "roomName": "West Core - Studio 4",
@@ -3289,7 +3289,7 @@
   },
   "Y-Studio5": {
     "roomName": "West Core - Studio 5",
-    "floor": "Ground"
+    "floor": 0
   },
   "UT-AUD1": {
     "roomName": "UTown Auditorium 1",

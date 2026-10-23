@@ -22,7 +22,6 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByText('Saved stops'))
     await user.click(screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' }))
     expect(onRemove).toHaveBeenCalledExactlyOnceWith('COM3')
   })
@@ -39,20 +38,15 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByText('Saved stops'))
     await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
     expect(onClear).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
     expect(onClear).toHaveBeenCalledOnce()
   })
 
-  it('shows the empty state after opening the saved stops row', async () => {
-    const user = userEvent.setup()
+  it('shows the empty state when there are no saved stops', () => {
     render(<FavouritesSection stops={[]} onRemove={() => undefined} onClear={() => undefined} />)
 
-    expect(document.querySelector('.settings-disclosure[open]')).toBeNull()
-
-    await user.click(screen.getByText('Saved stops'))
     expect(screen.getByText('None saved.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Clear all favourites' })).toBeNull()
   })

@@ -3,16 +3,26 @@ import type { VenueSearchResult } from '../../../domain/venue/search'
 import { searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../../../domain/venue/building-index'
 import type { BuildingVenueLinks } from '../../../domain/venue/building-links'
+import type { TransitIndex } from '../../../domain/transit'
+import type { TransitStop } from '@navus/shared/transit/types'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { BuildingIcon, CloseIcon, RoomIcon, SearchIcon } from '../../../ui/icons'
+import { BuildingIcon, BusIcon, CloseIcon, RoomIcon, SearchIcon } from '../../../ui/icons'
 import { IconButton } from '../../../ui/button'
 import { ScrollArea } from '../../../ui/scroll-area'
 import { SearchField } from '../../../ui/search-field'
+
+/** Short name and ID as secondary text, shown only when the short name differs from the ID. */
+function getStopSecondaryText(stop: TransitStop): string | null {
+  const shortName = stop.shortName.trim()
+  if (!shortName || shortName.toLocaleLowerCase() === stop.id.trim().toLocaleLowerCase()) return null
+  return `${shortName}, ${stop.id}`
+}
 
 interface VenueSearchProps {
   readonly venues: VenueLocationMap | null
   readonly buildings: BuildingIndex | null
   readonly buildingLinks: BuildingVenueLinks
+  readonly transitIndex?: TransitIndex | null
   readonly query: string
   readonly minimized: boolean
   readonly inputRef: RefObject<HTMLInputElement | null>
@@ -21,12 +31,14 @@ interface VenueSearchProps {
   readonly onQueryChange: (query: string) => void
   readonly onSelect: (result: VenueSearchResult, event: MouseEvent<HTMLButtonElement>) => void
   readonly onBuildingSelect: (buildingId: string, event: MouseEvent<HTMLButtonElement>) => void
+  readonly onStopSelect?: (stopId: string, event: MouseEvent<HTMLButtonElement>) => void
 }
 
 export function VenueSearch({
   venues,
   buildings,
   buildingLinks,
+  transitIndex = null,
   query,
   minimized,
   inputRef,
@@ -35,6 +47,7 @@ export function VenueSearch({
   onQueryChange,
   onSelect,
   onBuildingSelect,
+  onStopSelect,
 }: VenueSearchProps) {
   const searchState = useMemo((): { results: ExploreSearchResult[]; failed: boolean } => {
     if (!venues) return { results: [], failed: false }
@@ -42,7 +55,7 @@ export function VenueSearch({
     try {
       return {
         results: searchExplore(
-          { venues, buildings: buildings ?? EMPTY_BUILDING_INDEX, links: buildingLinks },
+          { venues, buildings: buildings ?? EMPTY_BUILDING_INDEX, links: buildingLinks, stops: transitIndex },
           query,
         ),
         failed: false,
@@ -52,7 +65,7 @@ export function VenueSearch({
       console.error('Venue search failed:', error)
       return { results: [], failed: true }
     }
-  }, [query, venues, buildings, buildingLinks])
+  }, [query, venues, buildings, buildingLinks, transitIndex])
 
   return (
     <div id="explore-content-panel" className="explore-content-panel">
@@ -92,6 +105,26 @@ export function VenueSearch({
           <ScrollArea className="navigation-panel-scroll-content explore-content-results" aria-label="Venue search results">
             {searchState.results.length > 0 ? (
               searchState.results.map((item) => {
+                if (item.kind === 'stop') {
+                  const { stop } = item
+                  const secondary = getStopSecondaryText(stop)
+                  return (
+                    <button
+                      className="explore-content-result"
+                      data-focus-id={`stop-result-${stop.id}`}
+                      type="button"
+                      key={`stop:${stop.id}`}
+                      onClick={(event) => onStopSelect?.(stop.id, event)}
+                      aria-label={`${stop.longName}, bus stop, code ${stop.id}`}
+                    >
+                      <span className="explore-content-result-identity">
+                        <BusIcon className="location-identity-icon location-identity-icon--stop" />
+                        <strong>{stop.longName}</strong>
+                      </span>
+                      {secondary && <span>{secondary}</span>}
+                    </button>
+                  )
+                }
                 if (item.kind === 'building') {
                   const { entry } = item
                   const secondary = describeBuildingEntry(entry)
@@ -131,7 +164,7 @@ export function VenueSearch({
                 )
               })
             ) : (
-              <p className="explore-content-status" role="status" aria-live="polite">No matching venues.</p>
+              <p className="explore-content-status" role="status" aria-live="polite">No matching venues or bus stops.</p>
             )}
           </ScrollArea>
         ) : (

@@ -1,4 +1,4 @@
-export type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark' | 'nus' | 'matcha' | 'sakura'
 export type ThemePreference = 'system' | Theme
 
 export function getSystemTheme(): Theme {

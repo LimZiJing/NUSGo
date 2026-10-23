@@ -41,16 +41,18 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Set up GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Build
         env:
           # Keep Pages deployable before the backend is available. API-backed features
           # remain unavailable until NAVUS_API_ORIGIN points to the deployed API.
           VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN || 'https://api.example.invalid' }}
+          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
           VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build
-
-      - name: Set up GitHub Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3

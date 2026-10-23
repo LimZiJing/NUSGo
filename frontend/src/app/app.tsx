@@ -46,6 +46,8 @@ import { SettingsContent } from '../features/settings/settings-content'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
+import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
+import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -211,6 +213,23 @@ function App() {
     planDetent: navigation.sheets.plan.detent,
     hasJourney: state.path.displayedCandidates.length > 0,
   })
+  useStopsEntryRefit({
+    commands,
+    isMobileViewport,
+    activeView: navigation.activeView,
+    stopsDetent: navigation.sheets.stops.detent,
+    rememberedStopId: stopsWorkflow.state.focusedStopId,
+  })
+  useExploreEntryRefit({
+    commands,
+    isMobileViewport,
+    activeView: navigation.activeView,
+    exploreDetent: navigation.sheets.explore.detent,
+    exploreMode: state.exploreState.mode,
+    selectedVenueCode: state.exploreState.selectedVenue?.code ?? null,
+    selectedBuildingId: state.exploreState.selectedBuildingId,
+    selectedRouteId: state.selectedRouteId,
+  })
 
   useLayoutEffect(() => {
     navigationRef.current = navigation
@@ -267,7 +286,7 @@ function App() {
     if (!focusTripControlAfterOverlayRef.current) return
     focusTripControlAfterOverlayRef.current = false
     const focusTarget = tripControlsRef.current?.querySelector<HTMLElement>(
-      '.plan-content-panel input:not([disabled]), .plan-content-panel select:not([disabled]), .plan-content-panel textarea:not([disabled]), .mobile-sheet-handle',
+      '.plan-content-panel input:not([disabled]), .plan-trip-line-main, .plan-content-panel select:not([disabled]), .plan-content-panel textarea:not([disabled]), .mobile-sheet-handle',
     )
     focusTarget?.focus()
   }, [isMobileViewport, navigation.sheets.plan.detent])
@@ -356,7 +375,25 @@ function App() {
   ])
 
   const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
+  // Favourite stops are shown in the trip search before anything is typed.
+  const planSearchSuggestions = useMemo(() => {
+    const { transitIndex } = state
+    if (!transitIndex) return []
+    return stopsWorkflow.state.favoriteStopIds.flatMap((stopId) => {
+      const stop = transitIndex.stopById.get(stopId)
+      return stop
+        ? [{
+          endpoint: { kind: 'stop' as const, id: stop.id },
+          label: stop.longName,
+          detail: stop.shortName.trim().toLowerCase() === stop.id.trim().toLowerCase()
+            ? ''
+            : `${stop.shortName} (${stop.id})`,
+        }]
+        : []
+    })
+  }, [state, stopsWorkflow.state.favoriteStopIds])
   const planContentProps: AppViewsProps['views']['plan'] = {
+    searchSuggestions: planSearchSuggestions,
     tripRequest: state.tripRequest,
     venues: state.venues,
     buildings: state.buildings,
@@ -392,8 +429,15 @@ function App() {
     }),
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
   }
+  // Mode is captured when the stop opens from Explore, so the label matches where Back returns.
+  const stopBackLabel = appNavigation.stopReturnTarget !== 'explore'
+    ? 'Back to stops'
+    : appNavigation.stopReturnMode === 'bus-routes'
+      ? 'Back to bus routes'
+      : 'Back to Find venue'
   const stopsContentProps: AppViewsProps['views']['stops'] = {
     selectedStop: stopsWorkflow.selectedStop,
+    backLabel: stopBackLabel,
     stopListEntries: stopsWorkflow.stopListEntries,
     stopListLoading: stopsWorkflow.stopListLoading,
     liveArrivalMessage: stopsWorkflow.liveArrivalMessage,

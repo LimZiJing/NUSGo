@@ -2,23 +2,22 @@ import type { ReactNode } from 'react'
 import { ChevronRightIcon } from '../../../ui/icons'
 import '../styles/settings-disclosures.css'
 
-interface SettingsDisclosureRowProps {
-  readonly icon: ReactNode
+interface SettingsDisclosureProps {
   readonly title: string
   readonly trailing?: ReactNode
   readonly children: ReactNode
+  readonly defaultOpen?: boolean
 }
 
-export function SettingsDisclosureRow({
-  icon,
+export function SettingsDisclosure({
   title,
   trailing,
   children,
-}: SettingsDisclosureRowProps) {
+  defaultOpen = false,
+}: SettingsDisclosureProps) {
   return (
-    <details className="settings-disclosure">
+    <details className="settings-disclosure" open={defaultOpen}>
       <summary className="settings-disclosure-summary">
-        <span className="settings-disclosure-icon">{icon}</span>
         <span className="settings-disclosure-title">{title}</span>
         {trailing && <span className="settings-disclosure-trailing">{trailing}</span>}
         <ChevronRightIcon className="settings-disclosure-chevron" size={18} />

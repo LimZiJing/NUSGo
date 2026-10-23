@@ -1189,6 +1189,46 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('refits the selected venue immediately with the current insets, then leaves later inset reports alone', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const venue: VenueLocation = {
+      roomName: 'Venue One',
+      location: { x: 103.7, y: 1.3 },
+    }
+    const map = fakeMapState.maps.at(-1) as {
+      flyTo: ReturnType<typeof vi.fn>
+    }
+
+    await session.ready
+    session.selectVenue(venue)
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+    expect(map.flyTo).toHaveBeenCalledOnce()
+
+    session.setViewportInsets({ top: 40, right: 12, bottom: 60, left: 300 })
+    session.refitSelectedVenue()
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103.7, 1.3],
+      zoom: 17,
+      offset: [144, -10],
+      essential: true,
+    }))
+
+    session.setViewportInsets({ top: 50, right: 12, bottom: 70, left: 300 })
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+
+    session.clearVenue()
+    session.refitSelectedVenue()
+    expect(map.flyTo).toHaveBeenCalledTimes(2)
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('marks every part of a selected building and fits the camera to all of them once insets are known', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({

@@ -38,10 +38,16 @@ describe('validateVenueLocationMap', () => {
     expect(error).toBeInstanceOf(VenueValidationError)
     expect((error as VenueValidationError).issues).toEqual([
       'Venue A-1 roomName must be a non-empty string',
-      'Venue A-1 floor must be a finite number, non-empty string, or null',
+      'Venue A-1 floor must be an integer or null when provided',
       'Venue A-1 has invalid longitude: 181',
       'Venue A-1 has invalid latitude: Infinity',
       'Venue B-1 must be an object',
     ])
+  })
+
+  it.each(['Ground', 1.5])('rejects non-integer floor values such as %s', (floor) => {
+    expect(() => validateVenueLocationMap({
+      'A-1': { roomName: 'Room', floor },
+    })).toThrow(VenueValidationError)
   })
 })

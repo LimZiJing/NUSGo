@@ -41,8 +41,13 @@ function formatBuildingSourceName(value: string): string {
     .replace(/\s*\(([^)]+)\)/, ' · $1')
 }
 
-function splitSourceNote(value: string): string[] {
-  return value.split(/(?<=\.)\s+/).filter(Boolean)
+function summarizeBuildingSourceNote(value: string): string[] {
+  const note = value.toLowerCase()
+  const sources = ['OpenStreetMap', 'Google Maps'].filter((source) => note.includes(source.toLowerCase()))
+  const summary = sources.length > 0 ? [`Data from ${sources.join(' and ')}.`] : []
+
+  if (/provisional|unverified/.test(note)) summary.push('Some locations are provisional.')
+  return summary
 }
 
 function SourceLink({ href, children }: SourceLinkProps) {
@@ -61,16 +66,17 @@ function AboutCardRow({ children, className = '' }: { readonly children: ReactNo
 }
 
 export function AboutSection({ dataVersion, transitMetadata, buildingSource }: AboutSectionProps) {
-  const buildChannel = dataVersion === LOCAL_DATA_VERSION ? 'Development' : 'Production'
+  const buildVersion = dataVersion === LOCAL_DATA_VERSION
+    ? 'Development'
+    : `Production · ${dataVersion.slice(0, 7)}`
 
   return (
-    <section className="settings-section settings-about" aria-label="About settings">
+    <div className="settings-about">
       <section className="settings-about-group" aria-labelledby="settings-about-sources-heading">
         <h3 id="settings-about-sources-heading" className="settings-about-group-title">Data sources</h3>
         <div className="settings-about-card">
           <AboutCardRow>
-            <h4>Live arrivals</h4>
-            <p className="settings-about-meta">NUS buses · NavUS</p>
+            <h4>Bus timings</h4>
             <p className="settings-about-link-line">
               <SourceLink href="https://datamall.lta.gov.sg/content/datamall/en.html">
                 Public buses · LTA DataMall
@@ -78,9 +84,16 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
             </p>
             {transitMetadata && (
               <p className="settings-about-detail">
-                Shuttle routes and stops verified {formatDate(transitMetadata.verifiedAt)}
+                {transitMetadata.source} · Updated {formatDate(transitMetadata.verifiedAt)}
               </p>
             )}
+          </AboutCardRow>
+
+          <AboutCardRow>
+            <h4>Venue data</h4>
+            <p className="settings-about-link-line">
+              <SourceLink href="https://nusmods.com">NUSMods</SourceLink>
+            </p>
           </AboutCardRow>
 
           {buildingSource && (
@@ -89,9 +102,9 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
               <p className="settings-about-link-line">
                 <SourceLink href={buildingSource.url}>{formatBuildingSourceName(buildingSource.name)}</SourceLink>
               </p>
-              <p className="settings-about-meta">Snapshot · {formatDate(buildingSource.fetchedOn)}</p>
+              <p className="settings-about-meta">Updated {formatDate(buildingSource.fetchedOn)}</p>
               <div className="settings-about-note">
-                {splitSourceNote(buildingSource.licenceNote).map((statement) => (
+                {summarizeBuildingSourceNote(buildingSource.licenceNote).map((statement) => (
                   <p className="settings-about-detail" key={statement}>{statement}</p>
                 ))}
               </div>
@@ -113,8 +126,8 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
         <h3 id="settings-about-version-heading" className="settings-about-group-title">App version</h3>
         <div className="settings-about-card">
           <AboutCardRow>
-            <h4>Build channel</h4>
-            <p className="settings-about-meta">{buildChannel}</p>
+            <h4>Build</h4>
+            <p className="settings-about-meta">{buildVersion}</p>
           </AboutCardRow>
         </div>
       </section>
@@ -127,7 +140,7 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
             <p className="settings-about-meta">Report a bug or share an idea.</p>
             <a
               className="settings-about-action"
-              href="https://github.com/LimZiJing/NavUS/issues/new"
+              href="https://github.com/LimZiJing/NUSGo/issues/new"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -138,15 +151,6 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
         </div>
       </section>
 
-      <footer className="settings-about-credits" aria-label="Map credits">
-        <p>
-          © <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a>
-          {' · '}
-          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
-            OpenStreetMap
-          </a>
-        </p>
-      </footer>
-    </section>
+    </div>
   )
 }

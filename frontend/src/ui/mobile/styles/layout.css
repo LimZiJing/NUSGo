@@ -91,6 +91,11 @@
     pointer-events: auto;
   }
 
+  /* With no location chip above it (Plan hides it above the collapsed detent), take the top row. */
+  .map-control-stack:not(:has(.location-control)) > .fit-routes-control {
+    top: var(--map-control-inset-top);
+  }
+
   .location-control-chip:focus-visible {
     outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
@@ -137,7 +142,7 @@
     right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Settings shows the required map credits in its About footer. */
+  /* Settings renders a compact map attribution above its sections. */
   .map-shell[data-settings-open='true'] .map .maplibregl-ctrl-bottom-right {
     display: none;
   }

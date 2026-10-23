@@ -9,40 +9,10 @@
   box-sizing: border-box;
 }
 
-.plan-content-submit:not(:disabled),
-.plan-endpoint-result:not(:disabled),
-.journey-option-summary:not(:disabled) {
-  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
-    border-color var(--motion-duration-fast) var(--motion-ease-standard),
-    color var(--motion-duration-fast) var(--motion-ease-standard),
-    transform var(--motion-duration-fast) var(--motion-ease-standard);
-}
-
-.plan-content-submit:active:not(:disabled),
-.plan-endpoint-result:active:not(:disabled),
-.journey-option-summary:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .plan-content-submit:active,
-  .plan-endpoint-result:active,
   .journey-option-summary:active {
     transform: none;
   }
-}
-
-.plan-content-heading,
-.plan-endpoint-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.plan-content-title {
-  min-width: 0;
-  text-align: left;
 }
 
 .plan-content-panel {
@@ -50,321 +20,11 @@
   gap: var(--space-1);
 }
 
-.plan-content-heading h2 {
-  margin: 0;
-  color: var(--text-primary);
-  font: 600 var(--font-size-xl)/1.2 var(--heading);
-}
-
-.plan-content-menu {
-  position: relative;
-}
-
-.plan-content-menu-panel {
-  position: absolute;
-  z-index: 4;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 104px;
-  padding: 4px;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-md);
-  background: var(--surface-overlay-panel);
-  box-shadow: var(--shadow-results);
-}
-
-.plan-content-submit:disabled,
-.plan-endpoint-result:disabled,
-.journey-option-summary:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.plan-endpoint-picker {
-  position: relative;
-  display: grid;
-  gap: 0;
-  /* Reserve the overlap space so the attached CTA stays visible in the sheet. */
-  margin-bottom: 18px;
-  padding: var(--space-2) 48px var(--space-2) var(--space-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-sm);
-  box-sizing: border-box;
-}
-
-.plan-endpoint-picker::before {
-  position: absolute;
-  top: 27px;
-  bottom: 27px;
-  left: 17px;
-  border-left: 2px dotted var(--text-muted);
-  opacity: 0.75;
-  content: '';
-}
-
-.plan-endpoint-control {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  align-items: start;
-  gap: 8px;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.plan-endpoint-control:has(.plan-endpoint-results) {
-  z-index: 4;
-}
-
-.plan-endpoint-control-destination::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 32px;
-  border-top: 1px solid var(--border-control);
-  content: '';
-  opacity: 0.65;
-}
-
-.plan-endpoint-marker {
-  display: grid;
-  width: 20px;
-  height: 20px;
-  margin: 8px 2px 0;
-  place-items: center;
-  box-sizing: border-box;
-}
-
-.plan-endpoint-control-origin .plan-endpoint-marker {
-  color: var(--status-marker-origin);
-}
-
-.plan-endpoint-control-destination .plan-endpoint-marker {
-  color: var(--status-marker-destination);
-}
-
-.plan-endpoint-marker svg {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.25;
-}
-
-.plan-endpoint-swap {
-  position: absolute;
-  z-index: 2;
-  /* Centred without a transform so the primitive's pressed scale cannot make it jump. */
-  top: calc(50% - var(--control-height-sm) / 2);
-  right: 8px;
-}
-
-.plan-endpoint-field {
-  position: relative;
-  min-width: 0;
-}
-
-.plan-endpoint-input-row {
-  position: relative;
-}
-
-.plan-endpoint-control .search-field-icon {
-  display: none;
-}
-
-/* A chosen endpoint is drawn as wrapping text over the input, so long names stay readable.
-   The input keeps the value for assistive tech and still takes the click and focus. */
-.plan-endpoint-input-row[data-label-visible='true'] {
-  display: grid;
-}
-
-.plan-endpoint-input-row[data-label-visible='true'] .search-field {
-  display: block;
-  grid-area: 1 / 1;
-}
-
-.plan-endpoint-input-row[data-label-visible='true'] .search-field input {
-  height: 100%;
-  color: transparent;
-  caret-color: transparent;
-}
-
-.plan-endpoint-selected-text {
-  grid-area: 1 / 1;
-  z-index: 1;
-  align-self: center;
-  padding: 8px 86px 8px 10px;
-  color: var(--text-primary);
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-  text-align: left;
-  pointer-events: none;
-}
-
-.plan-endpoint-control-has-identity .plan-endpoint-selected-text {
-  padding-left: 36px;
-}
-
-.plan-endpoint-control .search-field input {
-  min-height: var(--control-height-md);
-  padding: 8px 86px 8px 10px;
-  border: 0;
-  border-radius: 0;
-  color: var(--text-primary);
-  background: transparent;
-  font: inherit;
-  text-align: left;
-}
-
-.plan-endpoint-control-has-identity .search-field input {
-  padding-left: 36px;
-}
-
-.plan-endpoint-control .plan-endpoint-selected-icon {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  z-index: 1;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.plan-endpoint-control .search-field input:focus {
-  outline: 2px solid var(--focus-ring-neutral);
-  outline-offset: 1px;
-}
-
-.plan-endpoint-control .search-field input::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
-}
-
-.plan-endpoint-control .search-field input::placeholder {
-  color: var(--text-muted);
-}
-
-.plan-endpoint-actions {
-  position: absolute;
-  top: 50%;
-  right: var(--space-1);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  transform: translateY(-50%);
-}
-
-.plan-endpoint-location-status {
-  margin: 4px 0 0;
-  color: var(--text-warning);
-  font-size: var(--font-size-xs);
-  line-height: 1.25;
-}
-
-.plan-endpoint-search-status,
-.plan-validation {
-  margin: 0;
-}
-
 .plan-content-footer {
   display: flex;
   align-items: center;
   min-height: 16px;
-  padding: 0 44px 0 var(--space-2);
-}
-
-.plan-content-submit {
-  position: absolute;
-  right: 8px;
-  bottom: -18px;
-  z-index: 3;
-  display: grid;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  color: var(--accent-contrast);
-  background: var(--accent);
-  box-shadow: var(--shadow-lg);
-  cursor: pointer;
-}
-
-.plan-content-submit svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.25;
-}
-
-.plan-content-submit:not(:disabled):hover,
-.plan-content-submit:not(:disabled):focus-visible {
-  background: var(--accent-hover);
-}
-
-.plan-endpoint-results {
-  position: absolute;
-  z-index: 1;
-  top: calc(100% + 4px);
-  right: 0;
-  left: 0;
-  display: grid;
-  gap: 4px;
-  max-height: 180px;
-  padding: 4px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-results);
-}
-
-.plan-endpoint-result {
-  display: grid;
-  gap: 2px;
-  padding: 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  text-align: left;
-  color: var(--text-primary);
-  background: var(--surface-raised);
-  font: inherit;
-  cursor: pointer;
-}
-
-.plan-endpoint-result:focus-visible {
-  background: var(--surface-muted);
-}
-
-.plan-endpoint-result:hover {
-  border-color: var(--border-focus);
-}
-
-.plan-endpoint-result-identity {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.plan-endpoint-result span {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.plan-endpoint-empty {
-  margin: 4px 0;
-  padding: 4px;
-  color: var(--text-secondary);
+  padding: 0 var(--space-2);
 }
 
 .plan-validation {
@@ -468,50 +128,52 @@
 .journey-option-summary-topline {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
   gap: 8px;
 }
 
 .journey-option-heading-labels {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 8px;
+  gap: 0 var(--space-1);
   min-width: 0;
+}
+
+.journey-option-heading-recommended,
+.journey-option-heading-neutral {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .journey-option-heading-recommended {
   color: var(--status-success-strong);
-  font-size: var(--font-size-2xl);
-  font-weight: 800;
-  line-height: 1.1;
 }
 
-.journey-option-heading-neutral {
+.journey-option-heading-neutral,
+.journey-option-heading-qualifier {
   color: var(--text-secondary);
-  font-size: var(--font-size-md);
-  font-weight: 700;
-  line-height: 1.25;
 }
 
 .journey-option-heading-qualifier {
-  color: var(--text-secondary);
   font-size: var(--font-size-xs);
-  font-weight: 600;
-  line-height: 1.25;
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .journey-option-estimate {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: var(--space-2);
 }
 
 .journey-option-duration {
-  color: var(--accent);
-  font-size: var(--font-size-lg);
-  font-weight: 750;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -520,21 +182,22 @@
 }
 
 .journey-option-summary-bottomline {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-1);
 }
 
-.journey-option-walking-total {
-  align-self: center;
-  justify-self: end;
+.journey-option-detail {
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
-  font-weight: 550;
+  font-weight: 400;
   line-height: 1.3;
-  text-align: right;
-  white-space: nowrap;
+}
+
+.journey-option-detail::before {
+  content: '·';
+  margin-inline-end: var(--space-1);
 }
 
 .journey-option-modes {
@@ -560,6 +223,11 @@
   color: var(--journey-route-color, var(--text-secondary));
 }
 
+/* The footprints say "walk"; the word would crowd a transfer's four chips. */
+.journey-option-walking > span {
+  display: none;
+}
+
 .journey-result-details {
   display: grid;
   gap: 8px;
@@ -569,12 +237,6 @@
 
 .journey-result-details[hidden] {
   display: none;
-}
-
-.journey-detail-distance {
-  color: var(--text-muted);
-  font-size: var(--font-size-xs);
-  line-height: 1.25;
 }
 
 .journey-result-details .journey-timeline {
@@ -592,21 +254,6 @@
     padding: 10px;
   }
 
-  .journey-option-heading-recommended {
-    font-size: var(--font-size-xl);
-  }
-
-  .journey-option-heading-neutral {
-    font-size: var(--font-size-sm);
-  }
-
-  .journey-option-duration {
-    font-size: var(--font-size-lg);
-  }
-
-  .journey-option-walking-total {
-    font-size: var(--font-size-xs);
-  }
 }
 
 .journey-result h3 {
@@ -933,19 +580,6 @@
     height: 100%;
   }
 
-  .plan-content-heading {
-    min-height: var(--control-height-sm);
-  }
-
-  .plan-content-title {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .plan-content-title h2 {
-    font-size: var(--font-size-lg);
-  }
-
   .navigation-panel .plan-content-panel {
     min-height: 0;
     overflow-x: clip;
@@ -956,23 +590,22 @@
 
   .navigation-panel .plan-content-panel .journey-results {
     /*
-     * 32px on each side of the sheet's content box: 32px start margin, and 20px here plus
-     * the scroll panel's 12px end padding and margin. Sizing from the panel rather than
-     * the viewport keeps the results inside the sheet when landscape safe-area insets
-     * widen its padding.
+     * A start margin equal to the end gap left by the scroll panel's padding and margin,
+     * so the content has the same space on both sides of the sheet. Sizing from the
+     * panel rather than the viewport keeps the results inside the sheet when landscape
+     * safe-area insets widen its padding.
      */
-    width: calc(100% - 52px);
-    margin-inline-start: 32px;
+    width: calc(100% - var(--space-3));
+    margin-inline-start: var(--space-3);
     box-sizing: border-box;
   }
 
-  .plan-endpoint-picker {
-    width: 100%;
-    margin-inline: var(--space-2) 0;
+  .navigation-panel .plan-trip-card,
+  .plan-location-search {
+    width: calc(100% - var(--space-3));
+    margin-inline: var(--space-3) 0;
   }
 
-  .plan-content-submit,
-  .plan-endpoint-result,
   .journey-option-summary,
   .plan-content input,
   .plan-content select {
@@ -987,7 +620,7 @@
   /* The partial sheet is clipped to its detent, so the content row takes the
      remaining height and scrolls instead of growing past the visible area. */
   .navigation-panel[data-detent='partial'] .plan-content {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   /* Size to the content, only scrolling once it outgrows the row. */
@@ -1001,6 +634,38 @@
     min-height: 0;
     max-height: none;
     overflow: visible;
+  }
+
+  /* With a trip set, the trip card stays put and only the journey options scroll,
+     so the scrollbar starts at the options rather than at the top of the sheet. */
+  .navigation-panel .plan-content-panel-trip,
+  .navigation-panel[data-detent='full'] .plan-content-panel-trip {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .navigation-panel[data-detent='full'] .plan-content-panel-trip {
+    height: 100%;
+  }
+
+  .plan-content-panel-trip .plan-trip-pin {
+    position: static;
+    background: none;
+  }
+
+  .plan-results {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: start;
+    gap: var(--space-1);
+    min-height: 0;
+    /* Reaches into the panel's end padding so the scrollbar sits at the sheet's edge. */
+    margin-inline-end: calc(-1 * var(--space-2));
+    padding-inline-end: var(--space-2);
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
 }
@@ -1024,4 +689,347 @@
     max-height: none;
     overflow: visible;
   }
+}
+
+.plan-trip-card,
+.plan-location-search {
+  display: grid;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Keeps the trip in view while the journey options scroll beneath it. */
+.plan-trip-pin {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding-bottom: var(--space-1);
+  background: var(--surface-overlay-panel);
+}
+
+.plan-trip-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan-trip-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: 48px;
+  padding: 2px var(--space-1) 2px 0;
+}
+
+.plan-trip-line + .plan-trip-line {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.plan-trip-line-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 0 4px var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-trip-line-main:focus-visible {
+  outline: 2px solid var(--focus-ring-neutral);
+  outline-offset: -2px;
+}
+
+.plan-trip-line-icon {
+  display: grid;
+  flex: 0 0 18px;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.plan-trip-line-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.plan-trip-line-origin .plan-trip-line-icon {
+  color: var(--status-marker-origin);
+}
+
+.plan-trip-line-destination .plan-trip-line-icon {
+  color: var(--status-marker-destination);
+}
+
+.plan-trip-line-text {
+  min-width: 0;
+  font-size: var(--font-size-md);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.plan-trip-line-text {
+  font-weight: 600;
+}
+
+.plan-trip-line-prefix,
+.plan-trip-line-placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.plan-trip-locate:not(:disabled) {
+  color: var(--accent);
+}
+
+.plan-trip-location-status {
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-2);
+  color: var(--text-warning);
+  font-size: var(--font-size-xs);
+  line-height: 1.25;
+}
+
+.plan-content-footer {
+  padding: 0 var(--space-2);
+}
+
+.plan-validation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  color: var(--text-warning);
+  font-size: var(--font-size-xs);
+  line-height: 16px;
+}
+
+.plan-validation::before {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: '!';
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.plan-location-search {
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.plan-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 48px;
+  padding: 0 var(--space-1);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.plan-search-bar-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.plan-search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+}
+
+/* The bar's own accent border carries the focus state. */
+.plan-search-bar .plan-search-input:focus,
+.plan-search-bar .plan-search-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.plan-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.plan-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.plan-search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.plan-search-chip {
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.plan-search-chip[aria-pressed='true'] {
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.plan-search-chip:focus-visible,
+.plan-search-result:focus-visible {
+  outline: 2px solid var(--focus-ring-neutral);
+  outline-offset: 1px;
+}
+
+/* The bar and chips stay put while the sheet's single scroll area moves the results. */
+.plan-search-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  /* Matches the sheet's own tint so the pinned header does not read as a separate box. */
+  background: var(--surface-overlay-panel);
+}
+
+.plan-search-results {
+  display: grid;
+}
+
+.plan-search-heading {
+  margin: var(--space-2) 0 2px;
+  padding: 0 var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.plan-search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-search-result:hover {
+  background: var(--surface-muted);
+}
+
+.plan-search-result-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.plan-search-result-text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.plan-search-result-text span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.plan-search-match {
+  color: var(--accent);
+  background: transparent;
+  font-weight: 700;
+}
+
+.plan-search-empty {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-4) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.plan-search-empty p {
+  margin: 0;
+}
+
+.plan-search-empty-title {
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+}
+
+/* A quiet read-only row, set apart from the editable search bar above it. */
+.plan-search-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  /* Flush with the search bar's and the chips' left edge. */
+  padding: 0;
+  font-size: var(--font-size-sm);
+}
+
+.plan-search-context svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.plan-search-context[data-role='origin'] svg {
+  color: var(--status-marker-origin);
+}
+
+.plan-search-context[data-role='destination'] svg {
+  color: var(--status-marker-destination);
+}
+
+.plan-search-context-label {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.plan-search-context-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

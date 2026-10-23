@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react'
-import { CloseIcon } from './icons'
+import { ArrowLeftIcon } from './icons'
 
 interface SettingsSurfaceProps {
   readonly open: boolean
@@ -25,16 +25,16 @@ export function SettingsSurface({
     >
       <div className="settings-surface-body">
         <header className="settings-surface-header">
-          <h2 id="settings-heading" tabIndex={-1} ref={headingRef}>Settings</h2>
           <button
-            className="settings-close-button"
+            className="settings-back-button"
             type="button"
-            aria-label="Close Settings"
-            title="Close Settings"
+            aria-label="Back to previous view"
+            title="Back"
             onClick={onClose}
           >
-            <CloseIcon />
+            <ArrowLeftIcon />
           </button>
+          <h2 id="settings-heading" tabIndex={-1} ref={headingRef}>Settings</h2>
         </header>
         <div className="settings-content-scroll" id="settings-content">
           {children}

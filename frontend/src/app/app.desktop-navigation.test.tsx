@@ -579,7 +579,7 @@ describe('Settings surface', () => {
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
   })
@@ -594,7 +594,7 @@ describe('Settings surface', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
@@ -610,7 +610,7 @@ describe('Settings surface', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
 
-    await user.click(screen.getByRole('button', { name: 'Close Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
@@ -634,7 +634,7 @@ describe('Settings surface', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
-    await user.click(screen.getByRole('button', { name: 'Close Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')

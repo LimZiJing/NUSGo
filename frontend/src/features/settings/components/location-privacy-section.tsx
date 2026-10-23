@@ -14,8 +14,8 @@ const PERMISSION_LABELS: Record<PermissionStatus, string> = {
   checking: 'Checking',
   granted: 'Allowed',
   denied: 'Denied',
-  prompt: 'Not requested yet',
-  unavailable: 'Not available in this browser',
+  prompt: 'Not requested',
+  unavailable: 'Unavailable',
 }
 
 export function LocationPrivacySection({
@@ -27,19 +27,17 @@ export function LocationPrivacySection({
 
   const clearLocation = (): void => {
     onClearLocation()
-    setStatusMessage(
-      'Current location cleared. Browser permission has not changed. A saved trip endpoint was not changed.',
-    )
+    setStatusMessage('Location cleared. Permission and trip endpoints are unchanged.')
   }
 
   return (
     <section className="settings-section" aria-labelledby="settings-location-heading">
       <h3 id="settings-location-heading">Location &amp; privacy</h3>
       <p className="settings-section-subtitle">
-        Live location stays on your device; route requests send saved coordinates.
+        Live location stays on this device; routes use saved coordinates.
       </p>
       <p className="settings-location-permission">
-        Browser permission <span aria-live="polite">{PERMISSION_LABELS[permissionStatus]}</span>
+        Permission <span aria-live="polite">{PERMISSION_LABELS[permissionStatus]}</span>
       </p>
       <button
         className="settings-location-action"
@@ -48,12 +46,10 @@ export function LocationPrivacySection({
         onClick={clearLocation}
       >
         <MapPinIcon size={18} />
-        <span>Clear current location</span>
+        <span>Clear location</span>
         <ChevronRightIcon className="settings-row-chevron" size={18} />
       </button>
-      <p className="settings-status-message" role="status">
-        {statusMessage}
-      </p>
+      {statusMessage && <p className="settings-status-message" role="status">{statusMessage}</p>}
     </section>
   )
 }

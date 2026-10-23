@@ -21,14 +21,14 @@ describe('Location and privacy settings', () => {
 
     expect(screen.getByText('Denied')).toBeTruthy()
     expect(screen.getByText(
-      'Live location stays on your device; route requests send saved coordinates.',
+      'Live location stays on this device; routes use saved coordinates.',
     )).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Clear current location' }))
+    await user.click(screen.getByRole('button', { name: 'Clear location' }))
 
     expect(onClearLocation).toHaveBeenCalledOnce()
     expect(screen.getByRole('status').textContent)
-      .toBe('Current location cleared. Browser permission has not changed. A saved trip endpoint was not changed.')
+      .toBe('Location cleared. Permission and trip endpoints are unchanged.')
   })
 
   it('disables clearing when no active or in-memory fix exists', () => {
@@ -40,8 +40,8 @@ describe('Location and privacy settings', () => {
       />,
     )
 
-    expect((screen.getByRole('button', { name: 'Clear current location' }) as HTMLButtonElement).disabled)
+    expect((screen.getByRole('button', { name: 'Clear location' }) as HTMLButtonElement).disabled)
       .toBe(true)
-    expect(screen.getByText('Not available in this browser')).toBeTruthy()
+    expect(screen.getByText('Unavailable')).toBeTruthy()
   })
 })

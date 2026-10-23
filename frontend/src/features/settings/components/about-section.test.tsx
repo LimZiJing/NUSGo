@@ -30,9 +30,9 @@ describe('About settings', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'About & support' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'About' })).toBeTruthy()
     expect(document.querySelectorAll('.settings-disclosure[open]')).toHaveLength(0)
-    await user.click(screen.getByText('Map & data credits'))
+    await user.click(screen.getByText('Data sources'))
 
     expect(screen.getByText(/Verified 2026-10-20/)).toBeTruthy()
     expect(screen.getByText(/Route geometry: Reviewed map geometry/)).toBeTruthy()
@@ -45,7 +45,7 @@ describe('About settings', () => {
     expect(screen.getByRole('link', { name: 'LTA DataMall' }).getAttribute('href'))
       .toBe('https://datamall.lta.gov.sg/content/datamall/en.html')
 
-    await user.click(screen.getByText('App information'))
+    await user.click(screen.getByText('Version'))
     expect(screen.getByText('2026.10.23')).toBeTruthy()
   })
 
@@ -53,10 +53,10 @@ describe('About settings', () => {
     const user = userEvent.setup()
     render(<AboutSection dataVersion="local" transitMetadata={null} buildingSource={null} />)
 
-    await user.click(screen.getByText('Map & data credits'))
+    await user.click(screen.getByText('Data sources'))
     expect(screen.queryByText('Bus network')).toBeNull()
     expect(screen.queryByText('Buildings')).toBeNull()
-    await user.click(screen.getByText('App information'))
+    await user.click(screen.getByText('Version'))
     expect(screen.getByText('local')).toBeTruthy()
   })
 })

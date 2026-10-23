@@ -22,7 +22,7 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByText('Manage favourite stops'))
+    await user.click(screen.getByText('Saved stops'))
     await user.click(screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' }))
     expect(onRemove).toHaveBeenCalledExactlyOnceWith('COM3')
   })
@@ -39,7 +39,7 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByText('Manage favourite stops'))
+    await user.click(screen.getByText('Saved stops'))
     await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
     expect(onClear).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
@@ -52,8 +52,8 @@ describe('Favourites settings', () => {
 
     expect(document.querySelector('.settings-disclosure[open]')).toBeNull()
 
-    await user.click(screen.getByText('Manage favourite stops'))
-    expect(screen.getByText('No favourite bus stops saved.')).toBeTruthy()
+    await user.click(screen.getByText('Saved stops'))
+    expect(screen.getByText('None saved.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Clear all favourites' })).toBeNull()
   })
 })

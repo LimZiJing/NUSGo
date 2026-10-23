@@ -20,8 +20,8 @@ function isSecureExternalUrl(value: string): boolean {
 export function AboutSection({ dataVersion, transitMetadata, buildingSource }: AboutSectionProps) {
   return (
     <section className="settings-section" aria-labelledby="settings-about-heading">
-      <h3 id="settings-about-heading">About &amp; support</h3>
-      <SettingsDisclosureRow icon={<MapIcon size={18} />} title="Map & data credits">
+      <h3 id="settings-about-heading">About</h3>
+      <SettingsDisclosureRow icon={<MapIcon size={18} />} title="Data sources">
         <dl className="settings-about-list">
           {transitMetadata && (
             <div>
@@ -71,10 +71,10 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
           </div>
         </dl>
       </SettingsDisclosureRow>
-      <SettingsDisclosureRow icon={<InfoIcon size={18} />} title="App information">
+      <SettingsDisclosureRow icon={<InfoIcon size={18} />} title="Version">
         <dl className="settings-about-list">
           <div>
-            <dt>App build / data version</dt>
+            <dt>Build &amp; data</dt>
             <dd>{dataVersion}</dd>
           </div>
         </dl>

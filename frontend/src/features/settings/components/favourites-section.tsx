@@ -24,7 +24,7 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
   const clearAllStops = (): void => {
     if (!window.confirm('Clear all favourite bus stops?')) return
     onClear()
-    setStatusMessage('All favourite bus stops cleared.')
+    setStatusMessage('Favourites cleared.')
   }
 
   return (
@@ -32,11 +32,11 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
       <h3 id="settings-favourites-heading">Favourites</h3>
       <SettingsDisclosureRow
         icon={<FavoriteIcon filled size={18} />}
-        title="Manage favourite stops"
+        title="Saved stops"
         trailing={`${stops.length} saved`}
       >
         {stops.length === 0 ? (
-          <p>No favourite bus stops saved.</p>
+          <p>None saved.</p>
         ) : (
           <>
             <ul className="settings-favourite-list">
@@ -60,7 +60,7 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
           </>
         )}
       </SettingsDisclosureRow>
-      <p className="settings-status-message" role="status">{statusMessage}</p>
+      {statusMessage && <p className="settings-status-message" role="status">{statusMessage}</p>}
     </section>
   )
 }

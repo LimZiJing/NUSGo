@@ -509,8 +509,8 @@ describe('JourneyResults', () => {
     )
 
     expect(getJourneyTimelineEntries(path, collidingVenues, createTransitIndex(collidingNetwork))
-      .filter((entry) => entry.kind === 'location' && entry.label === 'COM 3')
-      .map((entry) => entry.locationKind)).toEqual(['venue', 'stop'])
+      .flatMap((entry) => entry.kind === 'location' && entry.label === 'COM 3' ? [entry.locationKind] : []))
+      .toEqual(['venue', 'stop'])
     expect(markup).toContain('aria-label="COM 3, bus stop"')
   })
 

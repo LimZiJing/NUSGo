@@ -568,6 +568,22 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('Settings surface', () => {
+  it('hides the nearby map crosshair while Settings is open on mobile', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Close Settings' }))
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+  })
+
   it('opens and closes on desktop without changing the active workflow', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()

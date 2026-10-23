@@ -469,7 +469,9 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        {stopsWorkflow.showNearbyCrosshair && <NearbyCrosshair insets={mapInsets} />}
+        {!isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
+          <NearbyCrosshair insets={mapInsets} />
+        )}
         <div className="map-control-stack">
           {navigation.activeView === 'plan' &&
             state.path.status === 'ready' &&

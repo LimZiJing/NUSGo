@@ -160,6 +160,44 @@ describe('useAppNavigation', () => {
     expect(options.pendingExploreReturnFocusRef.current).toBeNull()
   })
 
+  it('exposes the Explore return target and mode until Back is selected', () => {
+    const base = createOptions(false, 'explore')
+    const options = {
+      ...base,
+      exploreState: { mode: 'bus-routes' as const, selectedVenue: null, selectedBuildingId: null },
+    }
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+
+    expect(result.current.stopReturnTarget).toBe('explore')
+    expect(result.current.stopReturnMode).toBe('bus-routes')
+
+    act(() => result.current.backFromStopDetails(vi.fn()))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
+  })
+
+  it('clears the Explore return target when a stop is selected from a non-Explore view', () => {
+    const options = createOptions(false, 'explore')
+    const { result, rerender } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+    expect(result.current.stopReturnTarget).toBe('explore')
+
+    options.state = navigationReducer(options.state, { type: 'select-view', view: 'stops' })
+    rerender()
+
+    act(() => expect(result.current.handleStopSelected('STOP-B')).toBe(true))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
+  })
+
   it('coordinates mobile route selection from Stops with Explore navigation', () => {
     const options = createOptions(true, 'stops')
     const { result } = renderHook(() => useAppNavigation(options))

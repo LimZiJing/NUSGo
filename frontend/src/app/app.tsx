@@ -378,8 +378,15 @@ function App() {
     }),
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
   }
+  // Mode is captured when the stop opens from Explore, so the label matches where Back returns.
+  const stopBackLabel = appNavigation.stopReturnTarget !== 'explore'
+    ? 'Back to stops'
+    : appNavigation.stopReturnMode === 'bus-routes'
+      ? 'Back to bus routes'
+      : 'Back to Find venue'
   const stopsContentProps: AppViewsProps['views']['stops'] = {
     selectedStop: stopsWorkflow.selectedStop,
+    backLabel: stopBackLabel,
     stopListEntries: stopsWorkflow.stopListEntries,
     stopListLoading: stopsWorkflow.stopListLoading,
     liveArrivalMessage: stopsWorkflow.liveArrivalMessage,

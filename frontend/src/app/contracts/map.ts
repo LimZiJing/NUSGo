@@ -101,6 +101,8 @@ export interface MapSession {
   zoomOut(): void
   resetView(target: MapResetTarget): void
   selectVenue(venue: VenueLocation): void
+  /** Re-applies the selected venue or building fit with the current insets, without waiting for an inset report. */
+  refitSelectedVenue(): void
   /** Marks every part of a building, or a repeated-name group, and fits the camera to all of them. */
   selectBuilding(building: MapBuildingSelection): void
   clearVenue(): void

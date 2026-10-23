@@ -106,6 +106,8 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  /** Refits the active Explore target (selected venue/building or the selected route) with the current insets. */
+  refitExploreTarget(): void
   setStopsPinVisible(visible: boolean): void
   setNearbyStopHighlight(stopIds: readonly string[]): void
   setPlanLayersVisible(visible: boolean): void
@@ -687,6 +689,18 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed || !transitIndex?.stopById.has(stopId)) return
         dependencies.map.focusStopInStopsTab(stopId)
+      })
+    },
+
+    refitExploreTarget() {
+      enqueueTransition(() => {
+        if (disposed) return
+        const explore = state.exploreState
+        if (explore.mode === 'venue-detail') {
+          dependencies.map.refitSelectedVenue()
+          return
+        }
+        if (explore.mode === 'bus-routes' && state.selectedRouteId) dependencies.map.refitRoute()
       })
     },
 

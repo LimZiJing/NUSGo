@@ -85,6 +85,7 @@ export function ExploreContent({
     onFocusCapture,
     onVenueSelect,
     onBuildingSelect,
+    onStopSelect,
     onBack,
     onSelectVenueSearch,
     onSelectBusRoutes,
@@ -150,6 +151,7 @@ export function ExploreContent({
             venues={venues}
             buildings={buildingIndex}
             buildingLinks={buildingLinks}
+            transitIndex={transitIndex}
             minimized={minimized}
             inputRef={searchInputRef}
             onRestore={onRestore}
@@ -157,6 +159,7 @@ export function ExploreContent({
             onQueryChange={onQueryChange}
             onSelect={onVenueSelect}
             onBuildingSelect={onBuildingSelect}
+            onStopSelect={onStopSelect}
           />
         )}
 

@@ -221,7 +221,7 @@ describe('mobile Stops tab state', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
 
-    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     mapMarker.remove()
   })
@@ -252,7 +252,7 @@ describe('mobile Stops tab state', () => {
     await user.keyboard('{Enter}')
 
     await screen.findByRole('heading', { name: 'Stop A, bus stop' })
-    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await user.click(screen.getByRole('button', { name: 'Back to bus routes' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
     expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
@@ -291,7 +291,7 @@ describe('mobile Stops tab state', () => {
     await user.keyboard('{Enter}')
 
     await screen.findByRole('heading', { name: 'Stop A, bus stop' })
-    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
     expect(screen.getByRole('heading', { name: 'COM1-0212, venue' })).toBeTruthy()

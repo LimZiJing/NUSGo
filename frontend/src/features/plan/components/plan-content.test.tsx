@@ -433,6 +433,43 @@ describe('PlanContent location search', () => {
     expect(screen.queryByRole('button', { name: 'Use current location' })).toBeNull()
   })
 
+  it('hides current location in the origin search once the origin already is one', async () => {
+    const user = userEvent.setup()
+    render(
+      <PlanContent
+        {...noopControls}
+        venues={venues}
+        networkIndex={networkIndex}
+        tripRequest={{
+          origin: { kind: 'current-location', coordinate: { longitude: 103.78, latitude: 1.29 } },
+          destination: null,
+        }}
+        onUseCurrentLocationForOrigin={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /^Origin: .*Change origin$/ }))
+    expect(screen.queryByRole('button', { name: 'Use current location' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Retry current location' })).toBeNull()
+  })
+
+  it('announces the busy state in the search status while the origin is being located', async () => {
+    const user = userEvent.setup()
+    render(
+      <PlanContent
+        {...noopControls}
+        venues={venues}
+        networkIndex={networkIndex}
+        tripRequest={createEmptyTripRequest()}
+        originLocationRequest={{ status: 'requesting', error: null }}
+        onUseCurrentLocationForOrigin={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Choose origin' }))
+    expect(screen.getByText('Getting your location…').getAttribute('role')).toBe('status')
+  })
+
   it('swaps the two ends from the card', async () => {
     const user = userEvent.setup()
     render(<TripHarness />)

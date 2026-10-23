@@ -7,6 +7,7 @@ import './styles/stops-content.css'
 
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null
+  readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
@@ -25,6 +26,7 @@ interface StopsContentProps {
 
 export function StopsContent({
   selectedStop,
+  backLabel,
   onBackToStops,
   onSelectOppositeStop,
   onSelectRoute,
@@ -52,6 +54,7 @@ export function StopsContent({
             stop={selectedStop}
             favorite={selectedStopFavorite}
             liveArrivalMessage={liveArrivalMessage}
+            backLabel={backLabel}
             onBackToStops={onBackToStops}
             onSelectOppositeStop={onSelectOppositeStop}
             onSelectRoute={onSelectRoute}

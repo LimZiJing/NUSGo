@@ -9,6 +9,7 @@ export function StopDetails({
   stop,
   favorite,
   liveArrivalMessage,
+  backLabel = 'Back to stops',
   onBackToStops,
   onSelectOppositeStop,
   onSelectRoute,
@@ -18,6 +19,7 @@ export function StopDetails({
   readonly stop: StopDetailsModel
   readonly favorite: boolean
   readonly liveArrivalMessage: string | null
+  readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string) => void
@@ -28,7 +30,7 @@ export function StopDetails({
 
   return (
     <div className="stop-selection" data-testid="stop-detail">
-      <GhostBackButton label="Back to stops" onClick={onBackToStops} />
+      <GhostBackButton label={backLabel} onClick={onBackToStops} />
       <div className="stop-identity">
         <div className="stop-identity-copy">
           <h2

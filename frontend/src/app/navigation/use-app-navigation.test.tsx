@@ -111,6 +111,26 @@ describe('useAppNavigation', () => {
     expect(options.dispatch).toHaveBeenLastCalledWith({ type: 'select-view', view: 'explore' })
   })
 
+  it('returns focus to a connected Explore stop result when Back is selected', () => {
+    const options = createOptions(true, 'explore')
+    const stopResultButton = document.createElement('button')
+    stopResultButton.dataset.focusId = 'stop-result-STOP-A'
+    document.body.appendChild(stopResultButton)
+    const backToStops = vi.fn()
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    try {
+      act(() => result.current.openStopFromExplore('STOP-A', stopResultButton))
+      act(() => result.current.backFromStopDetails(backToStops))
+
+      expect(backToStops).toHaveBeenCalledOnce()
+      expect(options.pendingExploreReturnFocusRef.current).toBe(stopResultButton)
+      expect(options.pendingExploreReturnFocusRef.current?.isConnected).toBe(true)
+    } finally {
+      stopResultButton.remove()
+    }
+  })
+
   it('keeps direct Stops details on the Stops list when Back is selected', () => {
     const options = createOptions(true, 'stops')
     const backToStops = vi.fn()
@@ -138,6 +158,44 @@ describe('useAppNavigation', () => {
     expect(backToStops).toHaveBeenCalledOnce()
     expect(options.dispatch).not.toHaveBeenCalledWith({ type: 'select-view', view: 'explore' })
     expect(options.pendingExploreReturnFocusRef.current).toBeNull()
+  })
+
+  it('exposes the Explore return target and mode until Back is selected', () => {
+    const base = createOptions(false, 'explore')
+    const options = {
+      ...base,
+      exploreState: { mode: 'bus-routes' as const, selectedVenue: null, selectedBuildingId: null },
+    }
+    const { result } = renderHook(() => useAppNavigation(options))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+
+    expect(result.current.stopReturnTarget).toBe('explore')
+    expect(result.current.stopReturnMode).toBe('bus-routes')
+
+    act(() => result.current.backFromStopDetails(vi.fn()))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
+  })
+
+  it('clears the Explore return target when a stop is selected from a non-Explore view', () => {
+    const options = createOptions(false, 'explore')
+    const { result, rerender } = renderHook(() => useAppNavigation(options))
+
+    act(() => result.current.openStopFromExplore('STOP-A'))
+    expect(result.current.stopReturnTarget).toBe('explore')
+
+    options.state = navigationReducer(options.state, { type: 'select-view', view: 'stops' })
+    rerender()
+
+    act(() => expect(result.current.handleStopSelected('STOP-B')).toBe(true))
+
+    expect(result.current.stopReturnTarget).toBeNull()
+    expect(result.current.stopReturnMode).toBeNull()
   })
 
   it('coordinates mobile route selection from Stops with Explore navigation', () => {

@@ -143,7 +143,9 @@ export function PlanLocationSearch({
     .filter((group) => group.rows.length > 0)
   const showHeadings = filter === 'all' && groups.length > 1
 
-  const searchStatus = !hasLocationData
+  const searchStatus = locating
+    ? 'Getting your location…'
+    : !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : hasQuery
       ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`

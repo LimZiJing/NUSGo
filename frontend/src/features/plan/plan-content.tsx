@@ -102,7 +102,10 @@ export function PlanContent({
             onSelect={(endpoint) => form.onSelectEndpoint(searchRole, endpoint)}
             onBack={closeSearch}
             originLocationRequest={originLocationRequest}
-            onUseCurrentLocation={onUseCurrentLocationForOrigin}
+            // Once the origin is a Current location, capturing it again adds nothing.
+            onUseCurrentLocation={tripRequest.origin?.kind === 'current-location'
+              ? undefined
+              : onUseCurrentLocationForOrigin}
           />
         ) : (
           <div className="plan-trip-pin">

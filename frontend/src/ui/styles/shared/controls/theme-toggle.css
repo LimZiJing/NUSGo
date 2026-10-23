@@ -21,6 +21,10 @@
   outline-offset: 2px;
 }
 
+.theme-toggle:active:not(:disabled) {
+  filter: brightness(0.85);
+}
+
 .theme-toggle-icon {
   width: 20px;
   height: 20px;

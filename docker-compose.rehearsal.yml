@@ -1,0 +1,31 @@
+services:
+  valhalla:
+    image: ghcr.io/nilsnolde/docker-valhalla/valhalla@sha256:4e7cca5db66e0c8d3a4ab6c3f83a748ef9b805fe227d3d4d4f496f161ac9b69f
+    entrypoint: valhalla_service
+    command: ['/custom_files/valhalla.json', '2']
+    volumes:
+      - type: bind
+        source: ${NAVUS_VALHALLA_DATA_DIR:?Set the directory containing prebuilt Valhalla tiles and valhalla.json}
+        target: /custom_files
+        read_only: true
+    stop_grace_period: 30s
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - ${NAVUS_BACKEND_ENV_FILE:?Set the path to the backend-only environment file}
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: '3001'
+      NAVUS_DATA_DIR: /app/data
+      NAVUS_DATA_VERSION: development
+      VALHALLA_BASE_URL: http://valhalla:8002
+      API_CORS_ORIGINS: http://127.0.0.1:5173
+    ports:
+      - '127.0.0.1:${NAVUS_API_HOST_PORT:-13001}:3001'
+    depends_on:
+      valhalla:
+        condition: service_started
+    stop_grace_period: 15s

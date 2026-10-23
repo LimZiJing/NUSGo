@@ -351,7 +351,8 @@ describe('PlanContent location search', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'Choose origin' }))
-    expect(screen.getByText('To: Central Library')).toBeTruthy()
+    expect(screen.getByText('To')).toBeTruthy()
+    expect(screen.getByText('Central Library')).toBeTruthy()
   })
 
   it('uses Escape to clear the query first, then leave the search', async () => {

@@ -10,7 +10,7 @@ import type {
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import { IconButton } from '../../../ui/button'
-import { ArrowLeftIcon, CloseIcon, LocateIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
+import { ArrowLeftIcon, CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
 import type { OriginLocationRequestState } from './plan-trip-card'
@@ -217,6 +217,14 @@ export function PlanLocationSearch({
           {originLocationRequest.error}
         </p>
       )}
+      {otherEndpointLabel && (
+        // The other end of the trip, so the search never loses sight of what it is for.
+        <p className="plan-search-context" data-role={role === 'origin' ? 'destination' : 'origin'}>
+          {role === 'origin' ? <MapPinIcon /> : <CircleDotIcon />}
+          <span className="plan-search-context-label">{role === 'origin' ? 'To' : 'From'}</span>
+          <strong className="plan-search-context-name">{otherEndpointLabel}</strong>
+        </p>
+      )}
 
       <div className="plan-search-filters" role="group" aria-label="Filter results">
         {FILTERS.map(({ id, label }) => (
@@ -270,12 +278,6 @@ export function PlanLocationSearch({
             </div>
           )}
         </div>
-      )}
-
-      {otherEndpointLabel && (
-        <p className="plan-search-context">
-          {role === 'origin' ? 'To' : 'From'}: {otherEndpointLabel}
-        </p>
       )}
     </section>
   )

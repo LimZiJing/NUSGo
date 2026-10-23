@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   const envDir = resolve(process.cwd(), '..')
   const env = loadEnv(mode, envDir, ['VITE_', 'NAVUS_VITE_'])
   const allowedHost = env.NAVUS_VITE_ALLOWED_HOST?.trim()
-  const buildSettings = resolveViteBuildSettings(mode, env.VITE_API_ORIGIN)
+  const buildSettings = resolveViteBuildSettings(mode, env.VITE_API_ORIGIN, env.VITE_BASE_PATH)
   const dataVersion = parseDataVersion(
     env.VITE_DATA_VERSION?.trim() || process.env.GITHUB_SHA || LOCAL_DATA_VERSION,
     'VITE_DATA_VERSION',

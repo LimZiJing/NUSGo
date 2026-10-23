@@ -7,9 +7,22 @@ describe('resolveViteBuildSettings', () => {
     expect(() => resolveViteBuildSettings('production', 'http://127.0.0.1:3001')).toThrow(/HTTPS/)
     expect(resolveViteBuildSettings('production', 'https://api.example.edu.sg')).toEqual({
       apiOrigin: 'https://api.example.edu.sg',
-      base: '/NavUS/',
+      base: '/NUSGo/',
       outDir: 'dist',
     })
+    expect(resolveViteBuildSettings('production', 'https://api.example.edu.sg', '/renamed-repo/')).toEqual({
+      apiOrigin: 'https://api.example.edu.sg',
+      base: '/renamed-repo/',
+      outDir: 'dist',
+    })
+    expect(resolveViteBuildSettings('production', 'https://api.example.edu.sg', '/')).toEqual({
+      apiOrigin: 'https://api.example.edu.sg',
+      base: '/',
+      outDir: 'dist',
+    })
+    expect(() => resolveViteBuildSettings('production', 'https://api.example.edu.sg', '/invalid')).toThrow(
+      /VITE_BASE_PATH/,
+    )
   })
 
   it('keeps the local rehearsal on loopback and in its own output directory', () => {

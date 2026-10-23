@@ -59,6 +59,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     zoomOut: vi.fn(),
     resetView: vi.fn(),
     selectVenue: vi.fn(),
+    refitSelectedVenue: vi.fn(),
     selectBuilding: vi.fn(),
     clearVenue: vi.fn(),
     setBuildingLabels: () => undefined,
@@ -824,6 +825,45 @@ describe('navigation session', () => {
     } finally {
       consoleError.mockRestore()
     }
+  })
+
+  it('refits the selected venue on demand with the current insets and not on later updates', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.selectVenue({ code: 'COM1', venue: dependencies.venues.venues.COM1 })
+    expect(dependencies.map.refitSelectedVenue).not.toHaveBeenCalled()
+
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 240 })
+    session.refitExploreTarget()
+    expect(dependencies.map.refitSelectedVenue).toHaveBeenCalledOnce()
+    expect(dependencies.map.setViewportInsets).toHaveBeenLastCalledWith({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 240,
+    })
+
+    session.setViewportInsets({ top: 0, right: 0, bottom: 0, left: 300 })
+    session.setNearbyStopHighlight(['STOP-A'])
+    expect(dependencies.map.refitSelectedVenue).toHaveBeenCalledOnce()
+    expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+  })
+
+  it('does not refit anything for Explore refits outside a venue or route target', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+
+    session.refitExploreTarget()
+    expect(dependencies.map.refitSelectedVenue).not.toHaveBeenCalled()
+    expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+
+    session.enterMobileRoutes()
+    session.refitExploreTarget()
+    expect(dependencies.map.refitRoute).toHaveBeenCalledOnce()
+    expect(dependencies.map.refitSelectedVenue).not.toHaveBeenCalled()
   })
 
   it('remembers a mobile route while clearing and restoring its map selection', async () => {

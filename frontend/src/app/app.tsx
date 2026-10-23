@@ -41,6 +41,7 @@ import { useAppNavigation, useAppNavigationState } from './navigation/use-app-na
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
+import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -196,6 +197,16 @@ function App() {
     activeView: navigation.activeView,
     stopsDetent: navigation.sheets.stops.detent,
     rememberedStopId: stopsWorkflow.state.focusedStopId,
+  })
+  useExploreEntryRefit({
+    commands,
+    isMobileViewport,
+    activeView: navigation.activeView,
+    exploreDetent: navigation.sheets.explore.detent,
+    exploreMode: state.exploreState.mode,
+    selectedVenueCode: state.exploreState.selectedVenue?.code ?? null,
+    selectedBuildingId: state.exploreState.selectedBuildingId,
+    selectedRouteId: state.selectedRouteId,
   })
 
   useLayoutEffect(() => {

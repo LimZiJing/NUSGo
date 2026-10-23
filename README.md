@@ -1,4 +1,4 @@
-# NavUS
+# NUSGo
 
 An experimental campus-navigation prototype for the National University of Singapore. Explore venues and bus routes, plan estimated walking-and-bus journeys, and check bus arrivals.
 

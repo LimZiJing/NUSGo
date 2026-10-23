@@ -58,3 +58,9 @@
 .settings-disclosure-content {
   padding: 0 0 var(--space-2) 28px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-disclosure-chevron {
+    transition: none;
+  }
+}

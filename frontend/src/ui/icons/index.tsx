@@ -12,6 +12,7 @@ import {
   CircleDot,
   DoorOpen,
   EllipsisVertical,
+  ExternalLink,
   Footprints,
   Info,
   Map,
@@ -81,6 +82,10 @@ export function CircleDotIcon(props: IconProps) {
 
 export function EllipsisVerticalIcon(props: IconProps) {
   return renderDecorativeIcon(EllipsisVertical, props)
+}
+
+export function ExternalLinkIcon(props: IconProps) {
+  return renderDecorativeIcon(ExternalLink, props)
 }
 
 export function FootprintsIcon(props: IconProps) {

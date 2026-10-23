@@ -137,10 +137,9 @@
     right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Keep required map credits above the full-screen Settings surface and clear of its tab pill. */
+  /* Settings shows the required map credits in its About footer. */
   .map-shell[data-settings-open='true'] .map .maplibregl-ctrl-bottom-right {
-    z-index: 17;
-    bottom: calc(var(--mobile-tab-bar-height) + 18px);
+    display: none;
   }
 
   .map .maplibregl-ctrl-bottom-left {

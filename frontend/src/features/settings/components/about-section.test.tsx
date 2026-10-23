@@ -1,18 +1,16 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import { AboutSection } from './about-section'
 
 afterEach(cleanup)
 
 describe('About settings', () => {
-  it('keeps credits and app information in separate expandable rows', async () => {
-    const user = userEvent.setup()
+  it('groups sources, version, and feedback into compact sections', () => {
     render(
       <AboutSection
-        dataVersion="2026.10.23"
+        dataVersion="development"
         transitMetadata={{
           source: 'NUSMods routes and stops',
           routeStopOrder: 'Curated stop order',
@@ -30,33 +28,31 @@ describe('About settings', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'About' })).toBeTruthy()
-    expect(document.querySelectorAll('.settings-disclosure[open]')).toHaveLength(0)
-    await user.click(screen.getByText('Data sources'))
-
-    expect(screen.getByText(/Verified 2026-10-20/)).toBeTruthy()
-    expect(screen.getByText(/Route geometry: Reviewed map geometry/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'NUS Digital Twin (City Syntax Lab)' }).getAttribute('href'))
+    expect(screen.queryByRole('heading', { name: 'About NavUS' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Data sources' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'App version' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Help & feedback' })).toBeTruthy()
+    expect(screen.getByText('Shuttle routes and stops verified 20 Oct 2026')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'NUS Digital Twin · City Syntax Lab' }).getAttribute('href'))
       .toBe('https://www.nus-digital-twin.com/api/v1/buildings')
-    expect(screen.getByRole('link', { name: 'OpenMapTiles' }).getAttribute('href'))
-      .toBe('https://openmaptiles.org/')
-    expect(screen.getByRole('link', { name: 'OpenStreetMap' }).getAttribute('href'))
-      .toBe('https://www.openstreetmap.org/copyright')
-    expect(screen.getByRole('link', { name: 'LTA DataMall' }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: 'OpenFreeMap' }).getAttribute('href'))
+      .toBe('https://openfreemap.org/')
+    const openStreetMapLinks = screen.getAllByRole('link', { name: 'OpenStreetMap' })
+    expect(openStreetMapLinks).toHaveLength(2)
+    expect(openStreetMapLinks.every((link) => link.getAttribute('href') === 'https://www.openstreetmap.org/copyright'))
+      .toBe(true)
+    expect(screen.getByRole('link', { name: 'Public buses · LTA DataMall' }).getAttribute('href'))
       .toBe('https://datamall.lta.gov.sg/content/datamall/en.html')
-
-    await user.click(screen.getByText('Version'))
-    expect(screen.getByText('2026.10.23')).toBeTruthy()
+    expect(screen.getByText('Development')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Send feedback' }).getAttribute('href'))
+      .toBe('https://github.com/LimZiJing/NavUS/issues/new')
   })
 
-  it('omits unavailable transit and building source details', async () => {
-    const user = userEvent.setup()
+  it('omits unavailable transit and building source details', () => {
     render(<AboutSection dataVersion="local" transitMetadata={null} buildingSource={null} />)
 
-    await user.click(screen.getByText('Data sources'))
     expect(screen.queryByText('Bus network')).toBeNull()
-    expect(screen.queryByText('Buildings')).toBeNull()
-    await user.click(screen.getByText('Version'))
-    expect(screen.getByText('local')).toBeTruthy()
+    expect(screen.queryByText('Building locations')).toBeNull()
+    expect(screen.getByText('Production')).toBeTruthy()
   })
 })

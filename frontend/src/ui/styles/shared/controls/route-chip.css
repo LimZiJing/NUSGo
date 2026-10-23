@@ -40,12 +40,12 @@
 
 .route-chip-scroller::before {
   left: 0;
-  background: linear-gradient(90deg, var(--surface-overlay-panel), transparent);
+  background: linear-gradient(90deg, var(--surface-raised), transparent);
 }
 
 .route-chip-scroller::after {
   right: 0;
-  background: linear-gradient(270deg, var(--surface-overlay-panel), transparent);
+  background: linear-gradient(270deg, var(--surface-raised), transparent);
 }
 
 .route-chip-scroller[data-can-scroll-left='true']::before,

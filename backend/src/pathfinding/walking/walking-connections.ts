@@ -27,7 +27,11 @@ function addConnection(
   connection: WalkingConnection,
 ): void {
   if (connection.fromKey === connection.toKey) return
-  connections.set(`${connection.fromKey}\u0000${connection.toKey}`, connection)
+  connections.set(connectionKey(connection.fromKey, connection.toKey), connection)
+}
+
+function connectionKey(fromKey: string, toKey: string): string {
+  return `${fromKey}\u0000${toKey}`
 }
 
 function addMatrixConnections(
@@ -49,11 +53,10 @@ function addMatrixConnections(
   }
 }
 
-function addStaticConnections(
-  connections: Map<string, WalkingConnection>,
+function getStaticConnections(
   graph: WalkingStopGraph,
   stopLocations: readonly WalkingConnectionRequest['origin'][],
-): void {
+): readonly WalkingConnection[] {
   const locationByStopId = new Map(
     stopLocations.flatMap((location) => location.stopId
       ? [[location.stopId, location] as const]
@@ -65,6 +68,8 @@ function addStaticConnections(
   ) {
     throw new Error('Walking stop graph does not match the loaded transit stops')
   }
+
+  const connections: WalkingConnection[] = []
   // Preserve graph direction: a walk from A to B does not imply that B to A is equivalent.
   for (const connection of graph.connections) {
     const fromStopId = connection.fromKey.slice('stop:'.length)
@@ -74,13 +79,14 @@ function addStaticConnections(
     if (!from || !to) {
       throw new Error('Walking stop graph does not match the loaded transit stops')
     }
-    addConnection(connections, {
+    connections.push({
       fromKey: from.key,
       toKey: to.key,
       distanceMeters: connection.distanceMeters,
       durationSeconds: connection.durationSeconds,
     })
   }
+  return connections
 }
 
 export function createWalkingConnectionProvider(
@@ -98,28 +104,48 @@ export function createWalkingConnectionProvider(
         .filter((location, index, locations) => (
           locations.findIndex((candidate) => candidate.key === location.key) === index
         ))
-      // Ask for endpoint connector costs while the checked-in graph loads or resolves from cache.
-      const endpointQuery = options.routeEngine.matrixWalking({
-        sources: [request.origin.coordinate],
-        targets: targets.map((location) => location.coordinate),
-      }, signal)
-      const destinationQuery = stopLocations.length === 0
-        ? Promise.resolve<readonly WalkingMatrixConnection[]>([])
-        : options.routeEngine.matrixWalking({
-          sources: stopLocations.map((location) => location.coordinate),
-          targets: [request.destination.coordinate],
-        }, signal)
-
-      const [loadedGraph, [originConnections, destinationConnections]] = await Promise.all([
-        graph ? Promise.resolve(graph) : loadGraph(signal),
-        Promise.all([endpointQuery, destinationQuery]),
-      ])
+      const loadedGraph = graph ?? await loadGraph(signal)
       graph = loadedGraph
+      const staticConnections = getStaticConnections(loadedGraph, stopLocations)
+      const staticConnectionKeys = new Set(staticConnections.map(({ fromKey, toKey }) => (
+        connectionKey(fromKey, toKey)
+      )))
+      const stopKeys = new Set(stopLocations.map(({ key }) => key))
+      const endpointTargets = targets.filter((target) => {
+        if (target.key === request.origin.key) return false
+
+        const key = connectionKey(request.origin.key, target.key)
+        if (stopKeys.has(request.origin.key) && stopKeys.has(target.key) && staticConnectionKeys.has(key)) {
+          return false
+        }
+        // The destination column supplies this same stop-to-destination pair and takes precedence.
+        if (target.key === request.destination.key && stopKeys.has(request.origin.key)) return false
+        return true
+      })
+      const destinationSources = stopLocations.filter((source) => (
+        source.key !== request.destination.key &&
+        !staticConnectionKeys.has(connectionKey(source.key, request.destination.key))
+      ))
+
+      const [originConnections, destinationConnections] = await Promise.all([
+        endpointTargets.length === 0
+          ? Promise.resolve<readonly WalkingMatrixConnection[]>([])
+          : options.routeEngine.matrixWalking({
+            sources: [request.origin.coordinate],
+            targets: endpointTargets.map((location) => location.coordinate),
+          }, signal),
+        destinationSources.length === 0
+          ? Promise.resolve<readonly WalkingMatrixConnection[]>([])
+          : options.routeEngine.matrixWalking({
+            sources: destinationSources.map((location) => location.coordinate),
+            targets: [request.destination.coordinate],
+          }, signal),
+      ])
 
       const connections = new Map<string, WalkingConnection>()
-      addMatrixConnections(connections, originConnections, [request.origin], targets)
-      addMatrixConnections(connections, destinationConnections, stopLocations, [request.destination])
-      addStaticConnections(connections, graph, stopLocations)
+      addMatrixConnections(connections, originConnections, [request.origin], endpointTargets)
+      addMatrixConnections(connections, destinationConnections, destinationSources, [request.destination])
+      for (const connection of staticConnections) addConnection(connections, connection)
       return [...connections.values()]
     },
   }

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { FavoriteIcon } from '../../../ui/icons'
+import { SettingsDisclosureRow } from './settings-disclosure-row'
 
 export interface FavoriteStopSummary {
   readonly id: string
@@ -27,31 +29,37 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
 
   return (
     <section className="settings-section" aria-labelledby="settings-favourites-heading">
-      <h3 id="settings-favourites-heading">Favourite bus stops</h3>
-      {stops.length === 0 ? (
-        <p>No favourite bus stops saved.</p>
-      ) : (
-        <>
-          <ul className="settings-favourite-list">
-            {stops.map((stop) => (
-              <li className="settings-favourite-row" key={stop.id}>
-                <span>{stop.name}</span>
-                <button
-                  className="settings-favourite-remove"
-                  type="button"
-                  aria-label={`Remove ${stop.name} from favourites`}
-                  onClick={() => removeStop(stop)}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button className="settings-action-button" type="button" onClick={clearAllStops}>
-            Clear all favourites
-          </button>
-        </>
-      )}
+      <h3 id="settings-favourites-heading">Favourites</h3>
+      <SettingsDisclosureRow
+        icon={<FavoriteIcon filled size={18} />}
+        title="Manage favourite stops"
+        trailing={`${stops.length} saved`}
+      >
+        {stops.length === 0 ? (
+          <p>No favourite bus stops saved.</p>
+        ) : (
+          <>
+            <ul className="settings-favourite-list">
+              {stops.map((stop) => (
+                <li className="settings-favourite-row" key={stop.id}>
+                  <span>{stop.name}</span>
+                  <button
+                    className="settings-favourite-remove"
+                    type="button"
+                    aria-label={`Remove ${stop.name} from favourites`}
+                    onClick={() => removeStop(stop)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button className="settings-action-button" type="button" onClick={clearAllStops}>
+              Clear all favourites
+            </button>
+          </>
+        )}
+      </SettingsDisclosureRow>
       <p className="settings-status-message" role="status">{statusMessage}</p>
     </section>
   )

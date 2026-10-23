@@ -81,6 +81,19 @@ describe('Journey planning client', () => {
       .rejects.toMatchObject({ status: 429, code: 'rate_limited' })
   })
 
+  it('preserves planning timeouts as a distinct server error', async () => {
+    const client = createJourneyPlanningClient({
+      endpoint: '/api/journeys',
+      fetcher: async () => response({
+        error: 'Journey planning timed out',
+        code: 'planning_timeout',
+      }, 504),
+    })
+
+    await expect(client(request, { signal: new AbortController().signal }))
+      .rejects.toMatchObject({ status: 504, code: 'planning_timeout' })
+  })
+
   it('passes through aborts and rejects malformed success responses', async () => {
     const abort = new Error('aborted')
     abort.name = 'AbortError'

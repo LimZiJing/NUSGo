@@ -4,7 +4,7 @@ import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@nav
 import { loadBackendConfig } from '../../config.ts'
 import { createApp } from '../app.ts'
 import { closeHttpServer, listenHttpServer } from '../../server.ts'
-import { InvalidJourneyEndpointError } from '../../pathfinding/service.ts'
+import { InvalidJourneyEndpointError, JourneyPlanningTimeoutError } from '../../pathfinding/service.ts'
 import { ValhallaRouteError } from '../../pathfinding/walking/valhalla-walking-client.ts'
 import { InvalidJourneyRequestError, parseJourneyPlanningRequest } from './journeys.ts'
 
@@ -142,7 +142,7 @@ describe('POST /api/journeys', () => {
     })
   })
 
-  it('aborts overdue planner work and reports a provider timeout', async () => {
+  it('aborts overdue planner work and reports a planning timeout', async () => {
     let aborted = false
     await withServer({
       plan(_planningRequest, signal) {
@@ -160,10 +160,23 @@ describe('POST /api/journeys', () => {
       assert.equal(response.status, 504)
       assert.deepEqual(await response.json(), {
         error: 'Journey planning timed out',
-        code: 'provider_unavailable',
+        code: 'planning_timeout',
       })
     }, 100)
     assert.equal(aborted, true)
+  })
+
+  it('reports an internal geometry deadline as a planning timeout', async () => {
+    await withServer({
+      async plan() { throw new JourneyPlanningTimeoutError() },
+    }, async (baseUrl) => {
+      const response = await post(baseUrl, request)
+      assert.equal(response.status, 504)
+      assert.deepEqual(await response.json(), {
+        error: 'Journey planning timed out',
+        code: 'planning_timeout',
+      })
+    })
   })
 
   it('limits Journey requests per client and returns a retry delay', async () => {

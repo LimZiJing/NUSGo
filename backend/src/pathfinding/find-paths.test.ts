@@ -5,6 +5,8 @@ import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import { createFindPathsTestService, type TestTransitData } from './find-paths.test-support.ts'
 import { createCurrentLocationTripEndpoint } from './endpoints.ts'
+import type { WalkingRouteEngine } from './walking/walking-contracts.ts'
+import { JourneyPlanningTimeoutError } from './find-paths.ts'
 
 function createTransitData(): TestTransitData {
   const network = validateTransitNetwork({
@@ -1343,5 +1345,84 @@ describe('findPaths', () => {
     const endedPath = (await service(request))?.candidates[0]?.path ?? null
     expect(endedPath?.legs.every((leg) => leg.mode === 'walking')).toBe(true)
     expect(shuttleArrivalClient.getArrivals).not.toHaveBeenCalled()
+  })
+
+  it('classifies geometry deadline expiry separately from caller cancellation', async () => {
+    vi.useFakeTimers()
+    let monotonicTime = 0
+    let markRouteStarted = (): void => {}
+    let finishRoute: (result: Awaited<ReturnType<WalkingRouteEngine['routeWalking']>>) => void = () => {}
+    let geometrySignal: AbortSignal | undefined
+    let routeStarted = new Promise<void>((resolve) => { markRouteStarted = resolve })
+    const routeEngine: WalkingRouteEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 100, durationSeconds: 80 },
+      ]),
+      routeWalking: vi.fn<WalkingRouteEngine['routeWalking']>((_request, signal) => new Promise((resolve, reject) => {
+        geometrySignal = signal
+        markRouteStarted()
+        finishRoute = resolve
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+      })),
+    }
+    const service = createFindPathsTestService(
+      routeEngine,
+      undefined,
+      undefined,
+      Date.now,
+      undefined,
+      undefined,
+      () => monotonicTime,
+    )
+    const transit = createTransitData()
+    const caller = new AbortController()
+    const request = {
+      tripRequest: {
+        origin: createCurrentLocationTripEndpoint({ longitude: 103, latitude: 1 })!,
+        destination: { kind: 'venue' as const, id: 'DESTINATION' },
+      },
+      venues: { DESTINATION: { roomName: 'Destination', location: { x: 103.01, y: 1.01 } } },
+      transit,
+      signal: caller.signal,
+    }
+
+    try {
+      const beforeDeadline = service(request)
+      await routeStarted
+      monotonicTime = 349
+      finishRoute({
+        distanceMeters: 100,
+        durationSeconds: 80,
+        geometry: { type: 'LineString', coordinates: [[103, 1], [103.01, 1.01]] },
+      })
+      const completed = await beforeDeadline
+      expect(completed?.searchStatus).toBe('complete')
+      expect(completed?.candidates).toHaveLength(1)
+      expect(caller.signal.aborted).toBe(false)
+
+      monotonicTime = 0
+      routeStarted = new Promise<void>((resolve) => { markRouteStarted = resolve })
+      const expiredCaller = new AbortController()
+      const expired = service({ ...request, signal: expiredCaller.signal })
+      void expired.catch(() => undefined)
+      await routeStarted
+      monotonicTime = 350
+      await vi.advanceTimersByTimeAsync(350)
+      await expect(expired).rejects.toBeInstanceOf(JourneyPlanningTimeoutError)
+      expect(geometrySignal?.aborted).toBe(true)
+      expect(expiredCaller.signal.aborted).toBe(false)
+
+      monotonicTime = 0
+      routeStarted = new Promise<void>((resolve) => { markRouteStarted = resolve })
+      const cancelledCaller = new AbortController()
+      const cancelled = service({ ...request, signal: cancelledCaller.signal })
+      void cancelled.catch(() => undefined)
+      await routeStarted
+      cancelledCaller.abort()
+      await expect(cancelled).rejects.toMatchObject({ name: 'AbortError' })
+      expect(cancelledCaller.signal.aborted).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

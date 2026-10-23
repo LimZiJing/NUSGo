@@ -19,6 +19,7 @@ import {
   Moon,
   Route,
   Search,
+  Settings,
   Star,
   Sun,
   X,
@@ -109,6 +110,10 @@ export function SunIcon(props: IconProps) {
 
 export function SearchIcon(props: IconProps) {
   return renderDecorativeIcon(Search, props)
+}
+
+export function SettingsIcon(props: IconProps) {
+  return renderDecorativeIcon(Settings, props)
 }
 
 export interface FavoriteIconProps extends IconProps {

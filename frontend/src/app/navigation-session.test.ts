@@ -2386,6 +2386,27 @@ describe('navigation session', () => {
     expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
   })
 
+  it('clears live location tracking without changing a frozen Current location endpoint', () => {
+    const dependencies = createDependencies()
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    const session = createNavigationSession(dependencies)
+    locationTracker.emit({
+      status: 'tracking',
+      latestFix: { longitude: 103.1, latitude: 1.3, accuracy: 10, timestamp: 1_000 },
+    })
+    session.useCurrentLocationForOrigin()
+    const frozenOrigin = session.getState().tripRequest.origin
+    expect(frozenOrigin).toEqual({
+      kind: 'current-location',
+      coordinate: { longitude: 103.1, latitude: 1.3 },
+    })
+
+    session.disableLocationTracking()
+
+    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
+    expect(session.getState().tripRequest.origin).toBe(frozenOrigin)
+  })
+
   it('zooms to the first location fix after locate is pressed and focuses the latest fix on later presses', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

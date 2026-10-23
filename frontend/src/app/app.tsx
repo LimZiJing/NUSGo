@@ -22,8 +22,15 @@ import { deriveExplorePanelStatus } from './explore-panel-status'
 import { getIsMobileViewport, subscribeToMobileViewport } from './navigation/navigation-state'
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
-import { applyTheme, getSystemTheme, type Theme } from '../ui/theme'
-import { ThemeToggle } from '../ui/theme-toggle'
+import { SettingsEntryButton } from '../ui/settings-entry-button'
+import { readBrowserLocationPermission } from '../infrastructure/location/browser-permissions'
+import type { LocationPermissionState } from '../domain/location/types'
+import {
+  applyTheme,
+  getSystemTheme,
+  subscribeToSystemThemeChanges,
+  type ThemePreference,
+} from '../ui/theme'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
@@ -37,6 +44,7 @@ import { AppViews, type AppViewsProps } from './composition/app-views'
 import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-panel-focus'
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
+import { SettingsContent } from '../features/settings/settings-content'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -54,14 +62,41 @@ function App() {
   const explorePanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
+  const settingsEntryButtonRef = useRef<HTMLButtonElement>(null)
+  const settingsHeadingRef = useRef<HTMLHeadingElement>(null)
+  const settingsWasOpenRef = useRef(false)
+  const skipSettingsFocusRestoreRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
-  const [theme, setTheme] = useState<Theme>(getSystemTheme)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [themePreference, setThemePreference] = useState<ThemePreference>('system')
+  const [locationPermission, setLocationPermission] = useState<LocationPermissionState | 'checking'>('unavailable')
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
+
+  useEffect(() => {
+    const applyPreference = (): void => {
+      applyTheme(themePreference === 'system' ? getSystemTheme() : themePreference)
+    }
+    applyPreference()
+    return themePreference === 'system'
+      ? subscribeToSystemThemeChanges(applyPreference)
+      : undefined
+  }, [themePreference])
+
+  useEffect(() => {
+    if (!isSettingsOpen) return
+    let active = true
+    void readBrowserLocationPermission().then((permission) => {
+      if (active) setLocationPermission(permission)
+    })
+    return () => {
+      active = false
+    }
+  }, [isSettingsOpen])
   const state = useNavigationSession(session)
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
@@ -334,14 +369,6 @@ function App() {
   ])
 
   const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
-  const toggleTheme = useCallback((): void => {
-    setTheme((currentTheme) => {
-      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark'
-      applyTheme(nextTheme)
-      return nextTheme
-    })
-  }, [])
-
   const planContentProps: AppViewsProps['views']['plan'] = {
     tripRequest: state.tripRequest,
     venues: state.venues,
@@ -396,13 +423,44 @@ function App() {
     onDismissLocationNotice: stopsWorkflow.dismissLocationNotice,
   }
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
+    if (isSettingsOpen) {
+      skipSettingsFocusRestoreRef.current = true
+      setIsSettingsOpen(false)
+    }
     appNavigation.selectView(view, stopsWorkflow.state.list)
   }
+  const toggleSettings = (): void => {
+    if (!isSettingsOpen) setLocationPermission('checking')
+    setIsSettingsOpen((open) => !open)
+  }
+
+  useLayoutEffect(() => {
+    if (isSettingsOpen) {
+      settingsHeadingRef.current?.focus()
+    } else if (settingsWasOpenRef.current && !skipSettingsFocusRestoreRef.current) {
+      settingsEntryButtonRef.current?.focus()
+    }
+    settingsWasOpenRef.current = isSettingsOpen
+    skipSettingsFocusRestoreRef.current = false
+  }, [isSettingsOpen])
+
+  useEffect(() => {
+    if (!isSettingsOpen) return
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      event.stopPropagation()
+      setIsSettingsOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape, true)
+    return () => window.removeEventListener('keydown', closeOnEscape, true)
+  }, [isSettingsOpen])
 
   return (
     <main
       className="map-shell"
       ref={assignMapShellRef}
+      data-settings-open={isSettingsOpen ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
@@ -413,7 +471,6 @@ function App() {
         />
         {stopsWorkflow.showNearbyCrosshair && <NearbyCrosshair insets={mapInsets} />}
         <div className="map-control-stack">
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {navigation.activeView === 'plan' &&
             state.path.status === 'ready' &&
             state.path.displayedCandidates.length > 0 && (
@@ -447,6 +504,13 @@ function App() {
             searching={state.location.status === 'requesting'}
             onLocate={stopsWorkflow.locateFromControl}
           />
+          <SettingsEntryButton
+            expanded={isSettingsOpen}
+            buttonRef={(button) => {
+              settingsEntryButtonRef.current = button
+            }}
+            onClick={toggleSettings}
+          />
           <aside
             className="map-legend"
             aria-label="Map legend"
@@ -472,6 +536,26 @@ function App() {
           sheetPortalContainer={sheetPortalContainer}
           navigation={navigation}
           onSelectView={selectView}
+          settings={{
+            open: isSettingsOpen,
+            headingRef: settingsHeadingRef,
+            onClose: () => setIsSettingsOpen(false),
+            content: (
+              <SettingsContent
+                themePreference={themePreference}
+                onThemePreferenceChange={setThemePreference}
+                locationPermission={locationPermission}
+                hasLocationActivity={state.location.status !== 'disabled' || state.location.latestFix !== null}
+                onClearLocation={commands.disableLocationTracking}
+                favoriteStops={stopsWorkflow.favoriteStops}
+                onRemoveFavorite={stopsWorkflow.removeFavorite}
+                onClearFavorites={stopsWorkflow.clearFavoriteStops}
+                transitMetadata={state.transitIndex?.network.metadata ?? null}
+                buildingSource={state.buildings?.source ?? null}
+                dataVersion={__NAVUS_DATA_VERSION__}
+              />
+            ),
+          }}
           shells={{
             navigationColumnRef,
             mainNavigationRef,

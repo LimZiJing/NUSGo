@@ -776,6 +776,7 @@ export function createNavigationSession(
 
     disableLocationTracking() {
       if (disposed) return
+      // This clears the live fix and marker; a frozen Current location trip endpoint is separate state.
       dependencies.locationTracker.disable()
     },
 

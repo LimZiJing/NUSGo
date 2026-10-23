@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PERSONAL_WAYPOINTS_MAX_COUNT,
   validatePersonalWaypoint,
   validatePersonalWaypoints,
 } from './personal-waypoint'
@@ -20,6 +21,26 @@ describe('personal waypoint validation', () => {
       ok: true,
       waypoint: {
         ...validWaypoint,
+        name: 'Water fountain',
+        category: 'Water',
+        note: 'Near the side entrance',
+      },
+    })
+  })
+
+  it('normalizes uppercase UUIDs and ignores fields added by a newer version', () => {
+    const result = validatePersonalWaypoint({
+      ...validWaypoint,
+      id: validWaypoint.id.toUpperCase(),
+      futureField: 'preserved by newer versions',
+      coordinate: { ...validWaypoint.coordinate, altitude: 12 },
+    })
+
+    expect(result).toEqual({
+      ok: true,
+      waypoint: {
+        ...validWaypoint,
+        id: validWaypoint.id,
         name: 'Water fountain',
         category: 'Water',
         note: 'Near the side entrance',
@@ -80,9 +101,21 @@ describe('personal waypoint validation', () => {
     }).ok).toBe(true)
   })
 
-  it('rejects community-only fields on personal records', () => {
-    const result = validatePersonalWaypoint({ ...validWaypoint, attribution: 'Community source' })
+  it('rejects an update timestamp earlier than creation', () => {
+    const result = validatePersonalWaypoint({
+      ...validWaypoint,
+      createdAt: '2026-10-22T00:00:00.000Z',
+      updatedAt: '2026-10-21T23:59:59.999Z',
+    })
+
     expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.issues.map(({ field }) => field)).toContain('updatedAt')
+  })
+
+  it('strips community-only fields from personal records', () => {
+    const result = validatePersonalWaypoint({ ...validWaypoint, attribution: 'Community source' })
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.waypoint).not.toHaveProperty('attribution')
   })
 
   it('rejects duplicate IDs in a collection', () => {
@@ -91,5 +124,24 @@ describe('personal waypoint validation', () => {
     if (!result.ok) expect(result.issues).toEqual([
       { field: 'id', index: 1, message: 'Must be unique within the collection.' },
     ])
+  })
+
+  it('keeps valid records and reports records beyond the collection limit', () => {
+    const waypoints = Array.from({ length: PERSONAL_WAYPOINTS_MAX_COUNT + 1 }, (_, index) => ({
+      ...validWaypoint,
+      id: `11111111-1111-4111-8111-${String(index + 1).padStart(12, '0')}`,
+    }))
+
+    const result = validatePersonalWaypoints(waypoints)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.waypoints).toHaveLength(PERSONAL_WAYPOINTS_MAX_COUNT)
+      expect(result.issues).toContainEqual({
+        field: 'waypoints',
+        index: PERSONAL_WAYPOINTS_MAX_COUNT,
+        message: `Only the first ${PERSONAL_WAYPOINTS_MAX_COUNT} waypoints can be loaded.`,
+      })
+    }
   })
 })

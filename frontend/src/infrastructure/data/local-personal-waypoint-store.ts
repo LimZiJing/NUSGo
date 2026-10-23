@@ -4,10 +4,13 @@ import type {
   PersonalWaypointStoreReadResult,
   PersonalWaypointStoreRevision,
 } from '../../app/contracts/personal-waypoint-store'
-import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import type {
+  PersonalWaypoint,
+  PersonalWaypointValidationIssue,
+} from '../../domain/waypoints/personal/personal-waypoint'
 import { validatePersonalWaypoints } from '../../domain/waypoints/personal/personal-waypoint'
 
-const PERSONAL_WAYPOINTS_KEY = 'navus:personal-waypoints'
+const PERSONAL_WAYPOINTS_KEY = 'navus:personal-waypoints:v1'
 const PERSONAL_WAYPOINTS_VERSION = 1
 
 type BrowserStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
@@ -16,8 +19,16 @@ type StorageProvider = () => BrowserStorage
 type StoredWaypoints =
   | { readonly kind: 'valid'; readonly waypoints: readonly PersonalWaypoint[] }
   | {
+      readonly kind: 'partial'
+      readonly waypoints: readonly PersonalWaypoint[]
+      readonly rejectedRecords: {
+        readonly count: number
+        readonly issues: readonly PersonalWaypointValidationIssue[]
+      }
+    }
+  | {
       readonly kind: 'invalid'
-      readonly reason: 'malformed-data' | 'unsupported-version' | 'invalid-records'
+      readonly reason: 'malformed-data' | 'unsupported-version'
     }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,9 +61,16 @@ function parseStoredWaypoints(raw: string): StoredWaypoints {
   }
 
   const result = validatePersonalWaypoints(envelope.waypoints)
-  return result.ok
-    ? { kind: 'valid', waypoints: result.waypoints }
-    : { kind: 'invalid', reason: 'invalid-records' }
+  if (result.ok) return { kind: 'valid', waypoints: result.waypoints }
+
+  return {
+    kind: 'partial',
+    waypoints: result.waypoints,
+    rejectedRecords: {
+      count: envelope.waypoints.length - result.waypoints.length,
+      issues: result.issues,
+    },
+  }
 }
 
 export function createLocalPersonalWaypointStore(
@@ -66,7 +84,14 @@ export function createLocalPersonalWaypointStore(
       return { kind: 'unavailable', operation: 'read' }
     }
 
-    if (raw === null) return { kind: 'ready', waypoints: [], revision: null }
+    if (raw === null) {
+      return {
+        kind: 'ready',
+        waypoints: [],
+        revision: null,
+        rejectedRecords: { count: 0, issues: [] },
+      }
+    }
 
     const parsed = parseStoredWaypoints(raw)
     if (parsed.kind === 'invalid') {
@@ -74,7 +99,14 @@ export function createLocalPersonalWaypointStore(
       return { kind: 'recovery-required', reason: parsed.reason, revision: toRevision(raw) }
     }
 
-    return { kind: 'ready', waypoints: parsed.waypoints, revision: toRevision(raw) }
+    return {
+      kind: 'ready',
+      waypoints: parsed.waypoints,
+      revision: toRevision(raw),
+      rejectedRecords: parsed.kind === 'partial'
+        ? parsed.rejectedRecords
+        : { count: 0, issues: [] },
+    }
   }
 
   function replaceAll(

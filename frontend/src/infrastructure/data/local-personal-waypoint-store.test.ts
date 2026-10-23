@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createLocalPersonalWaypointStore } from './local-personal-waypoint-store'
 
-const PERSONAL_WAYPOINTS_KEY = 'navus:personal-waypoints'
+const PERSONAL_WAYPOINTS_KEY = 'navus:personal-waypoints:v1'
 
 const waypoint = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -33,7 +33,12 @@ describe('local personal waypoint store', () => {
     const storage = createMemoryStorage()
     const store = createLocalPersonalWaypointStore(() => storage)
 
-    expect(store.read()).toEqual({ kind: 'ready', waypoints: [], revision: null })
+    expect(store.read()).toEqual({
+      kind: 'ready',
+      waypoints: [],
+      revision: null,
+      rejectedRecords: { count: 0, issues: [] },
+    })
   })
 
   it('writes and reads the versioned personal waypoint envelope', () => {
@@ -48,6 +53,49 @@ describe('local personal waypoint store', () => {
     })
     expect(store.read()).toMatchObject({ kind: 'ready', waypoints: [waypoint] })
     expect(storage.values.get('other-navus-data')).toBe('keep')
+  })
+
+  it('loads known waypoint fields when stored records contain fields from a newer version', () => {
+    const stored = JSON.stringify({
+      version: 1,
+      waypoints: [{ ...waypoint, futureField: 'newer data' }],
+    })
+    const storage = createMemoryStorage({ [PERSONAL_WAYPOINTS_KEY]: stored })
+    const store = createLocalPersonalWaypointStore(() => storage)
+
+    expect(store.read()).toMatchObject({
+      kind: 'ready',
+      waypoints: [waypoint],
+      rejectedRecords: { count: 0, issues: [] },
+    })
+    expect(storage.values.get(PERSONAL_WAYPOINTS_KEY)).toBe(stored)
+  })
+
+  it('keeps readable records available and reports invalid records for review', () => {
+    const secondWaypoint = { ...waypoint, id: '22222222-2222-4222-8222-222222222222' }
+    const stored = JSON.stringify({
+      version: 1,
+      waypoints: [waypoint, { ...waypoint, id: 'invalid-id' }, secondWaypoint],
+    })
+    const storage = createMemoryStorage({ [PERSONAL_WAYPOINTS_KEY]: stored })
+    const store = createLocalPersonalWaypointStore(() => storage)
+    const result = store.read()
+
+    expect(result).toMatchObject({
+      kind: 'ready',
+      waypoints: [waypoint, secondWaypoint],
+      rejectedRecords: {
+        count: 1,
+        issues: [{ field: 'id', index: 1, message: 'Must be a UUID.' }],
+      },
+    })
+    expect(storage.values.get(PERSONAL_WAYPOINTS_KEY)).toBe(stored)
+
+    if (result.kind === 'ready') {
+      expect(store.replaceAll(result.waypoints, result.revision).kind).toBe('saved')
+      expect(JSON.parse(storage.values.get(PERSONAL_WAYPOINTS_KEY) ?? '').waypoints)
+        .toEqual([waypoint, secondWaypoint])
+    }
   })
 
   it('preserves malformed data and blocks replacement until explicit clear', () => {

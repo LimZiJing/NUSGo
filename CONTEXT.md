@@ -18,7 +18,6 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 - **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note and timestamps. It is not sent to NavUS services.
 - **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
 
-
 ## Bus transit
 
 - **Bus route**: A fixed campus bus service with a stable route ID, a display name, an official color, and an ordered sequence of stops. The engine uses `BusRoute` for this concept; it is distinct from a computed Path.

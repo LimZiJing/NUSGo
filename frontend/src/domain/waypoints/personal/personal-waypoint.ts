@@ -4,17 +4,9 @@ import type { Waypoint, WaypointCoordinate } from '../waypoint'
 export const PERSONAL_WAYPOINT_NAME_MAX_LENGTH = 80
 export const PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH = 40
 export const PERSONAL_WAYPOINT_NOTE_MAX_LENGTH = 500
+export const PERSONAL_WAYPOINTS_MAX_COUNT = 500
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const PERSONAL_WAYPOINT_FIELDS = new Set([
-  'id',
-  'name',
-  'category',
-  'coordinate',
-  'note',
-  'createdAt',
-  'updatedAt',
-])
 
 export interface PersonalWaypoint extends Waypoint {
   readonly note?: string
@@ -45,7 +37,11 @@ export type PersonalWaypointValidationResult =
 
 export type PersonalWaypointsValidationResult =
   | { readonly ok: true; readonly waypoints: readonly PersonalWaypoint[] }
-  | { readonly ok: false; readonly issues: readonly PersonalWaypointValidationIssue[] }
+  | {
+      readonly ok: false
+      readonly waypoints: readonly PersonalWaypoint[]
+      readonly issues: readonly PersonalWaypointValidationIssue[]
+    }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -72,9 +68,6 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
   }
 
   const issues: PersonalWaypointValidationIssue[] = []
-  if (Object.keys(input).some((field) => !PERSONAL_WAYPOINT_FIELDS.has(field))) {
-    addIssue(issues, 'waypoint', 'Contains unsupported fields.')
-  }
 
   const id = typeof input.id === 'string' ? input.id.toLowerCase() : ''
   if (!UUID_PATTERN.test(id)) addIssue(issues, 'id', 'Must be a UUID.')
@@ -98,8 +91,7 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
     if (
       typeof longitude === 'number' &&
       typeof latitude === 'number' &&
-      isValidLocationCoordinates(longitude, latitude) &&
-      Object.keys(input.coordinate).every((field) => field === 'longitude' || field === 'latitude')
+      isValidLocationCoordinates(longitude, latitude)
     ) {
       coordinate = { longitude, latitude }
     }
@@ -125,6 +117,9 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
 
   const updatedAt = input.updatedAt
   if (!isUtcIsoDateTime(updatedAt)) addIssue(issues, 'updatedAt', 'Must be a UTC ISO date-time.')
+  else if (isUtcIsoDateTime(createdAt) && Date.parse(updatedAt) < Date.parse(createdAt)) {
+    addIssue(issues, 'updatedAt', 'Must be on or after the creation timestamp.')
+  }
 
   if (issues.length > 0 || !coordinate || !isUtcIsoDateTime(createdAt) || !isUtcIsoDateTime(updatedAt)) {
     return { ok: false, issues }
@@ -146,14 +141,18 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
 
 export function validatePersonalWaypoints(input: unknown): PersonalWaypointsValidationResult {
   if (!Array.isArray(input)) {
-    return { ok: false, issues: [{ field: 'waypoints', message: 'Must be an array.' }] }
+    return {
+      ok: false,
+      waypoints: [],
+      issues: [{ field: 'waypoints', message: 'Must be an array.' }],
+    }
   }
 
   const waypoints: PersonalWaypoint[] = []
   const issues: PersonalWaypointValidationIssue[] = []
   const ids = new Set<string>()
 
-  for (const [index, value] of input.entries()) {
+  for (const [index, value] of input.slice(0, PERSONAL_WAYPOINTS_MAX_COUNT).entries()) {
     const result = validatePersonalWaypoint(value)
     if (!result.ok) {
       issues.push(...result.issues.map((issue) => ({ ...issue, index })))
@@ -169,5 +168,15 @@ export function validatePersonalWaypoints(input: unknown): PersonalWaypointsVali
     waypoints.push(result.waypoint)
   }
 
-  return issues.length > 0 ? { ok: false, issues } : { ok: true, waypoints }
+  if (input.length > PERSONAL_WAYPOINTS_MAX_COUNT) {
+    issues.push({
+      field: 'waypoints',
+      index: PERSONAL_WAYPOINTS_MAX_COUNT,
+      message: `Only the first ${PERSONAL_WAYPOINTS_MAX_COUNT} waypoints can be loaded.`,
+    })
+  }
+
+  return issues.length > 0
+    ? { ok: false, waypoints, issues }
+    : { ok: true, waypoints }
 }

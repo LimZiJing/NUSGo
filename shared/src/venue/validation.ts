@@ -18,8 +18,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isValidFloor(value: unknown): boolean {
   return (
     value === undefined || value === null ||
-    (typeof value === 'number' && Number.isFinite(value)) ||
-    (typeof value === 'string' && value.trim().length > 0)
+    (typeof value === 'number' && Number.isInteger(value))
   )
 }
 
@@ -37,7 +36,7 @@ function validateVenue(
     issues.push(`Venue ${code} roomName must be a non-empty string`)
   }
   if (!isValidFloor(value.floor)) {
-    issues.push(`Venue ${code} floor must be a finite number, non-empty string, or null`)
+    issues.push(`Venue ${code} floor must be an integer or null when provided`)
   }
 
   if (value.location === undefined) return true

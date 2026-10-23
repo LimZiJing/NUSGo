@@ -39,6 +39,7 @@ The Codex In-app Browser session provided a 1280 × 720 viewport. Earlier Edge h
 - [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
+- [ ] For a selected basement, ground-floor, and first-floor venue, venue details show “Basement 1”, “Ground floor”, and “Floor 1” respectively.
 - [ ] bus route browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and bus stops.
 - [ ] In Plan, the Origin location action requests browser location only after activation, fills the closest mapped venue, keeps the existing origin until success, and shows a retryable message when location is denied or unavailable.

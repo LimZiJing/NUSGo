@@ -17,8 +17,6 @@ export interface DeviceLocationFix {
 
 export type LocationRequestFailureStatus = 'denied' | 'unavailable' | 'timeout' | 'invalid'
 
-export type LocationPermissionState = 'granted' | 'denied' | 'prompt' | 'unavailable'
-
 export interface LocationRequestFailure {
   readonly status: LocationRequestFailureStatus
 }

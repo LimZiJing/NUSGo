@@ -113,7 +113,6 @@ export interface NavigationSession {
   locateUser(): void
   useCurrentLocationForOrigin(): void
   cancelOriginLocationRequest(): void
-  disableLocationTracking(): void
   hideLocationMarker(): void
   showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
@@ -772,12 +771,6 @@ export function createNavigationSession(
     cancelOriginLocationRequest() {
       if (disposed) return
       cancelOriginLocationRequest()
-    },
-
-    disableLocationTracking() {
-      if (disposed) return
-      // This clears the live fix and marker; a frozen Current location trip endpoint is separate state.
-      dependencies.locationTracker.disable()
     },
 
     hideLocationMarker() {

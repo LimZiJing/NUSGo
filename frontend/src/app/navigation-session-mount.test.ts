@@ -77,7 +77,6 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     locateUser: vi.fn(),
     useCurrentLocationForOrigin: vi.fn(),
     cancelOriginLocationRequest: vi.fn(),
-    disableLocationTracking: vi.fn(),
     hideLocationMarker: vi.fn(),
     showLocationMarker: vi.fn(),
     back: vi.fn(),
@@ -259,12 +258,10 @@ describe('navigation session application seam', () => {
     expect(session.setPlanLayersVisible).toHaveBeenCalledWith(false)
     firstCommands.enableLocationTracking()
     firstCommands.locateUser()
-    firstCommands.disableLocationTracking()
     firstCommands.hideLocationMarker()
     firstCommands.showLocationMarker()
     expect(session.enableLocationTracking).toHaveBeenCalledOnce()
     expect(session.locateUser).toHaveBeenCalledOnce()
-    expect(session.disableLocationTracking).toHaveBeenCalledOnce()
     expect(session.hideLocationMarker).toHaveBeenCalledOnce()
     expect(session.showLocationMarker).toHaveBeenCalledOnce()
 

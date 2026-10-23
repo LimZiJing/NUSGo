@@ -23,8 +23,6 @@ import { getIsMobileViewport, subscribeToMobileViewport } from './navigation/nav
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { SettingsEntryButton } from '../ui/settings-entry-button'
-import { readBrowserLocationPermission } from '../infrastructure/location/browser-permissions'
-import type { LocationPermissionState } from '../domain/location/types'
 import {
   applyTheme,
   getSystemTheme,
@@ -72,7 +70,6 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [themePreference, setThemePreference] = useState<ThemePreference>('system')
-  const [locationPermission, setLocationPermission] = useState<LocationPermissionState | 'checking'>('unavailable')
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -87,16 +84,6 @@ function App() {
       : undefined
   }, [themePreference])
 
-  useEffect(() => {
-    if (!isSettingsOpen) return
-    let active = true
-    void readBrowserLocationPermission().then((permission) => {
-      if (active) setLocationPermission(permission)
-    })
-    return () => {
-      active = false
-    }
-  }, [isSettingsOpen])
   const state = useNavigationSession(session)
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
@@ -430,7 +417,6 @@ function App() {
     appNavigation.selectView(view, stopsWorkflow.state.list)
   }
   const toggleSettings = (): void => {
-    if (!isSettingsOpen) setLocationPermission('checking')
     setIsSettingsOpen((open) => !open)
   }
 
@@ -546,9 +532,6 @@ function App() {
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={setThemePreference}
-                locationPermission={locationPermission}
-                hasLocationActivity={state.location.status !== 'disabled' || state.location.latestFix !== null}
-                onClearLocation={commands.disableLocationTracking}
                 favoriteStops={stopsWorkflow.favoriteStops}
                 onRemoveFavorite={stopsWorkflow.removeFavorite}
                 onClearFavorites={stopsWorkflow.clearFavoriteStops}

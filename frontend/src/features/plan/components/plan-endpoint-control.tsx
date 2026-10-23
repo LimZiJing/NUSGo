@@ -138,7 +138,13 @@ export function PlanEndpointControl({
     : originLocationRequest.error
       ? 'Retry current location'
       : 'Use current location'
-  const searchStatus = !hasLocationData
+  // Once the origin is a Current location, capturing it again adds nothing, so the action is hidden.
+  const useCurrentLocation = role === 'origin' && endpoint?.kind !== 'current-location'
+    ? onUseCurrentLocation
+    : undefined
+  const searchStatus = isGettingCurrentLocation
+    ? 'Getting your location…'
+    : !hasLocationData
     ? `${roleLabel} search is waiting for location data to load.`
     : showResults
         ? `${results.length} ${roleLabel.toLocaleLowerCase()} location${results.length === 1 ? '' : 's'} found.`
@@ -225,7 +231,7 @@ export function PlanEndpointControl({
             aria-describedby={originLocationRequest.error ? `${statusId} ${locationStatusId}` : statusId}
           />
           <div className="plan-endpoint-actions">
-            {role === 'origin' && onUseCurrentLocation && (
+            {useCurrentLocation && (
               <IconButton
                 variant="plain"
                 label={locationActionLabel}
@@ -233,7 +239,7 @@ export function PlanEndpointControl({
                 icon={<LocateIcon />}
                 busy={isGettingCurrentLocation}
                 disabled={isGettingCurrentLocation}
-                onClick={onUseCurrentLocation}
+                onClick={useCurrentLocation}
               />
             )}
             {(endpoint || searchQuery) && (

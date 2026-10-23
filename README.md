@@ -6,7 +6,7 @@ The website is a static frontend. Journey planning needs the Express API and a p
 
 ## Demo
 
-Try the [GitHub Pages frontend](https://limzijing.github.io/NavUS/). It is built separately from Express; live features depend on the API origin configured for that build and the availability of its backend services.
+Try the [GitHub Pages frontend](https://limzijing.github.io/NUSGo/). It is built separately from Express; live features depend on the API origin configured for that build and the availability of its backend services.
 
 ## Screenshots
 

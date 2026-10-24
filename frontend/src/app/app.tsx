@@ -139,6 +139,10 @@ function App() {
   useLayoutEffect(() => {
     commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
   }, [commands, stopsWorkflow.nearbyHighlightStopIds])
+  const isCrosshairVisible = !isSettingsOpen && stopsWorkflow.showNearbyCrosshair
+  useLayoutEffect(() => {
+    commands.setVisibleCenterZoom(isCrosshairVisible)
+  }, [commands, isCrosshairVisible])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -506,7 +510,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        {!isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
+        {isCrosshairVisible && (
           <NearbyCrosshair insets={mapInsets} />
         )}
         <div className="map-control-stack">

@@ -122,6 +122,7 @@ export interface NavigationSessionCommands {
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly setVisibleCenterZoom: (enabled: boolean) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -169,6 +170,7 @@ function createNavigationSessionCommands(
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

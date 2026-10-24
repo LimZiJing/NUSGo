@@ -54,6 +54,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),

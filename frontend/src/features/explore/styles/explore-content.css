@@ -274,6 +274,17 @@
   gap: var(--space-1);
 }
 
+.venue-nearby-stops {
+  margin-top: 4px;
+}
+
+.venue-building-parts {
+  padding: 8px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+}
+
 .venue-building-parts ul {
   display: grid;
   gap: 4px;
@@ -329,9 +340,10 @@
   width: 100%;
   min-width: 0;
   padding: 8px;
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
   text-align: left;
-  background: var(--surface-raised);
+  background: var(--surface-card);
 }
 
 .nearby-stop-identity {

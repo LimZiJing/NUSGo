@@ -285,6 +285,34 @@
     min-width: 0;
   }
 
+  .stop-departures {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    background: var(--surface-card);
+  }
+
+  .stop-departures .stop-departure-list {
+    margin: 0 var(--space-2);
+    padding: var(--space-1) 0;
+    border-top: 0;
+  }
+
+  .stop-departures .stop-departure-row {
+    border-bottom-color: var(--border-default);
+  }
+
+  .stop-departures .stop-departure-list-empty {
+    padding: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .stop-departures .stop-departure-row:last-child {
+    border-bottom: 0;
+  }
+
   .stop-selection h3 {
     margin: 0 0 8px;
     color: var(--text-primary);

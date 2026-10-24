@@ -83,6 +83,7 @@ export function createFindPathsTestService(
   now: () => number = Date.now,
   walkingConnectionProvider?: WalkingConnectionProvider,
   getTestDepartureMs: () => number | null = () => null,
+  monotonicNow: () => number = () => performance.now(),
 ): (request: TestRequest) => Promise<FindPathsResult | null> {
   const service = createFindPathsService({
     routeEngine,
@@ -95,7 +96,7 @@ export function createFindPathsTestService(
       : undefined,
     getTestDepartureMs,
     now,
-    monotonicNow: () => performance.now(),
+    monotonicNow,
     yieldControl: () => Promise.resolve(),
   })
 

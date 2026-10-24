@@ -42,7 +42,7 @@ async function parseError(response: Response): Promise<JourneyPlanningRequestErr
       const code = value.code
       body = {
         error: value.error,
-        ...(code === 'invalid_request' || code === 'not_ready' || code === 'provider_unavailable' || code === 'rate_limited'
+        ...(code === 'invalid_request' || code === 'not_ready' || code === 'planning_timeout' || code === 'provider_unavailable' || code === 'rate_limited'
           ? { code }
           : {}),
       }

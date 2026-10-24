@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Map } from 'maplibre-gl'
-import { applyBasemapTheme, toDarkColor, watchBasemapTheme } from './basemap-theme'
+import { applyBasemapTheme, toDarkColor, toQuietColor, watchBasemapTheme } from './basemap-theme'
 
 const LIGHT_BACKGROUND = 'hsl(47, 26%, 88%)'
 
@@ -59,6 +59,47 @@ describe('toDarkColor', () => {
   })
 })
 
+function hslaParts(color: string): { hue: number, saturation: number, lightness: number, alpha: number } {
+  const match = /^hsla\(([\d.]+), ([\d.]+)%, ([\d.]+)%, ([\d.]+)\)$/.exec(color)
+  if (!match) throw new Error(`not an hsla colour: ${color}`)
+  return {
+    hue: Number(match[1]),
+    saturation: Number(match[2]),
+    lightness: Number(match[3]),
+    alpha: Number(match[4]),
+  }
+}
+
+describe('toQuietColor', () => {
+  it('mutes strongly coloured fills and lifts them towards pale', () => {
+    const water = hslaParts(toQuietColor('rgb(158, 189, 255)', 'surface'))
+
+    expect(water.saturation).toBeLessThan(70)
+    expect(water.lightness).toBeGreaterThan(81)
+    expect(water.hue).toBeGreaterThan(215)
+    expect(water.hue).toBeLessThan(230)
+  })
+
+  it('turns yellow and orange roads into warm greys', () => {
+    for (const road of ['#fea', '#fc8', '#ffdaa6']) {
+      const quiet = hslaParts(toQuietColor(road, 'line'))
+      expect(quiet.saturation).toBe(28)
+      expect(quiet.lightness).toBeLessThanOrEqual(92)
+      expect(quiet.lightness).toBeGreaterThanOrEqual(86)
+    }
+  })
+
+  it('keeps white roads, halos and alpha as they are', () => {
+    expect(hslaParts(toQuietColor('#ffffff', 'line')).lightness).toBe(100)
+    expect(toQuietColor('rgba(255, 255, 255, 0.5)', 'halo')).toBe('rgba(255, 255, 255, 0.5)')
+    expect(hslaParts(toQuietColor('rgba(176, 213, 154, 0.4)', 'surface')).alpha).toBe(0.4)
+  })
+
+  it('returns unrecognised values untouched', () => {
+    expect(toQuietColor('grass', 'surface')).toBe('grass')
+  })
+})
+
 describe('applyBasemapTheme', () => {
   it('recolours basemap layers, including zoom expressions, and leaves overlays alone', () => {
     const map = createFakeMap()
@@ -75,22 +116,31 @@ describe('applyBasemapTheme', () => {
     expect(calls).toContainEqual(['natural', 'raster-brightness-max', 0.3])
   })
 
-  it('restores the original colours when switching back to light', () => {
+  it('quiets the original colours when switching back to light', () => {
     const map = createFakeMap()
 
     applyBasemapTheme(map as unknown as Map, 'dark')
     map.setPaintProperty.mockClear()
     applyBasemapTheme(map as unknown as Map, 'light')
 
-    expect(map.setPaintProperty).toHaveBeenCalledWith('background', 'background-color', LIGHT_BACKGROUND)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(
+      'background',
+      'background-color',
+      toQuietColor(LIGHT_BACKGROUND, 'surface'),
+    )
+    expect(map.setPaintProperty).toHaveBeenCalledWith('natural', 'raster-brightness-max', undefined)
   })
 
-  it('does nothing for light before any dark theme was applied', () => {
+  it('quiets the light basemap without a prior dark theme and leaves overlays alone', () => {
     const map = createFakeMap()
 
     applyBasemapTheme(map as unknown as Map, 'light')
 
-    expect(map.setPaintProperty).not.toHaveBeenCalled()
+    const calls = map.setPaintProperty.mock.calls
+    expect(calls.some(([id]) => id === 'route')).toBe(false)
+    const roadColor = calls.find(([id, prop]) => id === 'road' && prop === 'line-color')?.[2] as unknown[]
+    expect(roadColor[0]).toBe('interpolate')
+    expect(roadColor[6]).toMatch(/^hsla\(38\.0, 28.0%/)
   })
 })
 
@@ -108,7 +158,11 @@ describe('watchBasemapTheme', () => {
     map.setPaintProperty.mockClear()
     document.documentElement.dataset.theme = 'light'
     await Promise.resolve()
-    expect(map.setPaintProperty).toHaveBeenCalledWith('background', 'background-color', LIGHT_BACKGROUND)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(
+      'background',
+      'background-color',
+      toQuietColor(LIGHT_BACKGROUND, 'surface'),
+    )
 
     stop()
     expect(map.off).toHaveBeenCalledWith('style.load', expect.any(Function))

@@ -113,7 +113,9 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay-soft);
-  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-panel);
   font: var(--font-size-md)/1.2 var(--sans);
 }
 
@@ -151,7 +153,9 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-md);
   font: var(--font-size-md)/1.2 var(--sans);
   cursor: pointer;
 }
@@ -317,7 +321,9 @@
   border-radius: var(--radius-pill);
   color: var(--text-muted);
   background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-md);
   font: 600 var(--font-size-xs)/1 var(--sans);
   cursor: pointer;
   appearance: none;
@@ -361,7 +367,9 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay-soft);
-  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-panel);
   font: var(--font-size-md)/1.2 var(--sans);
   pointer-events: auto;
 }
@@ -423,7 +431,9 @@
   border-radius: var(--radius-md);
   color: var(--text-primary);
   background: var(--surface-overlay-strong);
-  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-lg);
   font: var(--font-size-md)/1.2 var(--sans);
 }
 

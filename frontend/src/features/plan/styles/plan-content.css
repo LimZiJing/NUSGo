@@ -704,7 +704,7 @@
   z-index: 1;
   top: 0;
   padding-bottom: var(--space-1);
-  background: var(--surface-overlay-panel);
+  background: var(--surface-raised);
 }
 
 .plan-trip-card {
@@ -916,7 +916,7 @@
   gap: var(--space-2);
   padding-bottom: var(--space-1);
   /* Matches the sheet's own tint so the pinned header does not read as a separate box. */
-  background: var(--surface-overlay-panel);
+  background: var(--surface-raised);
 }
 
 .plan-search-results {

@@ -464,7 +464,7 @@
   .navigation-panel.stops-sheet {
     border: 1px solid var(--border-subtle);
     border-bottom: 0;
-    background: var(--surface-overlay-panel);
+    background: var(--surface-raised);
   }
 
   .navigation-panel .stops-list-selector {

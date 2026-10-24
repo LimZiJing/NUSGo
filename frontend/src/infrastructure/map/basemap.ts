@@ -24,11 +24,24 @@ const BASEMAP_NON_BUS_FILTER: FilterSpecification = [
   'bus',
 ]
 
+// Road shields and one-way arrows add clutter without helping campus orientation.
+const BASEMAP_HIDDEN_LAYER_IDS = [
+  'highway-shield-non-us',
+  'highway-shield-us-interstate',
+  'road_shield_us',
+  'road_one_way_arrow',
+  'road_one_way_arrow_opposite',
+]
+
 /**
  * Keep the OpenFreeMap Liberty style useful for campus orientation without
  * allowing duplicate bus labels and low-priority POIs to dominate the map.
  */
 export function applyBasemapPresentation(map: Map): void {
+  for (const layerId of BASEMAP_HIDDEN_LAYER_IDS) {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', 'none')
+  }
+
   if (map.getLayer(BASEMAP_TRANSIT_POI_LAYER_ID)) {
     map.setFilter(BASEMAP_TRANSIT_POI_LAYER_ID, BASEMAP_TRANSIT_POI_FILTER)
   }

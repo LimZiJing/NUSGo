@@ -158,10 +158,50 @@ export function toDarkColor(value: string, role: ColorRole): string {
   return format(nextHue, nextSaturation, darkLightness(lightness, role))
 }
 
+const QUIET_SURFACE_LIGHTNESS_CEILING = 0.88
+const QUIET_ROAD_LIGHTNESS = { min: 0.86, max: 0.92 }
+const QUIET_WARM_HUE = 38
+
+/**
+ * Calms Liberty's light palette so route and stop overlays carry the colour: saturation drops,
+ * strongly coloured fills lift towards pale, and the yellow and orange roads become warm greys.
+ */
+export function toQuietColor(value: string, role: ColorRole): string {
+  const rgba = parseColor(value)
+  if (!rgba) return value
+  // Halos keep the label legible against whatever sits behind it.
+  if (role === 'halo') return value
+  const [hue, saturation, lightness] = rgbToHsl(rgba[0], rgba[1], rgba[2])
+  const alpha = Math.round(rgba[3] * 1000) / 1000
+  const format = (h: number, s: number, l: number): string => (
+    `hsla(${h.toFixed(1)}, ${(clamp(s, 0, 1) * 100).toFixed(1)}%, ${(l * 100).toFixed(1)}%, ${alpha})`
+  )
+
+  if (role === 'text') return format(hue, saturation * 0.5, lightness)
+  if (role === 'line' && isWarmAndVivid(hue, saturation)) {
+    return format(
+      QUIET_WARM_HUE,
+      0.28,
+      clamp(lightness + 0.07, QUIET_ROAD_LIGHTNESS.min, QUIET_ROAD_LIGHTNESS.max),
+    )
+  }
+
+  const natural = hue >= 80 && hue <= 250
+  const nextSaturation = saturation * (natural ? 0.65 : 0.4)
+  const nextLightness = role === 'surface' && lightness < QUIET_SURFACE_LIGHTNESS_CEILING
+    ? lightness + (QUIET_SURFACE_LIGHTNESS_CEILING - lightness) * 0.25
+    : lightness
+  return format(hue, nextSaturation, nextLightness)
+}
+
 /** Recolours a paint value, including colours nested in zoom interpolation expressions. */
-function transformPaintValue(value: unknown, role: ColorRole): unknown {
-  if (typeof value === 'string') return toDarkColor(value, role)
-  if (Array.isArray(value)) return value.map((entry) => transformPaintValue(entry, role))
+function transformPaintValue(
+  value: unknown,
+  role: ColorRole,
+  recolour: (color: string, role: ColorRole) => string,
+): unknown {
+  if (typeof value === 'string') return recolour(value, role)
+  if (Array.isArray(value)) return value.map((entry) => transformPaintValue(entry, role, recolour))
   return value
 }
 
@@ -206,32 +246,32 @@ function captureOriginalPaint(map: Map): readonly OriginalPaint[] {
 
 /**
  * Recolours the basemap in place so the route, stop and label layers added on
- * top of it survive a theme change. Only the Dark theme recolours; every other
- * theme restores the style's own colours.
+ * top of it survive a theme change. Dark darkens it; every other theme gets the
+ * quiet version of the style's own colours.
  */
 export function applyBasemapTheme(map: Map, theme: BasemapTheme): void {
   let originals = originalPaintByMap.get(map)
   if (!originals) {
-    if (theme === 'light') return
     originals = captureOriginalPaint(map)
     originalPaintByMap.set(map, originals)
   }
 
+  const recolour = theme === 'dark' ? toDarkColor : toQuietColor
   for (const { layerId, property, value } of originals) {
     if (!map.getLayer(layerId)) continue
-    if (theme === 'light') {
-      map.setPaintProperty(layerId, property, value)
-    } else if (property in DARK_RASTER_PAINT) {
+    if (property in DARK_RASTER_PAINT) {
       map.setPaintProperty(
         layerId,
         property,
-        DARK_RASTER_PAINT[property as keyof typeof DARK_RASTER_PAINT],
+        theme === 'dark'
+          ? DARK_RASTER_PAINT[property as keyof typeof DARK_RASTER_PAINT]
+          : value,
       )
     } else {
       map.setPaintProperty(
         layerId,
         property,
-        transformPaintValue(value, COLOR_PROPERTY_ROLES[property]) as PaintValue,
+        transformPaintValue(value, COLOR_PROPERTY_ROLES[property], recolour) as PaintValue,
       )
     }
   }

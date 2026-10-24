@@ -57,8 +57,10 @@
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   color: var(--text-primary);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-lg);
+  background: var(--surface-overlay-strong);
+  box-shadow: var(--glass-edge), var(--shadow-lg);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
   list-style: none;
 }
 

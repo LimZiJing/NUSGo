@@ -4,10 +4,15 @@
   --surface-muted: #dfc3cc;
   --surface-subtle: #d8b7c2;
   --surface-inverse: #4a2633;
-  --surface-overlay: rgb(244 231 235 / 95%);
-  --surface-overlay-strong: rgb(244 231 235 / 98%);
-  --surface-overlay-soft: rgb(244 231 235 / 90%);
-  --surface-overlay-panel: rgb(244 231 235 / 96%);
+  --surface-overlay: rgb(244 231 235 / 62%);
+  --surface-overlay-strong: rgb(244 231 235 / 88%);
+  --surface-overlay-soft: rgb(244 231 235 / 68%);
+  --surface-overlay-panel: rgb(244 231 235 / 80%);
+  --glass-edge:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 0 0 0 1px rgb(255 255 255 / 45%),
+    inset 0 0 16px rgb(255 255 255 / 35%),
+    inset 0 -1px 0 rgb(15 23 42 / 8%);
   --surface-neutral: #e4cfd5;
   --surface-faint: #f5e9ec;
   --surface-info-soft: #eee8fa;
@@ -73,7 +78,7 @@
 
   --shadow-sm: 0 1px 3px rgb(74 38 51 / 10%);
   --shadow-md: 0 1px 4px rgb(74 38 51 / 25%);
-  --shadow-lg: 0 8px 24px rgb(74 38 51 / 12%);
+  --shadow-lg: 0 1px 2px rgb(74 38 51 / 6%), 0 8px 24px -12px rgb(74 38 51 / 28%);
   --shadow-panel: 0 1px 4px rgb(74 38 51 / 25%);
   --shadow-card-strong: 0 1px 3px rgb(74 38 51 / 30%);
   --shadow-chip: 0 2px 7px rgb(74 38 51 / 18%);

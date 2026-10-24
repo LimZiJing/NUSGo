@@ -57,6 +57,17 @@ describe('applyBasemapPresentation', () => {
     )
   })
 
+  it('hides road shields and one-way arrows', () => {
+    const map = createFakeMap()
+    map.getLayer.mockReturnValue({})
+
+    applyBasemapPresentation(map as unknown as Map)
+
+    for (const layerId of ['highway-shield-non-us', 'road_shield_us', 'road_one_way_arrow']) {
+      expect(map.setLayoutProperty).toHaveBeenCalledWith(layerId, 'visibility', 'none')
+    }
+  })
+
   it('skips optional basemap layers when the style does not provide them', () => {
     const map = createFakeMap()
     map.getLayer.mockReturnValue(undefined)

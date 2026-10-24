@@ -17,6 +17,10 @@ function createOverviewIndex() {
 }
 
 describe('Stops list data', () => {
+  it('uses a 250 metre Nearby expansion radius', () => {
+    expect(NEARBY_STOP_RADIUS_METERS).toBe(250)
+  })
+
   it('shows all stops and orders the Nearby list by map distance', () => {
     const index = createOverviewIndex()
     const centre = { longitude: 103, latitude: 1 }

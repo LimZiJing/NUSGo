@@ -63,7 +63,7 @@ afterEach(() => {
   appHarness.session.enableLocationTracking.mockClear()
 })
 
-// Nearby cards expand within 500 m of the map centre, so tests that assert the
+// Nearby cards expand within 250 m of the map centre, so tests that assert the
 // closed-to-open transition start with the map away from the fixture stops.
 const FAR_MAP_CENTRE: readonly [number, number] = [103.5, 1.5]
 const STOP_A_MAP_CENTRE: readonly [number, number] = [103, 1]

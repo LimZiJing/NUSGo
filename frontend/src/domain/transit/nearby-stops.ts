@@ -3,7 +3,7 @@ import { getDistanceMeters } from '../location/coordinates'
 import type { TransitIndex } from './index'
 import type { BusRoute, TransitStop } from '@nusgo/shared/transit/types'
 
-const MAX_NEARBY_STOP_DISTANCE_METERS = 500
+const MAX_NEARBY_STOP_DISTANCE_METERS = 250
 const MAX_NEARBY_STOP_COUNT = 3
 
 export interface NearbyShuttleStop {

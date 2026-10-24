@@ -3,7 +3,11 @@ import { createTransitIndex } from '@navus/shared/transit/index'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
 import type { BackendLiveData } from '../live-data/runtime.ts'
-import { createFindPathsService, NoPathAvailableError } from './find-paths.ts'
+import {
+  createFindPathsService,
+  JourneyPlanningTimeoutError,
+  NoPathAvailableError,
+} from './find-paths.ts'
 import { buildBuildingLocations, hasCanonicalEndpoint } from './endpoints.ts'
 import { createValhallaRouteEngine } from './walking/valhalla-walking-client.ts'
 import { getValhallaBaseUrl } from './walking/valhalla-config.ts'
@@ -15,6 +19,8 @@ export class InvalidJourneyEndpointError extends Error {
     this.name = 'InvalidJourneyEndpointError'
   }
 }
+
+export { JourneyPlanningTimeoutError }
 
 export interface PathfindingService {
   plan(request: ApiJourneyPlanningRequest, signal: AbortSignal): Promise<ApiJourneyPlanningResponse>

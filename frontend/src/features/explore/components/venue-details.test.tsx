@@ -113,6 +113,18 @@ describe('ExploreContent venue details', () => {
       .toBeLessThan(markup.indexOf('Nearby bus stops'))
   })
 
+  it.each([
+    [-1, 'Basement 1'],
+    [0, 'Ground floor'],
+    [1, 'Floor 1'],
+  ])('shows floor %i as %s in venue details', (floor, label) => {
+    const markup = renderVenueDetails({
+      selectedVenue: { ...venue, floor },
+    })
+
+    expect(markup).toContain(`<span>${label} · Computing 1</span></p>`)
+  })
+
   it('omits nearby stops and disables navigation for a venue without coordinates', () => {
     const unlocatedVenue: VenueLocation = { roomName: 'Tutorial Room' }
     const markup = renderVenueDetails({

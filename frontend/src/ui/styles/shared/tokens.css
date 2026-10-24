@@ -1,4 +1,5 @@
 :root {
+  --blur-overlay: blur(16px) saturate(1.6);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

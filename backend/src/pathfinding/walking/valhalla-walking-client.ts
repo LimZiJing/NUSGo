@@ -220,10 +220,6 @@ function requireMatrixResults(
   return connections
 }
 
-function isAbortError(error: unknown): boolean {
-  return isRecord(error) && error.name === 'AbortError'
-}
-
 function normalizeBaseUrl(baseUrl: string): string {
   const normalized = baseUrl.trim().replace(/\/+$/, '')
   if (normalized.length === 0) throw new ValhallaRouteError('Valhalla base URL is required')
@@ -246,7 +242,7 @@ async function requestJson(
       signal,
     })
   } catch (error) {
-    if (isAbortError(error)) throw error
+    if (signal.aborted) throw signal.reason ?? error
     throw new ValhallaRouteError(`Valhalla ${resourceName} request failed`)
   }
 
@@ -256,7 +252,8 @@ async function requestJson(
 
   try {
     return await response.json() as unknown
-  } catch {
+  } catch (error) {
+    if (signal.aborted) throw signal.reason ?? error
     throw new ValhallaRouteError(`Valhalla ${resourceName} response was not valid JSON`)
   }
 }

@@ -159,12 +159,91 @@ describe('Valhalla route engine', () => {
       .rejects.toThrow('Valhalla route request failed: 503')
   })
 
-  it('preserves aborted requests', async () => {
+  it('wraps an unowned AbortError as a provider failure', async () => {
     const abortError = new DOMException('The operation was aborted.', 'AbortError')
     const fetcher = vi.fn<typeof fetch>(async () => { throw abortError })
     const engine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })
 
     await expect(engine.routeWalking({ origin, destination }, new AbortController().signal))
-      .rejects.toBe(abortError)
+      .rejects.toThrow('Valhalla route request failed')
+  })
+
+  it('preserves the caller abort reason when fetch rejects after cancellation', async () => {
+    const callerAbortError = new Error('Journey was cancelled')
+    callerAbortError.name = 'AbortError'
+    const fetchController = new AbortController()
+    const fetcher = vi.fn<typeof fetch>((_input, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('The fetch was aborted.', 'AbortError'))
+      }, { once: true })
+    }))
+    const engine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })
+    const pending = engine.routeWalking({ origin, destination }, fetchController.signal)
+    const outcome = pending.then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    )
+    fetchController.abort(callerAbortError)
+
+    await expect(outcome).resolves.toEqual({ error: callerAbortError })
+  })
+
+  it('preserves the owning abort reason when fetch rejects after cancellation', async () => {
+    const deadlineError = new Error('Path geometry completion exceeded its time budget')
+    deadlineError.name = 'TimeoutError'
+
+    const fetchController = new AbortController()
+    const fetcher = vi.fn<typeof fetch>((_input, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('The fetch was aborted.', 'AbortError'))
+      }, { once: true })
+    }))
+    const fetchEngine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })
+    const fetchPending = fetchEngine.routeWalking({ origin, destination }, fetchController.signal)
+    const fetchOutcome = fetchPending.then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    )
+    fetchController.abort(deadlineError)
+    await expect(fetchOutcome).resolves.toEqual({ error: deadlineError })
+  })
+
+  it('preserves the owning abort reason while reading the response body', async () => {
+    const deadlineError = new Error('Path geometry completion exceeded its time budget')
+    deadlineError.name = 'TimeoutError'
+    const bodyController = new AbortController()
+    let markBodyStarted = (): void => {}
+    const bodyStarted = new Promise<void>((resolve) => { markBodyStarted = resolve })
+    const bodyResponse = {
+      ok: true,
+      json: vi.fn(() => new Promise((_resolve, reject) => {
+        markBodyStarted()
+        bodyController.signal.addEventListener('abort', () => {
+          reject(new DOMException('The body read was aborted.', 'AbortError'))
+        }, { once: true })
+      })),
+    } as unknown as Response
+    const bodyEngine = createValhallaRouteEngine({
+      baseUrl: 'https://routing.example.test',
+      fetcher: vi.fn<typeof fetch>(async () => bodyResponse),
+    })
+    const bodyPending = bodyEngine.routeWalking({ origin, destination }, bodyController.signal)
+    const bodyOutcome = bodyPending.then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    )
+    await bodyStarted
+    bodyController.abort(deadlineError)
+    await expect(bodyOutcome).resolves.toEqual({ error: deadlineError })
+  })
+
+  it('does not classify an unowned transport TimeoutError as cancellation', async () => {
+    const timeoutError = new Error('transport timed out')
+    timeoutError.name = 'TimeoutError'
+    const fetcher = vi.fn<typeof fetch>(async () => { throw timeoutError })
+    const engine = createValhallaRouteEngine({ baseUrl: 'https://routing.example.test', fetcher })
+
+    await expect(engine.routeWalking({ origin, destination }, new AbortController().signal))
+      .rejects.toThrow('Valhalla route request failed')
   })
 })

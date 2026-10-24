@@ -12,13 +12,19 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-edge), var(--shadow-md);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
   cursor: pointer;
 }
 
 .theme-toggle:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;
+}
+
+.theme-toggle:active:not(:disabled) {
+  filter: brightness(0.85);
 }
 
 .theme-toggle-icon {

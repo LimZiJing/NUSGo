@@ -416,7 +416,7 @@
 }
 @media (max-width: 768px) {
   .navigation-panel.explore-sheet {
-    background: var(--surface-overlay-strong);
+    background: var(--surface-raised);
   }
 
   .navigation-panel .explore-mode-selector {

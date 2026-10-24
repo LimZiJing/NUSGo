@@ -106,6 +106,8 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  /** Refits the active Explore target (selected venue/building or the selected route) with the current insets. */
+  refitExploreTarget(): void
   setStopsPinVisible(visible: boolean): void
   setNearbyStopHighlight(stopIds: readonly string[]): void
   setPlanLayersVisible(visible: boolean): void
@@ -195,6 +197,8 @@ export function createNavigationSession(
   let journeyPlanningRequestId = 0
   let journeyPlanningRequested = false
   let originLocationRequestId = 0
+  // Request id of an origin capture waiting for the first valid tracking fix.
+  let pendingOriginCaptureId: number | null = null
   const getStatus = (
     resourceStatus: ResourceStatusState = state.resourceStatus,
     mapError: string | null = state.mapError,
@@ -255,6 +259,7 @@ export function createNavigationSession(
       dependencies.map.focusCurrentLocation(location.latestFix)
     }
     updateState({ location })
+    handlePendingOriginCapture(location)
   })
 
   dependencies.map.setCurrentLocation(state.location.latestFix, state.locationMarkerVisible)
@@ -280,6 +285,7 @@ export function createNavigationSession(
 
   const invalidateOriginLocationRequest = (): void => {
     originLocationRequestId += 1
+    pendingOriginCaptureId = null
   }
 
   const cancelOriginLocationRequest = (): void => {
@@ -296,13 +302,13 @@ export function createNavigationSession(
     const status = isLocationRequestFailure(error) ? error.status : 'unavailable'
     switch (status) {
       case 'denied':
-        return 'Location permission was denied. Please allow location access and try again.'
+        return 'Location is off. Allow access to use it.'
       case 'timeout':
-        return 'The location request timed out. Please try again.'
+        return 'Location timed out. Try again.'
       case 'invalid':
-        return 'The device returned an invalid location. Please try again.'
+        return 'Location was invalid. Try again.'
       default:
-        return 'Device location is unavailable. Please try again.'
+        return 'Location is unavailable. Try again.'
     }
   }
 
@@ -333,6 +339,28 @@ export function createNavigationSession(
       'origin',
       origin,
     ))
+  }
+
+  // Captures the origin from the first tracking fix only; later fixes leave the origin alone.
+  const handlePendingOriginCapture = (location: LocationTrackingState): void => {
+    const requestId = pendingOriginCaptureId
+    if (requestId === null || requestId !== originLocationRequestId) return
+
+    if (location.status === 'tracking') {
+      pendingOriginCaptureId = null
+      const fix = location.latestFix
+      enqueueTransition(() => applyCurrentLocationOrigin(requestId, fix))
+      return
+    }
+
+    if (
+      location.status === 'denied' ||
+      location.status === 'timeout' ||
+      location.status === 'unavailable'
+    ) {
+      pendingOriginCaptureId = null
+      setOriginLocationRequestError(requestId, { status: location.status })
+    }
   }
 
   const requestJourneyPlanning = (): void => {
@@ -664,6 +692,18 @@ export function createNavigationSession(
       })
     },
 
+    refitExploreTarget() {
+      enqueueTransition(() => {
+        if (disposed) return
+        const explore = state.exploreState
+        if (explore.mode === 'venue-detail') {
+          dependencies.map.refitSelectedVenue()
+          return
+        }
+        if (explore.mode === 'bus-routes' && state.selectedRouteId) dependencies.map.refitRoute()
+      })
+    },
+
     setStopsPinVisible(visible) {
       if (disposed) return
       dependencies.map.setStopsPinVisible(visible)
@@ -746,27 +786,18 @@ export function createNavigationSession(
         return
       }
 
+      // Wait for the first valid tracking fix from the watch, so the live marker starts too.
+      pendingOriginCaptureId = requestId
       updateState({
         originLocationRequest: { status: 'requesting', error: null },
       })
-      const requestLocation = dependencies.locationTracker.requestCurrentLocation
-      if (!requestLocation) {
-        setOriginLocationRequestError(requestId, { status: 'unavailable' })
-        return
+      if (!state.locationMarkerVisible) {
+        dependencies.map.setCurrentLocation(state.location.latestFix, true)
+        updateState({ locationMarkerVisible: true })
       }
-
-      let request: Promise<LocationTrackingState['latestFix']>
-      try {
-        request = requestLocation()
-      } catch (error) {
-        setOriginLocationRequestError(requestId, error)
-        return
-      }
-
-      void request.then(
-        (fix) => enqueueTransition(() => applyCurrentLocationOrigin(requestId, fix)),
-        (error: unknown) => enqueueTransition(() => setOriginLocationRequestError(requestId, error)),
-      )
+      // Keep this call synchronous so browsers can associate permission with the user's action.
+      // Setting the pending id first lets a synchronous failure from enable() be reported.
+      dependencies.locationTracker.enable()
     },
 
     cancelOriginLocationRequest() {
@@ -776,6 +807,8 @@ export function createNavigationSession(
 
     disableLocationTracking() {
       if (disposed) return
+      // Turning tracking off would leave a pending origin capture waiting forever.
+      cancelOriginLocationRequest()
       dependencies.locationTracker.disable()
     },
 

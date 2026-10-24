@@ -17,6 +17,7 @@ import {
   LocateFixed,
   Navigation,
   Moon,
+  RotateCw,
   Route,
   Search,
   Star,
@@ -85,6 +86,10 @@ export function FootprintsIcon(props: IconProps) {
 
 export function LocateIcon(props: IconProps) {
   return renderDecorativeIcon(LocateFixed, props)
+}
+
+export function RefreshIcon(props: IconProps) {
+  return renderDecorativeIcon(RotateCw, props)
 }
 
 export function MapPinIcon(props: IconProps) {

@@ -5,6 +5,11 @@ export interface VenueSearchResult {
   readonly venue: VenueLocation
 }
 
+/** Every name a venue can be found by: its code and room name. */
+export function getVenueSearchFields(code: string, venue: VenueLocation): string[] {
+  return [code, venue.roomName]
+}
+
 const MAX_RESULTS = 8
 
 function normalize(value: string): string {

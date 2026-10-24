@@ -7,15 +7,15 @@ const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const styles = readFileSync(resolve(stylesDirectory, 'plan-content.css'), 'utf8')
 
 describe('mobile Plan panel scrolling styles', () => {
-  it('keeps the panel vertically scrollable and fits the endpoint picker in its scrollport', () => {
+  it('keeps the panel vertically scrollable and fits the trip card in its scrollport', () => {
     expect(styles).toMatch(
       /\.navigation-panel\s+\.plan-content-panel\s*{[^}]*overflow-x:\s*clip;[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*auto;/s,
     )
     expect(styles).toMatch(
-      /\.plan-endpoint-picker\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*var\(--space-2\)\s+0;/s,
+      /\.plan-trip-card,\s*\.plan-location-search\s*{[^}]*width:\s*calc\(100%\s*-\s*var\(--space-3\)\);[^}]*margin-inline:\s*var\(--space-3\)\s+0;/s,
     )
     expect(styles).toMatch(
-      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100%\s*-\s*52px\);[^}]*margin-inline-start:\s*32px;[^}]*box-sizing:\s*border-box;/s,
+      /\.navigation-panel\s+\.plan-content-panel\s+\.journey-results\s*{[^}]*width:\s*calc\(100%\s*-\s*var\(--space-3\)\);[^}]*margin-inline-start:\s*var\(--space-3\);[^}]*box-sizing:\s*border-box;/s,
     )
   })
 })

@@ -65,6 +65,14 @@ function getJourneyFitInsets(
   }
 }
 
+type VenueCameraFit = {
+  readonly kind: 'venue'
+  readonly venue: VenueLocation
+} | {
+  readonly kind: 'building'
+  readonly locations: readonly VenueLocation['location'][]
+}
+
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
@@ -98,13 +106,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let stopsPinVisible = false
   let nearbyStopIds: readonly string[] = []
   let viewportInsets: MapViewportInsets = EMPTY_VIEWPORT_INSETS
-  let pendingCameraFit: {
-    readonly kind: 'venue'
-    readonly venue: VenueLocation
-  } | {
-    readonly kind: 'building'
-    readonly locations: readonly VenueLocation['location'][]
-  } | {
+  // The venue or building the user selected; kept so Explore can refit it on menu entry.
+  let selectedVenueFit: VenueCameraFit | null = null
+  let pendingCameraFit: VenueCameraFit | {
     readonly kind: 'route'
     readonly routeId: string | null
   } | {
@@ -146,6 +150,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const clearVenueMarker = () => {
     selectedVenueMarker?.dispose()
     selectedVenueMarker = null
+    selectedVenueFit = null
     if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
@@ -167,6 +172,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       offset: [offsetX, offsetY - popupOffset],
       essential: true,
     })
+  }
+
+  const applyVenueFit = (fit: VenueCameraFit): void => {
+    if (fit.kind === 'venue') {
+      fitVenue(fit.venue)
+    } else {
+      fitBuilding(fit.locations as NonNullable<VenueLocation['location']>[])
+    }
   }
 
   const fitVenue = (venue: VenueLocation): void => {
@@ -434,6 +447,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     refitRoute() {
       if (disposed || !transitData || !currentRouteSelection.route) return
+      // The immediate fit replaces any fit still waiting for the next inset report.
+      if (pendingCameraFit?.kind === 'route') pendingCameraFit = null
       transitRouteLayers?.fitRoute(
         transitData.index,
         transitData.geometry,
@@ -570,10 +585,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       lifecycle.setViewportInsets(viewportInsets)
       const pendingFit = pendingCameraFit
       pendingCameraFit = null
-      if (pendingFit?.kind === 'venue') {
-        fitVenue(pendingFit.venue)
-      } else if (pendingFit?.kind === 'building') {
-        fitBuilding(pendingFit.locations as NonNullable<VenueLocation['location']>[])
+      if (pendingFit?.kind === 'venue' || pendingFit?.kind === 'building') {
+        applyVenueFit(pendingFit)
       } else if (pendingFit?.kind === 'route' && transitData) {
         transitRouteLayers?.fitRoute(
           transitData.index,
@@ -647,7 +660,15 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (!marker || !venue.location) return
 
       selectedVenueMarker = marker
-      pendingCameraFit = { kind: 'venue', venue }
+      selectedVenueFit = { kind: 'venue', venue }
+      pendingCameraFit = selectedVenueFit
+    },
+
+    refitSelectedVenue() {
+      if (disposed || !selectedVenueFit) return
+      // The immediate fit replaces the one waiting for the next inset report.
+      pendingCameraFit = null
+      applyVenueFit(selectedVenueFit)
     },
 
     selectBuilding(building) {
@@ -672,10 +693,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
           for (const marker of markers) marker.dispose()
         },
       }
-      pendingCameraFit = {
+      selectedVenueFit = {
         kind: 'building',
         locations: highlighted ? [highlighted] : building.locations,
       }
+      pendingCameraFit = selectedVenueFit
     },
 
     clearVenue() {

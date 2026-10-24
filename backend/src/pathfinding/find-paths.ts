@@ -11,7 +11,10 @@ import {
   describeUnavailableBusService,
   NoPathAvailableError,
 } from './pipeline/apply-bus-waits.ts'
-import { completePathGeometry } from './pipeline/complete-path-geometry.ts'
+import {
+  completePathGeometry,
+  PathGeometryDeadlineExceededError,
+} from './pipeline/complete-path-geometry.ts'
 import { resolvePathEndpoints } from './pipeline/resolve-path-endpoints.ts'
 import { selectWalkingConnections } from './pipeline/select-walking-connections.ts'
 import {
@@ -184,14 +187,22 @@ export async function findPaths(
     throw new NoPathAvailableError(describeUnavailableBusService(waitResult.unavailableService))
   }
 
-  const geometry = await completePathGeometry(
-    routeEngine,
-    waitResult.search,
-    endpoints.all,
-    signal,
-    monotonicNow() + MAX_SEARCH_DURATION_MS,
-    monotonicNow,
-  )
+  let geometry
+  try {
+    geometry = await completePathGeometry(
+      routeEngine,
+      waitResult.search,
+      endpoints.all,
+      signal,
+      monotonicNow() + MAX_SEARCH_DURATION_MS,
+      monotonicNow,
+    )
+  } catch (error: unknown) {
+    if (error instanceof PathGeometryDeadlineExceededError) {
+      throw new JourneyPlanningTimeoutError()
+    }
+    throw error
+  }
   if (!geometry) return null
 
   return {
@@ -222,3 +233,10 @@ export function createFindPathsService(
 }
 
 export { NoPathAvailableError }
+
+export class JourneyPlanningTimeoutError extends Error {
+  constructor() {
+    super('Journey planning timed out')
+    this.name = 'JourneyPlanningTimeoutError'
+  }
+}

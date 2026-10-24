@@ -5,6 +5,7 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 ## Campus navigation
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
+- **Venue floor**: A signed integer relative to ground level. Negative values identify basement floors, zero identifies the ground floor, and positive values identify floors above ground.
 - **Building**: A named NUS structure in the building catalogue, distinct from the rooms inside it and from bus stops, with its own stable identity. A Building is a kind of Venue. Its location is an API centroid, or an accepted but unverified entrance, until a pedestrian entrance has been verified; a Building is never merged with a nearby bus stop.
 - **Transit network**: The set of bus routes, bus stops, and service associations available for campus travel.
 - **Path**: A complete, continuous ordered sequence of walking and bus legs between the selected origin and destination. It is the canonical name for one computed option.
@@ -14,6 +15,9 @@ This document defines the domain and product vocabulary used by NavUS. It contai
 - **Current location**: A trip endpoint that snapshots the coordinates of an active valid device-location fix. It keeps those coordinates after the device location moves and has no venue or stop identifier.
 - **Walking connection**: A directed, validated walking link between two trip endpoints or bus stops, with travel distance and duration. A walking Path leg also has routed geometry.
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
+- **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.
+- **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note and timestamps. It is not sent to NavUS services.
+- **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
 
 ## Bus transit
 

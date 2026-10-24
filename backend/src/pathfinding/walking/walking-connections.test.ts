@@ -21,6 +21,11 @@ const stopB = {
   stopId: 'STOP-B',
   coordinate: { longitude: 103.002, latitude: 1 },
 }
+const stopC = {
+  key: 'stop:STOP-C',
+  stopId: 'STOP-C',
+  coordinate: { longitude: 103.003, latitude: 1 },
+}
 
 const request: WalkingConnectionRequest = {
   origin,
@@ -63,6 +68,49 @@ function connectionKeys(connections: readonly { fromKey: string; toKey: string }
 }
 
 describe('walking connection provider', () => {
+  it('uses exact directed stop-graph costs without requesting covered stop pairs', async () => {
+    const routeEngine = createRouteEngine()
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: graph })
+
+    const connections = await provider.getWalkingConnections({
+      origin: { key: stopA.key, coordinate: stopA.coordinate },
+      destination: { key: stopB.key, coordinate: stopB.coordinate },
+      stops: [stopA, stopB],
+    }, new AbortController().signal)
+
+    expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
+    expect(connections).toHaveLength(2)
+    expect(connections).toEqual(expect.arrayContaining([
+      { fromKey: 'stop:STOP-A', toKey: 'stop:STOP-B', distanceMeters: 120, durationSeconds: 90 },
+      { fromKey: 'stop:STOP-B', toKey: 'stop:STOP-A', distanceMeters: 140, durationSeconds: 110 },
+    ]))
+  })
+
+  it('uses a live fallback when only the reverse directed graph edge exists', async () => {
+    const routeEngine = createRouteEngine()
+    const forwardOnlyGraph: WalkingStopGraph = {
+      ...graph,
+      connections: [graph.connections[0]],
+    }
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: forwardOnlyGraph })
+
+    const connections = await provider.getWalkingConnections({
+      origin: { key: stopB.key, coordinate: stopB.coordinate },
+      destination: { key: stopA.key, coordinate: stopA.coordinate },
+      stops: [stopA, stopB],
+    }, new AbortController().signal)
+
+    expect(routeEngine.matrixWalking).toHaveBeenCalledOnce()
+    expect(routeEngine.matrixWalking).toHaveBeenCalledWith({
+      sources: [stopB.coordinate],
+      targets: [stopA.coordinate],
+    }, expect.any(AbortSignal))
+    expect(connections).toEqual(expect.arrayContaining([
+      { fromKey: stopA.key, toKey: stopB.key, distanceMeters: 120, durationSeconds: 90 },
+      { fromKey: stopB.key, toKey: stopA.key, distanceMeters: 1_000, durationSeconds: 800 },
+    ]))
+  })
+
   it('combines two endpoint queries with the static directed stop graph', async () => {
     const routeEngine = createRouteEngine()
     const loadGraph = vi.fn(async () => graph)
@@ -87,7 +135,124 @@ describe('walking connection provider', () => {
       sources: [stopA.coordinate, stopB.coordinate],
       targets: [destination.coordinate],
     }, expect.any(AbortSignal))
+    expect(connections).toContainEqual({
+      fromKey: origin.key,
+      toKey: destination.key,
+      distanceMeters: 1_000,
+      durationSeconds: 800,
+    })
     expect(loadGraph).toHaveBeenCalledOnce()
+  })
+
+  it('keeps live non-stop cells and falls back only for a missing directed graph pair', async () => {
+    const routeEngine = createRouteEngine()
+    const partialGraph: WalkingStopGraph = {
+      ...graph,
+      stopIds: ['STOP-A', 'STOP-B', 'STOP-C'],
+      connections: [
+        graph.connections[0],
+        graph.connections[1],
+      ],
+    }
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: partialGraph })
+    const currentLocation = {
+      key: 'current-location:origin',
+      coordinate: { longitude: 103.004, latitude: 1.004 },
+    }
+
+    const connections = await provider.getWalkingConnections({
+      origin: currentLocation,
+      destination: { key: stopB.key, coordinate: stopB.coordinate },
+      stops: [stopA, stopB, stopC],
+    }, new AbortController().signal)
+
+    expect(routeEngine.matrixWalking).toHaveBeenCalledTimes(2)
+    expect(routeEngine.matrixWalking).toHaveBeenNthCalledWith(1, {
+      sources: [currentLocation.coordinate],
+      targets: [stopB.coordinate, stopA.coordinate, stopC.coordinate],
+    }, expect.any(AbortSignal))
+    expect(routeEngine.matrixWalking).toHaveBeenNthCalledWith(2, {
+      sources: [stopC.coordinate],
+      targets: [stopB.coordinate],
+    }, expect.any(AbortSignal))
+    expect(connections).toContainEqual({
+      fromKey: currentLocation.key,
+      toKey: stopB.key,
+      distanceMeters: 1_000,
+      durationSeconds: 800,
+    })
+    expect(connections).toContainEqual({
+      fromKey: 'stop:STOP-A',
+      toKey: 'stop:STOP-B',
+      distanceMeters: 120,
+      durationSeconds: 90,
+    })
+    expect(connections).toContainEqual({
+      fromKey: 'stop:STOP-C',
+      toKey: 'stop:STOP-B',
+      distanceMeters: 1_000,
+      durationSeconds: 800,
+    })
+  })
+
+  it('uses the destination matrix for stop-to-destination pairs only once', async () => {
+    const routeEngine = createRouteEngine()
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: graph })
+
+    const connections = await provider.getWalkingConnections({
+      origin: { key: stopA.key, coordinate: stopA.coordinate },
+      destination,
+      stops: [stopA, stopB],
+    }, new AbortController().signal)
+
+    expect(routeEngine.matrixWalking).toHaveBeenCalledOnce()
+    expect(routeEngine.matrixWalking).toHaveBeenCalledWith({
+      sources: [stopA.coordinate, stopB.coordinate],
+      targets: [destination.coordinate],
+    }, expect.any(AbortSignal))
+    expect(connections).toContainEqual({
+      fromKey: stopA.key,
+      toKey: destination.key,
+      distanceMeters: 200,
+      durationSeconds: 160,
+    })
+  })
+
+  it('omits same-key self cells without inventing a walking connection', async () => {
+    const routeEngine = createRouteEngine()
+    const singleStopGraph: WalkingStopGraph = {
+      ...graph,
+      stopIds: ['STOP-A'],
+      connections: [],
+    }
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: singleStopGraph })
+
+    const connections = await provider.getWalkingConnections({
+      origin: { key: stopA.key, coordinate: stopA.coordinate },
+      destination: { key: stopA.key, coordinate: stopA.coordinate },
+      stops: [stopA],
+    }, new AbortController().signal)
+
+    expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
+    expect(connections).toEqual([])
+  })
+
+  it('fails closed when the loaded graph does not match the request stops', async () => {
+    const routeEngine = createRouteEngine()
+    const mismatchedGraph: WalkingStopGraph = { ...graph, stopIds: ['STOP-A'] }
+    const provider = createWalkingConnectionProvider({ routeEngine, walkingStopGraph: mismatchedGraph })
+
+    await expect(provider.getWalkingConnections(request, new AbortController().signal))
+      .rejects.toThrow('Walking stop graph does not match the loaded transit stops')
+  })
+
+  it('fails closed when the canonical graph cannot be loaded', async () => {
+    const routeEngine = createRouteEngine()
+    const loadGraph = vi.fn(async () => { throw new Error('walking graph unavailable') })
+    const provider = createWalkingConnectionProvider({ routeEngine, loadGraph })
+
+    await expect(provider.getWalkingConnections(request, new AbortController().signal))
+      .rejects.toThrow('walking graph unavailable')
   })
 
   it('loads the static graph once and supports arbitrary endpoint coordinates', async () => {

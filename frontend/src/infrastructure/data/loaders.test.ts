@@ -58,6 +58,11 @@ describe('data loaders', () => {
 
     expect(result.venueCount).toBeGreaterThan(0)
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
+    expect(result.venues['Y-DanceStu']?.floor).toBe(0)
+    expect(result.venues['Y-Studio3']?.floor).toBe(0)
+    expect(result.venues['Y-Studio5']?.floor).toBe(0)
+    expect(result.venues['S13-M-08']?.floor).toBe(1)
+    expect(result.venues['AS4-B107']?.floor).toBe(-1)
   })
 
   it('loads the building catalogue with the venues and indexes it for search', async () => {

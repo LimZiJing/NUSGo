@@ -15,6 +15,8 @@ Requests under `/api` pass through these steps:
 
 The shared limit runs before CORS and body parsing so rejected origins, malformed bodies, and unknown routes still use the client's request budget.
 
+Journey planning deadlines return HTTP 504 with `planning_timeout`; failures from the walking provider remain HTTP 503 with `provider_unavailable`. A disconnected client cancels planner work without writing a response.
+
 ## Tests and related guidance
 
 `app.test.ts` checks the shared policy through Express, including every public route, CORS rejection, and client-IP handling. `routes/journeys.test.ts` checks Journey-specific limits and slot cleanup.

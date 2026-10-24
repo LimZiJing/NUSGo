@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { renderToStaticMarkup } from 'react-dom/server'
-import { render, screen } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../../../domain/transit'
@@ -91,13 +91,23 @@ const venues = {
   DESTINATION: { roomName: 'Destination venue', location: { x: 103.1, y: 1.1 } },
 }
 
+// Cards start collapsed, so open the selected one before reading its timeline markup.
+function renderExpandedMarkup(element: ReactElement): string {
+  const { container, unmount } = render(element)
+  const selected = container.querySelector<HTMLElement>('.journey-option-summary[aria-current="true"]')
+  if (selected) fireEvent.click(selected)
+  const markup = container.innerHTML
+  unmount()
+  return markup
+}
+
 function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
   const busLeg = path.legs[1]
   if (!busLeg || busLeg.mode !== 'shuttle') {
     throw new Error('Test journey is missing its bus leg')
   }
 
-  return renderToStaticMarkup(
+  return renderExpandedMarkup(
     <JourneyResults
       state={{
         status: 'ready',
@@ -137,7 +147,7 @@ function renderJourneyWithWaitingSeconds(waitingSeconds: number): string {
 
 describe('JourneyResults', () => {
   it('shows the estimated Journey totals and ordered walking and bus details', () => {
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
         venues={venues}
@@ -160,7 +170,7 @@ describe('JourneyResults', () => {
     expect(markup).toContain('journey-stop-marker')
     expect(markup).toContain('>MID</span>')
     expect(markup).not.toContain('Middle Stop')
-    expect(markup).toContain(`--journey-route-color:${route.color}`)
+    expect(markup).toContain(`--journey-route-color: ${route.color}`)
     expect(markup).toContain('Due now · 5 min ride')
     // The trip card names both ends, so the timeline starts and ends on a leg.
     expect(markup).not.toContain('Origin venue')
@@ -173,7 +183,6 @@ describe('JourneyResults', () => {
     expect(markup).not.toContain('Alight')
     expect(markup).not.toContain('Stops:')
     expect(markup).not.toContain('journey-option-endpoint-arrow')
-    expect(markup).toContain('Uses live arrivals where available.')
     expect(markup).not.toContain('not guaranteed arrival times')
   })
 
@@ -194,7 +203,7 @@ describe('JourneyResults', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{ status: 'ready', path: walkingPath, candidates: [scoreJourney(walkingPath)], error: null }}
         venues={venues}
@@ -222,7 +231,7 @@ describe('JourneyResults', () => {
       estimateStatus: 'estimated',
       planningQuality: 'exact',
     }
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{
           status: 'ready',
@@ -284,7 +293,7 @@ describe('JourneyResults', () => {
       scoreJourney(transferPath, 'one-transfer'),
       scoreJourney(walkingPath, 'walking-alternative'),
     ]
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{
           status: 'ready',
@@ -359,7 +368,8 @@ describe('JourneyResults', () => {
     )
 
     const [firstOptionButton, secondOptionButton] = screen.getAllByRole('button')
-    expect(firstOptionButton.getAttribute('aria-expanded')).toBe('true')
+    // Cards start collapsed even though the first is selected on the map.
+    expect(firstOptionButton.getAttribute('aria-expanded')).toBe('false')
     expect(secondOptionButton.getAttribute('aria-expanded')).toBe('false')
     expect(secondOptionButton.getAttribute('aria-controls')).toBe('journey-option-details-2')
     expect(firstOptionButton.textContent).toContain('Recommended')
@@ -375,20 +385,22 @@ describe('JourneyResults', () => {
     expect(summaryBottomRow?.children[1]?.classList.contains('journey-option-detail')).toBe(true)
     expect(firstOptionButton.querySelector('.journey-option-estimate .journey-option-modes')).toBeTruthy()
     expect(firstOptionButton.getAttribute('aria-current')).toBe('true')
-    expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
+    expect(firstOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
     expect(secondOptionButton.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('false')
     expect(screen.getByRole('img', { name: /Journey modes: Walk, .* bus, Walk/ })).toBeTruthy()
     expect(screen.getByText('Recommended')).toBeTruthy()
     expect(screen.getByText('Walking')).toBeTruthy()
     expect(screen.queryByText('Alternative 2')).toBeNull()
-    expect(screen.queryByText('A faster route may exist')).toBeNull()
 
     await user.tab()
     expect(document.activeElement).toBe(firstOptionButton)
     await user.keyboard('{Enter}')
     expect(onSelectCandidate).toHaveBeenCalledWith('bus-recommendation')
+    expect(firstOptionButton.getAttribute('aria-expanded')).toBe('true')
+    // The collapse control, then the timeline's stop disclosure, come before the next option.
     await user.tab()
-    // The expanded timeline's accessible stop disclosure comes before the next option.
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Collapse journey 1 details' }))
+    await user.tab()
     await user.tab()
     expect(document.activeElement).toBe(secondOptionButton)
     await user.keyboard(' ')
@@ -421,6 +433,42 @@ describe('JourneyResults', () => {
     expect(selectedAlternative.getAttribute('aria-expanded')).toBe('true')
   })
 
+  it('recentres on a tap of the open card and collapses from its chevron', async () => {
+    const user = userEvent.setup()
+    const onFitSelected = vi.fn()
+    const options = [scoreJourney(path, 'bus-recommendation')]
+    const { container } = render(
+      <JourneyResults
+        state={{
+          status: 'ready',
+          path,
+          candidates: options,
+          displayedCandidates: options,
+          selectedCandidateKey: 'bus-recommendation',
+          error: null,
+        }}
+        venues={venues}
+        networkIndex={networkIndex}
+        onFitSelected={onFitSelected}
+      />,
+    )
+    const [summary] = within(container).getAllByRole('button')
+    expect(summary.getAttribute('aria-expanded')).toBe('false')
+    expect(within(container).queryByRole('button', { name: 'Collapse journey 1 details' })).toBeNull()
+
+    await user.click(summary)
+    expect(onFitSelected).not.toHaveBeenCalled()
+    expect(summary.getAttribute('aria-expanded')).toBe('true')
+
+    await user.click(summary)
+    expect(onFitSelected).toHaveBeenCalledOnce()
+    expect(summary.getAttribute('aria-expanded')).toBe('true')
+
+    await user.click(within(container).getByRole('button', { name: 'Collapse journey 1 details' }))
+    expect(summary.getAttribute('aria-expanded')).toBe('false')
+    expect(onFitSelected).toHaveBeenCalledOnce()
+  })
+
   it('keeps the first-ranked option aligned with the map Journey when candidate keys break a sequence tie', () => {
     const withRouteId = (routeId: string): Path => ({
       ...path,
@@ -429,7 +477,7 @@ describe('JourneyResults', () => {
     const mapJourney = withRouteId('ZZZ')
     const sequenceFirst = scoreJourney(withRouteId('AAA'), 'z-candidate')
     const mapCandidate = scoreJourney(mapJourney, 'a-candidate')
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{
           status: 'ready',
@@ -500,7 +548,7 @@ describe('JourneyResults', () => {
       longName: 'COM 3',
       shortName: 'COM 3',
     }
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
         venues={collidingVenues}
@@ -539,38 +587,6 @@ describe('JourneyResults', () => {
       .toBe('979 m')
   })
 
-  it('explains when the Journey was selected within a search budget', () => {
-    const markup = renderToStaticMarkup(
-      <JourneyResults
-        state={{
-          status: 'ready',
-          path: { ...path, planningQuality: 'bounded' },
-          candidates: [scoreJourney({ ...path, planningQuality: 'bounded' })],
-          error: null,
-        }}
-        venues={venues}
-        networkIndex={networkIndex}
-      />,
-    )
-
-    expect(markup).toContain('A faster route may exist')
-    expect(markup).not.toContain('Fastest estimated Journey')
-  })
-
-  it('leaves the detailed simulation notice to PlanContent', () => {
-    const markup = renderToStaticMarkup(
-      <JourneyResults
-        state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
-        venues={venues}
-        networkIndex={networkIndex}
-        simulated
-      />,
-    )
-
-    expect(markup).not.toContain('simulated route')
-    expect(markup).toContain('Journey options')
-  })
-
   it.each([
     [0, 'Due now'],
     [29, 'Due now'],
@@ -587,7 +603,7 @@ describe('JourneyResults', () => {
     ['no-route', 'No complete estimated Journey is available'],
     ['failed', 'Journey calculation is unavailable right now'],
   ] as const)('announces the %s state', (status, message) => {
-    const markup = renderToStaticMarkup(
+    const markup = renderExpandedMarkup(
       <JourneyResults
         state={{
           status,

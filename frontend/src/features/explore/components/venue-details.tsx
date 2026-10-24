@@ -32,12 +32,12 @@ function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) 
     <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
       <h4 id="venue-nearby-stops-heading">
         <BusIcon />
-        Nearby bus stops within 500 m
+        Nearby bus stops within 250 m
       </h4>
       {!transitAvailable ? (
         <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
       ) : nearbyStops.length === 0 ? (
-        <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
+        <p className="venue-nearby-empty" role="status">No NUS bus stops within 250 m.</p>
       ) : (
         <div className="venue-nearby-stop-list">
           {nearbyStops.map(({ stop, services }) => (

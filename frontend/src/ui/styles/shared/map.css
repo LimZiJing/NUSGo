@@ -54,7 +54,6 @@
 }
 
 .map-control-stack > .location-control,
-.map-control-stack > .fit-routes-control,
 .map-control-stack > .settings-entry-button,
 .map-control-stack > .map-legend {
   pointer-events: auto;
@@ -70,7 +69,6 @@
       'legend'
       'location'
       'settings'
-      'fit'
       'test';
     gap: 8px;
     align-items: start;
@@ -88,12 +86,6 @@
   .map-control-stack > .settings-entry-button {
     position: static;
     grid-area: settings;
-    justify-self: start;
-  }
-
-  .map-control-stack > .fit-routes-control {
-    position: static;
-    grid-area: fit;
     justify-self: start;
   }
 
@@ -142,15 +134,14 @@
   pointer-events: auto;
 }
 
-.map-control-surface {
+.map-control-stack .map-control-surface {
   background: var(--surface-overlay);
   -webkit-backdrop-filter: var(--blur-overlay);
   backdrop-filter: var(--blur-overlay);
   box-shadow: var(--glass-edge), var(--shadow-md);
 }
 
-.location-control-chip,
-.fit-routes-control {
+.location-control-chip {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--border-control);
@@ -168,28 +159,8 @@
   padding: 0;
 }
 
-.fit-routes-control {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  padding: 0;
-}
-
-.location-control-chip:active:not(:disabled),
-.fit-routes-control:active:not(:disabled) {
+.location-control-chip:active:not(:disabled) {
   filter: brightness(0.85);
-}
-
-.fit-routes-control-icon {
-  width: 22px;
-  height: 22px;
-  color: var(--text-secondary);
-}
-
-.fit-routes-control:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
 }
 
 .location-control-icon {

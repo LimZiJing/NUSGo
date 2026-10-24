@@ -15,6 +15,7 @@ interface Props {
 
 function setup(initial: Partial<Props> = {}) {
   const focusStopInStopsTab = vi.fn()
+  const focusCurrentLocationIfKnown = vi.fn()
   const initialProps: Props = {
     isMobileViewport: false,
     activeView: 'stops',
@@ -23,10 +24,13 @@ function setup(initial: Partial<Props> = {}) {
     ...initial,
   }
   const view = renderHook(
-    (props: Props) => useStopsEntryRefit({ commands: { focusStopInStopsTab }, ...props }),
+    (props: Props) => useStopsEntryRefit({
+        commands: { focusStopInStopsTab, focusCurrentLocationIfKnown },
+        ...props,
+      }),
     { initialProps },
   )
-  return { focusStopInStopsTab, initialProps, ...view }
+  return { focusStopInStopsTab, focusCurrentLocationIfKnown, initialProps, ...view }
 }
 
 describe('useStopsEntryRefit', () => {
@@ -50,14 +54,51 @@ describe('useStopsEntryRefit', () => {
     expect(focusStopInStopsTab).toHaveBeenCalledWith('stop-1')
   })
 
-  it('does nothing without a remembered stop', () => {
-    const { focusStopInStopsTab, initialProps, rerender } = setup({
+  it('recentres on the device location without a remembered stop', () => {
+    const { focusStopInStopsTab, focusCurrentLocationIfKnown, initialProps, rerender } = setup({
       activeView: 'explore',
       rememberedStopId: null,
     })
 
     rerender({ ...initialProps, activeView: 'stops' })
     expect(focusStopInStopsTab).not.toHaveBeenCalled()
+    expect(focusCurrentLocationIfKnown).toHaveBeenCalledOnce()
+  })
+
+  it('recentres on the device location when entering Stops from Plan without a remembered stop', () => {
+    const { focusCurrentLocationIfKnown, initialProps, rerender } = setup({
+      activeView: 'plan',
+      rememberedStopId: null,
+    })
+
+    rerender({ ...initialProps, activeView: 'stops' })
+    expect(focusCurrentLocationIfKnown).toHaveBeenCalledOnce()
+  })
+
+  it('does not recentre on the device location when a stop is remembered', () => {
+    const { focusCurrentLocationIfKnown, initialProps, rerender } = setup({ activeView: 'explore' })
+
+    rerender({ ...initialProps, activeView: 'stops' })
+    expect(focusCurrentLocationIfKnown).not.toHaveBeenCalled()
+  })
+
+  it('does not recentre when the remembered stop is cleared while Stops is active', () => {
+    const { focusCurrentLocationIfKnown, initialProps, rerender } = setup()
+
+    rerender({ ...initialProps, rememberedStopId: null })
+    expect(focusCurrentLocationIfKnown).not.toHaveBeenCalled()
+  })
+
+  it('does not recentre on mobile while the Stops sheet is collapsed', () => {
+    const { focusCurrentLocationIfKnown, initialProps, rerender } = setup({
+      isMobileViewport: true,
+      activeView: 'explore',
+      stopsDetent: 'collapsed',
+      rememberedStopId: null,
+    })
+
+    rerender({ ...initialProps, activeView: 'stops' })
+    expect(focusCurrentLocationIfKnown).not.toHaveBeenCalled()
   })
 
   it('refocuses when the remembered stop changes while Stops is active', () => {

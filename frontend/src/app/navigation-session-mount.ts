@@ -110,6 +110,7 @@ export interface NavigationSessionCommands {
   readonly selectMobileRoute: (routeId: string) => void
   readonly focusStop: (stopId: string) => void
   readonly focusStopInStopsTab: (stopId: string) => void
+  readonly focusCurrentLocationIfKnown: () => void
   readonly refitExploreTarget: () => void
   readonly setStopsPinVisible: (visible: boolean) => void
   readonly setNearbyStopHighlight: (stopIds: readonly string[]) => void
@@ -126,6 +127,7 @@ export interface NavigationSessionCommands {
   readonly zoomIn: () => void
   readonly zoomOut: () => void
   readonly fitJourneyRoutes: () => void
+  readonly fitSelectedJourney: () => void
   readonly resetView: () => void
 }
 
@@ -155,6 +157,7 @@ function createNavigationSessionCommands(
     selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
     focusStop: (stopId) => session?.focusStop(stopId),
     focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
+    focusCurrentLocationIfKnown: () => session?.focusCurrentLocationIfKnown(),
     refitExploreTarget: () => session?.refitExploreTarget(),
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
     setNearbyStopHighlight: (stopIds) => session?.setNearbyStopHighlight(stopIds),
@@ -171,6 +174,7 @@ function createNavigationSessionCommands(
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
     fitJourneyRoutes: () => session?.fitJourneyRoutes(),
+    fitSelectedJourney: () => session?.fitSelectedJourney(),
     resetView: () => session?.resetView(),
   }
 }

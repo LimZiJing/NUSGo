@@ -85,6 +85,7 @@ export interface MapSession {
     fitOverview?: boolean,
   ): void
   fitJourneyRoutes(): void
+  fitSelectedJourney(): void
   setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean): void
   focusCurrentLocation(fix: DeviceLocationFix): void
   /**

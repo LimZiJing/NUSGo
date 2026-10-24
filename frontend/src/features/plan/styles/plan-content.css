@@ -87,8 +87,32 @@
 }
 
 .journey-result-heading {
+  position: relative;
   min-width: 0;
   margin: 0;
+}
+
+/* Transparent target laid over the summary chevron so the chevron collapses while the card body recentres. */
+.journey-option-collapse {
+  position: absolute;
+  top: 6px;
+  right: 2px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-status);
+  background: transparent;
+  cursor: pointer;
+}
+
+.journey-option-collapse:hover {
+  background: var(--surface-muted);
+}
+
+.journey-option-collapse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .journey-option-summary {
@@ -647,6 +671,19 @@
 
   .navigation-panel[data-detent='full'] .plan-content-panel-trip {
     height: 100%;
+  }
+
+  /* The partial sheet is short, so the trip card scrolls away with the results
+     instead of taking half the visible height. */
+  .navigation-panel[data-detent='partial'] .plan-content-panel-trip {
+    overflow-y: auto;
+  }
+
+  .navigation-panel[data-detent='partial'] .plan-results {
+    flex: none;
+    margin-inline-end: 0;
+    padding-inline-end: 0;
+    overflow: visible;
   }
 
   .plan-content-panel-trip .plan-trip-pin {

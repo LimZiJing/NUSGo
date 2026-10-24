@@ -35,17 +35,14 @@
   pointer-events: none;
 }
 
-/* Open plus: four 2px round-capped arms with a 6px empty gap at the centre. */
+/* Centre dot: a solid accent circle with the same glow ring as .bus-stop-marker-nearby. */
 .nearby-crosshair {
   display: block;
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  overflow: visible;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .map-control-stack {

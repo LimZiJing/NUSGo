@@ -673,6 +673,19 @@
     height: 100%;
   }
 
+  /* The partial sheet is short, so the trip card scrolls away with the results
+     instead of taking half the visible height. */
+  .navigation-panel[data-detent='partial'] .plan-content-panel-trip {
+    overflow-y: auto;
+  }
+
+  .navigation-panel[data-detent='partial'] .plan-results {
+    flex: none;
+    margin-inline-end: 0;
+    padding-inline-end: 0;
+    overflow: visible;
+  }
+
   .plan-content-panel-trip .plan-trip-pin {
     position: static;
     background: none;

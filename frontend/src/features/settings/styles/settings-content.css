@@ -179,28 +179,10 @@
   flex: 0 0 auto;
 }
 
-.settings-action-button,
-.settings-favourite-remove {
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-panel);
-  color: var(--text-primary);
-  background: var(--surface-control);
-  font: 500 var(--font-size-md)/1.2 var(--sans);
-  cursor: pointer;
-}
-
-.settings-action-button:disabled,
-.settings-favourite-remove:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 .settings-favourite-list {
   display: grid;
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
+  gap: 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -213,21 +195,29 @@
 
 .settings-favourite-row {
   display: flex;
-  min-height: 44px;
+  min-height: var(--control-height-lg);
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 var(--space-3);
+}
+
+.settings-favourite-row + .settings-favourite-row {
+  border-top: 1px solid var(--border-subtle);
 }
 
 .settings-favourite-row > span {
   min-width: 0;
   overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
-.settings-favourite-remove {
-  flex: 0 0 auto;
+.button.icon-button.settings-favourite-remove {
+  color: var(--text-favorite);
+}
+
+.settings-favourites-actions {
+  padding: 0 var(--space-3) var(--space-1);
 }
 
 .settings-status-message {
@@ -252,7 +242,8 @@
   font: 600 var(--font-size-md)/1.3 var(--sans);
 }
 
-.settings-about-card {
+.settings-about-card,
+.settings-favourite-card {
   overflow: hidden;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);

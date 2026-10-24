@@ -22,8 +22,12 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' }))
+    const removeButton = screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' })
+    expect(removeButton.getAttribute('aria-pressed')).toBe('true')
+    expect(removeButton.getAttribute('data-size')).toBe('lg')
+    await user.click(removeButton)
     expect(onRemove).toHaveBeenCalledExactlyOnceWith('COM3')
+    expect(screen.getByRole('status').textContent).toBe('COM3 (Opp COM2) removed from favourites.')
   })
 
   it('confirms before clearing every saved stop', async () => {
@@ -47,7 +51,7 @@ describe('Favourites settings', () => {
   it('shows the empty state when there are no saved stops', () => {
     render(<FavouritesSection stops={[]} onRemove={() => undefined} onClear={() => undefined} />)
 
-    expect(screen.getByText('None saved.')).toBeTruthy()
+    expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Clear all favourites' })).toBeNull()
   })
 })

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Button, IconButton } from '../../../ui/button'
+import { FavoriteIcon } from '../../../ui/icons'
 
 export interface FavoriteStopSummary {
   readonly id: string
@@ -28,28 +30,33 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
   return (
     <div className="settings-favourites">
       {stops.length === 0 ? (
-        <p>None saved.</p>
+        <p>Star a stop in Stops to add it to your favourites.</p>
       ) : (
-        <>
+        <div className="settings-favourite-card">
           <ul className="settings-favourite-list">
             {stops.map((stop) => (
               <li className="settings-favourite-row" key={stop.id}>
                 <span>{stop.name}</span>
-                <button
+                <IconButton
                   className="settings-favourite-remove"
-                  type="button"
-                  aria-label={`Remove ${stop.name} from favourites`}
+                  variant="plain"
+                  size="lg"
+                  label={`Remove ${stop.name} from favourites`}
+                  icon={<FavoriteIcon filled />}
+                  pressed
                   onClick={() => removeStop(stop)}
-                >
-                  Remove
-                </button>
+                />
               </li>
             ))}
           </ul>
-          <button className="settings-action-button" type="button" onClick={clearAllStops}>
-            Clear all favourites
-          </button>
-        </>
+          <div className="settings-favourites-actions">
+            <Button
+              className="settings-favourites-clear"
+              label="Clear all favourites"
+              onClick={clearAllStops}
+            />
+          </div>
+        </div>
       )}
       {statusMessage && <p className="settings-status-message" role="status">{statusMessage}</p>}
     </div>

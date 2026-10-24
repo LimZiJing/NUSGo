@@ -1,0 +1,53 @@
+# Production composition for one private VM; setup steps are in docs/production-deploy.md.
+# Express must stay loopback-bound in production, so cloudflared shares the API's network
+# namespace and reaches it at http://localhost:3001. No service publishes a host port.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+services:
+  valhalla:
+    image: ghcr.io/nilsnolde/docker-valhalla/valhalla@sha256:4e7cca5db66e0c8d3a4ab6c3f83a748ef9b805fe227d3d4d4f496f161ac9b69f
+    entrypoint: valhalla_service
+    command: ['/custom_files/valhalla.json', '2']
+    volumes:
+      - type: bind
+        source: ${NAVUS_VALHALLA_DATA_DIR:?Set the directory containing prebuilt Valhalla tiles and valhalla.json}
+        target: /custom_files
+        read_only: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *default-logging
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - ${NAVUS_BACKEND_ENV_FILE:?Set the path to the backend-only environment file}
+    # These override the env file so it cannot weaken the production network policy.
+    environment:
+      NODE_ENV: production
+      HOST: 127.0.0.1
+      PORT: '3001'
+      NAVUS_DATA_DIR: /app/data
+      NAVUS_DATA_VERSION: ${NAVUS_DATA_VERSION:?Set NAVUS_DATA_VERSION to the commit SHA of the matching frontend build}
+      VALHALLA_BASE_URL: http://valhalla:8002
+    depends_on:
+      valhalla:
+        condition: service_started
+    restart: unless-stopped
+    stop_grace_period: 15s
+    logging: *default-logging
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.3
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set the Cloudflare Tunnel token}
+    network_mode: 'service:api'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *default-logging

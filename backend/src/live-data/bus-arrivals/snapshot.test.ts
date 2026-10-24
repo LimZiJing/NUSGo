@@ -132,7 +132,7 @@ describe('refreshBusArrivalSnapshot', () => {
     assert.equal(result.snapshot?.stopObservations?.['STOP-C'], undefined)
   })
 
-  it('does not list a failed stop that keeps previous data', async () => {
+  it('lists a failed stop that keeps previous data as unavailable', async () => {
     const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
       if (stop.stopId === 'STOP-B') throw new Error('NUS unavailable')
       return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
@@ -144,7 +144,8 @@ describe('refreshBusArrivalSnapshot', () => {
     })
 
     assert.equal(result.published, true)
-    assert.deepEqual(result.snapshot?.unavailableStopIds, [])
+    assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-B'])
+    assert.equal(result.snapshot?.stops['STOP-B'], previousSnapshot.stops['STOP-B'])
   })
 
   it('keeps listing a stop that stays unavailable across passes', async () => {

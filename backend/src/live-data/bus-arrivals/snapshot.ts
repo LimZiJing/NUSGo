@@ -165,12 +165,10 @@ export async function refreshBusArrivalSnapshot(
       continue
     }
 
-    // Stops with no previous data are listed so clients can tell "no live data" apart from stale data.
-    const previousRoutes = previous?.stops[stop.stopId]
-    stopsSnapshot[stop.stopId] = previousRoutes ?? {}
-    if (previousRoutes === undefined || previous?.unavailableStopIds?.includes(stop.stopId)) {
-      unavailableStopIds.push(stop.stopId)
-    }
+    // A stop without a fresh result is unavailable, even if we carry its previous routes over,
+    // so clients and routing never present stale arrivals as live.
+    stopsSnapshot[stop.stopId] = previous?.stops[stop.stopId] ?? {}
+    unavailableStopIds.push(stop.stopId)
     const previousObservation = previous?.stopObservations?.[stop.stopId]
     if (previousObservation) stopObservations[stop.stopId] = previousObservation
   }

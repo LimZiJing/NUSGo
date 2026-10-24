@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
-import type { BusRouteGeometry } from '@navus/shared/transit/types'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
+import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import { createValidTransitNetwork } from './test-fixtures'
 import {
   generateShuttleTimingData,
   validateShuttleTimingData,
-} from '@navus/shared/transit/timing'
+} from '@nusgo/shared/transit/timing'
 
 function createTimingNetwork() {
   const input = createValidTransitNetwork()

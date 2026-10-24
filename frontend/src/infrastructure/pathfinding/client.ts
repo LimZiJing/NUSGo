@@ -2,8 +2,8 @@ import type {
   ApiJourneyPlanningError,
   ApiJourneyPlanningRequest,
   ApiJourneyPlanningResponse,
-} from '@navus/shared/routing/path'
-import { parseApiJourneyPlanningResponse } from '@navus/shared/routing/validation'
+} from '@nusgo/shared/routing/path'
+import { parseApiJourneyPlanningResponse } from '@nusgo/shared/routing/validation'
 import { buildApiUrl } from '../api/api-url.ts'
 
 export interface JourneyPlanningClientOptions {

@@ -4,11 +4,11 @@ import type {
   WalkingMatrixRequest,
 } from '../../../backend/src/pathfinding/walking/walking-contracts.js'
 import type { Path, PathGeometry } from '../../../backend/src/pathfinding/path.js'
-import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
+import type { ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
-import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type {
   PathfindingBenchmarkCase,
 } from './contract.js'

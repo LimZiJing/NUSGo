@@ -28,7 +28,7 @@ describe('About settings', () => {
       />,
     )
 
-    expect(screen.queryByRole('heading', { name: 'About NavUS' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'About NUSGo' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Data sources' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'App version' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Help & feedback' })).toBeTruthy()
@@ -40,7 +40,7 @@ describe('About settings', () => {
       .toBe('https://github.com/hewliyang/nus-nextbus-web')
     expect(screen.getByRole('heading', { name: 'Bus timings' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Live arrivals' })).toBeNull()
-    expect(screen.queryByText('NUS buses · NavUS')).toBeNull()
+    expect(screen.queryByText('NUS buses · NUSGo')).toBeNull()
     expect(screen.getByText('NUSMods routes and stops · Updated 20 Oct 2026')).toBeTruthy()
     expect(screen.getByText('Updated 13 Oct 2026')).toBeTruthy()
     expect(screen.getByText('Data from OpenStreetMap and Google Maps.')).toBeTruthy()

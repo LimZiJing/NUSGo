@@ -5,7 +5,7 @@ import type {
   ApiShuttleArrivalsResponse,
   ApiShuttleServiceWindowsResponse,
   PublicBusArrivalSnapshot,
-} from '@navus/shared'
+} from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
 import {

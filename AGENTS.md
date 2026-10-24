@@ -1,4 +1,4 @@
-# NavUS Agent Guide
+# NUSGo Agent Guide
 
 ## Read before work
 

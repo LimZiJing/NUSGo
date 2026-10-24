@@ -77,7 +77,7 @@ planner.
 ## Freshness and response age
 
 Freshness is measured from each stop's `observedAt`, not only from the time
-NavUS fetched the response.
+NUSGo fetched the response.
 
 - The recommended live-arrival policy is a 30-second freshness window. A
   snapshot observed within 30 seconds is fresh and may be used for normal
@@ -152,7 +152,7 @@ The normal application policy is named
   shuttle edge;
 - other complete shuttle paths remain eligible;
 - a valid walking-only Journey remains eligible; and
-- if no complete Journey remains, NavUS reports that no recommended Journey is
+- if no complete Journey remains, NUSGo reports that no recommended Journey is
   currently available and identifies the missing timing data.
 
 Provider fetch, HTTP, authentication, and response-validation failures are
@@ -183,7 +183,7 @@ npm run shuttle:timing:generate:geometry
 ```
 
 The explicit geometry flag is required because geometry timing is an estimate,
-not an observed timetable. Set `NAVUS_TIMING_GENERATED_AT` when a reproducible
+not an observed timetable. Set `NUSGO_TIMING_GENERATED_AT` when a reproducible
 generation date is needed.
 
 `npm run dev` and `npm run build` run this generation step automatically.

@@ -1,4 +1,4 @@
-import type { ShuttleArrivalSnapshot } from '@navus/shared'
+import type { ShuttleArrivalSnapshot } from '@nusgo/shared'
 
 export type {
   DataFreshness,
@@ -6,12 +6,12 @@ export type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
   ShuttleArrivalSnapshot,
-} from '@navus/shared'
+} from '@nusgo/shared'
 export {
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   SHUTTLE_ARRIVAL_FRESHNESS_MS,
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
-} from '@navus/shared'
+} from '@nusgo/shared'
 
 function parseSnapshotVersion(version: string): { readonly timestampMs: number; readonly generation: number } | null {
   const match = version.match(/^(.*)-(\d+)$/)

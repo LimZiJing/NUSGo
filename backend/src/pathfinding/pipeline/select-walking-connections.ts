@@ -1,4 +1,4 @@
-import type { TransitIndex } from '@navus/shared/transit/index'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
 import type { PathGeometry } from '../path.ts'
 import { MAX_PATH_ENDPOINT_STOP_CONNECTORS } from '../search/search-path-candidates.ts'
 import type { PathWalkingConnection } from '../search/search-path-candidates.ts'

@@ -1,4 +1,4 @@
-import type { Building, BuildingCatalogueSource } from '@navus/shared/venue/buildings'
+import type { Building, BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 /**

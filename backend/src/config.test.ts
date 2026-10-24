@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { resolve } from 'node:path'
-import { parseApiOrigin } from '@navus/shared'
+import { parseApiOrigin } from '@nusgo/shared'
 import { loadBackendConfig } from './config.ts'
 
 const commit = 'a'.repeat(40)
@@ -20,14 +20,14 @@ describe('parseApiOrigin', () => {
 
 describe('loadBackendConfig', () => {
   it('resolves a supplied canonical data directory from the backend working directory', () => {
-    const workingDirectory = resolve('navus-backend')
-    const config = loadBackendConfig({ NAVUS_DATA_DIR: './data' }, workingDirectory)
+    const workingDirectory = resolve('nusgo-backend')
+    const config = loadBackendConfig({ NUSGO_DATA_DIR: './data' }, workingDirectory)
 
     assert.equal(config.dataDirectory, resolve(workingDirectory, 'data'))
   })
 
   it('uses loopback and exact local origins by default', () => {
-    const config = loadBackendConfig({}, 'C:/navus/backend')
+    const config = loadBackendConfig({}, 'C:/nusgo/backend')
 
     assert.equal(config.host, '127.0.0.1')
     assert.equal(config.port, 3001)
@@ -50,15 +50,15 @@ describe('loadBackendConfig', () => {
       NODE_ENV: 'production',
       HOST: '127.0.0.1',
       PORT: '3001',
-      API_CORS_ORIGINS: 'https://limzijing.github.io,https://navus.example.edu.sg',
-      NAVUS_DATA_VERSION: commit,
+      API_CORS_ORIGINS: 'https://limzijing.github.io,https://nusgo.example.edu.sg',
+      NUSGO_DATA_VERSION: commit,
     })
 
     assert.equal(config.environment, 'production')
     assert.equal(config.dataVersion, commit)
     assert.deepEqual(config.corsOrigins, [
       'https://limzijing.github.io',
-      'https://navus.example.edu.sg',
+      'https://nusgo.example.edu.sg',
     ])
   })
 
@@ -102,24 +102,24 @@ describe('loadBackendConfig', () => {
       NODE_ENV: 'production',
       HOST: '0.0.0.0',
       API_CORS_ORIGINS: 'https://limzijing.github.io',
-      NAVUS_DATA_VERSION: commit,
+      NUSGO_DATA_VERSION: commit,
     }), /loopback/)
     assert.throws(() => loadBackendConfig({
       NODE_ENV: 'production',
       API_CORS_ORIGINS: 'https://limzijing.github.io',
-      NAVUS_DATA_VERSION: 'development',
+      NUSGO_DATA_VERSION: 'development',
     }), /source commit/)
     assert.throws(() => loadBackendConfig({
       NODE_ENV: 'production',
       API_CORS_ORIGINS: 'http://localhost:5173,https://limzijing.github.io',
-      NAVUS_DATA_VERSION: commit,
+      NUSGO_DATA_VERSION: commit,
     }), /HTTPS/)
   })
 })
 
 describe('backend live-data settings', () => {
   it('uses bounded defaults and lets the process start without provider credentials', () => {
-    const config = loadBackendConfig({}, 'C:/navus/backend')
+    const config = loadBackendConfig({}, 'C:/nusgo/backend')
 
     assert.equal(config.liveData.shuttleRefreshIntervalMs, 30_000)
     assert.equal(config.liveData.requestTimeoutMs, 5_000)

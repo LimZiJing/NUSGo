@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Building } from '@navus/shared/venue/buildings'
+import type { Building } from '@nusgo/shared/venue/buildings'
 import { buildBuildingIndex } from '../domain/venue/building-index'
 import { canonicalizeTripEndpoint } from './navigation-session-validation'
 

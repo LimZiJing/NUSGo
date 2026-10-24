@@ -1,6 +1,6 @@
 import type { TransitIndex } from '../../../domain/transit'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../../domain/trip/types'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import { IconButton } from '../../../ui/button'
 import { ArrowDownUpIcon, ArrowRightIcon, CircleDotIcon, LocateIcon, MapPinIcon, RefreshIcon } from '../../../ui/icons'

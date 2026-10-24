@@ -4,8 +4,8 @@ import type {
   PublicBusEstimatedArrival,
   PublicBusServiceArrival,
   PublicBusStopArrivalData,
-} from '@navus/shared'
-import { PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS } from '@navus/shared'
+} from '@nusgo/shared'
+import { PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS } from '@nusgo/shared'
 import type { LtaPublicBusStopMapping } from './bus-stop-mapping.ts'
 import { parseLtaBusArrivalResponse } from './response.ts'
 import { type LtaScheduleLoader } from './service-schedules.ts'

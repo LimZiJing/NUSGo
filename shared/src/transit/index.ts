@@ -1,4 +1,4 @@
-import type { TransitNetwork, BusRoute, TransitStop } from '@navus/shared/transit/types'
+import type { TransitNetwork, BusRoute, TransitStop } from '@nusgo/shared/transit/types'
 
 export class TransitIndexPreconditionError extends Error {
   constructor(message: string) {

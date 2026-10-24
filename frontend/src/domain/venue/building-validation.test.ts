@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { VenueValidationError, validateBuildingCatalogue } from '@navus/shared/venue/validation'
+import { VenueValidationError, validateBuildingCatalogue } from '@nusgo/shared/venue/validation'
 
 function building(overrides: Record<string, unknown> = {}) {
   return {

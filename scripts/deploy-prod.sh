@@ -9,7 +9,7 @@ if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
   exit 2
 fi
 
-root="${NAVUS_DEPLOY_ROOT:-/opt/navus}"
+root="${NUSGO_DEPLOY_ROOT:-/opt/navus}"
 repo="$root/repo"
 compose=(docker compose --project-name navus --env-file "$root/compose.env" -f "$repo/docker-compose.prod.yml")
 
@@ -17,7 +17,7 @@ git -C "$repo" fetch --prune origin main
 git -C "$repo" checkout --detach "$sha"
 
 # The frontend build embeds the same SHA as VITE_DATA_VERSION; the two must match.
-export NAVUS_DATA_VERSION="$sha"
+export NUSGO_DATA_VERSION="$sha"
 "${compose[@]}" up -d --build --remove-orphans
 
 container_state() {

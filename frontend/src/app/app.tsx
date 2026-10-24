@@ -588,7 +588,7 @@ function App() {
                 onClearFavorites={stopsWorkflow.clearFavoriteStops}
                 transitMetadata={state.transitIndex?.network.metadata ?? null}
                 buildingSource={state.buildings?.source ?? null}
-                dataVersion={__NAVUS_DATA_VERSION__}
+                dataVersion={__NUSGO_DATA_VERSION__}
               />
             ),
           }}

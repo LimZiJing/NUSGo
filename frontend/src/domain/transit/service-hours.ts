@@ -4,10 +4,10 @@ export {
   getNextShuttleServiceStart,
   evaluateShuttleService,
   describeShuttleServiceUnavailable,
-} from '@navus/shared/transit/service-hours-policy'
+} from '@nusgo/shared/transit/service-hours-policy'
 export type {
   ShuttleServiceStatus,
   ShuttleServiceEvaluation,
   ShuttleServiceStart,
-} from '@navus/shared/transit/service-hours-policy'
-export type { ShuttleServiceWindow } from '@navus/shared'
+} from '@nusgo/shared/transit/service-hours-policy'
+export type { ShuttleServiceWindow } from '@nusgo/shared'

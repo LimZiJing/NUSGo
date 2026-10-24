@@ -3,7 +3,7 @@ import type {
   TransitGeoJsonPosition,
   BusRouteGeometry,
   BusRouteGeometryFeature,
-} from '@navus/shared/transit/types'
+} from '@nusgo/shared/transit/types'
 import { deriveBusRouteOverlapMap } from './overlap'
 
 function createFeature(

@@ -1,6 +1,6 @@
 # Codex Task Kickoff Template
 
-Copy and adapt this prompt when starting a NavUS task.
+Copy and adapt this prompt when starting a NUSGo task.
 
 ```text
 Goal:

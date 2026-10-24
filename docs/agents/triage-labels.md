@@ -1,6 +1,6 @@
 # Issue Labels
 
-NavUS uses lowercase, colon-delimited GitHub labels. GitHub labels are flat; the prefix is a naming convention, not a nested hierarchy. Use `:` consistently rather than mixing it with `/` or unprefixed names.
+NUSGo uses lowercase, colon-delimited GitHub labels. GitHub labels are flat; the prefix is a naming convention, not a nested hierarchy. Use `:` consistently rather than mixing it with `/` or unprefixed names.
 
 Every open issue MUST have exactly one `type:*` label, exactly one `status:*` label, and one or more useful `area:*` labels. `quality:*` and `priority:*` labels are optional.
 

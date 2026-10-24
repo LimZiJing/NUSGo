@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Building } from '@navus/shared/venue/buildings'
-import type { TransitIndex } from '@navus/shared/transit/index'
+import type { Building } from '@nusgo/shared/venue/buildings'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
 import { buildBuildingIndex } from '../endpoints.ts'
 import { resolvePathEndpoints } from './resolve-path-endpoints.ts'
 

@@ -44,7 +44,7 @@ describe('fetchBuildingsSnapshot', () => {
   let directory: string
 
   beforeEach(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'navus-buildings-'))
+    directory = await mkdtemp(join(tmpdir(), 'nusgo-buildings-'))
   })
   afterEach(async () => {
     await rm(directory, { recursive: true, force: true })
@@ -67,7 +67,7 @@ describe('fetchBuildingsSnapshot', () => {
     const [url, init] = fetchStub.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe(BUILDINGS_API_URL)
     const headers = new Headers(init.headers)
-    expect(headers.get('user-agent')).toMatch(/NavUS/)
+    expect(headers.get('user-agent')).toMatch(/NUSGo/)
     expect(headers.has('authorization')).toBe(false)
     expect(headers.has('x-api-key')).toBe(false)
     expect(init.signal).toBeInstanceOf(AbortSignal)

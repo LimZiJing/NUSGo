@@ -33,9 +33,9 @@ jobs:
 
       - name: Build
         env:
-          VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN || 'https://api.example.invalid' }}
+          VITE_API_ORIGIN: ${{ vars.NUSGO_API_ORIGIN || 'https://api.example.invalid' }}
           VITE_DATA_VERSION: ${{ github.sha }}
-          # Cloudflare Pages serves from the domain root, not /NavUS/.
+          # Cloudflare Pages serves from the domain root, not /NUSGo/.
           VITE_BASE_PATH: /
         run: npm run build
 

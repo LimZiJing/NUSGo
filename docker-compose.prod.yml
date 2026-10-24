@@ -14,7 +14,7 @@ services:
     command: ['/custom_files/valhalla.json', '2']
     volumes:
       - type: bind
-        source: ${NAVUS_VALHALLA_DATA_DIR:?Set the directory containing prebuilt Valhalla tiles and valhalla.json}
+        source: ${NUSGO_VALHALLA_DATA_DIR:?Set the directory containing prebuilt Valhalla tiles and valhalla.json}
         target: /custom_files
         read_only: true
     restart: unless-stopped
@@ -25,14 +25,14 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - ${NAVUS_BACKEND_ENV_FILE:?Set the path to the backend-only environment file}
+      - ${NUSGO_BACKEND_ENV_FILE:?Set the path to the backend-only environment file}
     # These override the env file so it cannot weaken the production network policy.
     environment:
       NODE_ENV: production
       HOST: 127.0.0.1
       PORT: '3001'
-      NAVUS_DATA_DIR: /app/data
-      NAVUS_DATA_VERSION: ${NAVUS_DATA_VERSION:?Set NAVUS_DATA_VERSION to the commit SHA of the matching frontend build}
+      NUSGO_DATA_DIR: /app/data
+      NUSGO_DATA_VERSION: ${NUSGO_DATA_VERSION:?Set NUSGO_DATA_VERSION to the commit SHA of the matching frontend build}
       VALHALLA_BASE_URL: http://valhalla:8002
     depends_on:
       valhalla:

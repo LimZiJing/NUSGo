@@ -1,7 +1,7 @@
 import type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
-} from '@navus/shared'
+} from '@nusgo/shared'
 import type { NusProviderConfig } from '../../../config.ts'
 import type { BusArrivalStop, BusArrivalStopResult } from '../../bus-arrivals/snapshot.ts'
 import {

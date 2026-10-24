@@ -3,8 +3,8 @@ import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
 import { SettingsDisclosure } from './components/settings-disclosure'
-import type { BuildingCatalogueSource } from '@navus/shared/venue/buildings'
-import type { TransitNetworkMetadata } from '@navus/shared/transit/types'
+import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
+import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
 import './styles/settings-content.css'
 
 interface SettingsContentProps {

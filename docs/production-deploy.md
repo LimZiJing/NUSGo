@@ -91,13 +91,13 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
    | `DEPLOY_KEY` | contents of the private `navus_deploy` file |
    | `DEPLOY_KNOWN_HOSTS` | the `ssh-keyscan` output |
 
-   Set the repository variable `NAVUS_API_ORIGIN` to `https://api.<your-domain>` so the Pages build points at the API.
+   Set the repository variable `NUSGO_API_ORIGIN` to `https://api.<your-domain>` so the Pages build points at the API.
 
 ## Deploying
 
 Each push to `main` runs the tests, then deploys that commit. The workflow can also be run by hand from the Actions tab.
 
-The commit SHA becomes `NAVUS_DATA_VERSION`, matching the `VITE_DATA_VERSION` the Pages workflow embeds in the frontend from the same commit. For a short time after a push the frontend and API may be on different versions until both workflows finish.
+The commit SHA becomes `NUSGO_DATA_VERSION`, matching the `VITE_DATA_VERSION` the Pages workflow embeds in the frontend from the same commit. For a short time after a push the frontend and API may be on different versions until both workflows finish.
 
 Check a deploy from your own machine:
 

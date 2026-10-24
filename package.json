@@ -10,9 +10,9 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "npm --workspace @navus/shared run typecheck && npm --workspace @navus/backend run typecheck && npm --workspace @navus/frontend run build",
+    "build": "npm --workspace @nusgo/shared run typecheck && npm --workspace @nusgo/backend run typecheck && npm --workspace @nusgo/frontend run build",
     "lint": "eslint --config frontend/eslint.config.js frontend backend/src shared/src && node frontend/scripts/lint-css.mjs",
-    "preview": "npm --workspace @navus/frontend run preview",
+    "preview": "npm --workspace @nusgo/frontend run preview",
     "valhalla:up": "node scripts/start-valhalla.mjs",
     "buildings:import": "node --experimental-strip-types scripts/import-nus-digital-twin-buildings.mjs",
     "walking:graph:generate": "node --experimental-strip-types scripts/generate-walking-stop-graph.mjs",
@@ -20,11 +20,11 @@
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
-    "test": "npm --workspace @navus/frontend run test && npm --workspace @navus/backend run test",
-    "benchmark:pathfinding": "npm --workspace @navus/frontend run benchmark:pathfinding --",
-    "dev:frontend": "npm --workspace @navus/frontend run dev",
-    "dev:backend": "npm --workspace @navus/backend run dev",
-    "build:local-rehearsal": "npm --workspace @navus/shared run typecheck && npm --workspace @navus/backend run typecheck && npm --workspace @navus/frontend run build:local-rehearsal",
-    "preview:local-rehearsal": "npm --workspace @navus/frontend run preview:local-rehearsal"
+    "test": "npm --workspace @nusgo/frontend run test && npm --workspace @nusgo/backend run test",
+    "benchmark:pathfinding": "npm --workspace @nusgo/frontend run benchmark:pathfinding --",
+    "dev:frontend": "npm --workspace @nusgo/frontend run dev",
+    "dev:backend": "npm --workspace @nusgo/backend run dev",
+    "build:local-rehearsal": "npm --workspace @nusgo/shared run typecheck && npm --workspace @nusgo/backend run typecheck && npm --workspace @nusgo/frontend run build:local-rehearsal",
+    "preview:local-rehearsal": "npm --workspace @nusgo/frontend run preview:local-rehearsal"
   }
 }

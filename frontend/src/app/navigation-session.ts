@@ -12,7 +12,7 @@ import {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import {
   createInitialResourceStatus,

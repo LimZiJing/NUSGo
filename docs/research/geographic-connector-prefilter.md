@@ -2,7 +2,7 @@
 
 Date: 2026-10-23
 
-Issue: [#425 — research geographic connector prefiltering](https://github.com/LimZiJing/NavUS/issues/425)
+Issue: [#425 — research geographic connector prefiltering](https://github.com/LimZiJing/NUSGo/issues/425)
 
 Status: research only; no production prefilter is implemented by this work.
 

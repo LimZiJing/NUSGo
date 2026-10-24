@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import type { BuildingCatalogueSource } from '@navus/shared/venue/buildings'
-import type { TransitNetworkMetadata } from '@navus/shared/transit/types'
-import { LOCAL_DATA_VERSION } from '@navus/shared/http/data-version'
+import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
+import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
+import { LOCAL_DATA_VERSION } from '@nusgo/shared/http/data-version'
 import { ArrowRightIcon, ExternalLinkIcon } from '../../../ui/icons'
 
 interface AboutSectionProps {

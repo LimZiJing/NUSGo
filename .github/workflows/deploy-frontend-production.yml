@@ -1,0 +1,62 @@
+name: deploy-frontend-production
+
+# Manual only. Promote a commit that has already run on the development frontend.
+# Deploy the backend first when the commit also changes the API.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA, tag or branch to deploy
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy the production frontend (Cloudflare Pages)
+    runs-on: ubuntu-latest
+    # Add required reviewers to this environment to gate each deploy behind a manual approval.
+    environment:
+      name: frontend-production
+    steps:
+      - name: Checkout ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          # The data version is the last commit that changed the data contract, so it needs history.
+          fetch-depth: 0
+
+      # Computed from the checked-out ref; github.sha is the commit the workflow was started on.
+      - name: Resolve data version
+        id: data-version
+        run: echo "version=$(bash scripts/data-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_API_ORIGIN: ${{ vars.NUSGO_API_ORIGIN || 'https://api.example.invalid' }}
+          VITE_DATA_VERSION: ${{ steps.data-version.outputs.version }}
+          # Cloudflare Pages serves from the domain root, not /NUSGo/.
+          VITE_BASE_PATH: /
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main

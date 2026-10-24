@@ -18,7 +18,25 @@ browser ──HTTPS──▶ Cloudflare ──tunnel──▶ cloudflared ──
 - `cloudflared` shares the `api` container's network namespace (`network_mode: service:api`). Express keeps `HOST=127.0.0.1`, as production config requires, and still receives `CF-Connecting-IP` from a loopback peer, which the rate limiter relies on.
 - Valhalla has no published port. Only `api` can reach it on the compose network.
 
-Files: [`docker-compose.prod.yml`](../docker-compose.prod.yml), [`scripts/deploy-prod.sh`](../scripts/deploy-prod.sh), [`.github/workflows/deploy-backend.yml`](../.github/workflows/deploy-backend.yml), and the env templates in [`deploy/`](../deploy).
+Files: [`docker-compose.prod.yml`](../docker-compose.prod.yml), [`scripts/deploy-prod.sh`](../scripts/deploy-prod.sh), [`.github/workflows/deploy-backend-production.yml`](../.github/workflows/deploy-backend-production.yml), and the env templates in [`deploy/`](../deploy).
+
+## Deploy flow
+
+| Environment | Workflow | Hosts | Trigger |
+| --- | --- | --- | --- |
+| `backend-production` | `deploy-backend-production` | API on the VM | Push to `main` that touches backend inputs (see the `paths` list), or manual. Waits for approval. |
+| `frontend-development` | `deploy-frontend-development` | GitHub Pages | Push to `main` that touches frontend inputs, or manual. |
+| `frontend-production` | `deploy-frontend-production` | Cloudflare Pages | Manual only. Choose the commit SHA to promote (default `main`). |
+
+The development frontend calls the production API, so keep API changes backwards-compatible: add the new behaviour, deploy the backend, switch the frontend over, and remove the old behaviour in a later change. Deploy the backend before promoting a frontend that needs it.
+
+The backend image copies `frontend/public/data/` and `scripts/generate-shuttle-timing.mjs`, so changes there redeploy the backend. If the Dockerfile starts copying other paths, add them to the `paths` list in the workflow.
+
+### Data version
+
+The frontend refuses to run unless its `VITE_DATA_VERSION` equals the API's `NUSGO_DATA_VERSION`. Both are set by [`scripts/data-version.sh`](../scripts/data-version.sh): the last commit that changed `shared/` or `frontend/public/data/`. Commits that touch only frontend or backend code leave it unchanged, so either side can deploy alone. A change to `shared/` or the data files changes it, and all three workflows trigger on those paths: deploy the backend, then the frontend. Until both are live, the frontend reports a version mismatch.
+
+If the version should depend on more files, add them to `scripts/data-version.sh`, and to the `paths` lists of the backend and development frontend workflows.
 
 ## One-time server setup
 
@@ -82,7 +100,7 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
 
    Append the contents of `navus_deploy.pub` to `~/.ssh/authorized_keys` on the server. The `ssh-keyscan` output is the value for `DEPLOY_KNOWN_HOSTS`.
 
-8. In GitHub, create an environment named `production` (Settings → Environments). Add required reviewers if each deploy should wait for approval. Add these environment secrets:
+8. In GitHub, create an environment named `backend-production` (Settings → Environments). Add required reviewers: the development frontend calls this backend, so each deploy should wait for approval. Add these environment secrets:
 
    | Secret | Value |
    | --- | --- |
@@ -97,7 +115,7 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
 
 Each push to `main` runs the tests, then deploys that commit. The workflow can also be run by hand from the Actions tab.
 
-The commit SHA becomes `NUSGO_DATA_VERSION`, matching the `VITE_DATA_VERSION` the Pages workflow embeds in the frontend from the same commit. For a short time after a push the frontend and API may be on different versions until both workflows finish.
+`NUSGO_DATA_VERSION` is the data version described under "Data version" above, not the deployed commit SHA. It matches the `VITE_DATA_VERSION` the frontend workflows embed. After a change to the data contract, the frontend and API are on different versions until both workflows finish.
 
 Check a deploy from your own machine:
 

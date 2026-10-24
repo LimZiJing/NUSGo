@@ -1,9 +1,23 @@
-name: deploy-backend
+name: deploy-backend-production
 
 on:
   push:
     branches:
       - main
+    # Only files the backend image or the deploy script actually use. The Dockerfile copies the
+    # frontend data files and the shuttle timing script, so those count as backend inputs too.
+    paths:
+      - backend/**
+      - shared/**
+      - frontend/public/data/**
+      - scripts/generate-shuttle-timing.mjs
+      - scripts/deploy-prod.sh
+      - scripts/data-version.sh
+      - docker-compose.prod.yml
+      - deploy/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/deploy-backend-production.yml
   workflow_dispatch:
 
 permissions:
@@ -11,7 +25,7 @@ permissions:
 
 # Deploys never overlap or cancel one another, so a half-finished deploy is not interrupted.
 concurrency:
-  group: deploy-backend
+  group: deploy-backend-production
   cancel-in-progress: false
 
 jobs:
@@ -38,8 +52,9 @@ jobs:
     name: Deploy to the production server
     needs: checks
     runs-on: ubuntu-latest
-    # Add required reviewers to this environment to gate each deploy behind a manual approval.
-    environment: production
+    # The dev frontend also calls this backend, so keep required reviewers on this environment
+    # to gate each deploy behind a manual approval.
+    environment: backend-production
     steps:
       - name: Checkout
         uses: actions/checkout@v4

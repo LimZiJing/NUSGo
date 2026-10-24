@@ -32,7 +32,7 @@ services:
       HOST: 127.0.0.1
       PORT: '3001'
       NUSGO_DATA_DIR: /app/data
-      NUSGO_DATA_VERSION: ${NUSGO_DATA_VERSION:?Set NUSGO_DATA_VERSION to the commit SHA of the matching frontend build}
+      NUSGO_DATA_VERSION: ${NUSGO_DATA_VERSION:?Set NUSGO_DATA_VERSION to the data version of the matching frontend build (scripts/data-version.sh)}
       VALHALLA_BASE_URL: http://valhalla:8002
     depends_on:
       valhalla:

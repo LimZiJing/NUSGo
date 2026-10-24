@@ -34,10 +34,6 @@ describe('Settings sections', () => {
     const favourites = getSection('Favourites')
     const about = getSection('About')
 
-    expect(screen.getByRole('contentinfo', { name: 'Map data attribution' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'OpenMapTiles' }).getAttribute('href'))
-      .toBe('https://openmaptiles.org/')
-
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(false)

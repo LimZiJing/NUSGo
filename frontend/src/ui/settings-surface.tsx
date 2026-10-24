@@ -3,14 +3,14 @@ import { ArrowLeftIcon } from './icons'
 
 interface SettingsSurfaceProps {
   readonly open: boolean
-  readonly headingRef: Ref<HTMLHeadingElement>
+  readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
   readonly children: ReactNode
 }
 
 export function SettingsSurface({
   open,
-  headingRef,
+  initialFocusRef,
   onClose,
   children,
 }: SettingsSurfaceProps) {
@@ -27,6 +27,7 @@ export function SettingsSurface({
         <header className="settings-surface-header">
           <button
             className="settings-back-button"
+            ref={initialFocusRef}
             type="button"
             aria-label="Back to previous view"
             title="Back"
@@ -34,7 +35,7 @@ export function SettingsSurface({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 id="settings-heading" tabIndex={-1} ref={headingRef}>Settings</h2>
+          <h2 id="settings-heading">Settings</h2>
         </header>
         <div className="settings-content-scroll" id="settings-content">
           {children}

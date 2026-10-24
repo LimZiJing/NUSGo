@@ -30,13 +30,6 @@ export function SettingsContent({
 }: SettingsContentProps) {
   return (
     <div className="settings-content">
-      <footer className="settings-map-attribution" aria-label="Map data attribution">
-        © <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a>
-        {' · '}
-        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
-          OpenStreetMap
-        </a>
-      </footer>
       <SettingsDisclosure title="Appearance" defaultOpen>
         <AppearanceSection
           preference={themePreference}

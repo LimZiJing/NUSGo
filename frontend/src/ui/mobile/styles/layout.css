@@ -142,11 +142,6 @@
     right: max(12px, env(safe-area-inset-right));
   }
 
-  /* Settings renders a compact map attribution above its sections. */
-  .map-shell[data-settings-open='true'] .map .maplibregl-ctrl-bottom-right {
-    display: none;
-  }
-
   .map .maplibregl-ctrl-bottom-left {
     left: max(12px, env(safe-area-inset-left));
   }

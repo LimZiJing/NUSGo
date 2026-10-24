@@ -51,6 +51,8 @@ describe('About settings', () => {
       .toBe('https://www.nus-digital-twin.com/api/v1/buildings')
     expect(screen.getByRole('link', { name: 'OpenFreeMap' }).getAttribute('href'))
       .toBe('https://openfreemap.org/')
+    expect(screen.getByRole('link', { name: 'OpenMapTiles' }).getAttribute('href'))
+      .toBe('https://openmaptiles.org/')
     const openStreetMapLinks = screen.getAllByRole('link', { name: 'OpenStreetMap' })
     expect(openStreetMapLinks).toHaveLength(1)
     expect(openStreetMapLinks.every((link) => link.getAttribute('href') === 'https://www.openstreetmap.org/copyright'))

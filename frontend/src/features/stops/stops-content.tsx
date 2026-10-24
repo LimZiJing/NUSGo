@@ -16,6 +16,7 @@ interface StopsContentProps {
   readonly selectedStopList?: 'nearby' | 'favourites'
   readonly selectedStopFavorite?: boolean
   readonly locationNotice?: string | null
+  readonly noLiveData?: boolean
   readonly liveArrivalMessage?: string | null
   readonly onSelectStopList: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite: (stopId: string) => void
@@ -34,6 +35,7 @@ export function StopsContent({
   selectedStopList = 'nearby',
   selectedStopFavorite = false,
   locationNotice = null,
+  noLiveData = false,
   liveArrivalMessage = null,
   onSelectStopList,
   onToggleFavorite,
@@ -77,6 +79,7 @@ export function StopsContent({
               selectedStopList={selectedStopList}
               loading={stopListLoading}
               locationNotice={locationNotice}
+              noLiveData={noLiveData}
               liveArrivalMessage={liveArrivalMessage}
               onSelectStopList={onSelectStopList}
               onToggleFavorite={onToggleFavorite}

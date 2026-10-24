@@ -382,6 +382,7 @@ function App() {
     selectedStop: stopsWorkflow.selectedStop,
     stopListEntries: stopsWorkflow.stopListEntries,
     stopListLoading: stopsWorkflow.stopListLoading,
+    noLiveData: stopsWorkflow.noLiveData,
     liveArrivalMessage: stopsWorkflow.liveArrivalMessage,
     selectedStopList: stopsWorkflow.state.list,
     selectedStopFavorite: stopsWorkflow.selectedStopFavorite,

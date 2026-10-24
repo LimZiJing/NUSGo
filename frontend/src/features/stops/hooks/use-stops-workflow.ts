@@ -40,6 +40,7 @@ export interface StopsWorkflow {
   readonly showNearbyCrosshair: boolean
   readonly selectedStopFavorite: boolean
   readonly locationNotice: string | null
+  readonly noLiveData: boolean
   readonly liveArrivalMessage: string | null
   readonly focusStop: (stopId: string) => void
   readonly selectStopList: (list: 'nearby' | 'favourites') => void
@@ -207,11 +208,12 @@ export function useStopsWorkflow({
   const locationNotice = locationError && !state.locationNoticeDismissed
     ? 'Location is unavailable. Showing stops near the map centre without distances.'
     : null
+  const noLiveData = !stopArrivals.snapshot && !publicStopArrivals.snapshot && stopArrivals.status === 'error'
   const liveArrivalMessage = stopArrivals.snapshot || publicStopArrivals.snapshot
     ? null
     : stopArrivals.status === 'loading'
       ? 'Updating…'
-      : stopArrivals.status === 'error'
+      : noLiveData
         ? 'No live data'
         : null
 
@@ -224,6 +226,7 @@ export function useStopsWorkflow({
     showNearbyCrosshair: active && state.list === 'nearby',
     selectedStopFavorite: focusedStop ? state.favoriteStopIds.includes(focusedStop.id) : false,
     locationNotice,
+    noLiveData,
     liveArrivalMessage,
     focusStop,
     selectStopList,

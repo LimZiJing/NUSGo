@@ -138,4 +138,18 @@ describe('StopDepartureList', () => {
     expect(screen.getByText('Not in operation')).toBeTruthy()
     expect(screen.getByText('Live timing unavailable')).toBeTruthy()
   })
+
+  it('keeps public arrival timings visible when live data is available', () => {
+    render(
+      <StopDepartureList
+        departures={[]}
+        publicServices={[{ serviceNumber: '151', timings: ['2m', '5m', '-'], status: 'live' }]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('151')).toBeTruthy()
+    expect(screen.getByText('2m')).toBeTruthy()
+    expect(screen.getByText('5m')).toBeTruthy()
+  })
 })

@@ -115,12 +115,6 @@
   outline-offset: -2px;
 }
 
-.journey-recentre-hint {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: var(--font-size-xs);
-}
-
 .journey-option-summary {
   display: grid;
   width: 100%;

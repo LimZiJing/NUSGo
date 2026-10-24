@@ -49,6 +49,8 @@ export interface MapLifecycle {
   readonly map: Map
   readonly ready: Promise<void>
   setViewportInsets(insets: MapViewportInsets): void
+  /** While on, zoom keeps the visible-area centre (where the crosshair sits) fixed. */
+  setVisibleCenterZoom(enabled: boolean): void
   dispose(): void
 }
 
@@ -93,6 +95,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const attributionControl = new NusgoAttributionControl()
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  let visibleCenterZoom = false
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
@@ -111,6 +114,16 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       ])
       : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
+  }
+
+  // Persistent padding makes MapLibre's own centre the visible-area centre, so button
+  // and gesture zoom use it. The pan keeps the view still while the padding changes.
+  const setPaddingKeepingView = (padding: MapViewportInsets): void => {
+    const { clientWidth, clientHeight } = map.getContainer()
+    const anchor = map.unproject([clientWidth / 2, clientHeight / 2])
+    map.setPadding(padding)
+    const moved = map.project(anchor)
+    map.panBy([moved.x - clientWidth / 2, moved.y - clientHeight / 2], { animate: false })
   }
 
   const handleMapClick = (event: MapMouseEvent) => {
@@ -161,7 +174,20 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     setViewportInsets(insets) {
       if (disposed) return
       viewportInsets = insets
+      if (visibleCenterZoom) setPaddingKeepingView(insets)
       reportMapCenter()
+    },
+    setVisibleCenterZoom(enabled) {
+      if (disposed || enabled === visibleCenterZoom) return
+      visibleCenterZoom = enabled
+      setPaddingKeepingView(enabled ? viewportInsets : { top: 0, right: 0, bottom: 0, left: 0 })
+      // `around: 'center'` follows the padded centre; plain enable() restores pointer-anchored zoom.
+      // enable() ignores new options while already enabled, so the handlers are reset first.
+      const zoomOptions = enabled ? { around: 'center' as const } : undefined
+      map.scrollZoom.disable()
+      map.scrollZoom.enable(zoomOptions)
+      map.touchZoomRotate.disable()
+      map.touchZoomRotate.enable(zoomOptions)
     },
     dispose() {
       if (disposed) return

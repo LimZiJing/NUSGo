@@ -46,6 +46,11 @@ vi.mock('maplibre-gl', () => ({
     readonly getContainer = vi.fn(() => this.containerSize)
     readonly getCenter = vi.fn(() => ({ lng: 103, lat: 1 }))
     readonly unproject = vi.fn(([x, y]: [number, number]) => ({ lng: x, lat: y }))
+    readonly project = vi.fn((point: { lng: number; lat: number }) => ({ x: point.lng, y: point.lat }))
+    readonly setPadding = vi.fn()
+    readonly panBy = vi.fn()
+    readonly scrollZoom = { enable: vi.fn(), disable: vi.fn() }
+    readonly touchZoomRotate = { enable: vi.fn(), disable: vi.fn() }
     readonly remove = vi.fn()
 
     constructor(options: Record<string, unknown>) {
@@ -94,12 +99,76 @@ type FakeMap = {
   readonly queryRenderedFeatures: ReturnType<typeof vi.fn>
   readonly getContainer: ReturnType<typeof vi.fn>
   readonly unproject: ReturnType<typeof vi.fn>
+  readonly setPadding: ReturnType<typeof vi.fn>
+  readonly panBy: ReturnType<typeof vi.fn>
+  readonly scrollZoom: { enable: ReturnType<typeof vi.fn>; disable: ReturnType<typeof vi.fn> }
+  readonly touchZoomRotate: { enable: ReturnType<typeof vi.fn>; disable: ReturnType<typeof vi.fn> }
   readonly remove: ReturnType<typeof vi.fn>
   emit(event: string, payload: unknown): void
 }
 
 beforeEach(() => {
   fakeMapState.maps.length = 0
+})
+
+describe('map lifecycle visible-centre zoom', () => {
+  const createLifecycle = () => {
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    return { lifecycle, map: fakeMapState.maps.at(-1) as FakeMap }
+  }
+
+  it('pads the map by the viewport insets and zooms about the centre while enabled', () => {
+    const { lifecycle, map } = createLifecycle()
+    const insets = { top: 76, right: 0, bottom: 400, left: 0 }
+    lifecycle.setViewportInsets(insets)
+
+    lifecycle.setVisibleCenterZoom(true)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith(insets)
+    expect(map.scrollZoom.enable).toHaveBeenLastCalledWith({ around: 'center' })
+    expect(map.touchZoomRotate.enable).toHaveBeenLastCalledWith({ around: 'center' })
+    expect(map.scrollZoom.disable).toHaveBeenCalledBefore(map.scrollZoom.enable)
+    expect(map.panBy).toHaveBeenCalledWith([0, 0], { animate: false })
+    lifecycle.dispose()
+  })
+
+  it('follows later inset changes only while enabled', () => {
+    const { lifecycle, map } = createLifecycle()
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
+    expect(map.setPadding).not.toHaveBeenCalled()
+
+    lifecycle.setVisibleCenterZoom(true)
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 300, left: 0 })
+    lifecycle.dispose()
+  })
+
+  it('clears padding and restores default pointer-anchored zoom when disabled', () => {
+    const { lifecycle, map } = createLifecycle()
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
+    lifecycle.setVisibleCenterZoom(true)
+
+    lifecycle.setVisibleCenterZoom(false)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 0, left: 0 })
+    expect(map.scrollZoom.enable).toHaveBeenLastCalledWith(undefined)
+    expect(map.touchZoomRotate.enable).toHaveBeenLastCalledWith(undefined)
+    lifecycle.dispose()
+  })
+
+  it('does nothing when the mode is unchanged', () => {
+    const { lifecycle, map } = createLifecycle()
+
+    lifecycle.setVisibleCenterZoom(false)
+
+    expect(map.setPadding).not.toHaveBeenCalled()
+    lifecycle.dispose()
+  })
 })
 
 describe('map lifecycle style readiness', () => {

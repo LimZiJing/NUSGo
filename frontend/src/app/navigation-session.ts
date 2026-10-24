@@ -136,6 +136,7 @@ export interface NavigationSession {
   closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
+  setVisibleCenterZoom(enabled: boolean): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
@@ -923,6 +924,11 @@ export function createNavigationSession(
       if (disposed) return
       viewportInsets = { ...insets }
       dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    setVisibleCenterZoom(enabled: boolean) {
+      if (disposed) return
+      dependencies.map.setVisibleCenterZoom(enabled)
     },
 
     dismissStopPopup() {

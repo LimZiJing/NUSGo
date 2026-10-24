@@ -146,7 +146,6 @@ export function PlanContent({
               venues={venues}
               buildings={buildings}
               networkIndex={networkIndex}
-              simulated={simulatedAtMs !== null}
               onSelectCandidate={onSelectJourneyOption}
               onFitSelected={onFitSelectedJourney}
             />

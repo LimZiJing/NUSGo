@@ -33,7 +33,6 @@ interface JourneyResultsProps {
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
   readonly buildings?: BuildingIndex | null
-  readonly simulated?: boolean
   readonly onSelectCandidate?: (candidateKey: string) => void
   readonly onFitSelected?: () => void
 }
@@ -213,7 +212,6 @@ export function JourneyResults({
   networkIndex,
   venues,
   buildings = null,
-  simulated = false,
   onSelectCandidate,
   onFitSelected,
 }: JourneyResultsProps) {
@@ -259,15 +257,6 @@ export function JourneyResults({
       {candidates.map(({ candidateKey, path }, index) => {
         const selected = candidateKey === selectedCandidateKey
         const expanded = candidateKey === expandedKey
-        const hasBusLeg = path.legs.some((leg) => leg.mode === 'shuttle')
-        const planningNotice = path.planningQuality === 'bounded'
-          ? 'A faster route may exist.'
-          : null
-        // PlanContent owns the detailed simulated-clock notice; keep this result notice from repeating it.
-        const liveArrivalNotice = !simulated && hasBusLeg
-          ? 'Uses live arrivals where available.'
-          : null
-        const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
         const titleId = `journey-option-summary-${index + 1}`
         const detailsId = `journey-option-details-${index + 1}`
         const summary = getJourneyCompactSummary(path, networkIndex)
@@ -326,12 +315,6 @@ export function JourneyResults({
               >
                 {expanded && (
                   <>
-                    <p className="journey-recentre-hint">Tap the card to recentre the map.</p>
-                    {journeyNotice && (
-                      <p className="journey-notice" role="note">
-                        {journeyNotice}
-                      </p>
-                    )}
                     <ol
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}

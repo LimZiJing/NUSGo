@@ -183,7 +183,6 @@ describe('JourneyResults', () => {
     expect(markup).not.toContain('Alight')
     expect(markup).not.toContain('Stops:')
     expect(markup).not.toContain('journey-option-endpoint-arrow')
-    expect(markup).toContain('Uses live arrivals where available.')
     expect(markup).not.toContain('not guaranteed arrival times')
   })
 
@@ -392,7 +391,6 @@ describe('JourneyResults', () => {
     expect(screen.getByText('Recommended')).toBeTruthy()
     expect(screen.getByText('Walking')).toBeTruthy()
     expect(screen.queryByText('Alternative 2')).toBeNull()
-    expect(screen.queryByText('A faster route may exist')).toBeNull()
 
     await user.tab()
     expect(document.activeElement).toBe(firstOptionButton)
@@ -587,38 +585,6 @@ describe('JourneyResults', () => {
       .toBe('Wait 6 min · Walk 5 min')
     expect(getJourneyOptionDetail(walking, getJourneyCompactSummary(walking, networkIndex)))
       .toBe('979 m')
-  })
-
-  it('explains when the Journey was selected within a search budget', () => {
-    const markup = renderExpandedMarkup(
-      <JourneyResults
-        state={{
-          status: 'ready',
-          path: { ...path, planningQuality: 'bounded' },
-          candidates: [scoreJourney({ ...path, planningQuality: 'bounded' })],
-          error: null,
-        }}
-        venues={venues}
-        networkIndex={networkIndex}
-      />,
-    )
-
-    expect(markup).toContain('A faster route may exist')
-    expect(markup).not.toContain('Fastest estimated Journey')
-  })
-
-  it('leaves the detailed simulation notice to PlanContent', () => {
-    const markup = renderExpandedMarkup(
-      <JourneyResults
-        state={{ status: 'ready', path, candidates: [scoreJourney(path)], error: null }}
-        venues={venues}
-        networkIndex={networkIndex}
-        simulated
-      />,
-    )
-
-    expect(markup).not.toContain('simulated route')
-    expect(markup).toContain('Journey options')
   })
 
   it.each([

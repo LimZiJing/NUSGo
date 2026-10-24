@@ -281,8 +281,9 @@
 
   .stop-actions .navigate-button,
   .stop-actions .stop-opposite {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     min-width: 0;
+    justify-content: center;
   }
 
   .stop-departures {

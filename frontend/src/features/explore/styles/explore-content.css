@@ -235,6 +235,11 @@
   gap: 8px;
 }
 
+.venue-detail-actions .navigate-button {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
 .venue-detail-actions .venue-building-picker {
   flex: 1 1 8rem;
 }
@@ -242,13 +247,14 @@
 .explore-content-detail .venue-detail-action {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  flex: 1 1 0;
+  justify-content: center;
   align-self: flex-start;
   gap: 8px;
   width: auto;
   min-height: var(--control-height-sm);
   box-sizing: border-box;
-  padding: var(--space-2) 10px;
+  padding: var(--space-2) 8px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);

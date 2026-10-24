@@ -1,9 +1,17 @@
-name: development
+name: deploy-frontend-development
 
 on:
   push:
     branches:
       - main
+    # Files the hosted frontend build reads. backend/ is left out on purpose.
+    paths:
+      - frontend/**
+      - shared/**
+      - scripts/generate-shuttle-timing.mjs
+      - package.json
+      - package-lock.json
+      - .github/workflows/deploy-frontend-development.yml
   workflow_dispatch:
 
 permissions:
@@ -12,15 +20,15 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-development
+  group: deploy-frontend-development
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build and deploy development
+    name: Build and deploy the development frontend (GitHub Pages)
     runs-on: ubuntu-latest
     environment:
-      name: development
+      name: frontend-development
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout

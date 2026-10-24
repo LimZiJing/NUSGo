@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Redeploys the production stack at one commit. The deploy-backend workflow streams this script
+# Redeploys the production stack at one commit. The deploy-backend-production workflow streams this script
 # over SSH; run it by hand with an older SHA to roll back (see docs/production-deploy.md).
 set -euo pipefail
 

@@ -99,7 +99,7 @@ See [project status](docs/project-status.md) for current capabilities and known 
 
 ## Contributing
 
-Issues and feature ideas are tracked in GitHub Issues. Before changing code, read [AGENTS.md](AGENTS.md) for the repository rules (worktrees, Conventional Commits, and the checks to run) and [CONTEXT.md](CONTEXT.md) for the project's vocabulary.
+Issues and feature ideas are tracked in GitHub Issues. Before changing code, read the [coding standards](docs/agents/coding-standards.md) (Conventional Commits and the checks to run), the [workflow guide](docs/agents/workflow.md) and [CONTEXT.md](CONTEXT.md) for the project's vocabulary. If you use an AI coding assistant, point it at [AGENTS.md](AGENTS.md) first.
 
 ## AI use
 

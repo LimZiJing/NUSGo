@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   createLiveBusWaitingTimeProvider,
   createTestBusWaitingTimeProvider,
+  MAX_BUS_WAIT_SECONDS,
+  TEST_SHUTTLE_WAIT_SECONDS,
 } from './apply-bus-waits.ts'
 
 const snapshot = {
@@ -124,5 +126,9 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
     expect(wait(record, { routeId: 'A1', boardingStopId: 'STOP-A', elapsedSeconds: 0 })).toBe(300)
     expect(wait(record, { routeId: 'B1', boardingStopId: 'STOP-B', elapsedSeconds: 240 })).toBe(300)
     expect(wait(record, { routeId: 'B1', boardingStopId: 'STOP-B', elapsedSeconds: 600 })).toBeNull()
+  })
+
+  it('keeps the test-time wait well below the maximum bus wait', () => {
+    expect(TEST_SHUTTLE_WAIT_SECONDS).toBeLessThan(MAX_BUS_WAIT_SECONDS)
   })
 })

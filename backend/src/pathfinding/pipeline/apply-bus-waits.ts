@@ -16,7 +16,7 @@ import type { Path } from '../path.ts'
 
 export const TEST_SHUTTLE_WAIT_SECONDS = 5 * 60
 // A boarding wait at or above this is not a useful option, so the Path is dropped.
-export const MAX_SHUTTLE_WAIT_SECONDS = 5 * 60 * 60
+export const MAX_BUS_WAIT_SECONDS = 5 * 60 * 60
 
 interface BoardingStopRequest {
   readonly stopId: string
@@ -245,7 +245,7 @@ function scoreCandidatesWithWaiting(
         waitingSeconds === null ||
         !Number.isFinite(waitingSeconds) ||
         waitingSeconds < 0 ||
-        waitingSeconds >= MAX_SHUTTLE_WAIT_SECONDS
+        waitingSeconds >= MAX_BUS_WAIT_SECONDS
       ) {
         valid = false
         break

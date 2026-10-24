@@ -121,7 +121,7 @@ describe('ExploreContent building details', () => {
     expect(markup).toContain('aria-label="COM1, building"')
     expect(markup).toContain('13 Computing Drive')
     expect(markup).toContain('2 rooms')
-    expect(markup).toContain('Nearby bus stops within 500 m')
+    expect(markup).toContain('Nearby bus stops within 250 m')
     expect(markup).toContain('COM1 Bus Stop')
     expect(markup).not.toContain('nusmods')
     expect(markup).not.toContain('NUSMods')

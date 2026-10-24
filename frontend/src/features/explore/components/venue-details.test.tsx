@@ -90,7 +90,7 @@ describe('ExploreContent venue details', () => {
   it('shows code-first venue identity, building, actions, and nearby stops in order', () => {
     const markup = renderVenueDetails()
 
-    expect(markup).toContain('Nearby bus stops within 500 m')
+    expect(markup).toContain('Nearby bus stops within 250 m')
     expect(markup).toContain('<h3 id="explore-venue-detail-heading"')
     expect(markup).toContain('aria-label="COM1-0212, venue"')
     expect(markup).toContain('location-identity-icon--venue')
@@ -180,7 +180,7 @@ describe('ExploreContent venue details', () => {
   it('shows an empty state when no bus stops qualify', () => {
     const markup = renderVenueDetails({ transitIndex: createTransitIndex(createValidTransitNetwork()) })
 
-    expect(markup).toContain('No NUS bus stops within 500 m.')
+    expect(markup).toContain('No NUS bus stops within 250 m.')
   })
 
   it('uses the same naturally sized detail actions on desktop', () => {

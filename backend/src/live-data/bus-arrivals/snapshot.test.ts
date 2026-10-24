@@ -146,6 +146,24 @@ describe('refreshBusArrivalSnapshot', () => {
     assert.equal(result.published, true)
     assert.deepEqual(result.snapshot?.unavailableStopIds, [])
   })
+
+  it('keeps listing a stop that stays unavailable across passes', async () => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
+      if (stop.stopId === 'STOP-C') throw new Error('NUS unavailable')
+      return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
+    }, {
+      previousSnapshot: {
+        ...previousSnapshot,
+        stops: { ...previousSnapshot.stops, 'STOP-C': {} },
+        unavailableStopIds: ['STOP-C'],
+      },
+      snapshotVersion: 'next',
+      refreshIntervalMs: 30_000,
+      maxConcurrency: 2,
+    })
+
+    assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-C'])
+  })
 })
 
 describe('createBusArrivalSnapshotStore', () => {

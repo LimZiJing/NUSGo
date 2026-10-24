@@ -1,18 +1,3 @@
-.settings-entry-button {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-panel);
-  color: var(--text-primary);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
-  cursor: pointer;
-}
-
 .settings-back-button {
   display: grid;
   width: 44px;
@@ -33,7 +18,6 @@
   }
 }
 
-.settings-entry-button:focus-visible,
 .settings-back-button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;

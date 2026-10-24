@@ -83,11 +83,6 @@
     min-height: var(--control-height-lg);
   }
 
-  .location-control-chip:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 2px;
-  }
-
   .main-navigation {
     position: absolute;
     z-index: 16;

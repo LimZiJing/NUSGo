@@ -134,9 +134,14 @@
   pointer-events: auto;
 }
 
-.location-control-chip {
-  min-height: 40px;
-  padding: 8px 10px;
+/* Single source of the glass look for square buttons floating over the map. */
+.map-overlay-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);
@@ -148,16 +153,17 @@
   cursor: pointer;
 }
 
-.location-control-chip {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  padding: 0;
+.map-overlay-button:active:not(:disabled) {
+  filter: brightness(0.85);
 }
 
-.location-control-chip:active:not(:disabled) {
-  filter: brightness(0.85);
+.map-overlay-button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.location-control-chip {
+  min-height: 40px;
 }
 
 .location-control-icon {

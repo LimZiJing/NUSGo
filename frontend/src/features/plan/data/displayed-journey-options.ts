@@ -1,6 +1,7 @@
 import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import type { Path, PathLeg } from '@nusgo/shared/routing/path'
 import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import { pruneUnworthwhileCandidates } from '@nusgo/shared/routing/candidate-policy'
 import type { TripEndpoint } from '../../../domain/trip/types'
 
 const MAX_DISPLAYED_PATHS = 3
@@ -152,11 +153,17 @@ export function selectDisplayedJourneyOptions(
     .filter(isScoredPathCandidate)
     .sort(compareCandidates)
   const seenCandidateKeys = new Set<string>()
-  const distinctCandidates = rankedCandidates.filter(({ candidateKey }) => {
-    if (seenCandidateKeys.has(candidateKey)) return false
-    seenCandidateKeys.add(candidateKey)
-    return true
-  })
+  const distinctCandidates = pruneUnworthwhileCandidates(
+    rankedCandidates.filter(({ candidateKey }) => {
+      if (seenCandidateKeys.has(candidateKey)) return false
+      seenCandidateKeys.add(candidateKey)
+      return true
+    }),
+    ({ adjustedDurationSeconds, path }) => ({
+      adjustedDurationSeconds,
+      boardings: path.legs.filter((leg) => leg.mode === 'shuttle').length,
+    }),
+  )
   const busCandidates = distinctCandidates
     .filter(({ path }) => path.legs.some((leg) => leg.mode === 'shuttle'))
     .slice(0, MAX_DISPLAYED_PATHS)

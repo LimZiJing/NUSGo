@@ -95,4 +95,47 @@ describe('canonical-data path planning regression', () => {
     expect(path?.legs.length).toBeGreaterThan(0)
     expect(path?.totalDurationSeconds).toBeGreaterThan(0)
   })
+
+  it('hides detour bus Paths between PGP stops that are a short walk apart', { timeout: 5_000 }, async () => {
+    const transit = createTransitData()
+    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const walkingConnections = createWalkingConnections()
+    const service = createFindPathsService({
+      routeEngine: { matrixWalking: async () => [], routeWalking: async ({ origin, destination }) => ({
+        distanceMeters: 100,
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      }),
+    },
+      walkingConnectionProvider: { getWalkingConnections: async () => walkingConnections },
+      getTestDepartureMs: () => null,
+      now: Date.now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
+    const candidates = (await service({
+      origin: { kind: 'stop', id: 'PGP' },
+      destination: { kind: 'stop', id: 'PGPR' },
+      venues,
+      transit: {
+        index: transit.index,
+        geometry: transit.geometry,
+        shuttleTiming: transit.shuttleTiming,
+      },
+    }, { signal: new AbortController().signal }))?.candidates ?? []
+
+    const walking = candidates.find(({ path }) => path.legs.every((leg) => leg.mode === 'walking'))
+    expect(walking).toBeDefined()
+    for (const { path, adjustedDurationSeconds } of candidates) {
+      if (path.legs.some((leg) => leg.mode === 'shuttle')) {
+        expect(adjustedDurationSeconds).toBeLessThanOrEqual(walking!.adjustedDurationSeconds * 2)
+      }
+    }
+  })
 })

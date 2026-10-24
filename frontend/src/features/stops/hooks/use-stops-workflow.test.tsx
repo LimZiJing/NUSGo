@@ -50,6 +50,20 @@ afterEach(() => {
 })
 
 describe('useStopsWorkflow', () => {
+  it('reports one no-live-data state when both arrival sources fail', async () => {
+    const options = createOptions({
+      loadArrivals: async () => { throw new Error('internal arrivals unavailable') },
+      loadPublicArrivals: async () => { throw new Error('public arrivals unavailable') },
+    })
+    const { result } = renderHook(
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
+      { initialProps: options },
+    )
+
+    await waitFor(() => expect(result.current.noLiveData).toBe(true))
+    expect(result.current.liveArrivalMessage).toBe('No live data')
+  })
+
   it('requests Nearby location when Stops becomes active and location is disabled', async () => {
     const requestLocation = vi.fn()
     const enableLocationTracking = vi.fn()

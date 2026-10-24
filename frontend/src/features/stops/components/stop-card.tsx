@@ -15,6 +15,7 @@ export interface StopCardProps {
   readonly distanceMeters: number | null
   readonly favorite: boolean
   readonly expanded: boolean
+  readonly noLiveData?: boolean
   readonly live?: boolean
   readonly liveArrivalMessage?: string | null
   readonly departures: readonly StopDeparture[]
@@ -36,6 +37,7 @@ export function StopCard({
   distanceMeters,
   favorite,
   expanded,
+  noLiveData = false,
   live = false,
   liveArrivalMessage = null,
   departures,
@@ -91,6 +93,7 @@ export function StopCard({
           <StopDepartureList
             departures={departures}
             scheduledDepartures={scheduledDepartures}
+            noLiveData={noLiveData}
             liveArrivalMessage={liveArrivalMessage}
             publicServices={publicServices}
             onSelectRoute={onSelectRoute}

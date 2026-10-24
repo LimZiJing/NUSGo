@@ -8,6 +8,7 @@ export function StopList({
   selectedStopList,
   loading,
   locationNotice,
+  noLiveData,
   liveArrivalMessage,
   onSelectStopList,
   onToggleFavorite,
@@ -19,6 +20,7 @@ export function StopList({
   readonly selectedStopList: 'nearby' | 'favourites'
   readonly loading: boolean
   readonly locationNotice: string | null
+  readonly noLiveData: boolean
   readonly liveArrivalMessage: string | null
   readonly onSelectStopList: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite: (stopId: string) => void
@@ -54,6 +56,7 @@ export function StopList({
               distanceMeters={distanceMeters}
               favorite={favorite}
               expanded={expanded}
+              noLiveData={noLiveData}
               live={stop.live}
               liveArrivalMessage={stop.liveArrivalMessage}
               departures={stop.departures}

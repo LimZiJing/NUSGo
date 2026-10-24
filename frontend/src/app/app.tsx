@@ -427,6 +427,7 @@ function App() {
     backLabel: stopBackLabel,
     stopListEntries: stopsWorkflow.stopListEntries,
     stopListLoading: stopsWorkflow.stopListLoading,
+    noLiveData: stopsWorkflow.noLiveData,
     liveArrivalMessage: stopsWorkflow.liveArrivalMessage,
     selectedStopList: stopsWorkflow.state.list,
     selectedStopFavorite: stopsWorkflow.selectedStopFavorite,

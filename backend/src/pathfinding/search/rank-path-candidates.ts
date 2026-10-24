@@ -1,3 +1,4 @@
+import { pruneUnworthwhileCandidates } from '@nusgo/shared/routing/candidate-policy'
 import { getTripEndpointKey } from '../endpoints.ts'
 import type { BusPathLeg, Path, PathLeg, PathQuality, ScoredPathCandidate } from '../path.ts'
 import { MAX_BUS_PATH_CANDIDATES, type CandidateCollector, type PathCandidate, type PathSearchInput } from './path-search-types.ts'
@@ -64,6 +65,13 @@ function compareCandidates(first: PathCandidate, second: PathCandidate): number 
     compareText(first.sequenceKey, second.sequenceKey)
 }
 
+function pruneCandidates(candidates: readonly PathCandidate[]): PathCandidate[] {
+  return pruneUnworthwhileCandidates(candidates, (candidate) => ({
+    adjustedDurationSeconds: candidate.adjustedDurationSeconds,
+    boardings: candidate.shuttleBoardings,
+  }))
+}
+
 export function addCandidate(collector: CandidateCollector, candidate: PathCandidate | null): void {
   if (!candidate) return
   if (candidate.shuttleBoardings === 0) {
@@ -101,11 +109,14 @@ export function collectPathCandidates(
   collector: CandidateCollector,
   planningQuality: PathQuality,
 ): readonly ScoredPathCandidate[] {
-  const topBusCandidates = [...collector.busByKey.values()]
-    .sort(compareCandidates)
-    .slice(0, MAX_BUS_PATH_CANDIDATES)
   const walkingCandidate = [...collector.walkingByKey.values()]
     .sort(compareCandidates)[0]
+  const topBusCandidates = pruneCandidates(
+    [...collector.busByKey.values(), ...(walkingCandidate ? [walkingCandidate] : [])],
+  )
+    .filter((candidate) => candidate.shuttleBoardings > 0)
+    .sort(compareCandidates)
+    .slice(0, MAX_BUS_PATH_CANDIDATES)
   const candidates = [
     ...topBusCandidates,
     ...(walkingCandidate ? [walkingCandidate] : []),
@@ -118,10 +129,10 @@ export function collectRankedPathCandidates(
   collector: CandidateCollector,
   planningQuality: PathQuality,
 ): readonly ScoredPathCandidate[] {
-  const candidates = [
+  const candidates = pruneCandidates([
     ...collector.busByKey.values(),
     ...collector.walkingByKey.values(),
-  ].sort(compareCandidates)
+  ]).sort(compareCandidates)
   return toScoredPathCandidates(input, candidates, planningQuality)
 }
 

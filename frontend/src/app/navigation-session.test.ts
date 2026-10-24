@@ -147,7 +147,7 @@ async function waitForState(
   })
 }
 
-function createPath(destination: TripEndpoint): Path {
+function createPath(destination: TripEndpoint, durationSeconds = 60): Path {
   return {
     origin: { kind: 'venue', id: 'COM1' },
     destination,
@@ -155,14 +155,14 @@ function createPath(destination: TripEndpoint): Path {
       mode: 'walking',
       from: { kind: 'venue', id: 'COM1' },
       to: destination,
-      durationSeconds: 60,
+      durationSeconds,
       distanceMeters: 100,
       geometry: {
         type: 'LineString',
         coordinates: [[103, 1], [103.001, 1.001]],
       },
     }],
-    totalDurationSeconds: 60,
+    totalDurationSeconds: durationSeconds,
     totalDistanceMeters: 100,
     estimateStatus: 'estimated',
     planningQuality: 'exact',
@@ -443,7 +443,7 @@ describe('navigation session', () => {
 
   it('defaults to the Recommended display option and updates selection without replanning', async () => {
     const busJourney = createBusPath()
-    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' }, 150)
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
       scoreCandidate('walking-option', walkingPath),
@@ -487,7 +487,7 @@ describe('navigation session', () => {
 
   it('resets an alternative selection to Recommended when a new calculation starts', async () => {
     const busJourney = createBusPath()
-    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' }, 150)
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
       scoreCandidate('walking-option', walkingPath),

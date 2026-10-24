@@ -16,8 +16,14 @@ compose=(docker compose --project-name navus --env-file "$root/compose.env" -f "
 git -C "$repo" fetch --prune origin main
 git -C "$repo" checkout --detach "$sha"
 
-# The frontend build embeds the same SHA as VITE_DATA_VERSION; the two must match.
-export NUSGO_DATA_VERSION="$sha"
+# The frontend build embeds the same value as VITE_DATA_VERSION; the two must match. Commits from
+# before scripts/data-version.sh existed used the deployed SHA itself.
+if [[ -f "$repo/scripts/data-version.sh" ]]; then
+  NUSGO_DATA_VERSION="$(bash "$repo/scripts/data-version.sh" "$sha")"
+else
+  NUSGO_DATA_VERSION="$sha"
+fi
+export NUSGO_DATA_VERSION
 "${compose[@]}" up -d --build --remove-orphans
 
 container_state() {

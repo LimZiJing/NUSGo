@@ -64,7 +64,7 @@ The checked-in canonical data source is `frontend/public/data`. For a deployment
 
 Relative `NUSGO_DATA_DIR` paths resolve from the backend process working directory. The npm workspace commands run Express from `backend/`, so the example value `../frontend/public/data` points to the checked-in data directory. Use an absolute path when starting Express from a different working directory.
 
-`VITE_DATA_VERSION` is embedded in the frontend build. `NUSGO_DATA_VERSION` identifies the matching backend data set. Keep them equal: both use `development` for the local rehearsal, while a hosted build uses the same source revision value for its frontend and backend data. A version mismatch means the frontend and API may be using different canonical data.
+`VITE_DATA_VERSION` is embedded in the frontend build. `NUSGO_DATA_VERSION` identifies the matching backend data set. Keep them equal: both use `development` for the local rehearsal, while a hosted build uses the commit printed by `scripts/data-version.sh` for both: the last commit that changed `shared/` or `frontend/public/data/`. A version mismatch means the frontend and API may be using different canonical data.
 
 `shuttle-timing.json` is a generated, ignored runtime artifact, not a checked-in source file. `npm run shuttle:timing:generate:geometry` creates it from the canonical network and route geometry. The frontend's predev and prebuild hooks also generate it. Generate it before starting a standalone backend so the file exists in `NUSGO_DATA_DIR`.
 

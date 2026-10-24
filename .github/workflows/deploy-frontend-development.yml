@@ -9,6 +9,7 @@ on:
       - frontend/**
       - shared/**
       - scripts/generate-shuttle-timing.mjs
+      - scripts/data-version.sh
       - package.json
       - package-lock.json
       - .github/workflows/deploy-frontend-development.yml
@@ -33,6 +34,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The data version is the last commit that changed the data contract, so it needs history.
+          fetch-depth: 0
+
+      - name: Resolve data version
+        id: data-version
+        run: echo "version=$(bash scripts/data-version.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -59,7 +67,7 @@ jobs:
           # remain unavailable until NUSGO_API_ORIGIN points to the deployed API.
           VITE_API_ORIGIN: ${{ vars.NUSGO_API_ORIGIN || 'https://api.example.invalid' }}
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-          VITE_DATA_VERSION: ${{ github.sha }}
+          VITE_DATA_VERSION: ${{ steps.data-version.outputs.version }}
         run: npm run build
 
       - name: Upload build artifact

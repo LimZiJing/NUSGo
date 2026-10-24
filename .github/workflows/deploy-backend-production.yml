@@ -12,6 +12,7 @@ on:
       - frontend/public/data/**
       - scripts/generate-shuttle-timing.mjs
       - scripts/deploy-prod.sh
+      - scripts/data-version.sh
       - docker-compose.prod.yml
       - deploy/**
       - package.json

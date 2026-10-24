@@ -32,6 +32,12 @@ The development frontend calls the production API, so keep API changes backwards
 
 The backend image copies `frontend/public/data/` and `scripts/generate-shuttle-timing.mjs`, so changes there redeploy the backend. If the Dockerfile starts copying other paths, add them to the `paths` list in the workflow.
 
+### Data version
+
+The frontend refuses to run unless its `VITE_DATA_VERSION` equals the API's `NUSGO_DATA_VERSION`. Both are set by [`scripts/data-version.sh`](../scripts/data-version.sh): the last commit that changed `shared/` or `frontend/public/data/`. Commits that touch only frontend or backend code leave it unchanged, so either side can deploy alone. A change to `shared/` or the data files changes it, and all three workflows trigger on those paths: deploy the backend, then the frontend. Until both are live, the frontend reports a version mismatch.
+
+If the version should depend on more files, add them to `scripts/data-version.sh`, and to the `paths` lists of the backend and development frontend workflows.
+
 ## One-time server setup
 
 Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
@@ -109,7 +115,7 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
 
 Each push to `main` runs the tests, then deploys that commit. The workflow can also be run by hand from the Actions tab.
 
-The commit SHA becomes `NUSGO_DATA_VERSION`, matching the `VITE_DATA_VERSION` the Pages workflow embeds in the frontend from the same commit. For a short time after a push the frontend and API may be on different versions until both workflows finish.
+`NUSGO_DATA_VERSION` is the data version described under "Data version" above, not the deployed commit SHA. It matches the `VITE_DATA_VERSION` the frontend workflows embed. After a change to the data contract, the frontend and API are on different versions until both workflows finish.
 
 Check a deploy from your own machine:
 

@@ -4,7 +4,7 @@ import { ExploreContentHarness as ExploreContent } from './components/explore-co
 import { createInitialExploreState } from './state/explore-state.ts'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 
 const transitIndex = createTransitIndex(createValidTransitNetwork())
 

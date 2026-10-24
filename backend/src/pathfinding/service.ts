@@ -1,5 +1,5 @@
-import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
-import { createTransitIndex } from '@navus/shared/transit/index'
+import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
+import { createTransitIndex } from '@nusgo/shared/transit/index'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
 import type { BackendLiveData } from '../live-data/runtime.ts'

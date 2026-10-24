@@ -1,4 +1,4 @@
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { TransitIndex } from '../../../domain/transit'
 import {
   getStopTimingData,

@@ -18,7 +18,7 @@ try {
   if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'ENOENT') throw error
 }
 
-const generatedAt = process.env.NAVUS_TIMING_GENERATED_AT ?? new Date().toISOString().slice(0, 10)
+const generatedAt = process.env.NUSGO_TIMING_GENERATED_AT ?? new Date().toISOString().slice(0, 10)
 
 const network = JSON.parse(await readFile('frontend/public/data/shuttle-network.json', 'utf8'))
 const geometry = JSON.parse(await readFile('frontend/public/data/shuttle-routes.geojson', 'utf8'))

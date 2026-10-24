@@ -13,9 +13,9 @@ import {
 } from './state/explore-state.ts'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
-import type { TransitNetwork } from '@navus/shared/transit/types'
+import type { TransitNetwork } from '@nusgo/shared/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 
 const venues: VenueLocationMap = {

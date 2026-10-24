@@ -1,10 +1,10 @@
 import type { TransitIndex } from '../transit'
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import type {
   TripEndpoint,
   TripLocationSearchResult,
 } from '../trip/types'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../venue/building-index'

@@ -1,4 +1,4 @@
-import type { Building } from '@navus/shared/venue/buildings'
+import type { Building } from '@nusgo/shared/venue/buildings'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 /**

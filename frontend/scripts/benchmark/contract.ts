@@ -5,8 +5,8 @@ import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.j
 import type { Path } from '../../../backend/src/pathfinding/path.js'
 import type { PathSearchInput } from '../../../backend/src/pathfinding/search/search-path-candidates.js'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
-import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
 import type { PathfindingBenchmarkGroup, PathfindingBenchmarkScenario, PathfindingBenchmarkTimingProfile } from './manifest.js'
 

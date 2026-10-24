@@ -1,4 +1,4 @@
-import type { PublicBusEstimatedArrival } from '@navus/shared'
+import type { PublicBusEstimatedArrival } from '@nusgo/shared'
 
 export interface ParsedLtaServiceArrival {
   readonly serviceNumber: string

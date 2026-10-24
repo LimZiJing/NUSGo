@@ -20,7 +20,7 @@ function asOutcome(path: Path | null): PathfindingBenchmarkOutcome {
 
 export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFactory = () => ({
   id: 'current-priority-queue',
-  label: 'Current NavUS planner',
+  label: 'Current NUSGo planner',
 
   createSearchRunner({ benchmarkCase }) {
     return async (signal) => {

@@ -11,12 +11,12 @@ import type {
 } from '../../../backend/src/pathfinding/search/search-path-candidates.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
-import { validateTransitMapData } from '@navus/shared/transit/map-data'
+import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours.js'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
-import { validateVenueLocationMap } from '@navus/shared/venue/validation'
-import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import { validateWalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type {
   PathfindingBenchmarkManifest,
   PathfindingBenchmarkManifestCase,

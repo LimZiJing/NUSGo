@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createTransitNetworkIndex } from '@navus/shared/transit/index'
-import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
-import type { TripEndpoint } from '@navus/shared/routing/path'
+import { createTransitNetworkIndex } from '@nusgo/shared/transit/index'
+import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
+import type { TripEndpoint } from '@nusgo/shared/routing/path'
 import { getTripEndpointKey } from '../endpoints.ts'
 import {
   searchPaths,

@@ -6,7 +6,7 @@ Use this folder for functional UI icons. Import icons from `./icons`; do not imp
 
 ## `brand-assets/`
 
-Use this folder for static product and external brand SVGs, such as the NavUS favicon, NUSMods logo, and social icons. Brand assets are not interchangeable with functional UI icons and should not be added to the Lucide wrapper module.
+Use this folder for static product and external brand SVGs, such as the NUSGo favicon, NUSMods logo, and social icons. Brand assets are not interchangeable with functional UI icons and should not be added to the Lucide wrapper module.
 
 ## Buttons, chips, and pills
 

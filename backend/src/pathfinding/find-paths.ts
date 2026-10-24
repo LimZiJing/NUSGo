@@ -1,11 +1,11 @@
-import type { ShuttleArrivalSnapshot } from '@navus/shared/transit/live-arrivals'
-import type { TransitIndex } from '@navus/shared/transit/index'
-import type { TripEndpoint } from '@navus/shared/routing/path'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { ShuttleArrivalSnapshot } from '@nusgo/shared/transit/live-arrivals'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
+import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from './endpoints.ts'
-import type { ShuttleTimingData } from '@navus/shared/transit/timing'
-import type { BusRouteGeometry } from '@navus/shared/transit/types'
-import type { ShuttleServiceWindow } from '@navus/shared/transit/service-hours-policy'
+import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
+import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
+import type { ShuttleServiceWindow } from '@nusgo/shared/transit/service-hours-policy'
 import {
   applyBusWaits,
   describeUnavailableBusService,

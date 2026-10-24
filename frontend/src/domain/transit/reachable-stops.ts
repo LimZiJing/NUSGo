@@ -1,5 +1,5 @@
 import type { TransitIndex } from './index'
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 
 const MAX_REACHABLE_FAVORITE_STOPS = 3
 

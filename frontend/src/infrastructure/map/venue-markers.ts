@@ -1,5 +1,5 @@
 import { Marker, type Map } from 'maplibre-gl'
-import type { VenueLocation } from '@navus/shared/venue/types'
+import type { VenueLocation } from '@nusgo/shared/venue/types'
 
 export const BUILDING_PART_HIGHLIGHT_COLOR = '#1d4ed8'
 

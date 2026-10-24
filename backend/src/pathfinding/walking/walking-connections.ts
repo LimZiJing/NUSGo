@@ -5,7 +5,7 @@ import type {
   WalkingMatrixConnection,
   WalkingRouteEngine,
 } from './walking-contracts.ts'
-import type { WalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 export type WalkingStopGraphLoader = (signal: AbortSignal) => Promise<WalkingStopGraph>
 
 interface WalkingConnectionProviderOptions {

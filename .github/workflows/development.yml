@@ -48,8 +48,8 @@ jobs:
       - name: Build
         env:
           # Keep Pages deployable before the backend is available. API-backed features
-          # remain unavailable until NAVUS_API_ORIGIN points to the deployed API.
-          VITE_API_ORIGIN: ${{ vars.NAVUS_API_ORIGIN || 'https://api.example.invalid' }}
+          # remain unavailable until NUSGO_API_ORIGIN points to the deployed API.
+          VITE_API_ORIGIN: ${{ vars.NUSGO_API_ORIGIN || 'https://api.example.invalid' }}
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
           VITE_DATA_VERSION: ${{ github.sha }}
         run: npm run build

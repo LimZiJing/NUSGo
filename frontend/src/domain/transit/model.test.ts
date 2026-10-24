@@ -3,9 +3,9 @@ import {
   TransitValidationError,
   validateTransitNetwork,
   validateTransitVerificationManifest,
-} from '@navus/shared/transit/model'
+} from '@nusgo/shared/transit/model'
 import { createValidTransitNetwork } from './test-fixtures'
-import type { TransitNetworkInput } from '@navus/shared/transit/types'
+import type { TransitNetworkInput } from '@nusgo/shared/transit/types'
 
 type Mutation = (network: TransitNetworkInput) => void
 type ValidationCase = [name: string, mutate: Mutation, expected: RegExp]

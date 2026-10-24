@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler, Response } from 'express'
-import type { ApiErrorCode, ApiErrorResponse } from '@navus/shared'
+import type { ApiErrorCode, ApiErrorResponse } from '@nusgo/shared'
 
 export function sendApiError(
   response: Response,

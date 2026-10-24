@@ -2,7 +2,11 @@ import type { Express, RequestHandler } from 'express'
 import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
 import type { BackendConfig } from '../../config.ts'
 import { LiveDataRequestError } from '../../live-data/runtime.ts'
-import { InvalidJourneyEndpointError, type PathfindingService } from '../../pathfinding/service.ts'
+import {
+  InvalidJourneyEndpointError,
+  JourneyPlanningTimeoutError,
+  type PathfindingService,
+} from '../../pathfinding/service.ts'
 import { ValhallaRouteError } from '../../pathfinding/walking/valhalla-walking-client.ts'
 import { sendApiError } from '../error-response.ts'
 import { createConcurrencyLimiter } from '../concurrency-limiter.ts'
@@ -86,13 +90,17 @@ function journeyHandler(
       .catch((error: unknown) => {
         if (timedOut) {
           if (!response.writableEnded) {
-            sendApiError(response, 504, 'Journey planning timed out', 'provider_unavailable')
+            sendApiError(response, 504, 'Journey planning timed out', 'planning_timeout')
           }
           return
         }
         if (controller.signal.aborted || isAbortError(error)) return
         if (error instanceof InvalidJourneyEndpointError) {
           sendApiError(response, 400, error.message, 'invalid_request')
+          return
+        }
+        if (error instanceof JourneyPlanningTimeoutError) {
+          sendApiError(response, 504, 'Journey planning timed out', 'planning_timeout')
           return
         }
         if (error instanceof LiveDataRequestError) {

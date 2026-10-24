@@ -24,7 +24,7 @@ export interface ApiNotReadyResponse {
 
 export type ApiReadinessResponse = ApiReadyResponse | ApiNotReadyResponse
 
-export type ApiErrorCode = 'invalid_request' | 'not_ready' | 'provider_unavailable' | 'rate_limited'
+export type ApiErrorCode = 'invalid_request' | 'not_ready' | 'planning_timeout' | 'provider_unavailable' | 'rate_limited'
 
 export interface ApiErrorResponse {
   readonly error: string

@@ -16,14 +16,25 @@ export interface CompletedPathGeometry {
   readonly geometryRouteCacheHits: number
 }
 
-function isAbortError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError'
-}
-
 function createAbortError(): Error {
   const error = new Error('The pathfinding request was aborted')
   error.name = 'AbortError'
   return error
+}
+
+export class PathGeometryDeadlineExceededError extends Error {
+  constructor() {
+    super('Path geometry completion exceeded its time budget')
+    this.name = 'PathGeometryDeadlineExceededError'
+  }
+}
+
+interface PreparedCandidateGeometry {
+  readonly promise: Promise<Path['legs']>
+  readonly state: {
+    completedAtMs: number | null
+    legs: Path['legs'] | null
+  }
 }
 
 function isValidWalkingGeometry(geometry: Path['legs'][number]['geometry']): boolean {
@@ -38,20 +49,28 @@ function isValidWalkingGeometry(geometry: Path['legs'][number]['geometry']): boo
 function createDeadlineSignal(signal: AbortSignal, deadlineAtMs: number, monotonicNow: () => number) {
   // Route requests must stop on either caller cancellation or the geometry-stage deadline.
   const controller = new AbortController()
+  const deadlineError = new PathGeometryDeadlineExceededError()
+  let expired = false
   const abortFromRequest = () => controller.abort(createAbortError())
   if (signal.aborted) abortFromRequest()
   else signal.addEventListener('abort', abortFromRequest, { once: true })
   const remainingMs = Math.max(0, deadlineAtMs - monotonicNow())
-  const timeout = setTimeout(() => {
-    const timeoutError = new Error('Path geometry completion exceeded its time budget')
-    timeoutError.name = 'TimeoutError'
-    controller.abort(timeoutError)
-  }, remainingMs)
+  const expire = () => {
+    if (controller.signal.aborted) return
+    expired = true
+    controller.abort(deadlineError)
+  }
+  const timeout = setTimeout(expire, remainingMs)
   return {
     signal: controller.signal,
+    expire,
+    hasExpired: () => expired,
+    deadlineError,
     dispose() {
       clearTimeout(timeout)
       signal.removeEventListener('abort', abortFromRequest)
+      // Stop only this stage's speculative route work; caller cancellation stays separate.
+      if (!controller.signal.aborted) controller.abort(createAbortError())
     },
   }
 }
@@ -78,8 +97,10 @@ export async function completePathGeometry(
     from: ResolvedPathLocation,
     to: ResolvedPathLocation,
   ): Promise<Path['legs'][number]['geometry']> => {
+    if (signal.aborted) return Promise.reject(createAbortError())
+    if (monotonicNow() >= deadlineAtMs) deadline.expire()
     if (deadline.signal.aborted) {
-      return Promise.reject(deadline.signal.reason ?? new Error('Walking geometry deadline exceeded'))
+      return Promise.reject(deadline.signal.reason ?? deadline.deadlineError)
     }
     const key = `${from.key}\u0000${to.key}`
     const cached = routePromises.get(key)
@@ -99,7 +120,7 @@ export async function completePathGeometry(
     return promise
   }
 
-  const preparedGeometry = new Map<ScoredPathCandidate, Promise<Path['legs']>>()
+  const preparedGeometry = new Map<ScoredPathCandidate, PreparedCandidateGeometry>()
   const prepareCandidateGeometry = (candidate: ScoredPathCandidate): Promise<Path['legs']> => (
     Promise.all(candidate.path.legs.map(async (leg) => {
       if (leg.mode === 'shuttle') return leg
@@ -110,6 +131,21 @@ export async function completePathGeometry(
       return { ...leg, geometry: await getRouteGeometry(from, to) }
     }))
   )
+  const getPreparedGeometry = (candidate: ScoredPathCandidate): PreparedCandidateGeometry => {
+    const existing = preparedGeometry.get(candidate)
+    if (existing) return existing
+
+    const state: PreparedCandidateGeometry['state'] = { completedAtMs: null, legs: null }
+    const promise = prepareCandidateGeometry(candidate).then((legs) => {
+      state.completedAtMs = monotonicNow()
+      state.legs = legs
+      return legs
+    })
+    const prepared = { promise, state }
+    void promise.catch(() => undefined)
+    preparedGeometry.set(candidate, prepared)
+    return prepared
+  }
 
   try {
     let preferredBusCount = 0
@@ -123,18 +159,46 @@ export async function completePathGeometry(
         if (preferredWalkingFound) continue
         preferredWalkingFound = true
       }
-      const promise = prepareCandidateGeometry(candidate)
-      void promise.catch(() => undefined)
-      preparedGeometry.set(candidate, promise)
+      getPreparedGeometry(candidate)
       if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES && preferredWalkingFound) break
     }
 
     let busCandidateCount = 0
     let walkingCandidateFound = false
-    for (const candidate of search.rankedCandidates) {
+    const appendCandidate = (candidate: ScoredPathCandidate, legs: Path['legs']): boolean => {
+      if (legs.some((leg) => leg.mode === 'walking' && !isValidWalkingGeometry(leg.geometry))) return false
+      candidates.push({ ...candidate, path: { ...candidate.path, legs } })
+      if (candidate.path.legs.some((leg) => leg.mode === 'shuttle')) busCandidateCount += 1
+      else walkingCandidateFound = true
+      return true
+    }
+    const harvestCompletedCandidates = (startIndex: number): void => {
+      for (let index = startIndex; index < search.rankedCandidates.length; index += 1) {
+        const candidate = search.rankedCandidates[index]!
+        const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
+        if (
+          (isBus && busCandidateCount >= MAX_BUS_PATH_CANDIDATES) ||
+          (!isBus && walkingCandidateFound)
+        ) continue
+        const prepared = preparedGeometry.get(candidate)
+        const completedAtMs = prepared?.state.completedAtMs
+        const legs = prepared?.state.legs
+        if (
+          completedAtMs === null || completedAtMs === undefined || completedAtMs >= deadlineAtMs ||
+          !legs
+        ) continue
+        geometryCandidateChecks += 1
+        appendCandidate(candidate, legs)
+      }
+    }
+
+    for (let candidateIndex = 0; candidateIndex < search.rankedCandidates.length; candidateIndex += 1) {
+      const candidate = search.rankedCandidates[candidateIndex]!
       if (signal.aborted) throw createAbortError()
       if (monotonicNow() >= deadlineAtMs) {
+        deadline.expire()
         searchStatus = 'budget-exceeded'
+        harvestCompletedCandidates(candidateIndex)
         break
       }
 
@@ -145,32 +209,37 @@ export async function completePathGeometry(
       ) continue
       geometryCandidateChecks += 1
       let valid = true
+      const prepared = getPreparedGeometry(candidate)
       try {
-        const legs = await (preparedGeometry.get(candidate) ?? prepareCandidateGeometry(candidate))
-        if (deadline.signal.aborted) {
-          if (signal.aborted) throw createAbortError()
+        const legs = await prepared.promise
+        if (signal.aborted) throw createAbortError()
+        const completedAtMs = prepared.state.completedAtMs
+        if (completedAtMs === null || completedAtMs >= deadlineAtMs) {
+          deadline.expire()
           searchStatus = 'budget-exceeded'
+          harvestCompletedCandidates(candidateIndex + 1)
           break
         }
-        if (legs.some((leg) => leg.mode === 'walking' && !isValidWalkingGeometry(leg.geometry))) {
-          valid = false
-        } else {
-          candidates.push({ ...candidate, path: { ...candidate.path, legs } })
-          if (isBus) busCandidateCount += 1
-          else walkingCandidateFound = true
+        if (deadline.hasExpired() || monotonicNow() >= deadlineAtMs) {
+          deadline.expire()
+          searchStatus = 'budget-exceeded'
+          valid = appendCandidate(candidate, legs)
+          harvestCompletedCandidates(candidateIndex + 1)
+          break
         }
+        valid = appendCandidate(candidate, legs)
       } catch (error: unknown) {
-        if (signal.aborted || isAbortError(error)) {
-          if (signal.aborted) throw createAbortError()
-          if (deadline.signal.aborted) {
-            searchStatus = 'budget-exceeded'
-            break
-          }
+        if (signal.aborted) throw createAbortError()
+        if (deadline.hasExpired() || monotonicNow() >= deadlineAtMs) {
+          deadline.expire()
+          searchStatus = 'budget-exceeded'
+          harvestCompletedCandidates(candidateIndex + 1)
+          break
         }
         valid = false
         lastGeometryError = error
       }
-      if (!valid && deadline.signal.aborted) {
+      if (!valid && deadline.hasExpired()) {
         searchStatus = 'budget-exceeded'
         break
       }
@@ -181,6 +250,9 @@ export async function completePathGeometry(
   }
 
   if (signal.aborted) throw createAbortError()
+  if (candidates.length === 0 && search.rankedCandidates.length > 0 && deadline.hasExpired()) {
+    throw deadline.deadlineError
+  }
   if (candidates.length === 0 && search.rankedCandidates.length > 0 && lastGeometryError) {
     throw lastGeometryError
   }

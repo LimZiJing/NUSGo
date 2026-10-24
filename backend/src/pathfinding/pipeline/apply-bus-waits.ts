@@ -1,12 +1,12 @@
-import type { ShuttleTimingData, ShuttleTimingRecord } from '@navus/shared/transit/timing'
-import type { TransitStop } from '@navus/shared/transit/types'
-import type { ShuttleArrivalSnapshot } from '@navus/shared/transit/live-arrivals'
+import type { ShuttleTimingData, ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
+import type { TransitStop } from '@nusgo/shared/transit/types'
+import type { ShuttleArrivalSnapshot } from '@nusgo/shared/transit/live-arrivals'
 import {
   describeShuttleServiceUnavailable,
   evaluateShuttleService,
   type ShuttleServiceEvaluation,
   type ShuttleServiceWindow,
-} from '@navus/shared/transit/service-hours-policy'
+} from '@nusgo/shared/transit/service-hours-policy'
 import type {
   BusWaitingTimeContext,
   BusWaitingTimeProvider,

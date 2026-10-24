@@ -1,7 +1,7 @@
 services:
   valhalla:
     image: ghcr.io/nilsnolde/docker-valhalla/valhalla:latest
-    container_name: navus-valhalla
+    container_name: nusgo-valhalla
     restart: unless-stopped
     ports:
       - '127.0.0.1:8002:8002'

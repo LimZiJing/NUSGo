@@ -27,12 +27,12 @@ setWorkerUrl(maplibreWorkerUrl)
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
-class NavusAttributionControl {
+class NusgoAttributionControl {
   private container: HTMLElement | null = null
 
   onAdd(): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'maplibregl-ctrl navus-map-attribution'
+    container.className = 'maplibregl-ctrl nusgo-map-attribution'
     container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
       + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     this.container = container
@@ -90,7 +90,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     attributionControl: false,
   })
   const navigationControl = new NavigationControl()
-  const attributionControl = new NavusAttributionControl()
+  const attributionControl = new NusgoAttributionControl()
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
 

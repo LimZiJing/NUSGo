@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { TransitIndex } from '../../../domain/transit'
 import { formatDuration } from '../../../domain/trip/duration-format'
-import type { Path } from '@navus/shared/routing/path'
-import type { ScoredPathCandidate } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 import {

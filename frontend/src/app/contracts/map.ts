@@ -2,11 +2,11 @@ import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-i
 import type { TransitIndex } from '../../domain/transit'
 import type {
   BusRoute,
-} from '@navus/shared/transit/types'
+} from '@nusgo/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Path } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
 
 export interface MapBuildingSelection {

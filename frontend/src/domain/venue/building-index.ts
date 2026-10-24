@@ -1,4 +1,4 @@
-import type { Building } from '@navus/shared/venue/buildings'
+import type { Building, BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 /**
@@ -29,6 +29,8 @@ export interface BuildingEntry {
 }
 
 export interface BuildingIndex {
+  /** Provenance from the validated catalogue, when it was loaded from the data source. */
+  readonly source?: BuildingCatalogueSource
   readonly entries: readonly BuildingEntry[]
   readonly byId: ReadonlyMap<string, BuildingEntry>
   /**
@@ -94,7 +96,10 @@ function toEntry(id: string, parts: readonly Building[]): BuildingEntry {
   }
 }
 
-export function buildBuildingIndex(buildings: readonly Building[]): BuildingIndex {
+export function buildBuildingIndex(
+  buildings: readonly Building[],
+  source?: BuildingCatalogueSource,
+): BuildingIndex {
   const groups = new Map<string, Building[]>()
   const entries: BuildingEntry[] = []
 
@@ -121,6 +126,7 @@ export function buildBuildingIndex(buildings: readonly Building[]): BuildingInde
     }
   }
   return {
+    ...(source === undefined ? {} : { source }),
     entries: sorted,
     byId: new Map(sorted.map((entry) => [entry.id, entry])),
     byPartId,

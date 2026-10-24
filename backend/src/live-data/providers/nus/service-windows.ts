@@ -1,4 +1,4 @@
-import type { ShuttleServiceWindow } from '@navus/shared'
+import type { ShuttleServiceWindow } from '@nusgo/shared'
 import type { NusProviderConfig } from '../../../config.ts'
 import {
   createNusBusProxyRequest,

@@ -38,23 +38,30 @@ function publicTimingMessage(status: PublicServiceTiming['status']): string {
 export function StopDepartureList({
   departures,
   scheduledDepartures = [],
+  noLiveData = false,
   liveArrivalMessage = null,
   publicServices,
   onSelectRoute,
 }: {
   readonly departures: readonly StopDeparture[]
   readonly scheduledDepartures?: readonly StopScheduledDeparture[]
+  readonly noLiveData?: boolean
   readonly liveArrivalMessage?: string | null
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
 }) {
-  if (departures.length === 0 && scheduledDepartures.length === 0 && publicServices.length === 0) {
+  const visiblePublicServices = noLiveData
+    ? publicServices.filter(({ timings }) => timings !== null)
+    : publicServices
+
+  if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
+    if (noLiveData) return null
     return <p className="stop-departure-list-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
   }
 
   return (
     <>
-      {liveArrivalMessage && (
+      {!noLiveData && liveArrivalMessage && (
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
         </p>
@@ -89,7 +96,7 @@ export function StopDepartureList({
             <span className="stop-departure-status">{message}</span>
           </li>
         ))}
-        {publicServices.map(({ serviceNumber, timings, status }) => (
+        {visiblePublicServices.map(({ serviceNumber, timings, status }) => (
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (

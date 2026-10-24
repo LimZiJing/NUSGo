@@ -2,7 +2,7 @@ import { exploreReducer, type ExploreAction, type ExploreState } from '../featur
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { MapBuildingSelection } from './contracts/map'
-import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import {
   createVenueSearchResultSnapshot,
   venuesMatch,

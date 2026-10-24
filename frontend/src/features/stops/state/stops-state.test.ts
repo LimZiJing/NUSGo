@@ -78,4 +78,19 @@ describe('Stops state', () => {
       favourites: ['STOP-A'],
     })
   })
+
+  it('removes one favourite or clears all without changing the selected Stops list', () => {
+    const state = {
+      ...createInitialStopsState(['STOP-A', 'STOP-B']),
+      list: 'favourites' as const,
+    }
+
+    const oneRemoved = stopsReducer(state, { type: 'remove-favorite', stopId: 'STOP-A' })
+    expect(oneRemoved.favoriteStopIds).toEqual(['STOP-B'])
+    expect(oneRemoved.list).toBe('favourites')
+
+    const allRemoved = stopsReducer(oneRemoved, { type: 'clear-favorites' })
+    expect(allRemoved.favoriteStopIds).toEqual([])
+    expect(allRemoved.list).toBe('favourites')
+  })
 })

@@ -4,12 +4,12 @@ import { createValhallaRouteEngine } from '../frontend/src/infrastructure/routin
 import { validateWalkingStopGraph } from '../frontend/src/infrastructure/routing/walking-stop-graph.ts'
 
 const outputPath = 'frontend/public/data/walking-stop-graph.json'
-const baseUrl = process.env.NAVUS_VALHALLA_BASE_URL?.trim() || 'http://127.0.0.1:8002'
-const routingDataVersion = process.env.NAVUS_VALHALLA_DATA_VERSION?.trim() || 'local-valhalla'
-const timeoutMs = Number(process.env.NAVUS_VALHALLA_TIMEOUT_MS ?? 30_000)
+const baseUrl = process.env.NUSGO_VALHALLA_BASE_URL?.trim() || 'http://127.0.0.1:8002'
+const routingDataVersion = process.env.NUSGO_VALHALLA_DATA_VERSION?.trim() || 'local-valhalla'
+const timeoutMs = Number(process.env.NUSGO_VALHALLA_TIMEOUT_MS ?? 30_000)
 
 if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
-  throw new Error('NAVUS_VALHALLA_TIMEOUT_MS must be a positive integer')
+  throw new Error('NUSGO_VALHALLA_TIMEOUT_MS must be a positive integer')
 }
 
 const network = validateTransitNetwork(

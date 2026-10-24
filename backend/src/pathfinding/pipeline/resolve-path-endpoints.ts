@@ -1,6 +1,6 @@
-import type { TransitIndex } from '@navus/shared/transit/index'
-import type { TripEndpoint } from '@navus/shared/routing/path'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
+import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { getTripEndpointCoordinate, getTripEndpointKey, type BuildingIndex, type ResolvedPathLocation } from '../endpoints.ts'
 
 export interface ResolvedPathEndpoints {

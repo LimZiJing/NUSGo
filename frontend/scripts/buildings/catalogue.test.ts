@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { buildCatalogue, type BuildCatalogueInput } from './catalogue'
 import type { ApiBuilding } from './snapshot'
 

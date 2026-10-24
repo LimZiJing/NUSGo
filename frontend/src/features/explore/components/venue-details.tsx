@@ -7,7 +7,7 @@ import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Select } from '../../../ui/select'
 import type { BuildingEntry } from '../../../domain/venue/building-index'
-import type { VenueLocation } from '@navus/shared/venue/types'
+import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
 
 interface VenueDetailsProps {

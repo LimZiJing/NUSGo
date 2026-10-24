@@ -1,6 +1,6 @@
 import { buildApiUrl } from './api-url'
-import { assertCompatibleDataVersion, parseDataVersion } from '@navus/shared/http/data-version'
-import type { ApiHealthResponse } from '@navus/shared/http/api-contracts'
+import { assertCompatibleDataVersion, parseDataVersion } from '@nusgo/shared/http/data-version'
+import type { ApiHealthResponse } from '@nusgo/shared/http/api-contracts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null

@@ -1,7 +1,7 @@
-import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
-import type { TransitIndex } from '@navus/shared/transit/index'
-import type { TripCoordinate, TripEndpoint, PathEndpointLocation } from '@navus/shared/routing/path'
+import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
+import type { TripCoordinate, TripEndpoint, PathEndpointLocation } from '@nusgo/shared/routing/path'
 
 export interface BuildingIndex {
   readonly byId: ReadonlyMap<string, { readonly location: Building['location'] }>

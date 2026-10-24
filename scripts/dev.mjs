@@ -118,7 +118,7 @@ async function main() {
   } catch (error) {
     if (!shutdownRequested) {
       exitCode = 1
-      console.error('The NavUS development stack failed to start.', error instanceof Error ? error.message : 'Unknown error')
+      console.error('The NUSGo development stack failed to start.', error instanceof Error ? error.message : 'Unknown error')
       requestShutdown(exitCode)
     }
   } finally {

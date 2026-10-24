@@ -1,4 +1,4 @@
-import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 
 export interface VenueSearchResult {
   readonly code: string

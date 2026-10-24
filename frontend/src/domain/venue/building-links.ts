@@ -1,4 +1,4 @@
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingEntry, BuildingIndex } from './building-index'
 
 /** How venues relate to the building catalogue. Computed once per data load. */

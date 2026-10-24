@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { createTransitNetworkIndex } from '@navus/shared/transit/index'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
-import { validateVenueLocationMap } from '@navus/shared/venue/validation'
+import { createTransitNetworkIndex } from '@nusgo/shared/transit/index'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
+import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import { createFindPathsService } from './find-paths.ts'
 import type { TestTransitData } from './find-paths.test-support.ts'
-import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import { validateWalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))

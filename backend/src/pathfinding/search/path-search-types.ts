@@ -1,7 +1,7 @@
-import type { ShuttleTimingData, ShuttleTimingRecord } from '@navus/shared/transit/timing'
-import type { TransitGeoJsonPosition, BusRouteGeometry } from '@navus/shared/transit/types'
-import type { TransitIndex } from '@navus/shared/transit/index'
-import type { TripEndpoint } from '@navus/shared/routing/path'
+import type { ShuttleTimingData, ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
+import type { TransitGeoJsonPosition, BusRouteGeometry } from '@nusgo/shared/transit/types'
+import type { TransitIndex } from '@nusgo/shared/transit/index'
+import type { TripEndpoint } from '@nusgo/shared/routing/path'
 import type { Path, PathEndpointLocation, PathGeometry, PathLeg, ScoredPathCandidate } from '../path.ts'
 
 export interface PathWalkingConnection {

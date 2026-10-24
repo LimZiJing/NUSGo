@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { before, describe, it } from 'node:test'
-import { generateShuttleTimingData, validateTransitMapData } from '@navus/shared'
+import { generateShuttleTimingData, validateTransitMapData } from '@nusgo/shared'
 import { createApp } from '../http/app.ts'
 import { loadBackendConfig } from '../config.ts'
 import { validateCanonicalData, type BackendData } from '../canonical-data.ts'
@@ -46,7 +46,7 @@ before(async () => {
 function createConfig(ltaAccountKey = 'test-lta-account-key') {
   return loadBackendConfig({
     NODE_ENV: 'test',
-    NAVUS_DATA_DIR: sourceDataDirectory,
+    NUSGO_DATA_DIR: sourceDataDirectory,
     NUS_BUS_PROXY_BASE_URL: 'https://bus-proxy.nus.example',
     NUS_ACCESS_TOKEN_URL: 'https://auth.nus.example/token',
     NUS_X_HTD_API: 'test-htd-api',

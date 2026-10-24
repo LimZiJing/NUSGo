@@ -1,5 +1,5 @@
-export type TripEndpoint = import('@navus/shared/routing/path').TripEndpoint
-export type TripCoordinate = import('@navus/shared/routing/path').TripCoordinate
+export type TripEndpoint = import('@nusgo/shared/routing/path').TripEndpoint
+export type TripCoordinate = import('@nusgo/shared/routing/path').TripCoordinate
 
 export type TripEndpointRole = 'origin' | 'destination'
 

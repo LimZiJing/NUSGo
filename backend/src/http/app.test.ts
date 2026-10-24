@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { Request } from 'express'
-import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
+import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
 import { loadBackendConfig } from '../config.ts'
 import { createApp } from './app.ts'
 import { getRateLimitClientAddress } from './rate-limiter.ts'

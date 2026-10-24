@@ -1,5 +1,5 @@
-import type { TransitStop } from '@navus/shared/transit/types'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '../transit'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 import { getBuildingSearchFields, type BuildingEntry, type BuildingIndex } from './building-index'

@@ -5,7 +5,7 @@ import {
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   parseCorsOrigins,
   parseDataVersion,
-} from '@navus/shared'
+} from '@nusgo/shared'
 
 const PAGES_ORIGIN = 'https://limzijing.github.io'
 const DEVELOPMENT_ORIGINS = Object.freeze([
@@ -204,15 +204,15 @@ export function loadBackendConfig(
   }
 
   const dataVersion = parseDataVersion(
-    environment.NAVUS_DATA_VERSION ?? environment.GITHUB_SHA ?? LOCAL_DATA_VERSION,
+    environment.NUSGO_DATA_VERSION ?? environment.GITHUB_SHA ?? LOCAL_DATA_VERSION,
   )
   if (mode === 'production' && dataVersion === LOCAL_DATA_VERSION) {
-    throw new Error('NAVUS_DATA_VERSION must be the deployed source commit in production')
+    throw new Error('NUSGO_DATA_VERSION must be the deployed source commit in production')
   }
 
   // Resolve relative paths from the backend process so Express can load a mounted
   // canonical-data directory without Vite.
-  const dataPath = environment.NAVUS_DATA_DIR?.trim() || '../frontend/public/data'
+  const dataPath = environment.NUSGO_DATA_DIR?.trim() || '../frontend/public/data'
   return Object.freeze({
     environment: mode,
     host,

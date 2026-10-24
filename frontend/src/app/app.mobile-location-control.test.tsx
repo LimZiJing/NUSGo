@@ -323,7 +323,7 @@ describe('mobile location control integration', () => {
     render(<App />)
 
     const stack = document.querySelector('.map-control-stack')
-    expect(stack?.querySelector('.theme-toggle')).toBeTruthy()
+    expect(stack?.querySelector('.settings-entry-button')).toBeTruthy()
     expect(stack?.querySelector('.location-control')).toBeTruthy()
     expect(stack?.querySelector('.map-legend')).toBeTruthy()
   })

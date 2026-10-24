@@ -12,7 +12,9 @@
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-edge), var(--shadow-md);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
   cursor: pointer;
 }
 

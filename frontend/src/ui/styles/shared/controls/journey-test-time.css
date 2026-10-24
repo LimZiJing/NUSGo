@@ -32,8 +32,10 @@
 .journey-test-time-panel {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-panel);
+  background: var(--surface-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-panel);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
   color: var(--text-primary);
 }
 

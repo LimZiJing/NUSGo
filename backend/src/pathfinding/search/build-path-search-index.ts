@@ -158,6 +158,21 @@ function sliceBetweenProjections(
   }
 }
 
+function withStopConnectors(
+  slice: { readonly geometry: PathGeometry; readonly distanceMeters: number } | null,
+  fromStop: { readonly longitude: number; readonly latitude: number } | undefined,
+  toStop: { readonly longitude: number; readonly latitude: number } | undefined,
+): { readonly geometry: PathGeometry; readonly distanceMeters: number } | null {
+  if (!slice || !fromStop || !toStop) return slice
+  // Route lines can sit tens of metres from a stop; extend the drawn leg so it meets the stop markers.
+  const coordinates = withoutDuplicateCoordinates([
+    toPosition(fromStop.longitude, fromStop.latitude),
+    ...slice.geometry.coordinates.map(([longitude, latitude]) => toPosition(longitude, latitude)),
+    toPosition(toStop.longitude, toStop.latitude),
+  ])
+  return { geometry: { type: 'LineString', coordinates }, distanceMeters: slice.distanceMeters }
+}
+
 export function createShuttleLeg(
   ride: ShuttleRideDefinition,
   waitingSeconds: number,
@@ -456,6 +471,11 @@ export function* buildSearchIndexSteps(
         ? sliceRouteGeometry(ride.geometryLine, fromCandidates, toCandidates)
         : null
     }
+    geometry = withStopConnectors(
+      geometry,
+      input.transitIndex.stopById.get(ride.fromStopId),
+      input.transitIndex.stopById.get(ride.toStopId),
+    )
     geometrySliceCount += 1
     geometrySliceDurationMs += now() - startedAt
     geometryByRideKey.set(key, geometry)

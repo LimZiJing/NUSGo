@@ -64,4 +64,13 @@ describe('buildSearchIndex ride geometry', () => {
     expect(sliced?.distanceMeters).toBeLessThan(150)
     expect(sliced?.geometry.coordinates.every(([, latitude]) => latitude < 1.001)).toBe(true)
   })
+
+  it('extends a ride so it starts and ends exactly at its stop coordinates', () => {
+    const index = buildSearchIndex(createLoopPassInput())
+    const ride = index.ridesByBoardingStopId.get('STOP-A')?.find((candidate) => candidate.toStopId === 'STOP-B')
+
+    const coordinates = index.getRideGeometry(ride!)?.geometry.coordinates
+    expect(coordinates?.[0]).toEqual([103, 1])
+    expect(coordinates?.at(-1)).toEqual([103.001, 1.00003])
+  })
 })

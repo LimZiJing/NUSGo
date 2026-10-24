@@ -7,7 +7,7 @@ import { buildSearchIndex } from './build-path-search-index.ts'
 import { zeroBusWaitingTime, type PathSearchInput } from './search-path-candidates.ts'
 
 // The line passes STOP-B twice: 3 m away on the way out, then directly over it on the way back to STOP-C.
-function createLoopPassInput(): PathSearchInput {
+function createLoopPassInput(stopB = { latitude: 1.00003, longitude: 103.001 }): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -21,7 +21,7 @@ function createLoopPassInput(): PathSearchInput {
     routes: [{ id: 'L1', name: 'L1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-C'] }],
     stops: [
       { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['L1'] },
-      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1.00003, longitude: 103.001, services: ['L1'] },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', ...stopB, services: ['L1'] },
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1.00003, longitude: 103.003, services: ['L1'] },
     ],
   })
@@ -63,5 +63,22 @@ describe('buildSearchIndex ride geometry', () => {
     const sliced = index.getRideGeometry(ride!)
     expect(sliced?.distanceMeters).toBeLessThan(150)
     expect(sliced?.geometry.coordinates.every(([, latitude]) => latitude < 1.001)).toBe(true)
+  })
+
+  it('extends a ride so it starts and ends exactly at its stop coordinates', () => {
+    const index = buildSearchIndex(createLoopPassInput())
+    const ride = index.ridesByBoardingStopId.get('STOP-A')?.find((candidate) => candidate.toStopId === 'STOP-B')
+
+    const coordinates = index.getRideGeometry(ride!)?.geometry.coordinates
+    expect(coordinates?.[0]).toEqual([103, 1])
+    expect(coordinates?.at(-1)).toEqual([103.001, 1.00003])
+  })
+
+  it('leaves a ride short of a stop that sits far from the line instead of drawing a long shortcut', () => {
+    const index = buildSearchIndex(createLoopPassInput({ latitude: 1.00027, longitude: 103.0006 }))
+    const ride = index.ridesByBoardingStopId.get('STOP-A')?.find((candidate) => candidate.toStopId === 'STOP-B')
+
+    const coordinates = index.getRideGeometry(ride!)?.geometry.coordinates
+    expect(coordinates?.at(-1)).toEqual([103.0006, 1])
   })
 })

@@ -116,6 +116,8 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
             <p className="settings-about-link-line settings-about-basemap-links">
               <SourceLink href="https://openfreemap.org/">OpenFreeMap</SourceLink>
               <span aria-hidden="true"> · </span>
+              <SourceLink href="https://openmaptiles.org/">OpenMapTiles</SourceLink>
+              <span aria-hidden="true"> · </span>
               <SourceLink href="https://www.openstreetmap.org/copyright">OpenStreetMap</SourceLink>
             </p>
           </AboutCardRow>

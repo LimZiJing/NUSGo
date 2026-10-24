@@ -27,7 +27,7 @@ export interface AppViewsProps {
   readonly onSelectView: ComponentProps<typeof MainNavigation>['onSelectView']
   readonly settings: {
     readonly open: boolean
-    readonly headingRef: Ref<HTMLHeadingElement>
+    readonly initialFocusRef: Ref<HTMLButtonElement>
     readonly onClose: () => void
     readonly content: ReactNode
   }
@@ -141,7 +141,7 @@ export function AppViews({
         <NavigationViewShell id="settings-panel" active={settings.open}>
           <SettingsSurface
             open={settings.open}
-            headingRef={settings.headingRef}
+            initialFocusRef={settings.initialFocusRef}
             onClose={settings.onClose}
           >
             {settings.content}

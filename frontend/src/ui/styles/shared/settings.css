@@ -51,6 +51,7 @@
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
+  background: var(--surface);
 }
 
 .settings-surface-body {
@@ -66,7 +67,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: var(--space-2);
-  padding-bottom: var(--space-1);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -74,11 +75,6 @@
   margin: 0;
   color: var(--text-heading);
   font: 600 var(--font-size-2xl)/1.2 var(--sans);
-}
-
-.settings-surface-header h2:focus-visible {
-  outline: 3px solid var(--focus-ring-strong);
-  outline-offset: 4px;
 }
 
 .settings-content-scroll {
@@ -104,7 +100,7 @@
       max(16px, env(safe-area-inset-left, 0px));
     border: 0;
     border-radius: 0;
-    background: var(--surface-overlay);
+    background: var(--surface);
     box-shadow: var(--shadow-sheet);
   }
 

@@ -65,7 +65,7 @@ function App() {
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
   const settingsEntryButtonRef = useRef<HTMLButtonElement>(null)
-  const settingsHeadingRef = useRef<HTMLHeadingElement>(null)
+  const settingsInitialFocusRef = useRef<HTMLButtonElement>(null)
   const settingsWasOpenRef = useRef(false)
   const skipSettingsFocusRestoreRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
@@ -473,7 +473,7 @@ function App() {
 
   useLayoutEffect(() => {
     if (isSettingsOpen) {
-      settingsHeadingRef.current?.focus()
+      settingsInitialFocusRef.current?.focus()
     } else if (settingsWasOpenRef.current && !skipSettingsFocusRestoreRef.current) {
       settingsEntryButtonRef.current?.focus()
     }
@@ -577,7 +577,7 @@ function App() {
           onSelectView={selectView}
           settings={{
             open: isSettingsOpen,
-            headingRef: settingsHeadingRef,
+            initialFocusRef: settingsInitialFocusRef,
             onClose: () => setIsSettingsOpen(false),
             content: (
               <SettingsContent

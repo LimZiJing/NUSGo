@@ -12,7 +12,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Path leg**: One walking or bus segment of a Path.
 - **Recommended result**: The best valid Path under the available route, timing, and endpoint data. It must not be presented as fastest when required timing data is unavailable. Plan may retain existing user-facing wording such as “recommended journey.”
 - **Trip endpoint**: A resolved Path origin or destination, identified by a stable venue or bus-stop reference, or by frozen coordinates for Current location.
-- **Current location**: A trip endpoint that snapshots the coordinates of an active valid device-location fix. It keeps those coordinates after the device location moves and has no venue or stop identifier.
+- **Current location**: A trip endpoint that snapshots the coordinates of an active valid device-location fix. It keeps those coordinates after the device location moves, until the user searches for a Path again and an active valid fix replaces them. It has no venue or stop identifier.
 - **Walking connection**: A directed, validated walking link between two trip endpoints or bus stops, with travel distance and duration. A walking Path leg also has routed geometry.
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 - **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.

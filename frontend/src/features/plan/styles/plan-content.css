@@ -78,6 +78,7 @@
   border: 1px solid var(--border-control);
   border-radius: var(--radius-status);
   background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 

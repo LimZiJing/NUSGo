@@ -28,6 +28,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-timeline);
   background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .explore-bus-route-list-timeline-count {

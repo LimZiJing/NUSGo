@@ -26,6 +26,8 @@ import { SettingsEntryButton } from '../ui/settings-entry-button'
 import {
   applyTheme,
   getSystemTheme,
+  readThemePreference,
+  saveThemePreference,
   subscribeToSystemThemeChanges,
   type ThemePreference,
 } from '../ui/theme'
@@ -71,7 +73,7 @@ function App() {
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [themePreference, setThemePreference] = useState<ThemePreference>('system')
+  const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -101,6 +103,10 @@ function App() {
   const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
     mapShellRef.current = shell
     setSheetPortalContainer(shell)
+  }, [])
+  const changeThemePreference = useCallback((preference: ThemePreference): void => {
+    saveThemePreference(preference)
+    setThemePreference(preference)
   }, [])
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
@@ -499,7 +505,7 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
-        {!isMobileViewport && !isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
+        {!isSettingsOpen && stopsWorkflow.showNearbyCrosshair && (
           <NearbyCrosshair insets={mapInsets} />
         )}
         <div className="map-control-stack">
@@ -575,7 +581,7 @@ function App() {
             content: (
               <SettingsContent
                 themePreference={themePreference}
-                onThemePreferenceChange={setThemePreference}
+                onThemePreferenceChange={changeThemePreference}
                 favoriteStops={stopsWorkflow.favoriteStops}
                 onRemoveFavorite={stopsWorkflow.removeFavorite}
                 onClearFavorites={stopsWorkflow.clearFavoriteStops}

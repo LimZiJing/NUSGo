@@ -568,12 +568,12 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('Settings surface', () => {
-  it('keeps the nearby map crosshair off mobile', async () => {
+  it('shows the nearby map crosshair on mobile and hides it while Settings is open', async () => {
     mockMobileViewport()
     const user = userEvent.setup()
     render(<App />)
 
-    expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Settings' }))
 
@@ -581,7 +581,7 @@ describe('Settings surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
-    expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
   it('hides and restores the nearby crosshair around desktop Settings', async () => {
@@ -646,7 +646,7 @@ describe('Settings surface', () => {
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('applies a chosen theme immediately and starts at System after remount', async () => {
+  it('applies and remembers a chosen theme after remount', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
     const firstRender = render(<App />)
@@ -654,13 +654,14 @@ describe('Settings surface', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     await user.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('navus:theme-preference:v1')).toBe('dark')
 
     firstRender.unmount()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    expect((screen.getByRole('radio', { name: 'System' }) as HTMLInputElement).checked).toBe(true)
-    expect(document.documentElement.dataset.theme).toBe('light')
+    expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
+    expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
   it('closes with Escape and returns focus to the Settings button', async () => {

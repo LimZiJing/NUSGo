@@ -30,6 +30,16 @@ const isLink = (path) => {
   }
 };
 
+// Unlike existsSync, this is true for a dangling symlink, so a destination is never written through a link.
+const occupied = (path) => {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 if (process.argv.includes("--unlink")) {
   for (const rel of LINKED_DIRS) {
     const dest = join(worktree, rel);
@@ -45,7 +55,7 @@ for (const rel of LINKED_DIRS) {
   const src = join(shared, rel);
   const dest = join(worktree, rel);
   if (!existsSync(src)) console.log(`worktree-setup: skip ${rel} (missing in shared checkout)`);
-  else if (existsSync(dest) || isLink(dest)) console.log(`worktree-setup: skip ${rel} (already present)`);
+  else if (occupied(dest)) console.log(`worktree-setup: skip ${rel} (already present)`);
   else {
     symlinkSync(src, dest, "junction");
     console.log(`worktree-setup: linked ${rel}`);
@@ -56,7 +66,7 @@ for (const rel of COPIED_FILES) {
   const src = join(shared, rel);
   const dest = join(worktree, rel);
   if (!existsSync(src)) console.log(`worktree-setup: skip ${rel} (missing in shared checkout)`);
-  else if (existsSync(dest)) console.log(`worktree-setup: skip ${rel} (already present)`);
+  else if (occupied(dest)) console.log(`worktree-setup: skip ${rel} (already present)`);
   else {
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(src, dest);

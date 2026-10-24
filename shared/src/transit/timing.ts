@@ -14,6 +14,9 @@ export const SHUTTLE_TIMING_WAITING_POLICY = 'unavailable-without-verified-headw
 const METRES_PER_LATITUDE_DEGREE = 110540
 const METRES_PER_LONGITUDE_DEGREE = 111320
 const MAX_STOP_DISTANCE_METRES = 50
+
+// Passes this close are equally good matches for a stop, so the earliest one wins.
+const STOP_ON_LINE_METRES = 10
 const PROJECTION_EPSILON_METRES = 0.001
 const BASELINE_SPEED_MPS = 15 * 1609.344 / 3600
 const LOWER_SPEED_MPS = 10 * 1609.344 / 3600
@@ -161,29 +164,45 @@ function projectPointOntoLine(
   return projections.sort((first, second) => first.distanceAlongLine - second.distanceAlongLine)
 }
 
+interface PlacementStep {
+  readonly candidate: LineProjection
+  readonly totalDistanceToLine: number
+  readonly previous: PlacementStep | null
+}
+
+// Picks one projection per stop, in order along the line, minimising the stops' total distance to the line.
+// Distances under STOP_ON_LINE_METRES tie, so an early pass that is close enough beats a slightly closer later one.
 function selectOrderedProjections(
   candidatesByStop: readonly (readonly LineProjection[])[],
-  stopIndex: number,
-  previousDistance: number,
 ): readonly LineProjection[] | null {
-  if (stopIndex === candidatesByStop.length) return []
-
-  const candidates = candidatesByStop[stopIndex]
-    .filter((candidate) => (
-      candidate.distanceToLine <= MAX_STOP_DISTANCE_METRES &&
-      candidate.distanceAlongLine > previousDistance + PROJECTION_EPSILON_METRES
-    ))
-
-  for (const candidate of candidates) {
-    const remaining = selectOrderedProjections(
-      candidatesByStop,
-      stopIndex + 1,
-      candidate.distanceAlongLine,
-    )
-    if (remaining) return [candidate, ...remaining]
+  let previousLayer: readonly PlacementStep[] = []
+  for (const [stopIndex, stopCandidates] of candidatesByStop.entries()) {
+    const layer: PlacementStep[] = []
+    for (const candidate of stopCandidates) {
+      if (candidate.distanceToLine > MAX_STOP_DISTANCE_METRES) continue
+      let previous: PlacementStep | null = null
+      for (const step of previousLayer) {
+        if (step.candidate.distanceAlongLine + PROJECTION_EPSILON_METRES >= candidate.distanceAlongLine) continue
+        if (!previous || step.totalDistanceToLine < previous.totalDistanceToLine) previous = step
+      }
+      if (stopIndex > 0 && !previous) continue
+      layer.push({
+        candidate,
+        totalDistanceToLine: Math.max(candidate.distanceToLine, STOP_ON_LINE_METRES) + (previous?.totalDistanceToLine ?? 0),
+        previous,
+      })
+    }
+    if (layer.length === 0) return null
+    previousLayer = layer
   }
 
-  return null
+  let best: PlacementStep | null = null
+  for (const step of previousLayer) {
+    if (!best || step.totalDistanceToLine < best.totalDistanceToLine) best = step
+  }
+  const placed: LineProjection[] = []
+  for (let step = best; step; step = step.previous) placed.push(step.candidate)
+  return placed.reverse()
 }
 
 /**
@@ -200,7 +219,7 @@ export function placeRouteStopsOnLine(
     if (!stop) return []
     return projectPointOntoLine([stop.longitude, stop.latitude], line)
   })
-  return selectOrderedProjections(candidatesByStop, 0, Number.NEGATIVE_INFINITY)
+  return selectOrderedProjections(candidatesByStop)
 }
 
 function routeProjections(

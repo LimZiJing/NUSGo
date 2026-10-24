@@ -3,6 +3,7 @@ import {
   NavigationControl,
   setWorkerUrl,
   type MapMouseEvent,
+  type MapTouchEvent,
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { MapSessionOptions, MapViewportInsets } from '../../app/contracts/map'
@@ -25,6 +26,11 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 setWorkerUrl(maplibreWorkerUrl)
 
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
+const DOUBLE_TAP_MS = 300
+const TAP_SLOP_PX = 20
+const DOUBLE_ZOOM_DEBOUNCE_MS = 500
+const DOUBLE_ZOOM_DURATION_MS = 300
+
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
 class NusgoAttributionControl {
@@ -126,6 +132,65 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     map.panBy([moved.x - clientWidth / 2, moved.y - clientHeight / 2], { animate: false })
   }
 
+  // MapLibre's double-click and double-tap zoom always anchors on the pointer and has no
+  // `around` option, so while the crosshair shows they are replaced by a plain zoom about
+  // the padded centre.
+  let touchStart: { readonly time: number; readonly x: number; readonly y: number } | null = null
+  let lastTap: { readonly time: number; readonly x: number; readonly y: number } | null = null
+  let lastDoubleZoomAt = 0
+
+  const zoomAboutCenter = (zoomOut: boolean): void => {
+    lastDoubleZoomAt = Date.now()
+    if (zoomOut) map.zoomOut({ duration: DOUBLE_ZOOM_DURATION_MS })
+    else map.zoomIn({ duration: DOUBLE_ZOOM_DURATION_MS })
+  }
+
+  const handleDoubleClick = (event: MapMouseEvent) => {
+    event.preventDefault()
+    // A touch double-tap can also raise dblclick; one gesture should zoom once.
+    if (Date.now() - lastDoubleZoomAt < DOUBLE_ZOOM_DEBOUNCE_MS) return
+    zoomAboutCenter(event.originalEvent.shiftKey)
+  }
+
+  const handleTouchStart = (event: MapTouchEvent) => {
+    const { touches } = event.originalEvent
+    if (touches.length !== 1) {
+      touchStart = null
+      lastTap = null
+      return
+    }
+    touchStart = { time: Date.now(), x: touches[0].clientX, y: touches[0].clientY }
+  }
+
+  const handleTouchEnd = (event: MapTouchEvent) => {
+    const { touches, changedTouches } = event.originalEvent
+    const start = touchStart
+    touchStart = null
+    if (!start || touches.length > 0 || changedTouches.length !== 1) return
+    const now = Date.now()
+    const { clientX: x, clientY: y } = changedTouches[0]
+    const isTap = now - start.time < DOUBLE_TAP_MS && Math.hypot(x - start.x, y - start.y) < TAP_SLOP_PX
+    if (!isTap) {
+      lastTap = null
+      return
+    }
+    const previous = lastTap
+    if (previous && now - previous.time < DOUBLE_TAP_MS && Math.hypot(x - previous.x, y - previous.y) < TAP_SLOP_PX * 2) {
+      lastTap = null
+      zoomAboutCenter(false)
+      return
+    }
+    lastTap = { time: now, x, y }
+  }
+
+  const removeDoubleZoomHandlers = (): void => {
+    map.off('dblclick', handleDoubleClick)
+    map.off('touchstart', handleTouchStart)
+    map.off('touchend', handleTouchEnd)
+    touchStart = null
+    lastTap = null
+  }
+
   const handleMapClick = (event: MapMouseEvent) => {
     if (disposed) return
 
@@ -188,6 +253,15 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       map.scrollZoom.enable(zoomOptions)
       map.touchZoomRotate.disable()
       map.touchZoomRotate.enable(zoomOptions)
+      if (enabled) {
+        map.doubleClickZoom.disable()
+        map.on('dblclick', handleDoubleClick)
+        map.on('touchstart', handleTouchStart)
+        map.on('touchend', handleTouchEnd)
+      } else {
+        removeDoubleZoomHandlers()
+        map.doubleClickZoom.enable()
+      }
     },
     dispose() {
       if (disposed) return
@@ -195,6 +269,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
+      removeDoubleZoomHandlers()
       if (options.onMapCenterChange) {
         map.off('moveend', reportMapCenter)
         map.off('resize', reportMapCenter)

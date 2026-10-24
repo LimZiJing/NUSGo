@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { waitForMapStyleLoaded } from './lifecycle'
 import { createMapLifecycle } from './lifecycle'
 import {
@@ -48,6 +48,9 @@ vi.mock('maplibre-gl', () => ({
     readonly unproject = vi.fn(([x, y]: [number, number]) => ({ lng: x, lat: y }))
     readonly project = vi.fn((point: { lng: number; lat: number }) => ({ x: point.lng, y: point.lat }))
     readonly setPadding = vi.fn()
+    readonly zoomIn = vi.fn()
+    readonly zoomOut = vi.fn()
+    readonly doubleClickZoom = { enable: vi.fn(), disable: vi.fn() }
     readonly panBy = vi.fn()
     readonly scrollZoom = { enable: vi.fn(), disable: vi.fn() }
     readonly touchZoomRotate = { enable: vi.fn(), disable: vi.fn() }
@@ -100,6 +103,9 @@ type FakeMap = {
   readonly getContainer: ReturnType<typeof vi.fn>
   readonly unproject: ReturnType<typeof vi.fn>
   readonly setPadding: ReturnType<typeof vi.fn>
+  readonly zoomIn: ReturnType<typeof vi.fn>
+  readonly zoomOut: ReturnType<typeof vi.fn>
+  readonly doubleClickZoom: { enable: ReturnType<typeof vi.fn>; disable: ReturnType<typeof vi.fn> }
   readonly panBy: ReturnType<typeof vi.fn>
   readonly scrollZoom: { enable: ReturnType<typeof vi.fn>; disable: ReturnType<typeof vi.fn> }
   readonly touchZoomRotate: { enable: ReturnType<typeof vi.fn>; disable: ReturnType<typeof vi.fn> }
@@ -159,6 +165,79 @@ describe('map lifecycle visible-centre zoom', () => {
     expect(map.scrollZoom.enable).toHaveBeenLastCalledWith(undefined)
     expect(map.touchZoomRotate.enable).toHaveBeenLastCalledWith(undefined)
     lifecycle.dispose()
+  })
+
+  describe('double-click and double-tap zoom', () => {
+    const touch = (x: number, y: number) => ({ clientX: x, clientY: y })
+    const tap = (map: FakeMap, x = 100, y = 200) => {
+      map.emit('touchstart', { originalEvent: { touches: [touch(x, y)], changedTouches: [touch(x, y)] } })
+      map.emit('touchend', { originalEvent: { touches: [], changedTouches: [touch(x, y)] } })
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-10-24T08:00:00Z'))
+    })
+    afterEach(() => vi.useRealTimers())
+
+    it('replaces pointer-anchored double-click zoom with centre zoom while enabled', () => {
+      const { lifecycle, map } = createLifecycle()
+      lifecycle.setVisibleCenterZoom(true)
+
+      expect(map.doubleClickZoom.disable).toHaveBeenCalled()
+      const preventDefault = vi.fn()
+      map.emit('dblclick', { preventDefault, originalEvent: { shiftKey: false } })
+      expect(preventDefault).toHaveBeenCalled()
+      expect(map.zoomIn).toHaveBeenCalledWith({ duration: 300 })
+
+      vi.advanceTimersByTime(1000)
+      map.emit('dblclick', { preventDefault, originalEvent: { shiftKey: true } })
+      expect(map.zoomOut).toHaveBeenCalledWith({ duration: 300 })
+      lifecycle.dispose()
+    })
+
+    it('zooms in once on a double-tap, even if dblclick follows', () => {
+      const { lifecycle, map } = createLifecycle()
+      lifecycle.setVisibleCenterZoom(true)
+
+      tap(map)
+      vi.advanceTimersByTime(150)
+      tap(map)
+      map.emit('dblclick', { preventDefault: vi.fn(), originalEvent: { shiftKey: false } })
+
+      expect(map.zoomIn).toHaveBeenCalledTimes(1)
+      lifecycle.dispose()
+    })
+
+    it('ignores slow taps, taps far apart, and dragged touches', () => {
+      const { lifecycle, map } = createLifecycle()
+      lifecycle.setVisibleCenterZoom(true)
+
+      tap(map)
+      vi.advanceTimersByTime(600)
+      tap(map)
+      vi.advanceTimersByTime(100)
+      tap(map, 300, 500)
+      map.emit('touchstart', { originalEvent: { touches: [touch(0, 0)], changedTouches: [touch(0, 0)] } })
+      map.emit('touchend', { originalEvent: { touches: [], changedTouches: [touch(80, 0)] } })
+      tap(map, 80, 0)
+
+      expect(map.zoomIn).not.toHaveBeenCalled()
+      lifecycle.dispose()
+    })
+
+    it('restores MapLibre double-click zoom and stops handling taps when disabled', () => {
+      const { lifecycle, map } = createLifecycle()
+      lifecycle.setVisibleCenterZoom(true)
+      lifecycle.setVisibleCenterZoom(false)
+
+      expect(map.doubleClickZoom.enable).toHaveBeenCalled()
+      tap(map)
+      vi.advanceTimersByTime(100)
+      tap(map)
+      expect(map.zoomIn).not.toHaveBeenCalled()
+      lifecycle.dispose()
+    })
   })
 
   it('does nothing when the mode is unchanged', () => {

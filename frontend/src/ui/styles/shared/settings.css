@@ -1,0 +1,120 @@
+.settings-entry-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.settings-back-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .settings-back-button:hover {
+    background: var(--surface-raised);
+  }
+}
+
+.settings-entry-button:focus-visible,
+.settings-back-button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.settings-entry-icon,
+.settings-back-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.settings-surface {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-surface-body {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+}
+
+.settings-surface-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-surface-header h2 {
+  margin: 0;
+  color: var(--text-heading);
+  font: 600 var(--font-size-2xl)/1.2 var(--sans);
+}
+
+.settings-surface-header h2:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 4px;
+}
+
+.settings-content-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-inline-end: calc(-1 * var(--space-1));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0 var(--space-3);
+  padding-inline-end: var(--space-3);
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 768px) {
+  .navigation-panel.settings-surface {
+    position: absolute;
+    z-index: 15;
+    inset: 0;
+    height: auto;
+    padding: max(24px, env(safe-area-inset-top, 0px))
+      max(16px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-left, 0px));
+    border: 0;
+    border-radius: 0;
+    background: var(--surface-overlay);
+    box-shadow: var(--shadow-sheet);
+  }
+
+  .settings-content-scroll {
+    margin-inline-end: 0;
+    padding-inline-end: 0;
+    scrollbar-width: none;
+  }
+
+  .settings-content-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}

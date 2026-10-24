@@ -112,10 +112,10 @@ export interface NavigationSession {
   setNearbyStopHighlight(stopIds: readonly string[]): void
   setPlanLayersVisible(visible: boolean): void
   enableLocationTracking(): void
+  disableLocationTracking(): void
   locateUser(): void
   useCurrentLocationForOrigin(): void
   cancelOriginLocationRequest(): void
-  disableLocationTracking(): void
   hideLocationMarker(): void
   showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
@@ -811,7 +811,6 @@ export function createNavigationSession(
       cancelOriginLocationRequest()
       dependencies.locationTracker.disable()
     },
-
     hideLocationMarker() {
       if (disposed) return
       dependencies.map.setCurrentLocation(state.location.latestFix, false)

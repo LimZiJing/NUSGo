@@ -96,6 +96,25 @@ describe('useStopsWorkflow', () => {
     expect(enableLocationTracking).not.toHaveBeenCalled()
   })
 
+  it('exposes canonical favourite stop names and persists removals and clear-all actions', async () => {
+    localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A', 'STOP-B']))
+    const { result } = renderHook(() => useStopsWorkflow(createOptions({ active: false })))
+
+    await waitFor(() => expect(result.current.favoriteStops).toHaveLength(2))
+    expect(result.current.favoriteStops.map(({ name }) => name)).toEqual([
+      transitIndex.stopById.get('STOP-A')?.longName,
+      transitIndex.stopById.get('STOP-B')?.longName,
+    ])
+
+    act(() => result.current.removeFavorite('STOP-A'))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual(['STOP-B']))
+
+    act(() => result.current.clearFavoriteStops())
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual([]))
+  })
+
   it('uses the settled map centre after the location button moves the camera', async () => {
     const locateFromControl = vi.fn()
     const options = createOptions({

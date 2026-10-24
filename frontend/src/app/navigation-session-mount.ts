@@ -118,7 +118,6 @@ export interface NavigationSessionCommands {
   readonly locateUser: () => void
   readonly useCurrentLocationForOrigin: () => void
   readonly cancelOriginLocationRequest: () => void
-  readonly disableLocationTracking: () => void
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
@@ -164,7 +163,6 @@ function createNavigationSessionCommands(
     locateUser: () => session?.locateUser(),
     useCurrentLocationForOrigin: () => session?.useCurrentLocationForOrigin(),
     cancelOriginLocationRequest: () => session?.cancelOriginLocationRequest(),
-    disableLocationTracking: () => session?.disableLocationTracking(),
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),

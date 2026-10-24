@@ -31,6 +31,7 @@ export interface StopsWorkflowOptions {
 
 export interface StopsWorkflow {
   readonly state: StopsState
+  readonly favoriteStops: readonly { readonly id: string; readonly name: string }[]
   readonly selectedStop: StopDetailsModel | null
   readonly stopListEntries: readonly StopListEntry[]
   readonly stopListLoading: boolean
@@ -45,6 +46,8 @@ export interface StopsWorkflow {
   readonly focusStop: (stopId: string) => void
   readonly selectStopList: (list: 'nearby' | 'favourites') => void
   readonly toggleFavorite: (stopId: string) => void
+  readonly removeFavorite: (stopId: string) => void
+  readonly clearFavoriteStops: () => void
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
@@ -149,6 +152,10 @@ export function useStopsWorkflow({
       expanded: state.expandedStopIds[state.list].includes(stop.id),
     }))
     : []
+  const favoriteStops = useMemo(() => state.favoriteStopIds.flatMap((stopId) => {
+    const stop = transitIndex?.stopById.get(stopId)
+    return stop ? [{ id: stop.id, name: stop.longName }] : []
+  }), [state.favoriteStopIds, transitIndex])
 
   useEffect(() => {
     if (mapCenter) {
@@ -195,6 +202,12 @@ export function useStopsWorkflow({
   const toggleFavorite = useCallback((stopId: string): void => {
     dispatch({ type: 'toggle-favorite', stopId })
   }, [dispatch])
+  const removeFavorite = useCallback((stopId: string): void => {
+    dispatch({ type: 'remove-favorite', stopId })
+  }, [dispatch])
+  const clearFavoriteStops = useCallback((): void => {
+    dispatch({ type: 'clear-favorites' })
+  }, [dispatch])
   const toggleExpanded = useCallback((stopId: string): void => {
     dispatch({ type: 'toggle-expanded', stopId })
   }, [dispatch])
@@ -219,6 +232,7 @@ export function useStopsWorkflow({
 
   return {
     state,
+    favoriteStops,
     selectedStop,
     stopListEntries,
     stopListLoading: !transitIndex || (state.list === 'nearby' && !mapCenter),
@@ -231,6 +245,8 @@ export function useStopsWorkflow({
     focusStop,
     selectStopList,
     toggleFavorite,
+    removeFavorite,
+    clearFavoriteStops,
     toggleExpanded,
     dismissLocationNotice,
     backToStops,

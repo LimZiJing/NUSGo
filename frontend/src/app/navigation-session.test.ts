@@ -2511,17 +2511,6 @@ describe('navigation session', () => {
     expect(session.getState().tripRequest.destination).toEqual(expectedDestination)
   })
 
-  it('disables and disposes the location tracker through session commands', () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-
-    session.disableLocationTracking()
-    session.dispose()
-
-    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
-    expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
-  })
-
   it('zooms to the first location fix after locate is pressed and focuses the latest fix on later presses', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

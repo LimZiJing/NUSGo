@@ -50,6 +50,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),
+    fitSelectedJourney: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),

@@ -560,6 +560,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       fitJourneyOptions(currentJourneyOptions)
     },
 
+    fitSelectedJourney() {
+      if (disposed) return
+      const selected = getDisplayedJourneyOptions().filter(({ candidateKey }) => (
+        candidateKey === selectedJourneyCandidateKey
+      ))
+      if (selected.length === 0) return
+      pendingCameraFit = null
+      fitJourneyOptions(selected)
+    },
+
     setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean) {
       if (disposed) return
       currentLocationMarker.setLocation(fix, visible)

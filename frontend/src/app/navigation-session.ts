@@ -141,6 +141,7 @@ export interface NavigationSession {
   zoomIn(): void
   zoomOut(): void
   fitJourneyRoutes(): void
+  fitSelectedJourney(): void
   resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
@@ -947,6 +948,11 @@ export function createNavigationSession(
     fitJourneyRoutes() {
       if (disposed) return
       dependencies.map.fitJourneyRoutes()
+    },
+
+    fitSelectedJourney() {
+      if (disposed) return
+      dependencies.map.fitSelectedJourney()
     },
 
     resetView() {

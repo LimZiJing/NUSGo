@@ -83,19 +83,6 @@
     min-height: var(--control-height-lg);
   }
 
-  .fit-routes-control {
-    position: absolute;
-    z-index: 13;
-    top: calc(var(--map-control-inset-top) + var(--map-control-row-step));
-    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
-    pointer-events: auto;
-  }
-
-  /* With no location chip above it (Plan hides it above the collapsed detent), take the top row. */
-  .map-control-stack:not(:has(.location-control)) > .fit-routes-control {
-    top: var(--map-control-inset-top);
-  }
-
   .location-control-chip:focus-visible {
     outline: 3px solid var(--focus-ring);
     outline-offset: 2px;

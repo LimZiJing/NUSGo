@@ -126,6 +126,7 @@ export interface NavigationSessionCommands {
   readonly zoomIn: () => void
   readonly zoomOut: () => void
   readonly fitJourneyRoutes: () => void
+  readonly fitSelectedJourney: () => void
   readonly resetView: () => void
 }
 
@@ -171,6 +172,7 @@ function createNavigationSessionCommands(
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
     fitJourneyRoutes: () => session?.fitJourneyRoutes(),
+    fitSelectedJourney: () => session?.fitSelectedJourney(),
     resetView: () => session?.resetView(),
   }
 }

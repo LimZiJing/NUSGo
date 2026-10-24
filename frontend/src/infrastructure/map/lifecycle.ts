@@ -120,7 +120,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     // and route-line clicks belong to their own interactions.
     const eventTarget = event.originalEvent.target
     if (eventTarget instanceof Element && eventTarget.closest(
-      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control, .fit-routes-control',
+      '.maplibregl-marker, .maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
     )) return
 
     const routeLayerIds = [

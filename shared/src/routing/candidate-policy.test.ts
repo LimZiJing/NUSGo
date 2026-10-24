@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pruneUnworthwhileCandidates } from '@nusgo/shared/routing/candidate-policy'
+import { pruneUnworthwhileCandidates } from './candidate-policy.ts'
 
 type Item = { readonly name: string, readonly adjustedDurationSeconds: number, readonly boardings: number }
 

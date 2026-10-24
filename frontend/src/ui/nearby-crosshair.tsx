@@ -25,14 +25,7 @@ export function NearbyCrosshair({ insets }: NearbyCrosshairProps) {
         '--nearby-crosshair-left': `${insets.left}px`,
       } as CSSProperties}
     >
-      <svg
-        className="nearby-crosshair"
-        viewBox="0 0 16 16"
-        focusable="false"
-        aria-hidden="true"
-      >
-        <path d="M1 8H4M12 8H15M8 1V4M8 12V15" />
-      </svg>
+      <span className="nearby-crosshair" aria-hidden="true" />
     </div>
   )
 }

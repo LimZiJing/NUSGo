@@ -54,3 +54,11 @@ The selected Matt Pocock skills are installed under `.agents/skills/` and pinned
 - Use `/diagnosing-bugs` for difficult bugs or regressions.
 
 Skills are reusable guidance, not application dependencies. Review their instructions and keep user intent and this file's repository rules authoritative.
+
+## Use theme tokens for colour
+
+Themes live in `frontend/src/ui/styles/shared/themes/` (light, dark, sakura, matcha, nus).
+- Style colours with the existing `var(--...)` tokens (`--text-*`, `--border-*`, `--surface-*`). Never hard-code hex values in component CSS.
+- Check the token exists in every theme file before using it. Prefer fixing a rule with a token that works in all themes over a `:root[data-theme='dark']` override.
+- Use a theme-specific override only when the token's value is right in other themes but wrong in one, and say why in a one-line comment.
+- Judge contrast against the surface the element sits on: in dark mode `--border-subtle` and `--surface-raised` are nearly the same colour, so use `--border-card` for card edges.

@@ -2542,6 +2542,22 @@ describe('navigation session', () => {
     expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledTimes(2)
   })
 
+  it('recentres on a known fix without enabling tracking or requesting a new one', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+
+    session.focusCurrentLocationIfKnown()
+    expect(dependencies.map.focusCurrentLocation).not.toHaveBeenCalled()
+
+    const fix = { longitude: 103.7844, latitude: 1.2933, accuracy: 500, timestamp: 1_000 }
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    session.focusCurrentLocationIfKnown()
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledOnce()
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledWith(fix)
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
+  })
+
   it('uses the Kent Ridge fallback before requesting a location fix', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)

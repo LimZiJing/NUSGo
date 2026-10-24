@@ -4,6 +4,16 @@ Navigate your way in NUS! Check bus timings, locate hard-to-find classrooms, and
 
 **Live at [nusgo.app](https://nusgo.app/)** (v1). NUSGo is an independent project and is not affiliated with NUS.
 
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre_GL_JS-6-396CB2?logo=maplibre&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-22+-5FA04E?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![Valhalla](https://img.shields.io/badge/Valhalla-routing-6C757D)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Licence: MIT](https://img.shields.io/badge/Licence-MIT-yellow)
+
 | Nearby stops | Live journey |
 | --- | --- |
 | <img src="docs/qa/screenshots/prototype-nearby-stops-live.png" width="180" alt="Nearby stops with live arrivals and favourite stops"> | <img src="docs/qa/screenshots/prototype-journey-live.png" width="180" alt="Recommended live journey from Prince George's Park to UTown Auditorium 2"> |

@@ -7,7 +7,7 @@ import type { TripRequest } from '../domain/trip/types'
 import { getTripEndpointCoordinate, type TripEndpointLocationSources } from '../domain/trip/endpoint-location'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type {
   MapCoordinate,
   MapResetTarget,

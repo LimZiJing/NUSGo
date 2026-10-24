@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { validateBuildingCatalogue } from '@navus/shared/venue/validation'
+import { validateBuildingCatalogue } from '@nusgo/shared/venue/validation'
 import { runBuildingsCommand, type CommandPaths } from './command'
 
 function apiBuilding(elementId: string, name: string) {
@@ -20,7 +20,7 @@ describe('runBuildingsCommand', () => {
   let paths: CommandPaths
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'navus-buildings-import-'))
+    root = await mkdtemp(join(tmpdir(), 'nusgo-buildings-import-'))
     paths = {
       snapshotDirectory: join(root, 'snapshots'),
       venues: join(root, 'venues.json'),

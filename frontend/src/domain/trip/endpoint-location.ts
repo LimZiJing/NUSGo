@@ -1,4 +1,4 @@
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '../transit'
 import { isValidLocationCoordinates } from '../location/coordinates'
 import { resolveBuildingLocation, type BuildingIndex } from '../venue/building-index'

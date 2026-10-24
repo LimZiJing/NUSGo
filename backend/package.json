@@ -1,10 +1,10 @@
 {
-  "name": "@navus/backend",
+  "name": "@nusgo/backend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
-    "@navus/shared": "0.0.0",
+    "@nusgo/shared": "0.0.0",
     "express": "^5.1.0"
   },
   "devDependencies": {

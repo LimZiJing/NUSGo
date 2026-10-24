@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { buildBuildingIndex } from './building-index'
 import { linkVenuesToBuildings } from './building-links'
 

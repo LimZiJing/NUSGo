@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { getTripEndpointLabel, searchTripLocations } from './search'
-import type { Building } from '@navus/shared/venue/buildings'
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { Building } from '@nusgo/shared/venue/buildings'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import { buildBuildingIndex } from '../venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 
 const venues: VenueLocationMap = {
   LT17: {

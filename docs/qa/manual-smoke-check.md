@@ -1,4 +1,4 @@
-# NavUS manual smoke checklist
+# NUSGo manual smoke checklist
 
 This is the canonical browser smoke checklist for a release or deployment milestone. It is not a requirement to repeat the full checklist for every implementation task.
 
@@ -15,7 +15,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 - Date: 2026-09-21
 - Browser and version: Codex In-app Browser, Chromium-based; exact version unavailable from the automation session
-- URL or build: `http://127.0.0.1:4173/NavUS/`, production preview from `npm run build` and `vite preview`
+- URL or build: `http://127.0.0.1:4173/NUSGo/`, production preview from `npm run build` and `vite preview`
 - Build commit: `ffe891f` (production preview)
 - Tester: Codex
 - Result: passed with limitations

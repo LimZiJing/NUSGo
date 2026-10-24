@@ -1,6 +1,6 @@
 export const LOCAL_DATA_VERSION = 'development'
 
-export function parseDataVersion(input: unknown, label = 'NAVUS_DATA_VERSION'): string {
+export function parseDataVersion(input: unknown, label = 'NUSGO_DATA_VERSION'): string {
   if (typeof input !== 'string') throw new Error(`${label} must be a full 40-character commit SHA or development`)
 
   const version = input.trim()

@@ -5,7 +5,7 @@ import {
   type FilterSpecification,
   type SymbolLayerSpecification,
 } from 'maplibre-gl'
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import { getOverlayPalette } from './overlay-theme'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
 import {

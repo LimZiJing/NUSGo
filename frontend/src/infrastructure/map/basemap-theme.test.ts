@@ -16,7 +16,7 @@ function createFakeMap() {
     },
     { id: 'label', type: 'symbol', source: 'openmaptiles', paint: { 'text-color': '#222222' } },
     { id: 'natural', type: 'raster', source: 'ne2_shaded', paint: {} },
-    { id: 'route', type: 'line', source: 'navus-route', paint: { 'line-color': '#ff0000' } },
+    { id: 'route', type: 'line', source: 'nusgo-route', paint: { 'line-color': '#ff0000' } },
   ]
   const handlers = new globalThis.Map<string, () => void>()
   return {
@@ -27,7 +27,7 @@ function createFakeMap() {
       sources: {
         openmaptiles: { type: 'vector' },
         ne2_shaded: { type: 'raster' },
-        'navus-route': { type: 'geojson' },
+        'nusgo-route': { type: 'geojson' },
       },
     })),
     getLayer: vi.fn((id: string) => layers.find((layer) => layer.id === id)),

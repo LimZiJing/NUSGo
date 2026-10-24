@@ -17,9 +17,9 @@ import {
   swapTripEndpoints,
 } from '../../../domain/trip/endpoints'
 import type { TripRequest } from '../../../domain/trip/types'
-import type { TransitStopInput } from '@navus/shared/transit/types'
-import type { Path, ScoredPathCandidate } from '@navus/shared/routing/path'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { TransitStopInput } from '@nusgo/shared/transit/types'
+import type { Path, ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {

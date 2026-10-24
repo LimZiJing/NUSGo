@@ -3,23 +3,23 @@
   height: 100%;
 }
 
-.map .navus-map-attribution {
+.map .nusgo-map-attribution {
   padding: 0;
   color: var(--text-muted);
   background-color: transparent;
   font: var(--font-size-xs)/14px var(--sans);
 }
 
-.map .maplibregl-ctrl-bottom-right > .navus-map-attribution {
+.map .maplibregl-ctrl-bottom-right > .nusgo-map-attribution {
   margin-bottom: 0;
 }
 
-.map .navus-map-attribution a {
+.map .nusgo-map-attribution a {
   color: inherit;
   text-decoration: none;
 }
 
-.map .navus-map-attribution a:hover {
+.map .nusgo-map-attribution a:hover {
   text-decoration: underline;
 }
 
@@ -35,17 +35,14 @@
   pointer-events: none;
 }
 
-/* Open plus: four 2px round-capped arms with a 6px empty gap at the centre. */
+/* Centre dot: a solid accent circle with the same glow ring as .bus-stop-marker-nearby. */
 .nearby-crosshair {
   display: block;
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  overflow: visible;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .map-control-stack {
@@ -56,8 +53,8 @@
   pointer-events: none;
 }
 
-.map-control-stack > .theme-toggle,
 .map-control-stack > .location-control,
+.map-control-stack > .settings-entry-button,
 .map-control-stack > .map-legend {
   pointer-events: auto;
 }
@@ -71,25 +68,25 @@
     grid-template-areas:
       'legend'
       'location'
-      'theme'
+      'settings'
       'test';
     gap: 8px;
     align-items: start;
   }
 
-  .map-control-stack > .theme-toggle,
   .map-control-stack > .location-control,
   .map-control-stack > .map-legend {
     position: static;
   }
 
-  .map-control-stack > .theme-toggle {
-    grid-area: theme;
-    justify-self: start;
-  }
-
   .map-control-stack > .location-control {
     grid-area: location;
+  }
+
+  .map-control-stack > .settings-entry-button {
+    position: static;
+    grid-area: settings;
+    justify-self: start;
   }
 
   .map-control-stack > .map-legend {

@@ -5,10 +5,10 @@ import {
   createValidTransitNetwork,
 } from '../../domain/transit/test-fixtures'
 import { createTransitIndex } from '../../domain/transit'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import type { BusRouteGeometry } from '@navus/shared/transit/types'
-import type { Path } from '@navus/shared/routing/path'
-import type { VenueLocation } from '@navus/shared/venue/types'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { VenueLocation } from '@nusgo/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 
 const fakeMapState = vi.hoisted(() => ({

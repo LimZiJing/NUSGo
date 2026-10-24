@@ -1,4 +1,4 @@
-import type { PublicBusArrivalSnapshot } from '@navus/shared'
+import type { PublicBusArrivalSnapshot } from '@nusgo/shared'
 
 export type {
   PublicBusServiceArrivalStatus,
@@ -6,12 +6,12 @@ export type {
   PublicBusServiceArrival,
   PublicBusStopArrivalData,
   PublicBusArrivalSnapshot,
-} from '@navus/shared'
+} from '@nusgo/shared'
 export {
   PUBLIC_BUS_ARRIVAL_REFRESH_INTERVAL_MS,
   PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
-} from '@navus/shared'
+} from '@nusgo/shared'
 
 export function isOlderPublicBusArrivalSnapshot(
   candidate: PublicBusArrivalSnapshot,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from './index'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
 import { createValidTransitNetwork } from './test-fixtures'
 
 function createIndexedNetwork() {

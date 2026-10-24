@@ -4,7 +4,7 @@ import { join } from 'node:path'
 export const BUILDINGS_API_URL = 'https://www.nus-digital-twin.com/api/v1/buildings'
 export const SNAPSHOT_DIRECTORY = 'docs/research/nus-digital-twin'
 
-const USER_AGENT = 'NavUS-building-import/1 (+https://github.com/LimZiJing/NUSGo; one-off snapshot)'
+const USER_AGENT = 'NUSGo-building-import/1 (+https://github.com/LimZiJing/NUSGo; one-off snapshot)'
 const DEFAULT_TIMEOUT_MS = 30_000
 
 /** One record of GET /buildings, as documented by NUS Digital Twin (API v1, beta). */

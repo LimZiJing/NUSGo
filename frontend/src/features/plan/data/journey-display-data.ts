@@ -1,10 +1,10 @@
 import type { TransitIndex } from '../../../domain/transit'
-import type { Path, PathLeg, BusPathLeg } from '@navus/shared/routing/path'
+import type { Path, PathLeg, BusPathLeg } from '@nusgo/shared/routing/path'
 import { formatDuration } from '../../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../../domain/location/search'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 
 export type JourneyTimelineEntry =
   | {

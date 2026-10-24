@@ -4,7 +4,7 @@ export type BuildingSourceRef = {
 }
 
 export type Building = {
-  /** Stable NavUS ID, never reused, independent of the external elementId. */
+  /** Stable NUSGo ID, never reused, independent of the external elementId. */
   readonly id: string
   readonly name: string
   /** Alternative names and codes, used by search only. */

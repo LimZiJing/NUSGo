@@ -1,7 +1,7 @@
 import { getTripEndpointLabel } from '../../../domain/location/search'
 import type { TransitIndex } from '../../../domain/transit'
 import type { TripEndpoint } from '../../../domain/trip/types'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 
 export function getEndpointLabel(

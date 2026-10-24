@@ -42,7 +42,7 @@ describe('local personal waypoint store', () => {
   })
 
   it('writes and reads the versioned personal waypoint envelope', () => {
-    const storage = createMemoryStorage({ 'other-navus-data': 'keep' })
+    const storage = createMemoryStorage({ 'other-nusgo-data': 'keep' })
     const store = createLocalPersonalWaypointStore(() => storage)
     const result = store.replaceAll([waypoint], null)
 
@@ -52,7 +52,7 @@ describe('local personal waypoint store', () => {
       waypoints: [waypoint],
     })
     expect(store.read()).toMatchObject({ kind: 'ready', waypoints: [waypoint] })
-    expect(storage.values.get('other-navus-data')).toBe('keep')
+    expect(storage.values.get('other-nusgo-data')).toBe('keep')
   })
 
   it('loads known waypoint fields when stored records contain fields from a newer version', () => {

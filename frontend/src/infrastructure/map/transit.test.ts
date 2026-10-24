@@ -12,7 +12,7 @@ import {
 import { createDirectionChevronImage } from './route-lanes'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
-import type { BusRouteGeometry } from '@navus/shared/transit/types'
+import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 
 function createValidGeometry(): BusRouteGeometry {
   return {

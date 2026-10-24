@@ -9,4 +9,4 @@ export type {
   Path,
   ScoredPathCandidate,
   PathEndpointLocation,
-} from '@navus/shared/routing/path'
+} from '@nusgo/shared/routing/path'

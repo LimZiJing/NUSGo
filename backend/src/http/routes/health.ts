@@ -4,7 +4,7 @@ import type {
   ApiNotReadyResponse,
   ApiReadinessResponse,
   ApiReadyResponse,
-} from '@navus/shared'
+} from '@nusgo/shared'
 import type { BackendConfig } from '../../config.ts'
 import type { BackendData } from '../../canonical-data.ts'
 import type { BackendLiveData } from '../../live-data/runtime.ts'

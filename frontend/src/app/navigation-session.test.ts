@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
-import type { Path } from '@navus/shared/routing/path'
-import type { ScoredPathCandidate } from '@navus/shared/routing/path'
-import type { ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import type { ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
 import type { VenueSearchResult } from '../domain/venue/search'
-import { validateVenueLocationMap } from '@navus/shared/venue/validation'
+import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import { buildBuildingIndex } from '../domain/venue/building-index'
 import type { LocationTracker } from './contracts/location'
@@ -2510,17 +2510,6 @@ describe('navigation session', () => {
     expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
     expect(session.getState().tripRequest.origin).toEqual(expectedOrigin)
     expect(session.getState().tripRequest.destination).toEqual(expectedDestination)
-  })
-
-  it('disables and disposes the location tracker through session commands', () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-
-    session.disableLocationTracking()
-    session.dispose()
-
-    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
-    expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
   })
 
   it('zooms to the first location fix after locate is pressed and focuses the latest fix on later presses', () => {

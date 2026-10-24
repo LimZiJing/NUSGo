@@ -427,7 +427,7 @@ function formatMode(name, modeReport, local = false) {
 
 function printReport(report) {
   const lines = [
-    `NavUS Path benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
+    `NUSGo Path benchmark baseline ${report.baseline.commit ?? 'unknown'} (${report.baseline.branch ?? 'detached'})`,
     `Runtime: Node ${report.configuration.runtime.node}; ${report.configuration.runtime.platform}/${report.configuration.runtime.architecture}.`,
     `Cases: ${report.configuration.caseCount}; ${report.configuration.samplesPerCase} samples and ${report.configuration.warmupsPerCase} warmups per case; fixed clock ${report.configuration.fixedNow}.`,
   ]
@@ -466,7 +466,7 @@ async function main() {
   let loadedAdapters = []
   let progress
   const report = {
-    benchmark: 'NavUS Pathfinding benchmark',
+    benchmark: 'NUSGo Pathfinding benchmark',
     baseline: getGitIdentity(),
     configuration: {
       mode: options.mode,

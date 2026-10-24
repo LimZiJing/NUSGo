@@ -45,7 +45,7 @@ async function startBackend(): Promise<void> {
   const pathfinding = createPathfindingService(data, liveData, config)
   const server = await listenHttpServer(createApp(config, data, liveData, pathfinding), config.host, config.port)
   liveData.start()
-  console.info('NavUS Express API is listening.', {
+  console.info('NUSGo Express API is listening.', {
     host: config.host,
     port: config.port,
     dataVersion: data.dataVersion,
@@ -55,9 +55,9 @@ async function startBackend(): Promise<void> {
   const shutdown = (signal: NodeJS.Signals) => {
     if (shuttingDown) return
     shuttingDown = true
-    console.info(`NavUS Express API received ${signal}; closing gracefully.`)
+    console.info(`NUSGo Express API received ${signal}; closing gracefully.`)
     void Promise.all([closeHttpServer(server), liveData.stop()]).catch((error: unknown) => {
-      console.error('NavUS Express API shutdown failed.', error instanceof Error ? error.name : typeof error)
+      console.error('NUSGo Express API shutdown failed.', error instanceof Error ? error.name : typeof error)
       process.exitCode = 1
     })
   }
@@ -69,7 +69,7 @@ const entryPath = process.argv[1]
 if (entryPath && resolve(entryPath) === fileURLToPath(import.meta.url)) {
   void startBackend().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : 'Unknown startup error'
-    console.error('NavUS Express API failed to start.', message)
+    console.error('NUSGo Express API failed to start.', message)
     process.exitCode = 1
   })
 }

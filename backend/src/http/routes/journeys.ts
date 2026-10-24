@@ -1,5 +1,5 @@
 import type { Express, RequestHandler } from 'express'
-import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
+import type { ApiJourneyPlanningRequest, ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
 import type { BackendConfig } from '../../config.ts'
 import { LiveDataRequestError } from '../../live-data/runtime.ts'
 import {

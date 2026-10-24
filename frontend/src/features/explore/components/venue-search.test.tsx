@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import { EMPTY_BUILDING_INDEX } from '../../../domain/venue/building-index'

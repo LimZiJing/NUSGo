@@ -1,11 +1,11 @@
 import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
-import { validateTransitMapData } from '@navus/shared/transit/map-data'
-import { validateBuildingCatalogue, validateVenueLocationMap, getVenueCount } from '@navus/shared/venue/validation'
-import { validateShuttleTimingData } from '@navus/shared/transit/timing'
-import type { ShuttleTimingData } from '@navus/shared/transit/timing'
-import type { BuildingCatalogue } from '@navus/shared/venue/buildings'
-import type { TransitNetwork } from '@navus/shared/transit/types'
+import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
+import { validateBuildingCatalogue, validateVenueLocationMap, getVenueCount } from '@nusgo/shared/venue/validation'
+import { validateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
+import type { BuildingCatalogue } from '@nusgo/shared/venue/buildings'
+import type { TransitNetwork } from '@nusgo/shared/transit/types'
 import { buildBuildingIndex, EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { fetchJson } from './json'
 
@@ -33,7 +33,7 @@ export async function loadVenueData(
 async function loadBuildingIndex(signal: AbortSignal, fetcher: JsonFetcher): Promise<BuildingIndex> {
   try {
     const catalogue = await loadBuildingCatalogue(signal, fetcher)
-    return buildBuildingIndex(catalogue.buildings)
+    return buildBuildingIndex(catalogue.buildings, catalogue.source)
   } catch (error) {
     if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
     console.error('Building catalogue unavailable; continuing without buildings:', error)

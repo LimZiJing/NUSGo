@@ -566,3 +566,114 @@ describe('mobile drawer tab switches', () => {
     expect(viewports.every((viewport) => viewport.hasAttribute('data-open'))).toBe(true)
   })
 })
+
+describe('Settings surface', () => {
+  it('shows the nearby map crosshair on mobile and hides it while Settings is open', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+  })
+
+  it('hides and restores the nearby crosshair around desktop Settings', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+  })
+
+  it('opens and closes on desktop without changing the active workflow', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    const settingsButton = screen.getByRole('button', { name: 'Settings' })
+    await user.click(settingsButton)
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(document.activeElement).toBe(settingsButton)
+  })
+
+  it('leaves the mobile navigation pill usable and closes when a workflow is selected', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Plan trip panel' }))
+    expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
+
+    appHarness.session.locateUser.mockClear()
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('true')
+    expect(appHarness.session.locateUser).not.toHaveBeenCalled()
+    expect(screen.getByRole('navigation', { name: 'Map navigation tabs' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
+    expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
+    expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('applies and remembers a chosen theme after remount', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    const firstRender = render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('radio', { name: 'Dark' }))
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('navus:theme-preference:v1')).toBe('dark')
+
+    firstRender.unmount()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('closes with Escape and returns focus to the Settings button', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+    const settingsButton = screen.getByRole('button', { name: 'Settings' })
+
+    await user.click(settingsButton)
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+    expect(document.activeElement).toBe(settingsButton)
+  })
+})

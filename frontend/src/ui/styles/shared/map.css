@@ -56,9 +56,9 @@
   pointer-events: none;
 }
 
-.map-control-stack > .theme-toggle,
 .map-control-stack > .location-control,
 .map-control-stack > .fit-routes-control,
+.map-control-stack > .settings-entry-button,
 .map-control-stack > .map-legend {
   pointer-events: auto;
 }
@@ -72,26 +72,26 @@
     grid-template-areas:
       'legend'
       'location'
+      'settings'
       'fit'
-      'theme'
       'test';
     gap: 8px;
     align-items: start;
   }
 
-  .map-control-stack > .theme-toggle,
   .map-control-stack > .location-control,
   .map-control-stack > .map-legend {
     position: static;
   }
 
-  .map-control-stack > .theme-toggle {
-    grid-area: theme;
-    justify-self: start;
-  }
-
   .map-control-stack > .location-control {
     grid-area: location;
+  }
+
+  .map-control-stack > .settings-entry-button {
+    position: static;
+    grid-area: settings;
+    justify-self: start;
   }
 
   .map-control-stack > .fit-routes-control {

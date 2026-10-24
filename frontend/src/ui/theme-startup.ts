@@ -1,3 +1,4 @@
-import { applyTheme, getSystemTheme } from './theme'
+import { applyTheme, getSystemTheme, readThemePreference } from './theme'
 
-applyTheme(getSystemTheme())
+const preference = readThemePreference()
+applyTheme(preference === 'system' ? getSystemTheme() : preference)

@@ -12,14 +12,19 @@ import {
   CircleDot,
   DoorOpen,
   EllipsisVertical,
+  ExternalLink,
   Footprints,
+  Info,
+  Map,
   MapPin,
   LocateFixed,
+  Monitor,
   Navigation,
   Moon,
   RotateCw,
   Route,
   Search,
+  Settings,
   Star,
   Sun,
   X,
@@ -80,6 +85,10 @@ export function EllipsisVerticalIcon(props: IconProps) {
   return renderDecorativeIcon(EllipsisVertical, props)
 }
 
+export function ExternalLinkIcon(props: IconProps) {
+  return renderDecorativeIcon(ExternalLink, props)
+}
+
 export function FootprintsIcon(props: IconProps) {
   return renderDecorativeIcon(Footprints, props)
 }
@@ -96,6 +105,10 @@ export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
 }
 
+export function MapIcon(props: IconProps) {
+  return renderDecorativeIcon(Map, props)
+}
+
 export function NavigationIcon(props: IconProps) {
   return renderDecorativeIcon(Navigation, props)
 }
@@ -108,12 +121,24 @@ export function MoonIcon(props: IconProps) {
   return renderDecorativeIcon(Moon, props)
 }
 
+export function MonitorIcon(props: IconProps) {
+  return renderDecorativeIcon(Monitor, props)
+}
+
+export function InfoIcon(props: IconProps) {
+  return renderDecorativeIcon(Info, props)
+}
+
 export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
 }
 
 export function SearchIcon(props: IconProps) {
   return renderDecorativeIcon(Search, props)
+}
+
+export function SettingsIcon(props: IconProps) {
+  return renderDecorativeIcon(Settings, props)
 }
 
 export interface FavoriteIconProps extends IconProps {

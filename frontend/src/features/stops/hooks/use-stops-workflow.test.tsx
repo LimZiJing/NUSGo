@@ -50,6 +50,20 @@ afterEach(() => {
 })
 
 describe('useStopsWorkflow', () => {
+  it('reports one no-live-data state when both arrival sources fail', async () => {
+    const options = createOptions({
+      loadArrivals: async () => { throw new Error('internal arrivals unavailable') },
+      loadPublicArrivals: async () => { throw new Error('public arrivals unavailable') },
+    })
+    const { result } = renderHook(
+      (currentOptions: StopsWorkflowOptions) => useStopsWorkflow(currentOptions),
+      { initialProps: options },
+    )
+
+    await waitFor(() => expect(result.current.noLiveData).toBe(true))
+    expect(result.current.liveArrivalMessage).toBe('No live data')
+  })
+
   it('requests Nearby location when Stops becomes active and location is disabled', async () => {
     const requestLocation = vi.fn()
     const enableLocationTracking = vi.fn()
@@ -80,6 +94,25 @@ describe('useStopsWorkflow', () => {
     expect(locateFromControl).toHaveBeenCalledOnce()
     expect(requestLocation).not.toHaveBeenCalled()
     expect(enableLocationTracking).not.toHaveBeenCalled()
+  })
+
+  it('exposes canonical favourite stop names and persists removals and clear-all actions', async () => {
+    localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A', 'STOP-B']))
+    const { result } = renderHook(() => useStopsWorkflow(createOptions({ active: false })))
+
+    await waitFor(() => expect(result.current.favoriteStops).toHaveLength(2))
+    expect(result.current.favoriteStops.map(({ name }) => name)).toEqual([
+      transitIndex.stopById.get('STOP-A')?.longName,
+      transitIndex.stopById.get('STOP-B')?.longName,
+    ])
+
+    act(() => result.current.removeFavorite('STOP-A'))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual(['STOP-B']))
+
+    act(() => result.current.clearFavoriteStops())
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual([]))
   })
 
   it('uses the settled map centre after the location button moves the camera', async () => {

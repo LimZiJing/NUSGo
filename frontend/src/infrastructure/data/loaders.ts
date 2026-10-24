@@ -33,7 +33,7 @@ export async function loadVenueData(
 async function loadBuildingIndex(signal: AbortSignal, fetcher: JsonFetcher): Promise<BuildingIndex> {
   try {
     const catalogue = await loadBuildingCatalogue(signal, fetcher)
-    return buildBuildingIndex(catalogue.buildings)
+    return buildBuildingIndex(catalogue.buildings, catalogue.source)
   } catch (error) {
     if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
     console.error('Building catalogue unavailable; continuing without buildings:', error)

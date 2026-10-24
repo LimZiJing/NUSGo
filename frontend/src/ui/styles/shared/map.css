@@ -142,6 +142,13 @@
   pointer-events: auto;
 }
 
+.map-control-surface {
+  background: var(--surface-overlay);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-md);
+}
+
 .location-control-chip,
 .fit-routes-control {
   min-height: 40px;
@@ -149,10 +156,6 @@
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);
-  background: var(--surface-overlay);
-  -webkit-backdrop-filter: var(--blur-overlay);
-  backdrop-filter: var(--blur-overlay);
-  box-shadow: var(--glass-edge), var(--shadow-md);
   font: var(--font-size-md)/1.2 var(--sans);
   cursor: pointer;
 }

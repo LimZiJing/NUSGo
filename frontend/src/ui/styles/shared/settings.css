@@ -8,8 +8,6 @@
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-md);
   cursor: pointer;
 }
 

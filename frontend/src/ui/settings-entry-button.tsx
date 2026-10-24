@@ -14,7 +14,7 @@ export function SettingsEntryButton({
 }: SettingsEntryButtonProps) {
   return (
     <button
-      className="settings-entry-button"
+      className="settings-entry-button map-control-surface"
       type="button"
       aria-label="Settings"
       aria-expanded={expanded}

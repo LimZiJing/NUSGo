@@ -7,7 +7,7 @@ export interface FitRoutesControlProps {
 export function FitRoutesControl({ onFit }: FitRoutesControlProps) {
   return (
     <button
-      className="fit-routes-control"
+      className="fit-routes-control map-control-surface"
       type="button"
       aria-label="Fit routes"
       title="Fit routes"

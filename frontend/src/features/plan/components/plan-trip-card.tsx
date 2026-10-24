@@ -122,7 +122,7 @@ export function PlanTripCard({
           disabled={planning}
         />
       </div>
-      {originLocationRequest.error && !origin && (
+      {originLocationRequest.error && (
         <p className="plan-trip-location-status" role="status" aria-live="polite">
           {originLocationRequest.error}
         </p>

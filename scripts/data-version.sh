@@ -6,6 +6,9 @@
 # Needs full git history (actions/checkout with fetch-depth: 0).
 set -euo pipefail
 
+# deploy-prod.sh runs this over SSH from the home directory, so work from the repository root.
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 commit="${1:-HEAD}"
 
 # The contract is the canonical data files and the types shared by both sides. The backend deploy

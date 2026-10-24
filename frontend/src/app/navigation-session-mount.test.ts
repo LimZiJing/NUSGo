@@ -74,6 +74,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     selectMobileRoute: vi.fn(),
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
+    focusCurrentLocationIfKnown: vi.fn(),
     setStopsPinVisible: vi.fn(),
     setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
@@ -258,6 +259,8 @@ describe('navigation session application seam', () => {
     firstCommands.focusStopInStopsTab('STOP-A')
     firstCommands.setStopsPinVisible(true)
     expect(session.focusStopInStopsTab).toHaveBeenCalledWith('STOP-A')
+    firstCommands.focusCurrentLocationIfKnown()
+    expect(session.focusCurrentLocationIfKnown).toHaveBeenCalledOnce()
     expect(session.setStopsPinVisible).toHaveBeenCalledWith(true)
     firstCommands.setPlanLayersVisible(false)
     expect(session.setPlanLayersVisible).toHaveBeenCalledWith(false)

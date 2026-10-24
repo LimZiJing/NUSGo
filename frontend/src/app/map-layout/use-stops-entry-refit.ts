@@ -4,7 +4,7 @@ import type { NavigationSessionCommands } from '../navigation-session-mount'
 import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 
 interface UseStopsEntryRefitOptions {
-  readonly commands: Pick<NavigationSessionCommands, 'focusStopInStopsTab'>
+  readonly commands: Pick<NavigationSessionCommands, 'focusStopInStopsTab' | 'focusCurrentLocationIfKnown'>
   readonly isMobileViewport: boolean
   readonly activeView: NavigationView
   readonly stopsDetent: MobileSheetDetent
@@ -13,6 +13,7 @@ interface UseStopsEntryRefitOptions {
 
 /**
  * Refocuses the remembered Stops stop when Stops becomes active or the remembered stop changes.
+ * With no remembered stop, entering Stops recentres on the device location when one is known.
  * Call it after useMapOverlayLayout so the new insets are already applied.
  * A collapsed mobile Stops sheet leaves the map unobscured, so the camera is left alone.
  */
@@ -33,9 +34,16 @@ export function useStopsEntryRefit({
     stopsDetentRef.current = stopsDetent
   }, [commands, isMobileViewport, stopsDetent])
 
+  const previousViewRef = useRef(activeView)
   useLayoutEffect(() => {
-    if (activeView !== 'stops' || rememberedStopId === null) return
+    const enteredStops = previousViewRef.current !== 'stops' && activeView === 'stops'
+    previousViewRef.current = activeView
+    if (activeView !== 'stops') return
     if (isMobileViewportRef.current && stopsDetentRef.current === 'collapsed') return
-    commandsRef.current.focusStopInStopsTab(rememberedStopId)
+    if (rememberedStopId !== null) {
+      commandsRef.current.focusStopInStopsTab(rememberedStopId)
+    } else if (enteredStops) {
+      commandsRef.current.focusCurrentLocationIfKnown()
+    }
   }, [activeView, rememberedStopId])
 }

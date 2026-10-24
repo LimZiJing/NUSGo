@@ -106,6 +106,8 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  /** Recentres on the latest known device fix without prompting for permission; no-op without a fix. */
+  focusCurrentLocationIfKnown(): void
   /** Refits the active Explore target (selected venue/building or the selected route) with the current insets. */
   refitExploreTarget(): void
   setStopsPinVisible(visible: boolean): void
@@ -690,6 +692,15 @@ export function createNavigationSession(
       enqueueTransition(() => {
         if (disposed || !transitIndex?.stopById.has(stopId)) return
         dependencies.map.focusStopInStopsTab(stopId)
+      })
+    },
+
+    focusCurrentLocationIfKnown() {
+      enqueueTransition(() => {
+        if (disposed) return
+        const fix = dependencies.locationTracker.getState().latestFix
+        if (!fix || !isValidLocationCoordinates(fix.longitude, fix.latitude)) return
+        dependencies.map.focusCurrentLocation(fix)
       })
     },
 

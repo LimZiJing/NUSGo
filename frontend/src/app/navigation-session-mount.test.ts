@@ -27,9 +27,11 @@ function createMapDouble(): MapSession {
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),
+    fitSelectedJourney: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -49,9 +51,11 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     subscribe: vi.fn(() => () => undefined),
     start: vi.fn(async () => undefined),
     setViewportInsets: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitJourneyRoutes: vi.fn(),
+    fitSelectedJourney: vi.fn(),
     refitExploreTarget: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
@@ -72,14 +76,15 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     selectMobileRoute: vi.fn(),
     focusStop: vi.fn(),
     focusStopInStopsTab: vi.fn(),
+    focusCurrentLocationIfKnown: vi.fn(),
     setStopsPinVisible: vi.fn(),
     setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
     enableLocationTracking: vi.fn(),
+    disableLocationTracking: vi.fn(),
     locateUser: vi.fn(),
     useCurrentLocationForOrigin: vi.fn(),
     cancelOriginLocationRequest: vi.fn(),
-    disableLocationTracking: vi.fn(),
     hideLocationMarker: vi.fn(),
     showLocationMarker: vi.fn(),
     back: vi.fn(),
@@ -256,17 +261,17 @@ describe('navigation session application seam', () => {
     firstCommands.focusStopInStopsTab('STOP-A')
     firstCommands.setStopsPinVisible(true)
     expect(session.focusStopInStopsTab).toHaveBeenCalledWith('STOP-A')
+    firstCommands.focusCurrentLocationIfKnown()
+    expect(session.focusCurrentLocationIfKnown).toHaveBeenCalledOnce()
     expect(session.setStopsPinVisible).toHaveBeenCalledWith(true)
     firstCommands.setPlanLayersVisible(false)
     expect(session.setPlanLayersVisible).toHaveBeenCalledWith(false)
     firstCommands.enableLocationTracking()
     firstCommands.locateUser()
-    firstCommands.disableLocationTracking()
     firstCommands.hideLocationMarker()
     firstCommands.showLocationMarker()
     expect(session.enableLocationTracking).toHaveBeenCalledOnce()
     expect(session.locateUser).toHaveBeenCalledOnce()
-    expect(session.disableLocationTracking).toHaveBeenCalledOnce()
     expect(session.hideLocationMarker).toHaveBeenCalledOnce()
     expect(session.showLocationMarker).toHaveBeenCalledOnce()
 

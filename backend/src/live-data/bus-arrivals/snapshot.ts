@@ -2,7 +2,7 @@ import type {
   DataFreshness,
   ShuttleArrivalSnapshot,
   ShuttleRouteArrivalData,
-} from '@navus/shared'
+} from '@nusgo/shared'
 
 export interface BusArrivalStop {
   readonly stopId: string

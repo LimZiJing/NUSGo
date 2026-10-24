@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Path } from '@navus/shared/routing/path'
-import type { ScoredPathCandidate } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import { selectDisplayedJourneyOptions } from './displayed-journey-options'
 
 const origin = { kind: 'stop', id: 'STOP-A' } as const
@@ -141,5 +141,14 @@ describe('selectJourneysForDisplay', () => {
 
     expect(selectDisplayedJourneyOptions([...buses, walking]))
       .toEqual([...buses.slice(0, 3), walking])
+  })
+
+  it('hides a bus Journey more than twice as slow as walking', () => {
+    const sensible = candidate('A1', 'shuttle', 300)
+    const loop = candidate('LOOP', 'shuttle', 1500)
+    const walking = candidate('walk', 'walking', 525)
+
+    expect(selectDisplayedJourneyOptions([loop, walking, sensible]))
+      .toEqual([sensible, walking])
   })
 })

@@ -5,7 +5,7 @@ import type { Path } from '../../../backend/src/pathfinding/path'
 import type { PathWalkingConnection } from '../../../backend/src/pathfinding/search/search-path-candidates'
 import { createLiveBusWaitingTimeProvider } from '../../../backend/src/pathfinding/pipeline/apply-bus-waits'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals'
-import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
+import type { ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
 import type { PathfindingBenchmarkCase } from './contract'
 import { validatePathfindingBenchmarkOutcome } from './outcome'
 

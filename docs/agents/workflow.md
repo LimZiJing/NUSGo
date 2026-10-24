@@ -1,6 +1,6 @@
 # Codex Workflow
 
-This document defines the default collaboration lifecycle for NavUS implementation, investigation, and documentation tasks. It complements the engineering rules in `AGENTS.md` and `docs/agents/coding-standards.md`.
+This document defines the default collaboration lifecycle for NUSGo implementation, investigation, and documentation tasks. It complements the engineering rules in `AGENTS.md` and `docs/agents/coding-standards.md`.
 
 ## 1. Start with one coherent outcome
 

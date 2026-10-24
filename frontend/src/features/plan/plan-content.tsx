@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripEndpointRole, TripLocationSearchResult, TripRequest } from '../../domain/trip/types.ts'
 import type { BuildingIndex } from '../../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { PlanTripCard, type OriginLocationRequestState } from './components/plan-trip-card.tsx'
 import { PlanLocationSearch } from './components/plan-location-search.tsx'
 import { getEndpointLabel } from './components/plan-endpoint-labels.ts'
@@ -26,6 +26,7 @@ interface PlanContentProps {
   onUseCurrentLocationForOrigin?: () => void
   onCancelOriginLocationRequest?: () => void
   onSelectJourneyOption?: (candidateKey: string) => void
+  onFitSelectedJourney?: () => void
   path?: JourneyResultsState
   simulatedAtMs?: number | null
 }
@@ -47,6 +48,7 @@ export function PlanContent({
   onUseCurrentLocationForOrigin,
   onCancelOriginLocationRequest,
   onSelectJourneyOption,
+  onFitSelectedJourney,
   path = { status: 'idle', path: null, candidates: [], error: null },
   simulatedAtMs = null,
 }: PlanContentProps) {
@@ -144,8 +146,8 @@ export function PlanContent({
               venues={venues}
               buildings={buildings}
               networkIndex={networkIndex}
-              simulated={simulatedAtMs !== null}
               onSelectCandidate={onSelectJourneyOption}
+              onFitSelected={onFitSelectedJourney}
             />
           </div>
         )}

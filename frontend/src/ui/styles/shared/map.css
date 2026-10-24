@@ -3,23 +3,23 @@
   height: 100%;
 }
 
-.map .navus-map-attribution {
+.map .nusgo-map-attribution {
   padding: 0;
   color: var(--text-muted);
   background-color: transparent;
   font: var(--font-size-xs)/14px var(--sans);
 }
 
-.map .maplibregl-ctrl-bottom-right > .navus-map-attribution {
+.map .maplibregl-ctrl-bottom-right > .nusgo-map-attribution {
   margin-bottom: 0;
 }
 
-.map .navus-map-attribution a {
+.map .nusgo-map-attribution a {
   color: inherit;
   text-decoration: none;
 }
 
-.map .navus-map-attribution a:hover {
+.map .nusgo-map-attribution a:hover {
   text-decoration: underline;
 }
 
@@ -35,17 +35,14 @@
   pointer-events: none;
 }
 
-/* Open plus: four 2px round-capped arms with a 6px empty gap at the centre. */
+/* Centre dot: a solid accent circle with the same glow ring as .bus-stop-marker-nearby. */
 .nearby-crosshair {
   display: block;
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  overflow: visible;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .map-control-stack {
@@ -56,9 +53,8 @@
   pointer-events: none;
 }
 
-.map-control-stack > .theme-toggle,
 .map-control-stack > .location-control,
-.map-control-stack > .fit-routes-control,
+.map-control-stack > .settings-entry-button,
 .map-control-stack > .map-legend {
   pointer-events: auto;
 }
@@ -72,31 +68,24 @@
     grid-template-areas:
       'legend'
       'location'
-      'fit'
-      'theme'
+      'settings'
       'test';
     gap: 8px;
     align-items: start;
   }
 
-  .map-control-stack > .theme-toggle,
   .map-control-stack > .location-control,
   .map-control-stack > .map-legend {
     position: static;
-  }
-
-  .map-control-stack > .theme-toggle {
-    grid-area: theme;
-    justify-self: start;
   }
 
   .map-control-stack > .location-control {
     grid-area: location;
   }
 
-  .map-control-stack > .fit-routes-control {
+  .map-control-stack > .settings-entry-button {
     position: static;
-    grid-area: fit;
+    grid-area: settings;
     justify-self: start;
   }
 
@@ -145,10 +134,14 @@
   pointer-events: auto;
 }
 
-.location-control-chip,
-.fit-routes-control {
-  min-height: 40px;
-  padding: 8px 10px;
+/* Single source of the glass look for square buttons floating over the map. */
+.map-overlay-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-panel);
   color: var(--text-primary);
@@ -160,36 +153,17 @@
   cursor: pointer;
 }
 
-.location-control-chip {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  padding: 0;
-}
-
-.fit-routes-control {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  padding: 0;
-}
-
-.location-control-chip:active:not(:disabled),
-.fit-routes-control:active:not(:disabled) {
+.map-overlay-button:active:not(:disabled) {
   filter: brightness(0.85);
 }
 
-.fit-routes-control-icon {
-  width: 22px;
-  height: 22px;
-  color: var(--text-secondary);
+.map-overlay-button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
 }
 
-.fit-routes-control:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+.location-control-chip {
+  min-height: 40px;
 }
 
 .location-control-icon {

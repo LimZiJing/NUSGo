@@ -1,10 +1,10 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { TransitIndex } from '../../../domain/transit'
 import { formatDuration } from '../../../domain/trip/duration-format'
-import type { Path } from '@navus/shared/routing/path'
-import type { ScoredPathCandidate } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, FootprintsIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 import {
@@ -33,8 +33,8 @@ interface JourneyResultsProps {
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
   readonly buildings?: BuildingIndex | null
-  readonly simulated?: boolean
   readonly onSelectCandidate?: (candidateKey: string) => void
+  readonly onFitSelected?: () => void
 }
 
 function renderJourneyModeSummary(summary: JourneyCompactSummary) {
@@ -212,14 +212,37 @@ export function JourneyResults({
   networkIndex,
   venues,
   buildings = null,
-  simulated = false,
   onSelectCandidate,
+  onFitSelected,
 }: JourneyResultsProps) {
-  if (state.status !== 'ready' || state.path === null) {
+  const ready = state.status === 'ready' && state.path !== null
+  const candidates = ready
+    ? state.displayedCandidates ?? selectDisplayedJourneyOptions(state.candidates)
+    : []
+  const selectedKey = candidates.some(({ candidateKey }) => candidateKey === state.selectedCandidateKey)
+    ? state.selectedCandidateKey!
+    : candidates[0]?.candidateKey ?? null
+
+  // Selection (map highlight) and expansion are separate: cards start collapsed.
+  const [expandedKey, setExpandedKey] = useState<string | null>(null)
+  const previousSelectedKey = useRef(selectedKey)
+  const candidateKeys = candidates.map(({ candidateKey }) => candidateKey).join('|')
+  useEffect(() => {
+    const previous = previousSelectedKey.current
+    previousSelectedKey.current = selectedKey
+    if (previous === null || !candidateKeys.split('|').includes(previous)) {
+      // A new set of journeys: start collapsed again.
+      setExpandedKey(null)
+    } else if (selectedKey !== null && previous !== selectedKey) {
+      // Choosing another journey (card or map marker) opens that card.
+      setExpandedKey(selectedKey)
+    }
+  }, [selectedKey, candidateKeys])
+
+  if (!ready) {
     return renderJourneyStatus(state)
   }
 
-  const candidates = state.displayedCandidates ?? selectDisplayedJourneyOptions(state.candidates)
   if (candidates.length === 0) {
     return renderJourneyStatus({
       status: 'no-route',
@@ -228,24 +251,12 @@ export function JourneyResults({
       error: null,
     })
   }
-  const selectedCandidateKey = candidates.some(({ candidateKey }) => (
-    candidateKey === state.selectedCandidateKey
-  ))
-    ? state.selectedCandidateKey!
-    : candidates[0]!.candidateKey
+  const selectedCandidateKey = selectedKey!
   return (
     <ol className="journey-results" aria-label="Journey options" aria-live="polite">
       {candidates.map(({ candidateKey, path }, index) => {
         const selected = candidateKey === selectedCandidateKey
-        const hasBusLeg = path.legs.some((leg) => leg.mode === 'shuttle')
-        const planningNotice = path.planningQuality === 'bounded'
-          ? 'This is a valid route found within a short search budget. A faster route may exist.'
-          : null
-        // PlanContent owns the detailed simulated-clock notice; keep this result notice from repeating it.
-        const liveArrivalNotice = !simulated && hasBusLeg
-          ? 'Uses live arrivals where available.'
-          : null
-        const journeyNotice = [planningNotice, liveArrivalNotice].filter(Boolean).join(' ')
+        const expanded = candidateKey === expandedKey
         const titleId = `journey-option-summary-${index + 1}`
         const detailsId = `journey-option-details-${index + 1}`
         const summary = getJourneyCompactSummary(path, networkIndex)
@@ -262,16 +273,24 @@ export function JourneyResults({
                   type="button"
                   className="journey-option-summary"
                   data-candidate-key={candidateKey}
-                  aria-expanded={selected}
+                  aria-expanded={expanded}
                   aria-current={selected ? 'true' : undefined}
                   aria-controls={detailsId}
-                  onClick={() => onSelectCandidate?.(candidateKey)}
+                  onClick={() => {
+                    if (expanded) {
+                      // Already open: the tap recentres the map on this route.
+                      onFitSelected?.()
+                      return
+                    }
+                    setExpandedKey(candidateKey)
+                    onSelectCandidate?.(candidateKey)
+                  }}
                 >
                   <span className="journey-option-summary-topline">
                     <span className="journey-option-duration">{formatDuration(path.totalDurationSeconds)}</span>
                     <span className="journey-option-estimate">
                       {renderJourneyModeSummary(summary)}
-                      <DisclosureChevron expanded={selected} />
+                      <DisclosureChevron expanded={expanded} />
                     </span>
                   </span>
                   <span className="journey-option-summary-bottomline">
@@ -279,20 +298,23 @@ export function JourneyResults({
                     <span className="journey-option-detail">{getJourneyOptionDetail(path, summary)}</span>
                   </span>
                 </button>
+                {expanded && (
+                  <button
+                    type="button"
+                    className="journey-option-collapse"
+                    aria-label={`Collapse journey ${index + 1} details`}
+                    onClick={() => setExpandedKey(null)}
+                  />
+                )}
               </h3>
               <div
                 id={detailsId}
                 className="journey-result-details"
                 aria-labelledby={titleId}
-                hidden={!selected}
+                hidden={!expanded}
               >
-                {selected && (
+                {expanded && (
                   <>
-                    {journeyNotice && (
-                      <p className="journey-notice" role="note">
-                        {journeyNotice}
-                      </p>
-                    )}
                     <ol
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}

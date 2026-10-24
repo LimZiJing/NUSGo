@@ -1,7 +1,7 @@
-import type { TransitGeoJsonPosition } from '@navus/shared/transit/types'
-import { placeRouteStopsOnLine, type ShuttleTimingRecord } from '@navus/shared/transit/timing'
+import type { TransitGeoJsonPosition } from '@nusgo/shared/transit/types'
+import { placeRouteStopsOnLine, type ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
 import { getTripEndpointKey } from '../endpoints.ts'
-import type { TripEndpoint } from '@navus/shared/routing/path'
+import type { TripEndpoint } from '@nusgo/shared/routing/path'
 import type { BusPathLeg, PathEndpointLocation, PathGeometry, WalkingPathLeg } from '../path.ts'
 import { MAX_PATH_ENDPOINT_STOP_CONNECTORS, type PathSearchIndex, type PathSearchInput, type PathWalkingConnection, type ProjectedPoint, type ShuttleRideDefinition, type TransferOption, type WalkingConnector } from './path-search-types.ts'
 

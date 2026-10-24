@@ -1,5 +1,5 @@
 {
-  "name": "@navus/shared",
+  "name": "@nusgo/shared",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +11,7 @@
     "./routing/*": "./src/routing/*.ts"
   },
   "scripts": {
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {

@@ -7,7 +7,7 @@ import {
   assertCompatibleDataVersion,
   generateShuttleTimingData,
   validateTransitMapData,
-} from '@navus/shared'
+} from '@nusgo/shared'
 import { describe, it } from 'node:test'
 import { loadCanonicalData, validateCanonicalData } from './canonical-data.ts'
 
@@ -66,7 +66,7 @@ describe('canonical backend data', () => {
 
   it('loads and validates the same files used by the frontend from a data directory', async () => {
     const inputs = await readInputs()
-    const directory = await mkdtemp(resolve(tmpdir(), 'navus-data-'))
+    const directory = await mkdtemp(resolve(tmpdir(), 'nusgo-data-'))
     try {
       await Promise.all([
         writeFile(resolve(directory, 'venues.json'), JSON.stringify(inputs.venues)),

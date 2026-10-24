@@ -48,6 +48,10 @@
     display: none !important;
   }
 
+  .map-shell[data-settings-open='true'] .map-control-stack > * {
+    visibility: hidden;
+  }
+
   /* Mobile overlay buttons are absolutely positioned; these tokens are the single source of their vertical rhythm. */
   .map-control-stack {
     display: contents;
@@ -67,26 +71,16 @@
     pointer-events: auto;
   }
 
-  .location-control-chip {
-    min-height: var(--control-height-lg);
-  }
-
-  .fit-routes-control {
+  .settings-entry-button {
     position: absolute;
     z-index: 13;
-    top: calc(var(--map-control-inset-top) + var(--map-control-row-step));
-    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+    top: var(--map-control-inset-top);
+    right: max(12px, env(safe-area-inset-right));
     pointer-events: auto;
   }
 
-  /* With no location chip above it (Plan hides it above the collapsed detent), take the top row. */
-  .map-control-stack:not(:has(.location-control)) > .fit-routes-control {
-    top: var(--map-control-inset-top);
-  }
-
-  .location-control-chip:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 2px;
+  .location-control-chip {
+    min-height: var(--control-height-lg);
   }
 
   .main-navigation {

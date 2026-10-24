@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 
 const composeFile = 'docker-compose.valhalla.yml'
 const statusUrl = 'http://127.0.0.1:8002/status'
-const waitTimeoutMs = Number(process.env.NAVUS_VALHALLA_WAIT_MS ?? 1_800_000)
+const waitTimeoutMs = Number(process.env.NUSGO_VALHALLA_WAIT_MS ?? 1_800_000)
 const pollIntervalMs = 2_000
 
 function runCompose(args) {

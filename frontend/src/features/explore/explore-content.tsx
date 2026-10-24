@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'

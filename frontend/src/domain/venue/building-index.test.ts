@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { Building, BuildingCatalogue } from '@navus/shared/venue/buildings'
+import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
 import { buildBuildingIndex, describeBuildingEntry, formatBlockLabel, resolveBuildingLocation, searchBuildings } from './building-index'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {

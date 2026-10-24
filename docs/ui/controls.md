@@ -1,6 +1,6 @@
 # Interface controls
 
-This is the specification for NavUS buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
+This is the specification for NUSGo buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
 
 ## Primitives
 

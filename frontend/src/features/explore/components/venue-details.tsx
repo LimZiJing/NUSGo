@@ -7,7 +7,7 @@ import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Select } from '../../../ui/select'
 import type { BuildingEntry } from '../../../domain/venue/building-index'
-import type { VenueLocation } from '@navus/shared/venue/types'
+import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
 
 interface VenueDetailsProps {
@@ -32,12 +32,12 @@ function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) 
     <section className="venue-nearby-stops" aria-labelledby="venue-nearby-stops-heading">
       <h4 id="venue-nearby-stops-heading">
         <BusIcon />
-        Nearby bus stops within 500 m
+        Nearby bus stops within 250 m
       </h4>
       {!transitAvailable ? (
         <p className="venue-nearby-empty" role="status">Nearby stops are unavailable right now.</p>
       ) : nearbyStops.length === 0 ? (
-        <p className="venue-nearby-empty" role="status">No NUS bus stops within 500 m.</p>
+        <p className="venue-nearby-empty" role="status">No NUS bus stops within 250 m.</p>
       ) : (
         <div className="venue-nearby-stop-list">
           {nearbyStops.map(({ stop, services }) => (

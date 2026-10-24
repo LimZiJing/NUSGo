@@ -11,7 +11,7 @@ import { isMobileLayoutWidth } from '../../domain/layout-breakpoint'
 import type {
   TransitGeoJsonPosition,
   BusRouteGeometry,
-} from '@navus/shared/transit/types'
+} from '@nusgo/shared/transit/types'
 import {
   SELECTED_ROUTE_LANE_STOPS,
   DIRECTION_IMAGE_PIXEL_RATIO,

@@ -1,5 +1,5 @@
-import type { WalkingConnection } from '@navus/shared/routing/walking-connection'
-export type { WalkingConnection } from '@navus/shared/routing/walking-connection'
+import type { WalkingConnection } from '@nusgo/shared/routing/walking-connection'
+export type { WalkingConnection } from '@nusgo/shared/routing/walking-connection'
 
 export interface RoutingCoordinate {
   readonly longitude: number

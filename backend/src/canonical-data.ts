@@ -7,7 +7,7 @@ import {
   validateBuildingCatalogue,
   validateVenueLocationMap,
   validateWalkingStopGraph,
-} from '@navus/shared'
+} from '@nusgo/shared'
 import type {
   BuildingCatalogue,
   ShuttleTimingData,
@@ -15,7 +15,7 @@ import type {
   BusRouteGeometry,
   VenueLocationMap,
   WalkingStopGraph,
-} from '@navus/shared'
+} from '@nusgo/shared'
 
 export interface CanonicalDataInputs {
   readonly venues: unknown

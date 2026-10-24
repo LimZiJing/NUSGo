@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Path, ScoredPathCandidate, TripEndpoint } from '@navus/shared/routing/path'
+import type { Path, ScoredPathCandidate, TripEndpoint } from '@nusgo/shared/routing/path'
 import { getTripEndpointKey } from '../endpoints.ts'
 import type { PathCandidateSearchResult } from '../search/search-path-candidates.ts'
 import type { WalkingRouteEngine } from '../walking/walking-contracts.ts'

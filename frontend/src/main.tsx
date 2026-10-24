@@ -12,9 +12,9 @@ const Gallery = import.meta.env.DEV
   : null
 const showGallery = Gallery !== null && new URLSearchParams(window.location.search).has('gallery')
 
-if (import.meta.env.DEV || __NAVUS_API_ORIGIN__) {
-  void checkApiDataVersion(__NAVUS_API_ORIGIN__, __NAVUS_DATA_VERSION__).catch((error: unknown) => {
-    console.error('NavUS backend compatibility check failed.', error)
+if (import.meta.env.DEV || __NUSGO_API_ORIGIN__) {
+  void checkApiDataVersion(__NUSGO_API_ORIGIN__, __NUSGO_DATA_VERSION__).catch((error: unknown) => {
+    console.error('NUSGo backend compatibility check failed.', error)
   })
 }
 

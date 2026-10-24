@@ -17,9 +17,9 @@ import {
   swapTripEndpoints,
 } from '../../../domain/trip/endpoints'
 import type { TripRequest } from '../../../domain/trip/types'
-import type { TransitStopInput } from '@navus/shared/transit/types'
-import type { Path, ScoredPathCandidate } from '@navus/shared/routing/path'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { TransitStopInput } from '@nusgo/shared/transit/types'
+import type { Path, ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 
 const venues: VenueLocationMap = {
   'COM1-0210': {
@@ -293,6 +293,24 @@ describe('PlanContent trip card', () => {
     />)
     expect(screen.getByRole('button', { name: 'Origin: Current location. Change origin' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Use current location' })).toBeNull()
+  })
+
+  it('shows the origin location notice while a Current location origin is set', () => {
+    render(<PlanContent
+      {...noopControls}
+      venues={venues}
+      networkIndex={networkIndex}
+      tripRequest={{
+        origin: { kind: 'current-location', coordinate: { longitude: 103.12345, latitude: 1.23456 } },
+        destination: { kind: 'venue', id: 'COM1-0210' },
+      }}
+      originLocationRequest={{
+        status: 'error',
+        error: 'Could not update your location. Using your earlier position.',
+      }}
+    />)
+
+    expect(screen.getByText('Could not update your location. Using your earlier position.')).toBeTruthy()
   })
 })
 

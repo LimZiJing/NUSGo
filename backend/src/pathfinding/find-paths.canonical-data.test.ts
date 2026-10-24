@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { createTransitNetworkIndex } from '@navus/shared/transit/index'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
-import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
-import { validateVenueLocationMap } from '@navus/shared/venue/validation'
+import { createTransitNetworkIndex } from '@nusgo/shared/transit/index'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
+import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
+import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import { createFindPathsService } from './find-paths.ts'
 import type { TestTransitData } from './find-paths.test-support.ts'
-import { validateWalkingStopGraph } from '@navus/shared/routing/walking-stop-graph'
+import { validateWalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
@@ -94,5 +94,48 @@ describe('canonical-data path planning regression', () => {
     expect(path?.destination).toEqual({ kind: 'venue', id: 'UT-AUD2' })
     expect(path?.legs.length).toBeGreaterThan(0)
     expect(path?.totalDurationSeconds).toBeGreaterThan(0)
+  })
+
+  it('hides detour bus Paths between PGP stops that are a short walk apart', { timeout: 5_000 }, async () => {
+    const transit = createTransitData()
+    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const walkingConnections = createWalkingConnections()
+    const service = createFindPathsService({
+      routeEngine: { matrixWalking: async () => [], routeWalking: async ({ origin, destination }) => ({
+        distanceMeters: 100,
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      }),
+    },
+      walkingConnectionProvider: { getWalkingConnections: async () => walkingConnections },
+      getTestDepartureMs: () => null,
+      now: Date.now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
+    const candidates = (await service({
+      origin: { kind: 'stop', id: 'PGP' },
+      destination: { kind: 'stop', id: 'PGPR' },
+      venues,
+      transit: {
+        index: transit.index,
+        geometry: transit.geometry,
+        shuttleTiming: transit.shuttleTiming,
+      },
+    }, { signal: new AbortController().signal }))?.candidates ?? []
+
+    const walking = candidates.find(({ path }) => path.legs.every((leg) => leg.mode === 'walking'))
+    expect(walking).toBeDefined()
+    for (const { path, adjustedDurationSeconds } of candidates) {
+      if (path.legs.some((leg) => leg.mode === 'shuttle')) {
+        expect(adjustedDurationSeconds).toBeLessThanOrEqual(walking!.adjustedDurationSeconds * 2)
+      }
+    }
   })
 })

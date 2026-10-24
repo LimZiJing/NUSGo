@@ -1,6 +1,6 @@
 # Running the frontend, Express, and Valhalla separately
 
-NavUS has three local processes: the static frontend, the Express API, and the private Valhalla walking service. Express owns API routes, provider credentials, live-data polling, and Journey calculations. Vite owns the frontend development server and, during development only, forwards `/api` requests to Express.
+NUSGo has three local processes: the static frontend, the Express API, and the private Valhalla walking service. Express owns API routes, provider credentials, live-data polling, and Journey calculations. Vite owns the frontend development server and, during development only, forwards `/api` requests to Express.
 
 The root `npm run dev` command is a convenience that starts Vite, Express, and Valhalla together. The steps below exercise the same services as separate processes, including a built frontend.
 
@@ -49,7 +49,7 @@ With provider credentials unset, Express can still serve the app and calculate w
 
 ## Canonical data and version matching
 
-Express reads the following files from `NAVUS_DATA_DIR`:
+Express reads the following files from `NUSGO_DATA_DIR`:
 
 - `venues.json`
 - `buildings.json`
@@ -60,19 +60,19 @@ Express reads the following files from `NAVUS_DATA_DIR`:
 - `bus-stops.json` (NUS provider mapping)
 - `lta-public-bus-stops.json` (LTA provider mapping)
 
-The checked-in canonical data source is `frontend/public/data`. For a deployment where the backend cannot read the frontend checkout, copy the matching files into a backend data directory and set `NAVUS_DATA_DIR` to that directory. Express loads and validates the files itself; it does not ask Vite or the static web server for data.
+The checked-in canonical data source is `frontend/public/data`. For a deployment where the backend cannot read the frontend checkout, copy the matching files into a backend data directory and set `NUSGO_DATA_DIR` to that directory. Express loads and validates the files itself; it does not ask Vite or the static web server for data.
 
-Relative `NAVUS_DATA_DIR` paths resolve from the backend process working directory. The npm workspace commands run Express from `backend/`, so the example value `../frontend/public/data` points to the checked-in data directory. Use an absolute path when starting Express from a different working directory.
+Relative `NUSGO_DATA_DIR` paths resolve from the backend process working directory. The npm workspace commands run Express from `backend/`, so the example value `../frontend/public/data` points to the checked-in data directory. Use an absolute path when starting Express from a different working directory.
 
-`VITE_DATA_VERSION` is embedded in the frontend build. `NAVUS_DATA_VERSION` identifies the matching backend data set. Keep them equal: both use `development` for the local rehearsal, while a hosted build uses the same source revision value for its frontend and backend data. A version mismatch means the frontend and API may be using different canonical data.
+`VITE_DATA_VERSION` is embedded in the frontend build. `NUSGO_DATA_VERSION` identifies the matching backend data set. Keep them equal: both use `development` for the local rehearsal, while a hosted build uses the commit printed by `scripts/data-version.sh` for both: the last commit that changed `shared/` or `frontend/public/data/`. A version mismatch means the frontend and API may be using different canonical data.
 
-`shuttle-timing.json` is a generated, ignored runtime artifact, not a checked-in source file. `npm run shuttle:timing:generate:geometry` creates it from the canonical network and route geometry. The frontend's predev and prebuild hooks also generate it. Generate it before starting a standalone backend so the file exists in `NAVUS_DATA_DIR`.
+`shuttle-timing.json` is a generated, ignored runtime artifact, not a checked-in source file. `npm run shuttle:timing:generate:geometry` creates it from the canonical network and route geometry. The frontend's predev and prebuild hooks also generate it. Generate it before starting a standalone backend so the file exists in `NUSGO_DATA_DIR`.
 
 `walking-stop-graph.json` is a checked-in derived artifact. Regenerate it with `npm run walking:graph:generate` while local Valhalla is running when the canonical bus stops, walking profile, or routing data changes. The backend validates that the graph's network version and stop IDs match the canonical transit network. Do not regenerate it for an ordinary app start.
 
 ## API addresses and credentials
 
-The root `.env.example` contains frontend settings only. `VITE_API_ORIGIN` is public because Vite embeds it in the browser files. Leave it blank for the Vite development server, which forwards `/api` requests to Express. Hosted production builds require an explicit HTTPS API origin; GitHub Actions reads it from the `NAVUS_API_ORIGIN` repository variable. Until the API is deployed, the Development Pages workflow uses a reserved `.invalid` origin so the frontend can still build and deploy; API-backed features such as live shuttle timings and pathfinding remain unavailable until the real API origin is configured.
+The root `.env.example` contains frontend settings only. `VITE_API_ORIGIN` is public because Vite embeds it in the browser files. Leave it blank for the Vite development server, which forwards `/api` requests to Express. Hosted production builds require an explicit HTTPS API origin; GitHub Actions reads it from the `NUSGO_API_ORIGIN` repository variable. Until the API is deployed, the Development Pages workflow uses a reserved `.invalid` origin so the frontend can still build and deploy; API-backed features such as live shuttle timings and pathfinding remain unavailable until the real API origin is configured.
 
 The local rehearsal uses `.env.local-rehearsal`, which points only to loopback Express. Its build mode accepts HTTP on a loopback address and writes to a separate output directory. The GitHub Pages workflow reads its base path from `actions/configure-pages`, passes it to Vite, and uploads only `frontend/dist`, the hosted build output. Project-site paths therefore follow the repository name, while custom-domain sites use the root path.
 
@@ -93,8 +93,8 @@ The counters and concurrency slots live in the Express process and reset when it
 `backend/Dockerfile` defines an initial local-rehearsal image. Build from the repository root:
 
 ```bash
-docker build -f backend/Dockerfile -t navus-express:236-local .
-docker run --rm --name navus-express-236 -p 127.0.0.1:3001:3001 navus-express:236-local
+docker build -f backend/Dockerfile -t nusgo-express:236-local .
+docker run --rm --name nusgo-express-236 -p 127.0.0.1:3001:3001 nusgo-express:236-local
 ```
 
 The image contains Express, shared runtime modules, production npm dependencies, and the six canonical data artifacts and both provider stop mappings from the same checkout. Timing data is generated during the build using the existing geometry-fallback policy. The Dockerfile-specific context allowlist excludes environment files, host dependencies, unrelated checkout files, and local Valhalla tiles. The runtime uses the unprivileged Node user and launches Node directly so it receives shutdown signals.
@@ -108,24 +108,24 @@ For the integrated rehearsal, provide backend-only configuration at runtime and 
 Phase 0 verification includes the built frontend against this API, exact CORS and preflight, private Valhalla geometry, provider failure/recovery, restart/readiness, shutdown, and separate snapshot/Journey resource measurements. See issue #236 for the acceptance criteria; packaging alone does not complete Phase 0 or authorize hosting.
 ### Repeatable integrated container run
 
-`docker-compose.rehearsal.yml` starts one API and a separate Valhalla service without publishing a Valhalla port. It consumes existing, prebuilt tiles read-only; first prepare them with the ordinary Valhalla setup. Set `NAVUS_VALHALLA_DATA_DIR` to the absolute directory containing `valhalla.json`, `valhalla_tiles`, and `valhalla_tiles.tar`, and `NAVUS_BACKEND_ENV_FILE` to the absolute backend-only environment-file path. Those variables locate files; do not place credential values in shell history. The API defaults to host port 13001 to avoid an existing API on 3001.
+`docker-compose.rehearsal.yml` starts one API and a separate Valhalla service without publishing a Valhalla port. It consumes existing, prebuilt tiles read-only; first prepare them with the ordinary Valhalla setup. Set `NUSGO_VALHALLA_DATA_DIR` to the absolute directory containing `valhalla.json`, `valhalla_tiles`, and `valhalla_tiles.tar`, and `NUSGO_BACKEND_ENV_FILE` to the absolute backend-only environment-file path. Those variables locate files; do not place credential values in shell history. The API defaults to host port 13001 to avoid an existing API on 3001.
 
 From the repository root, with those path variables set:
 
 ```bash
-docker compose -p navus-236 -f docker-compose.rehearsal.yml up --build -d
+docker compose -p nusgo-236 -f docker-compose.rehearsal.yml up --build -d
 ```
 
-Build the frontend with `VITE_API_ORIGIN=http://127.0.0.1:13001` in the process environment and run `npm run build:local-rehearsal`, then `npm run preview:local-rehearsal`. If `NAVUS_API_HOST_PORT` is changed, use that same port in the frontend API origin. Serve on exactly `http://127.0.0.1:5173`, the rehearsal CORS allowlist. The frontend remains static and does not use Vite API handlers. The API overrides container paths, listener, routing URL, and local data version while receiving provider configuration from the environment file at runtime.
+Build the frontend with `VITE_API_ORIGIN=http://127.0.0.1:13001` in the process environment and run `npm run build:local-rehearsal`, then `npm run preview:local-rehearsal`. If `NUSGO_API_HOST_PORT` is changed, use that same port in the frontend API origin. Serve on exactly `http://127.0.0.1:5173`, the rehearsal CORS allowlist. The frontend remains static and does not use Vite API handlers. The API overrides container paths, listener, routing URL, and local data version while receiving provider configuration from the environment file at runtime.
 
 The composition deliberately uses development settings. Production still requires loopback binding and a local trusted proxy; preserve that policy. A production package must put its proxy in the API's network namespace or separately establish and verify a trusted container ingress design. Do not reuse this rehearsal composition as the hosted deployment.
 
 Stop the static preview with Ctrl+C and clean up only this rehearsal project:
 
 ```bash
-docker compose -p navus-236 -f docker-compose.rehearsal.yml down
+docker compose -p nusgo-236 -f docker-compose.rehearsal.yml down
 ```
-To repeat the project-style asset-base check, set the same `VITE_API_ORIGIN` and run `npm --workspace @navus/frontend exec -- vite build --mode local-rehearsal --base=/NavUS/`, then `npm --workspace @navus/frontend exec -- vite preview --mode local-rehearsal --outDir dist-local-rehearsal --host 127.0.0.1 --port 5173 --base=/NavUS/`. Open `http://127.0.0.1:5173/NavUS/`. Build and preview must use the same asset base; API calls still target `/api` on port 13001.
+To repeat the project-style asset-base check, set the same `VITE_API_ORIGIN` and run `npm --workspace @nusgo/frontend exec -- vite build --mode local-rehearsal --base=/NUSGo/`, then `npm --workspace @nusgo/frontend exec -- vite preview --mode local-rehearsal --outDir dist-local-rehearsal --host 127.0.0.1 --port 5173 --base=/NUSGo/`. Open `http://127.0.0.1:5173/NUSGo/`. Build and preview must use the same asset base; API calls still target `/api` on port 13001.
 
 ### Local rehearsal evidence — 22 October 2026
 
@@ -146,10 +146,10 @@ Initial packaging measurements were taken on Windows x64, Docker Desktop's Linux
 | Initial LTA without key | During the initial packaging run, the API returned 503 `provider_unavailable` and the browser displayed unavailable public timings while internal live arrivals worked |
 | Live LTA | Configured backend-only key returned 200 from `lta-datamall` for JSON-array stops KR-MRT and YIH; service 95 at KR-MRT and 95/151 at YIH returned normalized live arrivals (2, 3, and 3 respectively) |
 | Snapshot failure and freshness tests | Targeted existing tests passed 14/14 across snapshot/runtime cases, including incomplete first generation, transient retry, failed-stop retention, total-refresh failure retaining the last good snapshot, and no partial-generation publication; 6/6 Pathfinding tests covered stale and expired stop snapshots. These are deterministic test cases; no live provider outage was injected |
-| Browser | Headless Edge served the built `/NavUS/` bundle; initial Stops showed LIVE NUS arrivals and live public-service rows; Plan returned four geometry-complete candidates with recommended D2 at 14 min; no page errors, all API requests used `http://127.0.0.1:13001`, and no direct provider or Valhalla requests occurred |
+| Browser | Headless Edge served the built `/NUSGo/` bundle; initial Stops showed LIVE NUS arrivals and live public-service rows; Plan returned four geometry-complete candidates with recommended D2 at 14 min; no page errors, all API requests used `http://127.0.0.1:13001`, and no direct provider or Valhalla requests occurred |
 | Network and lifecycle | API published only on host loopback `127.0.0.1:13001`; Valhalla had no host-published port and the bridge contained only the API and Valhalla containers at inspection time. This does not establish API-exclusive access: Docker administrators and other services attached to the bridge can reach Valhalla. SIGTERM shutdown exited 0; temporary rehearsal containers were removed |
 
-At packaging commit `b07bde2`, full checks passed: `npm test` (905 frontend tests, 76 backend Node tests, 76 backend Pathfinding tests), `npm run lint`, `npm run build` with `VITE_API_ORIGIN=https://api.navus.invalid`, and `git diff --check`. This follow-up passed `npm run build:local-rehearsal` and `npm --workspace @navus/frontend exec -- vite build --mode local-rehearsal --base=/NavUS/` with `VITE_API_ORIGIN=http://127.0.0.1:13001`; `node --experimental-strip-types --test backend/src/live-data/bus-arrivals/snapshot.test.ts backend/src/live-data/runtime.test.ts` passed 14/14; `node node_modules/vitest/vitest.mjs run --root backend src/pathfinding/pipeline/apply-bus-waits.test.ts` passed 6/6; and final `git diff --check` passed. The full repository suite was not rerun because this follow-up changes documentation only. The earlier #234 offline pathfinding benchmark passed 50 cases. The frontend build retains its existing large-chunk warning.
+At packaging commit `b07bde2`, full checks passed: `npm test` (905 frontend tests, 76 backend Node tests, 76 backend Pathfinding tests), `npm run lint`, `npm run build` with `VITE_API_ORIGIN=https://api.nusgo.invalid`, and `git diff --check`. This follow-up passed `npm run build:local-rehearsal` and `npm --workspace @nusgo/frontend exec -- vite build --mode local-rehearsal --base=/NUSGo/` with `VITE_API_ORIGIN=http://127.0.0.1:13001`; `node --experimental-strip-types --test backend/src/live-data/bus-arrivals/snapshot.test.ts backend/src/live-data/runtime.test.ts` passed 14/14; `node node_modules/vitest/vitest.mjs run --root backend src/pathfinding/pipeline/apply-bus-waits.test.ts` passed 6/6; and final `git diff --check` passed. The full repository suite was not rerun because this follow-up changes documentation only. The earlier #234 offline pathfinding benchmark passed 50 cases. The frontend build retains its existing large-chunk warning.
 
 Outstanding #236/#102 work: no live NUS/LTA provider outage was injected; snapshot failure and freshness behavior is covered by deterministic tests, not by a live outage rehearsal. The local checks confirm loopback API publication and no host-published Valhalla port, but do not establish API-exclusive Valhalla access; Docker administrators or network peers remain able to connect. Production ingress and its trusted-proxy boundary still need design and verification before deployment. No cloud provisioning, hosted sizing, TLS, public deployment, or release approval is implied.
 

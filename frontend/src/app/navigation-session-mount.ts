@@ -110,6 +110,7 @@ export interface NavigationSessionCommands {
   readonly selectMobileRoute: (routeId: string) => void
   readonly focusStop: (stopId: string) => void
   readonly focusStopInStopsTab: (stopId: string) => void
+  readonly focusCurrentLocationIfKnown: () => void
   readonly refitExploreTarget: () => void
   readonly setStopsPinVisible: (visible: boolean) => void
   readonly setNearbyStopHighlight: (stopIds: readonly string[]) => void
@@ -118,15 +119,16 @@ export interface NavigationSessionCommands {
   readonly locateUser: () => void
   readonly useCurrentLocationForOrigin: () => void
   readonly cancelOriginLocationRequest: () => void
-  readonly disableLocationTracking: () => void
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly setVisibleCenterZoom: (enabled: boolean) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
   readonly zoomOut: () => void
   readonly fitJourneyRoutes: () => void
+  readonly fitSelectedJourney: () => void
   readonly resetView: () => void
 }
 
@@ -156,6 +158,7 @@ function createNavigationSessionCommands(
     selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
     focusStop: (stopId) => session?.focusStop(stopId),
     focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
+    focusCurrentLocationIfKnown: () => session?.focusCurrentLocationIfKnown(),
     refitExploreTarget: () => session?.refitExploreTarget(),
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
     setNearbyStopHighlight: (stopIds) => session?.setNearbyStopHighlight(stopIds),
@@ -164,15 +167,16 @@ function createNavigationSessionCommands(
     locateUser: () => session?.locateUser(),
     useCurrentLocationForOrigin: () => session?.useCurrentLocationForOrigin(),
     cancelOriginLocationRequest: () => session?.cancelOriginLocationRequest(),
-    disableLocationTracking: () => session?.disableLocationTracking(),
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),
     zoomOut: () => session?.zoomOut(),
     fitJourneyRoutes: () => session?.fitJourneyRoutes(),
+    fitSelectedJourney: () => session?.fitSelectedJourney(),
     resetView: () => session?.resetView(),
   }
 }

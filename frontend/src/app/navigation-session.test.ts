@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
-import type { Path } from '@navus/shared/routing/path'
-import type { ScoredPathCandidate } from '@navus/shared/routing/path'
-import type { ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
+import type { Path } from '@nusgo/shared/routing/path'
+import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import type { ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
 import type { VenueSearchResult } from '../domain/venue/search'
-import { validateVenueLocationMap } from '@navus/shared/venue/validation'
+import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import { buildBuildingIndex } from '../domain/venue/building-index'
 import type { LocationTracker } from './contracts/location'
@@ -50,9 +50,11 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),
+    fitSelectedJourney: vi.fn(),
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -146,7 +148,7 @@ async function waitForState(
   })
 }
 
-function createPath(destination: TripEndpoint): Path {
+function createPath(destination: TripEndpoint, durationSeconds = 60): Path {
   return {
     origin: { kind: 'venue', id: 'COM1' },
     destination,
@@ -154,14 +156,14 @@ function createPath(destination: TripEndpoint): Path {
       mode: 'walking',
       from: { kind: 'venue', id: 'COM1' },
       to: destination,
-      durationSeconds: 60,
+      durationSeconds,
       distanceMeters: 100,
       geometry: {
         type: 'LineString',
         coordinates: [[103, 1], [103.001, 1.001]],
       },
     }],
-    totalDurationSeconds: 60,
+    totalDurationSeconds: durationSeconds,
     totalDistanceMeters: 100,
     estimateStatus: 'estimated',
     planningQuality: 'exact',
@@ -442,7 +444,7 @@ describe('navigation session', () => {
 
   it('defaults to the Recommended display option and updates selection without replanning', async () => {
     const busJourney = createBusPath()
-    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' }, 150)
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
       scoreCandidate('walking-option', walkingPath),
@@ -486,7 +488,7 @@ describe('navigation session', () => {
 
   it('resets an alternative selection to Recommended when a new calculation starts', async () => {
     const busJourney = createBusPath()
-    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' })
+    const walkingPath = createPath({ kind: 'stop', id: 'STOP-B' }, 150)
     const result = createPlanningResult(busJourney, [
       scoreCandidate('bus-option', busJourney),
       scoreCandidate('walking-option', walkingPath),
@@ -2415,6 +2417,92 @@ describe('navigation session', () => {
     })
   })
 
+  describe('searching again from a Current location origin', () => {
+    async function startWithCurrentLocationOrigin() {
+      const pathfinder = vi.fn(() => createDeferred<ApiJourneyPlanningResponse>().promise)
+      const dependencies = createDependencies({ pathfinder })
+      const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+      locationTracker.emit({
+        status: 'tracking',
+        latestFix: { longitude: 103.1, latitude: 1.1, accuracy: 10, timestamp: 1_000 },
+      })
+      const session = createNavigationSession(dependencies)
+      await session.start(new AbortController().signal)
+      session.useCurrentLocationForOrigin()
+      await waitForState(session, (state) => state.tripRequest.origin !== null)
+      session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+      return { session, pathfinder, locationTracker }
+    }
+
+    it('plans from the latest fix after the user has moved', async () => {
+      const { session, pathfinder, locationTracker } = await startWithCurrentLocationOrigin()
+      locationTracker.emit({
+        status: 'tracking',
+        latestFix: { longitude: 103.2, latitude: 1.2, accuracy: 10, timestamp: 2_000 },
+      })
+
+      session.searchPaths()
+
+      const movedOrigin = {
+        kind: 'current-location',
+        coordinate: { longitude: 103.2, latitude: 1.2 },
+      }
+      expect(session.getState().tripRequest.origin).toEqual(movedOrigin)
+      expect(pathfinder).toHaveBeenCalledOnce()
+      expect(pathfinder).toHaveBeenCalledWith(
+        expect.objectContaining({ origin: movedOrigin }),
+        expect.anything(),
+      )
+      expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+      session.dispose()
+    })
+
+    it('keeps the earlier origin and shows a notice when the fix is stale', async () => {
+      const { session, pathfinder, locationTracker } = await startWithCurrentLocationOrigin()
+      locationTracker.emit({
+        status: 'stale',
+        latestFix: { longitude: 103.2, latitude: 1.2, accuracy: 10, timestamp: 2_000 },
+      })
+
+      session.searchPaths()
+
+      const earlierOrigin = {
+        kind: 'current-location',
+        coordinate: { longitude: 103.1, latitude: 1.1 },
+      }
+      expect(session.getState().tripRequest.origin).toEqual(earlierOrigin)
+      expect(pathfinder).toHaveBeenCalledWith(
+        expect.objectContaining({ origin: earlierOrigin }),
+        expect.anything(),
+      )
+      expect(session.getState().originLocationRequest).toEqual({
+        status: 'error',
+        error: 'Could not update your location. Using your earlier position.',
+      })
+      session.dispose()
+    })
+
+    it('never replaces a venue origin with the device location', async () => {
+      const pathfinder = vi.fn(() => createDeferred<ApiJourneyPlanningResponse>().promise)
+      const dependencies = createDependencies({ pathfinder })
+      const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+      locationTracker.emit({
+        status: 'tracking',
+        latestFix: { longitude: 103.2, latitude: 1.2, accuracy: 10, timestamp: 2_000 },
+      })
+      const session = createNavigationSession(dependencies)
+      await session.start(new AbortController().signal)
+      session.setTripEndpoint('origin', { kind: 'venue', id: 'COM1' })
+      session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+
+      session.searchPaths()
+
+      expect(session.getState().tripRequest.origin).toEqual({ kind: 'venue', id: 'COM1' })
+      expect(session.getState().originLocationRequest).toEqual({ status: 'idle', error: null })
+      session.dispose()
+    })
+  })
+
   it('stops the origin capture on cancel but leaves tracking on, ignoring a later fix', async () => {
     const dependencies = createDependencies()
     const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
@@ -2511,17 +2599,6 @@ describe('navigation session', () => {
     expect(session.getState().tripRequest.destination).toEqual(expectedDestination)
   })
 
-  it('disables and disposes the location tracker through session commands', () => {
-    const dependencies = createDependencies()
-    const session = createNavigationSession(dependencies)
-
-    session.disableLocationTracking()
-    session.dispose()
-
-    expect(dependencies.locationTracker.disable).toHaveBeenCalledOnce()
-    expect(dependencies.locationTracker.dispose).toHaveBeenCalledOnce()
-  })
-
   it('zooms to the first location fix after locate is pressed and focuses the latest fix on later presses', () => {
     const dependencies = createDependencies()
     const session = createNavigationSession(dependencies)
@@ -2551,6 +2628,22 @@ describe('navigation session', () => {
     session.locateUser()
     expect(dependencies.map.focusCurrentLocation).toHaveBeenLastCalledWith(secondFix.latestFix)
     expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledTimes(2)
+  })
+
+  it('recentres on a known fix without enabling tracking or requesting a new one', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+
+    session.focusCurrentLocationIfKnown()
+    expect(dependencies.map.focusCurrentLocation).not.toHaveBeenCalled()
+
+    const fix = { longitude: 103.7844, latitude: 1.2933, accuracy: 500, timestamp: 1_000 }
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    session.focusCurrentLocationIfKnown()
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledOnce()
+    expect(dependencies.map.focusCurrentLocation).toHaveBeenCalledWith(fix)
+    expect(dependencies.locationTracker.enable).not.toHaveBeenCalled()
   })
 
   it('uses the Kent Ridge fallback before requesting a location fix', () => {

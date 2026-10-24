@@ -1,12 +1,12 @@
-import type { ShuttleTimingData, ShuttleTimingRecord } from '@navus/shared/transit/timing'
-import type { TransitStop } from '@navus/shared/transit/types'
-import type { ShuttleArrivalSnapshot } from '@navus/shared/transit/live-arrivals'
+import type { ShuttleTimingData, ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
+import type { TransitStop } from '@nusgo/shared/transit/types'
+import type { ShuttleArrivalSnapshot } from '@nusgo/shared/transit/live-arrivals'
 import {
   describeShuttleServiceUnavailable,
   evaluateShuttleService,
   type ShuttleServiceEvaluation,
   type ShuttleServiceWindow,
-} from '@navus/shared/transit/service-hours-policy'
+} from '@nusgo/shared/transit/service-hours-policy'
 import type {
   BusWaitingTimeContext,
   BusWaitingTimeProvider,
@@ -15,6 +15,8 @@ import type {
 import type { Path } from '../path.ts'
 
 export const TEST_SHUTTLE_WAIT_SECONDS = 5 * 60
+// A boarding wait at or above this is not a useful option, so the Path is dropped.
+export const MAX_BUS_WAIT_SECONDS = 5 * 60 * 60
 
 interface BoardingStopRequest {
   readonly stopId: string
@@ -239,7 +241,12 @@ function scoreCandidatesWithWaiting(
         boardingStopId: leg.boardingStopId,
         elapsedSeconds,
       } satisfies BusWaitingTimeContext)
-      if (waitingSeconds === null || !Number.isFinite(waitingSeconds) || waitingSeconds < 0) {
+      if (
+        waitingSeconds === null ||
+        !Number.isFinite(waitingSeconds) ||
+        waitingSeconds < 0 ||
+        waitingSeconds >= MAX_BUS_WAIT_SECONDS
+      ) {
         valid = false
         break
       }

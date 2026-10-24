@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/package.json
 COPY shared/package.json shared/package.json
 COPY frontend/package.json frontend/package.json
-RUN npm ci --omit=dev --workspace @navus/backend --workspace @navus/shared --ignore-scripts
+RUN npm ci --omit=dev --workspace @nusgo/backend --workspace @nusgo/shared --ignore-scripts
 COPY shared/src shared/src
 COPY scripts/generate-shuttle-timing.mjs scripts/generate-shuttle-timing.mjs
 COPY frontend/public/data/bus-stops.json frontend/public/data/bus-stops.json
@@ -26,7 +26,7 @@ COPY --from=package /app/shared/src shared/src
 COPY backend/package.json backend/package.json
 COPY backend/src backend/src
 COPY --from=package /app/frontend/public/data data
-ENV NODE_ENV=development HOST=0.0.0.0 PORT=3001 NAVUS_DATA_DIR=/app/data NAVUS_DATA_VERSION=development
+ENV NODE_ENV=development HOST=0.0.0.0 PORT=3001 NUSGO_DATA_DIR=/app/data NUSGO_DATA_VERSION=development
 USER node
 WORKDIR /app/backend
 EXPOSE 3001

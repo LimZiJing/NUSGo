@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createTransitIndex } from '@navus/shared/transit/index'
-import { validateTransitNetwork } from '@navus/shared/transit/model'
-import { validateBusRouteGeometry } from '@navus/shared/transit/geometry'
-import { generateShuttleTimingData } from '@navus/shared/transit/timing'
+import { createTransitIndex } from '@nusgo/shared/transit/index'
+import { validateTransitNetwork } from '@nusgo/shared/transit/model'
+import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
+import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import { createFindPathsTestService, type TestTransitData } from './find-paths.test-support.ts'
 import { createCurrentLocationTripEndpoint } from './endpoints.ts'
 import type { WalkingRouteEngine } from './walking/walking-contracts.ts'
@@ -826,6 +826,81 @@ describe('findPaths', () => {
     expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
       waitingSeconds: 2_900,
     })
+  })
+
+  it.each([
+    { arrivalSeconds: 18_099, hasShuttle: true },
+    { arrivalSeconds: 18_100, hasShuttle: false },
+  ])('applies the five-hour wait limit at $arrivalSeconds s to the next arrival', async ({
+    arrivalSeconds,
+    hasShuttle,
+  }) => {
+    const transit = createTransitData()
+    const nowMs = Date.parse('2026-09-23T22:30:00.000Z')
+    const routeEngine = {
+      matrixWalking: vi.fn(async () => [
+        { fromIndex: 0, toIndex: 1, distanceMeters: 10_000, durationSeconds: 10_000 },
+        { fromIndex: 0, toIndex: 2, distanceMeters: 100, durationSeconds: 100 },
+        { fromIndex: 3, toIndex: 1, distanceMeters: 100, durationSeconds: 100 },
+      ]),
+      routeWalking: vi.fn(async ({ origin, destination }) => ({
+        distanceMeters: Math.round(Math.abs(destination.longitude - origin.longitude) * 100_000),
+        durationSeconds: 100,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [origin.longitude, origin.latitude] as const,
+            [destination.longitude, destination.latitude] as const,
+          ],
+        },
+      })),
+    }
+    const shuttleArrivalClient = {
+      getArrivals: vi.fn(async () => ({
+        observedAt: new Date(nowMs).toISOString(),
+        expiresAt: new Date(nowMs + 3_600_000).toISOString(),
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: arrivalSeconds,
+              upcomingArrivalSeconds: [arrivalSeconds],
+              headwaySeconds: null,
+            },
+          },
+        },
+      })),
+    }
+    const shuttleServiceHoursClient = {
+      getServiceWindows: vi.fn(async () => ({
+        A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],
+      })),
+    }
+
+    const result = await createFindPathsTestService(
+      routeEngine,
+      shuttleArrivalClient,
+      shuttleServiceHoursClient,
+      () => nowMs,
+    )({
+      tripRequest: {
+        origin: { kind: 'venue', id: 'ORIGIN' },
+        destination: { kind: 'venue', id: 'DESTINATION' },
+      },
+      venues: {
+        ORIGIN: { roomName: 'Origin', location: { x: 102.999, y: 1 } },
+        DESTINATION: { roomName: 'Destination', location: { x: 103.002, y: 1 } },
+      },
+      transit,
+      signal: new AbortController().signal,
+    })
+
+    const shuttleLegs = result?.candidates.flatMap((candidate) => (
+      candidate.path.legs.filter((leg) => leg.mode === 'shuttle')
+    )) ?? []
+    expect(shuttleLegs.length > 0).toBe(hasShuttle)
+    expect(result?.candidates.some((candidate) => (
+      candidate.path.legs.every((leg) => leg.mode === 'walking')
+    ))).toBe(true)
   })
 
   it('rejects boarding after service ends even when reaching the stop during service', async () => {

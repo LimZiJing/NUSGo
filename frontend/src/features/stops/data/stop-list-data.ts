@@ -1,9 +1,9 @@
 import { getDistanceMeters, type TransitIndex } from '../../../domain/transit'
-import type { TransitStop } from '@navus/shared/transit/types'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { DeviceLocationFix } from '../../../domain/location/types'
 import type { StopDetailsModel } from './stop-details-model'
 
-export const NEARBY_STOP_RADIUS_METERS = 500
+export const NEARBY_STOP_RADIUS_METERS = 250
 
 export interface StopListStop {
   readonly stop: TransitStop

@@ -1,4 +1,4 @@
-import type { ApiJourneyPlanningRequest } from '@navus/shared/routing/path'
+import type { ApiJourneyPlanningRequest } from '@nusgo/shared/routing/path'
 
 export class InvalidJourneyRequestError extends Error {
   constructor(message: string) {

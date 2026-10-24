@@ -6,13 +6,14 @@ import {
   clearTripEndpoint,
   createCurrentLocationTripEndpoint,
   createEmptyTripRequest,
+  getTripEndpointKey,
   setTripEndpoint,
   swapTripEndpoints,
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
-import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import {
   createInitialResourceStatus,
@@ -106,16 +107,18 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  /** Recentres on the latest known device fix without prompting for permission; no-op without a fix. */
+  focusCurrentLocationIfKnown(): void
   /** Refits the active Explore target (selected venue/building or the selected route) with the current insets. */
   refitExploreTarget(): void
   setStopsPinVisible(visible: boolean): void
   setNearbyStopHighlight(stopIds: readonly string[]): void
   setPlanLayersVisible(visible: boolean): void
   enableLocationTracking(): void
+  disableLocationTracking(): void
   locateUser(): void
   useCurrentLocationForOrigin(): void
   cancelOriginLocationRequest(): void
-  disableLocationTracking(): void
   hideLocationMarker(): void
   showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
@@ -136,11 +139,13 @@ export interface NavigationSession {
   closeToRoot(): void
   handleMapClick(): void
   setViewportInsets(insets: MapViewportInsets): void
+  setVisibleCenterZoom(enabled: boolean): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
   zoomOut(): void
   fitJourneyRoutes(): void
+  fitSelectedJourney(): void
   resetView(): void
   reportMapError(error: unknown): void
   dispose(): void
@@ -361,6 +366,24 @@ export function createNavigationSession(
       pendingOriginCaptureId = null
       setOriginLocationRequestError(requestId, { status: location.status })
     }
+  }
+
+  // Re-captures a Current location origin from the latest fix so a new search starts where the
+  // user is now. Returns false when no fresh fix exists, leaving the earlier origin in place.
+  const refreshCurrentLocationOrigin = (): boolean => {
+    const origin = state.tripRequest.origin
+    if (origin?.kind !== 'current-location') return true
+
+    const location = state.location
+    const refreshed = location.status === 'tracking' && location.latestFix !== null
+      ? createCurrentLocationTripEndpoint(location.latestFix)
+      : null
+    if (refreshed === null) return false
+
+    if (getTripEndpointKey(refreshed) !== getTripEndpointKey(origin)) {
+      updateTripRequest(setTripEndpoint(state.tripRequest, 'origin', refreshed))
+    }
+    return true
   }
 
   const requestJourneyPlanning = (): void => {
@@ -692,6 +715,15 @@ export function createNavigationSession(
       })
     },
 
+    focusCurrentLocationIfKnown() {
+      enqueueTransition(() => {
+        if (disposed) return
+        const fix = dependencies.locationTracker.getState().latestFix
+        if (!fix || !isValidLocationCoordinates(fix.longitude, fix.latitude)) return
+        dependencies.map.focusCurrentLocation(fix)
+      })
+    },
+
     refitExploreTarget() {
       enqueueTransition(() => {
         if (disposed) return
@@ -811,7 +843,6 @@ export function createNavigationSession(
       cancelOriginLocationRequest()
       dependencies.locationTracker.disable()
     },
-
     hideLocationMarker() {
       if (disposed) return
       dependencies.map.setCurrentLocation(state.location.latestFix, false)
@@ -877,7 +908,18 @@ export function createNavigationSession(
       journeyPlanningRequested = true
       enqueueTransition(() => {
         if (disposed) return
-        updateState({ path: createJourneyStateWithStatus('loading') })
+        const originRefreshed = refreshCurrentLocationOrigin()
+        // Replacing the origin resets the planning request, so mark it again.
+        journeyPlanningRequested = true
+        updateState({
+          path: createJourneyStateWithStatus('loading'),
+          ...(originRefreshed ? {} : {
+            originLocationRequest: {
+              status: 'error',
+              error: 'Could not update your location. Using your earlier position.',
+            },
+          }),
+        })
         requestJourneyPlanning()
       })
     },
@@ -925,6 +967,11 @@ export function createNavigationSession(
       dependencies.map.setViewportInsets(viewportInsets)
     },
 
+    setVisibleCenterZoom(enabled: boolean) {
+      if (disposed) return
+      dependencies.map.setVisibleCenterZoom(enabled)
+    },
+
     dismissStopPopup() {
       if (disposed) return false
       return dependencies.map.dismissStopPopup()
@@ -948,6 +995,11 @@ export function createNavigationSession(
     fitJourneyRoutes() {
       if (disposed) return
       dependencies.map.fitJourneyRoutes()
+    },
+
+    fitSelectedJourney() {
+      if (disposed) return
+      dependencies.map.fitSelectedJourney()
     },
 
     resetView() {

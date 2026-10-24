@@ -8,14 +8,14 @@ Research: [Walking and shuttle routing options](../research/walking-and-shuttle-
 
 ## Decision
 
-NavUS will use a composed routing architecture for the first recommended-journey implementation:
+NUSGo will use a composed routing architecture for the first recommended-journey implementation:
 
 - A self-hosted Valhalla instance will provide walking routes and walking travel-time/distance connections using pedestrian costing.
-- NavUS will keep `frontend/public/data/shuttle-network.json` and its validated route geometry as the only canonical source for internal shuttle routes, stops, service associations, ordered stop lists, and shuttle map geometry.
-- A pure NavUS Pathfinding engine will compose the walking connections with directed `BusRoute` edges and validated shuttle timing estimates.
+- NUSGo will keep `frontend/public/data/shuttle-network.json` and its validated route geometry as the only canonical source for internal shuttle routes, stops, service associations, ordered stop lists, and shuttle map geometry.
+- A pure NUSGo Pathfinding engine will compose the walking connections with directed `BusRoute` edges and validated shuttle timing estimates.
 - The application returns complete `Path` values made of ordered `PathLeg` values. Walking and bus travel are modes within a Path. Existing user-facing Plan wording remains unchanged by this terminology decision.
 
-The planner will not import the current shuttle model into Valhalla or OpenTripPlanner as a second transit source of truth. A combined transit engine can be reconsidered when NavUS has an intentional GTFS/timetable representation and a requirement for schedule-aware or live transit routing.
+The planner will not import the current shuttle model into Valhalla or OpenTripPlanner as a second transit source of truth. A combined transit engine can be reconsidered when NUSGo has an intentional GTFS/timetable representation and a requirement for schedule-aware or live transit routing.
 
 Valhalla is the first walking provider because its official API supports pedestrian costing, a matrix service for walking costs, and GeoJSON route shapes. The provider is replaceable behind the walking boundary; OSRM and other engines remain infrastructure alternatives rather than domain concepts. The public Valhalla demo is for development or limited manual investigation only and is not a production dependency.
 
@@ -98,7 +98,7 @@ The UI should call the output a `Recommended journey` and show that its duration
 
 ## Search completion and responsiveness
 
-The planner must preserve Path validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Express requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Path is marked `exact`. If the budget is reached after a complete Path has been found, that Path is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Path exists. If no complete multimodal Path is found, the application may return a valid walking-only fallback or a clear failure.
+The planner must preserve Path validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Express requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Path is marked `exact`. If the budget is reached after a complete Path has been found, that Path is returned as `bounded`: it is valid and is the best result found so far, but NUSGo does not claim that no faster Path exists. If no complete multimodal Path is found, the application may return a valid walking-only fallback or a clear failure.
 
 This is a responsiveness policy, not a change to the Valhalla boundary or the canonical shuttle source of truth. The UI presents both exact and bounded results as `Recommended journey` and explains the tradeoff when a bounded result may not be globally fastest.
 
@@ -123,18 +123,18 @@ The boundary should support the precomputed stop graph, the two endpoint matrix 
 - A walking failure removes only the affected walking connection. A valid direct walking Path may still be returned if the transit network or shuttle timing is unavailable.
 - A missing or invalid shuttle timing estimate removes that shuttle edge. The planner may still return a walking-only Path or another shuttle Path with complete estimates.
 - An invalid transit network fails closed for shuttle paths. Direct walking remains eligible when both endpoints are mapped and the walking service succeeds.
-- If no complete Path remains, NavUS shows that no recommended journey is currently available and explains whether route data, endpoint data, or shuttle timing data is missing. It does not present a partial Path as a recommendation.
+- If no complete Path remains, NUSGo shows that no recommended journey is currently available and explains whether route data, endpoint data, or shuttle timing data is missing. It does not present a partial Path as a recommendation.
 - Each trip request gets a request identity. Application state publishes results only for the latest active request; an abort or late response from an older request must not replace a newer result.
 
 ## Deployment, privacy, licensing, and rate limits
 
 Production routing will use a server-side proxy or same-origin routing endpoint backed by a self-hosted Valhalla instance. The browser will not contain a provider credential or call the public demo server as a product dependency. Local development may use a configurable local Valhalla endpoint.
 
-The routing endpoint must accept only validated NavUS endpoints or validated coordinates from the application boundary, enforce request timeouts and size limits, cache repeated static connection requests where appropriate, and apply per-client rate limits. It should avoid retaining raw origin/destination coordinates and request logs longer than needed for operations. Coordinates reveal a user's intended campus trip even though the endpoint catalogue is public, so production traffic must use HTTPS and operational logging should minimise or redact route details.
+The routing endpoint must accept only validated NUSGo endpoints or validated coordinates from the application boundary, enforce request timeouts and size limits, cache repeated static connection requests where appropriate, and apply per-client rate limits. It should avoid retaining raw origin/destination coordinates and request logs longer than needed for operations. Coordinates reveal a user's intended campus trip even though the endpoint catalogue is public, so production traffic must use HTTPS and operational logging should minimise or redact route details.
 
 Valhalla is MIT licensed. Walking graph data derived from OpenStreetMap is subject to ODbL obligations, including visible OpenStreetMap attribution and documented licensing for any redistributed derived database. The existing map attribution and route-data provenance must remain accurate. Shuttle and venue snapshots sourced from NUS APIs or NUSMods require a separate provenance and reuse check before a public refresh or redistribution; this ADR does not grant a new licence to those datasets.
 
-Self-hosting removes dependence on a third-party routing API key and its upstream quota, but it does not remove the need for capacity controls at the NavUS endpoint. If a hosted provider is used later, its key must remain server-side and its terms, retention, quota, and attribution requirements must be recorded before deployment.
+Self-hosting removes dependence on a third-party routing API key and its upstream quota, but it does not remove the need for capacity controls at the NUSGo endpoint. If a hosted provider is used later, its key must remain server-side and its terms, retention, quota, and attribution requirements must be recorded before deployment.
 
 ## Consequences
 
@@ -150,7 +150,7 @@ Costs and limitations:
 
 - The first deployment needs a server-side routing service and an OSM walking graph.
 - A matrix plus selected-route geometry requires more than one routing operation and careful request cancellation.
-- OpenStreetMap coverage may miss NUS indoor links, covered walkways, entrances, or campus-only paths; NavUS may later need curated walking data or a custom graph.
+- OpenStreetMap coverage may miss NUS indoor links, covered walkways, entrances, or campus-only paths; NUSGo may later need curated walking data or a custom graph.
 - Static shuttle timing is an estimate. Live arrivals are optional server-side data; timetable-aware departure search remains future work.
 - The public Valhalla demo, public OSM routing services, and unbounded client-side provider calls are not production fallbacks.
 

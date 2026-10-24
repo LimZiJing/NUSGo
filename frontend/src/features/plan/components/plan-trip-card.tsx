@@ -26,7 +26,7 @@ interface PlanTripCardProps {
 }
 
 const PROMPTS: Record<TripEndpointRole, string> = {
-  origin: 'Choose start point',
+  origin: 'Where from?',
   destination: 'Where to?',
 }
 

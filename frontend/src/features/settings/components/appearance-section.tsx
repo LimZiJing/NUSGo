@@ -22,26 +22,34 @@ export function AppearanceSection({ preference, onChange }: AppearanceSectionPro
   const selectedOtherTheme = OTHER_THEME_CHOICES.find(({ value }) => preference === value)
 
   return (
-    <fieldset className="settings-choice-group" aria-labelledby="settings-appearance-heading">
-      <legend id="settings-appearance-heading">Theme</legend>
-      <div className="settings-choice-options">
-        {THEME_CHOICES.map(({ value, label, Icon }) => (
-          <label
-            className="settings-choice"
-            data-selected={preference === value}
-            key={value}
-          >
-            <input
-              type="radio"
-              name="theme-preference"
-              value={value}
-              checked={preference === value}
-              onChange={() => onChange(value)}
-            />
-            <Icon className="settings-choice-icon" size={18} />
-            <span>{label}</span>
-          </label>
-        ))}
+    <div className="settings-appearance-card">
+      <div
+        className="settings-choice-group"
+        role="radiogroup"
+        aria-labelledby="settings-appearance-heading"
+      >
+        <div className="settings-choice-heading" id="settings-appearance-heading">
+          Theme
+        </div>
+        <div className="settings-choice-options">
+          {THEME_CHOICES.map(({ value, label, Icon }) => (
+            <label
+              className="settings-choice"
+              data-selected={preference === value}
+              key={value}
+            >
+              <input
+                type="radio"
+                name="theme-preference"
+                value={value}
+                checked={preference === value}
+                onChange={() => onChange(value)}
+              />
+              <Icon className="settings-choice-icon" size={18} />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
       </div>
       <details className="settings-theme-disclosure">
         <summary className="settings-theme-summary">
@@ -70,6 +78,6 @@ export function AppearanceSection({ preference, onChange }: AppearanceSectionPro
           ))}
         </div>
       </details>
-    </fieldset>
+    </div>
   )
 }

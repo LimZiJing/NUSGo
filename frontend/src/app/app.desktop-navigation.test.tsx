@@ -175,7 +175,7 @@ afterEach(() => {
 })
 
 describe('desktop shared navigation shell', () => {
-  it('shows Fit routes only while Plan is active for a retained Journey', async () => {
+  it('has no Fit routes button for a retained Journey in Plan', async () => {
     const user = userEvent.setup()
     const baseState = createInitialNavigationSessionState()
     const path: Path = {
@@ -216,7 +216,7 @@ describe('desktop shared navigation shell', () => {
 
     expect(screen.queryByRole('button', { name: 'Fit routes' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Plan' }))
-    expect(screen.getByRole('button', { name: 'Fit routes' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Fit routes' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     expect(screen.queryByRole('button', { name: 'Fit routes' })).toBeNull()
   })

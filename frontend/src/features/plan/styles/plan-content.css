@@ -87,8 +87,38 @@
 }
 
 .journey-result-heading {
+  position: relative;
   min-width: 0;
   margin: 0;
+}
+
+/* Transparent target laid over the summary chevron so the chevron collapses while the card body recentres. */
+.journey-option-collapse {
+  position: absolute;
+  top: 6px;
+  right: 2px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-status);
+  background: transparent;
+  cursor: pointer;
+}
+
+.journey-option-collapse:hover {
+  background: var(--surface-muted);
+}
+
+.journey-option-collapse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.journey-recentre-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .journey-option-summary {

@@ -26,6 +26,7 @@ interface PlanContentProps {
   onUseCurrentLocationForOrigin?: () => void
   onCancelOriginLocationRequest?: () => void
   onSelectJourneyOption?: (candidateKey: string) => void
+  onFitSelectedJourney?: () => void
   path?: JourneyResultsState
   simulatedAtMs?: number | null
 }
@@ -47,6 +48,7 @@ export function PlanContent({
   onUseCurrentLocationForOrigin,
   onCancelOriginLocationRequest,
   onSelectJourneyOption,
+  onFitSelectedJourney,
   path = { status: 'idle', path: null, candidates: [], error: null },
   simulatedAtMs = null,
 }: PlanContentProps) {
@@ -146,6 +148,7 @@ export function PlanContent({
               networkIndex={networkIndex}
               simulated={simulatedAtMs !== null}
               onSelectCandidate={onSelectJourneyOption}
+              onFitSelected={onFitSelectedJourney}
             />
           </div>
         )}

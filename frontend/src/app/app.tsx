@@ -30,7 +30,6 @@ import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-shee
 const JourneyTestTimeControl = import.meta.env.DEV
   ? lazy(() => import('../ui/journey-test-time-control').then((module) => ({ default: module.JourneyTestTimeControl })))
   : null
-import { FitRoutesControl } from '../ui/fit-routes-control'
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
@@ -388,6 +387,7 @@ function App() {
     form: planTripForm,
     originLocationRequest: state.originLocationRequest,
     onSelectJourneyOption: commands.selectJourneyOption,
+    onFitSelectedJourney: commands.fitSelectedJourney,
     onUseCurrentLocationForOrigin: commands.useCurrentLocationForOrigin,
     onCancelOriginLocationRequest: commands.cancelOriginLocationRequest,
     path: state.path,
@@ -459,11 +459,6 @@ function App() {
         {stopsWorkflow.showNearbyCrosshair && <NearbyCrosshair insets={mapInsets} />}
         <div className="map-control-stack">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          {navigation.activeView === 'plan' &&
-            state.path.status === 'ready' &&
-            state.path.displayedCandidates.length > 0 && (
-            <FitRoutesControl onFit={commands.fitJourneyRoutes} />
-          )}
           {JourneyTestTimeControl && (
             <Suspense fallback={null}>
               <JourneyTestTimeControl

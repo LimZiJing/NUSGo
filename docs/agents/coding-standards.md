@@ -101,6 +101,9 @@ Prefer the simplest explicit design that meets the requirement. Add abstractions
 - Prefer native semantic controls, visible focus, keyboard operation, and text alternatives for state changes.
 - Do not rely on color alone to communicate route identity, selection, status, or errors.
 - Prefer semantic class-based CSS, keep dynamic library styling localized, preserve responsive behavior, and avoid unexplained magic values.
+- Style colours with the theme tokens in `frontend/src/ui/styles/shared/themes/` (`--text-*`, `--border-*`, `--surface-*`) and do not hard-code hex values in component CSS.
+- Confirm a token exists in every theme file before using it. Prefer a token that works in all themes over a `:root[data-theme='dark']` override, and explain any theme-specific override in a one-line comment.
+- Judge contrast against the surface the element sits on. In dark mode `--border-subtle` and `--surface-raised` are nearly the same colour, so use `--border-card` for card edges.
 - Keep MapLibre imperative work in lifecycle-aware effects or focused helpers. Pair every event registration and map object creation with cleanup.
 - Preserve the separation between a domain location and its map marker. Changing marker presentation MUST NOT silently mutate the underlying venue or transit model.
 

@@ -94,6 +94,8 @@ export interface MapSession {
    * inset reports update padding without refitting the user's camera.
    */
   setViewportInsets(insets: MapViewportInsets): void
+  /** Zoom around the visible-area centre while a centre crosshair is shown. */
+  setVisibleCenterZoom(enabled: boolean): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

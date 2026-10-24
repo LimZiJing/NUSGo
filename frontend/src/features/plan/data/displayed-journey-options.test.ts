@@ -142,4 +142,13 @@ describe('selectJourneysForDisplay', () => {
     expect(selectDisplayedJourneyOptions([...buses, walking]))
       .toEqual([...buses.slice(0, 3), walking])
   })
+
+  it('hides a bus Journey more than twice as slow as walking', () => {
+    const sensible = candidate('A1', 'shuttle', 300)
+    const loop = candidate('LOOP', 'shuttle', 1500)
+    const walking = candidate('walk', 'walking', 525)
+
+    expect(selectDisplayedJourneyOptions([loop, walking, sensible]))
+      .toEqual([sensible, walking])
+  })
 })

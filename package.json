@@ -20,7 +20,7 @@
     "shuttle:timing:generate": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs",
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
-    "test": "npm --workspace @nusgo/frontend run test && npm --workspace @nusgo/backend run test",
+    "test": "npm --workspace @nusgo/shared run test && npm --workspace @nusgo/frontend run test && npm --workspace @nusgo/backend run test",
     "benchmark:pathfinding": "npm --workspace @nusgo/frontend run benchmark:pathfinding --",
     "dev:frontend": "npm --workspace @nusgo/frontend run dev",
     "dev:backend": "npm --workspace @nusgo/backend run dev",

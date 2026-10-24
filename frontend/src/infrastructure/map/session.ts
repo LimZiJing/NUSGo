@@ -609,6 +609,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    setVisibleCenterZoom(enabled: boolean) {
+      if (disposed) return
+      lifecycle.setVisibleCenterZoom(enabled)
+    },
+
     dismissStopPopup() {
       if (disposed) return false
       return shuttleStopMarkers?.dismissPopup() ?? false

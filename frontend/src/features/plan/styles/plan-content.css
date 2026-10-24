@@ -745,10 +745,16 @@
 }
 
 .plan-trip-card {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
+}
+
+/* --text-muted is too dim on the dark card. */
+:root[data-theme='dark'] .plan-trip-line-prefix,
+:root[data-theme='dark'] .plan-trip-line-placeholder {
+  color: var(--text-secondary);
 }
 
 .plan-trip-line {
@@ -761,7 +767,7 @@
 }
 
 .plan-trip-line + .plan-trip-line {
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-card);
 }
 
 .plan-trip-line-main {

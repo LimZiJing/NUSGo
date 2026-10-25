@@ -4,6 +4,7 @@ import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import { createValidTransitNetwork } from './test-fixtures'
 import {
   generateShuttleTimingData,
+  placeRouteStopsOnLine,
   validateShuttleTimingData,
 } from '@nusgo/shared/transit/timing'
 
@@ -128,5 +129,19 @@ describe('bus timing', () => {
       ...data,
       records: [{ ...data.records[0], fromStopId: 'STOP-B', toStopId: 'STOP-A' }, ...data.records.slice(1)],
     }, network)).toThrow('not in the verified direction')
+  })
+
+  it('places a stop on the loop pass that runs over it, not an earlier pass 33 m away', () => {
+    const stops = new Map([
+      ['A', { longitude: 103, latitude: 1 }],
+      ['B', { longitude: 103.001, latitude: 1.0003 }],
+      ['C', { longitude: 103, latitude: 1.0006 }],
+    ])
+    const line: [number, number][] = [[103, 1], [103.002, 1], [103.002, 1.0003], [103, 1.0003], [103, 1.0006]]
+
+    const placed = placeRouteStopsOnLine(['A', 'B', 'C'], stops, line)
+
+    expect(placed?.[1]?.segmentIndex).toBe(3)
+    expect(placed?.[1]?.distanceToLine).toBeLessThan(1)
   })
 })

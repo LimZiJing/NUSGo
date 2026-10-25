@@ -9,7 +9,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 **Desktop (769px and wider)**
 - One persistent left column holds the tabs. The map reserves the column's measured width as its left inset.
 - Inactive tabs stay mounted but inert, so their state survives tab switches and breakpoint changes.
-- Stops only loads live arrivals and service windows while it is the active tab.
+- Stops starts loading live arrivals and service windows once it becomes active. After you leave the tab, arrivals keep refreshing every 30 seconds for the last polled stop set, and that set only follows new requests while Stops is active. Service windows load only while Stops is active.
 
 **Mobile (768px and narrower)**
 - A bottom tab bar sits under feature sheets, which have three detents: collapsed (a 44px handle), partial (50% of the visual viewport above the tab bar) and full (covers the whole viewport).

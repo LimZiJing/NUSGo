@@ -11,6 +11,9 @@ const METRES_PER_LONGITUDE_DEGREE = 111320
 
 const PROJECTION_EPSILON_METRES = 0.001
 
+// Longer gaps would draw a visible straight shortcut across the road network, so they are left as they are.
+const MAX_STOP_CONNECTOR_METRES = 15
+
 function compareText(first: string, second: string): number {
   if (first < second) return -1
   if (first > second) return 1
@@ -156,6 +159,24 @@ function sliceBetweenProjections(
     geometry: { type: 'LineString', coordinates },
     distanceMeters: Math.round(to.distanceAlongLine - from.distanceAlongLine),
   }
+}
+
+function withStopConnectors(
+  slice: { readonly geometry: PathGeometry; readonly distanceMeters: number } | null,
+  fromStop: { readonly longitude: number; readonly latitude: number } | undefined,
+  toStop: { readonly longitude: number; readonly latitude: number } | undefined,
+): { readonly geometry: PathGeometry; readonly distanceMeters: number } | null {
+  if (!slice || !fromStop || !toStop) return slice
+  // Route lines can sit a few metres from a stop; extend the drawn leg so it meets the stop markers.
+  const line = slice.geometry.coordinates.map(([longitude, latitude]) => toPosition(longitude, latitude))
+  const start = toPosition(fromStop.longitude, fromStop.latitude)
+  const end = toPosition(toStop.longitude, toStop.latitude)
+  const coordinates = withoutDuplicateCoordinates([
+    ...(distanceBetween(start, line[0]) <= MAX_STOP_CONNECTOR_METRES ? [start] : []),
+    ...line,
+    ...(distanceBetween(line[line.length - 1], end) <= MAX_STOP_CONNECTOR_METRES ? [end] : []),
+  ])
+  return { geometry: { type: 'LineString', coordinates }, distanceMeters: slice.distanceMeters }
 }
 
 export function createShuttleLeg(
@@ -456,6 +477,11 @@ export function* buildSearchIndexSteps(
         ? sliceRouteGeometry(ride.geometryLine, fromCandidates, toCandidates)
         : null
     }
+    geometry = withStopConnectors(
+      geometry,
+      input.transitIndex.stopById.get(ride.fromStopId),
+      input.transitIndex.stopById.get(ride.toStopId),
+    )
     geometrySliceCount += 1
     geometrySliceDurationMs += now() - startedAt
     geometryByRideKey.set(key, geometry)

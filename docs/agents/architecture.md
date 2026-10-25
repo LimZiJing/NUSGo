@@ -13,8 +13,8 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `backend/src/live-data/bus-arrivals/snapshot.ts` owns provider-independent arrival snapshot generations and freshness.
 - `backend/src/live-data/providers/nus` and `backend/src/live-data/providers/lta` own provider authentication, mappings, requests, payload parsing, and provider caches. Provider credentials stay in backend configuration.
 - `backend/src/live-data/upstream` owns reusable concurrency, retry, and timeout controls used by provider modules.
-- `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, and domain transformations.
-- `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
+- `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, domain transformations, and the Personal Waypoint storage contract.
+- `frontend/src/features` owns product workflows and their feature-specific styles: Explore, Stops, Plan, Settings, the global More menu, and Personal Waypoints under `waypoints/personal`.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
 - frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
@@ -57,6 +57,28 @@ backend/src/http/routes/journeys
 The diagram describes allowed ownership and dependency direction; it does not require every module to import every lower layer.
 
 Backend dependencies flow from HTTP routes and validation to the pathfinding composition seam and live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules.
+
+## More navigation and Personal Waypoints
+
+The shared More entry button and panel shell live in `frontend/src/ui`. The destination list lives in `frontend/src/features/more`; each destination screen stays with its feature. Settings content remains under `frontend/src/features/settings`, while personal waypoint screens live under `frontend/src/features/waypoints/personal`:
+
+```text
+frontend/src/features/
+├── more/
+│   ├── more-menu.tsx
+│   └── more-menu.css
+├── settings/
+│   └── settings-content.tsx
+└── waypoints/
+    └── personal/
+        ├── index.ts
+        ├── personal-waypoints-home.tsx
+        ├── personal-waypoint-placement.tsx
+        ├── personal-waypoint-form.tsx
+        └── personal-waypoints.css
+```
+
+App composition owns navigation between destinations, focus handling, and the map-placement callback. Waypoint validation and browser persistence stay in domain and infrastructure modules, respectively.
 ## State, callbacks, and seams
 
 - Feature modules own workflow state such as search queries, selections, and commands. UI modules may own only transient presentation state that has no domain meaning.
@@ -80,10 +102,13 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Explore route browsing and venue workflows | `frontend/src/features/explore` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops` |
 | Trip endpoints and Path presentation | `frontend/src/features/plan` |
-| Path and Journey HTTP types | shared/src/routing |
-| Search, ordered planning stages, and walking boundary | backend/src/pathfinding |
+| Global More menu destinations | `frontend/src/features/more` |
+| Settings workflow content | `frontend/src/features/settings` |
+| Personal waypoint screens | `frontend/src/features/waypoints/personal` |
+| Path and Journey HTTP types | `shared/src/routing` |
+| Search, ordered planning stages, and walking boundary | `backend/src/pathfinding` |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
-| Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
+| Shared navigation, More panel shell, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |
 | `frontend/src/app/app.tsx` and composition in `frontend/src/main.tsx` | `frontend/src/app` |
 

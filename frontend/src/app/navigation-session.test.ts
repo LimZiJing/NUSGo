@@ -55,6 +55,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
+    setPersonalWaypointPlacement: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -1149,7 +1150,7 @@ describe('navigation session', () => {
     expect(session.getState().exploreState.mode).toBe('neutral')
 
     session.selectVenue(venueResult)
-    session.handleMapClick()
+    session.handleMapClick([103.78, 1.29])
     expect(session.getState().exploreState.mode).toBe('neutral')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })

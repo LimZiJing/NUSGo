@@ -375,6 +375,7 @@ describe('map lifecycle style readiness', () => {
 
     const click = (target: FakeElement) => map.emit('click', {
       point: { x: 10, y: 20 },
+      lngLat: { lng: 103.78, lat: 1.29 },
       originalEvent: { target },
     })
     click(new FakeElement('.maplibregl-marker'))
@@ -392,6 +393,7 @@ describe('map lifecycle style readiness', () => {
     map.renderedFeatures.length = 0
     click(new FakeElement(null))
     expect(onEmptyMapClick).toHaveBeenCalledOnce()
+    expect(onEmptyMapClick).toHaveBeenCalledWith([103.78, 1.29])
 
     lifecycle.dispose()
     lifecycle.dispose()

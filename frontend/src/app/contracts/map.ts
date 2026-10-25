@@ -19,7 +19,7 @@ export interface MapBuildingSelection {
 export interface MapSessionOptions {
   readonly container: HTMLElement
   readonly onMapError: (error: unknown) => void
-  readonly onEmptyMapClick: () => void
+  readonly onEmptyMapClick: (coordinate: MapCoordinate) => void
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
   /** Selects a displayed Journey option from a map route or duration label. */
@@ -96,6 +96,12 @@ export interface MapSession {
   setViewportInsets(insets: MapViewportInsets): void
   /** Zoom around the visible-area centre while a centre crosshair is shown. */
   setVisibleCenterZoom(enabled: boolean): void
+  /** Shows the temporary Personal Waypoint pin; only placement mode permits dragging it. */
+  setPersonalWaypointPlacement(
+    coordinate: MapCoordinate | null,
+    editable: boolean,
+    onDrag: (coordinate: MapCoordinate) => void,
+  ): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

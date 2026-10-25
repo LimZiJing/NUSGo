@@ -218,7 +218,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       { layers: routeLayerIds },
     ).length) return
 
-    options.onEmptyMapClick()
+    options.onEmptyMapClick([event.lngLat.lng, event.lngLat.lat])
   }
 
   map.addControl(navigationControl, 'top-right')

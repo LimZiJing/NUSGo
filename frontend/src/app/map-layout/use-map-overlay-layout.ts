@@ -16,6 +16,7 @@ import {
 export interface UseMapOverlayLayoutOptions {
   readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets'>
   readonly isMobileViewport: boolean
+  readonly waypointPlacementActive?: boolean
   readonly navigation: NavigationState
   readonly mapShellRef: RefObject<HTMLElement | null>
   readonly sheetPortalContainer?: HTMLElement | null
@@ -36,6 +37,7 @@ export interface MapOverlayLayout {
 export function useMapOverlayLayout({
   commands,
   isMobileViewport,
+  waypointPlacementActive = false,
   navigation,
   mapShellRef,
   sheetPortalContainer,
@@ -142,7 +144,7 @@ export function useMapOverlayLayout({
           : refs.explorePanel.current
       const activeSheetBounds = activeSheet?.getBoundingClientRect()
       const mapShellElement = refs.mapShell.current
-      const measuredNavigationWidth = isMobileViewport
+      const measuredNavigationWidth = isMobileViewport || waypointPlacementActive
         ? 0
         : refs.navigationColumn.current?.getBoundingClientRect().width ?? 0
       setNavigationColumnWidth((current) => (
@@ -151,10 +153,10 @@ export function useMapOverlayLayout({
       const metrics = mapShellElement
         ? measureMobileSheetMetrics(mapShellElement, refs.mainNavigation.current)
         : null
-      const tabBarInset = metrics?.tabBarInset ?? 0
+      const tabBarInset = waypointPlacementActive ? 0 : metrics?.tabBarInset ?? 0
       // A mobile sheet is sized from its detent: its bounds are still mid-transition when
       // the detent has only just changed, which would leave the map inset one step behind.
-      const activeSheetHeight = metrics && activeSheet?.classList.contains('mobile-sheet-popup')
+      const activeSheetHeight = waypointPlacementActive ? 0 : metrics && activeSheet?.classList.contains('mobile-sheet-popup')
         ? Math.max(0, getMobileSheetOccupiedHeight(
           navigation.sheets[activeView].detent,
           createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
@@ -166,7 +168,7 @@ export function useMapOverlayLayout({
         tripCardHeight: 0,
         activeSheetHeight: activeSheetHeight + tabBarInset,
         tripCardVisible: false,
-        activeSheetVisible: isMobileViewport,
+        activeSheetVisible: isMobileViewport && !waypointPlacementActive,
         desktopNavigationWidth: measuredNavigationWidth,
       })
       setMapInsets((current) => (
@@ -202,6 +204,7 @@ export function useMapOverlayLayout({
   }, [
     commands,
     isMobileViewport,
+    waypointPlacementActive,
     navigation.activeView,
     navigation.sheets,
     sheetPortalContainer,

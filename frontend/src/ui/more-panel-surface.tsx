@@ -1,32 +1,34 @@
 import type { ReactNode, Ref } from 'react'
 import { ArrowLeftIcon } from './icons'
 
-interface SettingsSurfaceProps {
+interface MorePanelSurfaceProps {
   readonly open: boolean
+  readonly title: string
   readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
   readonly children: ReactNode
 }
 
-export function SettingsSurface({
+export function MorePanelSurface({
   open,
+  title,
   initialFocusRef,
   onClose,
   children,
-}: SettingsSurfaceProps) {
+}: MorePanelSurfaceProps) {
   return (
     <section
-      id="settings-panel-content"
-      className="navigation-panel settings-surface"
-      aria-labelledby="settings-heading"
+      id="more-panel-content"
+      className="navigation-panel more-panel-surface"
+      aria-labelledby="more-panel-heading"
       aria-hidden={!open}
       inert={!open}
       data-open={open ? 'true' : 'false'}
     >
-      <div className="settings-surface-body">
-        <header className="settings-surface-header">
+      <div className="more-panel-body">
+        <header className="more-panel-header">
           <button
-            className="settings-back-button"
+            className="more-back-button"
             ref={initialFocusRef}
             type="button"
             aria-label="Back to previous view"
@@ -35,9 +37,9 @@ export function SettingsSurface({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 id="settings-heading">Settings</h2>
+          <h2 id="more-panel-heading">{title}</h2>
         </header>
-        <div className="settings-content-scroll" id="settings-content">
+        <div className="more-panel-content-scroll" id="more-panel-scroll">
           {children}
         </div>
       </div>

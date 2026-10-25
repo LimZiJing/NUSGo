@@ -5,7 +5,7 @@ import { StopsContent } from '../../features/stops/stops-content.tsx'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
-import { SettingsSurface } from '../../ui/settings-surface'
+import { MorePanelSurface } from '../../ui/more-panel-surface'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
 import {
   getExploreSheetSummary,
@@ -22,11 +22,13 @@ type ExploreContentProps = Omit<ComponentProps<typeof ExploreContent>, 'sheetDet
 
 export interface AppViewsProps {
   readonly isMobileViewport: boolean
+  readonly waypointPlacementActive: boolean
   readonly sheetPortalContainer: HTMLElement | null
   readonly navigation: NavigationState
   readonly onSelectView: ComponentProps<typeof MainNavigation>['onSelectView']
-  readonly settings: {
+  readonly morePanel: {
     readonly open: boolean
+    readonly title: string
     readonly initialFocusRef: Ref<HTMLButtonElement>
     readonly onClose: () => void
     readonly content: ReactNode
@@ -47,10 +49,11 @@ export interface AppViewsProps {
 
 export function AppViews({
   isMobileViewport,
+  waypointPlacementActive,
   sheetPortalContainer,
   navigation,
   onSelectView,
-  settings,
+  morePanel,
   shells: {
     navigationColumnRef,
     mainNavigationRef,
@@ -75,10 +78,11 @@ export function AppViews({
   return (
     <aside
       className="map-overlay-right navigation-column"
+      hidden={waypointPlacementActive}
       ref={navigationColumnRef}
     >
       <div className="navigation-view-stack">
-        <NavigationViewShell id="plan-panel" active={!settings.open && navigation.activeView === 'plan'}>
+        <NavigationViewShell id="plan-panel" active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'plan'}>
           <NavigationPanelShell
             className="plan-sheet"
             label="Plan trip panel"
@@ -86,7 +90,7 @@ export function AppViews({
             controlsId="plan-content-panel"
             detent={isMobileViewport ? navigation.sheets.plan.detent : 'partial'}
             enabled={isMobileViewport}
-            active={!settings.open && navigation.activeView === 'plan'}
+            active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'plan'}
             portalContainer={sheetPortalContainer}
             onDetentChange={onPlanDetentChange}
             sectionProps={{ 'aria-label': 'Trip endpoints' }}
@@ -95,7 +99,7 @@ export function AppViews({
             <PlanContent {...views.plan} />
           </NavigationPanelShell>
         </NavigationViewShell>
-        <NavigationViewShell id="explore-panel" active={!settings.open && navigation.activeView === 'explore'}>
+        <NavigationViewShell id="explore-panel" active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'explore'}>
           <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
@@ -109,7 +113,7 @@ export function AppViews({
             controlsId="explore-content-panel"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             enabled={isMobileViewport}
-            active={!settings.open && navigation.activeView === 'explore'}
+            active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'explore'}
             portalContainer={sheetPortalContainer}
             onDetentChange={onExploreDetentChange}
             sectionProps={{ 'aria-labelledby': 'explore-content-heading' }}
@@ -121,7 +125,7 @@ export function AppViews({
             />
           </NavigationPanelShell>
         </NavigationViewShell>
-        <NavigationViewShell id="stops-panel" active={!settings.open && navigation.activeView === 'stops'}>
+        <NavigationViewShell id="stops-panel" active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'stops'}>
           <NavigationPanelShell
             className="stops-sheet"
             label="Stops panel"
@@ -129,7 +133,7 @@ export function AppViews({
             controlsId="stops-content"
             detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
             enabled={isMobileViewport}
-            active={!settings.open && navigation.activeView === 'stops'}
+            active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'stops'}
             portalContainer={sheetPortalContainer}
             onDetentChange={onStopsDetentChange}
             sectionProps={{ 'aria-label': 'Stops' }}
@@ -138,21 +142,22 @@ export function AppViews({
             <StopsContent {...views.stops} />
           </NavigationPanelShell>
         </NavigationViewShell>
-        <NavigationViewShell id="settings-panel" active={settings.open}>
-          <SettingsSurface
-            open={settings.open}
-            initialFocusRef={settings.initialFocusRef}
-            onClose={settings.onClose}
+        <NavigationViewShell id="more-panel" active={morePanel.open}>
+          <MorePanelSurface
+            open={morePanel.open}
+            title={morePanel.title}
+            initialFocusRef={morePanel.initialFocusRef}
+            onClose={morePanel.onClose}
           >
-            {settings.content}
-          </SettingsSurface>
+            {morePanel.content}
+          </MorePanelSurface>
         </NavigationViewShell>
       </div>
-      <MainNavigation
+      {!waypointPlacementActive && <MainNavigation
         activeView={navigation.activeView}
         onSelectView={onSelectView}
         containerRef={mainNavigationRef}
-      />
+      />}
     </aside>
   )
 }

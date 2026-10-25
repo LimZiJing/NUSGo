@@ -567,15 +567,121 @@ describe('mobile drawer tab switches', () => {
   })
 })
 
-describe('Settings surface', () => {
-  it('shows the nearby map crosshair on mobile and hides it while Settings is open', async () => {
+describe('More surface', () => {
+  it('hides the desktop navigation column while placing a Personal Waypoint', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+
+    expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
+    expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(screen.getByLabelText('Name')).toBeTruthy()
+    expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
+  })
+
+  it('validates and applies typed coordinates before continuing', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+
+    const latitude = screen.getByRole('spinbutton', { name: 'Latitude' })
+    const longitude = screen.getByRole('spinbutton', { name: 'Longitude' })
+    await user.clear(latitude)
+    await user.type(latitude, '91')
+    await user.clear(longitude)
+    await user.type(longitude, '103.9')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('valid latitude and longitude')
+    expect(screen.queryByLabelText('Name')).toBeNull()
+
+    await user.clear(latitude)
+    await user.type(latitude, '1.5')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(screen.getByLabelText('Name')).toBe(document.activeElement)
+    expect(screen.getByText('1.500000, 103.900000')).toBeTruthy()
+  })
+
+  it('creates a Personal Waypoint only after Save waypoint', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('crypto', { randomUUID: () => '4a85589b-4941-4a85-8d47-7c46f5d47400' })
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    expect(screen.getByRole('heading', { name: 'Place waypoint' })).toBeTruthy()
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.type(screen.getByLabelText('Name'), '  Quiet bench  ')
+    await user.type(screen.getByLabelText('Category'), ' Study spot ')
+    await user.type(screen.getByLabelText('Note (optional)'), ' Near the trees ')
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+
+    const stored = JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}')
+    expect(stored.version).toBe(1)
+    expect(stored.waypoints).toEqual([expect.objectContaining({
+      name: 'Quiet bench', category: 'Study spot', note: 'Near the trees',
+      coordinate: { longitude: 103, latitude: 1 },
+    })])
+    expect(screen.getByRole('status').textContent).toContain('Waypoint saved')
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps cancelled and invalid waypoint drafts out of storage', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+    expect(screen.getAllByText('Must not be empty.')).toHaveLength(2)
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+  })
+
+  it('preserves unreadable saved data and pauses creation', async () => {
+    localStorage.setItem('navus:personal-waypoints:v1', '{broken')
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    expect(screen.getByRole('button', { name: 'Add waypoint' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Back to previous view' })).toBe(document.activeElement)
+    expect(screen.getByRole('alert').textContent).toContain('needs recovery')
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBe('{broken')
+  })
+
+  it('shows the nearby map crosshair on mobile and hides it while More is open', async () => {
     mockMobileViewport()
     const user = userEvent.setup()
     render(<App />)
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
@@ -584,14 +690,14 @@ describe('Settings surface', () => {
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
-  it('hides and restores the nearby crosshair around desktop Settings', async () => {
+  it('hides and restores the nearby crosshair around desktop More', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
     render(<App />)
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
@@ -603,18 +709,20 @@ describe('Settings surface', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const settingsButton = screen.getByRole('button', { name: 'Settings' })
-    await user.click(settingsButton)
+    const moreButton = screen.getByRole('button', { name: 'More' })
+    await user.click(moreButton)
 
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'My waypoints' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
-    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
-    expect(document.activeElement).toBe(settingsButton)
+    expect(document.activeElement).toBe(moreButton)
   })
 
   it('leaves the mobile navigation pill usable and closes when a workflow is selected', async () => {
@@ -627,8 +735,8 @@ describe('Settings surface', () => {
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
     appHarness.session.locateUser.mockClear()
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
-    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('true')
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
     expect(appHarness.session.locateUser).not.toHaveBeenCalled()
     expect(screen.getByRole('navigation', { name: 'Map navigation tabs' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
@@ -636,13 +744,13 @@ describe('Settings surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
-    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('false')
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Explore' }))
-    expect(document.querySelector('.settings-surface')?.getAttribute('data-open')).toBe('false')
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -651,6 +759,7 @@ describe('Settings surface', () => {
     const user = userEvent.setup()
     const firstRender = render(<App />)
 
+    await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     await user.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
@@ -659,21 +768,22 @@ describe('Settings surface', () => {
     firstRender.unmount()
     render(<App />)
 
+    await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('closes with Escape and returns focus to the Settings button', async () => {
+  it('closes with Escape and returns focus to the More button', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
     render(<App />)
-    const settingsButton = screen.getByRole('button', { name: 'Settings' })
+    const moreButton = screen.getByRole('button', { name: 'More' })
 
-    await user.click(settingsButton)
+    await user.click(moreButton)
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
-    expect(document.activeElement).toBe(settingsButton)
+    expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
+    expect(document.activeElement).toBe(moreButton)
   })
 })

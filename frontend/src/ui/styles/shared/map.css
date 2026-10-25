@@ -54,7 +54,7 @@
 }
 
 .map-control-stack > .location-control,
-.map-control-stack > .settings-entry-button,
+.map-control-stack > .more-entry-button,
 .map-control-stack > .map-legend {
   pointer-events: auto;
 }
@@ -83,7 +83,7 @@
     grid-area: location;
   }
 
-  .map-control-stack > .settings-entry-button {
+  .map-control-stack > .more-entry-button {
     position: static;
     grid-area: settings;
     justify-self: start;

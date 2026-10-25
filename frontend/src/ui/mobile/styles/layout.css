@@ -48,7 +48,7 @@
     display: none !important;
   }
 
-  .map-shell[data-settings-open='true'] .map-control-stack > * {
+  .map-shell[data-more-open='true'] .map-control-stack > * {
     visibility: hidden;
   }
 
@@ -71,7 +71,7 @@
     pointer-events: auto;
   }
 
-  .settings-entry-button {
+  .more-entry-button {
     position: absolute;
     z-index: 13;
     top: var(--map-control-inset-top);

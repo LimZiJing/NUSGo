@@ -22,7 +22,7 @@ import { deriveExplorePanelStatus } from './explore-panel-status'
 import { getIsMobileViewport, subscribeToMobileViewport } from './navigation/navigation-state'
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
-import { SettingsEntryButton } from '../ui/settings-entry-button'
+import { MoreEntryButton } from '../ui/more-entry-button'
 import {
   applyTheme,
   getSystemTheme,
@@ -44,6 +44,14 @@ import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-pane
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { SettingsContent } from '../features/settings/settings-content'
+import { MoreMenu } from '../features/more/more-menu'
+import {
+  PersonalWaypointForm,
+  PersonalWaypointPlacement,
+  PersonalWaypointsHome,
+  usePersonalWaypointWorkflow,
+} from '../features/waypoints/personal'
+import { createLocalPersonalWaypointStore } from '../infrastructure/data/local-personal-waypoint-store'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -55,6 +63,7 @@ import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arriv
 import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
 
 function App() {
+  type MorePage = 'closed' | 'menu' | 'waypoints' | 'placing' | 'creating' | 'settings'
   const mapContainer = useRef<HTMLDivElement>(null)
   const locationControlRef = useRef<HTMLDivElement>(null)
   const mapShellRef = useRef<HTMLElement>(null)
@@ -63,15 +72,23 @@ function App() {
   const explorePanelRef = useRef<HTMLElement>(null)
   const stopsSheetRef = useRef<HTMLElement>(null)
   const mainNavigationRef = useRef<HTMLElement>(null)
-  const settingsEntryButtonRef = useRef<HTMLButtonElement>(null)
-  const settingsInitialFocusRef = useRef<HTMLButtonElement>(null)
-  const settingsWasOpenRef = useRef(false)
-  const skipSettingsFocusRestoreRef = useRef(false)
+  const moreEntryButtonRef = useRef<HTMLButtonElement>(null)
+  const moreInitialFocusRef = useRef<HTMLButtonElement>(null)
+  const personalWaypointsInitialFocusRef = useRef<HTMLButtonElement>(null)
+  const personalWaypointNameRef = useRef<HTMLInputElement>(null)
+  const moreWasOpenRef = useRef(false)
+  const skipMoreFocusRestoreRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [morePage, setMorePage] = useState<MorePage>('closed')
+  const [placementReturnsToForm, setPlacementReturnsToForm] = useState(false)
+  const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
+  const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const updatePersonalWaypointDraft = personalWaypoints.updateDraft
+  // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
+  const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
@@ -139,10 +156,36 @@ function App() {
   useLayoutEffect(() => {
     commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
   }, [commands, stopsWorkflow.nearbyHighlightStopIds])
-  const isCrosshairVisible = !isSettingsOpen && stopsWorkflow.showNearbyCrosshair
+  const isCrosshairVisible = !isMoreOpen && morePage !== 'placing' && stopsWorkflow.showNearbyCrosshair
   useLayoutEffect(() => {
     commands.setVisibleCenterZoom(isCrosshairVisible)
   }, [commands, isCrosshairVisible])
+  const handlePersonalWaypointMapChange = useCallback((coordinate: readonly [number, number]): void => {
+    updatePersonalWaypointDraft({
+      coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
+    })
+  }, [updatePersonalWaypointDraft])
+  // App composition passes map placement events into the waypoint feature's draft workflow.
+  useEffect(() => {
+    const visible = morePage === 'placing' || morePage === 'creating'
+    const coordinate = visible
+      ? [personalWaypoints.draft.coordinate.longitude, personalWaypoints.draft.coordinate.latitude] as const
+      : null
+    commands.setPersonalWaypointPlacement(
+      coordinate,
+      morePage === 'placing',
+      handlePersonalWaypointMapChange,
+    )
+  }, [
+    commands,
+    handlePersonalWaypointMapChange,
+    morePage,
+    personalWaypoints.draft.coordinate.latitude,
+    personalWaypoints.draft.coordinate.longitude,
+  ])
+  useEffect(() => () => {
+    commands.setPersonalWaypointPlacement(null, false, handlePersonalWaypointMapChange)
+  }, [commands, handlePersonalWaypointMapChange])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -205,6 +248,7 @@ function App() {
   const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
+    waypointPlacementActive: morePage === 'placing',
     navigation,
     mapShellRef,
     sheetPortalContainer,
@@ -465,43 +509,68 @@ function App() {
     onDismissLocationNotice: stopsWorkflow.dismissLocationNotice,
   }
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
-    if (isSettingsOpen) {
-      skipSettingsFocusRestoreRef.current = true
-      setIsSettingsOpen(false)
+    if (isMoreOpen) {
+      skipMoreFocusRestoreRef.current = true
+      setMorePage('closed')
     }
     appNavigation.selectView(view, stopsWorkflow.state.list)
   }
-  const toggleSettings = (): void => {
-    setIsSettingsOpen((open) => !open)
+  const openWaypoints = (): void => {
+    personalWaypoints.refresh()
+    setMorePage('waypoints')
+  }
+  const beginWaypointPlacement = (): void => {
+    personalWaypoints.startDraft(mapCenter ?? { longitude: 103.7844, latitude: 1.2933 })
+    setPlacementReturnsToForm(false)
+    setMorePage('placing')
+  }
+  const cancelWaypointPlacement = (): void => {
+    setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+  }
+  const closeMore = (): void => {
+    setMorePage((page) => page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
+  }
+  const toggleMore = (): void => {
+    setMorePage((page) => page === 'closed' ? 'menu' : 'closed')
   }
 
   useLayoutEffect(() => {
-    if (isSettingsOpen) {
-      settingsInitialFocusRef.current?.focus()
-    } else if (settingsWasOpenRef.current && !skipSettingsFocusRestoreRef.current) {
-      settingsEntryButtonRef.current?.focus()
+    if (isMoreOpen) {
+      if (morePage === 'waypoints') {
+        const addButton = personalWaypointsInitialFocusRef.current
+        if (addButton && !addButton.disabled) addButton.focus()
+        else moreInitialFocusRef.current?.focus()
+      } else if (morePage === 'creating') personalWaypointNameRef.current?.focus()
+      else moreInitialFocusRef.current?.focus()
+    } else if (moreWasOpenRef.current && morePage === 'closed' && !skipMoreFocusRestoreRef.current) {
+      moreEntryButtonRef.current?.focus()
     }
-    settingsWasOpenRef.current = isSettingsOpen
-    skipSettingsFocusRestoreRef.current = false
-  }, [isSettingsOpen])
+    moreWasOpenRef.current = isMoreOpen
+    skipMoreFocusRestoreRef.current = false
+  }, [isMoreOpen, morePage])
 
   useEffect(() => {
-    if (!isSettingsOpen) return
+    if (morePage === 'closed') return
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       event.preventDefault()
       event.stopPropagation()
-      setIsSettingsOpen(false)
+      if (morePage === 'placing') {
+        setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+      } else {
+        setMorePage((page) => page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
+      }
     }
     window.addEventListener('keydown', closeOnEscape, true)
     return () => window.removeEventListener('keydown', closeOnEscape, true)
-  }, [isSettingsOpen])
+  }, [morePage, placementReturnsToForm])
 
   return (
     <main
       className="map-shell"
       ref={assignMapShellRef}
-      data-settings-open={isSettingsOpen ? 'true' : 'false'}
+      data-more-open={isMoreOpen ? 'true' : 'false'}
+      data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
@@ -510,6 +579,13 @@ function App() {
           className="map"
           style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
         />
+        {morePage === 'placing' && <PersonalWaypointPlacement
+          coordinate={personalWaypoints.draft.coordinate}
+          mapCenter={mapCenter}
+          onChange={(coordinate) => personalWaypoints.updateDraft({ coordinate })}
+          onContinue={() => setMorePage('creating')}
+          onCancel={cancelWaypointPlacement}
+        />}
         {isCrosshairVisible && (
           <NearbyCrosshair insets={mapInsets} />
         )}
@@ -542,12 +618,12 @@ function App() {
             searching={state.location.status === 'requesting'}
             onLocate={stopsWorkflow.locateFromControl}
           />
-          <SettingsEntryButton
-            expanded={isSettingsOpen}
+          <MoreEntryButton
+            expanded={isMoreOpen}
             buttonRef={(button) => {
-              settingsEntryButtonRef.current = button
+              moreEntryButtonRef.current = button
             }}
-            onClick={toggleSettings}
+            onClick={toggleMore}
           />
           <aside
             className="map-legend"
@@ -571,14 +647,40 @@ function App() {
       <MobileSheetMetricsContext.Provider value={mobileSheetMetrics}>
         <AppViews
           isMobileViewport={isMobileViewport}
+          waypointPlacementActive={morePage === 'placing'}
           sheetPortalContainer={sheetPortalContainer}
           navigation={navigation}
           onSelectView={selectView}
-          settings={{
-            open: isSettingsOpen,
-            initialFocusRef: settingsInitialFocusRef,
-            onClose: () => setIsSettingsOpen(false),
-            content: (
+          morePanel={{
+            open: isMoreOpen,
+            title: morePage === 'waypoints' ? 'My waypoints'
+              : morePage === 'creating' ? 'Add waypoint'
+                : morePage === 'settings' ? 'Settings' : 'More',
+            initialFocusRef: moreInitialFocusRef,
+            onClose: closeMore,
+            content: morePage === 'menu' ? <MoreMenu
+              onOpenWaypoints={openWaypoints}
+              onOpenSettings={() => setMorePage('settings')}
+            /> : morePage === 'waypoints' ? <PersonalWaypointsHome
+              readResult={personalWaypoints.readResult}
+              status={personalWaypoints.status}
+              onAdd={beginWaypointPlacement}
+              initialFocusRef={personalWaypointsInitialFocusRef}
+            /> : morePage === 'creating' ? <PersonalWaypointForm
+              draft={personalWaypoints.draft}
+              issues={personalWaypoints.issues}
+              status={personalWaypoints.status}
+              onChange={personalWaypoints.updateDraft}
+              initialFocusRef={personalWaypointNameRef}
+              onAdjustLocation={() => {
+                setPlacementReturnsToForm(true)
+                setMorePage('placing')
+              }}
+              onCancel={() => setMorePage('waypoints')}
+              onSave={() => {
+                if (personalWaypoints.save()) setMorePage('waypoints')
+              }}
+            /> : morePage === 'settings' ? (
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}
@@ -589,7 +691,7 @@ function App() {
                 buildingSource={state.buildings?.source ?? null}
                 dataVersion={__NUSGO_DATA_VERSION__}
               />
-            ),
+            ) : null,
           }}
           shells={{
             navigationColumnRef,

@@ -82,6 +82,10 @@ p {
   box-sizing: border-box;
 }
 
+.navigation-column[hidden] {
+  display: none;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,

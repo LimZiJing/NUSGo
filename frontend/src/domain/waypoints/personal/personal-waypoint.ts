@@ -5,6 +5,10 @@ export const PERSONAL_WAYPOINT_NAME_MAX_LENGTH = 80
 export const PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH = 40
 export const PERSONAL_WAYPOINT_NOTE_MAX_LENGTH = 500
 export const PERSONAL_WAYPOINTS_MAX_COUNT = 500
+export const DEFAULT_PERSONAL_WAYPOINT_COORDINATE: WaypointCoordinate = {
+  longitude: 103.7844,
+  latitude: 1.2933,
+}
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 

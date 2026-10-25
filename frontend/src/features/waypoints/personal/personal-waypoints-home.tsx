@@ -1,21 +1,10 @@
-import {
-  PERSONAL_WAYPOINTS_MAX_COUNT,
-  type PersonalWaypoint,
-} from '../../../domain/waypoints/personal/personal-waypoint'
+import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
+import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
 
-type PersonalWaypointReadView =
-  | {
-      readonly kind: 'ready'
-      readonly waypoints: readonly PersonalWaypoint[]
-      readonly rejectedRecords: { readonly count: number }
-    }
-  | { readonly kind: 'recovery-required' }
-  | { readonly kind: 'unavailable' }
-
 export function PersonalWaypointsHome({ readResult, status, onAdd, initialFocusRef }: {
-  readonly readResult: PersonalWaypointReadView
+  readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
   readonly onAdd: () => void
   readonly initialFocusRef?: Ref<HTMLButtonElement>

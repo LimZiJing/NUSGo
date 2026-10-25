@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { WaypointCoordinate } from '../../../../domain/waypoints/waypoint'
+import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { createPersonalWaypoint, type PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import type { PersonalWaypointValidationIssue } from '../../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStore } from '../../../../domain/waypoints/personal/personal-waypoint-store'
@@ -10,7 +11,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     name: '',
     category: '',
     note: '',
-    coordinate: { longitude: 103.7844, latitude: 1.2933 },
+    coordinate: DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
   })
   const [status, setStatus] = useState<string | null>(null)
   const [issues, setIssues] = useState<readonly PersonalWaypointValidationIssue[]>([])
@@ -30,8 +31,13 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
   }, [])
 
   const save = useCallback(() => {
+    if (typeof globalThis.crypto?.randomUUID !== 'function') {
+      setStatus('This browser cannot securely save a waypoint. Your draft is still here.')
+      return false
+    }
+
     const created = createPersonalWaypoint(draft, {
-      createId: () => crypto.randomUUID(),
+      createId: () => globalThis.crypto.randomUUID(),
       now: () => new Date().toISOString(),
     })
     if (!created.ok) {

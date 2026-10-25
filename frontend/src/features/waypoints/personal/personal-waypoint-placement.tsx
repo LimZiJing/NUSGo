@@ -33,6 +33,13 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     const next = readCoordinates()
     if (next) onChange(next)
   }
+  const useMapCenter = (): void => {
+    if (!mapCenter) return
+    if (latitudeInput.current) latitudeInput.current.value = String(mapCenter.latitude)
+    if (longitudeInput.current) longitudeInput.current.value = String(mapCenter.longitude)
+    setError(null)
+    onChange(mapCenter)
+  }
   const continueToForm = (): void => {
     const next = readCoordinates()
     if (!next) return
@@ -53,7 +60,7 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     {error && <p className="personal-waypoint-error" role="alert">{error}</p>}
     <div className="personal-waypoint-placement-tools">
       <Button label="Apply coordinates" onClick={applyCoordinates} />
-      <Button label="Use map centre" onClick={() => mapCenter && onChange(mapCenter)} disabled={!mapCenter} />
+      <Button label="Use map centre" onClick={useMapCenter} disabled={!mapCenter} />
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />

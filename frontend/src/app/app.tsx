@@ -57,6 +57,7 @@ import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
+import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -520,16 +521,19 @@ function App() {
     setMorePage('waypoints')
   }
   const beginWaypointPlacement = (): void => {
-    personalWaypoints.startDraft(mapCenter ?? { longitude: 103.7844, latitude: 1.2933 })
+    personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnsToForm(false)
     setMorePage('placing')
   }
   const cancelWaypointPlacement = (): void => {
     setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
   }
-  const closeMore = (): void => {
-    setMorePage((page) => page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
-  }
+  const goBackInMore = useCallback((): void => {
+    setMorePage((page) => page === 'placing'
+      ? placementReturnsToForm ? 'creating' : 'waypoints'
+      : page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
+  }, [placementReturnsToForm])
+  const closeMore = goBackInMore
   const toggleMore = (): void => {
     setMorePage((page) => page === 'closed' ? 'menu' : 'closed')
   }
@@ -555,15 +559,11 @@ function App() {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       event.preventDefault()
       event.stopPropagation()
-      if (morePage === 'placing') {
-        setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
-      } else {
-        setMorePage((page) => page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
-      }
+      goBackInMore()
     }
     window.addEventListener('keydown', closeOnEscape, true)
     return () => window.removeEventListener('keydown', closeOnEscape, true)
-  }, [morePage, placementReturnsToForm])
+  }, [goBackInMore, morePage])
 
   return (
     <main

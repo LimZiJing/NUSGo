@@ -621,6 +621,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     setPersonalWaypointPlacement(coordinate, editable, onDrag) {
       if (disposed) return
+      lifecycle.setWaypointPlacementActive(Boolean(coordinate && editable))
       onPersonalWaypointDrag = onDrag
       if (!coordinate) {
         if (personalWaypointMarker && personalWaypointDragHandler) {

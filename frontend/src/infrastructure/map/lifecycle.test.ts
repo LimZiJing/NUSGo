@@ -411,3 +411,60 @@ describe('map lifecycle style readiness', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('map lifecycle waypoint placement', () => {
+  it('uses taps over markers and route lines while leaving map controls available', () => {
+    vi.stubGlobal('Element', FakeElement)
+    const listeners = new Map<string, (event: MouseEvent) => void>()
+    const container = {
+      addEventListener: vi.fn((type: string, handler: (event: MouseEvent) => void) => {
+        listeners.set(type, handler)
+      }),
+      removeEventListener: vi.fn((type: string) => {
+        listeners.delete(type)
+      }),
+      getBoundingClientRect: vi.fn(() => ({ left: 10, top: 20 })),
+    } as unknown as HTMLElement
+    const onEmptyMapClick = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container,
+      onMapError: vi.fn(),
+      onEmptyMapClick,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    const click = listeners.get('click')
+    expect(click).toBeDefined()
+
+    const makeEvent = (target: FakeElement | null) => ({
+      target,
+      clientX: 30,
+      clientY: 60,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent)
+
+    const markerClick = makeEvent(new FakeElement('.maplibregl-marker'))
+    click?.(markerClick)
+    expect(onEmptyMapClick).not.toHaveBeenCalled()
+
+    lifecycle.setWaypointPlacementActive(true)
+    const routeClick = makeEvent(null)
+    const secondMarkerClick = makeEvent(new FakeElement('.maplibregl-marker'))
+    click?.(routeClick)
+    click?.(secondMarkerClick)
+    const controlClick = makeEvent(new FakeElement('.maplibregl-ctrl'))
+    click?.(controlClick)
+
+    expect(onEmptyMapClick).toHaveBeenNthCalledWith(1, [20, 40])
+    expect(onEmptyMapClick).toHaveBeenNthCalledWith(2, [20, 40])
+    expect(onEmptyMapClick).toHaveBeenCalledTimes(2)
+    expect(routeClick.stopImmediatePropagation).toHaveBeenCalledOnce()
+    expect(secondMarkerClick.stopImmediatePropagation).toHaveBeenCalledOnce()
+    expect(controlClick.stopImmediatePropagation).not.toHaveBeenCalled()
+    expect(map.unproject).toHaveBeenCalledTimes(2)
+
+    lifecycle.dispose()
+    expect(listeners.has('click')).toBe(false)
+    vi.unstubAllGlobals()
+  })
+})

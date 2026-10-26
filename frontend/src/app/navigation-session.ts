@@ -107,6 +107,7 @@ export interface NavigationSession {
   selectMobileRoute(routeId: string): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  clearStopsPin(): void
   /** Recentres on the latest known device fix without prompting for permission; no-op without a fix. */
   focusCurrentLocationIfKnown(): void
   /** Refits the active Explore target (selected venue/building or the selected route) with the current insets. */
@@ -719,6 +720,11 @@ export function createNavigationSession(
         if (disposed || !transitIndex?.stopById.has(stopId)) return
         dependencies.map.focusStopInStopsTab(stopId)
       })
+    },
+
+    clearStopsPin() {
+      if (disposed) return
+      dependencies.map.clearStopsPin()
     },
 
     focusCurrentLocationIfKnown() {

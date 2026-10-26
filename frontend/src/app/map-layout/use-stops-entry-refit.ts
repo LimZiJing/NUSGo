@@ -4,7 +4,7 @@ import type { NavigationSessionCommands } from '../navigation-session-mount'
 import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 
 interface UseStopsEntryRefitOptions {
-  readonly commands: Pick<NavigationSessionCommands, 'focusStopInStopsTab' | 'focusCurrentLocationIfKnown'>
+  readonly commands: Pick<NavigationSessionCommands, 'focusStopInStopsTab' | 'clearStopsPin' | 'focusCurrentLocationIfKnown'>
   readonly isMobileViewport: boolean
   readonly activeView: NavigationView
   readonly stopsDetent: MobileSheetDetent
@@ -13,7 +13,7 @@ interface UseStopsEntryRefitOptions {
 
 /**
  * Refocuses the remembered Stops stop when Stops becomes active or the remembered stop changes.
- * With no remembered stop, entering Stops recentres on the device location when one is known.
+ * With no remembered stop the pin is cleared, and entering Stops recentres on the device location when one is known.
  * Call it after useMapOverlayLayout so the new insets are already applied.
  * A collapsed mobile Stops sheet leaves the map unobscured, so the camera is left alone.
  */
@@ -39,6 +39,8 @@ export function useStopsEntryRefit({
     const enteredStops = previousViewRef.current !== 'stops' && activeView === 'stops'
     previousViewRef.current = activeView
     if (activeView !== 'stops') return
+    // Clearing the remembered stop (Back to stops) must drop the pin even when the camera is left alone.
+    if (rememberedStopId === null) commandsRef.current.clearStopsPin()
     if (isMobileViewportRef.current && stopsDetentRef.current === 'collapsed') return
     if (rememberedStopId !== null) {
       commandsRef.current.focusStopInStopsTab(rememberedStopId)

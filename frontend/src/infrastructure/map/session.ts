@@ -98,6 +98,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let planLayersVisible = true
   let viewportInsetsReady = false
   let visibleCenterZoomEnabled = false
+  let visibleCenterInsets: MapViewportInsets | null = null
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
@@ -160,13 +161,25 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
-  // Persistent map padding already moves the camera centre into the visible area.
-  const getFitOffset = (): [number, number] => visibleCenterZoomEnabled
-    ? [0, 0]
-    : [
+  // The active camera padding is captured when visible-centre mode begins.
+  const getFitOffset = (): [number, number] => {
+    if (visibleCenterZoomEnabled && visibleCenterInsets) {
+      return [
+        (
+          viewportInsets.left - viewportInsets.right -
+          visibleCenterInsets.left + visibleCenterInsets.right
+        ) / 2,
+        (
+          viewportInsets.top - viewportInsets.bottom -
+          visibleCenterInsets.top + visibleCenterInsets.bottom
+        ) / 2,
+      ]
+    }
+    return [
       (viewportInsets.left - viewportInsets.right) / 2,
       (viewportInsets.top - viewportInsets.bottom) / 2,
     ]
+  }
 
   const flyToStop = (stopId: string, zoom: number, popupOffset: number): void => {
     const stop = currentTransitIndex?.stopById.get(stopId)
@@ -618,8 +631,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     },
 
     setVisibleCenterZoom(enabled: boolean) {
-      if (disposed) return
+      if (disposed || visibleCenterZoomEnabled === enabled) return
       visibleCenterZoomEnabled = enabled
+      visibleCenterInsets = enabled ? { ...viewportInsets } : null
       lifecycle.setVisibleCenterZoom(enabled)
     },
 

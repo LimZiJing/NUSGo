@@ -126,23 +126,34 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
 
   options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
+  const getVisibleCenter = (
+    insets: MapViewportInsets,
+    clientWidth: number,
+    clientHeight: number,
+  ): [number, number] => [
+    Math.max(0, Math.min(clientWidth, (clientWidth + insets.left - insets.right) / 2)),
+    Math.max(0, Math.min(clientHeight, (clientHeight + insets.top - insets.bottom) / 2)),
+  ]
+
+  const getSheetTransitionDuration = (): number => {
+    if (typeof document === 'undefined' || typeof getComputedStyle !== 'function') return 0
+    const duration = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--motion-duration-panel'),
+    )
+    return Number.isFinite(duration) ? duration : 0
+  }
+
   const reportMapCenter = (): void => {
     if (disposed || !options.onMapCenterChange) return
     const { clientWidth, clientHeight } = map.getContainer()
-    // The bottom sheet obscures the canvas centre, so project the usable map area's centre.
-    const visibleCenterX = (clientWidth + viewportInsets.left - viewportInsets.right) / 2
-    const visibleCenterY = (clientHeight + viewportInsets.top - viewportInsets.bottom) / 2
     const center = clientWidth > 0 && clientHeight > 0
-      ? map.unproject([
-        Math.max(0, Math.min(clientWidth, visibleCenterX)),
-        Math.max(0, Math.min(clientHeight, visibleCenterY)),
-      ])
+      ? map.unproject(getVisibleCenter(viewportInsets, clientWidth, clientHeight))
       : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
   }
 
-  // Persistent padding makes MapLibre's own centre the visible-area centre, so button
-  // and gesture zoom use it. The pan keeps the view still while the padding changes.
+  // Padding aligns MapLibre's centre with the initial crosshair. Later detents pan
+  // to the new crosshair while keeping that padding, so camera perspective stays fixed.
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
     const { clientWidth, clientHeight } = map.getContainer()
     const anchor = map.unproject([clientWidth / 2, clientHeight / 2])
@@ -257,8 +268,19 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     ready,
     setViewportInsets(insets) {
       if (disposed) return
+      const { clientWidth, clientHeight } = map.getContainer()
+      const previousCenter = getVisibleCenter(viewportInsets, clientWidth, clientHeight)
       viewportInsets = insets
-      if (visibleCenterZoom) setPaddingKeepingView(insets)
+      if (visibleCenterZoom) {
+        const nextCenter = getVisibleCenter(viewportInsets, clientWidth, clientHeight)
+        const panOffset: [number, number] = [
+          previousCenter[0] - nextCenter[0],
+          previousCenter[1] - nextCenter[1],
+        ]
+        if (panOffset[0] !== 0 || panOffset[1] !== 0) {
+          map.panBy(panOffset, { duration: getSheetTransitionDuration() })
+        }
+      }
       reportMapCenter()
     },
     setVisibleCenterZoom(enabled) {

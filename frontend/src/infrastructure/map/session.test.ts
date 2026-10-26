@@ -621,11 +621,24 @@ describe('MapSession', () => {
       offset: [0, 0],
     }))
 
+    session.setViewportInsets({ top: 76, right: 0, bottom: 500, left: 0 })
+    session.focusCurrentLocation(fix)
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [fix.longitude, fix.latitude],
+      offset: [0, -50],
+    }))
+
+    session.resetView({ kind: 'campus', center: resetCenter, zoom: 16 })
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: resetCenter,
+      offset: [0, -50],
+    }))
+
     session.setVisibleCenterZoom(false)
     session.focusCurrentLocation(fix)
     expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
       center: [fix.longitude, fix.latitude],
-      offset: [0, -162],
+      offset: [0, -212],
     }))
 
     session.dispose()

@@ -142,15 +142,19 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
-  it('follows later inset changes only while enabled', () => {
+  it('pans the map under the crosshair without changing padding as insets change', () => {
     const { lifecycle, map } = createLifecycle()
-    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
+    const initialInsets = { top: 0, right: 0, bottom: 100, left: 0 }
+    lifecycle.setViewportInsets(initialInsets)
     expect(map.setPadding).not.toHaveBeenCalled()
 
     lifecycle.setVisibleCenterZoom(true)
     lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
 
-    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 300, left: 0 })
+    expect(map.setPadding).toHaveBeenCalledTimes(1)
+    expect(map.setPadding).toHaveBeenLastCalledWith(initialInsets)
+    expect(map.panBy).toHaveBeenCalledTimes(2)
+    expect(map.panBy.mock.calls[1][0]).toEqual([0, 100])
     lifecycle.dispose()
   })
 

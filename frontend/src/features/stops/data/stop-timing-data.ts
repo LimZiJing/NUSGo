@@ -68,7 +68,7 @@ export interface StopTimingData {
   readonly live: boolean
   readonly liveArrivalMessage: string | null
 }
-const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
+export const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
 
 function formatArrivalSeconds(seconds: number): string {
   return seconds < 30 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
@@ -163,9 +163,9 @@ function getLiveArrivalMessage(
   if (isRefreshing || scheduledDepartures.length > 0) return null
   if (publicArrivalSnapshot?.stops[stopId]) return null
   if (!snapshot) return null
-  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return 'No live data'
+  if (getArrivalAgeMs(snapshot, stopId, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return LIVE_TIMES_UNAVAILABLE_MESSAGE
   if (departures.length > 0) return null
-  return 'No live arrivals'
+  return 'No buses due soon'
 }
 
 function compactStartLabel(label: string): string {

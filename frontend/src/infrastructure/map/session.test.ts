@@ -36,6 +36,9 @@ vi.mock('maplibre-gl', () => {
     readonly removedLayers: string[] = []
     readonly addedMarkers: FakeMarker[] = []
     readonly failingLayers = new Set<string>()
+    readonly scrollZoom = { disable: vi.fn(), enable: vi.fn() }
+    readonly touchZoomRotate = { disable: vi.fn(), enable: vi.fn() }
+    readonly doubleClickZoom = { disable: vi.fn(), enable: vi.fn() }
     readonly paintProperties = new globalThis.Map<string, unknown>()
     readonly layoutProperties = new globalThis.Map<string, unknown>()
     readonly filters = new globalThis.Map<string, unknown>()
@@ -107,6 +110,10 @@ vi.mock('maplibre-gl', () => {
         : null,
     }))
     readonly fitBounds = vi.fn()
+    readonly setPadding = vi.fn()
+    readonly unproject = vi.fn(() => ({ lng: 0, lat: 0 }))
+    readonly project = vi.fn(() => ({ x: 600, y: 400 }))
+    readonly panBy = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly flyTo = vi.fn()
     readonly zoomIn = vi.fn()
@@ -581,6 +588,47 @@ describe('MapSession', () => {
     session.dispose()
     expect(currentLocationMarker.classes.has('current-location-marker-pulsing')).toBe(false)
     expect(marker?.remove).toHaveBeenCalledTimes(3)
+  })
+
+  it('focuses location and reset targets at the padded visible centre without applying the inset twice', async () => {
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    await session.ready
+    const map = fakeMapState.maps.at(-1) as { readonly flyTo: ReturnType<typeof vi.fn> }
+    const fix: DeviceLocationFix = {
+      longitude: 103.7844,
+      latitude: 1.2933,
+      accuracy: 12,
+      timestamp: 1_000,
+    }
+
+    session.setViewportInsets({ top: 76, right: 0, bottom: 400, left: 0 })
+    session.setVisibleCenterZoom(true)
+    session.focusCurrentLocation(fix)
+
+    expect(map.flyTo).toHaveBeenCalledWith(expect.objectContaining({
+      center: [fix.longitude, fix.latitude],
+      offset: [0, 0],
+    }))
+
+    const resetCenter: [number, number] = [103.785, 1.294]
+    session.resetView({ kind: 'campus', center: resetCenter, zoom: 16 })
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: resetCenter,
+      offset: [0, 0],
+    }))
+
+    session.setVisibleCenterZoom(false)
+    session.focusCurrentLocation(fix)
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [fix.longitude, fix.latitude],
+      offset: [0, -162],
+    }))
+
+    session.dispose()
   })
 
   beforeEach(() => {

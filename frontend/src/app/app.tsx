@@ -544,14 +544,16 @@ function App() {
         const addButton = personalWaypointsInitialFocusRef.current
         if (addButton && !addButton.disabled) addButton.focus()
         else moreInitialFocusRef.current?.focus()
-      } else if (morePage === 'creating') personalWaypointNameRef.current?.focus()
-      else moreInitialFocusRef.current?.focus()
+      } else if (morePage === 'creating') {
+        if (isMobileViewport) moreInitialFocusRef.current?.focus()
+        else personalWaypointNameRef.current?.focus()
+      } else moreInitialFocusRef.current?.focus()
     } else if (moreWasOpenRef.current && morePage === 'closed' && !skipMoreFocusRestoreRef.current) {
       moreEntryButtonRef.current?.focus()
     }
     moreWasOpenRef.current = isMoreOpen
     skipMoreFocusRestoreRef.current = false
-  }, [isMoreOpen, morePage])
+  }, [isMobileViewport, isMoreOpen, morePage])
 
   useEffect(() => {
     if (morePage === 'closed') return

@@ -43,7 +43,7 @@ before(async () => {
   }, 'development')
 })
 
-function createConfig(ltaAccountKey = 'test-lta-account-key') {
+function createConfig(ltaAccountKey = 'test-lta-account-key', extraEnv: Record<string, string> = {}) {
   return loadBackendConfig({
     NODE_ENV: 'test',
     NUSGO_DATA_DIR: sourceDataDirectory,
@@ -57,6 +57,7 @@ function createConfig(ltaAccountKey = 'test-lta-account-key') {
     LIVE_DATA_MAX_CONCURRENCY: '3',
     LIVE_DATA_RETRY_ATTEMPTS: '0',
     ...(ltaAccountKey ? { LTA_ACCOUNT_KEY: ltaAccountKey } : {}),
+    ...extraEnv,
   }, repositoryRoot)
 }
 
@@ -388,7 +389,8 @@ describe('Express live transit API', () => {
   })
 
   it('keeps readiness unavailable after an incomplete first shuttle cycle', async () => {
-    const config = createConfig()
+    // Require all 33 stops here so one failed stop is still an incomplete first cycle.
+    const config = createConfig('test-lta-account-key', { LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '33' })
     const firstStop = backendData.network.stops[0]
     assert.ok(firstStop)
     const upstreamCounts = { routeWindows: 0, shuttleStops: 0 }
@@ -433,6 +435,32 @@ describe('Express live transit API', () => {
       await Promise.all([closeHttpServer(server), liveData.stop()])
     }
   })
+  it('publishes the first snapshot with a failed stop and reports it only for requested stops', async () => {
+    const config = createConfig()
+    const failedStop = backendData.network.stops[0]
+    const okStop = backendData.network.stops[1]
+    assert.ok(failedStop && okStop)
+    const liveData = await createBackendLiveData(config, backendData, {
+      fetcher: createSuccessfulFetcher({ routeWindows: 0 }, undefined, failedStop.longName),
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+
+      const withFailedStop = liveData.getBusArrivals([failedStop.id, okStop.id])
+      assert.deepEqual(withFailedStop.unavailableStopIds, [failedStop.id])
+      assert.deepEqual(withFailedStop.stops[failedStop.id], {})
+
+      const withoutFailedStop = liveData.getBusArrivals([okStop.id])
+      assert.deepEqual(withoutFailedStop.unavailableStopIds, [])
+    } finally {
+      await liveData.stop()
+    }
+  })
+
   it('aborts in-flight provider work and leaves no shuttle snapshot during shutdown', async () => {
     let started = 0
     let aborted = 0

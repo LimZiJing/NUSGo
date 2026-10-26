@@ -131,7 +131,11 @@
       "id": "as6",
       "name": "AS6",
       "aliases": [
-        "AS 6"
+        "AS 6",
+        "LT 14",
+        "LT 15",
+        "LT14",
+        "LT15"
       ],
       "elementId": "15347235",
       "address": "11 Computing Drive",
@@ -142,7 +146,9 @@
       },
       "locationKind": "provisional-entrance",
       "roomCodePrefixes": [
-        "AS6"
+        "AS6",
+        "LT14",
+        "LT15"
       ],
       "sourceRefs": [
         {
@@ -2583,54 +2589,6 @@
         {
           "source": "nus-digital-twin",
           "elementId": "142077734"
-        }
-      ]
-    },
-    {
-      "id": "lt-14",
-      "name": "LT 14",
-      "aliases": [
-        "LT14"
-      ],
-      "elementId": "142079319",
-      "address": "11 Computing Drive",
-      "postal": "117416",
-      "location": {
-        "x": 103.77337,
-        "y": 1.29571
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [
-        "LT14"
-      ],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "142079319"
-        }
-      ]
-    },
-    {
-      "id": "lt-15",
-      "name": "LT 15",
-      "aliases": [
-        "LT15"
-      ],
-      "elementId": "142079318",
-      "address": "11 Computing Drive",
-      "postal": "117416",
-      "location": {
-        "x": 103.77343,
-        "y": 1.29552
-      },
-      "locationKind": "centroid",
-      "roomCodePrefixes": [
-        "LT15"
-      ],
-      "sourceRefs": [
-        {
-          "source": "nus-digital-twin",
-          "elementId": "142079318"
         }
       ]
     },

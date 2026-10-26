@@ -68,6 +68,8 @@ export interface StopTimingData {
   readonly live: boolean
   readonly liveArrivalMessage: string | null
 }
+const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
+
 function formatArrivalSeconds(seconds: number): string {
   return seconds < 30 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
 }
@@ -231,8 +233,10 @@ export function getStopTimingData(
   }: StopTimingDataOptions,
 ): StopTimingData {
   const favorites = new Set(favoriteStopIds)
+  // An unavailable stop shows the explicit label, not live or timetable times.
+  const shuttleUnavailable = arrivalSnapshot?.unavailableStopIds?.includes(stop.id) ?? false
   const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)
-  const departures = getLiveStopDepartures(
+  const departures = shuttleUnavailable ? [] : getLiveStopDepartures(
     stop,
     index,
     arrivalSnapshot,
@@ -247,9 +251,10 @@ export function getStopTimingData(
         isOpposite: stop.opposite === id,
       })),
   }))
+  const scheduledDepartures = shuttleUnavailable ? [] : routeAvailability.scheduledDepartures
   const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs)
   const live = (
-    !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
+    !shuttleUnavailable && !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
     getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
   ) || (
     !isRefreshing && !publicIsRefreshing &&
@@ -257,20 +262,22 @@ export function getStopTimingData(
     publicArrivalSnapshot !== null &&
     getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
   )
-  const liveArrivalMessage = getLiveArrivalMessage(
-    arrivalSnapshot,
-    stop.id,
-    nowMs,
-    departures,
-    routeAvailability.scheduledDepartures,
-    isRefreshing,
-    publicArrivalSnapshot,
-  )
+  const liveArrivalMessage = shuttleUnavailable
+    ? LIVE_TIMES_UNAVAILABLE_MESSAGE
+    : getLiveArrivalMessage(
+      arrivalSnapshot,
+      stop.id,
+      nowMs,
+      departures,
+      scheduledDepartures,
+      isRefreshing,
+      publicArrivalSnapshot,
+    )
 
   return {
     publicServices,
     departures,
-    scheduledDepartures: routeAvailability.scheduledDepartures,
+    scheduledDepartures,
     live,
     liveArrivalMessage,
   }

@@ -93,7 +93,7 @@ describe('Stops list data', () => {
     expect(nearbyStopIds).not.toContain('STOP-BEYOND-RADIUS')
   })
 
-  it('shows every saved canonical stop alphabetically regardless of map radius', () => {
+  it('shows every saved canonical stop in saved order regardless of map radius', () => {
     const favourites = getStopsForList(
       createOverviewIndex(),
       'favourites',
@@ -102,7 +102,7 @@ describe('Stops list data', () => {
       ['STOP-C', 'STOP-B', 'missing'],
     )
 
-    expect(favourites.map(({ stop }) => stop.id)).toEqual(['STOP-B', 'STOP-C'])
+    expect(favourites.map(({ stop }) => stop.id)).toEqual(['STOP-C', 'STOP-B'])
     expect(getStopsForList(null, 'nearby', null, null, [])).toEqual([])
   })
 })

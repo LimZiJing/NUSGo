@@ -5,7 +5,7 @@ import { StopsContent } from '../../features/stops/stops-content.tsx'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
-import { MorePanelSurface } from '../../ui/more-panel-surface'
+import { MorePanelSurface, type MorePanelPage } from '../../ui/more-panel-surface'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
 import {
   getExploreSheetSummary,
@@ -28,9 +28,13 @@ export interface AppViewsProps {
   readonly onSelectView: ComponentProps<typeof MainNavigation>['onSelectView']
   readonly morePanel: {
     readonly open: boolean
+    readonly page: MorePanelPage
+    readonly detent: MobileSheetDetent
+    readonly headerAction?: ReactNode
     readonly title: string
     readonly initialFocusRef: Ref<HTMLButtonElement>
     readonly onClose: () => void
+    readonly onDetentChange: (detent: MobileSheetDetent) => void
     readonly content: ReactNode
   }
   readonly shells: {
@@ -143,14 +147,33 @@ export function AppViews({
           </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="more-panel" active={morePanel.open}>
-          <MorePanelSurface
-            open={morePanel.open}
-            title={morePanel.title}
-            initialFocusRef={morePanel.initialFocusRef}
-            onClose={morePanel.onClose}
+          <NavigationPanelShell
+            className="more-panel-surface"
+            label="More panel"
+            controlsId="more-panel-content"
+            detent={isMobileViewport ? morePanel.detent : 'partial'}
+            partialVisibleHeight={morePanel.page === 'menu' ? 192 : undefined}
+            enabled={isMobileViewport}
+            active={morePanel.open}
+            portalContainer={sheetPortalContainer}
+            onDetentChange={morePanel.onDetentChange}
+            sectionProps={{
+              id: 'more-panel-content',
+              'aria-labelledby': 'more-panel-heading',
+              'data-open': morePanel.open ? 'true' : 'false',
+              'data-page': morePanel.page,
+            }}
           >
-            {morePanel.content}
-          </MorePanelSurface>
+            <MorePanelSurface
+              page={morePanel.page}
+              title={morePanel.title}
+              headerAction={morePanel.headerAction}
+              initialFocusRef={morePanel.initialFocusRef}
+              onClose={morePanel.onClose}
+            >
+              {morePanel.content}
+            </MorePanelSurface>
+          </NavigationPanelShell>
         </NavigationViewShell>
       </div>
       {!waypointPlacementActive && <MainNavigation

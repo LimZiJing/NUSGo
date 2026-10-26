@@ -13,7 +13,7 @@ How NUSGo plans a journey today. The accepted design is in [ADR 0002](adr/0002-n
 
 - Direct walking, one-bus and one-transfer candidates.
 - A venue endpoint contributes up to five reachable walking connectors, picked by estimated duration.
-- A chosen origin stop stays fixed for boarding. A chosen destination stop is an exact zero-walk endpoint, and may also use up to five final walks from other stops.
+- Selected stop endpoints retain the exact stop and use the nearby-stop connector policy defined in [ADR 0003](adr/0003-three-stop-single-shuttle-recommendation.md) for boarding and egress.
 - A transfer walks to a different route. A Path cannot revisit a stop or planning state.
 - Walking legs need complete Valhalla geometry.
 
@@ -40,7 +40,7 @@ A bus Path is discarded when its wait at any boarding, including a transfer, is 
 - Search is limited to 350 ms and 10,000 expanded paths, checks for cancellation and yields between batches. Timing records, walking adjacency and per-route stop projections are indexed or cached.
 - A Path with incomplete walking geometry is dropped alone, so the next ranked option can fill its place.
 - If geometry completion runs out of its 350 ms budget, the complete best-so-far candidates are returned and marked `bounded`. If there are none, the response is `planning_timeout`.
-- An `exact` result means the supported candidate set was exhausted. It does not prove a global optimum beyond the chosen connectors or one transfer.
+- An `exact` result means the supported candidate set was exhausted. It does not prove a global optimum beyond the selected endpoint connector limits or one transfer.
 - A valid no-bus response removes the bus options. Provider failures surface as planning errors.
 
 ## Timing inputs

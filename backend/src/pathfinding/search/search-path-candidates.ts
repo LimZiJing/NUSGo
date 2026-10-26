@@ -14,7 +14,13 @@ export type {
   PathSearchStatus,
   PathWalkingConnection,
 } from './path-search-types.ts'
-export { MAX_BUS_PATH_CANDIDATES, MAX_PATH_ENDPOINT_STOP_CONNECTORS, zeroBusWaitingTime } from './path-search-types.ts'
+export {
+  MAX_BUS_PATH_CANDIDATES,
+  MAX_PATH_ENDPOINT_STOP_CONNECTORS,
+  MAX_SELECTED_STOP_ENDPOINT_CONNECTORS,
+  MAX_SELECTED_STOP_ENDPOINT_STOPS,
+  zeroBusWaitingTime,
+} from './path-search-types.ts'
 
 function createPlanningResult(
   input: PathSearchInput,
@@ -53,7 +59,7 @@ function createPlanningResult(
 export function searchPaths(input: PathSearchInput): Path | null {
   const index = buildSearchIndex(input)
   const collector = createCollector()
-  for (const step of enumerateCandidateDefinitions(index)) {
+  for (const step of enumerateCandidateDefinitions(index, input.origin.endpoint)) {
     if (step.kind === 'candidate') {
       addCandidate(collector, resolveCandidate(input, index, step.definition))
     }
@@ -181,7 +187,7 @@ async function runBoundedCandidateSearch(
     return createState('budget-exceeded')
   }
 
-  for (const step of enumerateCandidateDefinitions(index)) {
+  for (const step of enumerateCandidateDefinitions(index, input.origin.endpoint)) {
     if (options.shouldCancel?.()) {
       return createState('cancelled')
     }

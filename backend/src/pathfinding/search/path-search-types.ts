@@ -174,8 +174,10 @@ export interface CandidateCollector {
   readonly walkingByKey: Map<string, PathCandidate>
 }
 
-// Keep endpoint fan-out bounded so a nearby venue cannot multiply the bus search without limit.
+// Venue connectors remain broad enough to find nearby stops; selected stops add at most one adjacent stop.
 export const MAX_PATH_ENDPOINT_STOP_CONNECTORS = 5
+export const MAX_SELECTED_STOP_ENDPOINT_STOPS = 2
+export const MAX_SELECTED_STOP_ENDPOINT_CONNECTORS = MAX_SELECTED_STOP_ENDPOINT_STOPS - 1
 
 export const MAX_BUS_PATH_CANDIDATES = 3
 

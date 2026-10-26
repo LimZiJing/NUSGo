@@ -1,6 +1,10 @@
 import type { TransitIndex } from '@nusgo/shared/transit/index'
 import type { PathGeometry } from '../path.ts'
-import { MAX_PATH_ENDPOINT_STOP_CONNECTORS } from '../search/search-path-candidates.ts'
+import { limitEndpointConnectors } from '../search/limit-endpoint-connectors.ts'
+import {
+  MAX_PATH_ENDPOINT_STOP_CONNECTORS,
+  MAX_SELECTED_STOP_ENDPOINT_CONNECTORS,
+} from '../search/search-path-candidates.ts'
 import type { PathWalkingConnection } from '../search/search-path-candidates.ts'
 import type {
   WalkingConnection,
@@ -20,6 +24,30 @@ function compareText(first: string, second: string): number {
   return 0
 }
 
+function selectEndpointConnectors(
+  candidates: readonly WalkingCandidate[],
+  endpoint: ResolvedPathLocation,
+  isOrigin: boolean,
+  transit: TransitIndex,
+): WalkingCandidate[] {
+  const isSelectedStop = endpoint.endpoint.kind === 'stop'
+  const maximumCount = isSelectedStop
+    ? MAX_SELECTED_STOP_ENDPOINT_CONNECTORS
+    : MAX_PATH_ENDPOINT_STOP_CONNECTORS
+  const preferredStopId = isSelectedStop
+    ? transit.stopById.get(endpoint.endpoint.id)?.opposite
+    : undefined
+  return limitEndpointConnectors(
+    candidates,
+    maximumCount,
+    preferredStopId,
+    (candidate) => {
+      const connectedEndpoint = isOrigin ? candidate.to.endpoint : candidate.from.endpoint
+      return connectedEndpoint.kind === 'stop' ? connectedEndpoint.id : ''
+    },
+  )
+}
+
 function isCandidatePair(
   from: ResolvedPathLocation,
   to: ResolvedPathLocation,
@@ -28,6 +56,11 @@ function isCandidatePair(
 ): boolean {
   if (from.key === to.key) return false
   if (from.key === endpoints.origin.key && to.key === endpoints.destination.key) return true
+  if (
+    from.key === endpoints.origin.key &&
+    endpoints.origin.endpoint.kind === 'stop' &&
+    to.endpoint.kind === 'stop'
+  ) return true
   if (
     from.key === endpoints.origin.key &&
     from.endpoint.kind !== 'stop' &&
@@ -71,23 +104,38 @@ function selectWalkingCandidates(
   const direct = candidates.filter((candidate) => (
     candidate.from.key === endpoints.origin.key && candidate.to.key === endpoints.destination.key
   ))
-  // Keep venue connector fan-out bounded, while selected stop endpoints stay fixed by ID.
-  const originConnectors = candidates
+  // Keep venue fan-out bounded. A selected stop keeps its exact stop and one preferred walkable neighbor.
+  const rankedOriginConnectors = candidates
     .filter((candidate) => (
       candidate.from.key === endpoints.origin.key && candidate.to.endpoint.kind === 'stop'
     ))
     .sort(compareCandidates)
-    .slice(0, MAX_PATH_ENDPOINT_STOP_CONNECTORS)
+  const originConnectors = selectEndpointConnectors(
+    rankedOriginConnectors,
+    endpoints.origin,
+    true,
+    transit,
+  )
   const destinationConnectors = candidates
     .filter((candidate) => (
       candidate.from.endpoint.kind === 'stop' && candidate.to.key === endpoints.destination.key
     ))
     .sort(compareCandidates)
-    .slice(0, MAX_PATH_ENDPOINT_STOP_CONNECTORS)
+  const selectedDestinationConnectors = selectEndpointConnectors(
+    destinationConnectors,
+    endpoints.destination,
+    false,
+    transit,
+  )
   const transferConnections = candidates.filter((candidate) => (
-    candidate.from.endpoint.kind === 'stop' && candidate.to.endpoint.kind === 'stop'
+    candidate.from.endpoint.kind === 'stop' &&
+    candidate.to.endpoint.kind === 'stop' &&
+    candidate.from.key !== endpoints.origin.key &&
+    candidate.to.key !== endpoints.origin.key &&
+    candidate.from.key !== endpoints.destination.key &&
+    candidate.to.key !== endpoints.destination.key
   ))
-  return [...direct, ...originConnectors, ...destinationConnectors, ...transferConnections]
+  return [...direct, ...originConnectors, ...selectedDestinationConnectors, ...transferConnections]
 }
 
 function toStraightLinePlaceholder(

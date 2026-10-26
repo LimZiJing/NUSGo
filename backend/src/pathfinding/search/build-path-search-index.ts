@@ -3,7 +3,8 @@ import { placeRouteStopsOnLine, type ShuttleTimingRecord } from '@nusgo/shared/t
 import { getTripEndpointKey } from '../endpoints.ts'
 import type { TripEndpoint } from '@nusgo/shared/routing/path'
 import type { BusPathLeg, PathEndpointLocation, PathGeometry, WalkingPathLeg } from '../path.ts'
-import { MAX_PATH_ENDPOINT_STOP_CONNECTORS, type PathSearchIndex, type PathSearchInput, type PathWalkingConnection, type ProjectedPoint, type ShuttleRideDefinition, type TransferOption, type WalkingConnector } from './path-search-types.ts'
+import { limitEndpointConnectors } from './limit-endpoint-connectors.ts'
+import { MAX_PATH_ENDPOINT_STOP_CONNECTORS, MAX_SELECTED_STOP_ENDPOINT_CONNECTORS, type PathSearchIndex, type PathSearchInput, type PathWalkingConnection, type ProjectedPoint, type ShuttleRideDefinition, type TransferOption, type WalkingConnector } from './path-search-types.ts'
 
 const METRES_PER_LATITUDE_DEGREE = 110540
 
@@ -248,7 +249,6 @@ function* collectConnectorsSteps(
   // Walking direction is part of the graph: reverse costs are never inferred from a forward edge.
   if (endpoint.endpoint.kind === 'stop') {
     if (!input.transitIndex.stopById.has(endpoint.endpoint.id)) return []
-    if (isOrigin) return [{ stopId: endpoint.endpoint.id, connection: null }]
   }
 
   const selectedByStop = new Map<string, WalkingConnector>()
@@ -272,21 +272,37 @@ function* collectConnectorsSteps(
     }
   }
   const topConnectors: WalkingConnector[] = []
+  const connectorLimit = endpoint.endpoint.kind === 'stop'
+    ? MAX_SELECTED_STOP_ENDPOINT_CONNECTORS
+    : MAX_PATH_ENDPOINT_STOP_CONNECTORS
   for (const candidate of selectedByStop.values()) {
     const insertAt = topConnectors.findIndex((connector) => compareConnectors(candidate, connector) < 0)
-    if (insertAt < 0 && topConnectors.length >= MAX_PATH_ENDPOINT_STOP_CONNECTORS) {
+    if (insertAt < 0 && topConnectors.length >= connectorLimit) {
       if (shouldCheckpoint()) yield
       continue
     }
     if (insertAt < 0) topConnectors.push(candidate)
     else topConnectors.splice(insertAt, 0, candidate)
-    if (topConnectors.length > MAX_PATH_ENDPOINT_STOP_CONNECTORS) topConnectors.pop()
+    if (topConnectors.length > connectorLimit) topConnectors.pop()
     if (shouldCheckpoint()) yield
   }
-  if (!isOrigin && endpoint.endpoint.kind === 'stop') {
-    return [{ stopId: endpoint.endpoint.id, connection: null }, ...topConnectors]
+  const oppositeStopId = endpoint.endpoint.kind === 'stop'
+    ? input.transitIndex.stopById.get(endpoint.endpoint.id)?.opposite
+    : undefined
+  const oppositeConnector = oppositeStopId ? selectedByStop.get(oppositeStopId) : undefined
+  if (oppositeConnector && !topConnectors.some(({ stopId }) => stopId === oppositeStopId)) {
+    topConnectors.push(oppositeConnector)
   }
-  return topConnectors
+  const connectors = limitEndpointConnectors(
+    topConnectors,
+    connectorLimit,
+    oppositeStopId,
+    (connector) => connector.stopId,
+  )
+  if (endpoint.endpoint.kind === 'stop') {
+    return [{ stopId: endpoint.endpoint.id, connection: null }, ...connectors]
+  }
+  return connectors
 }
 
 function getTimingKey(routeId: string, fromStopId: string, toStopId: string): string {

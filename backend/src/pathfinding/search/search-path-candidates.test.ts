@@ -5,6 +5,7 @@ import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import { validateTransitNetwork } from '@nusgo/shared/transit/model'
 import type { TripEndpoint } from '@nusgo/shared/routing/path'
 import { getTripEndpointKey } from '../endpoints.ts'
+import { buildSearchIndex } from './build-path-search-index.ts'
 import {
   searchPaths,
   searchPathsWithinBudget,
@@ -239,6 +240,7 @@ function createOneTransferInput(
 function createFiveStopConnectorInput(
   walkingConnections: readonly PathWalkingConnection[],
   rideSecondsByPair: ReadonlyMap<string, number>,
+  oppositeStopIds: ReadonlyMap<string, string> = new Map(),
 ): PathSearchInput {
   const stopIds = ['STOP-A', 'STOP-B', 'STOP-C', 'STOP-D', 'STOP-E']
   const network = validateTransitNetwork({
@@ -259,6 +261,7 @@ function createFiveStopConnectorInput(
       latitude: 1,
       longitude: 103 + index * 0.001,
       services: ['A1'],
+      ...(oppositeStopIds.has(id) ? { opposite: oppositeStopIds.get(id) } : {}),
     })),
   })
   const routeGeometry = validateBusRouteGeometry(network, {
@@ -399,7 +402,9 @@ function createSameRouteInput(): PathSearchInput {
   }
 }
 
-function createUpstreamBoardingInput(): PathSearchInput {
+function createUpstreamBoardingInput(
+  routeStopIds = ['STOP-B', 'STOP-A', 'STOP-C'],
+): PathSearchInput {
   const network = validateTransitNetwork({
     version: 1,
     metadata: {
@@ -410,10 +415,10 @@ function createUpstreamBoardingInput(): PathSearchInput {
       routeOrderSource: 'test',
       coordinateSource: 'test',
     },
-    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: ['STOP-A', 'STOP-B', 'STOP-C'] }],
+    routes: [{ id: 'A1', name: 'A1', color: '#123456', stopIds: routeStopIds }],
     stops: [
-      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'] },
-      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'] },
+      { id: 'STOP-A', longName: 'Stop A', shortName: 'A', latitude: 1, longitude: 103, services: ['A1'], opposite: 'STOP-B' },
+      { id: 'STOP-B', longName: 'Stop B', shortName: 'B', latitude: 1, longitude: 103.001, services: ['A1'], opposite: 'STOP-A' },
       { id: 'STOP-C', longName: 'Stop C', shortName: 'C', latitude: 1, longitude: 103.002, services: ['A1'] },
     ],
   })
@@ -422,7 +427,12 @@ function createUpstreamBoardingInput(): PathSearchInput {
     features: [{
       type: 'Feature',
       properties: { routeId: 'A1', name: 'A1', color: '#123456' },
-      geometry: { type: 'LineString', coordinates: [[103, 1], [103.001, 1], [103.002, 1]] },
+      geometry: {
+        type: 'LineString',
+        coordinates: routeStopIds.map((stopId) => (
+          stopId === 'STOP-A' ? [103, 1] : stopId === 'STOP-B' ? [103.001, 1] : [103.002, 1]
+        )),
+      },
     }],
   })
   const originStop: TripEndpoint = { kind: 'stop', id: 'STOP-B' }
@@ -638,6 +648,39 @@ function createCompleteAlternativeInput(): PathSearchInput {
 }
 
 describe('searchPathCandidates', () => {
+  it('keeps the selected origin and prefers its opposite over a closer third stop', () => {
+    const input = createUpstreamBoardingInput()
+    const index = buildSearchIndex({
+      ...input,
+      walkingConnections: [
+        walking({ kind: 'stop', id: 'STOP-B' }, stopC, 1),
+        ...input.walkingConnections,
+      ],
+    })
+
+    expect(index.originConnectors.map(({ stopId }) => stopId)).toEqual(['STOP-B', 'STOP-A'])
+  })
+
+  it('keeps the selected destination and prefers its opposite over a closer third stop', () => {
+    const selectedDestination: TripEndpoint = { kind: 'stop', id: 'STOP-E' }
+    const input = createFiveStopConnectorInput([
+      walking({ kind: 'stop', id: 'STOP-C' }, selectedDestination, 1),
+      walking({ kind: 'stop', id: 'STOP-B' }, selectedDestination, 10),
+    ], new Map(), new Map([
+      ['STOP-B', 'STOP-E'],
+      ['STOP-E', 'STOP-B'],
+    ]))
+    const index = buildSearchIndex({
+      ...input,
+      destination: {
+        endpoint: selectedDestination,
+        coordinate: { longitude: 103.004, latitude: 1 },
+      },
+    })
+
+    expect([...index.destinationConnectorByStopId.keys()]).toEqual(['STOP-E', 'STOP-B'])
+  })
+
   it('caps venue-origin connectors to the five shortest walking durations', () => {
     const input = createFiveStopConnectorInput([
       walking(origin, stopA, 1),
@@ -995,15 +1038,33 @@ describe('searchPathCandidates', () => {
     })
   })
 
-  it('keeps a selected stop fixed instead of walking to another boarding stop', () => {
+  it('allows a selected stop origin to walk to another boarding stop', () => {
     const path = searchPaths(createUpstreamBoardingInput())
 
-    expect(path?.legs.map((leg) => leg.mode)).toEqual(['shuttle', 'walking'])
+    expect(path?.legs.map((leg) => leg.mode)).toEqual(['walking', 'shuttle', 'walking'])
     expect(path?.legs[0]).toMatchObject({
+      mode: 'walking',
+      from: { kind: 'stop', id: 'STOP-B' },
+      to: { kind: 'stop', id: 'STOP-A' },
+    })
+    expect(path?.legs[1]).toMatchObject({
       routeId: 'A1',
-      boardingStopId: 'STOP-B',
+      boardingStopId: 'STOP-A',
       alightingStopId: 'STOP-C',
     })
+  })
+
+  it('does not revisit a selected origin when walking to an upstream boarding stop', async () => {
+    const result = await searchPathsWithinBudget(
+      createUpstreamBoardingInput(['STOP-A', 'STOP-B', 'STOP-C']),
+    )
+
+    expect(result.candidates.some(({ path }) => {
+      const firstLeg = path.legs[0]
+      return firstLeg?.mode === 'walking' &&
+        firstLeg.from.kind === 'stop' && firstLeg.from.id === 'STOP-B' &&
+        firstLeg.to.kind === 'stop' && firstLeg.to.id === 'STOP-A'
+    })).toBe(false)
   })
 
   it('does not reboard after a route reaches its declared terminal', () => {

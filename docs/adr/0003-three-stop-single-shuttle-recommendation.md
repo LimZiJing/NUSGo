@@ -18,12 +18,13 @@ display policy. The current code uses `Path`, `PathLeg`,
 
 For each venue endpoint, select at most five reachable directed walking
 connectors by estimated duration. Keep direct endpoint-to-endpoint walking as
-an option. A user-selected origin stop remains fixed for boarding. A
-user-selected destination stop remains the Path endpoint and also allows up
-to five validated directed walking connectors from other stops; retain the
-exact selected stop as a zero-walk destination, for up to six destination
-connectors total. Stop-to-stop walking links come from the validated directed
-walking graph.
+an option. A user-selected stop endpoint remains an exact zero-walk option and
+may connect to at most one other stop through a validated directed walking
+link, for two nearby stops total including the selected stop. If its paired
+opposite stop has a valid walking connection in the required direction, prefer
+that stop; otherwise use the shortest estimated walking connector. This applies
+to both origin boarding and destination egress. Stop-to-stop walking links come
+from the validated directed walking graph.
 
 The engine may generate Paths with zero, one, or two bus boardings. A
 two-boarding Path must transfer by walking to a different route. A Path
@@ -66,13 +67,14 @@ and stop so candidate rides reuse geometry work. Cancellation remains distinct
 from budget exhaustion. When a search or geometry-enrichment budget is reached,
 return only complete best-so-far candidates and mark them `bounded`. An
 `exact` candidate pool means the supported search completed; it is not a
-global optimum across connectors outside the five selected or Paths with
-more than one transfer.
+global optimum across connectors outside the selected endpoint limits or Paths
+with more than one transfer.
 
 ## Consequences
 
 - Up to five origin and five destination venue connectors produce at most 25
-  endpoint combinations before route alternatives are considered.
+  endpoint combinations before route alternatives are considered. A selected
+  stop endpoint keeps its exact stop plus at most one walkable alternative.
 - One transfer expands the supported set without eagerly materializing every
   full path; indexed joins and the shared path/time budget constrain work.
 - Navigation state retains the candidate pool while the map and current

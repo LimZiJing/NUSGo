@@ -7,13 +7,18 @@ function hasRepeatedStops(
   firstRide: ShuttleRideDefinition,
   secondRide?: ShuttleRideDefinition,
   transferConnection?: PathWalkingConnection,
+  initialOriginStopId?: string,
 ): boolean {
-  // A two-route option must not revisit any stop already traversed by its first ride or transfer.
+  // A Path cannot revisit a stop already visited by an earlier ride or the selected origin.
   const visited = firstRide.traversedStopIds
   if (transferConnection?.to.kind === 'stop' && visited.has(transferConnection.to.id)) return true
+  if (
+    transferConnection?.to.kind === 'stop' &&
+    transferConnection.to.id === initialOriginStopId
+  ) return true
   if (secondRide) {
     for (const stopId of secondRide.traversedStopIds) {
-      if (visited.has(stopId)) return true
+      if (visited.has(stopId) || stopId === initialOriginStopId) return true
     }
   }
   return false
@@ -21,6 +26,7 @@ function hasRepeatedStops(
 
 export function* enumerateCandidateDefinitions(
   index: PathSearchIndex,
+  originEndpoint: PathSearchInput['origin']['endpoint'],
 ): Generator<CandidateEnumerationStep> {
   for (const connection of index.directWalkingConnections) {
     yield { kind: 'work' }
@@ -29,8 +35,12 @@ export function* enumerateCandidateDefinitions(
 
   for (const originConnector of index.originConnectors) {
     const firstRides = index.ridesByBoardingStopId.get(originConnector.stopId) ?? []
+    const initialOriginStopId = originConnector.connection && originEndpoint.kind === 'stop'
+      ? originEndpoint.id
+      : undefined
     for (const firstRide of firstRides) {
       yield { kind: 'work' }
+      if (initialOriginStopId && firstRide.traversedStopIds.has(initialOriginStopId)) continue
       const destinationConnector = index.destinationConnectorByStopId.get(firstRide.toStopId)
       if (destinationConnector) {
         yield { kind: 'candidate', definition: {
@@ -47,7 +57,7 @@ export function* enumerateCandidateDefinitions(
       for (const [secondRouteId, options] of optionsByRoute) {
         if (firstRide.routeId === secondRouteId) continue
         for (const option of options) {
-          if (hasRepeatedStops(firstRide, option.ride, option.connection)) {
+          if (hasRepeatedStops(firstRide, option.ride, option.connection, initialOriginStopId)) {
             rejectedOptionCount += 1
             if (rejectedOptionCount % 64 === 0) yield { kind: 'work' }
             continue

@@ -96,6 +96,54 @@ describe('canonical-data path planning regression', () => {
     expect(path?.totalDurationSeconds).toBeGreaterThan(0)
   })
 
+  it('walks from a selected stop to its opposite stop to board D2 for COM3', { timeout: 5_000 }, async () => {
+    const transit = createTransitData()
+    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const walkingConnections = createWalkingConnections()
+    const service = createFindPathsService({
+      routeEngine: {
+        matrixWalking: async () => [],
+        routeWalking: async ({ origin, destination }) => ({
+          distanceMeters: 100,
+          durationSeconds: 100,
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: [
+              [origin.longitude, origin.latitude] as const,
+              [destination.longitude, destination.latitude] as const,
+            ],
+          },
+        }),
+      },
+      walkingConnectionProvider: { getWalkingConnections: async () => walkingConnections },
+      getTestDepartureMs: () => null,
+      now: Date.now,
+      monotonicNow: () => performance.now(),
+      yieldControl: () => Promise.resolve(),
+    })
+    const candidates = (await service({
+      origin: { kind: 'stop', id: 'KR-MRT' },
+      destination: { kind: 'stop', id: 'COM3' },
+      venues,
+      transit: {
+        index: transit.index,
+        geometry: transit.geometry,
+        shuttleTiming: transit.shuttleTiming,
+      },
+    }, { signal: new AbortController().signal }))?.candidates ?? []
+
+    expect(candidates.some(({ path }) => {
+      const [walk, ride] = path.legs
+      return walk?.mode === 'walking' &&
+        walk.from.kind === 'stop' && walk.from.id === 'KR-MRT' &&
+        walk.to.kind === 'stop' && walk.to.id === 'KR-MRT-OPP' &&
+        ride?.mode === 'shuttle' &&
+        ride.routeId === 'D2' &&
+        ride.boardingStopId === 'KR-MRT-OPP' &&
+        ride.alightingStopId === 'COM3'
+    })).toBe(true)
+  })
+
   it('hides detour bus Paths between PGP stops that are a short walk apart', { timeout: 5_000 }, async () => {
     const transit = createTransitData()
     const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))

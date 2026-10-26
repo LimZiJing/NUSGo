@@ -493,7 +493,7 @@ describe('findPaths', () => {
     expect(routeEngine.matrixWalking).not.toHaveBeenCalled()
   })
 
-  it('keeps a selected stop fixed when considering one-bus options', async () => {
+  it('keeps exact-stop boarding available and checks reachable alternative boarding stops', async () => {
     const transit = createAlternativeTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => []),
@@ -553,7 +553,10 @@ describe('findPaths', () => {
     const path = result?.candidates[0]?.path ?? null
 
     expect(shuttleArrivalClient.getArrivals).toHaveBeenCalledWith(
-      [{ stopId: 'STOP-A', stopName: 'Stop A' }],
+      [
+        { stopId: 'STOP-A', stopName: 'Stop A' },
+        { stopId: 'STOP-C', stopName: 'Stop C' },
+      ],
       expect.any(AbortSignal),
     )
     expect(path?.legs.find((leg) => leg.mode === 'shuttle')).toMatchObject({
@@ -563,7 +566,7 @@ describe('findPaths', () => {
     })
   })
 
-  it('enriches a same-route final walk to a selected destination stop while keeping the origin stop fixed', async () => {
+  it('enriches a same-route final walk to a selected destination stop from the exact origin stop', async () => {
     const transit = createFourStopTransitData()
     const routeEngine = {
       matrixWalking: vi.fn(async () => []),

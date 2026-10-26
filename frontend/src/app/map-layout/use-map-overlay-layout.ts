@@ -75,7 +75,8 @@ export function useMapOverlayLayout({
 
   useLayoutEffect(() => {
     const shell = refs.mapShell.current
-    if (!shell || !isMobileViewport) return
+    // Placement removes the measured tab bar, so remeasure only after navigation returns.
+    if (!shell || !isMobileViewport || waypointPlacementActive) return
 
     const updateVisualViewport = (): void => {
       const viewport = window.visualViewport
@@ -108,7 +109,7 @@ export function useMapOverlayLayout({
       shell.style.removeProperty('--mobile-tab-bar-height')
       shell.style.removeProperty('--mobile-viewport-offset-top')
     }
-  }, [isMobileViewport, refs])
+  }, [isMobileViewport, refs, waypointPlacementActive])
 
   useLayoutEffect(() => {
     const shell = refs.mapShell.current

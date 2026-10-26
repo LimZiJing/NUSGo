@@ -69,7 +69,7 @@ export interface StopTimingData {
   readonly liveArrivalMessage: string | null
 }
 function formatArrivalSeconds(seconds: number): string {
-  return seconds <= 60 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
+  return seconds < 30 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
 }
 
 function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, stopId: string, nowMs: number): number {

@@ -98,7 +98,7 @@ describe('selected stop details model', () => {
 
     expect(selection.publicServices).toEqual([{
       serviceNumber: '95',
-      timings: ['Arr', '5m', '-'],
+      timings: ['1m', '5m', '-'],
       status: 'live',
     }])
     expect(selection.live).toBe(true)
@@ -141,7 +141,7 @@ describe('selected stop details model', () => {
     const stopA = getSelectedStop(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
     const stopB = getSelectedStop(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
 
-    expect(stopA.departures[0]?.timings).toEqual(['Arr', '2m', '-'])
+    expect(stopA.departures[0]?.timings).toEqual(['1m', '2m', '-'])
     expect(stopB.departures[0]?.timings).toEqual(['2m', '3m', '-'])
   })
 

@@ -65,6 +65,42 @@ describe('useStopsArrivals', () => {
     expect(client).toHaveBeenCalledTimes(2)
   })
 
+  it('refreshes immediately when the page returns to the foreground', async () => {
+    vi.useFakeTimers()
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
+    const visibilityDescriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState')
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+
+    try {
+      render(<Probe client={client} active />)
+      await act(async () => undefined)
+      expect(client).toHaveBeenCalledOnce()
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      expect(client).toHaveBeenCalledOnce()
+
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+
+      expect(client).toHaveBeenCalledTimes(2)
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30_000)
+      })
+      expect(client).toHaveBeenCalledTimes(3)
+    } finally {
+      if (visibilityDescriptor) {
+        Object.defineProperty(document, 'visibilityState', visibilityDescriptor)
+      } else {
+        Reflect.deleteProperty(document, 'visibilityState')
+      }
+    }
+  })
+
   it('does not reload when the same stop request is recreated', async () => {
     const client: StopsArrivalLoader = vi.fn(async () => snapshot)
     const { rerender } = render(<Probe client={client} active stops={[...stops]} />)

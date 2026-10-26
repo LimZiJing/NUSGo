@@ -41,6 +41,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 - Stops and journey planning read one shared backend snapshot. Newer snapshots replace older ones together, and older responses are ignored. Rapid changes to the visible stop set are debounced, and countdowns run from per-stop observation times.
 - A fresh arrival gets the LIVE badge. A recent one stays visible without LIVE during a refresh or retry, up to the 120-second maximum age. Expired, unavailable and no-arrival states never show placeholder timings.
+- Returning the page to the foreground immediately refreshes the last requested stop set.
 - When the whole list has no live data, one "No live data" notice replaces the status-only public rows and per-card empty messages. Scheduled internal rows stay.
 - If live arrivals are empty for another reason, service windows give a compact scheduled or ended state, with first-service countdowns inside a 30-minute grace period.
 - The last snapshot stays visible while refreshing the same stop set. It clears when the visible stop set changes.

@@ -435,7 +435,7 @@ describe('Express live transit API', () => {
       await Promise.all([closeHttpServer(server), liveData.stop()])
     }
   })
-  it('publishes the first snapshot with a failed stop and reports it only for requested stops', async () => {
+  it('publishes the first snapshot with a failed stop, reports ready over HTTP, and lists it only for requested stops', async () => {
     const config = createConfig()
     const failedStop = backendData.network.stops[0]
     const okStop = backendData.network.stops[1]
@@ -445,10 +445,20 @@ describe('Express live transit API', () => {
       now: () => fixedNow,
       ltaMappings: [],
     })
+    const server = await listenHttpServer(createApp(config, backendData, liveData), '127.0.0.1', 0)
+    const address = server.address()
+    assert.ok(address && typeof address !== 'string')
+    const baseUrl = 'http://127.0.0.1:' + address.port
 
     try {
       liveData.start()
       await waitForSnapshot(liveData)
+
+      const ready = await fetch(baseUrl + '/api/ready')
+      assert.equal(ready.status, 200)
+      const readyBody = await ready.json() as { status: string; liveSnapshotReady: boolean }
+      assert.equal(readyBody.status, 'ready')
+      assert.equal(readyBody.liveSnapshotReady, true)
 
       const withFailedStop = liveData.getBusArrivals([failedStop.id, okStop.id])
       assert.deepEqual(withFailedStop.unavailableStopIds, [failedStop.id])
@@ -457,7 +467,7 @@ describe('Express live transit API', () => {
       const withoutFailedStop = liveData.getBusArrivals([okStop.id])
       assert.deepEqual(withoutFailedStop.unavailableStopIds, [])
     } finally {
-      await liveData.stop()
+      await Promise.all([closeHttpServer(server), liveData.stop()])
     }
   })
 

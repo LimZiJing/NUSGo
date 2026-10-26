@@ -97,6 +97,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   // Keep the selected Path while Plan is hidden so returning to Plan restores the same route.
   let planLayersVisible = true
   let viewportInsetsReady = false
+  let visibleCenterZoomEnabled = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
   let currentVenues: VenueLocationMap = {}
@@ -159,11 +160,13 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
-  // MapLibre retains flyTo padding, so use a temporary offset for sheet-aware point focus.
-  const getFitOffset = (): [number, number] => [
-    (viewportInsets.left - viewportInsets.right) / 2,
-    (viewportInsets.top - viewportInsets.bottom) / 2,
-  ]
+  // Persistent map padding already moves the camera centre into the visible area.
+  const getFitOffset = (): [number, number] => visibleCenterZoomEnabled
+    ? [0, 0]
+    : [
+      (viewportInsets.left - viewportInsets.right) / 2,
+      (viewportInsets.top - viewportInsets.bottom) / 2,
+    ]
 
   const flyToStop = (stopId: string, zoom: number, popupOffset: number): void => {
     const stop = currentTransitIndex?.stopById.get(stopId)
@@ -616,6 +619,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     setVisibleCenterZoom(enabled: boolean) {
       if (disposed) return
+      visibleCenterZoomEnabled = enabled
       lifecycle.setVisibleCenterZoom(enabled)
     },
 

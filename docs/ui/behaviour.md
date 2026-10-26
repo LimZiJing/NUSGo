@@ -36,6 +36,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - **Focused stop:** selecting a stop (on mobile via the Stops tab) opens a detail sheet and places a neutral pin above it, with no popup. The pin stays after Back, shows only in Stops, and returns without moving the camera.
 - **Popups:** entering Stops closes any open popup. Other tab changes close bus-stop popups. Switching between Find venue and Bus routes inside Explore leaves them open.
 - **Route rows** show up to three downstream favourited stop nicknames per internal route, forward-only by stop ID and excluding transfers and the selected stop. Public-bus rows show LTA DataMall timings and separate the live, no-estimate, out-of-operation and provider-error states. Public buses are display-only and never used in journey routing.
+- **Arrival labels:** internal and public-bus arrivals show “Arr” only below 30 seconds; countdowns of 30 seconds or longer round up to whole minutes.
 
 ### Arrival freshness
 

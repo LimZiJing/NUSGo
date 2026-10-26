@@ -114,8 +114,16 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
       }
     }
 
+    const refreshWhenVisible = (): void => {
+      if (document.visibilityState !== 'visible') return
+      if (refreshTimer) clearTimeout(refreshTimer)
+      refreshTimer = null
+      void load()
+    }
+
     const shouldDebounce = previousStopKeyRef.current !== null && previousStopKeyRef.current !== stopKey
     previousStopKeyRef.current = stopKey
+    document.addEventListener('visibilitychange', refreshWhenVisible)
     if (shouldDebounce) {
       stopSetTimer = setTimeout(() => { void load() }, STOP_SET_DEBOUNCE_MS)
     } else {
@@ -123,6 +131,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     }
     return () => {
       disposed = true
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
       controller?.abort()
       if (stopSetTimer) clearTimeout(stopSetTimer)
       if (refreshTimer) clearTimeout(refreshTimer)

@@ -26,6 +26,17 @@ that stop; otherwise use the shortest estimated walking connector. This applies
 to both origin boarding and destination egress. Stop-to-stop walking links come
 from the validated directed walking graph.
 
+Applying this cap to destination egress is a deliberate change from the previous
+allowance of five incoming connectors. That allowance could admit destination
+approaches through stops beyond the intended two-stop neighborhood. Applying
+the same cap at both selected endpoints keeps the exact stop available while
+allowing access from one valid directed neighbor, usually the paired opposite
+stop. Issue #505's clarified acceptance applies this rule to both selected
+origins and destinations; it supersedes the earlier #296 requirement to
+preserve selected-stop connector fan-out, while keeping exact-stop routes
+available. The tradeoff is that paths requiring a second or non-paired
+destination connector are no longer considered.
+
 The engine may generate Paths with zero, one, or two bus boardings. A
 two-boarding Path must transfer by walking to a different route. A Path
 cannot revisit a stop or planning state, and a BusRoute cannot be boarded again

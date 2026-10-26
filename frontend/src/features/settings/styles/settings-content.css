@@ -372,7 +372,7 @@
 }
 
 @media (max-width: 768px) {
-  .settings-content-scroll {
+  .more-panel-content-scroll {
     padding-bottom: calc(var(--mobile-tab-bar-height) + var(--space-3));
   }
 }

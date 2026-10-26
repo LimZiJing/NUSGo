@@ -57,6 +57,8 @@ export interface MapLifecycle {
   setViewportInsets(insets: MapViewportInsets): void
   /** While on, zoom keeps the visible-area centre (where the crosshair sits) fixed. */
   setVisibleCenterZoom(enabled: boolean): void
+  /** While on, map taps place the waypoint even when they land on existing map features. */
+  setWaypointPlacementActive(active: boolean): void
   dispose(): void
 }
 
@@ -102,10 +104,27 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   let visibleCenterZoom = false
+  let waypointPlacementActive = false
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
   }
+
+  const handlePlacementMapClick = (event: MouseEvent): void => {
+    if (disposed || !waypointPlacementActive) return
+    const target = event.target
+    if (typeof Element !== 'undefined' && target instanceof Element && target.closest(
+      '.maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
+    )) return
+
+    const bounds = options.container.getBoundingClientRect()
+    const point = map.unproject([event.clientX - bounds.left, event.clientY - bounds.top])
+    options.onEmptyMapClick([point.lng, point.lat])
+    event.preventDefault()
+    event.stopImmediatePropagation()
+  }
+
+  options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
   const reportMapCenter = (): void => {
     if (disposed || !options.onMapCenterChange) return
@@ -218,7 +237,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       { layers: routeLayerIds },
     ).length) return
 
-    options.onEmptyMapClick()
+    options.onEmptyMapClick([event.lngLat.lng, event.lngLat.lat])
   }
 
   map.addControl(navigationControl, 'top-right')
@@ -263,9 +282,14 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
         map.doubleClickZoom.enable()
       }
     },
+    setWaypointPlacementActive(active) {
+      if (disposed) return
+      waypointPlacementActive = active
+    },
     dispose() {
       if (disposed) return
       disposed = true
+      options.container.removeEventListener?.('click', handlePlacementMapClick, true)
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)

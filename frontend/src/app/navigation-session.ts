@@ -28,7 +28,7 @@ import { reconcileRouteSelection } from './bus-route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
-import type { MapJourneyOption, MapSession, MapViewportInsets } from './contracts/map'
+import type { MapCoordinate, MapJourneyOption, MapSession, MapViewportInsets } from './contracts/map'
 import {
   INITIAL_LOCATION_TRACKING_STATE,
   isLocationRequestFailure,
@@ -137,9 +137,14 @@ export interface NavigationSession {
   back(): void
   escape(): void
   closeToRoot(): void
-  handleMapClick(): void
+  handleMapClick(coordinate: MapCoordinate): void
   setViewportInsets(insets: MapViewportInsets): void
   setVisibleCenterZoom(enabled: boolean): void
+  setPersonalWaypointPlacement(
+    coordinate: MapCoordinate | null,
+    editable: boolean,
+    onChange: (coordinate: MapCoordinate) => void,
+  ): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
@@ -620,6 +625,7 @@ export function createNavigationSession(
     selectBuilding: (building) => dependencies.map.selectBuilding(building),
     clearVenue: () => dependencies.map.clearVenue(),
   })
+  let personalWaypointPlacementChange: ((coordinate: MapCoordinate) => void) | null = null
 
   const setActiveRoute = (routeId: string | null, remember: boolean, fit = true): void => {
     const route = routeId && transitIndex ? transitIndex.routeById.get(routeId) : undefined
@@ -959,7 +965,16 @@ export function createNavigationSession(
     back: panelTransitions.back,
     escape: panelTransitions.escape,
     closeToRoot: panelTransitions.closeToRoot,
-    handleMapClick: panelTransitions.handleMapClick,
+    handleMapClick(coordinate: MapCoordinate) {
+      if (disposed) return
+      if (personalWaypointPlacementChange) {
+        if (isValidLocationCoordinates(coordinate[0], coordinate[1])) {
+          personalWaypointPlacementChange(coordinate)
+        }
+        return
+      }
+      panelTransitions.handleMapClick()
+    },
 
     setViewportInsets(insets: MapViewportInsets) {
       if (disposed) return
@@ -970,6 +985,12 @@ export function createNavigationSession(
     setVisibleCenterZoom(enabled: boolean) {
       if (disposed) return
       dependencies.map.setVisibleCenterZoom(enabled)
+    },
+
+    setPersonalWaypointPlacement(coordinate, editable, onChange) {
+      if (disposed) return
+      personalWaypointPlacementChange = coordinate && editable ? onChange : null
+      dependencies.map.setPersonalWaypointPlacement(coordinate, editable, onChange)
     },
 
     dismissStopPopup() {

@@ -1,4 +1,4 @@
-.settings-back-button {
+.more-back-button {
   display: grid;
   width: 44px;
   height: 44px;
@@ -13,23 +13,23 @@
 }
 
 @media (hover: hover) {
-  .settings-back-button:hover {
+  .more-back-button:hover {
     background: var(--surface-raised);
   }
 }
 
-.settings-back-button:focus-visible {
+.more-back-button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;
 }
 
-.settings-entry-icon,
-.settings-back-button svg {
+.more-entry-icon,
+.more-back-button svg {
   width: 20px;
   height: 20px;
 }
 
-.settings-surface {
+.more-panel-surface {
   display: flex;
   height: 100%;
   min-height: 0;
@@ -38,14 +38,14 @@
   background: var(--surface);
 }
 
-.settings-surface-body {
+.more-panel-body {
   display: flex;
   min-height: 0;
   height: 100%;
   flex-direction: column;
 }
 
-.settings-surface-header {
+.more-panel-header {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
@@ -55,13 +55,13 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.settings-surface-header h2 {
+.more-panel-header h2 {
   margin: 0;
   color: var(--text-heading);
   font: 600 var(--font-size-2xl)/1.2 var(--sans);
 }
 
-.settings-content-scroll {
+.more-panel-content-scroll {
   min-height: 0;
   flex: 1 1 auto;
   margin-inline-end: calc(-1 * var(--space-1));
@@ -73,7 +73,7 @@
 }
 
 @media (max-width: 768px) {
-  .navigation-panel.settings-surface {
+  .navigation-panel.more-panel-surface {
     position: absolute;
     z-index: 15;
     inset: 0;
@@ -88,13 +88,13 @@
     box-shadow: var(--shadow-sheet);
   }
 
-  .settings-content-scroll {
+  .more-panel-content-scroll {
     margin-inline-end: 0;
     padding-inline-end: 0;
     scrollbar-width: none;
   }
 
-  .settings-content-scroll::-webkit-scrollbar {
+  .more-panel-content-scroll::-webkit-scrollbar {
     display: none;
   }
 }

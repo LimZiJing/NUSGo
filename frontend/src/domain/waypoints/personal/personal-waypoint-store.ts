@@ -1,7 +1,7 @@
 import type {
   PersonalWaypoint,
   PersonalWaypointValidationIssue,
-} from '../../domain/waypoints/personal/personal-waypoint'
+} from './personal-waypoint'
 
 declare const personalWaypointStoreRevisionBrand: unique symbol
 

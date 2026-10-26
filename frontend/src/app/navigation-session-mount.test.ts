@@ -32,6 +32,7 @@ function createMapDouble(): MapSession {
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
+    setPersonalWaypointPlacement: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -52,6 +53,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     start: vi.fn(async () => undefined),
     setViewportInsets: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
+    setPersonalWaypointPlacement: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -137,7 +139,7 @@ describe('navigation session application seam', () => {
     const mapOptions = dependencies.getMapOptions()
     const mapError = new Error('tile failure')
     mapOptions?.onMapError(mapError)
-    mapOptions?.onEmptyMapClick()
+    mapOptions?.onEmptyMapClick([103.78, 1.29])
     expect(session.reportMapError).toHaveBeenCalledWith(mapError)
     expect(session.handleMapClick).toHaveBeenCalledOnce()
 
@@ -160,7 +162,7 @@ describe('navigation session application seam', () => {
     expect(startSignal?.aborted).toBe(true)
     expect(session.dispose).toHaveBeenCalledOnce()
     mapOptions?.onMapError(new Error('late tile failure'))
-    mapOptions?.onEmptyMapClick()
+    mapOptions?.onEmptyMapClick([103.78, 1.29])
     expect(session.reportMapError).toHaveBeenCalledOnce()
     expect(session.handleMapClick).toHaveBeenCalledOnce()
     mount.dispose()

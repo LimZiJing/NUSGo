@@ -37,7 +37,7 @@ export function createNavigationSessionMount(
   const map = dependencies.createMapSession({
     container,
     onMapError: (error) => session?.reportMapError(error),
-    onEmptyMapClick: () => session?.handleMapClick(),
+    onEmptyMapClick: (coordinate) => session?.handleMapClick(coordinate),
     onStopSelected: dependencies.onStopSelected,
     onJourneyOptionSelected: (candidateKey) => {
       if (!session) return
@@ -123,6 +123,11 @@ export interface NavigationSessionCommands {
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly setVisibleCenterZoom: (enabled: boolean) => void
+  readonly setPersonalWaypointPlacement: (
+    coordinate: Parameters<NavigationSession['setPersonalWaypointPlacement']>[0],
+    editable: boolean,
+    onChange: Parameters<NavigationSession['setPersonalWaypointPlacement']>[2],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -171,6 +176,9 @@ function createNavigationSessionCommands(
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
+    setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
+      session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    ),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

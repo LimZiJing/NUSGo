@@ -4,7 +4,7 @@ How the app behaves today, by area. For a one-page summary see [project status](
 
 ## Layout
 
-The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stops is the default tab. Settings is a fourth surface opened from the map gear.
+The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stops is the default tab. The map's More button opens My waypoints and Settings.
 
 **Desktop (769px and wider)**
 - One persistent left column holds the tabs. The map reserves the column's measured width as its left inset.
@@ -61,9 +61,15 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - On mobile the button sits top-left in the safe area, above the sheets, and is hidden while Plan is expanded. While the first request is pending, the spinner shows and a further tap recentres without starting a second watch.
 - With no active fix, the button centres on Kent Ridge MRT at zoom 15 before requesting or retrying location. A valid recentre pulses the marker once (a static ring under reduced motion). Location updates never move the camera by themselves.
 
+## Personal Waypoints
+
+- More → My waypoints → Add waypoint starts creation. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
+- Continue opens the name, free-form category and optional note form. Adjust on map returns to the pin. Nothing is stored until Save waypoint is pressed; Cancel discards the draft.
+- Saving uses the existing versioned browser store. My waypoints shows the saved names and categories. Invalid fields show inline errors. If saved data is unreadable or contains rejected records, creation pauses without overwriting it. Persistent map markers, waypoint details, edit/delete actions and Journey endpoints are follow-up work.
+
 ## Settings and themes
 
-- Settings opens from the map gear. On desktop it uses the navigation column. On mobile it fills the screen behind the tab pill. Back restores the earlier workflow state.
+- Settings opens from More. On desktop it uses the navigation column. On mobile it fills the screen behind the tab pill. Back returns to More, which returns to the earlier workflow state.
 - Appearance, Favourites and About expand independently, with Appearance open first. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. A choice applies at once for the current page, and a reload starts at System.
 - Favourites shows the saved-stop controls. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
 - Browser location permission is managed by the browser. Settings shows no permission status and has no clear-location action.

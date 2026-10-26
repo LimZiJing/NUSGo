@@ -3,7 +3,7 @@ import type {
   PersonalWaypointStoreMutationResult,
   PersonalWaypointStoreReadResult,
   PersonalWaypointStoreRevision,
-} from '../../app/contracts/personal-waypoint-store'
+} from '../../domain/waypoints/personal/personal-waypoint-store'
 import type {
   PersonalWaypoint,
   PersonalWaypointValidationIssue,

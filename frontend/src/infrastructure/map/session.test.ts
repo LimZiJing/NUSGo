@@ -140,14 +140,17 @@ vi.mock('maplibre-gl', () => {
 
   class FakeMarker {
     readonly element: HTMLElement
-    readonly options: { element?: HTMLElement; color?: string; offset?: number[] }
+    readonly options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }
     popup: FakePopup | null = null
     coordinate: unknown = null
+    readonly handlers = new globalThis.Map<string, Set<() => void>>()
+    draggable = false
     readonly remove = vi.fn()
 
-    constructor(options: { element?: HTMLElement; color?: string; offset?: number[] }) {
+    constructor(options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }) {
       this.options = options
       this.element = options.element ?? document.createElement('div')
+      this.draggable = options.draggable ?? false
     }
 
     getElement() {
@@ -157,6 +160,32 @@ vi.mock('maplibre-gl', () => {
     setLngLat(coordinate: unknown) {
       this.coordinate = coordinate
       return this
+    }
+
+    getLngLat() {
+      const [lng, lat] = this.coordinate as [number, number]
+      return { lng, lat }
+    }
+
+    setDraggable(value: boolean) {
+      this.draggable = value
+      return this
+    }
+
+    on(event: string, handler: () => void) {
+      const handlers = this.handlers.get(event) ?? new Set()
+      handlers.add(handler)
+      this.handlers.set(event, handlers)
+      return this
+    }
+
+    off(event: string, handler: () => void) {
+      this.handlers.get(event)?.delete(handler)
+      return this
+    }
+
+    fire(event: string) {
+      this.handlers.get(event)?.forEach((handler) => handler())
     }
 
     setOpacity(opacity: string | number) {
@@ -1540,6 +1569,42 @@ describe('MapSession', () => {
     session.setTripRequest({ origin: null, destination: null }, venues, secondIndex)
 
     expect(map.addedMarkers.slice(-2).every((marker) => marker.remove.mock.calls.length === 1)).toBe(true)
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('moves and clears the temporary Personal Waypoint marker', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const onDrag = vi.fn()
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: Array<{
+        coordinate: unknown
+        draggable: boolean
+        setLngLat(coordinate: unknown): void
+        fire(event: string): void
+        remove: ReturnType<typeof vi.fn>
+      }>
+    }
+
+    session.setPersonalWaypointPlacement([103.78, 1.29], true, onDrag)
+    const marker = map.addedMarkers.at(-1)!
+    expect(marker.coordinate).toEqual([103.78, 1.29])
+    expect(marker.draggable).toBe(true)
+    marker.setLngLat([103.79, 1.3])
+    marker.fire('dragend')
+    expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])
+
+    session.setPersonalWaypointPlacement([103.8, 1.31], false, onDrag)
+    expect(map.addedMarkers.at(-1)).toBe(marker)
+    expect(marker.coordinate).toEqual([103.8, 1.31])
+    expect(marker.draggable).toBe(false)
+    session.setPersonalWaypointPlacement(null, false, onDrag)
+    expect(marker.remove).toHaveBeenCalledOnce()
     session.dispose()
     vi.unstubAllGlobals()
   })

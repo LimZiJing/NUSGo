@@ -1,5 +1,7 @@
 import type { LoadedTransitData } from '../../app/contracts/data'
+import { Marker } from 'maplibre-gl'
 import type {
+  MapCoordinate,
   MapRouteSelection,
   MapSession,
   MapSessionOptions,
@@ -81,6 +83,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     shuttleStopMarkers?.refreshTheme()
   })
   let selectedVenueMarker: VenueMarker | null = null
+  let personalWaypointMarker: Marker | null = null
+  let personalWaypointDragHandler: (() => void) | null = null
+  let onPersonalWaypointDrag: (coordinate: MapCoordinate) => void = () => undefined
   let endpointMarkers: TripEndpointMarkers | null = null
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
   let transitRouteLayers: TransitRouteLayers | null = null
@@ -614,6 +619,39 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       lifecycle.setVisibleCenterZoom(enabled)
     },
 
+    setPersonalWaypointPlacement(coordinate, editable, onDrag) {
+      if (disposed) return
+      lifecycle.setWaypointPlacementActive(Boolean(coordinate && editable))
+      onPersonalWaypointDrag = onDrag
+      if (!coordinate) {
+        if (personalWaypointMarker && personalWaypointDragHandler) {
+          personalWaypointMarker.off('dragend', personalWaypointDragHandler)
+        }
+        personalWaypointMarker?.remove()
+        personalWaypointMarker = null
+        personalWaypointDragHandler = null
+        return
+      }
+
+      if (!personalWaypointMarker) {
+        const element = document.createElement('div')
+        element.className = 'personal-waypoint-placement-marker'
+        element.setAttribute('aria-hidden', 'true')
+        personalWaypointMarker = new Marker({ element, draggable: editable })
+          .setLngLat([coordinate[0], coordinate[1]])
+          .addTo(map)
+        personalWaypointDragHandler = () => {
+          if (!personalWaypointMarker) return
+          const point = personalWaypointMarker.getLngLat()
+          onPersonalWaypointDrag([point.lng, point.lat])
+        }
+        personalWaypointMarker.on('dragend', personalWaypointDragHandler)
+      } else {
+        personalWaypointMarker.setLngLat([coordinate[0], coordinate[1]])
+        personalWaypointMarker.setDraggable(editable)
+      }
+    },
+
     dismissStopPopup() {
       if (disposed) return false
       return shuttleStopMarkers?.dismissPopup() ?? false
@@ -724,6 +762,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       disposed = true
       pendingCameraFit = null
       clearVenueMarker()
+      if (personalWaypointMarker && personalWaypointDragHandler) {
+        personalWaypointMarker.off('dragend', personalWaypointDragHandler)
+      }
+      personalWaypointMarker?.remove()
+      personalWaypointMarker = null
       clearEndpointMarkers()
       clearTransitData()
       currentPath = null

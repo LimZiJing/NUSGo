@@ -1,0 +1,23 @@
+.more-menu-content {
+  display: grid;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.more-menu-row {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  font: 600 var(--font-size-md)/1.3 var(--sans);
+  cursor: pointer;
+  text-align: left;
+}
+.more-menu-row span { flex: 1; }
+.more-menu-row svg { width: 20px; height: 20px; }
+.more-menu-row:hover { background: var(--surface-raised); }

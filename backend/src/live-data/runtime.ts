@@ -160,6 +160,7 @@ export async function createBackendLiveData(
     },
     refreshIntervalMs: config.liveData.shuttleRefreshIntervalMs,
     maxConcurrency: config.liveData.maxConcurrency,
+    minFirstSnapshotStops: config.liveData.minFirstSnapshotStops,
     now,
     onRefreshComplete(log, failures) {
       console.info('NUS bus-arrival refresh completed.', log)

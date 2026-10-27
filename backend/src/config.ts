@@ -45,6 +45,9 @@ export interface BackendConfig {
   readonly journeyRequestTimeoutMs: number
   readonly liveData: {
     readonly shuttleRefreshIntervalMs: number
+    readonly vehicleRefreshIntervalMs: number
+    readonly vehicleExpiryMs: number
+    readonly vehicleIdleTimeoutMs: number
     readonly requestTimeoutMs: number
     readonly maxConcurrency: number
     readonly minFirstSnapshotStops: number
@@ -214,6 +217,24 @@ export function loadBackendConfig(
   // Resolve relative paths from the backend process so Express can load a mounted
   // canonical-data directory without Vite.
   const dataPath = environment.NUSGO_DATA_DIR?.trim() || '../frontend/public/data'
+  // Vehicle positions are polled separately from arrivals, so the expiry is checked against this interval.
+  const vehicleRefreshIntervalMs = parseInteger(
+    environment.NUS_VEHICLE_REFRESH_INTERVAL_MS,
+    30_000,
+    'NUS_VEHICLE_REFRESH_INTERVAL_MS',
+    15_000,
+    300_000,
+  )
+  const vehicleExpiryMs = parseInteger(
+    environment.NUS_VEHICLE_EXPIRY_MS,
+    90_000,
+    'NUS_VEHICLE_EXPIRY_MS',
+    1_000,
+    600_000,
+  )
+  if (vehicleExpiryMs < vehicleRefreshIntervalMs * 2) {
+    throw new Error('NUS_VEHICLE_EXPIRY_MS must be at least twice NUS_VEHICLE_REFRESH_INTERVAL_MS')
+  }
   return Object.freeze({
     environment: mode,
     host,
@@ -264,6 +285,15 @@ export function loadBackendConfig(
         'NUS_SHUTTLE_REFRESH_INTERVAL_MS',
         1_000,
         300_000,
+      ),
+      vehicleRefreshIntervalMs,
+      vehicleExpiryMs,
+      vehicleIdleTimeoutMs: parseInteger(
+        environment.NUS_VEHICLE_IDLE_TIMEOUT_MS,
+        120_000,
+        'NUS_VEHICLE_IDLE_TIMEOUT_MS',
+        1_000,
+        3_600_000,
       ),
       requestTimeoutMs: parseInteger(
         environment.LIVE_DATA_REQUEST_TIMEOUT_MS,

@@ -1,4 +1,12 @@
 import type { ShuttleLoadLevel } from '@nusgo/shared'
+import type { NusProviderConfig } from '../../../config.ts'
+import {
+  createNusBusProxyRequest,
+  retryNusRequest,
+  type NusAuthenticatedClient,
+} from './client.ts'
+
+const NUS_ACTIVE_BUS_ENDPOINT = 'active-bus'
 
 export interface ParsedNusActiveBus {
   readonly plate: string
@@ -88,4 +96,61 @@ export function parseNusActiveBuses(payload: unknown): readonly ParsedNusActiveB
     const parsed = parseActiveBus(bus)
     return parsed ? [parsed] : []
   })
+}
+
+export interface NusActiveBusRouteResult {
+  readonly observedAt: string
+  readonly expiresAt: string
+  readonly vehicles: readonly ParsedNusActiveBus[]
+}
+
+export interface NusActiveBusProvider {
+  loadRoute(routeId: string, signal: AbortSignal): Promise<NusActiveBusRouteResult>
+}
+
+interface NusActiveBusProviderOptions {
+  readonly provider: NusProviderConfig
+  readonly client: NusAuthenticatedClient
+  readonly deviceId: string
+  readonly retryAttempts: number
+  readonly retryBaseDelayMs: number
+  readonly vehicleExpiryMs: number
+  readonly now?: () => number
+}
+
+function toIso(timestampMs: number): string {
+  return new Date(timestampMs).toISOString()
+}
+
+// An envelope without a data object is a failed response, not an empty route.
+function assertActiveBusEnvelope(payload: unknown): void {
+  if (!isRecord(payload) || !isRecord(getValue(payload, ['data']))) {
+    throw new Error('NUS active-bus response was invalid')
+  }
+}
+
+export function createNusActiveBusProvider(
+  options: NusActiveBusProviderOptions,
+): NusActiveBusProvider {
+  const now = options.now ?? Date.now
+
+  return {
+    async loadRoute(routeId, signal) {
+      const payload = await retryNusRequest(() => options.client.requestJson((session) => createNusBusProxyRequest(
+        options.provider,
+        session,
+        options.deviceId,
+        NUS_ACTIVE_BUS_ENDPOINT,
+        { route_code: routeId },
+      ), NUS_ACTIVE_BUS_ENDPOINT, signal), signal, options.retryAttempts, options.retryBaseDelayMs)
+      assertActiveBusEnvelope(payload)
+      const vehicles = parseNusActiveBuses(payload)
+      const observedAtMs = now()
+      return {
+        observedAt: toIso(observedAtMs),
+        expiresAt: toIso(observedAtMs + options.vehicleExpiryMs),
+        vehicles,
+      }
+    },
+  }
 }

@@ -37,6 +37,7 @@ import {
   type ThemePreference,
 } from '../ui/theme'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
+import { Button } from '../ui/button'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
 const JourneyTestTimeControl = import.meta.env.DEV
@@ -89,6 +90,7 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
+  const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
   const [placementReturnsToForm, setPlacementReturnsToForm] = useState(false)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
@@ -523,6 +525,7 @@ function App() {
   }
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
+    setIsEditingPersonalWaypoints(false)
     setMoreSheetDetent('full')
     setMorePage('waypoints')
   }
@@ -557,6 +560,7 @@ function App() {
 
     setMorePage('menu')
     setMoreSheetDetent('partial')
+    setIsEditingPersonalWaypoints(false)
   }, [morePage, placementReturnsToForm])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
@@ -567,7 +571,21 @@ function App() {
     }
     setMorePage('closed')
     setMoreSheetDetent('partial')
+    setIsEditingPersonalWaypoints(false)
   }
+
+  const canEditPersonalWaypoints = personalWaypoints.readResult.kind === 'ready' &&
+    personalWaypoints.readResult.rejectedRecords.count === 0 &&
+    personalWaypoints.readResult.waypoints.length > 0
+  const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
+    ? <Button
+      className="more-panel-header-action"
+      label={isEditingPersonalWaypoints ? 'Done' : 'Edit list'}
+      variant="ghost"
+      pressed={isEditingPersonalWaypoints}
+      onClick={() => setIsEditingPersonalWaypoints((editing) => !editing)}
+    />
+    : undefined
 
   useLayoutEffect(() => {
     if (isMoreOpen) {
@@ -686,6 +704,7 @@ function App() {
             open: isMoreOpen,
             page: morePage,
             detent: moreSheetDetent,
+            headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints' ? 'My waypoints'
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'settings' ? 'Settings' : 'More',
@@ -702,6 +721,10 @@ function App() {
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.status}
               onAdd={beginWaypointPlacement}
+              editing={isEditingPersonalWaypoints}
+              onRemove={personalWaypoints.removeWaypoint}
+              onMove={personalWaypoints.moveWaypoint}
+              onClearAll={personalWaypoints.clearAll}
               initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'creating' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}

@@ -739,6 +739,12 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     expect(sheet?.getAttribute('data-page')).toBe('waypoints')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
+    expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot down' }).hasAttribute('disabled'))
+      .toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Done' }))
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(sheet?.getAttribute('data-page')).toBe('menu')

@@ -6,6 +6,7 @@ export type MorePanelPage = 'closed' | 'menu' | 'waypoints' | 'placing' | 'creat
 interface MorePanelSurfaceProps {
   readonly page: MorePanelPage
   readonly title: string
+  readonly headerAction?: ReactNode
   readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
   readonly children: ReactNode
@@ -14,6 +15,7 @@ interface MorePanelSurfaceProps {
 export function MorePanelSurface({
   page,
   title,
+  headerAction,
   initialFocusRef,
   onClose,
   children,
@@ -38,6 +40,7 @@ export function MorePanelSurface({
             <h2 id="more-panel-heading">{title}</h2>
           </>
         )}
+        {headerAction}
         {isMenu && <button
           className="more-close-button"
           ref={initialFocusRef}

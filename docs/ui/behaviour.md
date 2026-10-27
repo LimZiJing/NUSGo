@@ -66,7 +66,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Personal Waypoints
 
-- More → My waypoints → Add waypoint starts creation. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
+- More → My waypoints → Add waypoint starts creation. The saved list can be searched and filtered by category. The page-header Edit list control reveals inline reorder and remove controls, with no per-row popup. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
 - Continue opens the name, free-form category and optional note form. Adjust on map returns to the pin. Nothing is stored until Save waypoint is pressed; Cancel discards the draft.
 - Saving uses the existing versioned browser store. My waypoints shows the saved names and categories. Invalid fields show inline errors. If saved data is unreadable or contains rejected records, creation pauses without overwriting it. Persistent map markers, waypoint details, edit/delete actions and Journey endpoints are follow-up work.
 

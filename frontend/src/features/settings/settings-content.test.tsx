@@ -54,7 +54,7 @@ describe('Settings sections', () => {
   it('manages favourites in Settings and keeps the saved order in the summary', async () => {
     const user = userEvent.setup()
     const onRemoveFavorite = vi.fn()
-    render(
+    const view = render(
       <SettingsContent
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
@@ -73,6 +73,19 @@ describe('Settings sections', () => {
     await user.click(screen.getByRole('button', { name: 'Remove Kent Ridge Bus Terminal from favourites' }))
 
     expect(onRemoveFavorite).toHaveBeenCalledWith('kent-ridge')
+    view.rerender(
+      <SettingsContent
+        themePreference="matcha"
+        onThemePreferenceChange={() => undefined}
+        favoriteStops={[]}
+        onMoveFavorite={() => undefined}
+        onRemoveFavorite={onRemoveFavorite}
+        onClearFavorites={() => undefined}
+        transitMetadata={null}
+        buildingSource={null}
+        dataVersion={'a'.repeat(40)}
+      />,
+    )
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
     expect(screen.getByText('Matcha palette')).toBeTruthy()

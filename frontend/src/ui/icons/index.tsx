@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react'
 import {
   ArrowDownUp,
   ArrowRight,
+  ArrowUpRight,
   ArrowLeft,
   Building2,
   BusFront,
@@ -14,12 +15,16 @@ import {
   EllipsisVertical,
   ExternalLink,
   Footprints,
+  GripVertical,
   Info,
+  ListFilter,
   Map,
   MapPin,
   LocateFixed,
   Monitor,
+  MoreHorizontal,
   Navigation,
+  Palette,
   Moon,
   RotateCw,
   Route,
@@ -43,6 +48,10 @@ export function ArrowDownUpIcon(props: IconProps) {
 
 export function ArrowRightIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowRight, props)
+}
+
+export function ArrowUpRightIcon(props: IconProps) {
+  return renderDecorativeIcon(ArrowUpRight, props)
 }
 
 export function ArrowLeftIcon(props: IconProps) {
@@ -89,12 +98,20 @@ export function ExternalLinkIcon(props: IconProps) {
   return renderDecorativeIcon(ExternalLink, props)
 }
 
+export function GripVerticalIcon(props: IconProps) {
+  return renderDecorativeIcon(GripVertical, props)
+}
+
 export function FootprintsIcon(props: IconProps) {
   return renderDecorativeIcon(Footprints, props)
 }
 
 export function LocateIcon(props: IconProps) {
   return renderDecorativeIcon(LocateFixed, props)
+}
+
+export function ListFilterIcon(props: IconProps) {
+  return renderDecorativeIcon(ListFilter, props)
 }
 
 export function RefreshIcon(props: IconProps) {
@@ -105,12 +122,20 @@ export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
 }
 
+export function MoreHorizontalIcon(props: IconProps) {
+  return renderDecorativeIcon(MoreHorizontal, props)
+}
+
 export function MapIcon(props: IconProps) {
   return renderDecorativeIcon(Map, props)
 }
 
 export function NavigationIcon(props: IconProps) {
   return renderDecorativeIcon(Navigation, props)
+}
+
+export function PaletteIcon(props: IconProps) {
+  return renderDecorativeIcon(Palette, props)
 }
 
 export function RouteIcon(props: IconProps) {

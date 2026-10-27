@@ -48,6 +48,7 @@ export interface StopsWorkflow {
   readonly toggleFavorite: (stopId: string) => void
   readonly removeFavorite: (stopId: string) => void
   readonly clearFavoriteStops: () => void
+  readonly reorderFavorite: (stopId: string, neighborId: string) => void
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
@@ -208,6 +209,9 @@ export function useStopsWorkflow({
   const clearFavoriteStops = useCallback((): void => {
     dispatch({ type: 'clear-favorites' })
   }, [dispatch])
+  const reorderFavorite = useCallback((stopId: string, neighborId: string): void => {
+    dispatch({ type: 'reorder-favourites', stopId, neighborId })
+  }, [dispatch])
   const toggleExpanded = useCallback((stopId: string): void => {
     dispatch({ type: 'toggle-expanded', stopId })
   }, [dispatch])
@@ -247,6 +251,7 @@ export function useStopsWorkflow({
     toggleFavorite,
     removeFavorite,
     clearFavoriteStops,
+    reorderFavorite,
     toggleExpanded,
     dismissLocationNotice,
     backToStops,

@@ -26,7 +26,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 
 Also in place:
 - A local Express container rehearsal (`backend/Dockerfile`, `docker-compose.rehearsal.yml`) with live NUS and LTA arrivals, checked locally on 22/10/2026. Results are in [local services](local-services.md#local-rehearsal-evidence--22-october-2026).
-- Personal waypoint model, versioned local store, create flow and a basic saved-name/category list are in place. Map markers, details, editing, deletion and Journey endpoints remain follow-up work. See [data and map](data-and-map.md#code-layout).
+- Personal waypoint model, versioned local store, create flow and a searchable, category-filtered saved list with reorder and removal controls are in place. Map markers, waypoint details and Journey endpoints remain follow-up work. See [data and map](data-and-map.md#code-layout).
 - A dev-only simulated clock for planning. See [Pathfinding](pathfinding.md#development-clock).
 - A dev-only component gallery at `/?gallery`. See [Interface controls](ui/controls.md).
 - Automated checks for resource validation, immutable indexes, loader failures and the transit manifest. The browser checklist is in [the manual smoke checklist](qa/manual-smoke-check.md), with past results in the [evidence log](qa/evidence-log.md).

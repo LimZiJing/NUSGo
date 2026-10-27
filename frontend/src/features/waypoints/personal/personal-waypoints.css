@@ -1,20 +1,158 @@
 .personal-waypoints-home,
-.personal-waypoint-form { display: grid; gap: var(--space-3); text-align: left; }
+.personal-waypoint-form { display: grid; gap: 10px; text-align: left; }
 
 .personal-waypoints-home > p,
 .personal-waypoint-form > p,
 .personal-waypoint-placement > p { margin: 0; line-height: 1.45; }
-.personal-waypoint-saved-list h3 { margin: var(--space-3) 0; font-size: var(--font-size-md); }
-.personal-waypoint-saved-list ul { margin: 0; padding: 0; list-style: none; }
-.personal-waypoint-saved-list li {
+.personal-waypoint-empty { color: var(--text-secondary); }
+
+.personal-waypoints-home > .button[data-variant='primary'] {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 12px;
+}
+
+.personal-waypoint-list {
   display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3);
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+}
+
+.personal-waypoint-list-search .search-field {
+  min-height: 39px;
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.personal-waypoint-list-search input {
+  min-height: 39px;
   border: 1px solid var(--border-card);
+  border-radius: 11px;
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.personal-waypoint-list-card {
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
   background: var(--surface-card);
 }
-.personal-waypoint-saved-list li + li { border-top: 0; }
-.personal-waypoint-saved-list li span { color: var(--text-secondary); }
+
+.personal-waypoint-list-card .saved-list-header-trailing {
+  flex: 0 1 148px;
+}
+
+.personal-waypoint-category-filter {
+  box-sizing: border-box;
+  gap: 0;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.personal-waypoint-category-filter .select-trigger {
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 9px;
+  font-size: var(--font-size-xs);
+}
+
+.personal-waypoint-category-filter .select-trigger-chevron {
+  width: 13px;
+  height: 13px;
+}
+
+.personal-waypoint-list-filter-note {
+  margin: 8px 10px 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
+.personal-waypoint-privacy-note {
+  margin: 8px 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
+.personal-waypoint-list-rows {
+  display: grid;
+  max-height: min(338px, 52vh);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.personal-waypoint-list-rows:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.personal-waypoint-pin {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.personal-waypoint-pin svg {
+  width: 15px;
+  height: 15px;
+}
+
+.personal-waypoint-grip {
+  display: grid;
+  width: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.personal-waypoint-grip svg {
+  width: 15px;
+  height: 15px;
+}
+
+.personal-waypoint-list-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.personal-waypoint-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0;
+}
+
+.personal-waypoint-row-actions .button.icon-button {
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.personal-waypoint-order-up svg { transform: rotate(180deg); }
+.personal-waypoint-remove { color: var(--text-error-strong); }
+
+.personal-waypoint-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-list-empty p { margin: 0; }
 
 .personal-waypoint-form label { font-weight: 600; }
 .personal-waypoint-form label span { color: var(--text-secondary); font-weight: 400; }

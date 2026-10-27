@@ -17,6 +17,7 @@ export type StopsAction =
   | { readonly type: 'toggle-favorite'; readonly stopId: string }
   | { readonly type: 'remove-favorite'; readonly stopId: string }
   | { readonly type: 'clear-favorites' }
+  | { readonly type: 'reorder-favourites'; readonly stopId: string; readonly neighborId: string }
   | { readonly type: 'reconcile-stops'; readonly stopIds: ReadonlySet<string> }
   | { readonly type: 'dismiss-location-notice' }
 
@@ -86,6 +87,16 @@ export function stopsReducer(
       return state.favoriteStopIds.length === 0
         ? state
         : { ...state, favoriteStopIds: [] }
+    case 'reorder-favourites': {
+      const from = state.favoriteStopIds.indexOf(action.stopId)
+      const to = state.favoriteStopIds.indexOf(action.neighborId)
+      if (from < 0 || to < 0 || from === to) return state
+      const favoriteStopIds = [...state.favoriteStopIds]
+      const movedStopId = favoriteStopIds[from]
+      favoriteStopIds[from] = favoriteStopIds[to]
+      favoriteStopIds[to] = movedStopId
+      return { ...state, favoriteStopIds }
+    }
     case 'reconcile-stops': {
       const favoriteStopIds = state.favoriteStopIds.filter((id) => action.stopIds.has(id))
       const expandedStopIds = {

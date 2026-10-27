@@ -25,7 +25,7 @@ Epic #500 adds moving buses to the map and a crowding colour on stop arrival tim
 
 **Transport.** The browser polls Express, as it does for arrivals. Express alone polls NUS, on a fixed cadence with a polling budget (#491). Streaming is rejected: the upstream is poll-only, so a stream would add moving parts without fresher data. Starting cadence is 30 seconds per route.
 
-**Which routes are polled.** Express polls only routes that a client needs: the routes on the current Path, the selected route, and routes serving a selected stop. The map layer is off by default and shows those routes only. An "all routes" mode is out of scope until the polling budget has been measured, because every extra route is another upstream call per cycle.
+**Which routes are polled.** Express polls every internal route in one cycle, but only while a client has asked for vehicles in the last two minutes, so there is no unprompted overnight traffic. The cost is routes times one call per interval (8 routes at 30 seconds is 16 calls a minute). Polling only the routes a client needs was considered and rejected for now: it needs per-route demand tracking, and a request for another route would wait a full cycle. The map layer is off by default and the browser asks only for the routes on the current Path, the selected route, and routes serving a selected stop.
 
 **Stale positions.** Each Live bus carries the NUS `TimeStamp` and an Express observation time. A bus not refreshed for 90 seconds (three missed cycles) is hidden, not left frozen on the map. If a whole route fails to refresh, its buses expire the same way and the layer shows a short "Live buses unavailable" note. These numbers are starting values and can change after #491 is measured.
 

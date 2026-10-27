@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import { parseNusActiveBuses } from './active-buses.ts'
+import type { NusProviderConfig } from '../../../config.ts'
+import { createNusActiveBusProvider, parseNusActiveBuses } from './active-buses.ts'
+import type { NusApiRequest, NusApiSession, NusAuthenticatedClient } from './client.ts'
 
 interface RawActiveBusFixture {
   readonly data: {
@@ -137,3 +139,103 @@ describe('NUS active-bus parsing', () => {
     assert.equal(bus.load, 'high')
   })
 })
+
+const provider: NusProviderConfig = {
+  busProxyBaseUrl: 'https://bus.example.test',
+  accessTokenUrl: 'https://auth.example.test/token',
+  htdApi: 'htd',
+  appApi: 'app',
+  apiKey: 'test-key',
+  deviceId: 'device-1',
+  ipaddr: '127.0.0.1',
+  version: '1.0.0',
+}
+
+const session: NusApiSession = { token: 'token-1', userId: 'user-1', domain: 'domain-1' }
+
+function fakeClient(payload: unknown): { client: NusAuthenticatedClient, bodies: unknown[] } {
+  const bodies: unknown[] = []
+  const client: NusAuthenticatedClient = {
+    async requestJson(requestFactory: (session: NusApiSession) => NusApiRequest) {
+      const request = requestFactory(session)
+      bodies.push(JSON.parse(String(request.init.body)))
+      return payload
+    },
+  }
+  return { client, bodies }
+}
+
+describe('createNusActiveBusProvider', () => {
+  it('requests one route by route_code and returns parsed vehicles with an expiry', async () => {
+    const { client, bodies } = fakeClient({ data: { activebus: [goodBus] } })
+    const activeBuses = createNusActiveBusProvider({
+      provider,
+      client,
+      deviceId: 'device-1',
+      retryAttempts: 0,
+      retryBaseDelayMs: 0,
+      vehicleExpiryMs: 90_000,
+      now: () => Date.parse('2026-10-10T10:00:00.000Z'),
+    })
+
+    const result = await activeBuses.loadRoute('D1', new AbortController().signal)
+
+    assert.deepEqual(bodies, [expectedBody('D1')])
+    assert.equal(result.observedAt, '2026-10-10T10:00:00.000Z')
+    assert.equal(result.expiresAt, '2026-10-10T10:01:30.000Z')
+    assert.deepEqual(result.vehicles, [{
+      plate: 'PD496S',
+      lat: 1.291666,
+      lng: 103.783352,
+      headingDegrees: 309.8,
+      speed: 15,
+      load: 'medium',
+    }])
+  })
+
+  it('treats an empty bus list as a successful route with no vehicles', async () => {
+    const { client } = fakeClient({ data: { ActiveBusCount: '0', activebus: [] } })
+    const activeBuses = createNusActiveBusProvider({
+      provider,
+      client,
+      deviceId: 'device-1',
+      retryAttempts: 0,
+      retryBaseDelayMs: 0,
+      vehicleExpiryMs: 90_000,
+      now: () => 0,
+    })
+
+    const result = await activeBuses.loadRoute('D1', new AbortController().signal)
+
+    assert.deepEqual(result.vehicles, [])
+  })
+
+  it('throws for a garbage payload so it counts as a route failure', async () => {
+    for (const payload of [null, 'activebus', [], {}, { data: null }, { data: 'activebus' },
+      { data: {} }, { data: { activebus: 'unexpected' } }, { data: { activebus: null } }, { data: { activebus: {} } }]) {
+      const { client } = fakeClient(payload)
+      const activeBuses = createNusActiveBusProvider({
+        provider,
+        client,
+        deviceId: 'device-1',
+        retryAttempts: 0,
+        retryBaseDelayMs: 0,
+        vehicleExpiryMs: 90_000,
+      })
+
+      await assert.rejects(activeBuses.loadRoute('D1', new AbortController().signal), /invalid/)
+    }
+  })
+})
+
+function expectedBody(routeCode: string): Record<string, string> {
+  return {
+    route_code: routeCode,
+    deviceid: 'device-1',
+    domain: 'domain-1',
+    ipaddr: '127.0.0.1',
+    token: 'token-1',
+    userid: 'user-1',
+    version: '1.0.0',
+  }
+}

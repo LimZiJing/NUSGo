@@ -4,6 +4,7 @@ import type {
   ApiPublicBusArrivalsResponse,
   ApiShuttleArrivalsResponse,
   ApiShuttleServiceWindowsResponse,
+  ApiShuttleVehiclesResponse,
   PublicBusArrivalSnapshot,
 } from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
@@ -17,7 +18,9 @@ import { createNusAuthenticatedClient } from './providers/nus/client.ts'
 import { createNusBusArrivalProvider } from './providers/nus/bus-arrivals.ts'
 import { loadNusBusStopMapping } from './providers/nus/bus-stop-mapping.ts'
 import { createNusServiceWindowsProvider } from './providers/nus/service-windows.ts'
+import { createNusActiveBusProvider } from './providers/nus/active-buses.ts'
 import { createBusArrivalSnapshotStore, type BusArrivalStop } from './bus-arrivals/snapshot.ts'
+import { createBusVehicleSnapshotStore } from './bus-vehicles/snapshot.ts'
 import { mapWithConcurrency } from './upstream/concurrency.ts'
 import { fetchWithRetry } from './upstream/retry.ts'
 import { createLtaPublicBusArrivalProvider } from './providers/lta/provider.ts'
@@ -27,6 +30,7 @@ export interface BackendLiveData {
   isSnapshotReady(): boolean
   getPublicBusStopIds(): readonly string[]
   getBusArrivals(stopIds: readonly string[]): ApiShuttleArrivalsResponse
+  getVehicles(routeIds: readonly string[]): ApiShuttleVehiclesResponse
   getServiceWindows(routeIds: readonly string[], signal?: AbortSignal): Promise<ApiShuttleServiceWindowsResponse>
   getPublicBusArrivals(stopIds: readonly string[]): Promise<ApiPublicBusArrivalsResponse>
   start(): void
@@ -173,6 +177,43 @@ export async function createBackendLiveData(
     },
   })
 
+  const nusActiveBuses = providerConfig && nusClient
+    ? createNusActiveBusProvider({
+      provider: providerConfig,
+      client: nusClient,
+      deviceId,
+      retryAttempts: config.liveData.retryAttempts,
+      retryBaseDelayMs: config.liveData.retryBaseDelayMs,
+      vehicleExpiryMs: config.liveData.vehicleExpiryMs,
+      now,
+    })
+    : null
+
+  // Covers every canonical route, so the request budget is routes x one call per refresh interval.
+  const vehicleStore = nusActiveBuses
+    ? createBusVehicleSnapshotStore({
+      routeIds,
+      loadRoute(routeId, signal) {
+        if (!nusActiveBuses) throw new Error('NUS live-data provider is not configured')
+        return nusActiveBuses.loadRoute(routeId, signal)
+      },
+      refreshIntervalMs: config.liveData.vehicleRefreshIntervalMs,
+      vehicleExpiryMs: config.liveData.vehicleExpiryMs,
+      idleTimeoutMs: config.liveData.vehicleIdleTimeoutMs,
+      maxConcurrency: config.liveData.maxConcurrency,
+      now,
+      onRefreshComplete(log, failures) {
+        console.info('NUS bus-vehicle refresh completed.', log)
+        if (failures.length > 0) {
+          console.warn('NUS bus-vehicle refresh had failed routes.', {
+            routeIds: failures.map(({ routeId }) => routeId),
+            failureCount: failures.length,
+          })
+        }
+      },
+    })
+    : null
+
   const shutdownController = new AbortController()
   const activeOperations = new Set<Promise<unknown>>()
   const track = <Value>(operation: Promise<Value>): Promise<Value> => {
@@ -233,6 +274,29 @@ export async function createBackendLiveData(
       } satisfies ApiShuttleArrivalsResponse
       return selected
     },
+    getVehicles(requestedRouteIds) {
+      if (!vehicleStore) {
+        const nowIso = toIso(now())
+        return { observedAt: nowIso, expiresAt: nowIso, vehicles: [], unavailableRouteIds: [...requestedRouteIds] }
+      }
+      vehicleStore.touch()
+      const snapshot = vehicleStore.getSnapshot()
+      if (!snapshot) {
+        // Vehicles never block arrivals readiness, so a missing first snapshot is an empty answer, not a 503.
+        const nowIso = toIso(now())
+        return { observedAt: nowIso, expiresAt: nowIso, vehicles: [], unavailableRouteIds: [...requestedRouteIds] }
+      }
+      const requested = new Set(requestedRouteIds)
+      const knownRouteIds = new Set(routeIds)
+      const storeUnavailable = new Set(snapshot.unavailableRouteIds)
+      return {
+        observedAt: snapshot.observedAt,
+        expiresAt: snapshot.expiresAt,
+        vehicles: snapshot.vehicles.filter((vehicle) => requested.has(vehicle.routeId)),
+        unavailableRouteIds: requestedRouteIds.filter((routeId) =>
+          !knownRouteIds.has(routeId) || storeUnavailable.has(routeId)),
+      } satisfies ApiShuttleVehiclesResponse
+    },
     getServiceWindows(routes, requestSignal) {
       const operation = (async (): Promise<ApiShuttleServiceWindowsResponse> => {
         const entries = await mapWithConcurrency(routes, config.liveData.maxConcurrency, async (routeId) => {
@@ -268,11 +332,13 @@ export async function createBackendLiveData(
     },
     start() {
       snapshotStore.start()
+      vehicleStore?.start()
     },
     async stop() {
       shutdownController.abort()
       await Promise.all([
         snapshotStore.stop(),
+        vehicleStore?.stop(),
         ...[...activeOperations].map((operation) => Promise.resolve(operation).catch(() => undefined)),
       ])
     },

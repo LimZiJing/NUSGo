@@ -28,10 +28,24 @@ A stop that did not succeed in the latest cycle is listed in the snapshot's `una
 
 NUS service-window results are cached for ten minutes. LTA stop results use their own short cache and distinguish an upstream failure from a valid response with no estimate.
 
+## Live vehicle positions
+
+Vehicle positions come from NUS active-bus data and run on their own timer, separate from the 30-second arrival cycle. Arrivals and readiness do not depend on vehicles: a vehicle failure never returns 503 for arrivals.
+
+Each vehicle cycle covers every internal route, one call per route per cycle. The budget is routes x one call per interval, so 8 routes at a 30-second interval is 16 upstream calls a minute. Vehicle polling only runs while a client has asked for vehicles within the idle timeout (120 seconds by default). The first request after an idle spell starts a cycle at once. Requests made through the runtime's `getVehicles` return whatever the latest cycle holds; no HTTP route is part of this section.
+
+A failed route keeps its last good vehicles, with their original observation times, until that route's expiry (90 seconds by default). Only then does its route ID move to `unavailableRouteIds`, so clients do not read it as having no buses. Unlike arrivals, a carried-over route is not listed as unavailable before it expires; clients should use each vehicle's `observedAt` to show its age. Expiry must be at least twice the refresh interval, so one missed cycle does not empty a route.
+
+NUS's Acceptable Use Policy applies to this traffic. Keep upstream requests modest, and do not shorten the vehicle refresh interval without checking the policy and the request budget first. The minimum interval is 15 seconds.
+
+Only one Express instance may poll NUS for vehicles. Each instance keeps its own in-memory snapshot and polls on its own, so running two instances multiplies the upstream traffic. The same single-instance rule as the arrival snapshot applies.
+
 ## Backend configuration
 
 Copy backend/.env.example to backend/.env for local settings. NUS live shuttle data requires all four values NUS_BUS_PROXY_BASE_URL, NUS_X_HTD_API, NUS_X_APP_API, and NUS_X_API_KEY; the token URL, app version, and device ID can use their defaults. An initial NUS_UNIVUS_JWT and NUS_USER_ID are optional; Express can obtain a session token when they are absent.
 
 LTA_ACCOUNT_KEY enables public-bus arrivals. Credentials are read only by the backend and must not be exposed through Vite environment variables or frontend builds. Live-data timeout, concurrency, retry count, retry delay, and shuttle refresh interval settings are range-checked by backend configuration.
+
+Vehicle settings are NUS_VEHICLE_REFRESH_INTERVAL_MS (default 30000, minimum 15000), NUS_VEHICLE_EXPIRY_MS (default 90000, at least twice the refresh interval), and NUS_VEHICLE_IDLE_TIMEOUT_MS (default 120000). If you raise the refresh interval, raise the expiry too, or startup fails.
 
 On SIGINT or SIGTERM, Express stops accepting requests, aborts the poller and upstream requests, clears its refresh timer, and waits for active live-data operations to finish.

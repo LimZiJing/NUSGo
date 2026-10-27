@@ -1,4 +1,5 @@
 import type { ThemePreference } from '../../ui/theme'
+import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
@@ -11,6 +12,8 @@ import './styles/settings-content.css'
 interface SettingsContentProps {
   readonly themePreference: ThemePreference
   readonly onThemePreferenceChange: (preference: ThemePreference) => void
+  readonly minuteFormat: MinuteFormat
+  readonly onMinuteFormatChange: (format: MinuteFormat) => void
   readonly favoriteStops: readonly FavoriteStopSummary[]
   readonly onMoveFavorite: (stopId: string, neighborId: string) => void
   readonly onRemoveFavorite: (stopId: string) => void
@@ -32,6 +35,8 @@ const APPEARANCE_SUMMARIES: Record<ThemePreference, string> = {
 export function SettingsContent({
   themePreference,
   onThemePreferenceChange,
+  minuteFormat,
+  onMinuteFormatChange,
   favoriteStops,
   onMoveFavorite,
   onRemoveFavorite,
@@ -50,6 +55,8 @@ export function SettingsContent({
         <AppearanceSection
           preference={themePreference}
           onChange={onThemePreferenceChange}
+          minuteFormat={minuteFormat}
+          onMinuteFormatChange={onMinuteFormatChange}
         />
       </SettingsDisclosure>
       <SettingsDisclosure

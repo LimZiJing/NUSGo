@@ -17,7 +17,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
-| More and Settings | My waypoints and Settings entry points; themes, favourites and About in Settings | [UI behaviour](ui/behaviour.md#settings-and-themes) |
+| More and Settings | My waypoints and Settings entry points; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes) |
 | Personal Waypoints | Create a private waypoint by placing a map pin and saving a named record in this browser profile | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |

@@ -175,6 +175,31 @@ describe('mobile Stops tab state', () => {
     )
   })
 
+  it('updates Stops timings immediately and saves the selected minute format', async () => {
+    const user = userEvent.setup()
+    const view = render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Favourites' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
+    await waitFor(() => expect(screen.getByText('5′')).toBeTruthy())
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByText('Appearance'))
+    await user.click(screen.getByRole('radio', { name: '12 minutes shown as 12m' }))
+    expect(localStorage.getItem('navus:minute-format:v1')).toBe('m')
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
+
+    view.unmount()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Favourites' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
+    await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
+  })
+
   it('returns from Plan to Favourites with the selected stop card still collapsed', async () => {
     const user = userEvent.setup()
 

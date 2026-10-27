@@ -65,6 +65,33 @@ export function AppearanceSection({
           ))}
         </div>
       </div>
+      <details className="settings-theme-disclosure">
+        <summary className="settings-theme-summary">
+          <span className="settings-theme-title">Other themes</span>
+          {selectedOtherTheme && <span className="settings-theme-selected">{selectedOtherTheme.label}</span>}
+          <ChevronRightIcon className="settings-theme-chevron" size={18} />
+        </summary>
+        <div className="settings-theme-options" role="group" aria-label="Other themes">
+          {OTHER_THEME_CHOICES.map(({ value, label }) => (
+            <label
+              className="settings-theme-choice"
+              data-selected={preference === value}
+              data-theme-choice={value}
+              key={value}
+            >
+              <input
+                type="radio"
+                name="theme-preference"
+                value={value}
+                checked={preference === value}
+                onChange={() => onChange(value)}
+              />
+              <span className="settings-theme-swatch" aria-hidden="true" />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </details>
       <div
         className="settings-choice-group"
         role="radiogroup"
@@ -93,33 +120,6 @@ export function AppearanceSection({
           ))}
         </div>
       </div>
-      <details className="settings-theme-disclosure">
-        <summary className="settings-theme-summary">
-          <span className="settings-theme-title">Other themes</span>
-          {selectedOtherTheme && <span className="settings-theme-selected">{selectedOtherTheme.label}</span>}
-          <ChevronRightIcon className="settings-theme-chevron" size={18} />
-        </summary>
-        <div className="settings-theme-options" role="group" aria-label="Other themes">
-          {OTHER_THEME_CHOICES.map(({ value, label }) => (
-            <label
-              className="settings-theme-choice"
-              data-selected={preference === value}
-              data-theme-choice={value}
-              key={value}
-            >
-              <input
-                type="radio"
-                name="theme-preference"
-                value={value}
-                checked={preference === value}
-                onChange={() => onChange(value)}
-              />
-              <span className="settings-theme-swatch" aria-hidden="true" />
-              <span>{label}</span>
-            </label>
-          ))}
-        </div>
-      </details>
     </div>
   )
 }

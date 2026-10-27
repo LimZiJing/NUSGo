@@ -3,7 +3,7 @@ import { joinClassNames } from './class-names'
 export type StatusDotTone = 'success' | 'error' | 'muted'
 
 interface StatusDotProps {
-  /** Read out in place of the colour, so the status never relies on colour alone. */
+  /** Read out for assistive tech; sighted users get the tone's shape (circle, ring, triangle). */
   readonly label: string
   readonly tone?: StatusDotTone
   /** Pulses the dot to show something is in progress. */

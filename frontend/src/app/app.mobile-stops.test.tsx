@@ -163,7 +163,7 @@ describe('mobile Stops tab state', () => {
 
     await user.click(screen.getByRole('button', { name: 'Favourites' }))
     await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
-    await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('5′')).toBeTruthy())
 
     expect(screen.getByText('LIVE')).toBeTruthy()
     expect(appHarness.arrivalsClient.getArrivals).toHaveBeenCalledWith(

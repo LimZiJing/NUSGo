@@ -6,6 +6,30 @@ import type {
 } from '../data/stop-timing-data'
 import { ReachableFavouriteStops } from './reachable-favourite-stops'
 
+function timingAccessibleLabel(timing: string): string {
+  if (timing === 'Arr') return 'Arriving now'
+  if (timing === 'Left') return 'Bus has left'
+  const minutes = /^(\d+)(?:m|′| min)$/.exec(timing)?.[1]
+  return minutes === undefined ? timing : `${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function departureStatusAccessibleLabel(message: string): string {
+  const minutes = /^First bus in (\d+)(?:m|′| min)$/.exec(message)?.[1]
+  return minutes === undefined
+    ? message
+    : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function AccessibleTiming({ visual, spoken }: { readonly visual: string; readonly spoken: string }) {
+  if (visual === spoken) return visual
+  return (
+    <>
+      <span aria-hidden="true">{visual}</span>
+      <span className="visually-hidden">{spoken}</span>
+    </>
+  )
+}
+
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
   return (
     <span className="stop-departure-times">
@@ -15,7 +39,7 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
           className="stop-departure-time"
           data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
         >
-          {timing}
+          <AccessibleTiming visual={timing} spoken={timingAccessibleLabel(timing)} />
         </span>
       ))}
     </span>
@@ -93,7 +117,9 @@ export function StopDepartureList({
               size="compact"
               onClick={() => onSelectRoute(routeId)}
             />
-            <span className="stop-departure-status">{message}</span>
+            <span className="stop-departure-status">
+              <AccessibleTiming visual={message} spoken={departureStatusAccessibleLabel(message)} />
+            </span>
           </li>
         ))}
         {visiblePublicServices.map(({ serviceNumber, timings, status }) => (

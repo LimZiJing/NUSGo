@@ -67,7 +67,7 @@ Practical polling: 15 to 20 s would catch most movement; load would be fresh eno
 
 ## Off-hours behaviour
 
-Known from the previous night's run (27/10/2026, about 23:36 SGT; not re-captured here): `ActiveBusCount` is `"0"`, `activebus` is an empty list, response code `00000`, and `shuttle-service` returns `"-"` placeholders with empty `_etas`.
+Known from the night run on 26/10/2026 at about 23:36 SGT (not re-captured here; D2 still had 3 buses at 23:03 SGT on 27/10/2026, so the cut-off varies by route): `ActiveBusCount` is `"0"`, `activebus` is an empty list, response code `00000`, and `shuttle-service` returns `"-"` placeholders with empty `_etas`.
 
 ## Not verified
 

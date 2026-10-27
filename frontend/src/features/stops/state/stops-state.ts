@@ -42,9 +42,7 @@ export function stopsReducer(
     case 'back-to-stops':
       return state.focusedStopId === null ? state : { ...state, focusedStopId: null }
     case 'select-list':
-      return state.list === action.list
-        ? state
-        : { ...state, list: action.list }
+      return state.list === action.list ? state : { ...state, list: action.list }
     case 'toggle-expanded': {
       const expandedStopIds = state.expandedStopIds[state.list]
       const nextExpandedStopIds = expandedStopIds.includes(action.stopId)
@@ -114,12 +112,7 @@ export function stopsReducer(
         expandedStopIds.favourites.length === state.expandedStopIds.favourites.length &&
         focusedStopId === state.focusedStopId
       ) return state
-      return {
-        ...state,
-        favoriteStopIds,
-        expandedStopIds,
-        focusedStopId,
-      }
+      return { ...state, favoriteStopIds, expandedStopIds, focusedStopId }
     }
     case 'dismiss-location-notice':
       return state.locationNoticeDismissed ? state : { ...state, locationNoticeDismissed: true }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Button, IconButton } from '../../../ui/button'
 import { ChevronDownIcon, CloseIcon, FavoriteIcon } from '../../../ui/icons'
 import { SavedListHeader } from '../../../ui/saved-list-header'
@@ -24,18 +24,50 @@ export function FavouritesSection({
 }: FavouritesSectionProps) {
   const [editingList, setEditingList] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
+  const listHeadingRef = useRef<HTMLHeadingElement>(null)
+  const emptyMessageRef = useRef<HTMLParagraphElement>(null)
+  const actionRowsRef = useRef(new Map<string, HTMLDivElement>())
+  const pendingFocusRef = useRef<{
+    readonly stopId: string
+    readonly action: 'move-up' | 'move-down' | 'remove'
+  } | null>(null)
   const editing = editingList && stops.length > 0
+
+  useLayoutEffect(() => {
+    const pendingFocus = pendingFocusRef.current
+    if (!pendingFocus) return
+    pendingFocusRef.current = null
+
+    if (pendingFocus.action === 'remove') {
+      const focusTarget = listHeadingRef.current ?? emptyMessageRef.current
+      focusTarget?.focus()
+      return
+    }
+
+    const actionRow = actionRowsRef.current.get(pendingFocus.stopId)
+    const selector = pendingFocus.action === 'move-up'
+      ? '.settings-favourite-order-up'
+      : '.settings-favourite-order-down'
+    const preferredTarget = actionRow?.querySelector<HTMLButtonElement>(selector)
+    const focusTarget = preferredTarget && !preferredTarget.disabled
+      ? preferredTarget
+      : actionRow?.querySelector<HTMLButtonElement>('button:not(:disabled)')
+    const fallbackTarget = focusTarget ?? listHeadingRef.current
+    fallbackTarget?.focus()
+  })
 
   const moveStop = (index: number, direction: -1 | 1): void => {
     const stop = stops[index]
     const neighbor = stops[index + direction]
     if (!stop || !neighbor) return
+    pendingFocusRef.current = { stopId: stop.id, action: direction === -1 ? 'move-up' : 'move-down' }
     onMoveFavorite(stop.id, neighbor.id)
     setStatusMessage(`${stop.name} moved ${direction === -1 ? 'up' : 'down'}.`)
   }
 
   const clearAllStops = (): void => {
     if (!window.confirm('Clear all favourite bus stops?')) return
+    pendingFocusRef.current = { stopId: stops[0]?.id ?? '', action: 'remove' }
     onClearFavorites()
     setEditingList(false)
     setStatusMessage('Favourites cleared.')
@@ -44,10 +76,11 @@ export function FavouritesSection({
   return (
     <div className="settings-favourites">
       {stops.length === 0 ? (
-        <p>Star a stop in Stops to add it to your favourites.</p>
+        <p ref={emptyMessageRef} tabIndex={-1}>Star a stop in Stops to add it to your favourites.</p>
       ) : (
         <div className="settings-favourite-card">
           <SavedListHeader
+            headingRef={listHeadingRef}
             title="Favourite stops"
             count={stops.length}
             trailing={(
@@ -76,7 +109,13 @@ export function FavouritesSection({
                   leading={<span className="settings-favourite-icon"><FavoriteIcon filled /></span>}
                   title={stop.name}
                   trailing={editing ? (
-                    <div className="settings-favourite-row-actions">
+                    <div
+                      className="settings-favourite-row-actions"
+                      ref={(element) => {
+                        if (element) actionRowsRef.current.set(stop.id, element)
+                        else actionRowsRef.current.delete(stop.id)
+                      }}
+                    >
                       <IconButton
                         className="settings-favourite-order-up"
                         label={`Move ${stop.name} up`}
@@ -85,6 +124,7 @@ export function FavouritesSection({
                         onClick={() => moveStop(index, -1)}
                       />
                       <IconButton
+                        className="settings-favourite-order-down"
                         label={`Move ${stop.name} down`}
                         icon={<ChevronDownIcon />}
                         disabled={index === stops.length - 1}
@@ -95,8 +135,8 @@ export function FavouritesSection({
                         label={`Remove ${stop.name} from favourites`}
                         icon={<CloseIcon />}
                         onClick={() => {
+                          pendingFocusRef.current = { stopId: stop.id, action: 'remove' }
                           onRemoveFavorite(stop.id)
-                          if (stops.length === 1) setEditingList(false)
                           setStatusMessage(`${stop.name} removed from favourites.`)
                         }}
                       />

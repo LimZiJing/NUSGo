@@ -145,7 +145,7 @@ export function createLtaScheduleLoader(options: {
   readonly baseUrl?: string
   readonly mappings: readonly LtaPublicBusStopMapping[]
 }): LtaScheduleLoader {
-  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusRoutes'
+  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/BusRoutes'
   const wanted = new Set(options.mappings.flatMap(({ busStopCode, services }) => services.map((service) => scheduleKey(service, busStopCode))))
   let schedulesPromise: Promise<ReadonlyMap<string, readonly LtaServiceSchedule[]>> | null = null
 

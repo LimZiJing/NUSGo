@@ -51,7 +51,7 @@ describe('LTA service schedules', () => {
       accountKey: 'test-account-key',
       fetcher: async (input, init) => {
         calls += 1
-        assert.equal(input, 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusRoutes?$skip=0')
+        assert.equal(input, 'https://datamall2.mytransport.sg/ltaodataservice/BusRoutes?$skip=0')
         assert.deepEqual(init?.headers, { Accept: 'application/json', AccountKey: 'test-account-key' })
         return new Response(JSON.stringify({
           value: [

@@ -158,7 +158,7 @@ describe('selected stop details model', () => {
     // Now is Wed 30/09/2026 04:00 SGT.
     expect(startMessage('2026-09-29T21:30:00.000Z')).toBe('Starts 5:30 AM')
     expect(startMessage('2026-09-30T21:30:00.000Z')).toBe('Starts tomorrow 5:30 AM')
-    expect(startMessage('2026-10-01T22:00:00.000Z')).toBe('Starts Fri 6:00 AM')
+    expect(startMessage('2026-10-01T22:00:00.000Z')).toBe('Starts Friday at 6:00 AM')
     expect(startMessage(undefined)).toBeUndefined()
   })
 

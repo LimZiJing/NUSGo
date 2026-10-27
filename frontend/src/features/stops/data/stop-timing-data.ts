@@ -131,7 +131,7 @@ function getPublicServiceTimings(
 }
 
 const SINGAPORE_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore' })
-const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', weekday: 'short' })
+const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', weekday: 'long' })
 
 function singaporeDayNumber(ms: number): number {
   return Date.parse(`${SINGAPORE_DAY_FORMATTER.format(ms)}T00:00:00Z`) / 86_400_000
@@ -150,7 +150,7 @@ function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | 
   const clock = formatSingaporeClock(startMs)
   if (daysAway <= 0) return `Starts ${clock}`
   if (daysAway === 1) return `Starts tomorrow ${clock}`
-  return `Starts ${SINGAPORE_WEEKDAY_FORMATTER.format(startMs)} ${clock}`
+  return `Starts ${SINGAPORE_WEEKDAY_FORMATTER.format(startMs)} at ${clock}`
 }
 
 function getLiveStopDepartures(

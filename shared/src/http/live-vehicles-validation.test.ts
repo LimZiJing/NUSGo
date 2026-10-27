@@ -86,6 +86,25 @@ describe('parseApiShuttleVehiclesResponse', () => {
     expect(parseApiShuttleVehiclesResponse(response({ vehicles: [withoutPlate] }))).toBeNull()
   })
 
+  it('rejects a whitespace-only route ID or plate', () => {
+    expect(parseApiShuttleVehiclesResponse(response({ vehicles: [vehicle({ routeId: '   ' })] }))).toBeNull()
+    expect(parseApiShuttleVehiclesResponse(response({ vehicles: [vehicle({ plate: ' \t ' })] }))).toBeNull()
+  })
+
+  it('rejects a whitespace-only entry in unavailableRouteIds', () => {
+    expect(parseApiShuttleVehiclesResponse(response({ unavailableRouteIds: ['A2', '  '] }))).toBeNull()
+  })
+
+  it('returns trimmed route IDs and plates', () => {
+    const parsed = parseApiShuttleVehiclesResponse(response({
+      vehicles: [vehicle({ routeId: ' A1 ', plate: ' SBS1234X ' })],
+      unavailableRouteIds: [' A2 '],
+    }))
+    expect(parsed?.vehicles[0].routeId).toBe('A1')
+    expect(parsed?.vehicles[0].plate).toBe('SBS1234X')
+    expect(parsed?.unavailableRouteIds).toEqual(['A2'])
+  })
+
   it('rejects a non-string entry in unavailableRouteIds', () => {
     expect(parseApiShuttleVehiclesResponse(response({ unavailableRouteIds: ['A2', 3] }))).toBeNull()
   })

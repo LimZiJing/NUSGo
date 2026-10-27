@@ -6,7 +6,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0
+  return typeof value === 'string' && value.trim().length > 0
 }
 
 function isIsoTimestamp(value: unknown): value is string {
@@ -30,8 +30,8 @@ function parseVehicle(value: unknown): ShuttleVehiclePosition | null {
     return null
   }
   return {
-    routeId: value.routeId,
-    plate: value.plate,
+    routeId: value.routeId.trim(),
+    plate: value.plate.trim(),
     lat: value.lat,
     lng: value.lng,
     headingDegrees: value.headingDegrees,
@@ -66,6 +66,6 @@ export function parseApiShuttleVehiclesResponse(value: unknown): ApiShuttleVehic
     observedAt: value.observedAt,
     expiresAt: value.expiresAt,
     vehicles,
-    unavailableRouteIds: value.unavailableRouteIds,
+    unavailableRouteIds: value.unavailableRouteIds.map((routeId) => routeId.trim()),
   }
 }

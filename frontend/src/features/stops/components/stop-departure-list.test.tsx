@@ -58,6 +58,11 @@ describe('StopDepartureList', () => {
           routeName: 'A2',
           routeColor: '#123456',
           timings: ['1 min', '12 min', 'Arr'],
+        }, {
+          routeId: 'D1',
+          routeName: 'D1',
+          routeColor: '#654321',
+          timings: ['Left', '1m', '-'],
         }]}
         publicServices={[{
           serviceNumber: '151',
@@ -81,9 +86,12 @@ describe('StopDepartureList', () => {
     const otherTimings = [...container.querySelectorAll('.stop-departure-time')].slice(2)
     expect(otherTimings.every((timing) => !timing.querySelector('.stop-departure-time-min'))).toBe(true)
     expect(otherTimings[0].getAttribute('data-timing-state')).toBe('Arr')
-    expect(otherTimings[1].querySelector('[aria-hidden="true"]')?.textContent).toBe('2m')
-    expect(otherTimings[2].querySelector('[aria-hidden="true"]')?.textContent).toBe('3′')
+    expect(otherTimings[1].getAttribute('data-timing-state')).toBe('Left')
+    expect(otherTimings[2].querySelector('[aria-hidden="true"]')?.textContent).toBe('1m')
     expect(otherTimings[3].textContent).toBe('-')
+    expect(otherTimings[4].querySelector('[aria-hidden="true"]')?.textContent).toBe('2m')
+    expect(otherTimings[5].querySelector('[aria-hidden="true"]')?.textContent).toBe('3′')
+    expect(otherTimings[6].textContent).toBe('-')
   })
 
   it('shows the first reachable favourite beside an internal route and the rest in a popover', async () => {

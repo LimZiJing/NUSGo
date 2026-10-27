@@ -544,7 +544,7 @@ describe('mobile drawer tab switches', () => {
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     const viewports = Array.from(document.querySelectorAll<HTMLElement>('.mobile-sheet-viewport'))
-    expect(viewports).toHaveLength(3)
+    expect(viewports).toHaveLength(4)
     expect(viewports.every((viewport) => viewport.hasAttribute('data-open'))).toBe(true)
     expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
     expect(document.querySelector('.explore-sheet')?.getAttribute('data-detent')).toBe('partial')
@@ -685,9 +685,68 @@ describe('More surface', () => {
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+  })
+
+  it('opens More at the partial mobile sheet detent and lets the user expand it', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+    const moreButton = screen.getByRole('button', { name: 'More' })
+
+    await user.click(moreButton)
+
+    const sheet = document.querySelector('.more-panel-surface')
+    expect(sheet?.getAttribute('data-detent')).toBe('partial')
+    expect(screen.getByRole('button', { name: 'Expand More panel' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+    expect(screen.getByRole('navigation', { name: 'Map navigation tabs' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Expand More panel' }))
+
+    expect(sheet?.getAttribute('data-detent')).toBe('full')
+    expect(screen.getByRole('button', { name: 'Reduce More panel' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(moreButton)
+
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-detent')).toBe('partial')
+  })
+
+  it('opens More destinations as full-height mobile screens', async () => {
+    mockMobileViewport()
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [{
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Quiet bench',
+        category: 'Rest spot',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        createdAt: '2026-10-26T00:00:00.000Z',
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      }],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+    const moreButton = screen.getByRole('button', { name: 'More' })
+
+    await user.click(moreButton)
+    const sheet = document.querySelector<HTMLElement>('.more-panel-surface')
+    expect(sheet?.getAttribute('data-page')).toBe('menu')
+
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    expect(sheet?.getAttribute('data-page')).toBe('waypoints')
+    expect(sheet?.getAttribute('data-detent')).toBe('full')
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(sheet?.getAttribute('data-page')).toBe('menu')
+    expect(sheet?.getAttribute('data-detent')).toBe('partial')
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(sheet?.getAttribute('data-page')).toBe('settings')
+    expect(sheet?.getAttribute('data-detent')).toBe('full')
   })
 
   it('hides and restores the nearby crosshair around desktop More', async () => {
@@ -700,7 +759,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
@@ -718,12 +777,13 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
 
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
 
     expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(document.activeElement).toBe(moreButton)
   })
+
 
   it('leaves the mobile navigation pill usable and closes when a workflow is selected', async () => {
     mockMobileViewport()
@@ -742,7 +802,7 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')

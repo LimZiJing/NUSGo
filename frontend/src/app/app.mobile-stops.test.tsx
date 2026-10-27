@@ -269,7 +269,7 @@ describe('mobile Stops tab state', () => {
     window.dispatchEvent(new Event('resize'))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Close More' }))
 
     expect(stopsSheet.getAttribute('data-detent')).toBe('collapsed')
     expect(stopsSheet.style.getPropertyValue('--drawer-snap-point-offset')).toBe(initialSnapOffset)

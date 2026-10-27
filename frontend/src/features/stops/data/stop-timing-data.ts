@@ -40,6 +40,8 @@ export interface PublicServiceTiming {
   readonly serviceNumber: string
   readonly timings: readonly [string, string, string] | null
   readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
+  /** Set for a `not-in-operation` service whose next first bus is known. */
+  readonly startMessage?: string
 }
 
 export interface StopScheduledDeparture {
@@ -107,7 +109,12 @@ function getPublicServiceTimings(
     const service = stopData?.services[serviceNumber]
     if (!service) return { serviceNumber, timings: null, status: 'provider-error' as const }
     if (stale) return { serviceNumber, timings: null, status: 'provider-error' as const }
-    if (service.status !== 'live') return { serviceNumber, timings: null, status: service.status }
+    if (service.status !== 'live') {
+      const startMessage = service.status === 'not-in-operation' && service.nextStartAt
+        ? formatPublicServiceStart(service.nextStartAt, nowMs)
+        : undefined
+      return { serviceNumber, timings: null, status: service.status, ...(startMessage && { startMessage }) }
+    }
     const timings = service.arrivals
       .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - nowMs) / 1_000))
       .filter((seconds) => seconds >= 0)
@@ -121,6 +128,29 @@ function getPublicServiceTimings(
       }
       : { serviceNumber, timings: null, status: 'no-estimate' as const }
   })
+}
+
+const SINGAPORE_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore' })
+const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', weekday: 'short' })
+
+function singaporeDayNumber(ms: number): number {
+  return Date.parse(`${SINGAPORE_DAY_FORMATTER.format(ms)}T00:00:00Z`) / 86_400_000
+}
+
+function formatSingaporeClock(ms: number): string {
+  const minutes = Math.floor(((ms + 8 * 3_600_000) % 86_400_000) / 60_000)
+  const hour = Math.floor(minutes / 60)
+  return `${hour % 12 || 12}:${String(minutes % 60).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`
+}
+
+function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | undefined {
+  const startMs = Date.parse(nextStartAt)
+  if (!Number.isFinite(startMs)) return undefined
+  const daysAway = singaporeDayNumber(startMs) - singaporeDayNumber(nowMs)
+  const clock = formatSingaporeClock(startMs)
+  if (daysAway <= 0) return `Starts ${clock}`
+  if (daysAway === 1) return `Starts tomorrow ${clock}`
+  return `Starts ${SINGAPORE_WEEKDAY_FORMATTER.format(startMs)} ${clock}`
 }
 
 function getLiveStopDepartures(

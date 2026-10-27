@@ -14,6 +14,8 @@ export interface PublicBusEstimatedArrival {
 export interface PublicBusServiceArrival {
   readonly status: PublicBusServiceArrivalStatus
   readonly arrivals: readonly PublicBusEstimatedArrival[]
+  /** Next first bus at this stop (ISO 8601); only set when `status` is `not-in-operation`. */
+  readonly nextStartAt?: string
 }
 
 export interface PublicBusStopArrivalData extends DataFreshness {

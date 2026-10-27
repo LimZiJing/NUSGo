@@ -127,6 +127,41 @@ describe('selected stop details model', () => {
     expect(selection.live).toBe(true)
   })
 
+  it('describes when an LTA service next starts in Singapore time', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const snapshotWith = (nextStartAt: string | undefined): PublicBusArrivalSnapshot => ({
+      source: 'lta-datamall',
+      observedAt: '2026-09-29T20:00:00.000Z',
+      expiresAt: '2026-09-29T20:01:00.000Z',
+      refreshedAt: '2026-09-29T20:00:00.000Z',
+      stops: {
+        'STOP-A': {
+          observedAt: '2026-09-29T20:00:00.000Z',
+          expiresAt: '2026-09-29T20:01:00.000Z',
+          services: {
+            '95': { status: 'not-in-operation', arrivals: [], ...(nextStartAt && { nextStartAt }) },
+          },
+        },
+      },
+    })
+    const startMessage = (nextStartAt: string | undefined) => getSelectedStop(
+      index.stopById.get('STOP-A')!,
+      index,
+      [],
+      null,
+      Date.parse('2026-09-29T20:00:00.000Z'),
+      null,
+      false,
+      snapshotWith(nextStartAt),
+    ).publicServices[0]?.startMessage
+
+    // Now is Wed 30/09/2026 04:00 SGT.
+    expect(startMessage('2026-09-29T21:30:00.000Z')).toBe('Starts 5:30 AM')
+    expect(startMessage('2026-09-30T21:30:00.000Z')).toBe('Starts tomorrow 5:30 AM')
+    expect(startMessage('2026-10-01T22:00:00.000Z')).toBe('Starts Fri 6:00 AM')
+    expect(startMessage(undefined)).toBeUndefined()
+  })
+
   it('uses each stop observation clock for its displayed arrivals', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {

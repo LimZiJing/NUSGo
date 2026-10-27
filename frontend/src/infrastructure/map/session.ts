@@ -160,7 +160,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
-  // Persistent map padding already moves the camera centre into the visible area.
+  // Active MapLibre padding already centers camera targets at the crosshair.
   const getFitOffset = (): [number, number] => visibleCenterZoomEnabled
     ? [0, 0]
     : [
@@ -624,7 +624,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     },
 
     setVisibleCenterZoom(enabled: boolean) {
-      if (disposed) return
+      if (disposed || visibleCenterZoomEnabled === enabled) return
       visibleCenterZoomEnabled = enabled
       lifecycle.setVisibleCenterZoom(enabled)
     },

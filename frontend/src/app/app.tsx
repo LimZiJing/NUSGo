@@ -19,10 +19,15 @@ import {
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
 import { deriveExplorePanelStatus } from './explore-panel-status'
-import { getIsMobileViewport, subscribeToMobileViewport } from './navigation/navigation-state'
+import {
+  getIsMobileViewport,
+  subscribeToMobileViewport,
+  type MobileSheetDetent,
+} from './navigation/navigation-state'
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { MoreEntryButton } from '../ui/more-entry-button'
+import type { MorePanelPage } from '../ui/more-panel-surface'
 import {
   applyTheme,
   getSystemTheme,
@@ -32,6 +37,7 @@ import {
   type ThemePreference,
 } from '../ui/theme'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
+import { Button } from '../ui/button'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
 const JourneyTestTimeControl = import.meta.env.DEV
@@ -44,6 +50,11 @@ import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-pane
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { SettingsContent } from '../features/settings/settings-content'
+import type { MinuteFormat } from '../domain/trip/minute-format'
+import {
+  readMinuteFormatPreference,
+  saveMinuteFormatPreference,
+} from '../ui/minute-format-preference'
 import { MoreMenu } from '../features/more/more-menu'
 import {
   PersonalWaypointForm,
@@ -64,7 +75,6 @@ import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arriv
 import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
 
 function App() {
-  type MorePage = 'closed' | 'menu' | 'waypoints' | 'placing' | 'creating' | 'settings'
   const mapContainer = useRef<HTMLDivElement>(null)
   const locationControlRef = useRef<HTMLDivElement>(null)
   const mapShellRef = useRef<HTMLElement>(null)
@@ -83,7 +93,9 @@ function App() {
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [session, setSession] = useState<NavigationSession | null>(null)
-  const [morePage, setMorePage] = useState<MorePage>('closed')
+  const [morePage, setMorePage] = useState<MorePanelPage>('closed')
+  const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
+  const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
   const [placementReturnsToForm, setPlacementReturnsToForm] = useState(false)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
@@ -91,6 +103,7 @@ function App() {
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
   const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
+  const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -125,6 +138,10 @@ function App() {
     saveThemePreference(preference)
     setThemePreference(preference)
   }, [])
+  const changeMinuteFormat = useCallback((format: MinuteFormat): void => {
+    saveMinuteFormatPreference(format)
+    setMinuteFormat(format)
+  }, [])
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
   const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
@@ -143,6 +160,7 @@ function App() {
     session?.locateUser()
   }, [session])
   const stopsWorkflow = useStopsWorkflow({
+    minuteFormat,
     transitIndex: state.transitIndex,
     mapCenter,
     location: state.location,
@@ -514,29 +532,85 @@ function App() {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
     }
+    setIsEditingPersonalWaypoints(false)
     appNavigation.selectView(view, stopsWorkflow.state.list)
   }
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
+    setIsEditingPersonalWaypoints(false)
+    setMoreSheetDetent('full')
     setMorePage('waypoints')
   }
+  const openSettings = (): void => {
+    setIsEditingPersonalWaypoints(false)
+    setMoreSheetDetent('full')
+    setMorePage('settings')
+  }
   const beginWaypointPlacement = (): void => {
+    setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnsToForm(false)
     setMorePage('placing')
   }
   const cancelWaypointPlacement = (): void => {
+    if (!placementReturnsToForm) setIsEditingPersonalWaypoints(false)
     setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
   }
+  const clearPersonalWaypoints = (): void => {
+    personalWaypoints.clearAll()
+    setIsEditingPersonalWaypoints(false)
+  }
+  const removePersonalWaypoint = (waypointId: string): void => {
+    const removingLastWaypoint = personalWaypoints.readResult.kind === 'ready' &&
+      personalWaypoints.readResult.waypoints.length === 1
+    const removed = personalWaypoints.removeWaypoint(waypointId)
+    if (removed && removingLastWaypoint) setIsEditingPersonalWaypoints(false)
+  }
   const goBackInMore = useCallback((): void => {
-    setMorePage((page) => page === 'placing'
-      ? placementReturnsToForm ? 'creating' : 'waypoints'
-      : page === 'menu' ? 'closed' : page === 'creating' ? 'waypoints' : 'menu')
-  }, [placementReturnsToForm])
+    if (morePage === 'placing') {
+      setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+      setMoreSheetDetent('full')
+      return
+    }
+    if (morePage === 'menu') {
+      setMorePage('closed')
+      setMoreSheetDetent('partial')
+      return
+    }
+    if (morePage === 'creating') {
+      setMorePage('waypoints')
+      setMoreSheetDetent('full')
+      return
+    }
+
+    setMorePage('menu')
+    setMoreSheetDetent('partial')
+    setIsEditingPersonalWaypoints(false)
+  }, [morePage, placementReturnsToForm])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
-    setMorePage((page) => page === 'closed' ? 'menu' : 'closed')
+    if (morePage === 'closed') {
+      setMoreSheetDetent('partial')
+      setMorePage('menu')
+      return
+    }
+    setMorePage('closed')
+    setMoreSheetDetent('partial')
+    setIsEditingPersonalWaypoints(false)
   }
+
+  const canEditPersonalWaypoints = personalWaypoints.readResult.kind === 'ready' &&
+    personalWaypoints.readResult.rejectedRecords.count === 0 &&
+    personalWaypoints.readResult.waypoints.length > 0
+  const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
+    ? <Button
+      className="more-panel-header-action"
+      label={isEditingPersonalWaypoints ? 'Done' : 'Edit list'}
+      variant="ghost"
+      pressed={isEditingPersonalWaypoints}
+      onClick={() => setIsEditingPersonalWaypoints((editing) => !editing)}
+    />
+    : undefined
 
   useLayoutEffect(() => {
     if (isMoreOpen) {
@@ -655,18 +729,29 @@ function App() {
           onSelectView={selectView}
           morePanel={{
             open: isMoreOpen,
+            page: morePage,
+            detent: moreSheetDetent,
+            headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints' ? 'My waypoints'
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'settings' ? 'Settings' : 'More',
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
+            onDetentChange: setMoreSheetDetent,
             content: morePage === 'menu' ? <MoreMenu
+              waypointCount={personalWaypoints.readResult.kind === 'ready'
+                ? personalWaypoints.readResult.waypoints.length
+                : null}
               onOpenWaypoints={openWaypoints}
-              onOpenSettings={() => setMorePage('settings')}
+              onOpenSettings={openSettings}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.status}
               onAdd={beginWaypointPlacement}
+              editing={isEditingPersonalWaypoints}
+              onRemove={removePersonalWaypoint}
+              onMove={personalWaypoints.moveWaypoint}
+              onClearAll={clearPersonalWaypoints}
               initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'creating' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}
@@ -678,15 +763,24 @@ function App() {
                 setPlacementReturnsToForm(true)
                 setMorePage('placing')
               }}
-              onCancel={() => setMorePage('waypoints')}
+              onCancel={() => {
+                setIsEditingPersonalWaypoints(false)
+                setMorePage('waypoints')
+              }}
               onSave={() => {
-                if (personalWaypoints.save()) setMorePage('waypoints')
+                if (personalWaypoints.save()) {
+                  setIsEditingPersonalWaypoints(false)
+                  setMorePage('waypoints')
+                }
               }}
             /> : morePage === 'settings' ? (
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}
+                minuteFormat={minuteFormat}
+                onMinuteFormatChange={changeMinuteFormat}
                 favoriteStops={stopsWorkflow.favoriteStops}
+                onMoveFavorite={stopsWorkflow.reorderFavorite}
                 onRemoveFavorite={stopsWorkflow.removeFavorite}
                 onClearFavorites={stopsWorkflow.clearFavoriteStops}
                 transitMetadata={state.transitIndex?.network.metadata ?? null}

@@ -13,10 +13,13 @@ import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
 import { useStopsState } from '../state/use-stops-state'
 import type { StopsState } from '../state/stops-state'
+import type { MinuteFormat } from '../../../domain/trip/minute-format'
+import { DEFAULT_MINUTE_FORMAT } from '../../../domain/trip/minute-format'
 
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
 export interface StopsWorkflowOptions {
+  readonly minuteFormat?: MinuteFormat
   readonly transitIndex: TransitIndex | null
   readonly mapCenter: Coordinate | null
   readonly location: LocationTrackingState
@@ -48,6 +51,7 @@ export interface StopsWorkflow {
   readonly toggleFavorite: (stopId: string) => void
   readonly removeFavorite: (stopId: string) => void
   readonly clearFavoriteStops: () => void
+  readonly reorderFavorite: (stopId: string, neighborId: string) => void
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
@@ -59,6 +63,7 @@ function hasLocationError(location: LocationTrackingState): boolean {
 }
 
 export function useStopsWorkflow({
+  minuteFormat = DEFAULT_MINUTE_FORMAT,
   transitIndex,
   mapCenter,
   location,
@@ -129,6 +134,7 @@ export function useStopsWorkflow({
   const publicArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
 
   const timingOptions: StopTimingDataOptions = {
+    minuteFormat,
     favoriteStopIds: state.favoriteStopIds,
     arrivalSnapshot: stopArrivals.snapshot,
     arrivalSnapshotReceivedAtMs: stopArrivals.snapshotReceivedAtMs,
@@ -210,6 +216,9 @@ export function useStopsWorkflow({
   const clearFavoriteStops = useCallback((): void => {
     dispatch({ type: 'clear-favorites' })
   }, [dispatch])
+  const reorderFavorite = useCallback((stopId: string, neighborId: string): void => {
+    dispatch({ type: 'reorder-favourites', stopId, neighborId })
+  }, [dispatch])
   const toggleExpanded = useCallback((stopId: string): void => {
     dispatch({ type: 'toggle-expanded', stopId })
   }, [dispatch])
@@ -249,6 +258,7 @@ export function useStopsWorkflow({
     toggleFavorite,
     removeFavorite,
     clearFavoriteStops,
+    reorderFavorite,
     toggleExpanded,
     dismissLocationNotice,
     backToStops,

@@ -11,7 +11,14 @@ describe('Appearance settings', () => {
   it('keeps System, Light, and Dark in the segmented control', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<AppearanceSection preference="system" onChange={onChange} />)
+    render(
+      <AppearanceSection
+        preference="system"
+        onChange={onChange}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
+      />,
+    )
 
     expect((screen.getByRole('radio', { name: 'System' }) as HTMLInputElement).checked).toBe(true)
     expect(screen.getByRole('radio', { name: 'Light' })).toBeTruthy()
@@ -24,7 +31,14 @@ describe('Appearance settings', () => {
   it('shows other palettes in a dropdown and reports their selection', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<AppearanceSection preference="system" onChange={onChange} />)
+    render(
+      <AppearanceSection
+        preference="system"
+        onChange={onChange}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
+      />,
+    )
 
     const summary = screen.getByText('Other themes')
     const disclosure = summary.closest('details')

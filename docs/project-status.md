@@ -17,7 +17,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
-| More and Settings | My waypoints and Settings entry points; themes, favourites and About in Settings | [UI behaviour](ui/behaviour.md#settings-and-themes) |
+| More and Settings | My waypoints and Settings entry points; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes) |
 | Personal Waypoints | Create a private waypoint by placing a map pin and saving a named record in this browser profile | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
@@ -26,7 +26,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 
 Also in place:
 - A local Express container rehearsal (`backend/Dockerfile`, `docker-compose.rehearsal.yml`) with live NUS and LTA arrivals, checked locally on 22/10/2026. Results are in [local services](local-services.md#local-rehearsal-evidence--22-october-2026).
-- Personal waypoint model, versioned local store, create flow and a basic saved-name/category list are in place. Map markers, details, editing, deletion and Journey endpoints remain follow-up work. See [data and map](data-and-map.md#code-layout).
+- Personal waypoint model, versioned local store, create flow and a searchable, category-filtered saved list with reorder and removal controls are in place. Map markers, waypoint details and Journey endpoints remain follow-up work. See [data and map](data-and-map.md#code-layout).
 - A dev-only simulated clock for planning. See [Pathfinding](pathfinding.md#development-clock).
 - A dev-only component gallery at `/?gallery`. See [Interface controls](ui/controls.md).
 - Automated checks for resource validation, immutable indexes, loader failures and the transit manifest. The browser checklist is in [the manual smoke checklist](qa/manual-smoke-check.md), with past results in the [evidence log](qa/evidence-log.md).

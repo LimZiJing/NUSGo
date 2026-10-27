@@ -2,6 +2,14 @@
   "version": 1,
   "$comment": "Hand-edited decisions merged by npm run buildings:import; never overwritten and not shipped to the browser. Key each entry by the API elementId. Allowed fields: name, aliases (replaces derived search aliases), roomCodePrefixes (replaces computed links), location {x: longitude, y: latitude} (replaces the API centroid), entrance {x, y, osmNode} (a provisional OpenStreetMap entrance; cannot be combined with location), groupKey, partLabel (for example \"Blocks 15-17\"), blocks (block numbers or letters), groupRole (\"entrance\" marks a group main-entrance record), and $comment for the reason. unlinkedPrefixes ({prefix: reason}) lists room code prefixes deliberately left unlinked. Unknown elementIds or fields fail the import.",
   "overrides": {
+    "142079318": {
+      "mergeInto": "15347235",
+      "$comment": "LT15 is a room inside AS6 (11 Computing Drive, per the NUS Computing LT15 directions)."
+    },
+    "142079319": {
+      "mergeInto": "15347235",
+      "$comment": "LT14 shares AS6's address and sits about 15 m from its entrance; treated as inside AS6 (unconfirmed, tracked in the lecture theatre classification issue)."
+    },
     "1084099106": {
       "mergeInto": "238932778"
     },
@@ -271,7 +279,12 @@
         "y": 1.2953637,
         "osmNode": "10574167549"
       },
-      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10574167549 tagged entrance=yes on the building outline (single-entrance). Unverified on site."
+      "$comment": "Provisional entrance accepted by the maintainer on 13/10/2026: OSM node 10574167549 tagged entrance=yes on the building outline (single-entrance). Unverified on site.",
+      "roomCodePrefixes": [
+        "AS6",
+        "LT14",
+        "LT15"
+      ]
     },
     "15521864": {
       "groupKey": "king-edward-vii-hall",

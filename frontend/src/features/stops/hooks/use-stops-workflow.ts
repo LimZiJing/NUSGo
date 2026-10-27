@@ -131,6 +131,8 @@ export function useStopsWorkflow({
   const timingOptions: StopTimingDataOptions = {
     favoriteStopIds: state.favoriteStopIds,
     arrivalSnapshot: stopArrivals.snapshot,
+    arrivalSnapshotReceivedAtMs: stopArrivals.snapshotReceivedAtMs,
+    publicArrivalSnapshotReceivedAtMs: publicStopArrivals.snapshotReceivedAtMs,
     nowMs: stopArrivals.nowMs,
     serviceWindows: stopServiceWindows.windows,
     isRefreshing: stopArrivalsUpdating,

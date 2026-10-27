@@ -20,6 +20,8 @@ export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 
 export interface StopsArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  // When the current snapshot reached the client; countdowns are pinned to this, not the clock.
+  readonly snapshotReceivedAtMs: number | null
   readonly nowMs: number
 }
 
@@ -27,6 +29,7 @@ interface ArrivalRequestState<TSnapshot> {
   readonly stopKey: string | null
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  readonly receivedAtMs: number | null
 }
 
 function isAbortError(error: unknown): boolean {
@@ -34,6 +37,8 @@ function isAbortError(error: unknown): boolean {
 }
 
 const STOP_SET_DEBOUNCE_MS = 150
+// Slow clock for staleness and service windows. Displayed arrival times never use it.
+const CLOCK_INTERVAL_MS = 30_000
 
 export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
   loadArrivals: StopsArrivalLoader<TSnapshot>,
@@ -48,6 +53,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     stopKey: null,
     status: 'idle',
     snapshot: null,
+    receivedAtMs: null,
   }))
   const [nowMs, setNowMs] = useState(() => Date.now())
   const requestedStopKey = stops
@@ -87,25 +93,31 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
         stopKey,
         status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
         snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+        receivedAtMs: previous.stopKey === stopKey ? previous.receivedAtMs : null,
       }))
 
       try {
         const snapshot = await loadArrivals(latestStopsRef.current, controller.signal)
         if (disposed) return
-        setState((previous) => ({
-          stopKey,
-          status: 'ready',
-          snapshot: previous.stopKey === stopKey && previous.snapshot &&
+        const receivedAtMs = Date.now()
+        setNowMs(receivedAtMs)
+        setState((previous) => {
+          const keepPrevious = previous.stopKey === stopKey && previous.snapshot !== null &&
             isOlderSnapshot(snapshot, previous.snapshot)
-            ? previous.snapshot
-            : snapshot,
-        }))
+          return {
+            stopKey,
+            status: 'ready',
+            snapshot: keepPrevious ? previous.snapshot : snapshot,
+            receivedAtMs: keepPrevious ? previous.receivedAtMs : receivedAtMs,
+          }
+        })
       } catch (error: unknown) {
         if (disposed || isAbortError(error)) return
         setState((previous) => ({
           stopKey,
           status: 'error',
           snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+          receivedAtMs: previous.stopKey === stopKey ? previous.receivedAtMs : null,
         }))
       }
 
@@ -140,13 +152,18 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
 
   useEffect(() => {
     if (!active) return
-    const clock = setInterval(() => setNowMs(Date.now()), 1_000)
+    const clock = setInterval(() => setNowMs(Date.now()), CLOCK_INTERVAL_MS)
     return () => clearInterval(clock)
   }, [active])
 
   const visibleState: ArrivalRequestState<TSnapshot> = hasActiveStops
     ? state
-    : { stopKey: null, status: 'idle', snapshot: null }
+    : { stopKey: null, status: 'idle', snapshot: null, receivedAtMs: null }
 
-  return { status: visibleState.status, snapshot: visibleState.snapshot, nowMs }
+  return {
+    status: visibleState.status,
+    snapshot: visibleState.snapshot,
+    snapshotReceivedAtMs: visibleState.receivedAtMs,
+    nowMs,
+  }
 }

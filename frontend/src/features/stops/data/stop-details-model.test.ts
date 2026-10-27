@@ -6,7 +6,7 @@ import type { ShuttleServiceWindow } from '../../../domain/transit/service-hours
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import { getStopDetailsModel } from './stop-details-model'
 import type { StopDetailsModel } from './stop-details-model'
-import type { StopsServiceWindows } from './stop-timing-data'
+import type { StopPollState, StopsServiceWindows } from './stop-timing-data'
 
 function getSelectedStop(
   stop: Parameters<typeof getStopDetailsModel>[0],
@@ -17,7 +17,7 @@ function getSelectedStop(
   serviceWindows: StopsServiceWindows | null = null,
   isRefreshing = false,
   publicArrivalSnapshot: PublicBusArrivalSnapshot | null = null,
-  publicIsRefreshing = false,
+  pollState: StopPollState = 'idle',
 ): StopDetailsModel {
   return getStopDetailsModel(stop, index, {
     favoriteStopIds,
@@ -26,7 +26,7 @@ function getSelectedStop(
     serviceWindows,
     isRefreshing,
     publicArrivalSnapshot,
-    publicIsRefreshing,
+    pollState,
   })
 }
 
@@ -170,7 +170,7 @@ describe('selected stop details model', () => {
     )
 
     expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
-    expect(selection.live).toBe(false)
+    expect(selection.live).toBe(true)
     expect(selection.liveArrivalMessage).toBeNull()
   })
 
@@ -270,7 +270,7 @@ describe('selected stop details model', () => {
     expect(selection.liveArrivalMessage).toBeNull()
   })
 
-  it('keeps old rows during a refresh without marking them live or stale', () => {
+  it('keeps the live pill and old rows during a refresh, and reports the refresh', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {
       observedAt: '2026-09-30T00:00:00.000Z',
@@ -297,10 +297,13 @@ describe('selected stop details model', () => {
       Date.parse('2026-09-30T00:00:31.000Z'),
       serviceWindows,
       true,
+      null,
+      'refreshing',
     )
 
     expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
-    expect(selection.live).toBe(false)
+    expect(selection.live).toBe(true)
+    expect(selection.pollState).toBe('refreshing')
     expect(selection.liveArrivalMessage).toBeNull()
   })
 

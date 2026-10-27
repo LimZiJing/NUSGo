@@ -20,6 +20,8 @@ export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 
 export interface StopsArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  /** Polls that have failed in a row since the last success; a refresh in flight keeps the count. */
+  readonly failedPolls: number
   readonly nowMs: number
 }
 
@@ -27,6 +29,7 @@ interface ArrivalRequestState<TSnapshot> {
   readonly stopKey: string | null
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  readonly failedPolls: number
 }
 
 function isAbortError(error: unknown): boolean {
@@ -48,6 +51,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     stopKey: null,
     status: 'idle',
     snapshot: null,
+    failedPolls: 0,
   }))
   const [nowMs, setNowMs] = useState(() => Date.now())
   const requestedStopKey = stops
@@ -87,6 +91,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
         stopKey,
         status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
         snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+        failedPolls: previous.stopKey === stopKey ? previous.failedPolls : 0,
       }))
 
       try {
@@ -99,6 +104,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
             isOlderSnapshot(snapshot, previous.snapshot)
             ? previous.snapshot
             : snapshot,
+          failedPolls: 0,
         }))
       } catch (error: unknown) {
         if (disposed || isAbortError(error)) return
@@ -106,6 +112,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
           stopKey,
           status: 'error',
           snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+          failedPolls: previous.stopKey === stopKey ? previous.failedPolls + 1 : 1,
         }))
       }
 
@@ -146,7 +153,12 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
 
   const visibleState: ArrivalRequestState<TSnapshot> = hasActiveStops
     ? state
-    : { stopKey: null, status: 'idle', snapshot: null }
+    : { stopKey: null, status: 'idle', snapshot: null, failedPolls: 0 }
 
-  return { status: visibleState.status, snapshot: visibleState.snapshot, nowMs }
+  return {
+    status: visibleState.status,
+    snapshot: visibleState.snapshot,
+    failedPolls: visibleState.failedPolls,
+    nowMs,
+  }
 }

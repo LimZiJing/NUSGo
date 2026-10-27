@@ -1,11 +1,9 @@
 import { getReachableFavoriteStops, type TransitIndex } from '../../../domain/transit'
 import {
-  SHUTTLE_ARRIVAL_FRESHNESS_MS,
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../../domain/transit/arrivals'
 import {
-  PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
 } from '../../../domain/transit/public-bus-arrivals'
@@ -51,6 +49,11 @@ interface StopRouteAvailability {
   readonly scheduledDepartures: readonly StopScheduledDeparture[]
 }
 
+/** What the live pill shows about polling: `refreshing` pulses, `failing` means repeated failed polls. */
+export type StopPollState = 'idle' | 'refreshing' | 'failing'
+
+const POLL_STATE_SEVERITY: Readonly<Record<StopPollState, number>> = { idle: 0, refreshing: 1, failing: 2 }
+
 export interface StopTimingDataOptions {
   readonly favoriteStopIds?: readonly string[]
   readonly arrivalSnapshot?: ShuttleArrivalSnapshot | null
@@ -58,7 +61,8 @@ export interface StopTimingDataOptions {
   readonly serviceWindows?: StopsServiceWindows | null
   readonly isRefreshing?: boolean
   readonly publicArrivalSnapshot?: PublicBusArrivalSnapshot | null
-  readonly publicIsRefreshing?: boolean
+  readonly pollState?: StopPollState
+  readonly publicPollState?: StopPollState
 }
 
 export interface StopTimingData {
@@ -66,6 +70,7 @@ export interface StopTimingData {
   readonly departures: readonly StopDeparture[]
   readonly scheduledDepartures: readonly StopScheduledDeparture[]
   readonly live: boolean
+  readonly pollState: StopPollState
   readonly liveArrivalMessage: string | null
 }
 export const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
@@ -229,7 +234,8 @@ export function getStopTimingData(
     serviceWindows = null,
     isRefreshing = false,
     publicArrivalSnapshot = null,
-    publicIsRefreshing = false,
+    pollState = 'idle',
+    publicPollState = 'idle',
   }: StopTimingDataOptions,
 ): StopTimingData {
   const favorites = new Set(favoriteStopIds)
@@ -253,15 +259,13 @@ export function getStopTimingData(
   }))
   const scheduledDepartures = shuttleUnavailable ? [] : routeAvailability.scheduledDepartures
   const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs)
-  const live = (
-    !shuttleUnavailable && !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
-    getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
-  ) || (
-    !isRefreshing && !publicIsRefreshing &&
-    publicServices.some(({ timings, status }) => timings !== null && status === 'live') &&
-    publicArrivalSnapshot !== null &&
-    getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
-  )
+  // The pill follows the rows on screen: it stays on through a refresh or a failing poll, and goes
+  // only when the rows are too old to show (MAX_AGE), so it does not blink out before each 30s poll.
+  const live = (!shuttleUnavailable && departures.length > 0) ||
+    publicServices.some(({ timings, status }) => timings !== null && status === 'live')
+  // Public bus polling only counts for stops that have public bus services.
+  const publicPoll = publicServices.length > 0 ? publicPollState : 'idle'
+  const stopPollState = POLL_STATE_SEVERITY[publicPoll] > POLL_STATE_SEVERITY[pollState] ? publicPoll : pollState
   const liveArrivalMessage = shuttleUnavailable
     ? LIVE_TIMES_UNAVAILABLE_MESSAGE
     : getLiveArrivalMessage(
@@ -279,6 +283,7 @@ export function getStopTimingData(
     departures,
     scheduledDepartures,
     live,
+    pollState: stopPollState,
     liveArrivalMessage,
   }
 }

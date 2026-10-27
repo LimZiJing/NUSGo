@@ -19,6 +19,12 @@
   background: var(--status-success-surface);
 }
 
+.pill[data-tone='error'] {
+  border: 1px solid color-mix(in srgb, var(--status-error) 35%, transparent);
+  color: var(--status-error);
+  background: var(--status-error-surface);
+}
+
 .pill[data-leading-dot='true']::before {
   width: 5px;
   height: 5px;
@@ -26,4 +32,20 @@
   border-radius: 50%;
   background: currentColor;
   content: '';
+}
+
+.pill[data-pulse='true']::before {
+  animation: pill-dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pill-dot-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill[data-pulse='true']::before {
+    animation: none;
+  }
 }

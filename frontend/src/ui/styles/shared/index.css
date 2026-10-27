@@ -11,6 +11,7 @@
 @import './controls/button.css';
 @import './controls/chip.css';
 @import './controls/pill.css';
+@import './controls/status-dot.css';
 @import './controls/route-chip.css';
 @import './controls/segmented-control.css';
 @import './controls/select.css';

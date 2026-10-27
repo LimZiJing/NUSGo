@@ -3,8 +3,10 @@ import type {
   StopDeparture,
   StopScheduledDeparture,
   PublicServiceTiming,
+  StopPollState,
 } from '../data/stop-timing-data'
 import { InfoPill } from '../../../ui/info-pill'
+import { StatusDot, type StatusDotTone } from '../../../ui/status-dot'
 import { IconButton } from '../../../ui/button'
 import { BusIcon, FavoriteIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
@@ -17,6 +19,7 @@ export interface StopCardProps {
   readonly expanded: boolean
   readonly noLiveData?: boolean
   readonly live?: boolean
+  readonly pollState?: StopPollState
   readonly liveArrivalMessage?: string | null
   readonly departures: readonly StopDeparture[]
   readonly scheduledDepartures?: readonly StopScheduledDeparture[]
@@ -31,6 +34,19 @@ function formatDistance(distanceMeters: number): string {
   return `${Math.round(distanceMeters / 10) * 10}m`
 }
 
+function getLiveStatusDot(
+  live: boolean,
+  pollState: StopPollState,
+): { readonly label: string; readonly tone: StatusDotTone; readonly pulse: boolean } {
+  if (pollState === 'failing') return { label: 'Live times failing, retrying', tone: 'error', pulse: true }
+  if (!live) return { label: 'No live times', tone: 'muted', pulse: pollState === 'refreshing' }
+  return {
+    label: pollState === 'refreshing' ? 'Live times, refreshing' : 'Live times',
+    tone: 'success',
+    pulse: pollState === 'refreshing',
+  }
+}
+
 export function StopCard({
   stopId,
   stopName,
@@ -39,6 +55,7 @@ export function StopCard({
   expanded,
   noLiveData = false,
   live = false,
+  pollState = 'idle',
   liveArrivalMessage = null,
   departures,
   scheduledDepartures = [],
@@ -67,8 +84,11 @@ export function StopCard({
               <InfoPill text={formatDistance(distanceMeters)} colorScheme="neutral" />
             )}
           </span>
-          {expanded && live && (
-            <InfoPill text="LIVE" colorScheme="success" className="stop-card-live" leadingDot />
+          {expanded && (
+            <StatusDot
+              className="stop-card-live"
+              {...getLiveStatusDot(live, pollState)}
+            />
           )}
           <span className="stop-card-favorite-space" aria-hidden="true" />
           <DisclosureChevron expanded={expanded} className="stop-card-chevron" />

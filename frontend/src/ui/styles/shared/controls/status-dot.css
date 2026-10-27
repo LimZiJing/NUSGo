@@ -1,0 +1,37 @@
+/* Status dot primitive: a compact, non-interactive status light. Pill is the labelled counterpart. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.status-dot[data-tone='muted'] {
+  background: var(--text-muted);
+  opacity: 0.5;
+}
+
+.status-dot[data-tone='success'] {
+  background: var(--status-success);
+}
+
+.status-dot[data-tone='error'] {
+  background: var(--status-error);
+}
+
+.status-dot[data-pulse='true'] {
+  animation: status-dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes status-dot-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot[data-pulse='true'] {
+    animation: none;
+  }
+}

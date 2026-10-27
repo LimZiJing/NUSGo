@@ -16,13 +16,14 @@ const stop: StopDetailsModel = {
   departures: [],
   scheduledDepartures: [],
   live: false,
+  pollState: 'idle',
   liveArrivalMessage: null,
 }
 
-function renderStopDetails(backLabel?: string, onBackToStops = vi.fn()) {
+function renderStopDetails(backLabel?: string, onBackToStops = vi.fn(), model: StopDetailsModel = stop) {
   return render(
     <StopDetails
-      stop={stop}
+      stop={model}
       favorite={false}
       liveArrivalMessage={null}
       backLabel={backLabel}
@@ -51,5 +52,30 @@ describe('StopDetails Back button', () => {
     await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
 
     expect(onBackToStops).toHaveBeenCalledOnce()
+  })
+})
+
+describe('StopDetails live status pill', () => {
+  it('shows no pill when there are no live times', () => {
+    renderStopDetails()
+
+    expect(screen.queryByText('LIVE')).toBeNull()
+    expect(screen.queryByText('RETRYING')).toBeNull()
+  })
+
+  it('shows a pulsing LIVE pill while a refresh is in flight', () => {
+    renderStopDetails(undefined, vi.fn(), { ...stop, live: true, pollState: 'refreshing' })
+
+    const pill = screen.getByText('LIVE')
+    expect(pill.getAttribute('data-tone')).toBe('success')
+    expect(pill.getAttribute('data-pulse')).toBe('true')
+  })
+
+  it('shows a red RETRYING pill when polling keeps failing', () => {
+    renderStopDetails(undefined, vi.fn(), { ...stop, live: true, pollState: 'failing' })
+
+    const pill = screen.getByText('RETRYING')
+    expect(pill.getAttribute('data-tone')).toBe('error')
+    expect(screen.queryByText('LIVE')).toBeNull()
   })
 })

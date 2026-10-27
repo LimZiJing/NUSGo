@@ -1,6 +1,7 @@
 import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Button, IconButton } from '../../../ui/button'
+import { InfoPill } from '../../../ui/info-pill'
 import { BusIcon, ChevronRightIcon, FavoriteIcon } from '../../../ui/icons'
 import type { StopDetailsModel } from '../data/stop-details-model'
 import { StopDepartureList } from './stop-departure-list'
@@ -41,7 +42,17 @@ export function StopDetails({
             <BusIcon className="location-identity-icon location-identity-icon--stop" />
             <span>{stop.longName}</span>
           </h2>
-          <span className="stop-id">{stop.id}</span>
+          <span className="stop-id">
+            {stop.id}
+            {(stop.live || stop.pollState === 'failing') && (
+              <InfoPill
+                text={stop.pollState === 'failing' ? 'RETRYING' : 'LIVE'}
+                colorScheme={stop.pollState === 'failing' ? 'error' : 'success'}
+                leadingDot
+                pulse={stop.pollState !== 'idle'}
+              />
+            )}
+          </span>
         </div>
         <IconButton
           className="stop-favorite"

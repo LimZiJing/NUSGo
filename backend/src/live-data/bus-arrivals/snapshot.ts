@@ -36,6 +36,7 @@ export interface RefreshBusArrivalSnapshotOptions {
   readonly refreshIntervalMs: number
   readonly nextRefreshAtMs?: number
   readonly maxConcurrency: number
+  readonly minFirstSnapshotStops: number
   readonly now?: () => number
   readonly signal?: AbortSignal
 }
@@ -55,6 +56,7 @@ export interface BusArrivalSnapshotStoreOptions {
   readonly loadStop: BusArrivalStopLoader
   readonly refreshIntervalMs: number
   readonly maxConcurrency: number
+  readonly minFirstSnapshotStops: number
   readonly now?: () => number
   readonly onRefreshComplete?: (
     log: BusArrivalRefreshLog,
@@ -140,7 +142,13 @@ export async function refreshBusArrivalSnapshot(
     }
   })
 
-  if (signal.aborted || successfulStopIds.length === 0 || (!options.previousSnapshot && failures.length > 0)) {
+  // The first snapshot only needs enough successful stops; the rest are listed as unavailable.
+  const effectiveMinFirstSnapshotStops = Math.min(options.minFirstSnapshotStops, stops.length)
+  if (
+    signal.aborted
+    || successfulStopIds.length === 0
+    || (!options.previousSnapshot && successfulStopIds.length < effectiveMinFirstSnapshotStops)
+  ) {
     return {
       snapshot: options.previousSnapshot ?? null,
       published: false,
@@ -232,6 +240,7 @@ export function createBusArrivalSnapshotStore(
         refreshIntervalMs: options.refreshIntervalMs,
         nextRefreshAtMs: startedAtMs + options.refreshIntervalMs,
         maxConcurrency: options.maxConcurrency,
+        minFirstSnapshotStops: options.minFirstSnapshotStops,
         now,
         signal: controller.signal,
       })

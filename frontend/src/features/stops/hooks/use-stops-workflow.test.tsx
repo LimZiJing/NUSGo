@@ -61,7 +61,7 @@ describe('useStopsWorkflow', () => {
     )
 
     await waitFor(() => expect(result.current.noLiveData).toBe(true))
-    expect(result.current.liveArrivalMessage).toBe('No live data')
+    expect(result.current.liveArrivalMessage).toBe('Live times unavailable')
   })
 
   it('requests Nearby location when Stops becomes active and location is disabled', async () => {

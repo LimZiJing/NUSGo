@@ -154,6 +154,21 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
+  it('does not re-apply padding that is already set, so a running flight is not cancelled', () => {
+    const { lifecycle, map } = createLifecycle()
+    const insets = { top: 0, right: 0, bottom: 0, left: 372 }
+    lifecycle.setVisibleCenterZoom(true)
+    lifecycle.setViewportInsets(insets)
+    map.setPadding.mockClear()
+    map.panBy.mockClear()
+
+    lifecycle.setViewportInsets({ ...insets })
+
+    expect(map.setPadding).not.toHaveBeenCalled()
+    expect(map.panBy).not.toHaveBeenCalled()
+    lifecycle.dispose()
+  })
+
   it('clears padding and restores default pointer-anchored zoom when disabled', () => {
     const { lifecycle, map } = createLifecycle()
     lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })

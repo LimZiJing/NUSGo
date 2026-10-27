@@ -50,6 +50,11 @@ describe('linkVenuesToBuildings', () => {
     expect(links.wholeBuildingVenueCodes.has('COM1-0210')).toBe(false)
   })
 
+  it('points a whole-building venue at its NUSMods page, and leaves other buildings without one', () => {
+    expect(links.nusmodsVenueCodeByBuildingId.get('lt-17')).toBe('LT17')
+    expect(links.nusmodsVenueCodeByBuildingId.has('com1')).toBe(false)
+  })
+
   it('counts only the rooms inside a building', () => {
     expect(links.roomCountByBuildingId.get('com1')).toBe(2)
     expect(links.roomCountByBuildingId.get('saga')).toBe(1)
@@ -76,6 +81,14 @@ describe('linkVenuesToBuildings with the real data', () => {
     expect(links.wholeBuildingVenueCodes.has('LT17')).toBe(true)
     expect(links.wholeBuildingVenueCodes.has('Frontier')).toBe(true)
     expect(links.buildingByVenueCode.get('Frontier')?.parts).toHaveLength(2)
+  })
+
+  it('links LT14 and LT15 as rooms inside AS6 rather than as buildings of their own', () => {
+    for (const code of ['LT14', 'LT15']) {
+      expect(links.wholeBuildingVenueCodes.has(code)).toBe(false)
+      expect(links.buildingByVenueCode.get(code)?.id).toBe('as6')
+    }
+    expect(links.nusmodsVenueCodeByBuildingId.has('as6')).toBe(false)
   })
 
   it('keeps LAW_SR3, Y and Pinnacle unlinked and a one-room building as a building with one room', () => {

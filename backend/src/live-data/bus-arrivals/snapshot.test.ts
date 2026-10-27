@@ -49,6 +49,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'first',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.equal(result.published, false)
@@ -69,6 +70,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
       now: () => Date.parse('2026-10-10T10:00:01.000Z'),
     })
 
@@ -87,6 +89,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.equal(result.published, true)
@@ -102,6 +105,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.equal(result.published, false)
@@ -124,6 +128,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.equal(result.published, true)
@@ -141,11 +146,70 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.equal(result.published, true)
     assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-B'])
     assert.equal(result.snapshot?.stops['STOP-B'], previousSnapshot.stops['STOP-B'])
+  })
+
+  describe('first-pass threshold', () => {
+    const canonicalStops: readonly BusArrivalStop[] = Array.from({ length: 33 }, (_, index) => ({
+      stopId: `CANON-${String(index).padStart(2, '0')}`,
+      stopName: `Canonical ${index}`,
+    }))
+
+    function loadWithFailures(failingCount: number) {
+      const failingIds = new Set(canonicalStops.slice(0, failingCount).map(({ stopId }) => stopId))
+      return async (stop: BusArrivalStop): Promise<BusArrivalStopResult> => {
+        if (failingIds.has(stop.stopId)) throw new Error('NUS unavailable')
+        return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
+      }
+    }
+
+    it('publishes the first snapshot with 28 of 33 stops successful and lists the failed stops', async () => {
+      const result = await refreshBusArrivalSnapshot(canonicalStops, loadWithFailures(5), {
+        snapshotVersion: 'first',
+        refreshIntervalMs: 30_000,
+        maxConcurrency: 4,
+        minFirstSnapshotStops: 28,
+      })
+
+      assert.equal(result.published, true)
+      assert.equal(result.successfulStopIds.length, 28)
+      assert.equal(result.failures.length, 5)
+      assert.equal(result.snapshot?.unavailableStopIds?.length, 5)
+      assert.deepEqual(result.snapshot?.unavailableStopIds, canonicalStops.slice(0, 5).map(({ stopId }) => stopId))
+      assert.deepEqual(result.snapshot?.stops[canonicalStops[0]!.stopId], {})
+    })
+
+    it('does not publish the first snapshot with 27 of 33 stops successful', async () => {
+      const result = await refreshBusArrivalSnapshot(canonicalStops, loadWithFailures(6), {
+        snapshotVersion: 'first',
+        refreshIntervalMs: 30_000,
+        maxConcurrency: 4,
+        minFirstSnapshotStops: 28,
+      })
+
+      assert.equal(result.published, false)
+      assert.equal(result.snapshot, null)
+      assert.equal(result.successfulStopIds.length, 27)
+      assert.equal(result.failures.length, 6)
+    })
+
+    it('clamps the minimum to the stop count so a short stop list can publish', async () => {
+      const result = await refreshBusArrivalSnapshot(stops, async (stop) => resultFor(stop.stopId), {
+        snapshotVersion: 'first',
+        refreshIntervalMs: 30_000,
+        maxConcurrency: 2,
+        minFirstSnapshotStops: 10,
+      })
+
+      assert.equal(result.published, true)
+      assert.equal(result.successfulStopIds.length, stops.length)
+      assert.deepEqual(result.snapshot?.unavailableStopIds, [])
+    })
   })
 
   it('keeps listing a stop that stays unavailable across passes', async () => {
@@ -161,6 +225,7 @@ describe('refreshBusArrivalSnapshot', () => {
       snapshotVersion: 'next',
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
     })
 
     assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-C'])
@@ -176,6 +241,7 @@ describe('createBusArrivalSnapshotStore', () => {
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 3,
+      minFirstSnapshotStops: 3,
       loadStop: (stop) => {
         loadCount += 1
         if (loadCount <= stops.length) {
@@ -209,6 +275,7 @@ describe('createBusArrivalSnapshotStore', () => {
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 3,
+      minFirstSnapshotStops: 3,
       loadStop: async (stop) => {
         if (stop.stopId === 'STOP-C') {
           return new Promise<BusArrivalStopResult>((resolveResult) => {
@@ -236,6 +303,7 @@ describe('createBusArrivalSnapshotStore', () => {
       stops,
       refreshIntervalMs: 30_000,
       maxConcurrency: 2,
+      minFirstSnapshotStops: 3,
       loadStop: (_stop, signal) => {
         started += 1
         return new Promise<BusArrivalStopResult>((_resolve, reject) => {

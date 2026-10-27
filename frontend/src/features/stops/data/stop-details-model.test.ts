@@ -200,7 +200,7 @@ describe('selected stop details model', () => {
 
     expect(selection.departures).toEqual([])
     expect(selection.live).toBe(false)
-    expect(selection.liveArrivalMessage).toBe('No live data')
+    expect(selection.liveArrivalMessage).toBe('Live times unavailable')
   })
 
   it('shows a scheduled first-bus estimate within the 30-minute grace period', () => {

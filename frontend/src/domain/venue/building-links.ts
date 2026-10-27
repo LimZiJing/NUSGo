@@ -14,6 +14,8 @@ export interface BuildingVenueLinks {
   readonly roomCountByBuildingId: ReadonlyMap<string, number>
   /** Names of whole-building venues, so searching them still finds the building. */
   readonly extraNamesByBuildingId: ReadonlyMap<string, readonly string[]>
+  /** The venue code of each whole-building venue, which is also its NUSMods venue page. */
+  readonly nusmodsVenueCodeByBuildingId: ReadonlyMap<string, string>
 }
 
 export const EMPTY_BUILDING_VENUE_LINKS: BuildingVenueLinks = {
@@ -21,6 +23,7 @@ export const EMPTY_BUILDING_VENUE_LINKS: BuildingVenueLinks = {
   wholeBuildingVenueCodes: new Set<string>(),
   roomCountByBuildingId: new Map<string, number>(),
   extraNamesByBuildingId: new Map<string, readonly string[]>(),
+  nusmodsVenueCodeByBuildingId: new Map<string, string>(),
 }
 
 /** The building token of a venue code: the part before the first "-" or "_". */
@@ -36,12 +39,18 @@ export function linkVenuesToBuildings(
   const wholeBuildingVenueCodes = new Set<string>()
   const roomCountByBuildingId = new Map<string, number>()
   const extraNamesByBuildingId = new Map<string, string[]>()
+  const nusmodsVenueCodeByBuildingId = new Map<string, string>()
 
   for (const [code, venue] of Object.entries(venues)) {
     const wholeBuilding = buildings.byRoomCodePrefix.get(code.toLowerCase())
-    if (wholeBuilding) {
+    // Only a building's first prefix is its own code; the others (LT15 under AS6) are rooms inside it.
+    const isWholeBuilding = wholeBuilding?.parts.some(
+      (part) => part.roomCodePrefixes[0]?.toLowerCase() === code.toLowerCase(),
+    )
+    if (wholeBuilding && isWholeBuilding) {
       buildingByVenueCode.set(code, wholeBuilding)
       wholeBuildingVenueCodes.add(code)
+      nusmodsVenueCodeByBuildingId.set(wholeBuilding.id, code)
       extraNamesByBuildingId.set(wholeBuilding.id, [
         ...(extraNamesByBuildingId.get(wholeBuilding.id) ?? []),
         venue.roomName,
@@ -55,5 +64,11 @@ export function linkVenuesToBuildings(
     roomCountByBuildingId.set(building.id, (roomCountByBuildingId.get(building.id) ?? 0) + 1)
   }
 
-  return { buildingByVenueCode, wholeBuildingVenueCodes, roomCountByBuildingId, extraNamesByBuildingId }
+  return {
+    buildingByVenueCode,
+    wholeBuildingVenueCodes,
+    roomCountByBuildingId,
+    extraNamesByBuildingId,
+    nusmodsVenueCodeByBuildingId,
+  }
 }

@@ -31,6 +31,29 @@ function getSelectedStop(
 }
 
 describe('selected stop details model', () => {
+  it('uses the selected minute format for timings in bus details', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const selection = getStopDetailsModel(index.stopById.get('STOP-A')!, index, {
+      minuteFormat: 'm',
+      nowMs: Date.parse('2026-09-30T00:00:00.000Z'),
+      arrivalSnapshot: {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 120,
+              upcomingArrivalSeconds: [120, 300, 480],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+    })
+
+    expect(selection.departures[0]?.timings).toEqual(['2m', '5m', '8m'])
+  })
+
   it('maps a fresh arrival snapshot to canonical route departures and adjusts for snapshot age', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const snapshot: ShuttleArrivalSnapshot = {
@@ -56,7 +79,7 @@ describe('selected stop details model', () => {
     )
 
     expect(selection.departures.map(({ routeId }) => routeId)).toEqual(['A1'])
-    expect(selection.departures[0]?.timings).toEqual(['Arr', '6m', '16m'])
+    expect(selection.departures[0]?.timings).toEqual(['Arr', '6′', '16′'])
     expect(selection.live).toBe(true)
     expect(selection.liveArrivalMessage).toBeNull()
   })
@@ -98,7 +121,7 @@ describe('selected stop details model', () => {
 
     expect(selection.publicServices).toEqual([{
       serviceNumber: '95',
-      timings: ['1m', '5m', '-'],
+      timings: ['1′', '5′', '-'],
       status: 'live',
     }])
     expect(selection.live).toBe(true)
@@ -141,8 +164,8 @@ describe('selected stop details model', () => {
     const stopA = getSelectedStop(index.stopById.get('STOP-A')!, index, [], snapshot, nowMs)
     const stopB = getSelectedStop(index.stopById.get('STOP-B')!, index, [], snapshot, nowMs)
 
-    expect(stopA.departures[0]?.timings).toEqual(['1m', '2m', '-'])
-    expect(stopB.departures[0]?.timings).toEqual(['2m', '3m', '-'])
+    expect(stopA.departures[0]?.timings).toEqual(['1′', '2′', '-'])
+    expect(stopB.departures[0]?.timings).toEqual(['2′', '3′', '-'])
   })
 
   it('keeps slightly stale arrivals during the refresh grace period', () => {
@@ -169,7 +192,7 @@ describe('selected stop details model', () => {
       Date.parse('2026-09-30T00:00:31.000Z'),
     )
 
-    expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
+    expect(selection.departures[0]?.timings).toEqual(['5′', '10′', '-'])
     expect(selection.live).toBe(true)
     expect(selection.liveArrivalMessage).toBeNull()
   })
@@ -229,7 +252,7 @@ describe('selected stop details model', () => {
       routeId: 'A1',
       routeName: 'A1',
       routeColor: '#123456',
-      message: 'First bus in 6m',
+      message: 'First bus in 6′',
     }])
     expect(selection.liveArrivalMessage).toBeNull()
   })
@@ -301,7 +324,7 @@ describe('selected stop details model', () => {
       'refreshing',
     )
 
-    expect(selection.departures[0]?.timings).toEqual(['5m', '10m', '-'])
+    expect(selection.departures[0]?.timings).toEqual(['5′', '10′', '-'])
     expect(selection.live).toBe(true)
     expect(selection.pollState).toBe('refreshing')
     expect(selection.liveArrivalMessage).toBeNull()

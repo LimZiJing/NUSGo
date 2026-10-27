@@ -115,6 +115,17 @@ describe('useStopsWorkflow', () => {
       .toEqual([]))
   })
 
+  it('persists favourite-stop reorder from outside the Stops Favourites view', async () => {
+    localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A', 'STOP-B']))
+    const { result } = renderHook(() => useStopsWorkflow(createOptions({ active: false })))
+
+    act(() => result.current.reorderFavorite('STOP-B', 'STOP-A'))
+
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual(['STOP-B', 'STOP-A']))
+    expect(result.current.favoriteStops.map(({ id }) => id)).toEqual(['STOP-B', 'STOP-A'])
+  })
+
   it('uses the settled map centre after the location button moves the camera', async () => {
     const locateFromControl = vi.fn()
     const options = createOptions({

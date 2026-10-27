@@ -28,6 +28,7 @@ export function getStopsForList(
 ): readonly StopListStop[] {
   if (!index) return []
   const favorites = new Set(favoriteStopIds)
+  const favoriteOrder = new Map(favoriteStopIds.map((stopId, position) => [stopId, position]))
   return index.stops
     .filter((stop) => list === 'favourites' ? favorites.has(stop.id) : true)
     .map((stop) => ({
@@ -35,9 +36,12 @@ export function getStopsForList(
       distanceMeters: fix ? getDistanceMeters(fix, stop) : null,
     }))
     .sort((first, second) => (
-      list === 'nearby' && center
-        ? getDistanceMeters(center, first.stop) - getDistanceMeters(center, second.stop)
-        : first.stop.longName.localeCompare(second.stop.longName)
+      list === 'favourites'
+        ? (favoriteOrder.get(first.stop.id) ?? Number.MAX_SAFE_INTEGER) -
+          (favoriteOrder.get(second.stop.id) ?? Number.MAX_SAFE_INTEGER)
+        : center
+          ? getDistanceMeters(center, first.stop) - getDistanceMeters(center, second.stop)
+          : first.stop.longName.localeCompare(second.stop.longName)
     ) || first.stop.id.localeCompare(second.stop.id))
 }
 

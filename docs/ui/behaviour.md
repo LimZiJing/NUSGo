@@ -17,7 +17,9 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - Handle taps toggle partial and full, and a tap on the collapsed handle opens partial. Up and Down Arrow move one detent at a time. A swipe down from partial collapses.
 - A collapsed sheet shows a one-line summary of its tab, such as the Nearby stop count or the journey duration. The summary is part of the handle's accessible name.
 - Focusing a venue or endpoint search field opens the sheet at full height. Choosing a result returns it to partial. Dismissing search restores the earlier detent unless you changed it by hand.
-- The map's bottom inset follows the active sheet's detent, and the planned journey refits when the Plan detent changes or Plan becomes active again.
+
+- The map's bottom inset follows the active sheet's detent. In Stops → Nearby, map padding follows each detent so centre-anchored zoom stays on the crosshair without changing pitch or bearing. The planned journey refits when the Plan detent changes or Plan becomes active again.
+- More opens as a content-height sheet that keeps most of the map in view. Settings and My waypoints open full-height screens behind the tab pill; Back returns to More.
 - Sheets scroll natively, respect safe-area and visual-viewport sizes, honour reduced motion and are non-modal. Base UI Drawer handles swipes and snap points, while the app owns detent state.
 
 ## Explore
@@ -65,15 +67,15 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Personal Waypoints
 
-- More → My waypoints → Add waypoint starts creation. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
+- More → My waypoints → Add waypoint starts creation. The saved list can be searched and filtered by category. The page-header Edit list control reveals inline reorder and remove controls, with no per-row popup. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
 - Continue opens the name, free-form category and optional note form. Adjust on map returns to the pin. Nothing is stored until Save waypoint is pressed; Cancel discards the draft.
 - Saving uses the existing versioned browser store. My waypoints shows the saved names and categories. Invalid fields show inline errors. If saved data is unreadable or contains rejected records, creation pauses without overwriting it. Persistent map markers, waypoint details, edit/delete actions and Journey endpoints are follow-up work.
 
 ## Settings and themes
 
 - Settings opens from More. On desktop it uses the navigation column. On mobile it fills the screen behind the tab pill. Back returns to More, which returns to the earlier workflow state.
-- Appearance, Favourites and About expand independently, with Appearance open first. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. A choice applies at once for the current page, and a reload starts at System.
-- Favourites shows the saved-stop controls. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
+- Appearance, Favourites and About expand independently. Appearance starts collapsed, while Favourites starts expanded when saved stops exist. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. Minute format offers `12m`, `12′` and `12 min`; its selection applies immediately, is restored on reload and formats timings in the Stops area, including bus details and first-bus countdowns.
+- Favourites lists saved stops. Edit list reveals inline move and remove buttons and a confirmed Clear all action; Done exits edit mode. Stop cards keep their existing star toggle. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
 - Browser location permission is managed by the browser. Settings shows no permission status and has no clear-location action.
 - Colours, radii, shadows and control heights come from semantic tokens, and tests check text and status contrast in each theme. Official bus route colours sit outside the theme contract.
 

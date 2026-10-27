@@ -24,7 +24,7 @@ describe('stop timing data', () => {
       },
     })
 
-    expect(timingData.departures[0]?.timings).toEqual(['Arr', '1m', '1m'])
+    expect(timingData.departures[0]?.timings).toEqual(['Arr', '1′', '1′'])
   })
 
   it('shows the live times unavailable label and no departures for an unavailable stop', () => {
@@ -113,6 +113,49 @@ describe('stop timing data', () => {
 
     expect(timingData.liveArrivalMessage).toBeNull()
     expect(timingData.live).toBe(true)
-    expect(timingData.departures[0]?.timings).toEqual(['2m', '5m', '8m'])
+    expect(timingData.departures[0]?.timings).toEqual(['2′', '5′', '8′'])
+  })
+
+  it('applies the selected format to shuttle and public arrivals', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const timingData = getStopTimingData(stop, index, {
+      minuteFormat: 'min',
+      nowMs: Date.parse('2026-09-30T00:00:00.000Z'),
+      arrivalSnapshot: {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 120,
+              upcomingArrivalSeconds: [120, 300, 480],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      publicArrivalSnapshot: {
+        source: 'lta-datamall',
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        refreshedAt: '2026-09-30T00:00:00.000Z',
+        stops: {
+          'STOP-A': {
+            observedAt: '2026-09-30T00:00:00.000Z',
+            expiresAt: '2026-09-30T00:01:00.000Z',
+            services: {
+              '95': {
+                status: 'live',
+                arrivals: [{ estimatedAt: '2026-09-30T00:03:00.000Z', monitored: true }],
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(timingData.departures[0]?.timings).toEqual(['2 min', '5 min', '8 min'])
+    expect(timingData.publicServices[0]?.timings).toEqual(['3 min', '-', '-'])
   })
 })

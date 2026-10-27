@@ -80,6 +80,20 @@ function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) 
   )
 }
 
+function NusmodsLink({ venueCode }: { readonly venueCode: string }) {
+  return (
+    <a
+      className="venue-detail-action venue-detail-nusmods"
+      href={`https://nusmods.com/venues/${encodeURIComponent(venueCode)}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span>View in</span>
+      <img src={nusmodsLogoUrl} alt="NUSMods" />
+    </a>
+  )
+}
+
 export function VenueDetails({
   venue,
   transitIndex,
@@ -122,15 +136,7 @@ export function VenueDetails({
           disabled={!hasCoordinates}
           onClick={() => onNavigateToVenue?.(venue.code)}
         />
-        <a
-          className="venue-detail-action venue-detail-nusmods"
-          href={`https://nusmods.com/venues/${encodeURIComponent(venue.code)}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span>View in</span>
-          <img src={nusmodsLogoUrl} alt="NUSMods" />
-        </a>
+        <NusmodsLink venueCode={venue.code} />
       </div>
       {hasCoordinates && venueLocation && (
         <NearbyStops location={venueLocation} transitIndex={transitIndex} onFocusStop={onFocusStop} />
@@ -142,6 +148,8 @@ export function VenueDetails({
 interface BuildingDetailsProps {
   readonly building: BuildingEntry
   readonly roomCount: number
+  /** The NUSMods venue page of a building that is itself a venue (for example LT17); absent otherwise. */
+  readonly nusmodsVenueCode?: string
   readonly transitIndex: TransitIndex | null
   readonly headingRef: RefObject<HTMLHeadingElement | null>
   readonly onNavigateToBuilding?: (buildingId: string, partId?: string) => void
@@ -153,6 +161,7 @@ interface BuildingDetailsProps {
 export function BuildingDetails({
   building,
   roomCount,
+  nusmodsVenueCode,
   transitIndex,
   headingRef,
   onNavigateToBuilding,
@@ -201,6 +210,7 @@ export function BuildingDetails({
       )}
       <div className="venue-detail-actions">
         <NavigateButton onClick={() => onNavigateToBuilding?.(building.id, navigationTarget?.id)} />
+        {nusmodsVenueCode && <NusmodsLink venueCode={nusmodsVenueCode} />}
         {hasChips && (
           <Select
             className="venue-building-picker"

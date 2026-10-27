@@ -110,6 +110,7 @@ export interface NavigationSessionCommands {
   readonly selectMobileRoute: (routeId: string) => void
   readonly focusStop: (stopId: string) => void
   readonly focusStopInStopsTab: (stopId: string) => void
+  readonly clearStopsPin: () => void
   readonly focusCurrentLocationIfKnown: () => void
   readonly refitExploreTarget: () => void
   readonly setStopsPinVisible: (visible: boolean) => void
@@ -163,6 +164,7 @@ function createNavigationSessionCommands(
     selectMobileRoute: (routeId) => session?.selectMobileRoute(routeId),
     focusStop: (stopId) => session?.focusStop(stopId),
     focusStopInStopsTab: (stopId) => session?.focusStopInStopsTab(stopId),
+    clearStopsPin: () => session?.clearStopsPin(),
     focusCurrentLocationIfKnown: () => session?.focusCurrentLocationIfKnown(),
     refitExploreTarget: () => session?.refitExploreTarget(),
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),

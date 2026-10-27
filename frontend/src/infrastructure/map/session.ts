@@ -479,6 +479,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       flyToStop(stopId, 17, 0)
     },
 
+    clearStopsPin() {
+      if (disposed) return
+      stopsPinStopId = null
+      shuttleStopMarkers?.setStopsPin(null, stopsPinVisible)
+    },
+
     setStopsPinVisible(visible: boolean) {
       if (disposed) return
       stopsPinVisible = visible

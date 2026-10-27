@@ -10,9 +10,13 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
   readonly onContinue: () => void
   readonly onCancel: () => void
 }) {
+  const headingRef = useRef<HTMLHeadingElement>(null)
   const latitudeInput = useRef<HTMLInputElement>(null)
   const longitudeInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    headingRef.current?.focus()
+  }, [])
   useEffect(() => {
     if (latitudeInput.current) latitudeInput.current.value = String(coordinate.latitude)
     if (longitudeInput.current) longitudeInput.current.value = String(coordinate.longitude)
@@ -47,12 +51,12 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     onContinue()
   }
   return <section className="personal-waypoint-placement" aria-label="Place personal waypoint">
-    <h2>Place waypoint</h2>
+    <h2 ref={headingRef} tabIndex={-1}>Place waypoint</h2>
     <p>Tap the map or drag the pin. You can also enter coordinates.</p>
     <div className="personal-waypoint-coordinate-fields">
       <label htmlFor="personal-waypoint-latitude">Latitude</label>
       <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
-        ref={latitudeInput} autoFocus onChange={() => setError(null)} />
+        ref={latitudeInput} onChange={() => setError(null)} />
       <label htmlFor="personal-waypoint-longitude">Longitude</label>
       <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={coordinate.longitude}
         ref={longitudeInput} onChange={() => setError(null)} />

@@ -1549,6 +1549,12 @@ describe('MapSession', () => {
 
     session.focusStopInStopsTab('unknown')
     expect(map.flyTo).toHaveBeenCalledTimes(2)
+
+    const addedMarkerCount = map.addedMarkers.length
+    session.clearStopsPin()
+    session.setStopsPinVisible(false)
+    session.setStopsPinVisible(true)
+    expect(map.addedMarkers).toHaveLength(addedMarkerCount)
     session.dispose()
     vi.unstubAllGlobals()
   })

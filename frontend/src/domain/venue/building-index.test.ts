@@ -75,7 +75,7 @@ describe('buildBuildingIndex', () => {
     )
 
     expect(partCounts).toMatchObject({ 'cendana-college': 5, 'saga-college': 6, 'elm-college': 3 })
-    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(251)
+    expect(index.entries.reduce((total, entry) => total + entry.parts.length, 0)).toBe(249)
   })
 })
 

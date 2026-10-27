@@ -145,9 +145,16 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     options.onMapCenterChange([center.lng, center.lat])
   }
 
-  // Padding aligns MapLibre's centre with the initial crosshair. Later detents pan
-  // to the new crosshair while keeping that padding, so camera perspective stays fixed.
+  // Active padding aligns MapLibre's centre with the crosshair. Identical padding
+  // must be skipped because MapLibre's setPadding calls jumpTo and cancels a running flyTo.
+  let appliedPadding: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  const isPaddingApplied = (padding: MapViewportInsets): boolean =>
+    padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
+    padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
+
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
+    if (isPaddingApplied(padding)) return
+    appliedPadding = { ...padding }
     const { clientWidth, clientHeight } = map.getContainer()
     const anchor = map.unproject([clientWidth / 2, clientHeight / 2])
     map.setPadding(padding)
@@ -263,11 +270,12 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       if (disposed) return
       viewportInsets = insets
       if (visibleCenterZoom) {
-        // The padded map centre is the crosshair, so keeping padding current also
-        // keeps centre-anchored zoom on the crosshair through every detent change.
         applyingViewportInsets = true
         try {
-          map.setPadding(insets)
+          if (!isPaddingApplied(insets)) {
+            appliedPadding = { ...insets }
+            map.setPadding(insets)
+          }
         } finally {
           applyingViewportInsets = false
         }

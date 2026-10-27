@@ -75,6 +75,29 @@ function mockMobileViewport(): void {
   })
 }
 
+function mockMobileLayoutGeometry(): void {
+  const getBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    if (this.classList.contains('map-shell')) {
+      return { x: 0, y: 0, top: 0, right: 390, bottom: 768, left: 0, width: 390, height: 768, toJSON: () => ({}) } as DOMRect
+    }
+    if (this.classList.contains('main-navigation')) {
+      return { x: 0, y: 696, top: 696, right: 390, bottom: 752, left: 0, width: 390, height: 56, toJSON: () => ({}) } as DOMRect
+    }
+    return getBoundingClientRect.call(this)
+  })
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains('mobile-sheet-popup') || this.classList.contains('mobile-sheet-viewport')
+      ? 768
+      : 0
+  })
+  vi.stubGlobal('ResizeObserver', class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  })
+}
+
 beforeEach(() => {
   mockMobileViewport()
   appHarness.arrivalsClient.getArrivals.mockResolvedValue({
@@ -100,6 +123,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   localStorage.clear()
   appHarness.arrivalsClient.getArrivals.mockReset()
   appHarness.serviceHoursClient.getServiceWindows.mockReset()
@@ -224,6 +249,48 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     mapMarker.remove()
+  })
+
+  it('keeps the collapsed Stops sheet positioned after returning from waypoint placement', async () => {
+    mockMobileLayoutGeometry()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.keyboard('{Escape}')
+    const stopsSheet = screen.getByRole('region', { name: 'Stops' })
+    expect(stopsSheet.getAttribute('data-detent')).toBe('collapsed')
+    const initialSnapOffset = stopsSheet.style.getPropertyValue('--drawer-snap-point-offset')
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
+
+    window.dispatchEvent(new Event('resize'))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    expect(stopsSheet.getAttribute('data-detent')).toBe('collapsed')
+    expect(stopsSheet.style.getPropertyValue('--drawer-snap-point-offset')).toBe(initialSnapOffset)
+  })
+
+  it('keeps the mobile keyboard closed while placing and naming a waypoint', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+
+    const placementHeading = screen.getByRole('heading', { name: 'Place waypoint' })
+    expect(document.activeElement).toBe(placementHeading)
+    expect(document.activeElement).not.toBe(screen.getByRole('spinbutton', { name: 'Latitude' }))
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Name' }))
   })
 
   it('opens a stop from the Explore route list and restores its route context and focus', async () => {

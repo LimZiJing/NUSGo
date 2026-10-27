@@ -122,9 +122,10 @@ function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
 }
 
-// An envelope without a data object is a failed response, not an empty route.
+// An envelope without a data object holding an activebus array is a failed response, not an empty route.
 function assertActiveBusEnvelope(payload: unknown): void {
-  if (!isRecord(payload) || !isRecord(getValue(payload, ['data']))) {
+  const data = isRecord(payload) ? getValue(payload, ['data']) : undefined
+  if (!isRecord(data) || !Array.isArray(getValue(data, ['activebus']))) {
     throw new Error('NUS active-bus response was invalid')
   }
 }

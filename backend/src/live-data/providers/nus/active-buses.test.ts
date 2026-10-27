@@ -211,7 +211,8 @@ describe('createNusActiveBusProvider', () => {
   })
 
   it('throws for a garbage payload so it counts as a route failure', async () => {
-    for (const payload of [null, 'activebus', [], {}, { data: null }, { data: 'activebus' }]) {
+    for (const payload of [null, 'activebus', [], {}, { data: null }, { data: 'activebus' },
+      { data: {} }, { data: { activebus: 'unexpected' } }, { data: { activebus: null } }, { data: { activebus: {} } }]) {
       const { client } = fakeClient(payload)
       const activeBuses = createNusActiveBusProvider({
         provider,

@@ -17,7 +17,11 @@ export type {
   ApiShuttleServiceWindowsRequest,
   ApiShuttleServiceWindowsResponse,
   ApiRequestOptions,
+  ApiShuttleVehiclesRequest,
+  ApiShuttleVehiclesResponse,
+  ShuttleVehiclePosition,
 } from './http/live-data-contracts.ts'
+export { parseApiShuttleVehiclesResponse } from './http/live-vehicles-validation.ts'
 
 export {
   TransitValidationError,
@@ -70,8 +74,10 @@ export type {
   ShuttleHeadwaySeconds,
   ShuttleRouteArrivalData,
   ShuttleArrivalSnapshot,
+  ShuttleLoadLevel,
 } from './transit/live-arrivals.ts'
 export {
+  SHUTTLE_LOAD_LEVELS,
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
   SHUTTLE_ARRIVAL_FRESHNESS_MS,
   SHUTTLE_ARRIVAL_MAX_AGE_MS,

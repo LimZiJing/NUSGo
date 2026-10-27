@@ -54,7 +54,7 @@ describe('StopList', () => {
         loading={false}
         locationNotice={null}
         noLiveData
-        liveArrivalMessage="No live data"
+        liveArrivalMessage="Live times unavailable"
         onSelectStopList={vi.fn()}
         onToggleFavorite={vi.fn()}
         onToggleExpanded={vi.fn()}
@@ -64,7 +64,7 @@ describe('StopList', () => {
     )
 
     expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(screen.getByText('No live data')).toBeTruthy()
+    expect(screen.getByText('Live times unavailable')).toBeTruthy()
     expect(screen.getByText('Museum')).toBeTruthy()
     expect(screen.getByText('University Town')).toBeTruthy()
     expect(screen.getByText('First bus in 6m')).toBeTruthy()

@@ -222,6 +222,16 @@
     font-size: var(--font-size-xs);
   }
 
+  /* The message above public-bus rows sits flush with them and replaces the list's top rule. */
+  .stop-card .stop-live-arrival-message {
+    padding: 0 var(--space-2) var(--space-2);
+    text-align: center;
+  }
+
+  .stop-card .stop-live-arrival-message + .stop-departure-list {
+    border-top: 0;
+  }
+
   .stop-card .stop-departure-row:last-child {
     border-bottom: 0;
   }

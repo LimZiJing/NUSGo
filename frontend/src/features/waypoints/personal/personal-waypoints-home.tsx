@@ -1,5 +1,6 @@
 import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
@@ -27,18 +28,41 @@ export function PersonalWaypointsHome({
   const canAdd = ready && readResult.rejectedRecords.count === 0 &&
     readResult.waypoints.length < PERSONAL_WAYPOINTS_MAX_COUNT
   const canManage = ready && readResult.rejectedRecords.count === 0
+  const [editAnnouncement, setEditAnnouncement] = useState('')
+  const emptyStateRef = useRef<HTMLParagraphElement>(null)
+  const waypointCount = ready ? readResult.waypoints.length : null
+  const previousWaypointCount = useRef(waypointCount)
+  const combinedStatus = [
+    status,
+    editAnnouncement,
+    ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
+      ? `The limit of ${PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.`
+      : null,
+  ].filter((message): message is string => message !== null && message !== '').join(' ')
+
+  useLayoutEffect(() => {
+    if (previousWaypointCount.current !== null && previousWaypointCount.current > 0 && waypointCount === 0) {
+      setEditAnnouncement('')
+      emptyStateRef.current?.focus()
+    }
+    previousWaypointCount.current = waypointCount
+  }, [waypointCount])
+
   return <div className="personal-waypoints-home">
     <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />
-    {status && <p role="status">{status}</p>}
+    <p className="personal-waypoint-privacy-note">Personal Waypoints are saved in this browser profile.</p>
+    {combinedStatus && <p role="status">{combinedStatus}</p>}
     {readResult.kind === 'unavailable' && <p role="alert">Browser storage is unavailable. Waypoints cannot be saved here.</p>}
     {readResult.kind === 'recovery-required' && <p role="alert">Saved waypoint data needs recovery. It has been left untouched.</p>}
     {ready && readResult.rejectedRecords.count > 0 && <p role="alert">
       {readResult.rejectedRecords.count} saved waypoint records could not be read.
       Adding a waypoint is paused so those records are not overwritten.
     </p>}
-    {ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT &&
-      <p role="status">The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.</p>}
-    {ready && readResult.waypoints.length === 0 && <p className="personal-waypoint-empty">
+    {ready && readResult.waypoints.length === 0 && <p
+      ref={emptyStateRef}
+      className="personal-waypoint-empty"
+      tabIndex={-1}
+    >
       No saved waypoints yet. Add a waypoint to start your list.
     </p>}
     {ready && readResult.waypoints.length > 0 && (
@@ -49,6 +73,7 @@ export function PersonalWaypointsHome({
         onRemove={onRemove}
         onMove={onMove}
         onClearAll={onClearAll}
+        onEditAnnouncement={setEditAnnouncement}
       />
     )}
   </div>

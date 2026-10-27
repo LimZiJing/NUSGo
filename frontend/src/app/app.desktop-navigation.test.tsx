@@ -643,6 +643,55 @@ describe('More surface', () => {
     vi.unstubAllGlobals()
   })
 
+  it('returns to browse mode after clearing and creating Personal Waypoints', async () => {
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [{
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Quiet bench',
+        category: 'Rest spot',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        createdAt: '2026-10-26T00:00:00.000Z',
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      }],
+    }))
+    vi.stubGlobal('crypto', { randomUUID: () => '4a85589b-4941-4a85-8d47-7c46f5d47400' })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
+
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
+    expect(confirm).toHaveBeenCalledWith(
+      'Clear all personal waypoints, including places hidden by filters?',
+    )
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Done' })).toBeNull())
+
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.type(screen.getByLabelText('Name'), 'Coffee stop')
+    await user.type(screen.getByLabelText('Category'), 'Food')
+    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Edit list' }).getAttribute('aria-pressed')).toBe('false')
+      expect(screen.queryByRole('button', { name: 'Done' })).toBeNull()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('button', { name: 'Edit list' }).getAttribute('aria-pressed')).toBe('false')
+
+    confirm.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
   it('keeps cancelled and invalid waypoint drafts out of storage', async () => {
     const user = userEvent.setup()
     render(<App />)

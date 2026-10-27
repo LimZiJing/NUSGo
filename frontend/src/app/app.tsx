@@ -521,6 +521,7 @@ function App() {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
     }
+    setIsEditingPersonalWaypoints(false)
     appNavigation.selectView(view, stopsWorkflow.state.list)
   }
   const openWaypoints = (): void => {
@@ -530,16 +531,29 @@ function App() {
     setMorePage('waypoints')
   }
   const openSettings = (): void => {
+    setIsEditingPersonalWaypoints(false)
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
   const beginWaypointPlacement = (): void => {
+    setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnsToForm(false)
     setMorePage('placing')
   }
   const cancelWaypointPlacement = (): void => {
+    if (!placementReturnsToForm) setIsEditingPersonalWaypoints(false)
     setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+  }
+  const clearPersonalWaypoints = (): void => {
+    personalWaypoints.clearAll()
+    setIsEditingPersonalWaypoints(false)
+  }
+  const removePersonalWaypoint = (waypointId: string): void => {
+    const removingLastWaypoint = personalWaypoints.readResult.kind === 'ready' &&
+      personalWaypoints.readResult.waypoints.length === 1
+    const removed = personalWaypoints.removeWaypoint(waypointId)
+    if (removed && removingLastWaypoint) setIsEditingPersonalWaypoints(false)
   }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
@@ -724,9 +738,9 @@ function App() {
               status={personalWaypoints.status}
               onAdd={beginWaypointPlacement}
               editing={isEditingPersonalWaypoints}
-              onRemove={personalWaypoints.removeWaypoint}
+              onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
-              onClearAll={personalWaypoints.clearAll}
+              onClearAll={clearPersonalWaypoints}
               initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'creating' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}
@@ -738,9 +752,15 @@ function App() {
                 setPlacementReturnsToForm(true)
                 setMorePage('placing')
               }}
-              onCancel={() => setMorePage('waypoints')}
+              onCancel={() => {
+                setIsEditingPersonalWaypoints(false)
+                setMorePage('waypoints')
+              }}
               onSave={() => {
-                if (personalWaypoints.save()) setMorePage('waypoints')
+                if (personalWaypoints.save()) {
+                  setIsEditingPersonalWaypoints(false)
+                  setMorePage('waypoints')
+                }
               }}
             /> : morePage === 'settings' ? (
               <SettingsContent

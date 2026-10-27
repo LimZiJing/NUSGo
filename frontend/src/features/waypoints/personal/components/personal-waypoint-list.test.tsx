@@ -2,6 +2,7 @@
 
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { PersonalWaypointList } from './personal-waypoint-list'
@@ -23,6 +24,34 @@ const waypoints = [
   createWaypoint(2, 'Design studio', 'Study place'),
   createWaypoint(3, 'Tea room', 'Rest spot'),
 ]
+
+function StatefulPersonalWaypointList() {
+  const [savedWaypoints, setSavedWaypoints] = useState(waypoints)
+
+  return (
+    <PersonalWaypointList
+      waypoints={savedWaypoints}
+      canEdit
+      editing
+      onRemove={(waypointId) => setSavedWaypoints((current) => (
+        current.filter((waypoint) => waypoint.id !== waypointId)
+      ))}
+      onMove={(waypointId, neighborId) => setSavedWaypoints((current) => {
+        const from = current.findIndex((waypoint) => waypoint.id === waypointId)
+        const to = current.findIndex((waypoint) => waypoint.id === neighborId)
+        if (from < 0 || to < 0) return current
+        const next = [...current]
+        const movedWaypoint = next[from]
+        const neighborWaypoint = next[to]
+        if (!movedWaypoint || !neighborWaypoint) return current
+        next[from] = neighborWaypoint
+        next[to] = movedWaypoint
+        return next
+      })}
+      onClearAll={() => setSavedWaypoints([])}
+    />
+  )
+}
 
 afterEach(() => {
   cleanup()
@@ -64,6 +93,7 @@ describe('PersonalWaypointList', () => {
     const user = userEvent.setup()
     const onMove = vi.fn()
     const onRemove = vi.fn()
+    const onEditAnnouncement = vi.fn()
     const view = render(
       <PersonalWaypointList
         waypoints={waypoints}
@@ -72,6 +102,7 @@ describe('PersonalWaypointList', () => {
         onRemove={onRemove}
         onMove={onMove}
         onClearAll={() => undefined}
+        onEditAnnouncement={onEditAnnouncement}
       />,
     )
 
@@ -83,10 +114,13 @@ describe('PersonalWaypointList', () => {
         onRemove={onRemove}
         onMove={onMove}
         onClearAll={() => undefined}
+        onEditAnnouncement={onEditAnnouncement}
       />,
     )
 
-    expect(screen.getByRole('status').textContent).toContain('Edit list mode')
+    expect(onEditAnnouncement).toHaveBeenCalledWith(
+      'Edit list mode. Use the move controls to reorder waypoints, or remove a waypoint.',
+    )
     expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot up' }).hasAttribute('disabled'))
       .toBe(true)
     expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot down' }).hasAttribute('disabled'))
@@ -116,7 +150,9 @@ describe('PersonalWaypointList', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
-    expect(confirm).toHaveBeenCalledWith('Clear all personal waypoints?')
+    expect(confirm).toHaveBeenCalledWith(
+      'Clear all personal waypoints, including places hidden by filters?',
+    )
     expect(onClearAll).not.toHaveBeenCalled()
 
     confirm.mockReturnValue(true)
@@ -137,5 +173,60 @@ describe('PersonalWaypointList', () => {
     )
 
     expect(screen.queryByRole('button', { name: /More actions for/ })).toBeNull()
+  })
+
+  it('disables reordering and clearing while search or category filters are active', async () => {
+    const user = userEvent.setup()
+    const onMove = vi.fn()
+    const onClearAll = vi.fn()
+    const confirm = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('confirm', confirm)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={() => undefined}
+        onMove={onMove}
+        onClearAll={onClearAll}
+      />,
+    )
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search saved places' }), 'design')
+    expect(screen.getByRole('button', { name: 'Move Design studio, Study place up' }).hasAttribute('disabled'))
+      .toBe(true)
+    expect(screen.getByRole('button', { name: 'Move Design studio, Study place down' }).hasAttribute('disabled'))
+      .toBe(true)
+    expect(screen.getByRole('button', { name: 'Clear all' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByText('Clear search and category filters to reorder or clear all saved places.'))
+      .toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
+    expect(confirm).not.toHaveBeenCalled()
+    expect(onClearAll).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Search saved places' }))
+    await user.click(screen.getByRole('button', { name: /Category/ }))
+    await user.click(screen.getByRole('option', { name: 'Rest spot' }))
+    expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot down' }).hasAttribute('disabled'))
+      .toBe(true)
+    expect(screen.getByRole('button', { name: 'Clear all' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('keeps focus on the moved row and restores it to the list heading after removal', async () => {
+    const user = userEvent.setup()
+    render(<StatefulPersonalWaypointList />)
+
+    await user.click(screen.getByRole('button', { name: 'Move Design studio, Study place up' }))
+    const moveDown = screen.getByRole('button', { name: 'Move Design studio, Study place down' })
+    expect(screen.getByRole('button', { name: 'Move Design studio, Study place up' }).hasAttribute('disabled'))
+      .toBe(true)
+    expect(document.activeElement).toBe(moveDown)
+
+    await user.click(screen.getByRole('button', { name: 'Remove Design studio, Study place' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Saved places 2' }))
+
+    await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Saved places 1' }))
   })
 })

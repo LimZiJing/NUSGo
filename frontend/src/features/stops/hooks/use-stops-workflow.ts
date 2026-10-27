@@ -8,7 +8,7 @@ import {
 import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
 import { getStopDetailsModel, type StopDetailsModel } from '../data/stop-details-model'
 import { getStopsForList, getStopsWithinNearbyRadius, type StopListEntry } from '../data/stop-list-data'
-import type { StopTimingDataOptions } from '../data/stop-timing-data'
+import { LIVE_TIMES_UNAVAILABLE_MESSAGE, type StopTimingDataOptions } from '../data/stop-timing-data'
 import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
 import { useStopsState } from '../state/use-stops-state'
@@ -231,7 +231,7 @@ export function useStopsWorkflow({
     : stopArrivals.status === 'loading'
       ? 'Updating…'
       : noLiveData
-        ? 'No live data'
+        ? LIVE_TIMES_UNAVAILABLE_MESSAGE
         : null
 
   return {

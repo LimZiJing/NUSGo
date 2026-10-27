@@ -184,13 +184,14 @@
   overflow-y: auto;
   padding: var(--space-4);
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-panel);
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
-  background: var(--surface-overlay-strong);
-  box-shadow: var(--shadow-panel);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-lg);
   box-sizing: border-box;
 }
 .personal-waypoint-placement h2 { margin: 0; font-size: var(--font-size-lg); }
+.personal-waypoint-placement h2:focus { outline: none; }
 .personal-waypoint-coordinate-fields {
   display: grid;
   grid-template-columns: auto 1fr;

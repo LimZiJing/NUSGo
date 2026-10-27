@@ -68,6 +68,8 @@ export interface MapSession {
   refitRoute(): void
   focusStop(stopId: string): void
   focusStopInStopsTab(stopId: string): void
+  /** Forgets the Stops pin so it stays hidden until another stop is focused. */
+  clearStopsPin(): void
   setStopsPinVisible(visible: boolean): void
   /** Accents the bus-stop markers for these stop IDs; an empty list clears the accent. */
   setNearbyStopHighlight(stopIds: readonly string[]): void

@@ -143,7 +143,14 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
 
   // Persistent padding makes MapLibre's own centre the visible-area centre, so button
   // and gesture zoom use it. The pan keeps the view still while the padding changes.
+  // Re-applying identical padding still calls MapLibre's jumpTo, which would cancel a running flyTo.
+  let appliedPadding: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
+    if (
+      padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
+      padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
+    ) return
+    appliedPadding = { ...padding }
     const { clientWidth, clientHeight } = map.getContainer()
     const anchor = map.unproject([clientWidth / 2, clientHeight / 2])
     map.setPadding(padding)

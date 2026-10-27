@@ -16,6 +16,7 @@ interface Props {
 function setup(initial: Partial<Props> = {}) {
   const focusStopInStopsTab = vi.fn()
   const focusCurrentLocationIfKnown = vi.fn()
+  const clearStopsPin = vi.fn()
   const initialProps: Props = {
     isMobileViewport: false,
     activeView: 'stops',
@@ -25,12 +26,12 @@ function setup(initial: Partial<Props> = {}) {
   }
   const view = renderHook(
     (props: Props) => useStopsEntryRefit({
-        commands: { focusStopInStopsTab, focusCurrentLocationIfKnown },
+        commands: { focusStopInStopsTab, clearStopsPin, focusCurrentLocationIfKnown },
         ...props,
       }),
     { initialProps },
   )
-  return { focusStopInStopsTab, focusCurrentLocationIfKnown, initialProps, ...view }
+  return { focusStopInStopsTab, clearStopsPin, focusCurrentLocationIfKnown, initialProps, ...view }
 }
 
 describe('useStopsEntryRefit', () => {
@@ -108,6 +109,25 @@ describe('useStopsEntryRefit', () => {
     rerender({ ...initialProps, rememberedStopId: 'stop-2' })
     expect(focusStopInStopsTab).toHaveBeenCalledTimes(2)
     expect(focusStopInStopsTab).toHaveBeenLastCalledWith('stop-2')
+  })
+
+  it('clears the pin when the remembered stop is cleared while Stops is active', () => {
+    const { clearStopsPin, initialProps, rerender } = setup()
+
+    expect(clearStopsPin).not.toHaveBeenCalled()
+    rerender({ ...initialProps, rememberedStopId: null })
+    expect(clearStopsPin).toHaveBeenCalledOnce()
+  })
+
+  it('clears the pin on a collapsed mobile sheet without moving the camera', () => {
+    const { clearStopsPin, focusStopInStopsTab, initialProps, rerender } = setup({
+      isMobileViewport: true,
+      stopsDetent: 'collapsed',
+    })
+
+    rerender({ ...initialProps, rememberedStopId: null })
+    expect(clearStopsPin).toHaveBeenCalledOnce()
+    expect(focusStopInStopsTab).not.toHaveBeenCalled()
   })
 
   it('refits again when Stops is re-entered after Explore', () => {

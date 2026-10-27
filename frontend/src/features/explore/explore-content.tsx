@@ -178,6 +178,7 @@ export function ExploreContent({
             key={selectedBuilding.id}
             building={selectedBuilding}
             roomCount={buildingLinks.roomCountByBuildingId.get(selectedBuilding.id) ?? 0}
+            nusmodsVenueCode={buildingLinks.nusmodsVenueCodeByBuildingId.get(selectedBuilding.id)}
             transitIndex={transitIndex}
             headingRef={detailHeadingRef}
             onNavigateToBuilding={onNavigateToBuilding}

@@ -142,15 +142,52 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
-  it('follows later inset changes only while enabled', () => {
+  it('keeps zoom anchored at the current crosshair through consecutive detent changes', () => {
     const { lifecycle, map } = createLifecycle()
-    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
+    const initialInsets = { top: 0, right: 0, bottom: 100, left: 0 }
+    const partialInsets = { top: 0, right: 0, bottom: 200, left: 0 }
+    const fullInsets = { top: 0, right: 0, bottom: 300, left: 0 }
+    const cameraCenter = { lng: 103.78, lat: 1.29 }
+    let cameraZoom = 15
+    let cameraPadding = { top: 0, right: 0, bottom: 0, left: 0 }
+    const getPaddingCenter = (padding: typeof cameraPadding): [number, number] => [
+      (map.containerSize.clientWidth + padding.left - padding.right) / 2,
+      (map.containerSize.clientHeight + padding.top - padding.bottom) / 2,
+    ]
+    map.setPadding.mockImplementation((padding) => {
+      cameraPadding = padding
+      map.emit('moveend', undefined)
+    })
+    const unprojectAt = ([x, y]: [number, number]) => {
+      const [centerX, centerY] = getPaddingCenter(cameraPadding)
+      const scale = 2 ** (cameraZoom - 15)
+      return {
+        lng: cameraCenter.lng + (x - centerX) / scale,
+        lat: cameraCenter.lat + (centerY - y) / scale,
+      }
+    }
+    map.unproject.mockImplementation(unprojectAt)
+    map.zoomIn.mockImplementation(() => { cameraZoom += 1 })
+
+    lifecycle.setViewportInsets(initialInsets)
     expect(map.setPadding).not.toHaveBeenCalled()
 
     lifecycle.setVisibleCenterZoom(true)
-    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
+    const pointBeforeDetents = unprojectAt(getPaddingCenter(cameraPadding))
+    const panCallsAfterEnabling = map.panBy.mock.calls.length
+    lifecycle.setViewportInsets(partialInsets)
+    lifecycle.setViewportInsets(fullInsets)
+    const pointBeforeZoom = unprojectAt(getPaddingCenter(cameraPadding))
+    const preventDefault = vi.fn()
+    map.emit('dblclick', { preventDefault, originalEvent: { shiftKey: false } })
+    const pointAfterZoom = unprojectAt(getPaddingCenter(cameraPadding))
 
-    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 300, left: 0 })
+    expect(map.setPadding).toHaveBeenLastCalledWith(fullInsets)
+    expect(map.panBy).toHaveBeenCalledTimes(panCallsAfterEnabling)
+    expect(map.scrollZoom.enable).toHaveBeenLastCalledWith({ around: 'center' })
+    expect(map.touchZoomRotate.enable).toHaveBeenLastCalledWith({ around: 'center' })
+    expect(pointBeforeZoom).toEqual(pointBeforeDetents)
+    expect(pointAfterZoom).toEqual(pointBeforeDetents)
     lifecycle.dispose()
   })
 
@@ -169,16 +206,41 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
-  it('clears padding and restores default pointer-anchored zoom when disabled', () => {
+  it('clears the latest detent padding and restores pointer-anchored zoom when disabled', () => {
     const { lifecycle, map } = createLifecycle()
-    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
     lifecycle.setVisibleCenterZoom(true)
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 200, left: 0 })
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
 
     lifecycle.setVisibleCenterZoom(false)
 
     expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 0, left: 0 })
     expect(map.scrollZoom.enable).toHaveBeenLastCalledWith(undefined)
     expect(map.touchZoomRotate.enable).toHaveBeenLastCalledWith(undefined)
+    lifecycle.dispose()
+  })
+
+  it('reports the current crosshair centre after the matching padding update', () => {
+    const onMapCenterChange = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+      onMapCenterChange,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    map.setPadding.mockImplementation(() => map.emit('moveend', undefined))
+
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
+    lifecycle.setVisibleCenterZoom(true)
+    onMapCenterChange.mockClear()
+
+    lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 300, left: 0 })
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 0, right: 0, bottom: 300, left: 0 })
+    expect(onMapCenterChange).toHaveBeenCalledOnce()
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 272])
     lifecycle.dispose()
   })
 
@@ -197,12 +259,16 @@ describe('map lifecycle visible-centre zoom', () => {
 
     it('replaces pointer-anchored double-click zoom with centre zoom while enabled', () => {
       const { lifecycle, map } = createLifecycle()
+      lifecycle.setViewportInsets({ top: 0, right: 0, bottom: 100, left: 0 })
       lifecycle.setVisibleCenterZoom(true)
+      const fullInsets = { top: 0, right: 0, bottom: 300, left: 0 }
+      lifecycle.setViewportInsets(fullInsets)
 
       expect(map.doubleClickZoom.disable).toHaveBeenCalled()
       const preventDefault = vi.fn()
       map.emit('dblclick', { preventDefault, originalEvent: { shiftKey: false } })
       expect(preventDefault).toHaveBeenCalled()
+      expect(map.setPadding).toHaveBeenLastCalledWith(fullInsets)
       expect(map.zoomIn).toHaveBeenCalledWith({ duration: 300 })
 
       vi.advanceTimersByTime(1000)

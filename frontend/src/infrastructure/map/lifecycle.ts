@@ -104,6 +104,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   let visibleCenterZoom = false
+  let applyingViewportInsets = false
   let waypointPlacementActive = false
 
   const handleMapError = (event: { error?: unknown }) => {
@@ -126,30 +127,33 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
 
   options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
+  const getVisibleCenter = (
+    insets: MapViewportInsets,
+    clientWidth: number,
+    clientHeight: number,
+  ): [number, number] => [
+    Math.max(0, Math.min(clientWidth, (clientWidth + insets.left - insets.right) / 2)),
+    Math.max(0, Math.min(clientHeight, (clientHeight + insets.top - insets.bottom) / 2)),
+  ]
+
   const reportMapCenter = (): void => {
-    if (disposed || !options.onMapCenterChange) return
+    if (disposed || applyingViewportInsets || !options.onMapCenterChange) return
     const { clientWidth, clientHeight } = map.getContainer()
-    // The bottom sheet obscures the canvas centre, so project the usable map area's centre.
-    const visibleCenterX = (clientWidth + viewportInsets.left - viewportInsets.right) / 2
-    const visibleCenterY = (clientHeight + viewportInsets.top - viewportInsets.bottom) / 2
     const center = clientWidth > 0 && clientHeight > 0
-      ? map.unproject([
-        Math.max(0, Math.min(clientWidth, visibleCenterX)),
-        Math.max(0, Math.min(clientHeight, visibleCenterY)),
-      ])
+      ? map.unproject(getVisibleCenter(viewportInsets, clientWidth, clientHeight))
       : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
   }
 
-  // Persistent padding makes MapLibre's own centre the visible-area centre, so button
-  // and gesture zoom use it. The pan keeps the view still while the padding changes.
-  // Re-applying identical padding still calls MapLibre's jumpTo, which would cancel a running flyTo.
+  // Active padding aligns MapLibre's centre with the crosshair. Identical padding
+  // must be skipped because MapLibre's setPadding calls jumpTo and cancels a running flyTo.
   let appliedPadding: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  const isPaddingApplied = (padding: MapViewportInsets): boolean =>
+    padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
+    padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
+
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
-    if (
-      padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
-      padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
-    ) return
+    if (isPaddingApplied(padding)) return
     appliedPadding = { ...padding }
     const { clientWidth, clientHeight } = map.getContainer()
     const anchor = map.unproject([clientWidth / 2, clientHeight / 2])
@@ -265,7 +269,17 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     setViewportInsets(insets) {
       if (disposed) return
       viewportInsets = insets
-      if (visibleCenterZoom) setPaddingKeepingView(insets)
+      if (visibleCenterZoom) {
+        applyingViewportInsets = true
+        try {
+          if (!isPaddingApplied(insets)) {
+            appliedPadding = { ...insets }
+            map.setPadding(insets)
+          }
+        } finally {
+          applyingViewportInsets = false
+        }
+      }
       reportMapCenter()
     },
     setVisibleCenterZoom(enabled) {

@@ -73,8 +73,8 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 ## Settings and themes
 
 - Settings opens from More. On desktop it uses the navigation column. On mobile it fills the screen behind the tab pill. Back returns to More, which returns to the earlier workflow state.
-- Appearance, Favourites and About expand independently, with Appearance open first. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. A choice applies at once for the current page, and a reload starts at System.
-- Favourites shows the saved-stop controls. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
+- Appearance, Favourites and About expand independently. Appearance starts collapsed, while Favourites starts expanded when saved stops exist. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. A choice applies at once for the current page, and a reload starts at System.
+- Favourites lists saved stops. Edit list reveals inline move and remove buttons and a confirmed Clear all action; Done exits edit mode. Stop cards keep their existing star toggle. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
 - Browser location permission is managed by the browser. Settings shows no permission status and has no clear-location action.
 - Colours, radii, shadows and control heights come from semantic tokens, and tests check text and status contrast in each theme. Official bus route colours sit outside the theme contract.
 

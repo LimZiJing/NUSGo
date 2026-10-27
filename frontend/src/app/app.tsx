@@ -722,6 +722,7 @@ function App() {
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}
                 favoriteStops={stopsWorkflow.favoriteStops}
+                onMoveFavorite={stopsWorkflow.reorderFavorite}
                 onRemoveFavorite={stopsWorkflow.removeFavorite}
                 onClearFavorites={stopsWorkflow.clearFavoriteStops}
                 transitMetadata={state.transitIndex?.network.metadata ?? null}

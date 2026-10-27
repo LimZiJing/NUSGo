@@ -784,6 +784,37 @@ describe('More surface', () => {
     expect(document.activeElement).toBe(moreButton)
   })
 
+  it('manages favourite-stop order and membership in Settings', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    localStorage.setItem('navus:favorite-stops:v1', JSON.stringify(['STOP-A', 'STOP-B']))
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const settingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
+    if (!settingsPanel) throw new Error('Settings panel is missing')
+    expect(within(settingsPanel).queryByRole('button', { name: /More actions for/ })).toBeNull()
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Edit list' }))
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Move Stop B up' }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual(['STOP-B', 'STOP-A']))
+
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Remove Stop A from favourites' }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual(['STOP-B']))
+
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Clear all' }))
+    expect(confirm).toHaveBeenCalledWith('Clear all favourite bus stops?')
+    confirm.mockRestore()
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
+      .toEqual([]))
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
+  })
 
   it('leaves the mobile navigation pill usable and closes when a workflow is selected', async () => {
     mockMobileViewport()

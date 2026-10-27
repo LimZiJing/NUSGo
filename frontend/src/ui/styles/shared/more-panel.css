@@ -1,13 +1,27 @@
 .more-back-button {
   display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   place-items: center;
   padding: 0;
   border: 0;
   border-radius: var(--radius-control);
   color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.more-close-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
   background: transparent;
   cursor: pointer;
 }
@@ -23,16 +37,22 @@
   outline-offset: 2px;
 }
 
+.more-close-button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .more-entry-icon,
-.more-back-button svg {
+.more-back-button svg,
+.more-close-button svg {
   width: 20px;
   height: 20px;
 }
 
 .more-panel-surface {
   display: flex;
-  height: 100%;
   min-height: 0;
+  height: 100%;
   flex-direction: column;
   overflow: hidden;
   background: var(--surface);
@@ -41,24 +61,35 @@
 .more-panel-body {
   display: flex;
   min-height: 0;
-  height: 100%;
+  flex: 1 1 auto;
   flex-direction: column;
 }
 
 .more-panel-header {
   display: flex;
+  box-sizing: border-box;
+  min-height: 55px;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-2);
-  padding-bottom: var(--space-3);
+  gap: 10px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .more-panel-header h2 {
+  min-width: 0;
+  flex: 1 1 auto;
   margin: 0;
   color: var(--text-heading);
-  font: 600 var(--font-size-2xl)/1.2 var(--sans);
+  font: 650 var(--font-size-lg)/1.2 var(--sans);
+  text-align: left;
+}
+
+.more-panel-header-action {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 4px 3px;
+  font-size: var(--font-size-sm);
 }
 
 .more-panel-content-scroll {
@@ -67,25 +98,26 @@
   margin-inline-end: calc(-1 * var(--space-1));
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 0 var(--space-3);
+  padding: 12px 0 68px;
   padding-inline-end: var(--space-3);
   scrollbar-gutter: stable;
 }
 
 @media (max-width: 768px) {
-  .navigation-panel.more-panel-surface {
-    position: absolute;
-    z-index: 15;
-    inset: 0;
-    height: auto;
-    padding: max(24px, env(safe-area-inset-top, 0px))
-      max(16px, env(safe-area-inset-right, 0px))
-      max(12px, env(safe-area-inset-bottom, 0px))
-      max(16px, env(safe-area-inset-left, 0px));
-    border: 0;
-    border-radius: 0;
-    background: var(--surface);
-    box-shadow: var(--shadow-sheet);
+  .more-panel-body-menu .more-panel-header {
+    min-height: 38px;
+    margin: 0 1px 9px;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .more-panel-body-menu .more-panel-header h2 {
+    font-size: var(--font-size-lg);
+    text-align: left;
+  }
+
+  .more-panel-body-menu .more-panel-content-scroll {
+    padding: 0;
   }
 
   .more-panel-content-scroll {
@@ -96,5 +128,42 @@
 
   .more-panel-content-scroll::-webkit-scrollbar {
     display: none;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='menu'][data-detent='partial'] {
+    padding-bottom: 12px;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='settings'][data-detent='full'],
+  .mobile-sheet-popup.more-panel-surface[data-page='waypoints'][data-detent='full'],
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'] {
+    padding: 0 0 12px;
+    border-radius: 0;
+    background: var(--surface-raised);
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='settings'] .mobile-sheet-handle-row,
+  .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .mobile-sheet-handle-row,
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row {
+    display: none;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-header,
+  .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-header,
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header {
+    padding-inline: 14px;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-content-scroll,
+  .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-content-scroll,
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll {
+    padding: 12px 13px 68px;
+  }
+}
+
+@media (min-width: 769px) {
+  .navigation-column .navigation-panel.more-panel-surface {
+    display: flex;
+    overflow: hidden;
   }
 }

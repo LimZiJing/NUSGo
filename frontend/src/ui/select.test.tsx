@@ -5,7 +5,10 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Select } from './select'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 const options = [
   { value: '', label: 'All buildings' },
@@ -43,6 +46,27 @@ describe('Select', () => {
 
     const items = screen.getAllByRole('option')
     expect(items.map((item) => item.textContent)).toEqual(['All buildings', 'Block A', 'Block B'])
+  })
+
+  it('keeps the option list wide enough to read labels when the trigger is narrow', async () => {
+    const user = userEvent.setup()
+    const rect = {
+      x: 100,
+      y: 50,
+      top: 50,
+      right: 200,
+      bottom: 80,
+      left: 100,
+      width: 100,
+      height: 30,
+      toJSON: () => ({}),
+    } as DOMRect
+    vi.spyOn(HTMLButtonElement.prototype, 'getBoundingClientRect').mockReturnValue(rect)
+    const { trigger } = renderSelect()
+
+    await user.click(trigger)
+
+    expect(screen.getByRole('listbox').getAttribute('style')).toContain('width: 160px')
   })
 
   it('selecting an option calls onChange and closes the list', async () => {

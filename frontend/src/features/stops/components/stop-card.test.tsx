@@ -148,4 +148,20 @@ describe('StopCard', () => {
     expect(screen.getByRole('img', { name: 'No live times' }).getAttribute('data-tone')).toBe('muted')
     expect(screen.getByText('No live internal bus arrivals.')).toBeTruthy()
   })
+
+  it('keeps the muted dot still while refreshing with no live rows', () => {
+    render(<StopCard
+      {...cardProps}
+      expanded
+      live={false}
+      pollState="refreshing"
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    const dot = screen.getByRole('img', { name: 'No live times' })
+    expect(dot.getAttribute('data-tone')).toBe('muted')
+    expect(dot.getAttribute('data-pulse')).toBeNull()
+  })
 })

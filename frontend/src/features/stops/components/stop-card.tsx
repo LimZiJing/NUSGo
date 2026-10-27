@@ -39,7 +39,7 @@ function getLiveStatusDot(
   pollState: StopPollState,
 ): { readonly label: string; readonly tone: StatusDotTone; readonly pulse: boolean } {
   if (pollState === 'failing') return { label: 'Live times failing, retrying', tone: 'error', pulse: true }
-  if (!live) return { label: 'No live times', tone: 'muted', pulse: pollState === 'refreshing' }
+  if (!live) return { label: 'No live times', tone: 'muted' }
   return {
     label: pollState === 'refreshing' ? 'Live times, refreshing' : 'Live times',
     tone: 'success',

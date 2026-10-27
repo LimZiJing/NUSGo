@@ -104,6 +104,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
   let visibleCenterZoom = false
+  let applyingViewportInsets = false
   let waypointPlacementActive = false
 
   const handleMapError = (event: { error?: unknown }) => {
@@ -135,16 +136,8 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     Math.max(0, Math.min(clientHeight, (clientHeight + insets.top - insets.bottom) / 2)),
   ]
 
-  const getSheetTransitionDuration = (): number => {
-    if (typeof document === 'undefined' || typeof getComputedStyle !== 'function') return 0
-    const duration = Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--motion-duration-panel'),
-    )
-    return Number.isFinite(duration) ? duration : 0
-  }
-
   const reportMapCenter = (): void => {
-    if (disposed || !options.onMapCenterChange) return
+    if (disposed || applyingViewportInsets || !options.onMapCenterChange) return
     const { clientWidth, clientHeight } = map.getContainer()
     const center = clientWidth > 0 && clientHeight > 0
       ? map.unproject(getVisibleCenter(viewportInsets, clientWidth, clientHeight))
@@ -268,17 +261,15 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     ready,
     setViewportInsets(insets) {
       if (disposed) return
-      const { clientWidth, clientHeight } = map.getContainer()
-      const previousCenter = getVisibleCenter(viewportInsets, clientWidth, clientHeight)
       viewportInsets = insets
       if (visibleCenterZoom) {
-        const nextCenter = getVisibleCenter(viewportInsets, clientWidth, clientHeight)
-        const panOffset: [number, number] = [
-          previousCenter[0] - nextCenter[0],
-          previousCenter[1] - nextCenter[1],
-        ]
-        if (panOffset[0] !== 0 || panOffset[1] !== 0) {
-          map.panBy(panOffset, { duration: getSheetTransitionDuration() })
+        // The padded map centre is the crosshair, so keeping padding current also
+        // keeps centre-anchored zoom on the crosshair through every detent change.
+        applyingViewportInsets = true
+        try {
+          map.setPadding(insets)
+        } finally {
+          applyingViewportInsets = false
         }
       }
       reportMapCenter()

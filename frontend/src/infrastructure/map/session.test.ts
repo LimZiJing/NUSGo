@@ -625,13 +625,13 @@ describe('MapSession', () => {
     session.focusCurrentLocation(fix)
     expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
       center: [fix.longitude, fix.latitude],
-      offset: [0, -50],
+      offset: [0, 0],
     }))
 
     session.resetView({ kind: 'campus', center: resetCenter, zoom: 16 })
     expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
       center: resetCenter,
-      offset: [0, -50],
+      offset: [0, 0],
     }))
 
     session.setVisibleCenterZoom(false)

@@ -10,6 +10,7 @@ All live-data routes accept GET:
 
 - /api/shuttle-arrivals?stops=<JSON array> returns selected canonical stop IDs from the latest bus-arrival snapshot. It includes a snapshot version and observation and expiry times for each stop. It also returns `unavailableStopIds`, the requested stops that had no fresh result in the latest cycle (see the snapshot lifecycle below); clients should show these as having no live data, not as having no buses.
 - /api/shuttle-service-windows?routes=<comma-separated route IDs> returns NUS service windows and their observation and expiry times.
+- /api/shuttle-vehicles?routes=<comma-separated route IDs> returns the latest vehicle positions and Load levels for those routes, with snapshot observation and expiry times and `unavailableRouteIds` for routes without fresh data. An empty vehicles list with all routes unavailable means data has not arrived yet or NUS failed, not that no buses are running. The first request after an idle spell starts polling.
 - /api/public-bus-arrivals?stops=<JSON array> accepts mapped canonical stop IDs and returns LTA arrivals with per-service live, no-estimate, not-in-operation, or provider-error status.
 
 Requests are bounded and validated against the canonical network or checked-in LTA mapping. Unknown route or stop IDs return a safe 400 response. Public-bus data is for display only and is not consumed by Journey routing.
@@ -32,7 +33,7 @@ NUS service-window results are cached for ten minutes. LTA stop results use thei
 
 Vehicle positions come from NUS active-bus data and run on their own timer, separate from the 30-second arrival cycle. Arrivals and readiness do not depend on vehicles: a vehicle failure never returns 503 for arrivals.
 
-Each vehicle cycle covers every internal route, one call per route per cycle. The budget is routes x one call per interval, so 8 routes at a 30-second interval is 16 upstream calls a minute. Vehicle polling only runs while a client has asked for vehicles within the idle timeout (120 seconds by default). The first request after an idle spell starts a cycle at once. Requests made through the runtime's `getVehicles` return whatever the latest cycle holds; no HTTP route is part of this section.
+Each vehicle cycle covers every internal route, one call per route per cycle. The budget is routes x one call per interval, so 8 routes at a 30-second interval is 16 upstream calls a minute. Vehicle polling only runs while a client has asked for vehicles within the idle timeout (120 seconds by default). The first request after an idle spell starts a cycle at once. Requests through `/api/shuttle-vehicles` and the runtime's `getVehicles` return whatever the latest cycle holds.
 
 A failed route keeps its last good vehicles, with their original observation times, until that route's expiry (90 seconds by default). Only then does its route ID move to `unavailableRouteIds`, so clients do not read it as having no buses. Unlike arrivals, a carried-over route is not listed as unavailable before it expires; clients should use each vehicle's `observedAt` to show its age. Expiry must be at least twice the refresh interval, so one missed cycle does not empty a route.
 

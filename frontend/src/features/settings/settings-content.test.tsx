@@ -14,6 +14,8 @@ describe('Settings sections', () => {
       <SettingsContent
         themePreference="system"
         onThemePreferenceChange={() => undefined}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
         favoriteStops={[{ id: 'kent-ridge', name: 'Kent Ridge Bus Terminal' }]}
         onMoveFavorite={() => undefined}
         onRemoveFavorite={() => undefined}
@@ -58,6 +60,8 @@ describe('Settings sections', () => {
       <SettingsContent
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
         favoriteStops={[{ id: 'kent-ridge', name: 'Kent Ridge Bus Terminal' }]}
         onMoveFavorite={() => undefined}
         onRemoveFavorite={onRemoveFavorite}
@@ -77,6 +81,8 @@ describe('Settings sections', () => {
       <SettingsContent
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
         favoriteStops={[]}
         onMoveFavorite={() => undefined}
         onRemoveFavorite={onRemoveFavorite}
@@ -89,5 +95,33 @@ describe('Settings sections', () => {
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
     expect(screen.getByText('Matcha palette')).toBeTruthy()
+  })
+
+  it('offers accessible minute format choices and reports a change', async () => {
+    const user = userEvent.setup()
+    const onMinuteFormatChange = vi.fn()
+    render(
+      <SettingsContent
+        themePreference="system"
+        onThemePreferenceChange={() => undefined}
+        minuteFormat="prime"
+        onMinuteFormatChange={onMinuteFormatChange}
+        favoriteStops={[]}
+        onMoveFavorite={() => undefined}
+        onRemoveFavorite={() => undefined}
+        onClearFavorites={() => undefined}
+        transitMetadata={null}
+        buildingSource={null}
+        dataVersion={'a'.repeat(40)}
+      />,
+    )
+
+    await user.click(screen.getByText('Appearance'))
+    const choices = screen.getByRole('radiogroup', { name: 'Minute format' })
+    expect(choices.querySelectorAll('input[type="radio"]')).toHaveLength(3)
+    expect(screen.getByRole('radio', { name: '12 minutes shown as 12′' })).toHaveProperty('checked', true)
+
+    await user.click(screen.getByRole('radio', { name: '12 minutes shown as 12 min' }))
+    expect(onMinuteFormatChange).toHaveBeenCalledWith('min')
   })
 })

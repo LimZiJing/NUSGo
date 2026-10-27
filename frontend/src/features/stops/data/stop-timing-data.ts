@@ -16,6 +16,11 @@ import {
   type ShuttleServiceWindow,
 } from '../../../domain/transit/service-hours'
 import type { TransitStop } from '@nusgo/shared/transit/types'
+import {
+  DEFAULT_MINUTE_FORMAT,
+  formatMinutes,
+  type MinuteFormat,
+} from '../../../domain/trip/minute-format'
 
 export interface StopFavouriteDestination {
   readonly id: string
@@ -52,6 +57,7 @@ interface StopRouteAvailability {
 }
 
 export interface StopTimingDataOptions {
+  readonly minuteFormat?: MinuteFormat
   readonly favoriteStopIds?: readonly string[]
   readonly arrivalSnapshot?: ShuttleArrivalSnapshot | null
   readonly nowMs: number
@@ -70,8 +76,8 @@ export interface StopTimingData {
 }
 export const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
 
-function formatArrivalSeconds(seconds: number): string {
-  return seconds < 30 ? 'Arr' : `${Math.ceil(seconds / 60)}m`
+function formatArrivalSeconds(seconds: number, minuteFormat: MinuteFormat): string {
+  return seconds < 30 ? 'Arr' : formatMinutes(Math.ceil(seconds / 60), minuteFormat)
 }
 
 function getArrivalAgeMs(snapshot: ShuttleArrivalSnapshot, stopId: string, nowMs: number): number {
@@ -88,6 +94,7 @@ function getPublicServiceTimings(
   stop: TransitStop,
   snapshot: PublicBusArrivalSnapshot | null,
   nowMs: number,
+  minuteFormat: MinuteFormat,
 ): readonly PublicServiceTiming[] {
   const serviceNumbers = stop.services
     .filter((service) => service.startsWith('PUB:'))
@@ -105,7 +112,7 @@ function getPublicServiceTimings(
       .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - nowMs) / 1_000))
       .filter((seconds) => seconds >= 0)
       .slice(0, 3)
-      .map(formatArrivalSeconds)
+      .map((seconds) => formatArrivalSeconds(seconds, minuteFormat))
     return timings.length > 0
       ? {
         serviceNumber,
@@ -122,6 +129,7 @@ function getLiveStopDepartures(
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
   liveRouteIds: ReadonlySet<string>,
+  minuteFormat: MinuteFormat,
 ): readonly StopDeparture[] {
   if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
@@ -138,7 +146,7 @@ function getLiveStopDepartures(
       .map((seconds) => seconds - ageSeconds)
       .filter((seconds) => seconds >= 0)
       .slice(0, 3)
-      .map(formatArrivalSeconds)
+      .map((seconds) => formatArrivalSeconds(seconds, minuteFormat))
     if (timings.length === 0) return []
 
     return [{
@@ -177,6 +185,7 @@ function getRouteAvailability(
   index: TransitIndex,
   serviceWindows: StopsServiceWindows | null,
   nowMs: number,
+  minuteFormat: MinuteFormat,
 ): StopRouteAvailability {
   const routeIds = [...(index.routeIdsByStopId.get(stop.id) ?? new Set<string>())]
   if (!serviceWindows) {
@@ -206,7 +215,7 @@ function getRouteAvailability(
     }
     const message = evaluation.status === 'before-start' &&
       nextStart.minutesUntil <= SHUTTLE_SERVICE_START_GRACE_MINUTES
-      ? `First bus in ${Math.max(1, Math.ceil(nextStart.minutesUntil))}m`
+      ? `First bus in ${formatMinutes(Math.max(1, Math.ceil(nextStart.minutesUntil)), minuteFormat)}`
       : `Starts ${compactStartLabel(nextStart.label)}`
     scheduledDepartures.push({
       routeId,
@@ -223,6 +232,7 @@ export function getStopTimingData(
   stop: TransitStop,
   index: TransitIndex,
   {
+    minuteFormat = DEFAULT_MINUTE_FORMAT,
     favoriteStopIds = [],
     arrivalSnapshot = null,
     nowMs,
@@ -235,13 +245,14 @@ export function getStopTimingData(
   const favorites = new Set(favoriteStopIds)
   // An unavailable stop shows the explicit label, not live or timetable times.
   const shuttleUnavailable = arrivalSnapshot?.unavailableStopIds?.includes(stop.id) ?? false
-  const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs)
+  const routeAvailability = getRouteAvailability(stop, index, serviceWindows, nowMs, minuteFormat)
   const departures = shuttleUnavailable ? [] : getLiveStopDepartures(
     stop,
     index,
     arrivalSnapshot,
     nowMs,
     routeAvailability.liveRouteIds,
+    minuteFormat,
   ).map((departure) => ({
     ...departure,
     reachableFavouriteStops: getReachableFavoriteStops(index, departure.routeId, stop.id, favorites)
@@ -252,7 +263,7 @@ export function getStopTimingData(
       })),
   }))
   const scheduledDepartures = shuttleUnavailable ? [] : routeAvailability.scheduledDepartures
-  const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs)
+  const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs, minuteFormat)
   const live = (
     !shuttleUnavailable && !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
     getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS

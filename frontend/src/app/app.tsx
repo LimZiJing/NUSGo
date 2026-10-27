@@ -50,6 +50,11 @@ import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-pane
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { SettingsContent } from '../features/settings/settings-content'
+import type { MinuteFormat } from '../domain/trip/minute-format'
+import {
+  readMinuteFormatPreference,
+  saveMinuteFormatPreference,
+} from '../ui/minute-format-preference'
 import { MoreMenu } from '../features/more/more-menu'
 import {
   PersonalWaypointForm,
@@ -98,6 +103,7 @@ function App() {
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
   const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
+  const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -132,6 +138,10 @@ function App() {
     saveThemePreference(preference)
     setThemePreference(preference)
   }, [])
+  const changeMinuteFormat = useCallback((format: MinuteFormat): void => {
+    saveMinuteFormatPreference(format)
+    setMinuteFormat(format)
+  }, [])
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
   const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
@@ -150,6 +160,7 @@ function App() {
     session?.locateUser()
   }, [session])
   const stopsWorkflow = useStopsWorkflow({
+    minuteFormat,
     transitIndex: state.transitIndex,
     mapCenter,
     location: state.location,
@@ -766,6 +777,8 @@ function App() {
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}
+                minuteFormat={minuteFormat}
+                onMinuteFormatChange={changeMinuteFormat}
                 favoriteStops={stopsWorkflow.favoriteStops}
                 onMoveFavorite={stopsWorkflow.reorderFavorite}
                 onRemoveFavorite={stopsWorkflow.removeFavorite}

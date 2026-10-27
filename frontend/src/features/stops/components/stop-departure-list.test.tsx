@@ -20,6 +20,36 @@ describe('StopDepartureList', () => {
     expect(screen.getByText('No bus timings available.').className).toBe('stop-departure-list-empty')
   })
 
+  it('announces minute timings as minutes regardless of their visual symbol', () => {
+    const { container } = render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          timings: ['Arr', '1′', '12′'],
+        }]}
+        scheduledDepartures={[{
+          routeId: 'A1',
+          routeName: 'A1',
+          routeColor: '#654321',
+          message: 'First bus in 12′',
+        }]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect([...container.querySelectorAll('.stop-departure-time .visually-hidden')].map((element) => (
+      element.textContent
+    ))).toEqual(['Arriving now', '1 minute', '12 minutes'])
+    expect(container.querySelector('.stop-departure-status .visually-hidden')?.textContent)
+      .toBe('First bus in 12 minutes')
+    expect([...container.querySelectorAll('.stop-departure-time [aria-hidden="true"]')].map((element) => (
+      element.textContent
+    ))).toEqual(['Arr', '1′', '12′'])
+  })
+
   it('shows the first reachable favourite beside an internal route and the rest in a popover', async () => {
     const user = userEvent.setup()
     render(

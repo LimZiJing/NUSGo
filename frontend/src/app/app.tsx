@@ -58,6 +58,7 @@ import {
 import { MoreMenu } from '../features/more/more-menu'
 import {
   PersonalWaypointForm,
+  PersonalWaypointDetails,
   PersonalWaypointPlacement,
   PersonalWaypointsHome,
   usePersonalWaypointWorkflow,
@@ -69,10 +70,19 @@ import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
+import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
 import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
+
+interface PersonalWaypointPanelReturnTarget {
+  readonly page: MorePanelPage
+  readonly detent: MobileSheetDetent
+  readonly focusTarget: HTMLElement | null
+}
+
+const EMPTY_PERSONAL_WAYPOINTS: readonly PersonalWaypoint[] = []
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -96,10 +106,14 @@ function App() {
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
-  const [placementReturnsToForm, setPlacementReturnsToForm] = useState(false)
+  const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
+  const [selectedPersonalWaypointId, setSelectedPersonalWaypointId] = useState<string | null>(null)
+  const waypointDetailsReturnTargetRef = useRef<PersonalWaypointPanelReturnTarget | null>(null)
+  const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
   const updatePersonalWaypointDraft = personalWaypoints.updateDraft
+  const cancelPersonalWaypointEdit = personalWaypoints.cancelEdit
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
   const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
@@ -184,6 +198,45 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
+    const returnTarget = waypointDetailsReturnTargetRef.current
+    pendingWaypointReturnFocusRef.current = focusTarget === undefined
+      ? returnTarget?.focusTarget ?? null
+      : focusTarget
+    setSelectedPersonalWaypointId(null)
+    setMorePage(returnTarget?.page ?? 'waypoints')
+    setMoreSheetDetent(returnTarget?.detent ?? 'full')
+    waypointDetailsReturnTargetRef.current = null
+  }, [])
+  const openPersonalWaypointDetails = useCallback((
+    waypointId: string,
+    returnPage: MorePanelPage,
+    returnDetent: MobileSheetDetent,
+    trigger: HTMLElement,
+  ): void => {
+    waypointDetailsReturnTargetRef.current = {
+      page: returnPage,
+      detent: returnDetent,
+      focusTarget: trigger,
+    }
+    setSelectedPersonalWaypointId(waypointId)
+    setMoreSheetDetent('full')
+    setMorePage('waypoint-details')
+  }, [])
+  const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
+    if (morePage === 'editing-waypoint' || morePage === 'placing') return
+    if (morePage === 'waypoint-details') {
+      setSelectedPersonalWaypointId(waypointId)
+      return
+    }
+    openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
+  }, [morePage, moreSheetDetent, openPersonalWaypointDetails])
+  const handlePersonalWaypointRowSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
+    openPersonalWaypointDetails(waypointId, 'waypoints', moreSheetDetent, trigger)
+  }, [moreSheetDetent, openPersonalWaypointDetails])
+  const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
+    ? personalWaypoints.readResult.waypoints
+    : EMPTY_PERSONAL_WAYPOINTS
   // App composition passes map placement events into the waypoint feature's draft workflow.
   useEffect(() => {
     const visible = morePage === 'placing' || morePage === 'creating'
@@ -205,6 +258,13 @@ function App() {
   useEffect(() => () => {
     commands.setPersonalWaypointPlacement(null, false, handlePersonalWaypointMapChange)
   }, [commands, handlePersonalWaypointMapChange])
+  useEffect(() => {
+    commands.setPersonalWaypoints(
+      personalWaypointsForMap,
+      morePage !== 'placing' && morePage !== 'editing-waypoint',
+      handlePersonalWaypointMapSelection,
+    )
+  }, [commands, handlePersonalWaypointMapSelection, morePage, personalWaypointsForMap])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -549,26 +609,58 @@ function App() {
   const beginWaypointPlacement = (): void => {
     setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
-    setPlacementReturnsToForm(false)
+    setPlacementReturnPage(null)
+    setMorePage('placing')
+  }
+  const beginWaypointLocationAdjustment = (): void => {
+    setPlacementReturnPage(morePage === 'editing-waypoint' ? 'editing-waypoint' : 'creating')
     setMorePage('placing')
   }
   const cancelWaypointPlacement = (): void => {
-    if (!placementReturnsToForm) setIsEditingPersonalWaypoints(false)
-    setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+    const returnPage = placementReturnPage
+    if (!returnPage) setIsEditingPersonalWaypoints(false)
+    setPlacementReturnPage(null)
+    setMoreSheetDetent('full')
+    setMorePage(returnPage ?? 'waypoints')
   }
   const clearPersonalWaypoints = (): void => {
     personalWaypoints.clearAll()
     setIsEditingPersonalWaypoints(false)
   }
-  const removePersonalWaypoint = (waypointId: string): void => {
+  const removePersonalWaypoint = (waypointId: string): boolean => {
     const removingLastWaypoint = personalWaypoints.readResult.kind === 'ready' &&
       personalWaypoints.readResult.waypoints.length === 1
     const removed = personalWaypoints.removeWaypoint(waypointId)
     if (removed && removingLastWaypoint) setIsEditingPersonalWaypoints(false)
+    return removed
+  }
+  const deleteSelectedPersonalWaypoint = (): void => {
+    if (!selectedPersonalWaypointId) return
+    const returnTarget = waypointDetailsReturnTargetRef.current
+    if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
+    const focusTarget = returnTarget?.page === 'waypoints'
+      ? personalWaypointsInitialFocusRef.current
+      : returnTarget?.page === 'closed'
+        ? moreEntryButtonRef.current
+        : moreInitialFocusRef.current
+    returnFromWaypointDetails(focusTarget)
   }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
-      setMorePage(placementReturnsToForm ? 'creating' : 'waypoints')
+      const returnPage = placementReturnPage
+      if (!returnPage) setIsEditingPersonalWaypoints(false)
+      setPlacementReturnPage(null)
+      setMorePage(returnPage ?? 'waypoints')
+      setMoreSheetDetent('full')
+      return
+    }
+    if (morePage === 'waypoint-details') {
+      returnFromWaypointDetails()
+      return
+    }
+    if (morePage === 'editing-waypoint') {
+      cancelPersonalWaypointEdit()
+      setMorePage('waypoint-details')
       setMoreSheetDetent('full')
       return
     }
@@ -586,9 +678,13 @@ function App() {
     setMorePage('menu')
     setMoreSheetDetent('partial')
     setIsEditingPersonalWaypoints(false)
-  }, [morePage, placementReturnsToForm])
+  }, [cancelPersonalWaypointEdit, morePage, placementReturnPage, returnFromWaypointDetails])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
+    if (morePage === 'waypoint-details') {
+      returnFromWaypointDetails()
+      return
+    }
     if (morePage === 'closed') {
       setMoreSheetDetent('partial')
       setMorePage('menu')
@@ -599,6 +695,12 @@ function App() {
     setIsEditingPersonalWaypoints(false)
   }
 
+  const selectedPersonalWaypoint = personalWaypoints.readResult.kind === 'ready'
+    ? personalWaypoints.readResult.waypoints.find(({ id }) => id === selectedPersonalWaypointId) ?? null
+    : null
+  const canManageSelectedPersonalWaypoint = personalWaypoints.readResult.kind === 'ready' &&
+    personalWaypoints.readResult.rejectedRecords.count === 0 &&
+    selectedPersonalWaypoint !== null
   const canEditPersonalWaypoints = personalWaypoints.readResult.kind === 'ready' &&
     personalWaypoints.readResult.rejectedRecords.count === 0 &&
     personalWaypoints.readResult.waypoints.length > 0
@@ -613,12 +715,24 @@ function App() {
     : undefined
 
   useLayoutEffect(() => {
+    const pendingReturnFocus = pendingWaypointReturnFocusRef.current
+    if (pendingReturnFocus) {
+      pendingWaypointReturnFocusRef.current = null
+      if (pendingReturnFocus.isConnected) pendingReturnFocus.focus()
+      else if (isMoreOpen && morePage === 'waypoints') personalWaypointsInitialFocusRef.current?.focus()
+      else if (isMoreOpen) moreInitialFocusRef.current?.focus()
+      else moreEntryButtonRef.current?.focus()
+      moreWasOpenRef.current = isMoreOpen
+      skipMoreFocusRestoreRef.current = false
+      return
+    }
+
     if (isMoreOpen) {
       if (morePage === 'waypoints') {
         const addButton = personalWaypointsInitialFocusRef.current
         if (addButton && !addButton.disabled) addButton.focus()
         else moreInitialFocusRef.current?.focus()
-      } else if (morePage === 'creating') {
+      } else if (morePage === 'creating' || morePage === 'editing-waypoint') {
         if (isMobileViewport) moreInitialFocusRef.current?.focus()
         else personalWaypointNameRef.current?.focus()
       } else moreInitialFocusRef.current?.focus()
@@ -659,7 +773,7 @@ function App() {
           coordinate={personalWaypoints.draft.coordinate}
           mapCenter={mapCenter}
           onChange={(coordinate) => personalWaypoints.updateDraft({ coordinate })}
-          onContinue={() => setMorePage('creating')}
+          onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
         {isCrosshairVisible && (
@@ -733,8 +847,10 @@ function App() {
             detent: moreSheetDetent,
             headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints' ? 'My waypoints'
-              : morePage === 'creating' ? 'Add waypoint'
-                : morePage === 'settings' ? 'Settings' : 'More',
+              : morePage === 'waypoint-details' ? 'Waypoint details'
+                : morePage === 'creating' ? 'Add waypoint'
+                  : morePage === 'editing-waypoint' ? 'Edit waypoint'
+                    : morePage === 'settings' ? 'Settings' : 'More',
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
@@ -749,28 +865,48 @@ function App() {
               status={personalWaypoints.status}
               onAdd={beginWaypointPlacement}
               editing={isEditingPersonalWaypoints}
+              onSelectWaypoint={handlePersonalWaypointRowSelection}
               onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
               onClearAll={clearPersonalWaypoints}
+              onResetUnreadableData={personalWaypoints.resetUnreadableData}
+              onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               initialFocusRef={personalWaypointsInitialFocusRef}
-            /> : morePage === 'creating' ? <PersonalWaypointForm
+            /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
+              waypoint={selectedPersonalWaypoint}
+              canManage={canManageSelectedPersonalWaypoint}
+              onEdit={() => {
+                if (!selectedPersonalWaypoint || !canManageSelectedPersonalWaypoint) return
+                if (personalWaypoints.startEdit(selectedPersonalWaypoint)) {
+                  setMorePage('editing-waypoint')
+                  setMoreSheetDetent('full')
+                }
+              }}
+              onDelete={deleteSelectedPersonalWaypoint}
+            /> : morePage === 'creating' || morePage === 'editing-waypoint' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}
               issues={personalWaypoints.issues}
               status={personalWaypoints.status}
               onChange={personalWaypoints.updateDraft}
               initialFocusRef={personalWaypointNameRef}
-              onAdjustLocation={() => {
-                setPlacementReturnsToForm(true)
-                setMorePage('placing')
-              }}
+              submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save waypoint'}
+              onAdjustLocation={beginWaypointLocationAdjustment}
               onCancel={() => {
-                setIsEditingPersonalWaypoints(false)
-                setMorePage('waypoints')
+                if (morePage === 'editing-waypoint') {
+                  cancelPersonalWaypointEdit()
+                  setMorePage('waypoint-details')
+                } else {
+                  setIsEditingPersonalWaypoints(false)
+                  setMorePage('waypoints')
+                }
               }}
               onSave={() => {
                 if (personalWaypoints.save()) {
-                  setIsEditingPersonalWaypoints(false)
-                  setMorePage('waypoints')
+                  if (morePage === 'editing-waypoint') setMorePage('waypoint-details')
+                  else {
+                    setIsEditingPersonalWaypoints(false)
+                    setMorePage('waypoints')
+                  }
                 }
               }}
             /> : morePage === 'settings' ? (

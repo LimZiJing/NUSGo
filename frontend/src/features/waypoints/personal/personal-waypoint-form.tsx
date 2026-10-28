@@ -12,7 +12,7 @@ function fieldError(issues: readonly PersonalWaypointValidationIssue[], field: s
   return issues.find((issue) => issue.field === field)?.message
 }
 
-export function PersonalWaypointForm({ draft, issues, status, onChange, initialFocusRef, onAdjustLocation, onCancel, onSave }: {
+export function PersonalWaypointForm({ draft, issues, status, onChange, initialFocusRef, onAdjustLocation, onCancel, onSave, submitLabel = 'Save waypoint' }: {
   readonly draft: PersonalWaypointDraft
   readonly issues: readonly PersonalWaypointValidationIssue[]
   readonly status: string | null
@@ -21,6 +21,7 @@ export function PersonalWaypointForm({ draft, issues, status, onChange, initialF
   readonly onAdjustLocation: () => void
   readonly onCancel: () => void
   readonly onSave: () => void
+  readonly submitLabel?: string
 }) {
   const submit = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); onSave() }
   const nameError = fieldError(issues, 'name')
@@ -51,7 +52,7 @@ export function PersonalWaypointForm({ draft, issues, status, onChange, initialF
     {status && <p className="personal-waypoint-error" role="alert">{status}</p>}
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />
-      <button type="submit" className="button" data-variant="primary" data-size="sm"><span>Save waypoint</span></button>
+      <button type="submit" className="button" data-variant="primary" data-size="sm"><span>{submitLabel}</span></button>
     </div>
   </form>
 }

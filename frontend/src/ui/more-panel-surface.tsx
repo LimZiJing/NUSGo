@@ -1,7 +1,15 @@
 import type { ReactNode, Ref } from 'react'
 import { ArrowLeftIcon, CloseIcon } from './icons'
 
-export type MorePanelPage = 'closed' | 'menu' | 'waypoints' | 'placing' | 'creating' | 'settings'
+export type MorePanelPage =
+  | 'closed'
+  | 'menu'
+  | 'waypoints'
+  | 'waypoint-details'
+  | 'placing'
+  | 'creating'
+  | 'editing-waypoint'
+  | 'settings'
 
 interface MorePanelSurfaceProps {
   readonly page: MorePanelPage

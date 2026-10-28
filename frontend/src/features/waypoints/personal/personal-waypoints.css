@@ -12,6 +12,48 @@
   border-radius: 12px;
 }
 
+.personal-waypoint-details {
+  display: grid;
+  gap: var(--space-4);
+  text-align: left;
+}
+
+.personal-waypoint-details h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+}
+
+.personal-waypoint-details dl {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.personal-waypoint-details dl > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.personal-waypoint-details dt {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.personal-waypoint-details dd {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.personal-waypoint-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .personal-waypoint-list {
   display: grid;
   gap: 8px;

@@ -10,18 +10,24 @@ export function PersonalWaypointsHome({
   status,
   onAdd,
   editing,
+  onSelectWaypoint,
   onRemove,
   onMove,
   onClearAll,
+  onResetUnreadableData,
+  onDiscardRejectedRecords,
   initialFocusRef,
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
   readonly onAdd: () => void
   readonly editing: boolean
+  readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, neighborId: string) => void
   readonly onClearAll: () => void
+  readonly onResetUnreadableData: () => void
+  readonly onDiscardRejectedRecords: () => void
   readonly initialFocusRef?: Ref<HTMLButtonElement>
 }) {
   const ready = readResult.kind === 'ready'
@@ -53,11 +59,27 @@ export function PersonalWaypointsHome({
     <p className="personal-waypoint-privacy-note">Personal Waypoints are saved in this browser profile.</p>
     {combinedStatus && <p role="status">{combinedStatus}</p>}
     {readResult.kind === 'unavailable' && <p role="alert">Browser storage is unavailable. Waypoints cannot be saved here.</p>}
-    {readResult.kind === 'recovery-required' && <p role="alert">Saved waypoint data needs recovery. It has been left untouched.</p>}
-    {ready && readResult.rejectedRecords.count > 0 && <p role="alert">
-      {readResult.rejectedRecords.count} saved waypoint records could not be read.
-      Adding a waypoint is paused so those records are not overwritten.
-    </p>}
+    {readResult.kind === 'recovery-required' && <>
+      <p role="alert">Saved waypoint data needs recovery. It has been left untouched.</p>
+      <Button label="Reset saved waypoint data" onClick={() => {
+        if (window.confirm('Reset the unreadable Personal Waypoints data? This removes only the Personal Waypoints storage key.')) {
+          onResetUnreadableData()
+        }
+      }} />
+    </>}
+    {ready && readResult.rejectedRecords.count > 0 && <>
+      <p role="alert">
+        {readResult.rejectedRecords.count} saved waypoint records could not be read.
+        Adding or changing waypoints is paused until you choose a recovery action.
+      </p>
+      <Button label="Discard unreadable records" onClick={() => {
+        const count = readResult.rejectedRecords.count
+        const records = count === 1 ? 'record' : 'records'
+        if (window.confirm(`Discard ${count} unreadable waypoint ${records} and keep the readable Personal Waypoints?`)) {
+          onDiscardRejectedRecords()
+        }
+      }} />
+    </>}
     {ready && readResult.waypoints.length === 0 && <p
       ref={emptyStateRef}
       className="personal-waypoint-empty"
@@ -70,6 +92,7 @@ export function PersonalWaypointsHome({
         waypoints={readResult.waypoints}
         canEdit={canManage}
         editing={editing}
+        onSelect={onSelectWaypoint}
         onRemove={onRemove}
         onMove={onMove}
         onClearAll={onClearAll}

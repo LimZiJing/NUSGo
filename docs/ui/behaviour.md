@@ -67,9 +67,11 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Personal Waypoints
 
-- More → My waypoints → Add waypoint starts creation. The saved list can be searched and filtered by category. The page-header Edit list control reveals inline reorder and remove controls, with no per-row popup. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
+- More → My waypoints → Add waypoint starts creation. The saved list uses compact rows that keep the name and category visible, and can be searched and filtered by category. The page-header Edit list control reveals inline reorder and remove controls, with no per-row popup. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
 - Continue opens the name, free-form category and optional note form. Adjust on map returns to the pin. Nothing is stored until Save waypoint is pressed; Cancel discards the draft.
-- Saving uses the existing versioned browser store. My waypoints shows the saved names and categories. Invalid fields show inline errors. If saved data is unreadable or contains rejected records, creation pauses without overwriting it. Persistent map markers, waypoint details, edit/delete actions and Journey endpoints are follow-up work.
+- Saved list rows and persistent map markers open the same More-panel details view with the name, category, note and coordinates. Returning from list details restores My waypoints; returning from map details restores the previous More page and sheet position. List selection does not move the map camera or change the active navigation workflow.
+- Edit waypoint reuses the create form. Editing preserves the waypoint ID and creation time and updates its modification time. Delete and Clear all affect only Personal Waypoints; Clear all asks for confirmation. Edit list remains for ordering and removal controls.
+- Invalid fields show inline errors. If storage is unreadable or contains rejected records, writes pause until the user confirms a reset of the Personal Waypoints storage key or discards rejected records while keeping readable waypoints. A write conflict reloads the latest collection and keeps the edit draft for the user to review; no write occurs automatically. Journey endpoints remain follow-up work.
 
 ## Settings and themes
 

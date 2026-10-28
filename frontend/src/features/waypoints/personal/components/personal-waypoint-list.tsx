@@ -23,6 +23,7 @@ interface PersonalWaypointListProps {
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, neighborId: string) => void
   readonly onClearAll: () => void
+  readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onEditAnnouncement?: (message: string) => void
 }
 
@@ -33,6 +34,7 @@ export function PersonalWaypointList({
   onRemove,
   onMove,
   onClearAll,
+  onSelect,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -153,12 +155,17 @@ export function PersonalWaypointList({
               <SavedListRow
                 key={waypoint.id}
                 className="personal-waypoint-row"
+                density="compact"
                 leading={<>
                   {editMode && <span className="personal-waypoint-grip" aria-hidden="true"><GripVerticalIcon /></span>}
                   <span className="personal-waypoint-pin"><MapPinIcon /></span>
                 </>}
                 title={waypoint.name}
                 subtitle={waypoint.category}
+                onSelect={onSelect
+                  ? (event) => onSelect(waypoint.id, event.currentTarget)
+                  : undefined}
+                selectLabel={`Open ${label} details`}
                 trailing={editMode ? (
                   <div
                     className="personal-waypoint-row-actions"

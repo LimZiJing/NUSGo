@@ -3,7 +3,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import { PersonalWaypointsHome } from './personal-waypoints-home'
@@ -33,6 +33,7 @@ function StatefulPersonalWaypointsHome() {
       status={null}
       onAdd={() => undefined}
       editing
+      onSelectWaypoint={() => undefined}
       onRemove={(waypointId) => setReadResult((current) => {
         if (current.kind !== 'ready') return current
         return {
@@ -42,6 +43,8 @@ function StatefulPersonalWaypointsHome() {
       })}
       onMove={() => undefined}
       onClearAll={() => undefined}
+      onResetUnreadableData={() => undefined}
+      onDiscardRejectedRecords={() => undefined}
     />
   )
 }
@@ -54,9 +57,12 @@ describe('PersonalWaypointsHome', () => {
       readResult: readyResult,
       status: 'Waypoint order saved.',
       onAdd: () => undefined,
+      onSelectWaypoint: () => undefined,
       onRemove: () => undefined,
       onMove: () => undefined,
       onClearAll: () => undefined,
+      onResetUnreadableData: () => undefined,
+      onDiscardRejectedRecords: () => undefined,
     }
     const view = render(<PersonalWaypointsHome {...props} editing={false} />)
 
@@ -79,5 +85,71 @@ describe('PersonalWaypointsHome', () => {
     const emptyState = screen.getByText('No saved waypoints yet. Add a waypoint to start your list.')
     expect(document.activeElement).toBe(emptyState)
     expect(screen.queryByRole('heading', { name: 'Saved places 0' })).toBeNull()
+  })
+
+  it('requires confirmation before resetting malformed saved data', async () => {
+    const user = userEvent.setup()
+    const onResetUnreadableData = vi.fn()
+    const confirm = vi.fn().mockReturnValue(false)
+    const recoveryResult: PersonalWaypointStoreReadResult = {
+      kind: 'recovery-required',
+      reason: 'malformed-data',
+      revision: '{broken' as NonNullable<typeof readyResult.revision>,
+    }
+    vi.stubGlobal('confirm', confirm)
+    render(
+      <PersonalWaypointsHome
+        readResult={recoveryResult}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={onResetUnreadableData}
+        onDiscardRejectedRecords={() => undefined}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Reset saved waypoint data' }))
+    expect(confirm).toHaveBeenCalledWith(
+      'Reset the unreadable Personal Waypoints data? This removes only the Personal Waypoints storage key.',
+    )
+    expect(onResetUnreadableData).not.toHaveBeenCalled()
+
+    confirm.mockReturnValue(true)
+    await user.click(screen.getByRole('button', { name: 'Reset saved waypoint data' }))
+    expect(onResetUnreadableData).toHaveBeenCalledOnce()
+  })
+
+  it('confirms discarding rejected records while keeping readable waypoints', async () => {
+    const user = userEvent.setup()
+    const onDiscardRejectedRecords = vi.fn()
+    const confirm = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('confirm', confirm)
+    render(
+      <PersonalWaypointsHome
+        readResult={{
+          ...readyResult,
+          rejectedRecords: { count: 2, issues: [] },
+        }}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={() => undefined}
+        onDiscardRejectedRecords={onDiscardRejectedRecords}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Discard unreadable records' }))
+    expect(confirm).toHaveBeenCalledWith(
+      'Discard 2 unreadable waypoint records and keep the readable Personal Waypoints?',
+    )
+    expect(onDiscardRejectedRecords).toHaveBeenCalledOnce()
   })
 })

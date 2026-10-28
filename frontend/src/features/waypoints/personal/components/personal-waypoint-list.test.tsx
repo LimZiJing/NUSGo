@@ -133,6 +133,33 @@ describe('PersonalWaypointList', () => {
     expect(onRemove).toHaveBeenCalledWith(waypoints[1].id)
   })
 
+  it('opens details from a row while keeping list management actions separate', async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onSelect={onSelect}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+      />,
+    )
+
+    const detailsButton = screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })
+    await user.click(detailsButton)
+
+    expect(onSelect).toHaveBeenCalledWith(waypoints[0]?.id, expect.any(HTMLButtonElement))
+    expect(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' })).toBeTruthy()
+
+    onSelect.mockClear()
+    detailsButton.focus()
+    await user.keyboard('{Enter}')
+    expect(onSelect).toHaveBeenCalledWith(waypoints[0]?.id, detailsButton)
+  })
+
   it('keeps clear-all separate and confirms it before clearing', async () => {
     const user = userEvent.setup()
     const onClearAll = vi.fn()

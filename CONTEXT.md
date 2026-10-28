@@ -16,7 +16,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Walking connection**: A directed, validated walking link between two trip endpoints or bus stops, with travel distance and duration. A walking Path leg also has routed geometry.
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 - **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.
-- **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note and timestamps. It is not sent to NUSGo services.
+- **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note, marker color and icon, and timestamps. It is not sent to NUSGo services.
 - **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
 
 ## Bus transit

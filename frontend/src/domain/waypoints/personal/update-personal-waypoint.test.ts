@@ -7,6 +7,8 @@ const savedWaypoint: PersonalWaypoint = {
   name: 'Quiet bench',
   category: 'Rest spot',
   coordinate: { longitude: 103.78, latitude: 1.29 },
+  markerColor: 'blue',
+  markerIcon: 'dot',
   createdAt: '2026-10-26T00:00:00.000Z',
   updatedAt: '2026-10-26T00:00:00.000Z',
 }
@@ -28,6 +30,8 @@ describe('updatePersonalWaypoint', () => {
         category: 'Rest spot',
         coordinate: { longitude: 103.79, latitude: 1.3 },
         note: 'Near the garden',
+        markerColor: 'blue',
+        markerIcon: 'dot',
         createdAt: savedWaypoint.createdAt,
         updatedAt: '2026-10-28T12:30:00.000Z',
       },
@@ -45,5 +49,27 @@ describe('updatePersonalWaypoint', () => {
     if (!result.ok) expect(result.issues).toContainEqual({ field: 'name', message: 'Must not be empty.' })
     expect(savedWaypoint.name).toBe('Quiet bench')
     expect(savedWaypoint.updatedAt).toBe('2026-10-26T00:00:00.000Z')
+  })
+
+  it('saves marker appearance and retains it when a draft omits appearance fields', () => {
+    const edited = updatePersonalWaypoint(savedWaypoint, {
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: savedWaypoint.coordinate,
+      markerColor: 'purple',
+      markerIcon: 'rest',
+    }, { now: () => '2026-10-28T12:30:00.000Z' })
+
+    expect(edited.ok).toBe(true)
+    if (edited.ok) expect(edited.waypoint).toMatchObject({ markerColor: 'purple', markerIcon: 'rest' })
+
+    const unchanged = updatePersonalWaypoint({ ...savedWaypoint, markerColor: 'green', markerIcon: 'food' }, {
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: savedWaypoint.coordinate,
+    }, { now: () => '2026-10-28T12:30:00.000Z' })
+
+    expect(unchanged.ok).toBe(true)
+    if (unchanged.ok) expect(unchanged.waypoint).toMatchObject({ markerColor: 'green', markerIcon: 'food' })
   })
 })

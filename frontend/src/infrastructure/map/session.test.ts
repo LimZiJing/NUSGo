@@ -1694,6 +1694,8 @@ describe('MapSession', () => {
       name: 'Quiet bench',
       category: 'Rest spot',
       coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
       createdAt: '2026-10-26T00:00:00.000Z',
       updatedAt: '2026-10-26T00:00:00.000Z',
     }

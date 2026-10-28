@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS,
   PERSONAL_WAYPOINTS_MAX_COUNT,
   validatePersonalWaypoint,
   validatePersonalWaypoints,
@@ -24,6 +25,8 @@ describe('personal waypoint validation', () => {
         name: 'Water fountain',
         category: 'Water',
         note: 'Near the side entrance',
+        markerColor: 'blue',
+        markerIcon: 'dot',
       },
     })
   })
@@ -44,6 +47,8 @@ describe('personal waypoint validation', () => {
         name: 'Water fountain',
         category: 'Water',
         note: 'Near the side entrance',
+        markerColor: 'blue',
+        markerIcon: 'dot',
       },
     })
   })
@@ -52,6 +57,26 @@ describe('personal waypoint validation', () => {
     const result = validatePersonalWaypoint({ ...validWaypoint, note: '   ' })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.waypoint).not.toHaveProperty('note')
+  })
+
+  it('rejects marker appearance values outside the curated options', () => {
+    const result = validatePersonalWaypoint({
+      ...validWaypoint,
+      markerColor: 'teal',
+      markerIcon: 'category-derived',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.issues.map(({ field }) => field)).toEqual(['markerColor', 'markerIcon'])
+    }
+  })
+
+  it('accepts every preset marker color', () => {
+    for (const { value } of PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS) {
+      const result = validatePersonalWaypoint({ ...validWaypoint, markerColor: value })
+      expect(result.ok).toBe(true)
+    }
   })
 
   it('rejects invalid UUIDs, blank labels, and text over the limits', () => {

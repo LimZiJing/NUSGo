@@ -16,6 +16,8 @@ export function updatePersonalWaypoint(
 ): PersonalWaypointValidationResult {
   return validatePersonalWaypoint({
     ...draft,
+    markerColor: draft.markerColor ?? savedWaypoint.markerColor,
+    markerIcon: draft.markerIcon ?? savedWaypoint.markerIcon,
     id: savedWaypoint.id,
     createdAt: savedWaypoint.createdAt,
     updatedAt: dependencies.now(),

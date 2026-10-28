@@ -14,6 +14,8 @@ function createWaypoint(id: number, name: string, category: string): PersonalWay
     name,
     category,
     coordinate: { longitude: 103.78, latitude: 1.29 },
+    markerColor: 'blue',
+    markerIcon: 'dot',
     createdAt: '2026-10-26T00:00:00.000Z',
     updatedAt: '2026-10-26T00:00:00.000Z',
   }

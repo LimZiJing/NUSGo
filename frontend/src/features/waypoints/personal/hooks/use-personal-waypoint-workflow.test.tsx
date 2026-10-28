@@ -196,7 +196,8 @@ describe('usePersonalWaypointWorkflow', () => {
     expect(result.current.readResult).toMatchObject({ kind: 'ready', waypoints: [latest] })
     expect(result.current.draft.name).toBe('My unsaved edit')
     expect(result.current.editingWaypointId).toBe(original.id)
-    expect(store.replaceAll).toHaveBeenCalledOnce()
+    expect(result.current.editConflict).toEqual({ revision: latestRevision, latestWaypoint: latest })
+    expect(store.replaceAll).not.toHaveBeenCalled()
   })
 
   it('clears only Personal Waypoints after the caller confirms the action', () => {

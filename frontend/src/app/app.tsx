@@ -887,6 +887,7 @@ function App() {
               draft={personalWaypoints.draft}
               issues={personalWaypoints.issues}
               status={personalWaypoints.status}
+              editConflict={morePage === 'editing-waypoint' ? personalWaypoints.editConflict : null}
               onChange={personalWaypoints.updateDraft}
               initialFocusRef={personalWaypointNameRef}
               submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save waypoint'}

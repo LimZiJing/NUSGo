@@ -51,6 +51,15 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.
 - [ ] In Plan, a collapsed journey card expands on tap, and tapping an expanded card recentres the map on the route.
 
+## Personal Waypoints (#207)
+
+- [ ] From More → My waypoints, add a waypoint and confirm its compact row and persistent map marker appear. Open details from both the row and marker; verify the same name, category, note, and location are shown.
+- [ ] Back from list-opened details returns to My waypoints. Back from marker-opened details restores the previous More page and sheet position without changing the map camera, selected stop, or selected route.
+- [ ] Edit the waypoint fields and location. Delete it and confirm only that Personal Waypoint and its marker are removed. Clear all waypoints and verify the confirmation is required and Community Waypoints remain unchanged.
+- [ ] In two tabs, keep a draft open in the first tab, save a change in the second tab, then save the first draft. Confirm the latest saved values are shown, the draft is preserved, and a separate Replace saved version action is required before overwriting. Repeat if the latest value changes again before replacement.
+- [ ] With malformed/unsupported storage and with rejected records, verify there is no write before the user confirms reset or explicitly keeps readable records and discards rejected ones.
+- [ ] Repeat the list, details, edit, and conflict review at 390 × 844. Check keyboard focus, scrolling, and touch-sized controls.
+
 ## Keyboard and accessibility
 
 - [ ] Focus is visible and follows a sensible order through the affected workflow.

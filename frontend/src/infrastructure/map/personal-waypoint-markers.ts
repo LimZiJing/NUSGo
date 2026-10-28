@@ -7,7 +7,6 @@ interface PersonalWaypointMarkerRecord {
   readonly marker: Marker
   readonly element: HTMLButtonElement
   readonly handleClick: (event: MouseEvent) => void
-  waypoint: PersonalWaypoint
   attached: boolean
 }
 
@@ -74,10 +73,9 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
           element.addEventListener('click', handleClick)
           const marker = new Marker({ anchor: 'bottom', element })
             .setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
-          record = { marker, element, handleClick, waypoint, attached: false }
+          record = { marker, element, handleClick, attached: false }
           markerRecords.set(waypoint.id, record)
         } else {
-          record.waypoint = waypoint
           record.element.setAttribute('aria-label', `Open ${waypoint.name}, ${waypoint.category} details`)
           record.marker.setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
         }

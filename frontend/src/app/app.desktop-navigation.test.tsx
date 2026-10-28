@@ -612,6 +612,55 @@ describe('More surface', () => {
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
   })
 
+  it('shows the latest saved waypoint before allowing a conflicted edit to replace it', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000004',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      note: 'Near the garden',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const storageKey = 'navus:personal-waypoints:v1'
+    localStorage.setItem(storageKey, JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'My unsaved edit')
+
+    const latest = { ...waypoint, name: 'Bench moved in another tab', note: 'Latest saved note' }
+    localStorage.setItem(storageKey, JSON.stringify({ version: 1, waypoints: [latest] }))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(screen.getByRole('heading', { name: 'Latest saved version' })).toBeTruthy()
+    expect(screen.getByText('Bench moved in another tab')).toBeTruthy()
+    expect(screen.getByText('Latest saved note')).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints[0].name)
+      .toBe('Bench moved in another tab')
+    expect(screen.getByRole('button', { name: 'Replace saved version' })).toBeTruthy()
+
+    const latestAgain = { ...latest, name: 'Bench changed again', note: 'Newest saved note' }
+    localStorage.setItem(storageKey, JSON.stringify({ version: 1, waypoints: [latestAgain] }))
+    await user.click(screen.getByRole('button', { name: 'Replace saved version' }))
+
+    expect(screen.getByText('Bench changed again')).toBeTruthy()
+    expect(screen.getByText('Newest saved note')).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints[0].name)
+      .toBe('Bench changed again')
+    await user.click(screen.getByRole('button', { name: 'Replace saved version' }))
+
+    expect(screen.getByRole('heading', { name: 'My unsaved edit' })).toBeTruthy()
+    const saved = JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints[0]
+    expect(saved.name).toBe('My unsaved edit')
+    expect(saved.note).toBe('Near the garden')
+  })
+
   it('restores the More page and sheet position after details opened from a map marker', async () => {
     mockMobileViewport()
     const waypoint = {

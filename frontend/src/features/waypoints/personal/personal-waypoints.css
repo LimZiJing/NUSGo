@@ -213,6 +213,26 @@
 }
 .personal-waypoint-form textarea { resize: vertical; }
 .personal-waypoint-form [aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-edit-conflict {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+.personal-waypoint-edit-conflict h3,
+.personal-waypoint-edit-conflict p { margin: 0; }
+.personal-waypoint-edit-conflict h3 {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+.personal-waypoint-edit-conflict p,
+.personal-waypoint-edit-conflict dt { color: var(--text-secondary); }
+.personal-waypoint-edit-conflict dl { display: grid; gap: var(--space-2); margin: 0; }
+.personal-waypoint-edit-conflict dl > div { display: grid; gap: var(--space-1); }
+.personal-waypoint-edit-conflict dt { font-size: var(--font-size-xs); font-weight: 600; }
+.personal-waypoint-edit-conflict dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
 .personal-waypoint-error { color: var(--text-error-strong); font-size: var(--font-size-sm); }
 .personal-waypoint-location { display: grid; gap: var(--space-2); }
 .personal-waypoint-location > span { color: var(--text-secondary); }

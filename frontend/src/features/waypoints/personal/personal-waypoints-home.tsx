@@ -1,8 +1,10 @@
 import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
+import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
+import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
 export function PersonalWaypointsHome({
@@ -16,6 +18,11 @@ export function PersonalWaypointsHome({
   onClearAll,
   onResetUnreadableData,
   onDiscardRejectedRecords,
+  categoryOptions = [],
+  hiddenCategories = [],
+  categoryVisibilityStatus = null,
+  onSetCategoryVisible = () => undefined,
+  onShowAllCategories = () => undefined,
   initialFocusRef,
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
@@ -28,6 +35,11 @@ export function PersonalWaypointsHome({
   readonly onClearAll: () => void
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
+  readonly categoryOptions?: readonly PersonalWaypointCategoryOption[]
+  readonly hiddenCategories?: readonly string[]
+  readonly categoryVisibilityStatus?: string | null
+  readonly onSetCategoryVisible?: (category: string, visible: boolean) => void
+  readonly onShowAllCategories?: () => void
   readonly initialFocusRef?: Ref<HTMLButtonElement>
 }) {
   const ready = readResult.kind === 'ready'
@@ -40,7 +52,7 @@ export function PersonalWaypointsHome({
   const previousWaypointCount = useRef(waypointCount)
   const combinedStatus = [
     status,
-    editAnnouncement,
+    categoryVisibilityStatus,
     ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
       ? `The limit of ${PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.`
       : null,
@@ -56,8 +68,8 @@ export function PersonalWaypointsHome({
 
   return <div className="personal-waypoints-home">
     <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />
-    <p className="personal-waypoint-privacy-note">Personal Waypoints are saved in this browser profile.</p>
     {combinedStatus && <p role="status">{combinedStatus}</p>}
+    {editAnnouncement && <p className="visually-hidden" aria-live="polite">{editAnnouncement}</p>}
     {readResult.kind === 'unavailable' && <p role="alert">Browser storage is unavailable. Waypoints cannot be saved here.</p>}
     {readResult.kind === 'recovery-required' && <>
       <p role="alert">Saved waypoint data needs recovery. It has been left untouched.</p>
@@ -88,6 +100,13 @@ export function PersonalWaypointsHome({
       No saved waypoints yet. Add a waypoint to start your list.
     </p>}
     {ready && readResult.waypoints.length > 0 && (
+      <>
+        {categoryOptions.length > 0 && <PersonalWaypointCategoryVisibility
+          categories={categoryOptions}
+          hiddenCategories={hiddenCategories}
+          onSetCategoryVisible={onSetCategoryVisible}
+          onShowAll={onShowAllCategories}
+        />}
       <PersonalWaypointList
         waypoints={readResult.waypoints}
         canEdit={canManage}
@@ -98,6 +117,7 @@ export function PersonalWaypointsHome({
         onClearAll={onClearAll}
         onEditAnnouncement={setEditAnnouncement}
       />
+      </>
     )}
   </div>
 }

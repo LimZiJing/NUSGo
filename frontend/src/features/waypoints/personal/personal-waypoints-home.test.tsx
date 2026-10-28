@@ -47,6 +47,11 @@ function StatefulPersonalWaypointsHome() {
       onClearAll={() => undefined}
       onResetUnreadableData={() => undefined}
       onDiscardRejectedRecords={() => undefined}
+      categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
+      hiddenCategories={[]}
+      categoryVisibilityStatus={null}
+      onSetCategoryVisible={() => undefined}
+      onShowAllCategories={() => undefined}
     />
   )
 }
@@ -54,7 +59,7 @@ function StatefulPersonalWaypointsHome() {
 afterEach(cleanup)
 
 describe('PersonalWaypointsHome', () => {
-  it('keeps browser-profile privacy visible and combines status announcements', async () => {
+  it('keeps the panel concise and announces edit mode without visible instructions', async () => {
     const props = {
       readResult: readyResult,
       status: 'Waypoint order saved.',
@@ -65,17 +70,61 @@ describe('PersonalWaypointsHome', () => {
       onClearAll: () => undefined,
       onResetUnreadableData: () => undefined,
       onDiscardRejectedRecords: () => undefined,
+      categoryOptions: [{ category: 'Rest spot', waypointCount: 1 }],
+      hiddenCategories: [],
+      categoryVisibilityStatus: null,
+      onSetCategoryVisible: () => undefined,
+      onShowAllCategories: () => undefined,
     }
     const view = render(<PersonalWaypointsHome {...props} editing={false} />)
 
-    expect(screen.getByText('Personal Waypoints are saved in this browser profile.')).toBeTruthy()
+    expect(screen.queryByText('Personal Waypoints are saved in this browser profile.')).toBeNull()
+    expect(screen.queryByText('Choose which categories appear on the map.')).toBeNull()
 
     view.rerender(<PersonalWaypointsHome {...props} editing />)
     await waitFor(() => {
       expect(screen.getAllByRole('status')).toHaveLength(1)
       expect(screen.getByRole('status').textContent).toContain('Waypoint order saved.')
-      expect(screen.getByRole('status').textContent).toContain('Edit list mode')
+      expect(screen.getByText('Edit mode.').className).toContain('visually-hidden')
     })
+  })
+
+  it('toggles map categories without removing saved waypoints and can restore all', async () => {
+    const user = userEvent.setup()
+    const onSetCategoryVisible = vi.fn()
+    const onShowAllCategories = vi.fn()
+    const secondWaypoint = { ...waypoint, id: '00000000-0000-4000-8000-000000000002', name: 'Cafe', category: 'Food & drink' }
+    render(
+      <PersonalWaypointsHome
+        readResult={{ ...readyResult, waypoints: [waypoint, secondWaypoint] }}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={() => undefined}
+        onDiscardRejectedRecords={() => undefined}
+        categoryOptions={[
+          { category: 'Food & drink', waypointCount: 1 },
+          { category: 'Rest spot', waypointCount: 1 },
+        ]}
+        hiddenCategories={['Food & drink']}
+        categoryVisibilityStatus={null}
+        onSetCategoryVisible={onSetCategoryVisible}
+        onShowAllCategories={onShowAllCategories}
+      />,
+    )
+
+    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked).toBe(false)
+    expect(screen.getByText('Cafe')).toBeTruthy()
+    expect(screen.getByText('Quiet bench')).toBeTruthy()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink markers' }))
+    expect(onSetCategoryVisible).toHaveBeenCalledWith('Food & drink', true)
+    await user.click(screen.getByRole('button', { name: 'Show all categories' }))
+    expect(onShowAllCategories).toHaveBeenCalledOnce()
   })
 
   it('restores focus to the page empty state when the last waypoint is removed', async () => {

@@ -62,8 +62,14 @@ import {
   PersonalWaypointPlacement,
   PersonalWaypointsHome,
   usePersonalWaypointWorkflow,
+  usePersonalWaypointCategoryVisibility,
 } from '../features/waypoints/personal'
 import { createLocalPersonalWaypointStore } from '../infrastructure/data/local-personal-waypoint-store'
+import { createLocalPersonalWaypointCategoryVisibilityStore } from '../infrastructure/data/local-personal-waypoint-category-visibility-store'
+import {
+  filterPersonalWaypointsByCategoryVisibility,
+  getPersonalWaypointCategoryOptions,
+} from '../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -112,6 +118,10 @@ function App() {
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
+  const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
+    personalWaypointCategoryVisibilityStore,
+  )
   const updatePersonalWaypointDraft = personalWaypoints.updateDraft
   const cancelPersonalWaypointEdit = personalWaypoints.cancelEdit
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
@@ -237,6 +247,17 @@ function App() {
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
+  const personalWaypointCategoryOptions = useMemo(
+    () => getPersonalWaypointCategoryOptions(personalWaypointsForMap),
+    [personalWaypointsForMap],
+  )
+  const visiblePersonalWaypointsForMap = useMemo(
+    () => filterPersonalWaypointsByCategoryVisibility(
+      personalWaypointsForMap,
+      personalWaypointCategoryVisibility.hiddenCategories,
+    ),
+    [personalWaypointCategoryVisibility.hiddenCategories, personalWaypointsForMap],
+  )
   // App composition passes map placement events into the waypoint feature's draft workflow.
   useEffect(() => {
     const visible = morePage === 'placing' || morePage === 'creating'
@@ -260,11 +281,11 @@ function App() {
   }, [commands, handlePersonalWaypointMapChange])
   useEffect(() => {
     commands.setPersonalWaypoints(
-      personalWaypointsForMap,
+      visiblePersonalWaypointsForMap,
       morePage !== 'placing' && morePage !== 'editing-waypoint',
       handlePersonalWaypointMapSelection,
     )
-  }, [commands, handlePersonalWaypointMapSelection, morePage, personalWaypointsForMap])
+  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -871,6 +892,11 @@ function App() {
               onClearAll={clearPersonalWaypoints}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
+              categoryOptions={personalWaypointCategoryOptions}
+              hiddenCategories={personalWaypointCategoryVisibility.hiddenCategories}
+              categoryVisibilityStatus={personalWaypointCategoryVisibility.status}
+              onSetCategoryVisible={personalWaypointCategoryVisibility.setCategoryVisible}
+              onShowAllCategories={personalWaypointCategoryVisibility.showAllCategories}
               initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
               waypoint={selectedPersonalWaypoint}
@@ -885,6 +911,7 @@ function App() {
               onDelete={deleteSelectedPersonalWaypoint}
             /> : morePage === 'creating' || morePage === 'editing-waypoint' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}
+              categoryOptions={personalWaypointCategoryOptions}
               issues={personalWaypoints.issues}
               status={personalWaypoints.status}
               editConflict={morePage === 'editing-waypoint' ? personalWaypoints.editConflict : null}

@@ -121,7 +121,7 @@ describe('PersonalWaypointList', () => {
     )
 
     expect(onEditAnnouncement).toHaveBeenCalledWith(
-      'Edit list mode. Use the move controls to reorder waypoints, or remove a waypoint.',
+      'Edit mode.',
     )
     expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot up' }).hasAttribute('disabled'))
       .toBe(true)

@@ -60,8 +60,8 @@ export function PersonalWaypointList({
     if (previousEditing.current === editing) return
     previousEditing.current = editing
     onEditAnnouncement?.(editing
-      ? 'Edit list mode. Use the move controls to reorder waypoints, or remove a waypoint.'
-      : 'Done editing the waypoint list.')
+      ? 'Edit mode.'
+      : 'List mode.')
   }, [editing, onEditAnnouncement])
 
   useLayoutEffect(() => {

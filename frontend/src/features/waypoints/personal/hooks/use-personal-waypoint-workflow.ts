@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react'
 import type { WaypointCoordinate } from '../../../../domain/waypoints/waypoint'
-import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../../../../domain/waypoints/personal/personal-waypoint'
+import {
+  DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
+  DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
+  DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
+} from '../../../../domain/waypoints/personal/personal-waypoint'
 import { createPersonalWaypoint, type PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import type { PersonalWaypoint, PersonalWaypointValidationIssue } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { updatePersonalWaypoint } from '../../../../domain/waypoints/personal/update-personal-waypoint'
@@ -64,6 +68,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     category: '',
     note: '',
     coordinate: DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
+    markerColor: DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
+    markerIcon: DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
   })
   const [status, setStatus] = useState<string | null>(null)
   const [issues, setIssues] = useState<readonly PersonalWaypointValidationIssue[]>([])
@@ -106,7 +112,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       const nextWaypoints = waypoints.filter(({ id }) => id !== waypointId)
       return nextWaypoints.length === waypoints.length ? waypoints : nextWaypoints
     },
-    'Waypoint removed from this browser profile.',
+    'Place removed.',
   ), [updateCollection])
 
   const moveWaypoint = useCallback((waypointId: string, neighborId: string): boolean => updateCollection(
@@ -121,7 +127,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       nextWaypoints[neighborIndex] = movedWaypoint
       return nextWaypoints
     },
-    'Waypoint order saved in this browser profile.',
+    'Order saved.',
   ), [updateCollection])
 
   const clearAll = useCallback((): boolean => {
@@ -142,7 +148,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     }
 
     setReadResult(store.read())
-    setStatus('Personal Waypoints cleared from this browser profile.')
+    setStatus('All places cleared.')
     return true
   }, [store])
 
@@ -150,7 +156,14 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     setEditingWaypointId(null)
     setEditConflict(null)
     setEditingBaseRevision(null)
-    setDraft({ name: '', category: '', note: '', coordinate })
+    setDraft({
+      name: '',
+      category: '',
+      note: '',
+      coordinate,
+      markerColor: DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
+      markerIcon: DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
+    })
     setIssues([])
     setStatus(null)
   }, [])
@@ -179,6 +192,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       category: savedWaypoint.category,
       note: savedWaypoint.note ?? '',
       coordinate: savedWaypoint.coordinate,
+      markerColor: savedWaypoint.markerColor,
+      markerIcon: savedWaypoint.markerIcon,
     })
     setIssues([])
     setStatus(null)
@@ -256,7 +271,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       }
 
       setReadResult(store.read())
-      setStatus('Waypoint changes saved.')
+      setStatus('Changes saved.')
       setIssues([])
       setEditingWaypointId(null)
       setEditConflict(null)
@@ -299,7 +314,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     }
 
     setReadResult(store.read())
-    setStatus('Waypoint saved in this browser profile.')
+    setStatus('Waypoint saved.')
     setIssues([])
     return true
   }, [draft, editConflict, editingBaseRevision, editingWaypointId, store])

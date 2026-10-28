@@ -1,5 +1,7 @@
-import type { FormEvent, Ref } from 'react'
+import { useState, type FormEvent, type Ref } from 'react'
+import { Autocomplete } from '@base-ui/react/autocomplete'
 import type { PersonalWaypointDraft } from '../../../domain/waypoints/personal/create-personal-waypoint'
+import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/personal/personal-waypoint-category-visibility'
 import {
   PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH,
   PERSONAL_WAYPOINT_NAME_MAX_LENGTH,
@@ -8,6 +10,8 @@ import {
   type PersonalWaypointValidationIssue,
 } from '../../../domain/waypoints/personal/personal-waypoint'
 import { Button } from '../../../ui/button'
+import { ChevronDownIcon } from '../../../ui/icons'
+import { PersonalWaypointAppearanceFields } from './components/personal-waypoint-appearance-fields'
 import { PersonalWaypointSummary } from './components/personal-waypoint-summary'
 
 function fieldError(issues: readonly PersonalWaypointValidationIssue[], field: string): string | undefined {
@@ -25,6 +29,7 @@ export function PersonalWaypointForm({
   onCancel,
   onSave,
   submitLabel = 'Save waypoint',
+  categoryOptions = [],
 }: {
   readonly draft: PersonalWaypointDraft
   readonly issues: readonly PersonalWaypointValidationIssue[]
@@ -36,7 +41,9 @@ export function PersonalWaypointForm({
   readonly onCancel: () => void
   readonly onSave: () => void
   readonly submitLabel?: string
+  readonly categoryOptions?: readonly PersonalWaypointCategoryOption[]
 }) {
+  const [isFilteringCategories, setIsFilteringCategories] = useState(false)
   const submit = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); onSave() }
   const nameError = fieldError(issues, 'name')
   const categoryError = fieldError(issues, 'category')
@@ -46,6 +53,10 @@ export function PersonalWaypointForm({
   const effectiveSubmitLabel = editConflict
     ? conflictWaypoint ? 'Replace saved version' : 'Saved waypoint removed'
     : submitLabel
+  const categorySuggestions = [...new Set([
+    ...categoryOptions.map(({ category }) => category),
+    ...(!isFilteringCategories ? [draft.category.trim()] : []),
+  ].filter(Boolean))].sort((left, right) => left.localeCompare(right))
 
   return <form className="personal-waypoint-form" onSubmit={submit} noValidate>
     <label htmlFor="personal-waypoint-name">Name</label>
@@ -54,9 +65,58 @@ export function PersonalWaypointForm({
       onChange={(event) => onChange({ name: event.target.value })} />
     {nameError && <p id="personal-waypoint-name-error" className="personal-waypoint-error">{nameError}</p>}
     <label htmlFor="personal-waypoint-category">Category</label>
-    <input id="personal-waypoint-category" value={draft.category} maxLength={PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH + 1}
-      aria-invalid={Boolean(categoryError)} aria-describedby={categoryError ? 'personal-waypoint-category-error' : undefined}
-      onChange={(event) => onChange({ category: event.target.value })} />
+    <Autocomplete.Root
+      items={categorySuggestions}
+      value={draft.category}
+      onValueChange={(category, eventDetails) => {
+        onChange({ category })
+        setIsFilteringCategories(eventDetails.reason === 'input-change')
+      }}
+      onOpenChange={(open, eventDetails) => {
+        if (open && categorySuggestions.length === 0) eventDetails.cancel()
+      }}
+      openOnInputClick
+      filter={(category, query) => {
+        const normalizedQuery = query.trim().toLocaleLowerCase()
+        return !isFilteringCategories
+          || !normalizedQuery
+          || category.toLocaleLowerCase().includes(normalizedQuery)
+      }}
+    >
+      <Autocomplete.InputGroup className="personal-waypoint-category-input-group">
+        <Autocomplete.Input
+          id="personal-waypoint-category"
+          className="personal-waypoint-category-input"
+          maxLength={PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH + 1}
+          aria-invalid={Boolean(categoryError)}
+          aria-describedby={categoryError ? 'personal-waypoint-category-error' : undefined}
+        />
+        {categorySuggestions.length > 0 && <Autocomplete.Trigger
+          className="personal-waypoint-category-trigger"
+          aria-label="Show categories"
+        >
+          <ChevronDownIcon size={16} />
+        </Autocomplete.Trigger>}
+      </Autocomplete.InputGroup>
+      <Autocomplete.Portal>
+        <Autocomplete.Positioner className="personal-waypoint-category-positioner" sideOffset={4}>
+          <Autocomplete.Popup className="personal-waypoint-category-popup">
+            <Autocomplete.Empty>
+              <div className="personal-waypoint-category-empty">No matches</div>
+            </Autocomplete.Empty>
+            <Autocomplete.List className="personal-waypoint-category-list">
+              {(category: string) => <Autocomplete.Item
+                key={category}
+                value={category}
+                className="personal-waypoint-category-item"
+              >
+                {category}
+              </Autocomplete.Item>}
+            </Autocomplete.List>
+          </Autocomplete.Popup>
+        </Autocomplete.Positioner>
+      </Autocomplete.Portal>
+    </Autocomplete.Root>
     {categoryError && <p id="personal-waypoint-category-error" className="personal-waypoint-error">{categoryError}</p>}
     <label htmlFor="personal-waypoint-note">Note <span>(optional)</span></label>
     <textarea id="personal-waypoint-note" value={draft.note ?? ''} rows={3}
@@ -68,6 +128,7 @@ export function PersonalWaypointForm({
       <span>{draft.coordinate.latitude.toFixed(6)}, {draft.coordinate.longitude.toFixed(6)}</span>
       <Button label="Adjust on map" onClick={onAdjustLocation} />
     </div>
+    <PersonalWaypointAppearanceFields draft={draft} onChange={onChange} />
     {editConflict && <section
       className="personal-waypoint-edit-conflict"
       role="alert"

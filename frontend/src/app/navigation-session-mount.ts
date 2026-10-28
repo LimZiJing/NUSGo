@@ -129,6 +129,11 @@ export interface NavigationSessionCommands {
     editable: boolean,
     onChange: Parameters<NavigationSession['setPersonalWaypointPlacement']>[2],
   ) => void
+  readonly setPersonalWaypoints: (
+    waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
+    visible: boolean,
+    onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -180,6 +185,9 @@ function createNavigationSessionCommands(
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
     setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
       session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    ),
+    setPersonalWaypoints: (waypoints, visible, onSelect) => (
+      session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,

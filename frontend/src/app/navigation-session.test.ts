@@ -57,6 +57,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setViewportInsets: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
+    setPersonalWaypoints: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -310,6 +311,26 @@ describe('navigation session', () => {
 
     expect(session.dismissStopPopup()).toBe(false)
     expect(dependencies.map.dismissStopPopup).toHaveBeenCalledOnce()
+  })
+
+  it('forwards saved waypoint marker updates without applying a camera action', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const onSelect = vi.fn()
+
+    session.setPersonalWaypoints([waypoint], true, onSelect)
+
+    expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect)
+    expect(dependencies.map.resetView).not.toHaveBeenCalled()
+    expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
   })
 
   it('loads immutable data, reconciles route selection once, and synchronizes the map', async () => {

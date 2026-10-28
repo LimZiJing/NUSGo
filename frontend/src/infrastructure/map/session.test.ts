@@ -10,6 +10,7 @@ import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
 const fakeMapState = vi.hoisted(() => ({
   maps: [] as unknown[],
@@ -1671,6 +1672,39 @@ describe('MapSession', () => {
     expect(marker.coordinate).toEqual([103.8, 1.31])
     expect(marker.draggable).toBe(false)
     session.setPersonalWaypointPlacement(null, false, onDrag)
+    expect(marker.remove).toHaveBeenCalledOnce()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('adds saved waypoint markers and removes them when the collection changes', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { addedMarkers: Array<{
+      coordinate: unknown
+      element: FakeElement
+      remove: ReturnType<typeof vi.fn>
+    }> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const onSelect = vi.fn()
+
+    session.setPersonalWaypoints([waypoint], true, onSelect)
+    const marker = map.addedMarkers.at(-1)!
+    expect(marker.coordinate).toEqual([103.78, 1.29])
+    expect(marker.element.attributes.get('aria-label')).toBe('Open Quiet bench, Rest spot details')
+
+    session.setPersonalWaypoints([], true, onSelect)
     expect(marker.remove).toHaveBeenCalledOnce()
     session.dispose()
     vi.unstubAllGlobals()

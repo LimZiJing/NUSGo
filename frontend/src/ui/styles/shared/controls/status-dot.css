@@ -1,0 +1,43 @@
+/* Status dot primitive: a compact, non-interactive status light. Pill is the labelled counterpart. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+/* Each tone has its own shape so the state never relies on colour alone: filled circle, hollow ring, warning triangle. */
+.status-dot[data-tone='muted'] {
+  box-sizing: border-box;
+  border: 1.5px solid var(--text-muted);
+  background: transparent;
+}
+
+.status-dot[data-tone='success'] {
+  background: var(--status-success);
+}
+
+.status-dot[data-tone='error'] {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  background: var(--status-error);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.status-dot[data-pulse='true'] {
+  animation: status-dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes status-dot-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot[data-pulse='true'] {
+    animation: none;
+  }
+}

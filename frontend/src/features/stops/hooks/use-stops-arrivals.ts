@@ -20,6 +20,8 @@ export type StopsArrivalsStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 
 export interface StopsArrivalsState<TSnapshot = ShuttleArrivalSnapshot> {
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  /** Polls that have failed in a row since the last success; a refresh in flight keeps the count. */
+  readonly failedPolls: number
   // When the current snapshot reached the client; countdowns are pinned to this, not the clock.
   readonly snapshotReceivedAtMs: number | null
   readonly nowMs: number
@@ -29,6 +31,7 @@ interface ArrivalRequestState<TSnapshot> {
   readonly stopKey: string | null
   readonly status: StopsArrivalsStatus
   readonly snapshot: TSnapshot | null
+  readonly failedPolls: number
   readonly receivedAtMs: number | null
 }
 
@@ -53,6 +56,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     stopKey: null,
     status: 'idle',
     snapshot: null,
+    failedPolls: 0,
     receivedAtMs: null,
   }))
   const [nowMs, setNowMs] = useState(() => Date.now())
@@ -93,6 +97,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
         stopKey,
         status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
         snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+        failedPolls: previous.stopKey === stopKey ? previous.failedPolls : 0,
         receivedAtMs: previous.stopKey === stopKey ? previous.receivedAtMs : null,
       }))
 
@@ -108,6 +113,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
             stopKey,
             status: 'ready',
             snapshot: keepPrevious ? previous.snapshot : snapshot,
+            failedPolls: 0,
             receivedAtMs: keepPrevious ? previous.receivedAtMs : receivedAtMs,
           }
         })
@@ -117,6 +123,7 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
           stopKey,
           status: 'error',
           snapshot: previous.stopKey === stopKey ? previous.snapshot : null,
+          failedPolls: previous.stopKey === stopKey ? previous.failedPolls + 1 : 1,
           receivedAtMs: previous.stopKey === stopKey ? previous.receivedAtMs : null,
         }))
       }
@@ -158,11 +165,12 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
 
   const visibleState: ArrivalRequestState<TSnapshot> = hasActiveStops
     ? state
-    : { stopKey: null, status: 'idle', snapshot: null, receivedAtMs: null }
+    : { stopKey: null, status: 'idle', snapshot: null, failedPolls: 0, receivedAtMs: null }
 
   return {
     status: visibleState.status,
     snapshot: visibleState.snapshot,
+    failedPolls: visibleState.failedPolls,
     snapshotReceivedAtMs: visibleState.receivedAtMs,
     nowMs,
   }

@@ -43,6 +43,7 @@ function Probe({
   return (
     <>
       <output data-testid="status">{state.status}</output>
+      <output data-testid="failed-polls">{state.failedPolls}</output>
       <output data-testid="snapshot">{state.snapshot?.observedAt ?? 'none'}</output>
       <output data-testid="received-at">{state.snapshotReceivedAtMs ?? 'none'}</output>
       <output data-testid="now">{state.nowMs}</output>
@@ -194,6 +195,34 @@ describe('useStopsArrivals', () => {
 
     expect(screen.getByTestId('status').textContent).toBe('error')
     expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
+  })
+
+  it('counts failed polls in a row through refreshes and resets on success', async () => {
+    vi.useFakeTimers()
+    const client: StopsArrivalLoader = vi.fn()
+      .mockResolvedValueOnce(snapshot)
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+      .mockResolvedValueOnce(refreshedSnapshot)
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    expect(screen.getByTestId('failed-polls').textContent).toBe('0')
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    expect(screen.getByTestId('failed-polls').textContent).toBe('1')
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    expect(screen.getByTestId('failed-polls').textContent).toBe('2')
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    expect(screen.getByTestId('failed-polls').textContent).toBe('0')
   })
 
   it('debounces rapid stop-set changes and loads the latest set', async () => {

@@ -58,6 +58,7 @@ export function StopList({
               expanded={expanded}
               noLiveData={noLiveData}
               live={stop.live}
+              pollState={stop.pollState}
               liveArrivalMessage={stop.liveArrivalMessage}
               departures={stop.departures}
               scheduledDepartures={stop.scheduledDepartures}

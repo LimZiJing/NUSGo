@@ -165,7 +165,7 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' }))
     await waitFor(() => expect(screen.getByText('5′')).toBeTruthy())
 
-    expect(screen.getByText('LIVE')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Live times' })).toBeTruthy()
     expect(appHarness.arrivalsClient.getArrivals).toHaveBeenCalledWith(
       [
         { stopId: 'STOP-A', stopName: 'Stop A' },

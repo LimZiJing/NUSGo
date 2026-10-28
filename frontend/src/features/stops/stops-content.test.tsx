@@ -19,6 +19,7 @@ const selectedStop: StopDetailsModel = {
   ],
   scheduledDepartures: [],
   live: true,
+  pollState: 'idle',
   liveArrivalMessage: null,
 }
 

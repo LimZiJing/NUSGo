@@ -59,7 +59,8 @@ describe('StopCard', () => {
     expect(titleBar.querySelector('.disclosure-chevron')?.getAttribute('data-expanded')).toBe('true')
     expect(star.getAttribute('aria-pressed')).toBe('false')
     expect(within(titleBar).getByText('320m')).toBeTruthy()
-    expect(within(titleBar).getByText('LIVE')).toBeTruthy()
+    expect(within(titleBar).getByRole('img', { name: 'Live times' })).toBeTruthy()
+    expect(titleBar.textContent).not.toContain('LIVE')
     await user.click(within(titleBar).getByText('Central Library'))
     await user.click(star)
     await user.click(screen.getByRole('button', { name: 'View A1 route details' }))
@@ -70,7 +71,48 @@ describe('StopCard', () => {
     expect(screen.queryByRole('button', { name: /View 95 route details/ })).toBeNull()
   })
 
-  it('keeps closed route controls inert and hides the LIVE pill', () => {
+  it('pulses a green dot while a refresh is in flight', () => {
+    render(<StopCard
+      {...cardProps}
+      pollState="refreshing"
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    const dot = screen.getByRole('img', { name: 'Live times, refreshing' })
+    expect(dot.getAttribute('data-tone')).toBe('success')
+    expect(dot.getAttribute('data-pulse')).toBe('true')
+  })
+
+  it('pulses a red dot when polling keeps failing', () => {
+    render(<StopCard
+      {...cardProps}
+      pollState="failing"
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    const dot = screen.getByRole('img', { name: 'Live times failing, retrying' })
+    expect(dot.getAttribute('data-tone')).toBe('error')
+    expect(dot.getAttribute('data-pulse')).toBe('true')
+  })
+
+  it('keeps the green dot still when nothing is polling', () => {
+    render(<StopCard
+      {...cardProps}
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    const dot = screen.getByRole('img', { name: 'Live times' })
+    expect(dot.getAttribute('data-tone')).toBe('success')
+    expect(dot.getAttribute('data-pulse')).toBeNull()
+  })
+
+  it('keeps closed route controls inert and hides the status dot', () => {
     const { container } = render(<StopCard
       {...cardProps}
       expanded={false}
@@ -87,12 +129,12 @@ describe('StopCard', () => {
     expect(screen.getByRole('button', { name: 'Remove Central Library, bus stop from favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
     expect(container.querySelector('.stop-card-timings')?.hasAttribute('inert')).toBe(true)
-    expect(screen.queryByText('LIVE')).toBeNull()
+    expect(screen.queryByRole('img')).toBeNull()
     expect(screen.queryByText('320m')).toBeNull()
     expect(screen.queryByRole('button', { name: 'View A1 route details' })).toBeNull()
   })
 
-  it('hides the LIVE pill when live arrivals are unavailable', () => {
+  it('keeps a muted dot when live arrivals are unavailable', () => {
     render(<StopCard
       {...cardProps}
       expanded
@@ -103,7 +145,23 @@ describe('StopCard', () => {
       onSelectRoute={vi.fn()}
     />)
 
-    expect(screen.queryByText('LIVE')).toBeNull()
+    expect(screen.getByRole('img', { name: 'No live times' }).getAttribute('data-tone')).toBe('muted')
     expect(screen.getByText('No live internal bus arrivals.')).toBeTruthy()
+  })
+
+  it('keeps the muted dot still while refreshing with no live rows', () => {
+    render(<StopCard
+      {...cardProps}
+      expanded
+      live={false}
+      pollState="refreshing"
+      onToggleExpanded={vi.fn()}
+      onToggleFavorite={vi.fn()}
+      onSelectRoute={vi.fn()}
+    />)
+
+    const dot = screen.getByRole('img', { name: 'No live times' })
+    expect(dot.getAttribute('data-tone')).toBe('muted')
+    expect(dot.getAttribute('data-pulse')).toBeNull()
   })
 })

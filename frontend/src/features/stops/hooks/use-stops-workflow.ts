@@ -8,8 +8,8 @@ import {
 import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
 import { getStopDetailsModel, type StopDetailsModel } from '../data/stop-details-model'
 import { getStopsForList, getStopsWithinNearbyRadius, type StopListEntry } from '../data/stop-list-data'
-import { LIVE_TIMES_UNAVAILABLE_MESSAGE, type StopTimingDataOptions } from '../data/stop-timing-data'
-import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
+import { LIVE_TIMES_UNAVAILABLE_MESSAGE, type StopPollState, type StopTimingDataOptions } from '../data/stop-timing-data'
+import { useStopsArrivals, type StopsArrivalLoader, type StopsArrivalsState } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
 import { useStopsState } from '../state/use-stops-state'
 import type { StopsState } from '../state/stops-state'
@@ -56,6 +56,14 @@ export interface StopsWorkflow {
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
   readonly locateFromControl: () => void
+}
+
+// One failed poll is usually a blip, so the pill only turns red after two in a row.
+const FAILING_POLL_THRESHOLD = 2
+
+function getPollState({ status, failedPolls }: StopsArrivalsState<unknown>): StopPollState {
+  if (failedPolls >= FAILING_POLL_THRESHOLD) return 'failing'
+  return status === 'refreshing' ? 'refreshing' : 'idle'
 }
 
 function hasLocationError(location: LocationTrackingState): boolean {
@@ -131,7 +139,6 @@ export function useStopsWorkflow({
   }, [arrivalRequests, transitIndex])
   const stopServiceWindows = useStopsServiceWindows(loadServiceWindows, active, serviceRouteIds)
   const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
-  const publicArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
 
   const timingOptions: StopTimingDataOptions = {
     minuteFormat,
@@ -143,7 +150,8 @@ export function useStopsWorkflow({
     serviceWindows: stopServiceWindows.windows,
     isRefreshing: stopArrivalsUpdating,
     publicArrivalSnapshot: publicStopArrivals.snapshot,
-    publicIsRefreshing: publicArrivalsUpdating,
+    pollState: getPollState(stopArrivals),
+    publicPollState: getPollState(publicStopArrivals),
   }
   const selectedStop = focusedStop && transitIndex
     ? getStopDetailsModel(focusedStop, transitIndex, timingOptions)

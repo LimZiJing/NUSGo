@@ -63,6 +63,10 @@ export interface StopTimingDataOptions {
   readonly minuteFormat?: MinuteFormat
   readonly favoriteStopIds?: readonly string[]
   readonly arrivalSnapshot?: ShuttleArrivalSnapshot | null
+  // When each snapshot reached the client. Displayed times are pinned to it so they only
+  // change on a poll; `nowMs` is the slow clock for staleness and service windows.
+  readonly arrivalSnapshotReceivedAtMs?: number | null
+  readonly publicArrivalSnapshotReceivedAtMs?: number | null
   readonly nowMs: number
   readonly serviceWindows?: StopsServiceWindows | null
   readonly isRefreshing?: boolean
@@ -99,6 +103,7 @@ function getPublicServiceTimings(
   stop: TransitStop,
   snapshot: PublicBusArrivalSnapshot | null,
   nowMs: number,
+  receivedAtMs: number,
   minuteFormat: MinuteFormat,
 ): readonly PublicServiceTiming[] {
   const serviceNumbers = stop.services
@@ -114,7 +119,7 @@ function getPublicServiceTimings(
     if (stale) return { serviceNumber, timings: null, status: 'provider-error' as const }
     if (service.status !== 'live') return { serviceNumber, timings: null, status: service.status }
     const timings = service.arrivals
-      .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - nowMs) / 1_000))
+      .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - receivedAtMs) / 1_000))
       .filter((seconds) => seconds >= 0)
       .slice(0, 3)
       .map((seconds) => formatArrivalSeconds(seconds, minuteFormat))
@@ -133,12 +138,13 @@ function getLiveStopDepartures(
   index: TransitIndex,
   snapshot: ShuttleArrivalSnapshot | null,
   nowMs: number,
+  receivedAtMs: number,
   liveRouteIds: ReadonlySet<string>,
   minuteFormat: MinuteFormat,
 ): readonly StopDeparture[] {
   if (!snapshot || getArrivalAgeMs(snapshot, stop.id, nowMs) > SHUTTLE_ARRIVAL_MAX_AGE_MS) return []
 
-  const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, nowMs) / 1_000)
+  const ageSeconds = Math.floor(getArrivalAgeMs(snapshot, stop.id, receivedAtMs) / 1_000)
   const stopArrivals = snapshot.stops[stop.id] ?? {}
   const servedRouteIds = index.routeIdsByStopId.get(stop.id) ?? new Set<string>()
   return Array.from(servedRouteIds).flatMap((routeId) => {
@@ -240,6 +246,8 @@ export function getStopTimingData(
     minuteFormat = DEFAULT_MINUTE_FORMAT,
     favoriteStopIds = [],
     arrivalSnapshot = null,
+    arrivalSnapshotReceivedAtMs = null,
+    publicArrivalSnapshotReceivedAtMs = null,
     nowMs,
     serviceWindows = null,
     isRefreshing = false,
@@ -257,6 +265,7 @@ export function getStopTimingData(
     index,
     arrivalSnapshot,
     nowMs,
+    arrivalSnapshotReceivedAtMs ?? nowMs,
     routeAvailability.liveRouteIds,
     minuteFormat,
   ).map((departure) => ({
@@ -269,7 +278,13 @@ export function getStopTimingData(
       })),
   }))
   const scheduledDepartures = shuttleUnavailable ? [] : routeAvailability.scheduledDepartures
-  const publicServices = getPublicServiceTimings(stop, publicArrivalSnapshot, nowMs, minuteFormat)
+  const publicServices = getPublicServiceTimings(
+    stop,
+    publicArrivalSnapshot,
+    nowMs,
+    publicArrivalSnapshotReceivedAtMs ?? nowMs,
+    minuteFormat,
+  )
   // The pill follows the rows on screen: it stays on through a refresh or a failing poll, and goes
   // only when the rows are too old to show (MAX_AGE), so it does not blink out before each 30s poll.
   const live = (!shuttleUnavailable && departures.length > 0) ||

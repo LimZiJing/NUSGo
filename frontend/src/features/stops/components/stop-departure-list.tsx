@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -20,13 +21,25 @@ function departureStatusAccessibleLabel(message: string): string {
     : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
 }
 
-function AccessibleTiming({ visual, spoken }: { readonly visual: string; readonly spoken: string }) {
-  if (visual === spoken) return visual
+function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
+  if (typeof visual === 'string' && visual === spoken) return visual
   return (
     <>
       <span aria-hidden="true">{visual}</span>
       <span className="visually-hidden">{spoken}</span>
     </>
+  )
+}
+
+function formatTimingVisual(timing: string): ReactNode {
+  const minutes = /^(\d+) min$/.exec(timing)
+  if (!minutes) return timing
+
+  return (
+    <span className="stop-departure-time-min">
+      <span>{minutes[1]}</span>
+      <span>min</span>
+    </span>
   )
 }
 
@@ -39,7 +52,7 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
           className="stop-departure-time"
           data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
         >
-          <AccessibleTiming visual={timing} spoken={timingAccessibleLabel(timing)} />
+          <AccessibleTiming visual={formatTimingVisual(timing)} spoken={timingAccessibleLabel(timing)} />
         </span>
       ))}
     </span>

@@ -495,6 +495,12 @@
     text-align: right;
   }
 
+  .stop-departure-time-min {
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    justify-items: end;
+  }
+
   .stop-departure-time[data-timing-state='Arr'] {
     color: var(--status-success);
   }

@@ -144,6 +144,8 @@ export function useStopsWorkflow({
     minuteFormat,
     favoriteStopIds: state.favoriteStopIds,
     arrivalSnapshot: stopArrivals.snapshot,
+    arrivalSnapshotReceivedAtMs: stopArrivals.snapshotReceivedAtMs,
+    publicArrivalSnapshotReceivedAtMs: publicStopArrivals.snapshotReceivedAtMs,
     nowMs: stopArrivals.nowMs,
     serviceWindows: stopServiceWindows.windows,
     isRefreshing: stopArrivalsUpdating,

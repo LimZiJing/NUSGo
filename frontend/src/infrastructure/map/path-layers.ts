@@ -9,6 +9,7 @@ import type { MapJourneyOption } from '../../app/contracts/map'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { TransitIndex } from '../../domain/transit'
 import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './path-duration-markers'
+import { BUS_STOP_INACTIVE_LABEL_LAYER_ID } from './shuttle-stops'
 import {
   SELECTED_ROUTE_LANE_STOPS,
   DIRECTION_IMAGE_PIXEL_RATIO,
@@ -399,8 +400,12 @@ export function createPathLayers(
         pixelRatio: DIRECTION_IMAGE_PIXEL_RATIO,
       })
     }
+    // Keep route lines beneath the bus stop labels so the lines never strike through the text.
+    const beforeId = map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)
+      ? BUS_STOP_INACTIVE_LABEL_LAYER_ID
+      : undefined
     for (const layer of createJourneyLayers(selectedCandidateKey)) {
-      map.addLayer(layer)
+      map.addLayer(layer, beforeId)
     }
     durationMarkers.setJourneyOptions(options, selectedCandidateKey)
     installed = true

@@ -13,12 +13,17 @@ export interface LtaServiceSchedule {
   readonly sunday: LtaServiceOperatingWindow | null
 }
 
+export interface LtaServiceOperation {
+  readonly operating: boolean
+  readonly nextStartMs: number | null
+}
+
 export type LtaScheduleLoader = (
   serviceNumber: string,
   busStopCode: string,
   atMs: number,
   signal: AbortSignal,
-) => Promise<boolean | null>
+) => Promise<LtaServiceOperation | null>
 
 interface RecordValue {
   readonly [key: string]: unknown
@@ -107,6 +112,29 @@ export function isLtaServiceOperating(schedule: LtaServiceSchedule, atMs: number
   return last < first && minute <= last
 }
 
+const SINGAPORE_OFFSET_MS = 8 * 3_600_000
+const DAY_MS = 86_400_000
+
+function toMinutes(time: string): number {
+  return Number(time.slice(0, 2)) * 60 + Number(time.slice(2))
+}
+
+/** Next first bus strictly after `atMs`, looking up to a week ahead. Public holidays are not modelled. */
+export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: number): number | null {
+  const localMs = atMs + SINGAPORE_OFFSET_MS
+  const today = new Date(localMs).getUTCDay()
+  const minute = Math.floor((localMs % DAY_MS) / 60_000)
+  const localMidnightMs = Math.floor(localMs / DAY_MS) * DAY_MS - SINGAPORE_OFFSET_MS
+  for (let offset = 0; offset < 7; offset += 1) {
+    const window = windowFor(schedule, (today + offset) % 7)
+    if (!window) continue
+    const first = toMinutes(window.firstBus)
+    if (offset === 0 && first <= minute) continue
+    return localMidnightMs + offset * DAY_MS + first * 60_000
+  }
+  return null
+}
+
 function scheduleKey(serviceNumber: string, busStopCode: string): string {
   return `${serviceNumber}\u0000${busStopCode}`
 }
@@ -117,7 +145,7 @@ export function createLtaScheduleLoader(options: {
   readonly baseUrl?: string
   readonly mappings: readonly LtaPublicBusStopMapping[]
 }): LtaScheduleLoader {
-  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusRoutes'
+  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/BusRoutes'
   const wanted = new Set(options.mappings.flatMap(({ busStopCode, services }) => services.map((service) => scheduleKey(service, busStopCode))))
   let schedulesPromise: Promise<ReadonlyMap<string, readonly LtaServiceSchedule[]>> | null = null
 
@@ -151,6 +179,12 @@ export function createLtaScheduleLoader(options: {
     const schedules = await schedulesPromise
     const matches = schedules.get(scheduleKey(serviceNumber, busStopCode))
     if (!matches?.length) return null
-    return matches.some((schedule) => isLtaServiceOperating(schedule, atMs))
+    const nextStarts = matches
+      .map((schedule) => getNextLtaServiceStart(schedule, atMs))
+      .filter((start): start is number => start !== null)
+    return {
+      operating: matches.some((schedule) => isLtaServiceOperating(schedule, atMs)),
+      nextStartMs: nextStarts.length > 0 ? Math.min(...nextStarts) : null,
+    }
   }
 }

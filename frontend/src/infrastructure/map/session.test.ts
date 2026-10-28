@@ -1704,7 +1704,8 @@ describe('MapSession', () => {
     session.setPersonalWaypoints([waypoint], true, onSelect)
     const marker = map.addedMarkers.at(-1)!
     expect(marker.coordinate).toEqual([103.78, 1.29])
-    expect(marker.element.attributes.get('aria-label')).toBe('Open Quiet bench, Rest spot details')
+    expect(marker.element.attributes.get('aria-label'))
+      .toBe('Open Quiet bench, Rest spot details. General icon, Blue marker.')
 
     session.setPersonalWaypoints([], true, onSelect)
     expect(marker.remove).toHaveBeenCalledOnce()

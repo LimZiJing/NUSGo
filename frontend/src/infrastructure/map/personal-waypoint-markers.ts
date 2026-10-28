@@ -1,11 +1,27 @@
 import { Marker, type Map } from 'maplibre-gl'
+import { createElement, type ReactNode } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { isValidLocationCoordinates } from '../../domain/location/coordinates'
-import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import {
+  PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS,
+  PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS,
+  type PersonalWaypoint,
+  type PersonalWaypointMarkerIcon,
+} from '../../domain/waypoints/personal/personal-waypoint'
+import {
+  ArmchairIcon,
+  CircleDotIcon,
+  CoffeeIcon,
+  FavoriteIcon,
+  TreePineIcon,
+  type IconProps,
+} from '../../ui/icons'
 import './personal-waypoint-markers.css'
 
 interface PersonalWaypointMarkerRecord {
   readonly marker: Marker
   readonly element: HTMLButtonElement
+  readonly icon: HTMLSpanElement
   readonly handleClick: (event: MouseEvent) => void
   attached: boolean
 }
@@ -19,16 +35,50 @@ export interface PersonalWaypointMarkers {
   dispose(): void
 }
 
-function createMarkerElement(waypoint: PersonalWaypoint): HTMLButtonElement {
+const markerIconProps: IconProps = { className: 'personal-waypoint-marker-glyph', size: 13 }
+const markerIconElements: Record<PersonalWaypointMarkerIcon, () => ReactNode> = {
+  dot: () => createElement(CircleDotIcon, markerIconProps),
+  rest: () => createElement(ArmchairIcon, markerIconProps),
+  food: () => createElement(CoffeeIcon, markerIconProps),
+  nature: () => createElement(TreePineIcon, markerIconProps),
+  favorite: () => createElement(FavoriteIcon, { ...markerIconProps, filled: false }),
+}
+
+function getMarkerIconLabel(waypoint: PersonalWaypoint): string {
+  return PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.find(({ value }) => value === waypoint.markerIcon)?.label ?? 'General'
+}
+
+function getMarkerColorLabel(waypoint: PersonalWaypoint): string {
+  return PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.find(({ value }) => value === waypoint.markerColor)?.label ?? 'Blue'
+}
+
+function updateMarkerElement(
+  element: HTMLButtonElement,
+  icon: HTMLSpanElement,
+  waypoint: PersonalWaypoint,
+): void {
+  element.dataset.markerColor = waypoint.markerColor
+  element.dataset.markerIcon = waypoint.markerIcon
+  element.setAttribute(
+    'aria-label',
+    `Open ${waypoint.name}, ${waypoint.category} details. ${getMarkerIconLabel(waypoint)} icon, ${getMarkerColorLabel(waypoint)} marker.`,
+  )
+  icon.innerHTML = renderToStaticMarkup(markerIconElements[waypoint.markerIcon]())
+}
+
+function createMarkerElement(waypoint: PersonalWaypoint): { readonly element: HTMLButtonElement; readonly icon: HTMLSpanElement } {
   const element = document.createElement('button')
   element.type = 'button'
   element.className = 'personal-waypoint-marker'
-  element.setAttribute('aria-label', `Open ${waypoint.name}, ${waypoint.category} details`)
+  const pin = document.createElement('span')
+  pin.className = 'personal-waypoint-marker-pin'
   const icon = document.createElement('span')
   icon.className = 'personal-waypoint-marker-icon'
   icon.setAttribute('aria-hidden', 'true')
-  element.append(icon)
-  return element
+  pin.append(icon)
+  element.append(pin)
+  updateMarkerElement(element, icon, waypoint)
+  return { element, icon }
 }
 
 export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers {
@@ -64,7 +114,7 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
       for (const waypoint of validWaypoints) {
         let record = markerRecords.get(waypoint.id)
         if (!record) {
-          const element = createMarkerElement(waypoint)
+          const { element, icon } = createMarkerElement(waypoint)
           const handleClick = (event: MouseEvent): void => {
             event.stopPropagation()
             if (!visible || disposed) return
@@ -73,10 +123,10 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
           element.addEventListener('click', handleClick)
           const marker = new Marker({ anchor: 'bottom', element })
             .setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
-          record = { marker, element, handleClick, attached: false }
+          record = { marker, element, icon, handleClick, attached: false }
           markerRecords.set(waypoint.id, record)
         } else {
-          record.element.setAttribute('aria-label', `Open ${waypoint.name}, ${waypoint.category} details`)
+          updateMarkerElement(record.element, record.icon, waypoint)
           record.marker.setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
         }
 

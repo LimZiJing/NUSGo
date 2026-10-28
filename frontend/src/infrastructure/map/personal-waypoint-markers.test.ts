@@ -72,7 +72,12 @@ describe('createPersonalWaypointMarkers', () => {
     const button = document.querySelector<HTMLButtonElement>('.personal-waypoint-marker')
 
     expect(button?.type).toBe('button')
-    expect(button?.getAttribute('aria-label')).toBe('Open Quiet bench, Rest spot details')
+    expect(button?.getAttribute('aria-label')).toBe(
+      'Open Quiet bench, Rest spot details. General icon, Blue marker.',
+    )
+    expect(button?.dataset.markerColor).toBe('blue')
+    expect(button?.dataset.markerIcon).toBe('dot')
+    expect(button?.querySelector('svg')).not.toBeNull()
     expect(markerState.instances[0]?.coordinates).toEqual([103.78, 1.29])
 
     expect(button).not.toBeNull()
@@ -93,6 +98,8 @@ describe('createPersonalWaypointMarkers', () => {
       ...waypoint,
       name: 'Shaded bench',
       coordinate: { longitude: 103.79, latitude: 1.30 },
+      markerColor: 'purple' as const,
+      markerIcon: 'rest' as const,
     }
 
     markers.setWaypoints([waypoint], true, () => undefined)
@@ -101,7 +108,9 @@ describe('createPersonalWaypointMarkers', () => {
     expect(markerState.instances).toHaveLength(1)
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('aria-label'))
-      .toBe('Open Shaded bench, Rest spot details')
+      .toBe('Open Shaded bench, Rest spot details. Rest icon, Purple marker.')
+    expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-color')).toBe('purple')
+    expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-icon')).toBe('rest')
 
     markers.setWaypoints([], true, () => undefined)
     expect(document.querySelector('.personal-waypoint-marker')).toBeNull()

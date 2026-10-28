@@ -44,6 +44,8 @@ function Probe({
     <>
       <output data-testid="status">{state.status}</output>
       <output data-testid="snapshot">{state.snapshot?.observedAt ?? 'none'}</output>
+      <output data-testid="received-at">{state.snapshotReceivedAtMs ?? 'none'}</output>
+      <output data-testid="now">{state.nowMs}</output>
     </>
   )
 }
@@ -63,6 +65,30 @@ describe('useStopsArrivals', () => {
     })
 
     expect(client).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not tick between polls and re-stamps the snapshot when a poll lands', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-30T00:00:00.000Z'))
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    const startMs = Date.parse('2026-09-30T00:00:00.000Z')
+    expect(screen.getByTestId('received-at').textContent).toBe(String(startMs))
+    expect(screen.getByTestId('now').textContent).toBe(String(startMs))
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29_000)
+    })
+    expect(screen.getByTestId('received-at').textContent).toBe(String(startMs))
+    expect(screen.getByTestId('now').textContent).toBe(String(startMs))
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    expect(screen.getByTestId('received-at').textContent).toBe(String(startMs + 30_000))
+    expect(screen.getByTestId('now').textContent).toBe(String(startMs + 30_000))
   })
 
   it('refreshes immediately when the page returns to the foreground', async () => {

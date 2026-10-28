@@ -1,0 +1,63 @@
+{
+  "data": {
+    "TimeStamp": "2026-10-27T10:08:13+08:00",
+    "ActiveBusCount": "4",
+    "activebus": [
+      {
+        "vehplate": "PD1022U",
+        "lat": 1.293902,
+        "lng": 103.769448,
+        "speed": 0,
+        "direction": 278.9,
+        "loadInfo": {
+          "occupancy": 0.023,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 2
+        }
+      },
+      {
+        "vehplate": "PD554H",
+        "lat": 1.29253,
+        "lng": 103.775152,
+        "speed": 5,
+        "direction": 168.3,
+        "loadInfo": {
+          "occupancy": 0.227,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 20
+        }
+      },
+      {
+        "vehplate": "PD696G",
+        "lat": 1.298541,
+        "lng": 103.774048,
+        "speed": 18,
+        "direction": 237.4,
+        "loadInfo": {
+          "occupancy": 0.42,
+          "crowdLevel": "medium",
+          "capacity": 88,
+          "ridership": 37
+        }
+      },
+      {
+        "vehplate": "PD576U",
+        "lat": 1.296266,
+        "lng": 103.770888,
+        "speed": 28,
+        "direction": 271.1,
+        "loadInfo": {
+          "occupancy": 0,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 0
+        }
+      }
+    ]
+  },
+  "code": "00000",
+  "msg": "",
+  "ts": "20261027100829"
+}

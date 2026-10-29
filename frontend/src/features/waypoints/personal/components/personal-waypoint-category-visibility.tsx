@@ -73,28 +73,29 @@ export function PersonalWaypointCategoryVisibility({
   }
 
   return <section className="personal-waypoint-visibility" aria-label="Map categories">
-    <button
-      className="personal-waypoint-visibility-trigger"
-      ref={triggerRef}
-      type="button"
-      aria-expanded={pickerOpen}
-      aria-controls="personal-waypoint-category-picker"
-      onClick={onTogglePicker}
-    >
-      <span className="personal-waypoint-visibility-summary">
-        <span className="personal-waypoint-visibility-label">Categories</span>
-        <span className="personal-waypoint-visibility-selection" aria-live="polite">
-          {selectedCategories.length} selected <span aria-hidden="true">·</span> {selectedSummary}
-          {hasPendingChanges && <span className="personal-waypoint-visibility-pending"> · Changes pending</span>}
+    <h2 className="personal-waypoint-visibility-heading">
+      <button
+        id="personal-waypoint-visibility-heading"
+        className="personal-waypoint-visibility-trigger"
+        ref={triggerRef}
+        type="button"
+        aria-expanded={pickerOpen}
+        aria-controls="personal-waypoint-category-picker"
+        onClick={onTogglePicker}
+      >
+        <span className="personal-waypoint-visibility-summary">
+          <span className="personal-waypoint-visibility-label">Categories</span>
+          <span className="personal-waypoint-visibility-selection" aria-live="polite">
+            {pickerOpen
+              ? <>Selected <strong>{selectedCategories.length}</strong></>
+              : <>{selectedCategories.length} selected <span aria-hidden="true">·</span> {selectedSummary}</>}
+            {hasPendingChanges && <span className="personal-waypoint-visibility-pending"> · Changes pending</span>}
+          </span>
         </span>
-      </span>
-      <ChevronDownIcon aria-hidden="true" />
-    </button>
+        <ChevronDownIcon aria-hidden="true" />
+      </button>
+    </h2>
     <div className="personal-waypoint-category-picker" id="personal-waypoint-category-picker" hidden={!pickerOpen}>
-      <div className="personal-waypoint-visibility-heading">
-        <h2 id="personal-waypoint-visibility-heading">Categories</h2>
-        <span>Selected <strong>{selectedCategories.length}</strong></span>
-      </div>
       <div className="personal-waypoint-category-search">
         <SearchField
           aria-label="Search categories"

@@ -53,12 +53,15 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Personal Waypoints (#207)
 
-- [ ] From More → My waypoints, add a waypoint and confirm its compact row and persistent map marker appear. Open details from both the row and marker; verify the same name, category, note, and location are shown.
-- [ ] Back from list-opened details returns to My waypoints. Back from marker-opened details restores the previous More page and sheet position without changing the map camera, selected stop, or selected route.
-- [ ] Edit the waypoint fields and location. Delete it and confirm only that Personal Waypoint and its marker are removed. Clear all waypoints and verify the confirmation is required and Community Waypoints remain unchanged.
+- [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each main-list row has one Edit action and opens the edit form directly.
+- [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.
+- [ ] Change visibility, open a category, then return to Categories. Confirm the draft remains checked/unchecked as staged, Cancel discards it, and Done applies it. Clear selections and verify no category markers remain after Done.
+- [ ] Back from category details returns to that category; Back to categories returns to the picker. Back from marker-opened details restores the previous More page and sheet position without changing the map camera, selected stop, or selected route.
+- [ ] In a category, search, edit a place from details, reorder, and remove it. Change its category and verify the derived category groups and counts update. Delete it and confirm only that Personal Waypoint and its marker are removed. Clear all waypoints and verify confirmation is required and Community Waypoints remain unchanged.
+- [ ] Add enough categories and places to verify the picker list and places list scroll independently. Repeat at 390 × 844 and check keyboard focus, scrolling, and touch-sized controls.
 - [ ] In two tabs, keep a draft open in the first tab, save a change in the second tab, then save the first draft. Confirm the latest saved values are shown, the draft is preserved, and a separate Replace saved version action is required before overwriting. Repeat if the latest value changes again before replacement.
 - [ ] With malformed/unsupported storage and with rejected records, verify there is no write before the user confirms reset or explicitly keeps readable records and discards rejected ones.
-- [ ] Repeat the list, details, edit, and conflict review at 390 × 844. Check keyboard focus, scrolling, and touch-sized controls.
+- [ ] Repeat the edit conflict review at 390 × 844. Check keyboard focus, scrolling, and touch-sized controls.
 
 ## Keyboard and accessibility
 

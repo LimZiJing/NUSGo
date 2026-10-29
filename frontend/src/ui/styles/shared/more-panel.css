@@ -96,6 +96,10 @@
 
 .more-panel-toast > div { display: flex; align-items: center; }
 
+.more-panel-body:has(.more-panel-toast) .more-panel-content-scroll {
+  margin-bottom: 64px;
+}
+
 .more-panel-header {
   display: flex;
   box-sizing: border-box;

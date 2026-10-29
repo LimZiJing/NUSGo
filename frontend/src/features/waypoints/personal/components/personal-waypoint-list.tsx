@@ -10,35 +10,36 @@ import {
   MapPinIcon,
 } from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
-import { Select } from '../../../../ui/select'
 import {
   filterPersonalWaypoints,
-  getPersonalWaypointCategories,
 } from '../data/filter-personal-waypoints'
 
 interface PersonalWaypointListProps {
   readonly waypoints: readonly PersonalWaypoint[]
+  readonly category?: string
   readonly canEdit: boolean
   readonly editing: boolean
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, neighborId: string) => void
   readonly onClearAll: () => void
   readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
+  readonly onEdit?: (waypointId: string) => void
   readonly onEditAnnouncement?: (message: string) => void
 }
 
 export function PersonalWaypointList({
   waypoints,
+  category,
   canEdit,
   editing,
   onRemove,
   onMove,
   onClearAll,
   onSelect,
+  onEdit,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
   const previousEditing = useRef(editing)
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
   const actionRowsRef = useRef(new Map<string, HTMLDivElement>())
@@ -46,14 +47,18 @@ export function PersonalWaypointList({
     readonly waypointId: string
     readonly action: 'move-up' | 'move-down' | 'remove'
   } | null>(null)
-  const categories = useMemo(() => getPersonalWaypointCategories(waypoints), [waypoints])
-  const activeCategory = categories.includes(selectedCategory) ? selectedCategory : ''
-  const hasActiveFilter = searchQuery.trim().length > 0 || activeCategory !== ''
+  const categoryView = category !== undefined
+  const activeCategory = categoryView ? category : ''
+  const hasSearchFilter = searchQuery.trim().length > 0
+  const hasActiveFilter = hasSearchFilter
   const visibleWaypoints = useMemo(() => filterPersonalWaypoints(
     waypoints,
     searchQuery,
     activeCategory || null,
   ), [activeCategory, searchQuery, waypoints])
+  const categoryWaypointCount = categoryView
+    ? waypoints.filter((waypoint) => waypoint.category === category).length
+    : waypoints.length
   const editMode = canEdit && editing && waypoints.length > 0
 
   useEffect(() => {
@@ -104,16 +109,11 @@ export function PersonalWaypointList({
     onMove(waypoint.id, neighbor.id)
   }
 
-  const categoryOptions = [
-    { value: '', label: 'All categories' },
-    ...categories.map((category) => ({ value: category, label: category })),
-  ]
-
   return <section className="personal-waypoint-list" aria-labelledby="personal-waypoint-list-heading">
     <div className="personal-waypoint-list-search">
       <SearchField
-        aria-label="Search saved places"
-        placeholder="Search saved places"
+        aria-label={categoryView ? `Search ${category} places` : 'Search saved places'}
+        placeholder={categoryView ? `Search ${category} places` : 'Search saved places'}
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
       />
@@ -122,23 +122,15 @@ export function PersonalWaypointList({
       <SavedListHeader
         headingId="personal-waypoint-list-heading"
         headingRef={listHeadingRef}
-        title="Saved places"
-        count={waypoints.length}
-        trailing={(
-          <Select
-            className="personal-waypoint-category-filter"
-            label="Category"
-            hideLabel
-            value={activeCategory}
-            options={categoryOptions}
-            onChange={setSelectedCategory}
-          />
-        )}
+        title={categoryView ? category : 'All places'}
+        count={categoryWaypointCount}
       />
 
       {editMode && hasActiveFilter && (
         <p className="personal-waypoint-list-filter-note">
-          Clear search and category filters to reorder or clear all saved places.
+          {categoryView
+            ? 'Clear search to reorder places in this category.'
+            : 'Clear search to reorder or clear all saved places.'}
         </p>
       )}
 
@@ -147,7 +139,7 @@ export function PersonalWaypointList({
           className="personal-waypoint-list-rows"
           data-editing={editMode ? 'true' : 'false'}
           tabIndex={0}
-          aria-label="Saved Personal Waypoints"
+          aria-label={categoryView ? `Saved Personal Waypoints in ${category}` : 'Saved Personal Waypoints'}
         >
           {visibleWaypoints.map((waypoint, index) => {
             const label = `${waypoint.name}, ${waypoint.category}`
@@ -198,6 +190,15 @@ export function PersonalWaypointList({
                       }}
                     />
                   </div>
+                ) : onEdit ? (
+                  <div className="personal-waypoint-row-actions">
+                    <Button
+                      label="Edit"
+                      ariaLabel={`Edit ${label}`}
+                      variant="ghost"
+                      onClick={() => onEdit(waypoint.id)}
+                    />
+                  </div>
                 ) : undefined}
               />
             )
@@ -205,18 +206,15 @@ export function PersonalWaypointList({
         </ul>
       ) : (
         <div className="personal-waypoint-list-empty">
-          <p>No waypoints match these filters.</p>
+          <p>No waypoints match this search.</p>
           <Button
-            label="Clear filters"
-            onClick={() => {
-              setSearchQuery('')
-              setSelectedCategory('')
-            }}
+            label="Clear search"
+            onClick={() => setSearchQuery('')}
           />
         </div>
       )}
     </div>
-    {editMode && (
+    {editMode && !categoryView && (
       <div className="personal-waypoint-list-edit-actions">
         <Button label="Clear all" onClick={clearAll} disabled={hasActiveFilter} />
       </div>

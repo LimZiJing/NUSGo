@@ -570,7 +570,98 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('opens waypoint details from the list, edits the record, and deletes only that waypoint', async () => {
+  it('edits an All places entry directly without adding a separate details action', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      note: 'Near the garden',
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    expect(screen.queryByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
+
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'Shaded bench')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.getByRole('heading', { name: 'All places 1' })).toBeTruthy()
+    expect(screen.getByText('Shaded bench')).toBeTruthy()
+  })
+
+  it('opens category places, preserves visibility drafts, and returns from details to the category', async () => {
+    const quietBench = {
+      id: '00000000-0000-4000-8000-000000000011',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      note: 'Near the garden',
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const cafe = {
+      ...quietBench,
+      id: '00000000-0000-4000-8000-000000000012',
+      name: 'Campus cafe',
+      category: 'Food & drink',
+    }
+    const categoryVisibilityKey = 'navus:personal-waypoint-category-visibility:v1'
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [quietBench, cafe],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const panel = document.querySelector('.more-panel-surface')
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
+    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink markers' }))
+    expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
+
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+    expect(screen.getByText('Quiet bench')).toBeTruthy()
+    expect(screen.queryByText('Campus cafe')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+    expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to categories' }))
+    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked)
+      .toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
+    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked)
+      .toBe(true)
+  })
+
+  it('opens category waypoint details, edits the record, and deletes only that waypoint', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000001',
       name: 'Quiet bench',
@@ -586,6 +677,8 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
+    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
     await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
 
     const panel = document.querySelector('.more-panel-surface')
@@ -629,6 +722,8 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
+    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
     await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
     await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
     await user.clear(screen.getByLabelText('Name'))

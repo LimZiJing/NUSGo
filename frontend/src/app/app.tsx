@@ -102,9 +102,12 @@ function App() {
   const moreEntryButtonRef = useRef<HTMLButtonElement>(null)
   const moreInitialFocusRef = useRef<HTMLButtonElement>(null)
   const personalWaypointsInitialFocusRef = useRef<HTMLButtonElement>(null)
+  const personalWaypointCategoryBackRef = useRef<HTMLButtonElement>(null)
+  const personalWaypointCategoryPickerRef = useRef<HTMLButtonElement>(null)
   const personalWaypointNameRef = useRef<HTMLInputElement>(null)
   const moreWasOpenRef = useRef(false)
   const skipMoreFocusRestoreRef = useRef(false)
+  const focusCategoryPickerAfterBackRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -112,8 +115,10 @@ function App() {
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
+  const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
   const [selectedPersonalWaypointId, setSelectedPersonalWaypointId] = useState<string | null>(null)
+  const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const waypointDetailsReturnTargetRef = useRef<PersonalWaypointPanelReturnTarget | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
@@ -122,6 +127,7 @@ function App() {
   const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
     personalWaypointCategoryVisibilityStore,
   )
+  const { openPicker: openCategoryPicker } = personalWaypointCategoryVisibility
   const updatePersonalWaypointDraft = personalWaypoints.updateDraft
   const cancelPersonalWaypointEdit = personalWaypoints.cancelEdit
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
@@ -233,6 +239,16 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('waypoint-details')
   }, [])
+  const openPersonalWaypointCategory = useCallback((category: string): void => {
+    focusCategoryPickerAfterBackRef.current = false
+    setSelectedPersonalWaypointCategory(category)
+    openCategoryPicker()
+  }, [openCategoryPicker])
+  const backToPersonalWaypointCategories = useCallback((): void => {
+    focusCategoryPickerAfterBackRef.current = true
+    setSelectedPersonalWaypointCategory(null)
+    openCategoryPicker()
+  }, [openCategoryPicker])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
     if (morePage === 'editing-waypoint' || morePage === 'placing') return
     if (morePage === 'waypoint-details') {
@@ -251,6 +267,10 @@ function App() {
     () => getPersonalWaypointCategoryOptions(personalWaypointsForMap),
     [personalWaypointsForMap],
   )
+  const activePersonalWaypointCategory = selectedPersonalWaypointCategory !== null &&
+    personalWaypointCategoryOptions.some(({ category }) => category === selectedPersonalWaypointCategory)
+    ? selectedPersonalWaypointCategory
+    : null
   const visiblePersonalWaypointsForMap = useMemo(
     () => filterPersonalWaypointsByCategoryVisibility(
       personalWaypointsForMap,
@@ -619,6 +639,8 @@ function App() {
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
     setIsEditingPersonalWaypoints(false)
+    focusCategoryPickerAfterBackRef.current = false
+    setSelectedPersonalWaypointCategory(null)
     setMoreSheetDetent('full')
     setMorePage('waypoints')
   }
@@ -659,7 +681,7 @@ function App() {
     if (!selectedPersonalWaypointId) return
     const returnTarget = waypointDetailsReturnTargetRef.current
     if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
-    const focusTarget = returnTarget?.page === 'waypoints'
+    const focusTarget = returnTarget?.page === 'waypoints' && activePersonalWaypointCategory === null
       ? personalWaypointsInitialFocusRef.current
       : returnTarget?.page === 'closed'
         ? moreEntryButtonRef.current
@@ -679,9 +701,13 @@ function App() {
       returnFromWaypointDetails()
       return
     }
+    if (morePage === 'waypoints' && activePersonalWaypointCategory !== null) {
+      backToPersonalWaypointCategories()
+      return
+    }
     if (morePage === 'editing-waypoint') {
       cancelPersonalWaypointEdit()
-      setMorePage('waypoint-details')
+      setMorePage(personalWaypointEditReturnPage)
       setMoreSheetDetent('full')
       return
     }
@@ -699,7 +725,15 @@ function App() {
     setMorePage('menu')
     setMoreSheetDetent('partial')
     setIsEditingPersonalWaypoints(false)
-  }, [cancelPersonalWaypointEdit, morePage, placementReturnPage, returnFromWaypointDetails])
+  }, [
+    backToPersonalWaypointCategories,
+    cancelPersonalWaypointEdit,
+    morePage,
+    personalWaypointEditReturnPage,
+    placementReturnPage,
+    returnFromWaypointDetails,
+    activePersonalWaypointCategory,
+  ])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
     if (morePage === 'waypoint-details') {
@@ -725,6 +759,23 @@ function App() {
   const canEditPersonalWaypoints = personalWaypoints.readResult.kind === 'ready' &&
     personalWaypoints.readResult.rejectedRecords.count === 0 &&
     personalWaypoints.readResult.waypoints.length > 0
+  const beginPersonalWaypointEdit = (
+    waypoint: PersonalWaypoint,
+    returnPage: 'waypoints' | 'waypoint-details',
+  ): void => {
+    if (!personalWaypoints.startEdit(waypoint)) return
+    setPersonalWaypointEditReturnPage(returnPage)
+    setMorePage('editing-waypoint')
+    setMoreSheetDetent('full')
+  }
+  const editPersonalWaypointFromList = (waypointId: string): void => {
+    if (personalWaypoints.readResult.kind !== 'ready') return
+    const waypoint = personalWaypoints.readResult.waypoints.find(({ id }) => id === waypointId)
+    if (waypoint) {
+      setSelectedPersonalWaypointCategory(null)
+      beginPersonalWaypointEdit(waypoint, 'waypoints')
+    }
+  }
   const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
     ? <Button
       className="more-panel-header-action"
@@ -740,7 +791,9 @@ function App() {
     if (pendingReturnFocus) {
       pendingWaypointReturnFocusRef.current = null
       if (pendingReturnFocus.isConnected) pendingReturnFocus.focus()
-      else if (isMoreOpen && morePage === 'waypoints') personalWaypointsInitialFocusRef.current?.focus()
+      else if (isMoreOpen && morePage === 'waypoints' && activePersonalWaypointCategory !== null) {
+        personalWaypointCategoryBackRef.current?.focus()
+      } else if (isMoreOpen && morePage === 'waypoints') personalWaypointsInitialFocusRef.current?.focus()
       else if (isMoreOpen) moreInitialFocusRef.current?.focus()
       else moreEntryButtonRef.current?.focus()
       moreWasOpenRef.current = isMoreOpen
@@ -750,9 +803,16 @@ function App() {
 
     if (isMoreOpen) {
       if (morePage === 'waypoints') {
-        const addButton = personalWaypointsInitialFocusRef.current
-        if (addButton && !addButton.disabled) addButton.focus()
-        else moreInitialFocusRef.current?.focus()
+        if (focusCategoryPickerAfterBackRef.current) {
+          focusCategoryPickerAfterBackRef.current = false
+          personalWaypointCategoryPickerRef.current?.focus()
+        } else if (activePersonalWaypointCategory !== null) {
+          personalWaypointCategoryBackRef.current?.focus()
+        } else {
+          const addButton = personalWaypointsInitialFocusRef.current
+          if (addButton && !addButton.disabled) addButton.focus()
+          else moreInitialFocusRef.current?.focus()
+        }
       } else if (morePage === 'creating' || morePage === 'editing-waypoint') {
         if (isMobileViewport) moreInitialFocusRef.current?.focus()
         else personalWaypointNameRef.current?.focus()
@@ -762,7 +822,7 @@ function App() {
     }
     moreWasOpenRef.current = isMoreOpen
     skipMoreFocusRestoreRef.current = false
-  }, [isMobileViewport, isMoreOpen, morePage])
+  }, [activePersonalWaypointCategory, isMobileViewport, isMoreOpen, morePage])
 
   useEffect(() => {
     if (morePage === 'closed') return
@@ -867,7 +927,8 @@ function App() {
             page: morePage,
             detent: moreSheetDetent,
             headerAction: personalWaypointHeaderAction,
-            title: morePage === 'waypoints' ? 'My waypoints'
+            title: morePage === 'waypoints'
+              ? activePersonalWaypointCategory ?? 'My waypoints'
               : morePage === 'waypoint-details' ? 'Waypoint details'
                 : morePage === 'creating' ? 'Add waypoint'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
@@ -887,6 +948,7 @@ function App() {
               onAdd={beginWaypointPlacement}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}
+              onEditWaypoint={editPersonalWaypointFromList}
               onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
               onClearAll={clearPersonalWaypoints}
@@ -894,19 +956,26 @@ function App() {
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}
               hiddenCategories={personalWaypointCategoryVisibility.hiddenCategories}
+              draftHiddenCategories={personalWaypointCategoryVisibility.draftHiddenCategories}
+              categoryPickerOpen={personalWaypointCategoryVisibility.pickerOpen}
+              selectedCategory={activePersonalWaypointCategory}
               categoryVisibilityStatus={personalWaypointCategoryVisibility.status}
               onSetCategoryVisible={personalWaypointCategoryVisibility.setCategoryVisible}
-              onShowAllCategories={personalWaypointCategoryVisibility.showAllCategories}
+              onOpenCategory={openPersonalWaypointCategory}
+              onBackToCategories={backToPersonalWaypointCategories}
+              onToggleCategoryPicker={personalWaypointCategoryVisibility.togglePicker}
+              onClearCategoryVisibilityChanges={personalWaypointCategoryVisibility.clearCategoryVisibilityChanges}
+              onCancelCategoryVisibilityChanges={personalWaypointCategoryVisibility.cancelCategoryVisibilityChanges}
+              onDoneCategoryVisibilityChanges={personalWaypointCategoryVisibility.saveCategoryVisibilityChanges}
+              categoryBackButtonRef={personalWaypointCategoryBackRef}
+              categoryPickerTriggerRef={personalWaypointCategoryPickerRef}
               initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
               waypoint={selectedPersonalWaypoint}
               canManage={canManageSelectedPersonalWaypoint}
               onEdit={() => {
                 if (!selectedPersonalWaypoint || !canManageSelectedPersonalWaypoint) return
-                if (personalWaypoints.startEdit(selectedPersonalWaypoint)) {
-                  setMorePage('editing-waypoint')
-                  setMoreSheetDetent('full')
-                }
+                beginPersonalWaypointEdit(selectedPersonalWaypoint, 'waypoint-details')
               }}
               onDelete={deleteSelectedPersonalWaypoint}
             /> : morePage === 'creating' || morePage === 'editing-waypoint' ? <PersonalWaypointForm
@@ -922,7 +991,7 @@ function App() {
               onCancel={() => {
                 if (morePage === 'editing-waypoint') {
                   cancelPersonalWaypointEdit()
-                  setMorePage('waypoint-details')
+                  setMorePage(personalWaypointEditReturnPage)
                 } else {
                   setIsEditingPersonalWaypoints(false)
                   setMorePage('waypoints')
@@ -930,7 +999,7 @@ function App() {
               }}
               onSave={() => {
                 if (personalWaypoints.save()) {
-                  if (morePage === 'editing-waypoint') setMorePage('waypoint-details')
+                  if (morePage === 'editing-waypoint') setMorePage(personalWaypointEditReturnPage)
                   else {
                     setIsEditingPersonalWaypoints(false)
                     setMorePage('waypoints')

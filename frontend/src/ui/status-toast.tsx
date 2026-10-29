@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Toast } from '@base-ui/react/toast'
-
-export const statusToastManager = Toast.createToastManager()
+import { statusToastManager } from './status-toast-manager'
 
 export function StatusToastProvider({ children }: { readonly children: ReactNode }) {
   return <Toast.Provider toastManager={statusToastManager} timeout={7000} limit={1}>

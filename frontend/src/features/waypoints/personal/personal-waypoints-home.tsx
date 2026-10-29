@@ -4,7 +4,7 @@ import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/p
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
-import { statusToastManager } from '../../../ui/status-toast'
+import { statusToastManager } from '../../../ui/status-toast-manager'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 

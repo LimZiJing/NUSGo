@@ -945,6 +945,8 @@ function App() {
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.status}
+              statusKind={personalWaypoints.statusKind}
+              statusRevision={personalWaypoints.statusRevision}
               onAdd={beginWaypointPlacement}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}

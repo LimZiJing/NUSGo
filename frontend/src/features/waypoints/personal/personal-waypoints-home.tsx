@@ -1,15 +1,18 @@
 import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/personal/personal-waypoint-category-visibility'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
+import { statusToastManager } from '../../../ui/status-toast'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
 export function PersonalWaypointsHome({
   readResult,
   status,
+  statusKind = 'problem',
+  statusRevision = 0,
   onAdd,
   editing,
   onSelectWaypoint,
@@ -38,6 +41,8 @@ export function PersonalWaypointsHome({
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
+  readonly statusKind?: 'success' | 'problem' | null
+  readonly statusRevision?: number
   readonly onAdd: () => void
   readonly editing: boolean
   readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
@@ -74,14 +79,23 @@ export function PersonalWaypointsHome({
   const activeCategory = selectedCategory && categoryOptions.some(({ category }) => category === selectedCategory)
     ? selectedCategory
     : null
+  const atWaypointLimit = !activeCategory && ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
   const previousWaypointCount = useRef(waypointCount)
-  const combinedStatus = [
-    status,
-    categoryVisibilityStatus,
-    ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
-      ? `The limit of ${PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.`
-      : null,
-  ].filter((message): message is string => message !== null && message !== '').join(' ')
+  const inlineStatus = statusKind === 'problem' ? status : null
+
+  useEffect(() => {
+    if (statusKind !== 'success' || !status) {
+      statusToastManager.close('personal-waypoint-status')
+      return
+    }
+
+    statusToastManager.add({
+      id: 'personal-waypoint-status',
+      description: status,
+      priority: 'low',
+      timeout: 7000,
+    })
+  }, [status, statusKind, statusRevision])
 
   useLayoutEffect(() => {
     if (previousWaypointCount.current !== null && previousWaypointCount.current > 0 && waypointCount === 0) {
@@ -93,7 +107,10 @@ export function PersonalWaypointsHome({
 
   return <div className="personal-waypoints-home">
     {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
-    {combinedStatus && <p role="status">{combinedStatus}</p>}
+    {inlineStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{inlineStatus}</p>}
+    {atWaypointLimit && <p className="personal-waypoints-limit">
+      The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.
+    </p>}
     {editAnnouncement && <p className="visually-hidden" aria-live="polite">{editAnnouncement}</p>}
     {readResult.kind === 'unavailable' && <p role="alert">Browser storage is unavailable. Waypoints cannot be saved here.</p>}
     {readResult.kind === 'recovery-required' && <>
@@ -148,6 +165,9 @@ export function PersonalWaypointsHome({
           onCancel={onCancelCategoryVisibilityChanges}
           onDone={onDoneCategoryVisibilityChanges}
         />}
+        {!activeCategory && categoryVisibilityStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">
+          {categoryVisibilityStatus}
+        </p>}
         <PersonalWaypointList
           waypoints={readResult.waypoints}
           category={activeCategory ?? undefined}

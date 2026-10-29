@@ -6,6 +6,18 @@
 .personal-waypoint-placement > p { margin: 0; line-height: 1.45; }
 .personal-waypoint-empty { color: var(--text-secondary); }
 
+.personal-waypoints-status {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.personal-waypoints-status-problem { color: var(--status-error); }
+
+.personal-waypoints-limit {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .personal-waypoints-home > .button[data-variant='primary'] {
   width: 100%;
   min-height: 40px;
@@ -496,7 +508,10 @@
   height: 18px;
   flex: 0 0 18px;
   color: var(--text-secondary);
+  transition: transform var(--motion-duration-standard) var(--motion-ease-standard);
 }
+
+.personal-waypoint-visibility-trigger[aria-expanded='true'] > svg { transform: rotate(180deg); }
 
 .personal-waypoint-visibility-summary {
   display: grid;
@@ -518,11 +533,7 @@
 
 .personal-waypoint-category-picker { border-top: 1px solid var(--border-subtle); }
 
-.personal-waypoint-visibility-heading {
-  padding: 10px 12px 8px;
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-}
+.personal-waypoint-visibility-heading { margin: 0; }
 
 .personal-waypoint-visibility-heading strong { color: var(--accent); font-weight: 650; }
 

@@ -51,7 +51,6 @@ function StatefulPersonalWaypointsHome() {
       hiddenCategories={[]}
       categoryVisibilityStatus={null}
       onSetCategoryVisible={() => undefined}
-      onShowAllCategories={() => undefined}
     />
   )
 }
@@ -74,7 +73,6 @@ describe('PersonalWaypointsHome', () => {
       hiddenCategories: [],
       categoryVisibilityStatus: null,
       onSetCategoryVisible: () => undefined,
-      onShowAllCategories: () => undefined,
     }
     const view = render(<PersonalWaypointsHome {...props} editing={false} />)
 
@@ -89,10 +87,10 @@ describe('PersonalWaypointsHome', () => {
     })
   })
 
-  it('toggles map categories without removing saved waypoints and can restore all', async () => {
+  it('keeps saved places while opening category visibility controls', async () => {
     const user = userEvent.setup()
     const onSetCategoryVisible = vi.fn()
-    const onShowAllCategories = vi.fn()
+    const onClearCategoryVisibilityChanges = vi.fn()
     const secondWaypoint = { ...waypoint, id: '00000000-0000-4000-8000-000000000002', name: 'Cafe', category: 'Food & drink' }
     render(
       <PersonalWaypointsHome
@@ -110,10 +108,11 @@ describe('PersonalWaypointsHome', () => {
           { category: 'Food & drink', waypointCount: 1 },
           { category: 'Rest spot', waypointCount: 1 },
         ]}
+        categoryPickerOpen
         hiddenCategories={['Food & drink']}
         categoryVisibilityStatus={null}
         onSetCategoryVisible={onSetCategoryVisible}
-        onShowAllCategories={onShowAllCategories}
+        onClearCategoryVisibilityChanges={onClearCategoryVisibilityChanges}
       />,
     )
 
@@ -123,8 +122,80 @@ describe('PersonalWaypointsHome', () => {
 
     await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink markers' }))
     expect(onSetCategoryVisible).toHaveBeenCalledWith('Food & drink', true)
-    await user.click(screen.getByRole('button', { name: 'Show all categories' }))
-    expect(onShowAllCategories).toHaveBeenCalledOnce()
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
+    expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
+  })
+
+  it('offers one Edit action for each place on the main list', async () => {
+    const user = userEvent.setup()
+    const onEditWaypoint = vi.fn()
+    render(
+      <PersonalWaypointsHome
+        readResult={readyResult}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onEditWaypoint={onEditWaypoint}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={() => undefined}
+        onDiscardRejectedRecords={() => undefined}
+        categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
+    expect(onEditWaypoint).toHaveBeenCalledWith(waypoint.id)
+  })
+
+  it('shows only the selected category and keeps Add waypoint on the main screen', async () => {
+    const user = userEvent.setup()
+    const onBackToCategories = vi.fn()
+    const view = render(
+      <PersonalWaypointsHome
+        readResult={readyResult}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={() => undefined}
+        onDiscardRejectedRecords={() => undefined}
+        categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
+        selectedCategory="Rest spot"
+        onBackToCategories={onBackToCategories}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Back to categories' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to categories' }))
+    expect(onBackToCategories).toHaveBeenCalledOnce()
+
+    view.rerender(
+      <PersonalWaypointsHome
+        readResult={readyResult}
+        status={null}
+        onAdd={() => undefined}
+        editing={false}
+        onSelectWaypoint={() => undefined}
+        onRemove={() => undefined}
+        onMove={() => undefined}
+        onClearAll={() => undefined}
+        onResetUnreadableData={() => undefined}
+        onDiscardRejectedRecords={() => undefined}
+        categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
+        selectedCategory={null}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
   })
 
   it('restores focus to the page empty state when the last waypoint is removed', async () => {
@@ -135,7 +206,7 @@ describe('PersonalWaypointsHome', () => {
 
     const emptyState = screen.getByText('No saved waypoints yet. Add a waypoint to start your list.')
     expect(document.activeElement).toBe(emptyState)
-    expect(screen.queryByRole('heading', { name: 'Saved places 0' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'All places 0' })).toBeNull()
   })
 
   it('requires confirmation before resetting malformed saved data', async () => {

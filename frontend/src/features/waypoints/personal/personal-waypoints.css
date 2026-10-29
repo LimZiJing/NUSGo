@@ -82,29 +82,6 @@
   background: var(--surface-card);
 }
 
-.personal-waypoint-list-card .saved-list-header-trailing {
-  flex: 0 1 148px;
-}
-
-.personal-waypoint-category-filter {
-  box-sizing: border-box;
-  gap: 0;
-  width: 100%;
-  flex: 1 1 auto;
-}
-
-.personal-waypoint-category-filter .select-trigger {
-  min-height: 36px;
-  padding: 0 8px;
-  border-radius: 9px;
-  font-size: var(--font-size-xs);
-}
-
-.personal-waypoint-category-filter .select-trigger-chevron {
-  width: 13px;
-  height: 13px;
-}
-
 .personal-waypoint-list-filter-note {
   margin: 8px 10px 0;
   color: var(--text-secondary);
@@ -314,8 +291,7 @@
 .personal-waypoint-location .button { justify-self: start; }
 .personal-waypoint-save-note { color: var(--text-secondary); font-size: var(--font-size-sm); }
 
-.personal-waypoint-appearance,
-.personal-waypoint-visibility {
+.personal-waypoint-appearance {
   display: grid;
   gap: var(--space-2);
   margin-top: var(--space-2);
@@ -491,47 +467,216 @@
   color: var(--text-secondary);
 }
 
-.personal-waypoint-category-options {
-  display: grid;
-  border-top: 1px solid var(--border-subtle);
+.personal-waypoint-visibility {
+  overflow: hidden;
+  margin-top: var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+  text-align: left;
 }
 
-.personal-waypoint-category-option {
+.personal-waypoint-visibility-trigger {
   display: flex;
-  min-height: 48px;
+  width: 100%;
+  min-height: 54px;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border: 0;
   color: var(--text-primary);
+  background: transparent;
+  text-align: left;
   cursor: pointer;
 }
 
-.personal-waypoint-category-label {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
+.personal-waypoint-visibility-trigger > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: var(--text-secondary);
 }
 
-.personal-waypoint-category-label small {
+.personal-waypoint-visibility-summary {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.personal-waypoint-visibility-label { font-weight: 600; }
+
+.personal-waypoint-visibility-selection {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-waypoint-visibility-pending { color: var(--accent); }
+
+.personal-waypoint-category-picker { border-top: 1px solid var(--border-subtle); }
+
+.personal-waypoint-visibility-heading {
+  padding: 10px 12px 8px;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
 }
 
-.personal-waypoint-category-option input {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
+.personal-waypoint-visibility-heading strong { color: var(--accent); font-weight: 650; }
+
+.personal-waypoint-category-search { padding: 0 10px 8px; }
+
+.personal-waypoint-category-search .search-field {
+  min-height: 38px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.personal-waypoint-category-search input {
+  min-height: 38px;
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.personal-waypoint-category-options {
+  max-height: min(260px, 38vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.personal-waypoint-category-group { padding: 0 10px; }
+
+.personal-waypoint-category-group + .personal-waypoint-category-group { margin-top: 2px; }
+
+.personal-waypoint-category-group h3 {
+  margin: 0;
+  padding: 8px 4px 3px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.personal-waypoint-category-option {
+  display: grid;
+  min-height: 50px;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.personal-waypoint-category-link {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.personal-waypoint-category-link:hover { color: var(--accent); }
+
+.personal-waypoint-category-link > svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-category-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.personal-waypoint-category-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-waypoint-category-link small {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.personal-waypoint-category-toggle {
+  display: grid;
+  min-width: 40px;
+  min-height: 44px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.personal-waypoint-category-toggle input {
+  width: 19px;
+  height: 19px;
   margin: 0;
   accent-color: var(--accent);
 }
 
-.personal-waypoint-category-option input:focus-visible {
+.personal-waypoint-category-toggle input:focus-visible {
   outline: 2px solid var(--focus-ring-strong);
   outline-offset: 2px;
 }
 
-.personal-waypoint-visibility > .button { justify-self: start; }
+.personal-waypoint-category-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-visibility-actions {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.personal-waypoint-visibility-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.personal-waypoint-category-back { margin-bottom: 6px; }
+
+.personal-waypoint-category-back .button { justify-self: start; }
+
+.personal-waypoint-category-back .button:only-child { margin-left: -8px; }
+
+.personal-waypoint-category-picker .button { min-height: 40px; }
+
+@media (max-width: 480px) {
+  .personal-waypoint-category-link { gap: 6px; padding-inline: 4px; }
+  .personal-waypoint-category-link small { padding-inline: 6px; }
+  .personal-waypoint-visibility-actions { padding-inline: 7px; }
+  .personal-waypoint-visibility-actions-end { gap: 4px; }
+}
+
 .personal-waypoint-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); }
 
 .personal-waypoint-placement {

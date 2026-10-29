@@ -54,7 +54,9 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 ## Personal Waypoints (#207)
 
 - [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each main-list row has one Edit action and opens the edit form directly.
+- [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.
 - [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.
+- [ ] Confirm the collapsed Categories summary is unchanged. When expanded, confirm there is one Categories heading, with the search field directly below it.
 - [ ] Change visibility, open a category, then return to Categories. Confirm the draft remains checked/unchecked as staged, Cancel discards it, and Done applies it. Clear selections and verify no category markers remain after Done.
 - [ ] Back from category details returns to that category; Back to categories returns to the picker. Back from marker-opened details restores the previous More page and sheet position without changing the map camera, selected stop, or selected route.
 - [ ] In a category, search, edit a place from details, reorder, and remove it. Change its category and verify the derived category groups and counts update. Delete it and confirm only that Personal Waypoint and its marker are removed. Clear all waypoints and verify confirmation is required and Community Waypoints remain unchanged.

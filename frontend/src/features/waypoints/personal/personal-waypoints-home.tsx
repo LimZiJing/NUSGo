@@ -1,10 +1,9 @@
 import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/personal/personal-waypoint-category-visibility'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
-import { statusToastManager } from '../../../ui/status-toast-manager'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
@@ -83,20 +82,6 @@ export function PersonalWaypointsHome({
   const previousWaypointCount = useRef(waypointCount)
   const inlineStatus = statusKind === 'problem' ? status : null
 
-  useEffect(() => {
-    if (statusKind !== 'success' || !status) {
-      statusToastManager.close('personal-waypoint-status')
-      return
-    }
-
-    statusToastManager.add({
-      id: 'personal-waypoint-status',
-      description: status,
-      priority: 'low',
-      timeout: 7000,
-    })
-  }, [status, statusKind, statusRevision])
-
   useLayoutEffect(() => {
     if (previousWaypointCount.current !== null && previousWaypointCount.current > 0 && waypointCount === 0) {
       setEditAnnouncement('')
@@ -107,6 +92,12 @@ export function PersonalWaypointsHome({
 
   return <div className="personal-waypoints-home">
     {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
+    {statusKind === 'success' && status && <p
+      key={statusRevision}
+      className="more-panel-status"
+      role="status"
+      aria-live="polite"
+    >{status}</p>}
     {inlineStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{inlineStatus}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.

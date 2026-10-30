@@ -383,9 +383,10 @@
 }
 
 .personal-waypoint-icon-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(36px, 1fr));
   gap: var(--space-2);
+  width: min(100%, 360px);
 }
 
 .personal-waypoint-form .personal-waypoint-color-option {
@@ -401,13 +402,11 @@
 
 .personal-waypoint-form .personal-waypoint-icon-option {
   position: relative;
-  display: flex;
-  min-width: 72px;
+  display: grid;
+  min-width: 0;
   min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: 4px 9px;
+  place-items: center;
+  padding: 4px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   color: var(--text-primary);
@@ -417,8 +416,6 @@
   font-weight: 500;
   cursor: pointer;
 }
-
-.personal-waypoint-form .personal-waypoint-icon-option { flex-direction: column; }
 
 .personal-waypoint-form .personal-waypoint-color-option input,
 .personal-waypoint-form .personal-waypoint-icon-option input {

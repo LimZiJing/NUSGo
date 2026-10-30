@@ -798,6 +798,7 @@ function App() {
     const pendingReturnFocus = pendingWaypointReturnFocusRef.current
     if (pendingReturnFocus) {
       pendingWaypointReturnFocusRef.current = null
+      // Removing a waypoint can detach its row; fall back to a control in the restored view.
       if (pendingReturnFocus.isConnected) pendingReturnFocus.focus()
       else if (isMoreOpen && morePage === 'waypoints' && activePersonalWaypointCategory !== null) {
         personalWaypointCategoryBackRef.current?.focus()

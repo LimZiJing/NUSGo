@@ -926,6 +926,8 @@ function App() {
             open: isMoreOpen,
             page: morePage,
             detent: moreSheetDetent,
+            statusMessage: personalWaypoints.statusKind === 'success' ? personalWaypoints.status : null,
+            statusRevision: personalWaypoints.statusRevision,
             headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints'
               ? activePersonalWaypointCategory ?? 'My waypoints'
@@ -944,9 +946,7 @@ function App() {
               onOpenSettings={openSettings}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
-              status={personalWaypoints.status}
-              statusKind={personalWaypoints.statusKind}
-              statusRevision={personalWaypoints.statusRevision}
+              status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointPlacement}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}

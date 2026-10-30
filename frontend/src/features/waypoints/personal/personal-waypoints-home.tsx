@@ -10,8 +10,6 @@ import { PersonalWaypointList } from './components/personal-waypoint-list'
 export function PersonalWaypointsHome({
   readResult,
   status,
-  statusKind = 'problem',
-  statusRevision = 0,
   onAdd,
   editing,
   onSelectWaypoint,
@@ -40,8 +38,6 @@ export function PersonalWaypointsHome({
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
-  readonly statusKind?: 'success' | 'problem' | null
-  readonly statusRevision?: number
   readonly onAdd: () => void
   readonly editing: boolean
   readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
@@ -80,7 +76,7 @@ export function PersonalWaypointsHome({
     : null
   const atWaypointLimit = !activeCategory && ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
   const previousWaypointCount = useRef(waypointCount)
-  const inlineStatus = statusKind === 'problem' ? status : null
+  const inlineStatus = status
 
   useLayoutEffect(() => {
     if (previousWaypointCount.current !== null && previousWaypointCount.current > 0 && waypointCount === 0) {
@@ -92,12 +88,6 @@ export function PersonalWaypointsHome({
 
   return <div className="personal-waypoints-home">
     {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
-    {statusKind === 'success' && status && <p
-      key={statusRevision}
-      className="more-panel-status"
-      role="status"
-      aria-live="polite"
-    >{status}</p>}
     {inlineStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{inlineStatus}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.

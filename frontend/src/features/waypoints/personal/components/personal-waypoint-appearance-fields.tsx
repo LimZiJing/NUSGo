@@ -84,10 +84,10 @@ export function PersonalWaypointAppearanceFields({
               name="personal-waypoint-marker-icon"
               value={value}
               checked={markerIcon === value}
+              aria-label={label}
               onChange={() => onChange({ markerIcon: value })}
             />
             <Icon className="personal-waypoint-choice-icon" size={17} />
-            <span>{label}</span>
           </label>
         })}
       </div>

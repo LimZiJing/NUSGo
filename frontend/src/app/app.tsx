@@ -222,6 +222,7 @@ function App() {
   }, [updatePersonalWaypointDraft])
   const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
+    // Restore the originating control after the details page has closed.
     pendingWaypointReturnFocusRef.current = focusTarget === undefined
       ? returnTarget?.focusTarget ?? null
       : focusTarget

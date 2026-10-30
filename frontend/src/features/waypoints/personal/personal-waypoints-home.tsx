@@ -76,7 +76,6 @@ export function PersonalWaypointsHome({
     : null
   const atWaypointLimit = !activeCategory && ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
   const previousWaypointCount = useRef(waypointCount)
-  const inlineStatus = status
 
   useLayoutEffect(() => {
     if (previousWaypointCount.current !== null && previousWaypointCount.current > 0 && waypointCount === 0) {
@@ -88,7 +87,7 @@ export function PersonalWaypointsHome({
 
   return <div className="personal-waypoints-home">
     {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
-    {inlineStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{inlineStatus}</p>}
+    {status && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{status}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.
     </p>}

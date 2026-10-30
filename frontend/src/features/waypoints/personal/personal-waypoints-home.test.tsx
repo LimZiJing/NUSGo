@@ -26,11 +26,24 @@ const readyResult: PersonalWaypointStoreReadResult = {
   rejectedRecords: { count: 0, issues: [] },
 }
 
+const noop = () => undefined
+const waypointHomeCallbacks = {
+  onEditWaypoint: noop,
+  onSetCategoryVisible: noop,
+  onOpenCategory: noop,
+  onBackToCategories: noop,
+  onToggleCategoryPicker: noop,
+  onClearCategoryVisibilityChanges: noop,
+  onCancelCategoryVisibilityChanges: noop,
+  onDoneCategoryVisibilityChanges: noop,
+}
+
 function StatefulPersonalWaypointsHome() {
   const [readResult, setReadResult] = useState(readyResult)
 
   return (
     <PersonalWaypointsHome
+      {...waypointHomeCallbacks}
       readResult={readResult}
       status={null}
       onAdd={() => undefined}
@@ -60,6 +73,7 @@ afterEach(cleanup)
 describe('PersonalWaypointsHome', () => {
   it('keeps the panel concise and announces edit mode without visible instructions', async () => {
     const props = {
+      ...waypointHomeCallbacks,
       readResult: readyResult,
       status: 'Waypoint order saved.',
       onAdd: () => undefined,
@@ -94,6 +108,7 @@ describe('PersonalWaypointsHome', () => {
     const secondWaypoint = { ...waypoint, id: '00000000-0000-4000-8000-000000000002', name: 'Cafe', category: 'Food & drink' }
     render(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={{ ...readyResult, waypoints: [waypoint, secondWaypoint] }}
         status={null}
         onAdd={() => undefined}
@@ -131,6 +146,7 @@ describe('PersonalWaypointsHome', () => {
     const onEditWaypoint = vi.fn()
     render(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={readyResult}
         status={null}
         onAdd={() => undefined}
@@ -156,6 +172,7 @@ describe('PersonalWaypointsHome', () => {
     const onBackToCategories = vi.fn()
     const view = render(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={readyResult}
         status={null}
         onAdd={() => undefined}
@@ -181,6 +198,7 @@ describe('PersonalWaypointsHome', () => {
 
     view.rerender(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={readyResult}
         status={null}
         onAdd={() => undefined}
@@ -221,6 +239,7 @@ describe('PersonalWaypointsHome', () => {
     vi.stubGlobal('confirm', confirm)
     render(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={recoveryResult}
         status={null}
         onAdd={() => undefined}
@@ -252,6 +271,7 @@ describe('PersonalWaypointsHome', () => {
     vi.stubGlobal('confirm', confirm)
     render(
       <PersonalWaypointsHome
+        {...waypointHomeCallbacks}
         readResult={{
           ...readyResult,
           rejectedRecords: { count: 2, issues: [] },

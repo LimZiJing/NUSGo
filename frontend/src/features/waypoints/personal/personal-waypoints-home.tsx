@@ -13,7 +13,7 @@ export function PersonalWaypointsHome({
   onAdd,
   editing,
   onSelectWaypoint,
-  onEditWaypoint = () => undefined,
+  onEditWaypoint,
   onRemove,
   onMove,
   onClearAll,
@@ -25,13 +25,13 @@ export function PersonalWaypointsHome({
   categoryPickerOpen = false,
   selectedCategory = null,
   categoryVisibilityStatus = null,
-  onSetCategoryVisible = () => undefined,
-  onOpenCategory = () => undefined,
-  onBackToCategories = () => undefined,
-  onToggleCategoryPicker = () => undefined,
-  onClearCategoryVisibilityChanges = () => undefined,
-  onCancelCategoryVisibilityChanges = () => undefined,
-  onDoneCategoryVisibilityChanges = () => undefined,
+  onSetCategoryVisible,
+  onOpenCategory,
+  onBackToCategories,
+  onToggleCategoryPicker,
+  onClearCategoryVisibilityChanges,
+  onCancelCategoryVisibilityChanges,
+  onDoneCategoryVisibilityChanges,
   categoryBackButtonRef,
   categoryPickerTriggerRef,
   initialFocusRef,
@@ -41,7 +41,7 @@ export function PersonalWaypointsHome({
   readonly onAdd: () => void
   readonly editing: boolean
   readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
-  readonly onEditWaypoint?: (waypointId: string) => void
+  readonly onEditWaypoint: (waypointId: string) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, neighborId: string) => void
   readonly onClearAll: () => void
@@ -53,13 +53,13 @@ export function PersonalWaypointsHome({
   readonly categoryPickerOpen?: boolean
   readonly selectedCategory?: string | null
   readonly categoryVisibilityStatus?: string | null
-  readonly onSetCategoryVisible?: (category: string, visible: boolean) => void
-  readonly onOpenCategory?: (category: string) => void
-  readonly onBackToCategories?: () => void
-  readonly onToggleCategoryPicker?: () => void
-  readonly onClearCategoryVisibilityChanges?: (categories: readonly string[]) => void
-  readonly onCancelCategoryVisibilityChanges?: () => void
-  readonly onDoneCategoryVisibilityChanges?: () => void
+  readonly onSetCategoryVisible: (category: string, visible: boolean) => void
+  readonly onOpenCategory: (category: string) => void
+  readonly onBackToCategories: () => void
+  readonly onToggleCategoryPicker: () => void
+  readonly onClearCategoryVisibilityChanges: (categories: readonly string[]) => void
+  readonly onCancelCategoryVisibilityChanges: () => void
+  readonly onDoneCategoryVisibilityChanges: () => void
   readonly categoryBackButtonRef?: Ref<HTMLButtonElement>
   readonly categoryPickerTriggerRef?: Ref<HTMLButtonElement>
   readonly initialFocusRef?: Ref<HTMLButtonElement>

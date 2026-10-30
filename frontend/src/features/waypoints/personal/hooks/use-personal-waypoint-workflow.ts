@@ -303,7 +303,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       return false
     }
 
-    if (!finishMutation(outcome, 'saved', 'Changes saved.')) return false
+    finishMutation(outcome, 'saved', 'Changes saved.')
     setIssues([])
     setEditing(null)
     return true

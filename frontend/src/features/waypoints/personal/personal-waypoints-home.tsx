@@ -19,12 +19,12 @@ export function PersonalWaypointsHome({
   onClearAll,
   onResetUnreadableData,
   onDiscardRejectedRecords,
-  categoryOptions = [],
-  hiddenCategories = [],
-  draftHiddenCategories = hiddenCategories,
-  categoryPickerOpen = false,
-  selectedCategory = null,
-  categoryVisibilityStatus = null,
+  categoryOptions,
+  hiddenCategories,
+  draftHiddenCategories,
+  categoryPickerOpen,
+  selectedCategory,
+  categoryVisibilityStatus,
   onSetCategoryVisible,
   onOpenCategory,
   onBackToCategories,
@@ -47,12 +47,12 @@ export function PersonalWaypointsHome({
   readonly onClearAll: () => void
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
-  readonly categoryOptions?: readonly PersonalWaypointCategoryOption[]
-  readonly hiddenCategories?: readonly string[]
-  readonly draftHiddenCategories?: readonly string[]
-  readonly categoryPickerOpen?: boolean
-  readonly selectedCategory?: string | null
-  readonly categoryVisibilityStatus?: string | null
+  readonly categoryOptions: readonly PersonalWaypointCategoryOption[]
+  readonly hiddenCategories: readonly string[]
+  readonly draftHiddenCategories: readonly string[]
+  readonly categoryPickerOpen: boolean
+  readonly selectedCategory: string | null
+  readonly categoryVisibilityStatus: string | null
   readonly onSetCategoryVisible: (category: string, visible: boolean) => void
   readonly onOpenCategory: (category: string) => void
   readonly onBackToCategories: () => void

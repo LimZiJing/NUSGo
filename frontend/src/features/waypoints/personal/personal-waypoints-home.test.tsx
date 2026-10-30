@@ -29,6 +29,12 @@ const readyResult: PersonalWaypointStoreReadResult = {
 const noop = () => undefined
 const waypointHomeCallbacks = {
   onEditWaypoint: noop,
+  categoryOptions: [],
+  hiddenCategories: [],
+  draftHiddenCategories: [],
+  categoryPickerOpen: false,
+  selectedCategory: null,
+  categoryVisibilityStatus: null,
   onSetCategoryVisible: noop,
   onOpenCategory: noop,
   onBackToCategories: noop,

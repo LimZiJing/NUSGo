@@ -18,6 +18,7 @@ export function getPersonalWaypointCategoryOptions(
     .sort((left, right) => left.category.localeCompare(right.category))
 }
 
+/** Filters map marker data only; hidden waypoints remain saved and visible in the list. */
 export function filterPersonalWaypointsByCategoryVisibility(
   waypoints: readonly PersonalWaypoint[],
   hiddenCategories: readonly string[],

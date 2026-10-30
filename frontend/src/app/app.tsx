@@ -88,6 +88,7 @@ interface PersonalWaypointPanelReturnTarget {
   readonly focusTarget: HTMLElement | null
 }
 
+// Keep the selected place with the panel location that opened its details.
 interface PersonalWaypointDetailsSelection {
   readonly waypointId: string
   readonly returnTarget: PersonalWaypointPanelReturnTarget

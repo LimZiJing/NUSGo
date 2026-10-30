@@ -88,6 +88,11 @@ interface PersonalWaypointPanelReturnTarget {
   readonly focusTarget: HTMLElement | null
 }
 
+interface PersonalWaypointDetailsSelection {
+  readonly waypointId: string
+  readonly returnTarget: PersonalWaypointPanelReturnTarget
+}
+
 const EMPTY_PERSONAL_WAYPOINTS: readonly PersonalWaypoint[] = []
 
 function App() {
@@ -117,9 +122,9 @@ function App() {
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
-  const [selectedPersonalWaypointId, setSelectedPersonalWaypointId] = useState<string | null>(null)
+  const [personalWaypointDetails, setPersonalWaypointDetails] = useState<PersonalWaypointDetailsSelection | null>(null)
+  const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
-  const waypointDetailsReturnTargetRef = useRef<PersonalWaypointPanelReturnTarget | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
@@ -215,27 +220,28 @@ function App() {
     })
   }, [updatePersonalWaypointDraft])
   const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
-    const returnTarget = waypointDetailsReturnTargetRef.current
+    const returnTarget = personalWaypointDetails?.returnTarget
     pendingWaypointReturnFocusRef.current = focusTarget === undefined
       ? returnTarget?.focusTarget ?? null
       : focusTarget
-    setSelectedPersonalWaypointId(null)
+    setPersonalWaypointDetails(null)
     setMorePage(returnTarget?.page ?? 'waypoints')
     setMoreSheetDetent(returnTarget?.detent ?? 'full')
-    waypointDetailsReturnTargetRef.current = null
-  }, [])
+  }, [personalWaypointDetails])
   const openPersonalWaypointDetails = useCallback((
     waypointId: string,
     returnPage: MorePanelPage,
     returnDetent: MobileSheetDetent,
     trigger: HTMLElement,
   ): void => {
-    waypointDetailsReturnTargetRef.current = {
-      page: returnPage,
-      detent: returnDetent,
-      focusTarget: trigger,
-    }
-    setSelectedPersonalWaypointId(waypointId)
+    setPersonalWaypointDetails({
+      waypointId,
+      returnTarget: {
+        page: returnPage,
+        detent: returnDetent,
+        focusTarget: trigger,
+      },
+    })
     setMoreSheetDetent('full')
     setMorePage('waypoint-details')
   }, [])
@@ -251,12 +257,12 @@ function App() {
   }, [openCategoryPicker])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
     if (morePage === 'editing-waypoint' || morePage === 'placing') return
-    if (morePage === 'waypoint-details') {
-      setSelectedPersonalWaypointId(waypointId)
+    if (personalWaypointDetails) {
+      setPersonalWaypointDetails({ ...personalWaypointDetails, waypointId })
       return
     }
     openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
-  }, [morePage, moreSheetDetent, openPersonalWaypointDetails])
+  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails])
   const handlePersonalWaypointRowSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
     openPersonalWaypointDetails(waypointId, 'waypoints', moreSheetDetent, trigger)
   }, [moreSheetDetent, openPersonalWaypointDetails])
@@ -679,7 +685,7 @@ function App() {
   }
   const deleteSelectedPersonalWaypoint = (): void => {
     if (!selectedPersonalWaypointId) return
-    const returnTarget = waypointDetailsReturnTargetRef.current
+    const returnTarget = personalWaypointDetails?.returnTarget
     if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
     const focusTarget = returnTarget?.page === 'waypoints' && activePersonalWaypointCategory === null
       ? personalWaypointsInitialFocusRef.current

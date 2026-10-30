@@ -50,6 +50,12 @@ export interface PersonalWaypointEditConflict {
   readonly latestWaypoint: PersonalWaypoint | null
 }
 
+interface PersonalWaypointEditingState {
+  readonly waypointId: string
+  readonly baseRevision: PersonalWaypointStoreRevision | null
+  readonly conflict: PersonalWaypointEditConflict | null
+}
+
 type PersonalWaypointWorkflowStatusKind = 'success' | 'problem'
 
 interface PersonalWaypointWorkflowStatus {
@@ -58,11 +64,25 @@ interface PersonalWaypointWorkflowStatus {
   readonly revision: number
 }
 
+function createEmptyPersonalWaypointDraft(
+  coordinate: WaypointCoordinate = DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
+): PersonalWaypointDraft {
+  return {
+    name: '',
+    category: '',
+    note: '',
+    coordinate,
+    markerColor: DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
+    markerIcon: DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
+  }
+}
+
 function getEditConflict(
   readResult: PersonalWaypointStoreReadResult,
   waypointId: string,
 ): PersonalWaypointEditConflict | null {
   if (readResult.kind !== 'ready' || readResult.rejectedRecords.count > 0) return null
+  // A null waypoint means another tab removed this record while it was being edited.
   return {
     revision: readResult.revision,
     latestWaypoint: readResult.waypoints.find(({ id }) => id === waypointId) ?? null,
@@ -71,20 +91,13 @@ function getEditConflict(
 
 export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
   const [readResult, setReadResult] = useState(() => store.read())
-  const [draft, setDraft] = useState<PersonalWaypointDraft>({
-    name: '',
-    category: '',
-    note: '',
-    coordinate: DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
-    markerColor: DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
-    markerIcon: DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
-  })
+  const [draft, setDraft] = useState<PersonalWaypointDraft>(() => createEmptyPersonalWaypointDraft())
   const [statusUpdate, setStatusUpdate] = useState<PersonalWaypointWorkflowStatus | null>(null)
   const statusRevision = useRef(0)
   const [issues, setIssues] = useState<readonly PersonalWaypointValidationIssue[]>([])
-  const [editingWaypointId, setEditingWaypointId] = useState<string | null>(null)
-  const [editingBaseRevision, setEditingBaseRevision] = useState<PersonalWaypointStoreRevision | null>(null)
-  const [editConflict, setEditConflict] = useState<PersonalWaypointEditConflict | null>(null)
+  const [editing, setEditing] = useState<PersonalWaypointEditingState | null>(null)
+  const editingWaypointId = editing?.waypointId ?? null
+  const editConflict = editing?.conflict ?? null
 
   const setStatus = useCallback((message: string, kind: PersonalWaypointWorkflowStatusKind) => {
     statusRevision.current += 1
@@ -104,6 +117,21 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
 
   const refresh = useCallback(() => setReadResult(store.read()), [store])
 
+  const finishMutation = useCallback((
+    outcome: PersonalWaypointStoreMutationResult,
+    successKind: 'saved' | 'cleared',
+    successMessage: string,
+    failureMessage?: string,
+  ): boolean => {
+    setReadResult(store.read())
+    const succeeded = outcome.kind === successKind
+    setStatus(
+      succeeded ? successMessage : failureMessage ?? getMutationFailureMessage(outcome),
+      succeeded ? 'success' : 'problem',
+    )
+    return succeeded
+  }, [setStatus, store])
+
   const updateCollection = useCallback((
     update: (waypoints: readonly PersonalWaypoint[]) => readonly PersonalWaypoint[],
     successMessage: string,
@@ -121,16 +149,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     if (nextWaypoints === current.waypoints) return false
 
     const outcome = store.replaceAll(nextWaypoints, current.revision)
-    if (outcome.kind !== 'saved') {
-      setReadResult(store.read())
-      setStatus(getMutationFailureMessage(outcome), 'problem')
-      return false
-    }
-
-    setReadResult(store.read())
-    setStatus(successMessage, 'success')
-    return true
-  }, [setStatus, store])
+    return finishMutation(outcome, 'saved', successMessage)
+  }, [finishMutation, setStatus, store])
 
   const removeWaypoint = useCallback((waypointId: string): boolean => updateCollection(
     (waypoints) => {
@@ -166,29 +186,12 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     if (current.kind !== 'ready' || current.waypoints.length === 0) return false
 
     const outcome = store.clear(current.revision)
-    if (outcome.kind !== 'cleared') {
-      setReadResult(store.read())
-      setStatus(getMutationFailureMessage(outcome), 'problem')
-      return false
-    }
-
-    setReadResult(store.read())
-    setStatus('All places cleared.', 'success')
-    return true
-  }, [setStatus, store])
+    return finishMutation(outcome, 'cleared', 'All places cleared.')
+  }, [finishMutation, setStatus, store])
 
   const startDraft = useCallback((coordinate: WaypointCoordinate) => {
-    setEditingWaypointId(null)
-    setEditConflict(null)
-    setEditingBaseRevision(null)
-    setDraft({
-      name: '',
-      category: '',
-      note: '',
-      coordinate,
-      markerColor: DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
-      markerIcon: DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON,
-    })
+    setEditing(null)
+    setDraft(createEmptyPersonalWaypointDraft(coordinate))
     setIssues([])
     clearStatus()
   }, [clearStatus])
@@ -209,9 +212,11 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       return false
     }
 
-    setEditingWaypointId(savedWaypoint.id)
-    setEditConflict(null)
-    setEditingBaseRevision(current.revision)
+    setEditing({
+      waypointId: savedWaypoint.id,
+      baseRevision: current.revision,
+      conflict: null,
+    })
     setDraft({
       name: savedWaypoint.name,
       category: savedWaypoint.category,
@@ -226,9 +231,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
   }, [clearStatus, setStatus, store])
 
   const cancelEdit = useCallback(() => {
-    setEditingWaypointId(null)
-    setEditingBaseRevision(null)
-    setEditConflict(null)
+    setEditing(null)
     setIssues([])
     clearStatus()
   }, [clearStatus])
@@ -239,71 +242,74 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     clearStatus()
   }, [clearStatus])
 
-  const save = useCallback(() => {
-    if (editingWaypointId) {
-      const current = store.read()
-      const expectedRevision = editConflict ? editConflict.revision : editingBaseRevision
-      setReadResult(current)
-      const blockedMessage = getBlockedMutationMessage(current)
-      if (blockedMessage) {
-        setStatus(blockedMessage, 'problem')
-        return false
-      }
-      if (current.kind !== 'ready') return false
+  const saveEditedWaypoint = useCallback((): boolean => {
+    if (!editing) return false
 
-      if (current.revision !== expectedRevision) {
-        const conflict = getEditConflict(current, editingWaypointId)
-        if (conflict) {
-          setEditConflict(conflict)
-          clearStatus()
-        }
-        return false
-      }
+    const current = store.read()
+    const expectedRevision = editing.conflict ? editing.conflict.revision : editing.baseRevision
+    setReadResult(current)
+    const blockedMessage = getBlockedMutationMessage(current)
+    if (blockedMessage) {
+      setStatus(blockedMessage, 'problem')
+      return false
+    }
+    if (current.kind !== 'ready') return false
 
-      const savedWaypoint = current.waypoints.find(({ id }) => id === editingWaypointId)
-      if (!savedWaypoint) {
-        setEditConflict({ revision: current.revision, latestWaypoint: null })
+    // Reject stale drafts before replacing the collection; another tab may have changed it.
+    if (current.revision !== expectedRevision) {
+      const conflict = getEditConflict(current, editing.waypointId)
+      if (conflict) {
+        setEditing((state) => state && { ...state, conflict })
         clearStatus()
-        return false
       }
-
-      const updated = updatePersonalWaypoint(savedWaypoint, draft, {
-        now: () => new Date().toISOString(),
-      })
-      if (!updated.ok) {
-        setIssues(updated.issues)
-        setStatus('Check the highlighted fields before saving.', 'problem')
-        return false
-      }
-
-      const nextWaypoints = current.waypoints.map((waypoint) => (
-        waypoint.id === editingWaypointId ? updated.waypoint : waypoint
-      ))
-      const outcome = store.replaceAll(nextWaypoints, expectedRevision)
-      if (outcome.kind !== 'saved') {
-        const latest = store.read()
-        setReadResult(latest)
-        if (outcome.kind === 'conflict') {
-          const conflict = getEditConflict(latest, editingWaypointId)
-          if (conflict) {
-            setEditConflict(conflict)
-            clearStatus()
-            return false
-          }
-        }
-        setStatus(getMutationFailureMessage(outcome), 'problem')
-        return false
-      }
-
-      setReadResult(store.read())
-      setStatus('Changes saved.', 'success')
-      setIssues([])
-      setEditingWaypointId(null)
-      setEditConflict(null)
-      setEditingBaseRevision(null)
-      return true
+      return false
     }
 
+    const savedWaypoint = current.waypoints.find(({ id }) => id === editing.waypointId)
+    if (!savedWaypoint) {
+      setEditing((state) => state && {
+        ...state,
+        conflict: { revision: current.revision, latestWaypoint: null },
+      })
+      clearStatus()
+      return false
+    }
+
+    const updated = updatePersonalWaypoint(savedWaypoint, draft, {
+      now: () => new Date().toISOString(),
+    })
+    if (!updated.ok) {
+      setIssues(updated.issues)
+      setStatus('Check the highlighted fields before saving.', 'problem')
+      return false
+    }
+
+    const nextWaypoints = current.waypoints.map((waypoint) => (
+      waypoint.id === editing.waypointId ? updated.waypoint : waypoint
+    ))
+    const outcome = store.replaceAll(nextWaypoints, expectedRevision)
+    if (outcome.kind !== 'saved') {
+      const latest = store.read()
+      setReadResult(latest)
+      if (outcome.kind === 'conflict') {
+        const conflict = getEditConflict(latest, editing.waypointId)
+        if (conflict) {
+          setEditing((state) => state && { ...state, conflict })
+          clearStatus()
+          return false
+        }
+      }
+      setStatus(getMutationFailureMessage(outcome), 'problem')
+      return false
+    }
+
+    if (!finishMutation(outcome, 'saved', 'Changes saved.')) return false
+    setIssues([])
+    setEditing(null)
+    return true
+  }, [clearStatus, draft, editing, finishMutation, setStatus, store])
+
+  const saveNewWaypoint = useCallback((): boolean => {
     if (typeof globalThis.crypto?.randomUUID !== 'function') {
       setStatus('This browser cannot securely save a waypoint. Your draft is still here.', 'problem')
       return false
@@ -330,19 +336,18 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       [...current.waypoints, created.waypoint],
       current.revision,
     )
-    if (outcome.kind !== 'saved') {
-      setReadResult(store.read())
-      setStatus(outcome.kind === 'conflict'
-        ? 'Waypoints changed in another tab. Review the latest saved list and try again.'
-        : 'The waypoint could not be saved. Your draft is still here.', 'problem')
-      return false
-    }
+    const failureMessage = outcome.kind === 'conflict'
+      ? 'Waypoints changed in another tab. Review the latest saved list and try again.'
+      : 'The waypoint could not be saved. Your draft is still here.'
+    if (!finishMutation(outcome, 'saved', 'Waypoint saved.', failureMessage)) return false
 
-    setReadResult(store.read())
-    setStatus('Waypoint saved.', 'success')
     setIssues([])
     return true
-  }, [clearStatus, draft, editConflict, editingBaseRevision, editingWaypointId, setStatus, store])
+  }, [draft, finishMutation, setReadResult, setStatus, store])
+
+  const save = useCallback(() => (
+    editing ? saveEditedWaypoint() : saveNewWaypoint()
+  ), [editing, saveEditedWaypoint, saveNewWaypoint])
 
   const resetUnreadableData = useCallback((): boolean => {
     const current = store.read()
@@ -350,16 +355,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     if (current.kind !== 'recovery-required') return false
 
     const outcome = store.clear(current.revision)
-    if (outcome.kind !== 'cleared') {
-      setReadResult(store.read())
-      setStatus(getMutationFailureMessage(outcome), 'problem')
-      return false
-    }
-
-    setReadResult(store.read())
-    setStatus('Unreadable Personal Waypoint data was reset from this browser profile.', 'success')
-    return true
-  }, [setStatus, store])
+    return finishMutation(outcome, 'cleared', 'Unreadable Personal Waypoint data was reset from this browser profile.')
+  }, [finishMutation, store])
 
   const discardRejectedRecords = useCallback((): boolean => {
     const current = store.read()
@@ -367,16 +364,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     if (current.kind !== 'ready' || current.rejectedRecords.count === 0) return false
 
     const outcome = store.replaceAll(current.waypoints, current.revision)
-    if (outcome.kind !== 'saved') {
-      setReadResult(store.read())
-      setStatus(getMutationFailureMessage(outcome), 'problem')
-      return false
-    }
-
-    setReadResult(store.read())
-    setStatus('Unreadable waypoint records were discarded. Readable waypoints were kept.', 'success')
-    return true
-  }, [setStatus, store])
+    return finishMutation(outcome, 'saved', 'Unreadable waypoint records were discarded. Readable waypoints were kept.')
+  }, [finishMutation, store])
 
   return {
     readResult,

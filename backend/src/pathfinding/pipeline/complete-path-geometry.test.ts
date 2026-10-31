@@ -24,12 +24,12 @@ function candidate(candidateKey: string, legs: Path['legs']): ScoredPathCandidat
   return { candidateKey, path, adjustedDurationSeconds: 100, score: 1 }
 }
 
-function shuttleLeg(): Path['legs'][number] {
+function shuttleLeg(routeId = 'A1'): Path['legs'][number] {
   return {
     mode: 'shuttle',
     from: origin,
     to: destination,
-    routeId: 'A1',
+    routeId,
     boardingStopId: 'STOP-A',
     alightingStopId: 'STOP-B',
     waitingSeconds: 0,
@@ -58,6 +58,23 @@ function search(rankedCandidates: readonly ScoredPathCandidate[]): PathCandidate
 }
 
 describe('completePathGeometry', () => {
+
+  it('returns the highest-ranked complete Path for each ordered bus route sequence', async () => {
+    const routeEngine: WalkingRouteEngine = {
+      matrixWalking: vi.fn(async () => []),
+      routeWalking: vi.fn(async () => { throw new Error('unexpected walking route') }),
+    }
+    const first = shuttleLeg()
+    if (first.mode !== 'shuttle') throw new Error('expected bus leg')
+    const result = await completePathGeometry(routeEngine, search([
+      candidate('a-fast', [first]),
+      candidate('a-slow', [{ ...first, boardingStopId: 'STOP-C' }]),
+      candidate('b', [{ ...first, routeId: 'B1' }]),
+    ]), [], new AbortController().signal, 350, () => 0)
+
+    expect(result?.candidates.map(({ candidateKey }) => candidateKey)).toEqual(['a-fast', 'b'])
+  })
+
   it('keeps completed candidates bounded when a later candidate hits the geometry deadline', async () => {
     vi.useFakeTimers()
     let monotonicTime = 0
@@ -83,7 +100,7 @@ describe('completePathGeometry', () => {
     }
     const pending = completePathGeometry(routeEngine, search([
       candidate('complete-bus', [shuttleLeg()]),
-      candidate('pending-bus', [walkingLeg, shuttleLeg()]),
+      candidate('pending-bus', [walkingLeg, shuttleLeg('B1')]),
     ]), [
       { key: getTripEndpointKey(origin), endpoint: origin, coordinate: origin.coordinate },
       { key: getTripEndpointKey(destination), endpoint: destination, coordinate: { longitude: 103.01, latitude: 1.01 } },
@@ -155,7 +172,7 @@ describe('completePathGeometry', () => {
     }
     const pending = completePathGeometry(routeEngine, search([
       candidate('highest-ranked', [firstWalkingLeg, shuttleLeg()]),
-      candidate('prefetched-before-deadline', [secondWalkingLeg, shuttleLeg()]),
+      candidate('prefetched-before-deadline', [secondWalkingLeg, shuttleLeg('B1')]),
     ]), [
       { key: getTripEndpointKey(origin), endpoint: origin, coordinate: origin.coordinate },
       { key: getTripEndpointKey(destination), endpoint: destination, coordinate: { longitude: 103.01, latitude: 1.01 } },

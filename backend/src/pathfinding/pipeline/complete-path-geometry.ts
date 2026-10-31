@@ -16,6 +16,10 @@ export interface CompletedPathGeometry {
   readonly geometryRouteCacheHits: number
 }
 
+function busRouteSequence(candidate: ScoredPathCandidate): string {
+  return JSON.stringify(candidate.path.legs.filter((leg) => leg.mode === 'shuttle').map((leg) => leg.routeId))
+}
+
 function createAbortError(): Error {
   const error = new Error('The pathfinding request was aborted')
   error.name = 'AbortError'
@@ -150,10 +154,14 @@ export async function completePathGeometry(
   try {
     let preferredBusCount = 0
     let preferredWalkingFound = false
+    const preferredBusRoutes = new Set<string>()
     for (const candidate of search.rankedCandidates) {
       const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
       if (isBus) {
         if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES) continue
+        const key = busRouteSequence(candidate)
+        if (preferredBusRoutes.has(key)) continue
+        preferredBusRoutes.add(key)
         preferredBusCount += 1
       } else {
         if (preferredWalkingFound) continue
@@ -165,8 +173,12 @@ export async function completePathGeometry(
 
     let busCandidateCount = 0
     let walkingCandidateFound = false
+    const completedBusRoutes = new Set<string>()
     const appendCandidate = (candidate: ScoredPathCandidate, legs: Path['legs']): boolean => {
       if (legs.some((leg) => leg.mode === 'walking' && !isValidWalkingGeometry(leg.geometry))) return false
+      const key = busRouteSequence(candidate)
+      if (key !== '[]' && completedBusRoutes.has(key)) return false
+      if (key !== '[]') completedBusRoutes.add(key)
       candidates.push({ ...candidate, path: { ...candidate.path, legs } })
       if (candidate.path.legs.some((leg) => leg.mode === 'shuttle')) busCandidateCount += 1
       else walkingCandidateFound = true
@@ -177,7 +189,7 @@ export async function completePathGeometry(
         const candidate = search.rankedCandidates[index]!
         const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
         if (
-          (isBus && busCandidateCount >= MAX_BUS_PATH_CANDIDATES) ||
+          (isBus && (busCandidateCount >= MAX_BUS_PATH_CANDIDATES || completedBusRoutes.has(busRouteSequence(candidate)))) ||
           (!isBus && walkingCandidateFound)
         ) continue
         const prepared = preparedGeometry.get(candidate)
@@ -204,7 +216,7 @@ export async function completePathGeometry(
 
       const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
       if (
-        (isBus && busCandidateCount >= MAX_BUS_PATH_CANDIDATES) ||
+        (isBus && (busCandidateCount >= MAX_BUS_PATH_CANDIDATES || completedBusRoutes.has(busRouteSequence(candidate)))) ||
         (!isBus && walkingCandidateFound)
       ) continue
       geometryCandidateChecks += 1

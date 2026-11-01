@@ -62,7 +62,7 @@ function StatefulPersonalWaypointsHome() {
           waypoints: current.waypoints.filter(({ id }) => id !== waypointId),
         }
       })}
-      onMove={() => undefined}
+      onMove={() => true}
       onClearAll={() => undefined}
       onResetUnreadableData={() => undefined}
       onDiscardRejectedRecords={() => undefined}
@@ -121,7 +121,7 @@ describe('PersonalWaypointsHome', () => {
         editing={false}
         onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
@@ -160,7 +160,7 @@ describe('PersonalWaypointsHome', () => {
         onSelectWaypoint={() => undefined}
         onEditWaypoint={onEditWaypoint}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
@@ -185,7 +185,7 @@ describe('PersonalWaypointsHome', () => {
         editing={false}
         onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
@@ -211,7 +211,7 @@ describe('PersonalWaypointsHome', () => {
         editing={false}
         onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
@@ -252,7 +252,7 @@ describe('PersonalWaypointsHome', () => {
         editing={false}
         onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={onResetUnreadableData}
         onDiscardRejectedRecords={() => undefined}
@@ -287,7 +287,7 @@ describe('PersonalWaypointsHome', () => {
         editing={false}
         onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
-        onMove={() => undefined}
+        onMove={() => true}
         onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={onDiscardRejectedRecords}

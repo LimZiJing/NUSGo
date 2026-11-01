@@ -221,17 +221,22 @@
 }
 
 .personal-waypoint-grip {
-  display: grid;
-  width: 18px;
-  flex: 0 0 18px;
-  place-items: center;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
   color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
 }
+
+.personal-waypoint-grip:active { cursor: grabbing; }
 
 .personal-waypoint-grip svg {
   width: 15px;
   height: 15px;
 }
+
+.personal-waypoint-row-dragging { opacity: .55; }
 
 .personal-waypoint-list-edit-actions {
   display: flex;
@@ -250,7 +255,6 @@
   min-height: 40px;
 }
 
-.personal-waypoint-order-up svg { transform: rotate(180deg); }
 .personal-waypoint-remove { color: var(--text-error-strong); }
 
 .personal-waypoint-list-empty {

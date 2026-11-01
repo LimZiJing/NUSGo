@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -19,6 +20,47 @@ function departureStatusAccessibleLabel(message: string): string {
   return minutes === undefined
     ? message
     : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+const LOAD_LEVEL_LABELS: Readonly<Record<ShuttleLoadLevel, string | null>> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  unknown: null,
+}
+
+const LOAD_LEVEL_BAR_COUNTS: Readonly<Record<ShuttleLoadLevel, number>> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  unknown: 0,
+}
+
+function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string {
+  const timingLabel = timingAccessibleLabel(timing)
+  const arrivalLabel = timing === 'Arr' || timing === 'Left' || timing === '-'
+    ? timingLabel
+    : `Arrives in ${timingLabel}`
+
+  return load === 'unknown'
+    ? `${arrivalLabel}. Crowding estimate unavailable.`
+    : `${arrivalLabel}. Estimated crowding: ${load}.`
+}
+
+function LoadLevelCue({ load }: { readonly load: ShuttleLoadLevel }) {
+  const label = LOAD_LEVEL_LABELS[load]
+  if (!label) return null
+
+  return (
+    <span className="stop-departure-load-cue" data-load-level={load} aria-hidden="true">
+      <span className="stop-departure-load-label">{label}</span>
+      <span className="stop-departure-load-bars">
+        {Array.from({ length: LOAD_LEVEL_BAR_COUNTS[load] }, (_, index) => (
+          <span key={index} />
+        ))}
+      </span>
+    </span>
+  )
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
@@ -43,18 +85,35 @@ function formatTimingVisual(timing: string): ReactNode {
   )
 }
 
-function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
+function DepartureTimes({
+  timings,
+  load,
+}: {
+  readonly timings: readonly [string, string, string]
+  readonly load?: ShuttleLoadLevel
+}) {
   return (
     <span className="stop-departure-times">
-      {timings.map((timing, index) => (
-        <span
-          key={index}
-          className="stop-departure-time"
-          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-        >
-          <AccessibleTiming visual={formatTimingVisual(timing)} spoken={timingAccessibleLabel(timing)} />
-        </span>
-      ))}
+      {timings.map((timing, index) => {
+        const nextBusLoad = index === 0 ? load : undefined
+
+        return (
+          <span
+            key={index}
+            className="stop-departure-time"
+            data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+            data-load-level={nextBusLoad}
+          >
+            <AccessibleTiming
+              visual={formatTimingVisual(timing)}
+              spoken={nextBusLoad
+                ? arrivalAccessibleLabel(timing, nextBusLoad)
+                : timingAccessibleLabel(timing)}
+            />
+            {nextBusLoad && <LoadLevelCue load={nextBusLoad} />}
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -87,6 +146,7 @@ export function StopDepartureList({
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
 }) {
+  const hasLoadEstimate = departures.some(({ load }) => load !== 'unknown')
   const visiblePublicServices = noLiveData
     ? publicServices.filter(({ timings }) => timings !== null)
     : publicServices
@@ -103,6 +163,9 @@ export function StopDepartureList({
           {liveArrivalMessage}
         </p>
       )}
+      {hasLoadEstimate && (
+        <p className="stop-load-estimate-note">Estimated crowding for the next bus on each route.</p>
+      )}
       <ul className="stop-departure-list" aria-label="Bus timings">
         {departures.map((departure) => (
           <li key={departure.routeId} className="stop-departure-row">
@@ -116,7 +179,7 @@ export function StopDepartureList({
               onClick={() => onSelectRoute(departure.routeId)}
             />
             <ReachableFavouriteStops stops={departure.reachableFavouriteStops ?? []} />
-            <DepartureTimes timings={departure.timings} />
+            <DepartureTimes timings={departure.timings} load={departure.load} />
           </li>
         ))}
         {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (

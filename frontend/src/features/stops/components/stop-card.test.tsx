@@ -16,7 +16,13 @@ const cardProps = {
   live: true,
   liveArrivalMessage: null,
   departures: [
-    { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', timings: ['Arr', '8m', '17m'] as const },
+    {
+      routeId: 'A1',
+      routeName: 'A1',
+      routeColor: '#0b7258',
+      load: 'unknown' as const,
+      timings: ['Arr', '8m', '17m'] as const,
+    },
   ],
   publicServices: [
     { serviceNumber: '95', timings: ['8m', '17m', '26m'] as const },

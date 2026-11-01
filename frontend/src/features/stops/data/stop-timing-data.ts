@@ -3,6 +3,7 @@ import {
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../../domain/transit/arrivals'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import {
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
@@ -30,6 +31,7 @@ export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
+  readonly load: ShuttleLoadLevel
   readonly timings: readonly [string, string, string]
   readonly reachableFavouriteStops?: readonly StopFavouriteDestination[]
 }
@@ -194,6 +196,7 @@ function getLiveStopDepartures(
       routeId,
       routeName: route.name,
       routeColor: route.color,
+      load: arrival.load ?? 'unknown',
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
       reachableFavouriteStops: [],
     }]

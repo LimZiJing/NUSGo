@@ -26,6 +26,8 @@ concurrency:
 
 jobs:
   deploy:
+    # workflow_dispatch can target any branch; only publish the main build to Pages.
+    if: github.ref == 'refs/heads/main'
     name: Build and deploy the development frontend (GitHub Pages)
     runs-on: ubuntu-latest
     environment:

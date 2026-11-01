@@ -40,4 +40,11 @@
   .status-dot[data-pulse='true'] {
     animation: none;
   }
+
+  /* Without the pulse, a ring around the green dot still tells refreshing from steady. The error
+     triangle is clipped, so its shape is the cue there. */
+  .status-dot[data-pulse='true'][data-tone='success'] {
+    outline: 1.5px solid var(--status-success);
+    outline-offset: 1.5px;
+  }
 }

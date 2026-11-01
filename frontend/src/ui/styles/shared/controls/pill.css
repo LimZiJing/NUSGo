@@ -45,7 +45,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Without the pulse, a ring around the dot still tells refreshing from steady. */
   .pill[data-pulse='true']::before {
     animation: none;
+    outline: 1px solid currentColor;
+    outline-offset: 1px;
+    margin-right: calc(var(--space-1) + 2px);
   }
 }

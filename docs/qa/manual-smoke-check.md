@@ -53,7 +53,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Personal Waypoints (#207)
 
-- [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each main-list row has one Edit action and opens the edit form directly.
+- [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each row opens waypoint details and its separate Edit action opens the edit form directly.
 - [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.
 - [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.
 - [ ] Confirm the collapsed Categories summary is unchanged. When expanded, confirm there is one Categories heading, with the search field directly below it.

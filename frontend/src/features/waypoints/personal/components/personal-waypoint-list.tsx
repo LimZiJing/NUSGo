@@ -243,7 +243,7 @@ export function PersonalWaypointList({
       {editMode && (hasSearchFilter || categoryView) && (
         <p className="personal-waypoint-list-filter-note">
           {categoryView
-            ? 'Clear the category filter to reorder places.'
+            ? 'Return to All places to reorder saved places.'
             : 'Clear search to reorder or clear all saved places.'}
         </p>
       )}

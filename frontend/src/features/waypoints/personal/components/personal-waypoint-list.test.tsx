@@ -130,13 +130,13 @@ describe('PersonalWaypointList', () => {
 
     const categoryHandle = screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
     expect(categoryHandle.hasAttribute('disabled')).toBe(true)
-    expect(screen.getByText('Clear the category filter to reorder places.')).toBeTruthy()
+    expect(screen.getByText('Return to All places to reorder saved places.')).toBeTruthy()
     expect(onMove).not.toHaveBeenCalled()
 
     await user.type(screen.getByRole('searchbox', { name: 'Search Rest spot places' }), 'quiet')
     expect(screen.getByText('Quiet bench')).toBeTruthy()
     expect(screen.queryByText('Tea room')).toBeNull()
-    expect(screen.getByText('Clear the category filter to reorder places.')).toBeTruthy()
+    expect(screen.getByText('Return to All places to reorder saved places.')).toBeTruthy()
   })
 
   it('announces edit mode and exposes labelled reorder and remove controls', async () => {

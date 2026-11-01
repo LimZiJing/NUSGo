@@ -1,0 +1,89 @@
+{
+  "data": {
+    "TimeStamp": "2026-10-27T10:06:23+08:00",
+    "ActiveBusCount": "6",
+    "activebus": [
+      {
+        "vehplate": "PD496S",
+        "lat": 1.291666,
+        "lng": 103.783352,
+        "speed": 15,
+        "direction": 309.8,
+        "loadInfo": {
+          "occupancy": 0.393,
+          "crowdLevel": "medium",
+          "capacity": 89,
+          "ridership": 35
+        }
+      },
+      {
+        "vehplate": "PD810T",
+        "lat": 1.29533,
+        "lng": 103.784288,
+        "speed": 23,
+        "direction": 142.6,
+        "loadInfo": {
+          "occupancy": 0.045,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 4
+        }
+      },
+      {
+        "vehplate": "PD726D",
+        "lat": 1.300033,
+        "lng": 103.774472,
+        "speed": 32,
+        "direction": 2.9,
+        "loadInfo": {
+          "occupancy": 0.364,
+          "crowdLevel": "medium",
+          "capacity": 88,
+          "ridership": 32
+        }
+      },
+      {
+        "vehplate": "PD679G",
+        "lat": 1.291425,
+        "lng": 103.780536,
+        "speed": 23,
+        "direction": 162,
+        "loadInfo": {
+          "occupancy": 0.023,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 2
+        }
+      },
+      {
+        "vehplate": "PD773S",
+        "lat": 1.298525,
+        "lng": 103.776712,
+        "speed": 33,
+        "direction": 138,
+        "loadInfo": {
+          "occupancy": 0.239,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 21
+        }
+      },
+      {
+        "vehplate": "PC4019R",
+        "lat": 1.295838,
+        "lng": 103.774512,
+        "speed": 0,
+        "direction": 167.2,
+        "loadInfo": {
+          "occupancy": 0,
+          "crowdLevel": "low",
+          "capacity": 88,
+          "ridership": 0
+        }
+      }
+    ]
+  },
+  "code": "00000",
+  "msg": "",
+  "ts": "20261027100642"
+}

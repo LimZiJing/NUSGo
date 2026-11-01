@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, ReactNode, Ref } from 'react'
 import './saved-list-row.css'
 
 interface SavedListRowProps {
@@ -8,6 +8,7 @@ interface SavedListRowProps {
   readonly trailing?: ReactNode
   readonly density?: 'compact' | 'regular'
   readonly className?: string
+  readonly rowRef?: Ref<HTMLLIElement>
   readonly onSelect?: (event: MouseEvent<HTMLButtonElement>) => void
   readonly selectLabel?: string
 }
@@ -19,6 +20,7 @@ export function SavedListRow({
   trailing,
   density = 'regular',
   className,
+  rowRef,
   onSelect,
   selectLabel,
 }: SavedListRowProps) {
@@ -28,7 +30,11 @@ export function SavedListRow({
   </>
 
   return (
-    <li className={['saved-list-row', className].filter(Boolean).join(' ')} data-density={density}>
+    <li
+      ref={rowRef}
+      className={['saved-list-row', className].filter(Boolean).join(' ')}
+      data-density={density}
+    >
       <div className="saved-list-row-leading">{leading}</div>
       {onSelect ? (
         <button

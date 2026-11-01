@@ -23,6 +23,11 @@ describe('PersonalWaypointPlacement', () => {
       />,
     )
 
+    const coordinateToggle = screen.getByRole('button', { name: 'Enter coordinates' })
+    expect(coordinateToggle.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
+    await user.click(coordinateToggle)
+
     const latitude = screen.getByRole('spinbutton', { name: 'Latitude' }) as HTMLInputElement
     const longitude = screen.getByRole('spinbutton', { name: 'Longitude' }) as HTMLInputElement
     await user.clear(latitude)

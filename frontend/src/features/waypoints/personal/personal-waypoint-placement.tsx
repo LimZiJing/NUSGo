@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { isValidLocationCoordinates } from '../../../domain/location/coordinates'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
-import { LocateIcon, MapPinIcon } from '../../../ui/icons'
+import { ChevronDownIcon, LocateIcon, MapPinIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -21,6 +21,7 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
   const latitudeInput = useRef<HTMLInputElement>(null)
   const longitudeInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [coordinateEntryOpen, setCoordinateEntryOpen] = useState(false)
   useEffect(() => {
     headingRef.current?.focus()
   }, [])
@@ -35,6 +36,7 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     const nextLongitude = Number(longitude)
     if (!latitude.trim() || !longitude.trim() || !isValidLocationCoordinates(nextLongitude, nextLatitude)) {
       setError('Enter valid latitude and longitude values.')
+      setCoordinateEntryOpen(true)
       return null
     }
     setError(null)
@@ -75,17 +77,40 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
         disabled={!mapCenter}
       />
     </div>
-    <div className="personal-waypoint-coordinate-fields">
-      <label htmlFor="personal-waypoint-latitude">Latitude</label>
-      <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
-        ref={latitudeInput} onChange={() => setError(null)} />
-      <label htmlFor="personal-waypoint-longitude">Longitude</label>
-      <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={coordinate.longitude}
-        ref={longitudeInput} onChange={() => setError(null)} />
-    </div>
-    {error && <p className="personal-waypoint-error" role="alert">{error}</p>}
-    <div className="personal-waypoint-placement-tools">
-      <Button label="Apply coordinates" onClick={applyCoordinates} />
+    <div className="personal-waypoint-coordinate-disclosure">
+      <Button
+        className="personal-waypoint-coordinate-toggle"
+        label="Enter coordinates"
+        trailingIcon={<ChevronDownIcon size={16} />}
+        variant="ghost"
+        expanded={coordinateEntryOpen}
+        controls="personal-waypoint-coordinate-fields"
+        onClick={() => setCoordinateEntryOpen((open) => !open)}
+      />
+      <div
+        id="personal-waypoint-coordinate-fields"
+        className="personal-waypoint-coordinate-content"
+        role="group"
+        aria-label="Waypoint coordinates"
+        hidden={!coordinateEntryOpen}
+      >
+        <div className="personal-waypoint-coordinate-fields">
+          <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-latitude">
+            <span>Latitude</span>
+            <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
+              ref={latitudeInput} onChange={() => setError(null)} />
+          </label>
+          <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-longitude">
+            <span>Longitude</span>
+            <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={coordinate.longitude}
+              ref={longitudeInput} onChange={() => setError(null)} />
+          </label>
+        </div>
+        {error && <p className="personal-waypoint-error" role="alert">{error}</p>}
+        <div className="personal-waypoint-coordinate-actions">
+          <Button label="Apply coordinates" onClick={applyCoordinates} />
+        </div>
+      </div>
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />

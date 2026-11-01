@@ -852,14 +852,16 @@
 }
 .personal-waypoint-coordinate-disclosure {
   overflow: hidden;
-  border-top: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 .personal-waypoint-coordinate-disclosure > .button[data-variant='ghost'] {
   display: flex;
   width: 100%;
   min-height: 40px;
   justify-content: flex-start;
-  padding-inline: var(--space-1);
+  padding-inline: var(--space-3);
   text-align: left;
 }
 .personal-waypoint-coordinate-disclosure > .button > svg {
@@ -871,7 +873,7 @@
 .personal-waypoint-coordinate-content {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-2) var(--space-1);
+  padding: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 .personal-waypoint-coordinate-content[hidden] { display: none; }
@@ -901,6 +903,9 @@
   font: 400 var(--font-size-sm)/1.2 var(--sans);
   font-variant-numeric: tabular-nums;
 }
+/* Match native number steppers to the active NUSGo theme, not the operating-system preference. */
+:root:not([data-theme='dark']) .personal-waypoint-coordinate-field input { color-scheme: light; }
+:root[data-theme='dark'] .personal-waypoint-coordinate-field input { color-scheme: dark; }
 .personal-waypoint-coordinate-actions { display: flex; justify-content: flex-end; }
 .personal-waypoint-coordinate-actions > .button.personal-waypoint-apply { min-width: 78px; }
 .personal-waypoint-placement > .personal-waypoint-actions {

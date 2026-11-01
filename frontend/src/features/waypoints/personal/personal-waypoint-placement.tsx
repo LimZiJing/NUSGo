@@ -10,6 +10,10 @@ function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   return `${latitude} · ${longitude}`
 }
 
+function formatCoordinateInput(value: number): string {
+  return value.toFixed(6)
+}
+
 export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onContinue, onCancel }: {
   readonly coordinate: WaypointCoordinate
   readonly mapCenter: WaypointCoordinate | null
@@ -28,8 +32,8 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     headingRef.current?.focus()
   }, [])
   useEffect(() => {
-    if (latitudeInput.current) latitudeInput.current.value = String(coordinate.latitude)
-    if (longitudeInput.current) longitudeInput.current.value = String(coordinate.longitude)
+    if (latitudeInput.current) latitudeInput.current.value = formatCoordinateInput(coordinate.latitude)
+    if (longitudeInput.current) longitudeInput.current.value = formatCoordinateInput(coordinate.longitude)
   }, [coordinate.latitude, coordinate.longitude])
   useEffect(() => {
     if (!coordinateEntryOpen || !invalidField) return
@@ -65,8 +69,8 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
   }
   const useMapCenter = (): void => {
     if (!mapCenter) return
-    if (latitudeInput.current) latitudeInput.current.value = String(mapCenter.latitude)
-    if (longitudeInput.current) longitudeInput.current.value = String(mapCenter.longitude)
+    if (latitudeInput.current) latitudeInput.current.value = formatCoordinateInput(mapCenter.latitude)
+    if (longitudeInput.current) longitudeInput.current.value = formatCoordinateInput(mapCenter.longitude)
     setError(null)
     setInvalidField(null)
     onChange(mapCenter)
@@ -82,17 +86,20 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     onContinue()
   }
   return <section className="personal-waypoint-placement" aria-label="Place personal waypoint">
-    <h2 ref={headingRef} tabIndex={-1}>Place waypoint</h2>
-    <p>Tap the map or drag the pin.</p>
+    <header className="personal-waypoint-placement-header">
+      <h2 ref={headingRef} tabIndex={-1}>Place waypoint</h2>
+      <p>Tap the map or move the pin.</p>
+    </header>
     <div className="personal-waypoint-selected-location">
       <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
-      <strong className="personal-waypoint-selected-location-label">Selected location</strong>
-      <span className="personal-waypoint-map-center">
-        <Button label="Use map centre" variant="ghost" onClick={useMapCenter} disabled={!mapCenter} />
-      </span>
-      <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
-        {formatSelectedCoordinate(coordinate)}
-      </span>
+      <div className="personal-waypoint-selected-location-copy">
+        <strong className="personal-waypoint-selected-location-label">Selected location</strong>
+        <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
+          {formatSelectedCoordinate(coordinate)}
+        </span>
+      </div>
+      <Button label="Map centre" ariaLabel="Use map centre" variant="ghost" className="personal-waypoint-map-centre"
+        onClick={useMapCenter} disabled={!mapCenter} />
     </div>
     <div className="personal-waypoint-coordinate-disclosure">
       <Button
@@ -113,20 +120,20 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
         <div className="personal-waypoint-coordinate-fields">
           <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-latitude">
             <span>Latitude</span>
-            <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
+            <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={formatCoordinateInput(coordinate.latitude)}
               ref={latitudeInput} aria-invalid={invalidField === 'latitude'}
               aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
           </label>
           <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-longitude">
             <span>Longitude</span>
-            <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={coordinate.longitude}
+            <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={formatCoordinateInput(coordinate.longitude)}
               ref={longitudeInput} aria-invalid={invalidField === 'longitude'}
               aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
           </label>
         </div>
         {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
         <div className="personal-waypoint-coordinate-actions">
-          <Button label="Apply coordinates" onClick={applyCoordinates} />
+          <Button label="Apply" className="personal-waypoint-apply" onClick={applyCoordinates} />
         </div>
       </div>
     </div>

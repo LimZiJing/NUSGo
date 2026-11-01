@@ -45,8 +45,8 @@ describe('PersonalWaypointPlacement', () => {
 
     await user.click(screen.getByRole('button', { name: 'Use map centre' }))
 
-    expect(latitude.value).toBe(String(center.latitude))
-    expect(longitude.value).toBe(String(center.longitude))
+    expect(Number(latitude.value)).toBe(center.latitude)
+    expect(Number(longitude.value)).toBe(center.longitude)
     expect(screen.queryByRole('alert')).toBeNull()
     expect(latitude.getAttribute('aria-invalid')).toBe('false')
     expect(onChange).toHaveBeenCalledWith(center)

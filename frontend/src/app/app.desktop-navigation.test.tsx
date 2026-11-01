@@ -843,6 +843,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Enter coordinates' }))
 
     const latitude = screen.getByRole('spinbutton', { name: 'Latitude' })
     const longitude = screen.getByRole('spinbutton', { name: 'Longitude' })
@@ -853,7 +854,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
-    expect(screen.getByRole('alert').textContent).toContain('valid latitude and longitude')
+    expect(screen.getByRole('alert').textContent).toContain('Latitude must be between')
     expect(screen.queryByLabelText('Name')).toBeNull()
 
     await user.clear(latitude)

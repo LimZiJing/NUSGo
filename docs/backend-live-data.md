@@ -41,6 +41,12 @@ NUS's Acceptable Use Policy applies to this traffic. Keep upstream requests mode
 
 Only one Express instance may poll NUS for vehicles. Each instance keeps its own in-memory snapshot and polls on its own, so running two instances multiplies the upstream traffic. The same single-instance rule as the arrival snapshot applies.
 
+## Browser presentation
+
+The Live buses map layer is off by default. When enabled, the browser requests only routes used by the selected Path, selected bus route, or focused bus stop. It polls on the 30-second vehicle interval while the page is visible and aborts an in-flight request when the page becomes hidden. It never calls NUS directly.
+
+Vehicle markers snap to the checked-in route geometry and interpolate between fresh positions. The browser applies updates directly when reduced motion is enabled. Markers use theme load colours with a neutral unknown state, become visually stale during the final refresh interval, and are removed at expiry. A marker popup shows its route, next stop and estimated crowding; an unavailable route displays a short status message.
+
 ## Backend configuration
 
 Copy backend/.env.example to backend/.env for local settings. NUS live shuttle data requires all four values NUS_BUS_PROXY_BASE_URL, NUS_X_HTD_API, NUS_X_APP_API, and NUS_X_API_KEY; the token URL, app version, and device ID can use their defaults. An initial NUS_UNIVUS_JWT and NUS_USER_ID are optional; Express can obtain a session token when they are absent.

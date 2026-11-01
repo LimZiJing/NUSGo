@@ -1,4 +1,5 @@
 import type { LoadedTransitData } from '../../app/contracts/data'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import { Marker } from 'maplibre-gl'
 import type {
   MapCoordinate,
@@ -18,6 +19,7 @@ import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
+import { createLiveBusMarkers } from './live-bus-markers'
 import {
   createShuttleStopMarkers,
   type JourneyStopRoute,
@@ -91,6 +93,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
+  const liveBusMarkers = createLiveBusMarkers(map, options.onStopDetailsSelected)
   let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
@@ -408,6 +411,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearTransitData()
       transitData = data
       currentTransitIndex = data.index
+      liveBusMarkers.setTransitData(data)
       if (stopsPinStopId && !data.index.stopById.has(stopsPinStopId)) stopsPinStopId = null
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       const routeColors = new Map(data.index.routes.map(({ id, color }) => [id, color] as const))
@@ -432,6 +436,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
       installJourneyRouteLayers()
+    },
+
+    setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean) {
+      if (disposed) return
+      liveBusMarkers.setVehicles(vehicles, visible)
     },
 
     setRouteSelection(selection: MapRouteSelection, fit = true) {
@@ -782,6 +791,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
+      liveBusMarkers.dispose()
       buildingLabels?.dispose()
       buildingLabels = null
       groupLabels?.dispose()

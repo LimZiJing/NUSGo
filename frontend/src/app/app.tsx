@@ -49,6 +49,8 @@ import { AppViews, type AppViewsProps } from './composition/app-views'
 import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-panel-focus'
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
+import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
+import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
@@ -104,6 +106,7 @@ function App() {
   const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
+  const [liveBusLayerEnabled, setLiveBusLayerEnabled] = useState(false)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -156,6 +159,12 @@ function App() {
     (routeIds, signal) => services.shuttleServiceHoursClient.getServiceWindows(routeIds, signal),
     [services],
   )
+  const loadShuttleVehicles = useCallback(
+    (routeIds: readonly string[], signal: AbortSignal) => (
+      services.shuttleVehicleClient.getVehicles(routeIds, signal)
+    ),
+    [services],
+  )
   const requestNearbyLocation = useCallback((): void => {
     session?.locateUser()
   }, [session])
@@ -172,6 +181,31 @@ function App() {
     locateFromControl: commands.locateUser,
     enableLocationTracking: commands.enableLocationTracking,
   })
+  const liveBusRouteIds = useMemo(() => {
+    const routeIds = new Set<string>()
+    if (state.selectedRouteId) routeIds.add(state.selectedRouteId)
+    for (const leg of state.path.path?.legs ?? []) {
+      if (leg.mode === 'shuttle') routeIds.add(leg.routeId)
+    }
+    const focusedStopId = stopsWorkflow.state.focusedStopId
+    for (const routeId of state.transitIndex?.routeIdsByStopId.get(focusedStopId ?? '') ?? []) {
+      routeIds.add(routeId)
+    }
+    return [...routeIds].sort()
+  }, [
+    state.path.path,
+    state.selectedRouteId,
+    state.transitIndex,
+    stopsWorkflow.state.focusedStopId,
+  ])
+  const liveVehicles = useShuttleVehicles(
+    loadShuttleVehicles,
+    liveBusLayerEnabled,
+    liveBusRouteIds,
+  )
+  useEffect(() => {
+    commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], liveBusLayerEnabled)
+  }, [commands, liveBusLayerEnabled, liveVehicles.snapshot])
   useLayoutEffect(() => {
     commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
   }, [commands, stopsWorkflow.nearbyHighlightStopIds])
@@ -428,6 +462,7 @@ function App() {
       pathfinder: services.pathfinder,
       locationTracker: services.createLocationTracker(),
       onStopSelected: appNavigation.handleStopSelected,
+      onStopDetailsSelected: appNavigation.openStopDetailsFromMap,
       onMapStopInteraction: appNavigation.handleMapStopInteraction,
       onMapStopDestinationSet: appNavigation.openPlan,
       onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
@@ -441,6 +476,7 @@ function App() {
   }, [
     appNavigation.handleMapStopInteraction,
     appNavigation.handleStopSelected,
+    appNavigation.openStopDetailsFromMap,
     appNavigation.openPlan,
     handleMapJourneyOptionSelected,
     services,
@@ -701,6 +737,14 @@ function App() {
             }}
             onClick={toggleMore}
           />
+          <LiveBusToggle
+            enabled={liveBusLayerEnabled}
+            onToggle={setLiveBusLayerEnabled}
+          />
+          {liveBusLayerEnabled && (
+            liveVehicles.status === 'error' ||
+            (liveVehicles.snapshot?.unavailableRouteIds?.length ?? 0) > 0
+          ) && <p className="live-bus-status" role="status">Live buses unavailable</p>}
           <aside
             className="map-legend"
             aria-label="Map legend"

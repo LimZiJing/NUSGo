@@ -48,6 +48,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setStopsPinVisible: vi.fn(),
     setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
+    setLiveVehicles: vi.fn(),
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),

@@ -649,7 +649,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         const element = document.createElement('div')
         element.className = 'personal-waypoint-placement-marker'
         element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ element, draggable: editable })
+        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
         personalWaypointDragHandler = () => {

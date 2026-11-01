@@ -148,14 +148,14 @@ vi.mock('maplibre-gl', () => {
 
   class FakeMarker {
     readonly element: HTMLElement
-    readonly options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }
+    readonly options: { anchor?: string; element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }
     popup: FakePopup | null = null
     coordinate: unknown = null
     readonly handlers = new globalThis.Map<string, Set<() => void>>()
     draggable = false
     readonly remove = vi.fn()
 
-    constructor(options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }) {
+    constructor(options: { anchor?: string; element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }) {
       this.options = options
       this.element = options.element ?? document.createElement('div')
       this.draggable = options.draggable ?? false
@@ -1663,6 +1663,7 @@ describe('MapSession', () => {
     const marker = map.addedMarkers.at(-1)!
     expect(marker.coordinate).toEqual([103.78, 1.29])
     expect(marker.draggable).toBe(true)
+    expect(marker.options.anchor).toBe('bottom')
     marker.setLngLat([103.79, 1.3])
     marker.fire('dragend')
     expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])

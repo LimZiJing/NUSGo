@@ -155,12 +155,19 @@ export async function completePathGeometry(
     let preferredBusCount = 0
     let preferredWalkingFound = false
     const preferredBusRoutes = new Set<string>()
+    const prefetchedBusFallbacks = new Set<string>()
     for (const candidate of search.rankedCandidates) {
       const isBus = candidate.path.legs.some((leg) => leg.mode === 'shuttle')
       if (isBus) {
-        if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES) continue
         const key = busRouteSequence(candidate)
-        if (preferredBusRoutes.has(key)) continue
+        if (preferredBusRoutes.has(key)) {
+          if (!prefetchedBusFallbacks.has(key)) {
+            prefetchedBusFallbacks.add(key)
+            getPreparedGeometry(candidate)
+          }
+          continue
+        }
+        if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES) continue
         preferredBusRoutes.add(key)
         preferredBusCount += 1
       } else {
@@ -168,7 +175,6 @@ export async function completePathGeometry(
         preferredWalkingFound = true
       }
       getPreparedGeometry(candidate)
-      if (preferredBusCount >= MAX_BUS_PATH_CANDIDATES && preferredWalkingFound) break
     }
 
     let busCandidateCount = 0

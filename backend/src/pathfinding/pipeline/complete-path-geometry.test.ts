@@ -129,7 +129,7 @@ describe('completePathGeometry', () => {
     }
   })
 
-  it('retains a lower-ranked prefetch completed before the deadline when the first candidate stalls', async () => {
+  it('retains a different-stop same-route fallback completed before the deadline', async () => {
     vi.useFakeTimers()
     let monotonicTime = 0
     let markFirstRouteStarted = (): void => {}
@@ -172,7 +172,10 @@ describe('completePathGeometry', () => {
     }
     const pending = completePathGeometry(routeEngine, search([
       candidate('highest-ranked', [firstWalkingLeg, shuttleLeg()]),
-      candidate('prefetched-before-deadline', [secondWalkingLeg, shuttleLeg('B1')]),
+      candidate('prefetched-before-deadline', [
+        secondWalkingLeg,
+        { ...shuttleLeg(), boardingStopId: 'STOP-C' },
+      ]),
     ]), [
       { key: getTripEndpointKey(origin), endpoint: origin, coordinate: origin.coordinate },
       { key: getTripEndpointKey(destination), endpoint: destination, coordinate: { longitude: 103.01, latitude: 1.01 } },

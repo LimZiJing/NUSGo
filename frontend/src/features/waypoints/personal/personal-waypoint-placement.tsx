@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { isValidLocationCoordinates } from '../../../domain/location/coordinates'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
+import { LocateIcon, MapPinIcon } from '../../../ui/icons'
+
+function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
+  const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
+  const longitude = `${Math.abs(coordinate.longitude).toFixed(6)}° ${coordinate.longitude < 0 ? 'W' : 'E'}`
+  return `${latitude} · ${longitude}`
+}
 
 export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onContinue, onCancel }: {
   readonly coordinate: WaypointCoordinate
@@ -52,7 +59,22 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
   }
   return <section className="personal-waypoint-placement" aria-label="Place personal waypoint">
     <h2 ref={headingRef} tabIndex={-1}>Place waypoint</h2>
-    <p>Tap the map or drag the pin. You can also enter coordinates.</p>
+    <p>Tap the map or drag the pin.</p>
+    <div className="personal-waypoint-selected-location">
+      <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
+      <span className="personal-waypoint-selected-location-copy">
+        <strong>Selected location</strong>
+        <span aria-live="polite">{formatSelectedCoordinate(coordinate)}</span>
+      </span>
+      <Button
+        className="personal-waypoint-map-center"
+        label="Use map centre"
+        icon={<LocateIcon size={15} />}
+        variant="ghost"
+        onClick={useMapCenter}
+        disabled={!mapCenter}
+      />
+    </div>
     <div className="personal-waypoint-coordinate-fields">
       <label htmlFor="personal-waypoint-latitude">Latitude</label>
       <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
@@ -64,7 +86,6 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     {error && <p className="personal-waypoint-error" role="alert">{error}</p>}
     <div className="personal-waypoint-placement-tools">
       <Button label="Apply coordinates" onClick={applyCoordinates} />
-      <Button label="Use map centre" onClick={useMapCenter} disabled={!mapCenter} />
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />

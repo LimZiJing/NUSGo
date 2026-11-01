@@ -131,6 +131,7 @@ describe('PersonalWaypointsHome', () => {
         ]}
         categoryPickerOpen
         hiddenCategories={['Food & drink']}
+        draftHiddenCategories={['Food & drink']}
         categoryVisibilityStatus={null}
         onSetCategoryVisible={onSetCategoryVisible}
         onClearCategoryVisibilityChanges={onClearCategoryVisibilityChanges}
@@ -147,7 +148,7 @@ describe('PersonalWaypointsHome', () => {
     expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
   })
 
-  it('offers one Edit action for each place on the main list', async () => {
+  it('keeps details and Edit actions separate for each place on the main list', async () => {
     const user = userEvent.setup()
     const onEditWaypoint = vi.fn()
     render(
@@ -168,7 +169,7 @@ describe('PersonalWaypointsHome', () => {
       />,
     )
 
-    expect(screen.queryByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
     expect(onEditWaypoint).toHaveBeenCalledWith(waypoint.id)
   })

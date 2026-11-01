@@ -570,7 +570,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('edits an All places entry directly without adding a separate details action', async () => {
+  it('keeps details and Edit actions separate for an All places entry', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -588,7 +588,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    expect(screen.queryByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
 
     const panel = document.querySelector('.more-panel-surface')
@@ -1040,7 +1040,7 @@ describe('More surface', () => {
     expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
     expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot down' }).hasAttribute('disabled'))
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
       .toBe(true)
     await user.click(screen.getByRole('button', { name: 'Done' }))
 

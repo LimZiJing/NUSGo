@@ -64,7 +64,7 @@ export function PersonalWaypointList({
     ? waypoints.filter((waypoint) => waypoint.category === category).length
     : waypoints.length
   const editMode = canEdit && editing && waypoints.length > 0
-  const canReorder = editMode && !hasSearchFilter && !categoryView
+  const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter && !categoryView
 
   useEffect(() => {
     if (previousEditing.current === editing) return

@@ -17,10 +17,12 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
   readonly onContinue: () => void
   readonly onCancel: () => void
 }) {
+  type CoordinateField = 'latitude' | 'longitude'
   const headingRef = useRef<HTMLHeadingElement>(null)
   const latitudeInput = useRef<HTMLInputElement>(null)
   const longitudeInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [invalidField, setInvalidField] = useState<CoordinateField | null>(null)
   const [coordinateEntryOpen, setCoordinateEntryOpen] = useState(false)
   useEffect(() => {
     headingRef.current?.focus()
@@ -29,17 +31,32 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     if (latitudeInput.current) latitudeInput.current.value = String(coordinate.latitude)
     if (longitudeInput.current) longitudeInput.current.value = String(coordinate.longitude)
   }, [coordinate.latitude, coordinate.longitude])
+  useEffect(() => {
+    if (!coordinateEntryOpen || !invalidField) return
+    const invalidInput = invalidField === 'latitude' ? latitudeInput.current : longitudeInput.current
+    invalidInput?.focus()
+  }, [coordinateEntryOpen, invalidField])
   const readCoordinates = (): WaypointCoordinate | null => {
     const latitude = latitudeInput.current?.value.trim() ?? ''
     const longitude = longitudeInput.current?.value.trim() ?? ''
     const nextLatitude = Number(latitude)
     const nextLongitude = Number(longitude)
-    if (!latitude.trim() || !longitude.trim() || !isValidLocationCoordinates(nextLongitude, nextLatitude)) {
-      setError('Enter valid latitude and longitude values.')
+    const latitudeIsInvalid = !latitude || !Number.isFinite(nextLatitude)
+      || nextLatitude < -90 || nextLatitude > 90
+    const longitudeIsInvalid = !longitude || !Number.isFinite(nextLongitude)
+      || nextLongitude < -180 || nextLongitude > 180
+    if (latitudeIsInvalid || longitudeIsInvalid
+      || !isValidLocationCoordinates(nextLongitude, nextLatitude)) {
+      const field = latitudeIsInvalid ? 'latitude' : 'longitude'
+      setInvalidField(field)
+      setError(field === 'latitude'
+        ? 'Latitude must be between −90 and 90.'
+        : 'Longitude must be between −180 and 180.')
       setCoordinateEntryOpen(true)
       return null
     }
     setError(null)
+    setInvalidField(null)
     return { latitude: nextLatitude, longitude: nextLongitude }
   }
   const applyCoordinates = (): void => {
@@ -51,7 +68,12 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     if (latitudeInput.current) latitudeInput.current.value = String(mapCenter.latitude)
     if (longitudeInput.current) longitudeInput.current.value = String(mapCenter.longitude)
     setError(null)
+    setInvalidField(null)
     onChange(mapCenter)
+  }
+  const clearError = (): void => {
+    setError(null)
+    setInvalidField(null)
   }
   const continueToForm = (): void => {
     const next = readCoordinates()
@@ -98,15 +120,17 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
           <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-latitude">
             <span>Latitude</span>
             <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={coordinate.latitude}
-              ref={latitudeInput} onChange={() => setError(null)} />
+              ref={latitudeInput} aria-invalid={invalidField === 'latitude'}
+              aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
           </label>
           <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-longitude">
             <span>Longitude</span>
             <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={coordinate.longitude}
-              ref={longitudeInput} onChange={() => setError(null)} />
+              ref={longitudeInput} aria-invalid={invalidField === 'longitude'}
+              aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
           </label>
         </div>
-        {error && <p className="personal-waypoint-error" role="alert">{error}</p>}
+        {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
         <div className="personal-waypoint-coordinate-actions">
           <Button label="Apply coordinates" onClick={applyCoordinates} />
         </div>

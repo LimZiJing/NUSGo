@@ -34,15 +34,21 @@ describe('PersonalWaypointPlacement', () => {
     await user.type(latitude, '91')
     await user.clear(longitude)
     await user.type(longitude, '104')
+    await user.click(coordinateToggle)
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
-    expect(screen.getByRole('alert').textContent).toContain('valid latitude and longitude')
+    expect(coordinateToggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('alert').textContent).toContain('Latitude must be between')
+    expect(latitude.getAttribute('aria-invalid')).toBe('true')
+    expect(longitude.getAttribute('aria-invalid')).toBe('false')
+    expect(document.activeElement).toBe(latitude)
 
     await user.click(screen.getByRole('button', { name: 'Use map centre' }))
 
     expect(latitude.value).toBe(String(center.latitude))
     expect(longitude.value).toBe(String(center.longitude))
     expect(screen.queryByRole('alert')).toBeNull()
+    expect(latitude.getAttribute('aria-invalid')).toBe('false')
     expect(onChange).toHaveBeenCalledWith(center)
   })
 })

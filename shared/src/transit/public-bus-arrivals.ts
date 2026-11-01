@@ -14,6 +14,7 @@ export interface PublicBusEstimatedArrival {
 export interface PublicBusServiceArrival {
   readonly status: PublicBusServiceArrivalStatus
   readonly arrivals: readonly PublicBusEstimatedArrival[]
+  readonly nextStartAt?: string
 }
 
 export interface PublicBusStopArrivalData extends DataFreshness {

@@ -40,8 +40,15 @@ function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
 }
 
-function emptyService(status: PublicBusServiceArrival['status']): PublicBusServiceArrival {
-  return { status, arrivals: [] }
+function emptyService(
+  status: PublicBusServiceArrival['status'],
+  nextStartAt?: string,
+): PublicBusServiceArrival {
+  return {
+    status,
+    arrivals: [],
+    ...(nextStartAt ? { nextStartAt } : {}),
+  }
 }
 
 function asFutureArrivals(arrivals: readonly PublicBusEstimatedArrival[], nowMs: number): readonly PublicBusEstimatedArrival[] {
@@ -86,8 +93,12 @@ export function createLtaPublicBusArrivalProvider(
         }
         if (!scheduleLoader) return [serviceNumber, emptyService('no-estimate')] as const
         try {
-          const operating = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
-          return [serviceNumber, emptyService(operating === false ? 'not-in-operation' : 'no-estimate')] as const
+          const schedule = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
+          const notInOperation = schedule !== null && !schedule.operating
+          const nextStartAt = notInOperation && schedule.nextStartAtMs !== null
+            ? toIso(schedule.nextStartAtMs)
+            : undefined
+          return [serviceNumber, emptyService(notInOperation ? 'not-in-operation' : 'no-estimate', nextStartAt)] as const
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') throw error
           console.warn('LTA public bus schedule lookup failed.', {

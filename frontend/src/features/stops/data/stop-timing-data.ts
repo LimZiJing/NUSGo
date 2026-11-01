@@ -40,6 +40,7 @@ export interface PublicServiceTiming {
   readonly serviceNumber: string
   readonly timings: readonly [string, string, string] | null
   readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
+  readonly nextStartMessage?: string
 }
 
 export interface StopScheduledDeparture {
@@ -80,6 +81,68 @@ export interface StopTimingData {
 }
 export const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
 
+const SINGAPORE_DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Singapore',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Singapore',
+  weekday: 'long',
+})
+const SINGAPORE_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Singapore',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+})
+
+interface SingaporeDate {
+  readonly year: number
+  readonly month: number
+  readonly day: number
+}
+
+function singaporeDate(timestampMs: number): SingaporeDate {
+  const parts = SINGAPORE_DATE_FORMATTER.formatToParts(new Date(timestampMs))
+  return {
+    year: Number(parts.find((part) => part.type === 'year')?.value),
+    month: Number(parts.find((part) => part.type === 'month')?.value),
+    day: Number(parts.find((part) => part.type === 'day')?.value),
+  }
+}
+
+function dateKey(date: SingaporeDate): string {
+  return `${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`
+}
+
+function tomorrowDateKey(date: SingaporeDate): string {
+  const tomorrow = new Date(Date.UTC(date.year, date.month - 1, date.day + 1))
+  return dateKey({
+    year: tomorrow.getUTCFullYear(),
+    month: tomorrow.getUTCMonth() + 1,
+    day: tomorrow.getUTCDate(),
+  })
+}
+
+function nextStartMessage(nextStartAt: string | undefined, nowMs: number): string | null {
+  if (!nextStartAt) return null
+  const startAtMs = Date.parse(nextStartAt)
+  if (!Number.isFinite(startAtMs) || startAtMs <= nowMs) return null
+
+  const startDateKey = dateKey(singaporeDate(startAtMs))
+  const nowDate = singaporeDate(nowMs)
+  const nowDateKey = dateKey(nowDate)
+  const dayLabel = startDateKey === nowDateKey
+    ? ''
+    : startDateKey === tomorrowDateKey(nowDate)
+      ? 'tomorrow '
+      : `${SINGAPORE_WEEKDAY_FORMATTER.format(new Date(startAtMs))} `
+  const time = SINGAPORE_TIME_FORMATTER.format(new Date(startAtMs))
+  return `Starts ${dayLabel}${time}`
+}
+
 function formatArrivalSeconds(seconds: number, minuteFormat: MinuteFormat): string {
   return seconds < 30 ? 'Arr' : formatMinutes(Math.ceil(seconds / 60), minuteFormat)
 }
@@ -112,7 +175,17 @@ function getPublicServiceTimings(
     const service = stopData?.services[serviceNumber]
     if (!service) return { serviceNumber, timings: null, status: 'provider-error' as const }
     if (stale) return { serviceNumber, timings: null, status: 'provider-error' as const }
-    if (service.status !== 'live') return { serviceNumber, timings: null, status: service.status }
+    if (service.status !== 'live') {
+      const message = service.status === 'not-in-operation'
+        ? nextStartMessage(service.nextStartAt, nowMs)
+        : null
+      return {
+        serviceNumber,
+        timings: null,
+        status: service.status,
+        ...(message ? { nextStartMessage: message } : {}),
+      }
+    }
     const timings = service.arrivals
       .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - receivedAtMs) / 1_000))
       .filter((seconds) => seconds >= 0)

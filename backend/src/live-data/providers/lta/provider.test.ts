@@ -15,13 +15,34 @@ function jsonResponse(value: unknown, status = 200): Response {
 }
 
 describe('LTA public bus arrival provider', () => {
+  it('includes a scheduled next start for a service that is not yet operating', async () => {
+    const nextStartAtMs = Date.parse('2026-10-15T04:00:00.000Z')
+    const provider = createLtaPublicBusArrivalProvider({
+      accountKey: 'test-account-key',
+      mappings,
+      now: () => Date.parse('2026-10-15T03:00:00.000Z'),
+      scheduleLoader: async () => ({ operating: false, nextStartAtMs }),
+      fetcher: async () => jsonResponse({ Services: [] }),
+    })
+
+    const result = await provider.getArrivals(mappings.map(({ stopId }) => stopId), new AbortController().signal)
+
+    assert.deepEqual(result.stops['STOP-A']?.services['95'], {
+      status: 'not-in-operation',
+      arrivals: [],
+      nextStartAt: '2026-10-15T04:00:00.000Z',
+    })
+  })
+
   it('distinguishes live, no-estimate, and out-of-operation services and caches stop data', async () => {
     let fetchCount = 0
     const provider = createLtaPublicBusArrivalProvider({
       accountKey: 'test-account-key',
       mappings,
       now: () => Date.parse('2026-10-15T03:00:00.000Z'),
-      scheduleLoader: async (serviceNumber) => serviceNumber === '151' ? false : null,
+      scheduleLoader: async (serviceNumber) => serviceNumber === '151'
+        ? { operating: false, nextStartAtMs: null }
+        : null,
       fetcher: async () => {
         fetchCount += 1
         return jsonResponse({

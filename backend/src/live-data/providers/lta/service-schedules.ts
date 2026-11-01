@@ -14,12 +14,17 @@ export interface LtaServiceSchedule {
   readonly sunday: LtaServiceOperatingWindow | null
 }
 
+export interface LtaServiceScheduleStatus {
+  readonly operating: boolean
+  readonly nextStartAtMs: number | null
+}
+
 export type LtaScheduleLoader = (
   serviceNumber: string,
   busStopCode: string,
   atMs: number,
   signal: AbortSignal,
-) => Promise<boolean | null>
+) => Promise<LtaServiceScheduleStatus | null>
 
 interface RecordValue {
   readonly [key: string]: unknown
@@ -226,6 +231,17 @@ export function createLtaScheduleLoader(options: {
     const schedules = await schedulesPromise
     const matches = schedules.get(scheduleKey(serviceNumber, busStopCode))
     if (!matches?.length) return null
-    return matches.some((schedule) => isLtaServiceOperating(schedule, atMs))
+
+    let operating = false
+    let nextStartAtMs: number | null = null
+    for (const schedule of matches) {
+      if (isLtaServiceOperating(schedule, atMs)) operating = true
+      const nextStart = getNextLtaServiceStart(schedule, atMs)
+      if (nextStart && (nextStartAtMs === null || nextStart.startAtMs < nextStartAtMs)) {
+        nextStartAtMs = nextStart.startAtMs
+      }
+    }
+
+    return { operating, nextStartAtMs }
   }
 }

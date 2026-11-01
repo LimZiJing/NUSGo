@@ -199,9 +199,39 @@ describe('LTA service schedules', () => {
     })
     const signal = new AbortController().signal
 
-    assert.equal(await loader('95', '12345', Date.parse('2026-10-05T15:00:00Z'), signal), true)
-    assert.equal(await loader('95', '12345', Date.parse('2026-10-05T17:00:00Z'), signal), false)
+    assert.deepEqual(await loader('95', '12345', Date.parse('2026-10-05T15:00:00Z'), signal), {
+      operating: true,
+      nextStartAtMs: Date.parse('2026-10-05T21:30:00Z'),
+    })
+    assert.deepEqual(await loader('95', '12345', Date.parse('2026-10-05T17:00:00Z'), signal), {
+      operating: false,
+      nextStartAtMs: Date.parse('2026-10-05T21:30:00Z'),
+    })
     assert.equal(await loader('96', '12345', Date.parse('2026-10-05T15:00:00Z'), signal), null)
     assert.equal(calls, 1)
+  })
+
+  it('loads a holiday next start through the schedule loader', async () => {
+    const loader = createLtaScheduleLoader({
+      mappings,
+      accountKey: 'test-account-key',
+      fetcher: async () => new Response(JSON.stringify({
+        value: [{
+          ServiceNo: '95',
+          BusStopCode: '12345',
+          WD_FirstBus: '0530',
+          WD_LastBus: '2300',
+          SAT_FirstBus: '0600',
+          SAT_LastBus: '2300',
+          SUN_FirstBus: '0700',
+          SUN_LastBus: '2300',
+        }],
+      })),
+    })
+
+    assert.deepEqual(await loader('95', '12345', Date.parse('2025-12-31T21:00:00Z'), new AbortController().signal), {
+      operating: false,
+      nextStartAtMs: Date.parse('2025-12-31T23:00:00Z'),
+    })
   })
 })

@@ -18,7 +18,7 @@ interface PersonalWaypointListRowProps {
   readonly handleRef?: (element: HTMLButtonElement | null) => void
   readonly isDragging?: boolean
   readonly index: number
-  readonly sortableDisabled?: boolean
+  readonly keyboardReordering?: boolean
   readonly onHandleKeyDown?: (waypointId: string, index: number, event: KeyboardEvent<HTMLButtonElement>) => void
   readonly handleDescriptionId: string
 }
@@ -35,6 +35,7 @@ export function PersonalWaypointListRow({
   handleRef,
   isDragging = false,
   index,
+  keyboardReordering = false,
   onHandleKeyDown,
   handleDescriptionId,
 }: PersonalWaypointListRowProps) {
@@ -58,6 +59,7 @@ export function PersonalWaypointListRow({
           onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, index, event)}
           ariaDescribedBy={handleDescriptionId}
           ariaKeyShortcuts="Space Enter ArrowUp ArrowDown Escape"
+          dataKeyboardReordering={keyboardReordering}
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
@@ -95,10 +97,9 @@ export function PersonalWaypointListRow({
 export function PersonalWaypointSortableListRow({
   waypoint,
   index,
-  sortableDisabled = false,
   ...props
 }: PersonalWaypointListRowProps) {
-  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index, disabled: sortableDisabled })
+  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index })
 
   return (
     <PersonalWaypointListRow

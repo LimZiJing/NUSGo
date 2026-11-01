@@ -202,7 +202,7 @@ export function PersonalWaypointList({
         waypoint,
         editing: editMode,
         handleDisabled: !canReorder || Boolean(keyboardReorder && keyboardReorder.waypointId !== waypoint.id),
-        sortableDisabled: keyboardReorder !== null,
+        keyboardReordering: keyboardReorder?.waypointId === waypoint.id,
         index,
         handleDescriptionId: reorderInstructionsId,
         onHandleKeyDown: handleReorderKeyDown,

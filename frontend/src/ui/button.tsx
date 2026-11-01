@@ -26,6 +26,7 @@ interface ButtonProps {
   readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
   readonly ariaDescribedBy?: string
   readonly ariaKeyShortcuts?: string
+  readonly dataKeyboardReordering?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -49,6 +50,7 @@ interface IconButtonProps {
   readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
   readonly ariaDescribedBy?: string
   readonly ariaKeyShortcuts?: string
+  readonly dataKeyboardReordering?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -71,6 +73,7 @@ export function Button({
   onKeyDown,
   ariaDescribedBy,
   ariaKeyShortcuts,
+  dataKeyboardReordering,
   className,
   ref,
 }: ButtonProps) {
@@ -91,6 +94,7 @@ export function Button({
       aria-busy={busy}
       aria-describedby={ariaDescribedBy}
       aria-keyshortcuts={ariaKeyShortcuts}
+      data-keyboard-reordering={dataKeyboardReordering ? 'true' : undefined}
       onClick={onClick}
       onKeyDown={onKeyDown}
     >
@@ -116,6 +120,7 @@ export function IconButton({
   onKeyDown,
   ariaDescribedBy,
   ariaKeyShortcuts,
+  dataKeyboardReordering,
   className,
   ref,
 }: IconButtonProps) {
@@ -136,6 +141,7 @@ export function IconButton({
       aria-busy={busy}
       aria-describedby={ariaDescribedBy}
       aria-keyshortcuts={ariaKeyShortcuts}
+      data-keyboard-reordering={dataKeyboardReordering ? 'true' : undefined}
       onClick={onClick}
       onKeyDown={onKeyDown}
     >

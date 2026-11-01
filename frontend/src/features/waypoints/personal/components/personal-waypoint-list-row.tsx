@@ -1,4 +1,5 @@
-import type { Ref } from 'react'
+import { useCallback } from 'react'
+import type { KeyboardEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
 import { IconButton, Button } from '../../../../ui/button'
@@ -16,6 +17,10 @@ interface PersonalWaypointListRowProps {
   readonly rowRef?: Ref<HTMLLIElement>
   readonly handleRef?: (element: HTMLButtonElement | null) => void
   readonly isDragging?: boolean
+  readonly index: number
+  readonly sortableDisabled?: boolean
+  readonly onHandleKeyDown?: (waypointId: string, index: number, event: KeyboardEvent<HTMLButtonElement>) => void
+  readonly handleDescriptionId: string
 }
 
 export function PersonalWaypointListRow({
@@ -29,12 +34,15 @@ export function PersonalWaypointListRow({
   rowRef,
   handleRef,
   isDragging = false,
+  index,
+  onHandleKeyDown,
+  handleDescriptionId,
 }: PersonalWaypointListRowProps) {
   const label = `${waypoint.name}, ${waypoint.category}`
-  const setHandleRef = (element: HTMLButtonElement | null): void => {
+  const setHandleRef = useCallback((element: HTMLButtonElement | null): void => {
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
-  }
+  }, [handleRef, onHandleRef, waypoint.id])
 
   return (
     <SavedListRow
@@ -47,6 +55,9 @@ export function PersonalWaypointListRow({
           label={`Reorder ${label}`}
           icon={<GripVerticalIcon />}
           onClick={() => undefined}
+          onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, index, event)}
+          ariaDescribedBy={handleDescriptionId}
+          ariaKeyShortcuts="Space Enter ArrowUp ArrowDown Escape"
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
@@ -84,15 +95,16 @@ export function PersonalWaypointListRow({
 export function PersonalWaypointSortableListRow({
   waypoint,
   index,
+  sortableDisabled = false,
   ...props
-}: PersonalWaypointListRowProps & { readonly index: number }) {
-  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index })
+}: PersonalWaypointListRowProps) {
+  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index, disabled: sortableDisabled })
 
   return (
     <PersonalWaypointListRow
       {...props}
       waypoint={waypoint}
-      handleDisabled={false}
+      index={index}
       rowRef={ref}
       handleRef={handleRef}
       isDragging={isDragging}

@@ -192,6 +192,78 @@ describe('PersonalWaypointList', () => {
     expect(screen.queryByRole('button', { name: /Move .* (up|down)/ })).toBeNull()
   })
 
+  it('supports keyboard start, movement, drop, and focus restoration', async () => {
+    const user = userEvent.setup()
+    const onMove = vi.fn(() => true)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={() => undefined}
+        onMove={onMove}
+        onClearAll={() => undefined}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const handle = screen.getByRole('button', { name: 'Reorder Design studio, Study place' })
+    expect(handle.getAttribute('aria-describedby')).toBe('personal-waypoint-reorder-instructions')
+    expect(screen.getByText(/Press Space or Enter to start reordering/)).toBeTruthy()
+
+    handle.focus()
+    await user.keyboard('{Space}')
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith(
+      'Picked up Design studio, position 2 of 3. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.',
+    )
+
+    await user.keyboard('{ArrowUp}')
+    expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+      'Design studioStudy place',
+      'Quiet benchRest spot',
+      'Tea roomRest spot',
+    ])
+    expect(onMove).not.toHaveBeenCalled()
+
+    await user.keyboard('{Enter}')
+    expect(onMove).toHaveBeenCalledOnce()
+    expect(onMove).toHaveBeenCalledWith(waypoints[1]?.id, 0)
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith('Design studio moved to position 1 of 3.')
+    expect(document.activeElement).toBe(handle)
+  })
+
+  it('cancels keyboard reordering and skips writes for a no-op', async () => {
+    const user = userEvent.setup()
+    const onMove = vi.fn(() => true)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={() => undefined}
+        onMove={onMove}
+        onClearAll={() => undefined}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const handle = screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
+    handle.focus()
+    await user.keyboard('{Space}')
+    await user.keyboard('{Escape}')
+    expect(onMove).not.toHaveBeenCalled()
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith('Reordering Quiet bench canceled.')
+
+    await user.keyboard('{Space}')
+    await user.keyboard('{ArrowDown}')
+    await user.keyboard('{ArrowUp}')
+    await user.keyboard('{Enter}')
+    expect(onMove).not.toHaveBeenCalled()
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith('Quiet bench remains at position 1 of 3.')
+  })
+
   it('opens details from a row while keeping list management actions separate', async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()

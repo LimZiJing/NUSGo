@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { move } from '@dnd-kit/helpers'
-import { DragDropProvider } from '@dnd-kit/react'
+import type { KeyboardEvent } from 'react'
+import { arrayMove, move } from '@dnd-kit/helpers'
+import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
 import type { DragEndEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { Button } from '../../../../ui/button'
@@ -11,6 +12,14 @@ import {
   PersonalWaypointListRow,
   PersonalWaypointSortableListRow,
 } from './personal-waypoint-list-row'
+
+const reorderInstructionsId = 'personal-waypoint-reorder-instructions'
+
+interface KeyboardReorderState {
+  readonly waypointId: string
+  readonly startIndex: number
+  readonly currentIndex: number
+}
 
 interface PersonalWaypointListProps {
   readonly waypoints: readonly PersonalWaypoint[]
@@ -38,6 +47,7 @@ export function PersonalWaypointList({
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [keyboardReorder, setKeyboardReorder] = useState<KeyboardReorderState | null>(null)
   const previousEditing = useRef(editing)
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
@@ -86,6 +96,68 @@ export function PersonalWaypointList({
     onClearAll()
   }
 
+  const handleReorderKeyDown = (
+    waypointId: string,
+    index: number,
+    event: KeyboardEvent<HTMLButtonElement>,
+  ): void => {
+    if (!canReorder) return
+    const isSpaceKey = event.key === ' ' || event.key === 'Space' || event.code === 'Space'
+    const waypoint = waypoints.find(({ id }) => id === waypointId)
+    if (!waypoint) return
+
+    if (keyboardReorder) {
+      if (keyboardReorder.waypointId !== waypointId) return
+
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault()
+        const direction = event.key === 'ArrowUp' ? -1 : 1
+        const currentIndex = Math.max(0, Math.min(waypoints.length - 1, keyboardReorder.currentIndex + direction))
+        if (currentIndex === keyboardReorder.currentIndex) {
+          onEditAnnouncement?.(`${waypoint.name} is at position ${currentIndex + 1} of ${waypoints.length}.`)
+          return
+        }
+        setKeyboardReorder({ ...keyboardReorder, currentIndex })
+        onEditAnnouncement?.(`${waypoint.name}, position ${currentIndex + 1} of ${waypoints.length}.`)
+        return
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setKeyboardReorder(null)
+        onEditAnnouncement?.(`Reordering ${waypoint.name} canceled.`)
+        return
+      }
+
+      if (isSpaceKey || event.key === 'Enter') {
+        event.preventDefault()
+        const targetIndex = keyboardReorder.currentIndex
+        setKeyboardReorder(null)
+        if (targetIndex === keyboardReorder.startIndex) {
+          onEditAnnouncement?.(`${waypoint.name} remains at position ${targetIndex + 1} of ${waypoints.length}.`)
+          return
+        }
+
+        if (!onMove(waypointId, targetIndex)) {
+          onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
+          return
+        }
+
+        pendingFocusRef.current = { waypointId, action: 'reorder' }
+        onEditAnnouncement?.(`${waypoint.name} moved to position ${targetIndex + 1} of ${waypoints.length}.`)
+      }
+      return
+    }
+
+    if (!isSpaceKey && event.key !== 'Enter') return
+    event.preventDefault()
+    setKeyboardReorder({ waypointId, startIndex: index, currentIndex: index })
+    onEditAnnouncement?.(`Picked up ${waypoint.name}, position ${index + 1} of ${waypoints.length}. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.`)
+  }
+
+  const keyboardPreviewWaypoints = keyboardReorder
+    ? arrayMove([...visibleWaypoints], keyboardReorder.startIndex, keyboardReorder.currentIndex)
+    : visibleWaypoints
   const handleDragEnd = (event: DragEndEvent): void => {
     const source = event.operation.source
     if (!source) return
@@ -125,11 +197,15 @@ export function PersonalWaypointList({
     tabIndex={0}
     aria-label={categoryView ? `Saved Personal Waypoints in ${category}` : 'Saved Personal Waypoints'}
   >
-    {visibleWaypoints.map((waypoint, index) => {
+    {keyboardPreviewWaypoints.map((waypoint, index) => {
       const rowProps = {
         waypoint,
         editing: editMode,
-        handleDisabled: !canReorder,
+        handleDisabled: !canReorder || Boolean(keyboardReorder && keyboardReorder.waypointId !== waypoint.id),
+        sortableDisabled: keyboardReorder !== null,
+        index,
+        handleDescriptionId: reorderInstructionsId,
+        onHandleKeyDown: handleReorderKeyDown,
         onRemove: (id: string) => {
           pendingFocusRef.current = { waypointId: id, action: 'remove' }
           onRemove(id)
@@ -173,11 +249,16 @@ export function PersonalWaypointList({
       )}
 
       {visibleWaypoints.length > 0 ? (
-        canReorder ? (
-          <DragDropProvider onDragEnd={handleDragEnd}>
-            {listRows}
-          </DragDropProvider>
-        ) : listRows
+        <>
+          {editMode && <p id={reorderInstructionsId} className="visually-hidden">
+            Press Space or Enter to start reordering. Use the Up and Down arrow keys to change position. Press Space or Enter to save, or Escape to cancel.
+          </p>}
+          {canReorder ? (
+            <DragDropProvider sensors={[PointerSensor]} onDragEnd={handleDragEnd}>
+              {listRows}
+            </DragDropProvider>
+          ) : listRows}
+        </>
       ) : (
         <div className="personal-waypoint-list-empty">
           <p>No waypoints match this search.</p>

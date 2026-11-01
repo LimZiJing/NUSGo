@@ -501,3 +501,146 @@ describe('Express live transit API', () => {
     assert.equal(liveData.isSnapshotReady(), false)
   })
 })
+
+function sleepFor(ms: number): Promise<void> {
+  return new Promise<void>((resolveWait) => setTimeout(resolveWait, ms))
+}
+
+// Serves arrivals from the shared fake and answers NUS active-bus calls itself.
+function createVehicleFetcher(failingRouteIds: ReadonlySet<string>, requestedRouteIds: string[]): typeof fetch {
+  const arrivalFetcher = createSuccessfulFetcher({ routeWindows: 0 })
+  return async (input, init) => {
+    const url = String(input)
+    if (!url.endsWith('/active-bus')) return arrivalFetcher(input, init)
+    const routeCode = (JSON.parse(String(init?.body)) as { route_code: string }).route_code
+    requestedRouteIds.push(routeCode)
+    if (failingRouteIds.has(routeCode)) return jsonResponse({ error: 'provider unavailable' }, 503)
+    return jsonResponse({
+      data: {
+        ActiveBusCount: '1',
+        activebus: [{
+          vehplate: 'PD' + routeCode,
+          lat: 1.291666,
+          lng: 103.783352,
+          speed: 15,
+          direction: 309.8,
+          loadInfo: { occupancy: 0.393, crowdLevel: 'medium', capacity: 89, ridership: 35 },
+        }],
+      },
+    })
+  }
+}
+
+async function waitForVehicleCycle(
+  liveData: Awaited<ReturnType<typeof createBackendLiveData>>,
+  routeIds: readonly string[],
+  expectedUnavailableRouteIds: readonly string[],
+): Promise<void> {
+  const deadline = Date.now() + 5_000
+  while (Date.now() < deadline) {
+    const unavailable = liveData.getVehicles(routeIds).unavailableRouteIds
+    if (JSON.stringify(unavailable) === JSON.stringify(expectedUnavailableRouteIds)) return
+    await sleepFor(5)
+  }
+  assert.fail('the first vehicle cycle should publish the expected unavailable routes')
+}
+
+describe('Live vehicle positions', () => {
+  it('serves vehicle positions for the requested routes after a successful cycle', async () => {
+    const routeIds = backendData.network.routes.map((route) => route.id)
+    const [requestedRoute, otherRoute] = routeIds
+    assert.ok(requestedRoute && otherRoute)
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: createVehicleFetcher(new Set(), []),
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForVehicleCycle(liveData, routeIds, [])
+
+      const response = liveData.getVehicles([requestedRoute])
+      assert.equal(response.vehicles.length, 1)
+      assert.equal(response.vehicles[0]?.routeId, requestedRoute)
+      assert.equal(response.vehicles[0]?.plate, 'PD' + requestedRoute)
+      assert.equal(response.vehicles.some((vehicle) => vehicle.routeId === otherRoute), false)
+      assert.deepEqual(response.unavailableRouteIds, [])
+      assert.equal(response.observedAt, new Date(fixedNow).toISOString())
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('keeps the other routes served when one route fails and lists only the failed route as unavailable', async () => {
+    const routeIds = backendData.network.routes.map((route) => route.id)
+    const [failedRoute, okRoute] = routeIds
+    assert.ok(failedRoute && okRoute)
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: createVehicleFetcher(new Set([failedRoute]), []),
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForVehicleCycle(liveData, routeIds, [failedRoute])
+
+      const response = liveData.getVehicles([failedRoute, okRoute])
+      assert.deepEqual(response.unavailableRouteIds, [failedRoute])
+      assert.equal(response.vehicles.length, 1)
+      assert.equal(response.vehicles[0]?.routeId, okRoute)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('returns no vehicles and marks every requested route unavailable when all routes fail, without affecting arrivals readiness', async () => {
+    const routeIds = backendData.network.routes.map((route) => route.id)
+    const requestedRouteIds: string[] = []
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: createVehicleFetcher(new Set(routeIds), requestedRouteIds),
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+      const deadline = Date.now() + 5_000
+      while (requestedRouteIds.length < routeIds.length && Date.now() < deadline) {
+        await sleepFor(5)
+      }
+      await sleepFor(25)
+
+      const response = liveData.getVehicles(routeIds)
+      assert.deepEqual(response.vehicles, [])
+      assert.deepEqual(response.unavailableRouteIds, routeIds)
+      assert.equal(liveData.isSnapshotReady(), true)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('reports every requested route as unavailable and does not change readiness when NUS is not configured', async () => {
+    const config = loadBackendConfig({
+      NODE_ENV: 'test',
+      NUSGO_DATA_DIR: sourceDataDirectory,
+      LTA_ACCOUNT_KEY: '',
+    }, repositoryRoot)
+    const liveData = await createBackendLiveData(config, backendData, {
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+    const routeIds = backendData.network.routes.map((route) => route.id)
+
+    try {
+      const response = liveData.getVehicles(routeIds)
+      assert.deepEqual(response.vehicles, [])
+      assert.deepEqual(response.unavailableRouteIds, routeIds)
+      assert.equal(liveData.isSnapshotReady(), false)
+    } finally {
+      await liveData.stop()
+    }
+  })
+})

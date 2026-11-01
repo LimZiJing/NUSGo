@@ -10,6 +10,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { LocationControl } from '../ui/location-control'
+import { PwaNotices } from './pwa-notices'
 import { NearbyCrosshair } from '../ui/nearby-crosshair'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
@@ -576,6 +577,7 @@ function App() {
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
+        <PwaNotices />
         <div
           ref={mapContainer}
           className="map"

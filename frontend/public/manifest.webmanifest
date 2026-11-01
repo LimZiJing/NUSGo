@@ -1,0 +1,31 @@
+{
+  "id": "./",
+  "name": "NUSGo",
+  "short_name": "NUSGo",
+  "description": "Find campus venues and bus routes at NUS.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff3e7",
+  "theme_color": "#003d7c",
+  "icons": [
+    {
+      "src": "./icons/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/pwa-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -125,7 +125,7 @@ export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: numbe
   const today = new Date(localMs).getUTCDay()
   const minute = Math.floor((localMs % DAY_MS) / 60_000)
   const localMidnightMs = Math.floor(localMs / DAY_MS) * DAY_MS - SINGAPORE_OFFSET_MS
-  for (let offset = 0; offset < 7; offset += 1) {
+  for (let offset = 0; offset <= 7; offset += 1) {
     const window = windowFor(schedule, (today + offset) % 7)
     if (!window) continue
     const first = toMinutes(window.firstBus)

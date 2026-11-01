@@ -120,6 +120,15 @@ describe('next LTA service start', () => {
     assert.ok(weekdayOnly)
     // Fri 09/10/2026 23:30 SGT, next first bus is Mon 12/10/2026 05:30 SGT
     assert.equal(getNextLtaServiceStart(weekdayOnly, Date.parse('2026-10-09T15:30:00Z')), Date.parse('2026-10-11T21:30:00Z'))
+    const sundayOnly = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+    assert.ok(sundayOnly)
+    // Sun 11/10/2026 12:00 SGT, after the first bus, so the next start is Sun 18/10/2026 07:00 SGT
+    assert.equal(getNextLtaServiceStart(sundayOnly, Date.parse('2026-10-11T04:00:00Z')), Date.parse('2026-10-17T23:00:00Z'))
     const none = parseLtaServiceSchedule({ ServiceNo: '95', BusStopCode: '12345' })
     assert.ok(none)
     assert.equal(getNextLtaServiceStart(none, Date.parse('2026-10-09T15:30:00Z')), null)

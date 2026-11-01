@@ -21,7 +21,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Personal Waypoints | Create a private waypoint by placing a map pin and saving a named record in this browser profile | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
-| Express API | Journey planning, NUS and LTA arrivals, service windows, one shuttle snapshot poller | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
+| Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
 | Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
 
 Also in place:

@@ -1,9 +1,10 @@
-import type {
-  ShuttleHeadwaySeconds,
-  ShuttleRouteArrivalData,
-} from '@nusgo/shared'
+import type { ShuttleHeadwaySeconds } from '@nusgo/shared'
 import type { NusProviderConfig } from '../../../config.ts'
-import type { BusArrivalStop, BusArrivalStopResult } from '../../bus-arrivals/snapshot.ts'
+import type {
+  BusArrivalStop,
+  BusArrivalStopResult,
+  ShuttleRouteArrivalWithPlate,
+} from '../../bus-arrivals/snapshot.ts'
 import {
   createNusBusProxyRequest,
   retryNusRequest,
@@ -14,7 +15,7 @@ const NUS_BUS_ARRIVAL_ENDPOINT = 'shuttle-service'
 
 export interface ParsedNusBusArrivalRoute {
   readonly routeId: string
-  readonly arrival: ShuttleRouteArrivalData
+  readonly arrival: ShuttleRouteArrivalWithPlate
 }
 
 export interface NusBusArrivalProvider {
@@ -157,6 +158,19 @@ function routeIdFrom(record: RecordValue, routeHint: string | null): string | nu
   return route ?? routeHint
 }
 
+function plateOrNull(value: string | null): string | null {
+  return value && value !== '-' ? value : null
+}
+
+function parseNextBusPlate(record: RecordValue): string | null {
+  const etas = getValue(record, ['_etas'])
+  const firstEtaPlate = Array.isArray(etas) && isRecord(etas[0])
+    ? getTextValue(etas[0], ['plate'])
+    : null
+  return plateOrNull(getTextValue(record, ['arrivalTime_veh_plate', 'nextBusPlate']))
+    ?? plateOrNull(firstEtaPlate)
+}
+
 function parseCandidate(
   record: RecordValue,
   routeHint: string | null,
@@ -170,12 +184,14 @@ function parseCandidate(
     .filter((arrival, index, values) => values.indexOf(arrival) === index)
     .sort((first, second) => first - second)
   if (!routeId || upcoming.length === 0) return null
+  const nextBusPlate = parseNextBusPlate(record)
   return {
     routeId,
     arrival: {
       nextArrivalSeconds: upcoming[0],
       upcomingArrivalSeconds: upcoming,
       headwaySeconds: createHeadwaySeconds(upcoming),
+      ...(nextBusPlate ? { nextBusPlate } : {}),
     },
   }
 }

@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T17:13:45Z",
+  "title": "Design System: NUSGo",
+  "extensions": {
+    "colorMeta": {
+      "light-accent": {
+        "role": "primary",
+        "displayName": "Light accent",
+        "canonical": "#1d4ed8",
+        "tonalRamp": ["#000331", "#000c6a", "#0119a9", "#1341cb", "#2e63ee", "#5688fc", "#9ebdfd", "#e7effe"]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark accent",
+        "canonical": "#60a5fa",
+        "tonalRamp": ["#000b1f", "#012147", "#023973", "#0454a2", "#2d72c3", "#4c91e4", "#92c1fd", "#e4f0fe"]
+      },
+      "nus-accent": {
+        "role": "primary",
+        "displayName": "NUS accent",
+        "canonical": "#bb4a00",
+        "tonalRamp": ["#190500", "#3c1301", "#622504", "#8b3808", "#b64d13", "#dc6930", "#fda47e", "#ffe9e1"]
+      },
+      "nus-brand-blue": {
+        "role": "secondary",
+        "displayName": "NUS theme blue",
+        "canonical": "#003d7c",
+        "tonalRamp": ["#000b1f", "#012147", "#023974", "#1f5596", "#3d73b6", "#5a91d7", "#92c1fe", "#e4f0ff"]
+      },
+      "nus-brand-orange": {
+        "role": "tertiary",
+        "displayName": "NUS theme orange",
+        "canonical": "#ef7c00",
+        "tonalRamp": ["#160700", "#371802", "#5a2d04", "#81420a", "#ac5700", "#d47117", "#fda76a", "#feeadd"]
+      },
+      "matcha-accent": {
+        "role": "primary",
+        "displayName": "Matcha accent",
+        "canonical": "#3b6347",
+        "tonalRamp": ["#030e06", "#0e2817", "#1c442a", "#386044", "#547d60", "#719b7c", "#9fcaaa", "#e7f2e9"]
+      },
+      "sakura-accent": {
+        "role": "primary",
+        "displayName": "Sakura accent",
+        "canonical": "#963b56",
+        "tonalRamp": ["#1c0108", "#41061c", "#6b1032", "#8b314d", "#ac4e68", "#cd6c86", "#fd9db4", "#ffe8ec"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Main application headings."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings and view titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanatory and supporting copy."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons, inputs, and menu labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Status and secondary labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel-separation",
+        "value": "var(--shadow-panel)",
+        "purpose": "Separate the persistent desktop navigation column from the map."
+      },
+      {
+        "name": "sheet-separation",
+        "value": "var(--shadow-sheet)",
+        "purpose": "Separate mobile workflow sheets from the map."
+      },
+      {
+        "name": "floating-list",
+        "value": "var(--shadow-lg)",
+        "purpose": "Lift select menus and floating results above nearby content."
+      },
+      {
+        "name": "card-rest",
+        "value": "var(--shadow-sm)",
+        "purpose": "Give stop cards a light boundary against the panel surface."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fast",
+        "value": "var(--motion-duration-fast) var(--motion-ease-standard)",
+        "purpose": "Short control-state changes; zeroed for reduced motion."
+      },
+      {
+        "name": "standard",
+        "value": "var(--motion-duration-standard) var(--motion-ease-standard)",
+        "purpose": "Standard component transitions; zeroed for reduced motion."
+      },
+      {
+        "name": "panel",
+        "value": "var(--motion-duration-panel) var(--motion-ease-standard)",
+        "purpose": "Mobile sheet transitions; zeroed for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-max",
+        "value": "768px"
+      },
+      {
+        "name": "desktop-min",
+        "value": "769px"
+      },
+      {
+        "name": "compact-type-max",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Theme-accent action for the main task in a view.",
+      "html": "<button type='button' class='ds-button-primary'>Navigate</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-height-sm);padding:var(--space-1) var(--space-2);border:1px solid var(--accent);border-radius:var(--radius-control);color:var(--text-inverse);background:var(--accent);font:500 var(--font-size-control)/1.2 var(--sans);cursor:pointer}.ds-button-primary:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-ring-offset)}.ds-button-primary:active:not(:disabled){transform:scale(.98)}.ds-button-primary:disabled{border-color:var(--control-border);color:var(--text-muted);background:var(--surface-control);opacity:.6;cursor:not-allowed}@media(hover:hover){.ds-button-primary:not(:disabled):hover{filter:brightness(.85)}}@media(prefers-reduced-motion:reduce){.ds-button-primary:active:not(:disabled){transform:none}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral bordered action for everyday controls.",
+      "html": "<button type='button' class='ds-button-secondary'>Details</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-height-sm);padding:var(--space-1) var(--space-2);border:1px solid var(--control-border);border-radius:var(--radius-control);color:var(--text-primary);background:var(--surface-control);font:500 var(--font-size-control)/1.2 var(--sans);cursor:pointer}.ds-button-secondary:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-ring-offset)}.ds-button-secondary:active:not(:disabled){transform:scale(.98)}.ds-button-secondary:disabled{color:var(--text-muted);opacity:.6;cursor:not-allowed}@media(hover:hover){.ds-button-secondary:not(:disabled):hover{filter:brightness(.85)}}@media(prefers-reduced-motion:reduce){.ds-button-secondary:active:not(:disabled){transform:none}}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Text-first action that stays unfilled until interaction.",
+      "html": "<button type='button' class='ds-button-ghost'>Back</button>",
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-height-sm);padding:var(--space-1) var(--space-2);border:1px solid transparent;border-radius:var(--radius-control);color:var(--accent);background:transparent;font:500 var(--font-size-control)/1.2 var(--sans);cursor:pointer}.ds-button-ghost:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-ring-offset);background:var(--accent-soft)}.ds-button-ghost:active:not(:disabled){transform:scale(.98)}.ds-button-ghost:disabled{color:var(--text-muted);cursor:not-allowed}@media(hover:hover){.ds-button-ghost:not(:disabled):hover{background:var(--accent-soft)}}@media(prefers-reduced-motion:reduce){.ds-button-ghost:active:not(:disabled){transform:none}}"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Flexible venue search with a leading search icon and room for a clear action.",
+      "html": "<div class='ds-search-field'><svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='10.8' cy='10.8' r='6.8'/><path d='m16 16 4 4'/></svg><input type='search' aria-label='Find a venue' placeholder='Find a venue'><button type='button' aria-label='Clear search'>×</button></div>",
+      "css": ".ds-search-field{position:relative;display:block;min-width:0}.ds-search-field>svg{position:absolute;top:50%;left:12px;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:var(--text-muted);stroke-width:2;pointer-events:none}.ds-search-field input{box-sizing:border-box;width:100%;min-height:36px;padding:8px 46px 8px 40px;border:1px solid var(--border-control);border-radius:var(--radius-sm);color:var(--text-primary);background:var(--surface-raised);font:inherit}.ds-search-field input:focus-visible{outline:3px solid var(--focus-ring-soft);outline-offset:2px}.ds-search-field>button{position:absolute;top:50%;right:3px;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:var(--radius-control);color:var(--text-primary);background:transparent;font:inherit;cursor:pointer}.ds-search-field>button:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-ring-offset)}"
+    },
+    {
+      "name": "Selected Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Selectable pill that uses the active theme accent.",
+      "html": "<button type='button' class='ds-chip' aria-pressed='true'>Nearby</button>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;justify-content:center;min-height:var(--control-height-sm);padding:0 var(--space-3);border:1px solid var(--accent);border-radius:var(--radius-pill);color:var(--text-inverse);background:var(--accent);font:700 var(--font-size-control)/1 var(--sans);cursor:pointer;transition:background-color var(--motion-duration-fast) var(--motion-ease-standard),border-color var(--motion-duration-fast) var(--motion-ease-standard),color var(--motion-duration-fast) var(--motion-ease-standard),transform var(--motion-duration-fast) var(--motion-ease-standard)}.ds-chip:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-ring-offset)}.ds-chip:active{transform:scale(.96)}@media(prefers-reduced-motion:reduce){.ds-chip:active{transform:none}}"
+    },
+    {
+      "name": "Success Pill",
+      "kind": "custom",
+      "refersTo": "status-pill-success",
+      "description": "Non-interactive status label with text and a semantic success tone.",
+      "html": "<span class='ds-status-pill' data-tone='success'>Live</span>",
+      "css": ".ds-status-pill{display:inline-flex;align-items:center;padding:2px var(--space-2);border:1px solid var(--border-success);border-radius:var(--radius-pill);color:var(--status-success);background:var(--status-success-surface);font:500 var(--font-size-label)/1.2 var(--sans);white-space:nowrap}"
+    },
+    {
+      "name": "Navigation Tabs",
+      "kind": "nav",
+      "refersTo": "navigation-selected",
+      "description": "Three task areas with a quiet selected state and icon labels.",
+      "html": "<nav class='ds-navigation' aria-label='Main navigation'><button type='button' class='ds-nav-tab' aria-current='page'><span>Explore</span></button><button type='button' class='ds-nav-tab'><span>Stops</span></button><button type='button' class='ds-nav-tab'><span>Plan</span></button></nav>",
+      "css": ".ds-navigation{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;height:56px;padding:var(--space-2);border-radius:var(--radius-pill);background:var(--surface-raised);box-shadow:var(--shadow-lg)}.ds-nav-tab{display:flex;align-items:center;justify-content:center;min-width:0;min-height:var(--control-height-lg);border:0;border-radius:var(--radius-pill);color:var(--text-secondary-strong);background:transparent;font:500 var(--font-size-xs)/1.2 var(--sans);cursor:pointer}.ds-nav-tab[aria-current='page']{color:var(--text-contrast);background:var(--accent-soft);font-weight:600}.ds-nav-tab:focus-visible{outline:3px solid var(--focus-ring-strong);outline-offset:2px}.ds-nav-tab:active{transform:scale(.97)}@media(prefers-reduced-motion:reduce){.ds-nav-tab:active{transform:none}}"
+    },
+    {
+      "name": "Stop Card",
+      "kind": "card",
+      "refersTo": "stop-card",
+      "description": "Compact bus-stop row with an expandable detail affordance.",
+      "html": "<article class='ds-stop-card'><button type='button' class='ds-stop-row' aria-expanded='false' aria-controls='arrival-details'><strong>Kent Ridge MRT</strong><span class='ds-card-live'>Live</span><span aria-hidden='true'>⌄</span></button><div id='arrival-details' hidden>Arrival details</div></article>",
+      "css": ".ds-stop-card{min-width:0;overflow:hidden;border:1px solid var(--border-card);border-radius:var(--radius-card);background:var(--surface-card);box-shadow:var(--shadow-sm)}.ds-stop-row{display:flex;align-items:center;gap:var(--space-2);width:100%;min-height:var(--control-height-lg);padding:0 var(--space-3);border:0;border-radius:var(--radius-panel);color:var(--text-strong);background:transparent;font:inherit;text-align:left;cursor:pointer}.ds-stop-row strong{flex:1;overflow:hidden;font-size:var(--font-size-sm);font-weight:600;text-overflow:ellipsis;white-space:nowrap}.ds-card-live{color:var(--status-success);font-size:var(--font-size-xs);font-weight:600}.ds-stop-row:focus-visible{outline:var(--focus-outline);outline-offset:calc(-1 * var(--focus-ring-width))}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Wayfinder",
+    "overview": "NUSGo is warm, approachable, and grounded in the campus it helps people navigate. The shared map remains the main spatial reference; Explore, Stops, and Plan place focused workflows over it so people can keep their bearings while searching, checking arrivals, or planning a trip. Familiar system typography, soft tonal surfaces, and rounded controls make the interface welcoming without taking attention away from places and routes.\n\nThe same control and status language carries across Light, Dark, NUS, Matcha, and Sakura. Soft shadows give panels and floating controls structural separation from the map. Official route colors appear in route-specific contexts; the wider network stays neutral.",
+    "keyCharacteristics": [
+      "The map carries campus geography while panels carry the current workflow.",
+      "Theme-aware surfaces and accents preserve the same control language across all five palettes.",
+      "Rounded controls and softly separated cards keep dense transit information approachable.",
+      "Route color stays contextual to the selected route."
+    ],
+    "rules": [
+      {
+        "name": "The Theme Role Rule",
+        "body": "Shared controls use semantic color roles; the selected theme supplies their values.",
+        "section": "colors"
+      },
+      {
+        "name": "The Map Separation Rule",
+        "body": "Use elevation to clarify which surface sits above the map, while keeping routine controls visually quiet.",
+        "section": "elevation"
+      },
+      {
+        "name": "The State Clarity Rule",
+        "body": "Selection and status remain clear in text and accessible state; color reinforces the meaning.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use the semantic theme variables for shared surfaces, text, borders, accents, and status colors.",
+      "Do reserve official route colors for route-specific display, especially the selected route.",
+      "Do keep map attribution visible.",
+      "Do expose selected states and status meaning through text or accessible semantics as well as color.",
+      "Do preserve NUSGo’s independent identity and accurate source attribution."
+    ],
+    "donts": [
+      "Don't hard-code one theme’s accent into shared controls.",
+      "Don't color the full network with route colors when no route is selected.",
+      "Don't rely on color alone to communicate selection or status.",
+      "Don't imply that NUSGo is an official NUS service."
+    ]
+  }
+}

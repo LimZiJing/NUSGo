@@ -130,9 +130,10 @@ describe('usePersonalWaypointWorkflow', () => {
     const { store, getWaypoints } = createMutableStore([first, second])
     const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
 
-    act(() => result.current.moveWaypoint(second.id, first.id))
+    act(() => result.current.moveWaypoint(second.id, 0))
 
     expect(getWaypoints().map(({ id }) => id)).toEqual([second.id, first.id])
+    expect(store.replaceAll).toHaveBeenCalledTimes(1)
     expect(result.current.readResult).toMatchObject({
       kind: 'ready',
       waypoints: [second, first],
@@ -142,6 +143,24 @@ describe('usePersonalWaypointWorkflow', () => {
 
     expect(getWaypoints().map(({ id }) => id)).toEqual([second.id])
     expect(result.current.status).toContain('removed')
+  })
+
+  it('moves a waypoint across multiple rows with one write and skips a no-op', () => {
+    const first = createWaypoint(1, 'First place')
+    const second = createWaypoint(2, 'Second place')
+    const third = createWaypoint(3, 'Third place')
+    const fourth = createWaypoint(4, 'Fourth place')
+    const { store, getWaypoints } = createMutableStore([first, second, third, fourth])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    act(() => result.current.moveWaypoint(first.id, 3))
+
+    expect(getWaypoints().map(({ id }) => id)).toEqual([second.id, third.id, fourth.id, first.id])
+    expect(store.replaceAll).toHaveBeenCalledTimes(1)
+
+    act(() => result.current.moveWaypoint(first.id, 3))
+
+    expect(store.replaceAll).toHaveBeenCalledTimes(1)
   })
 
   it('saves waypoint edits while preserving the saved identity and creation time', () => {

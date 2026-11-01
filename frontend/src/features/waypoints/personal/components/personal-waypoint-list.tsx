@@ -20,7 +20,7 @@ interface PersonalWaypointListProps {
   readonly canEdit: boolean
   readonly editing: boolean
   readonly onRemove: (waypointId: string) => void
-  readonly onMove: (waypointId: string, neighborId: string) => void
+  readonly onMove: (waypointId: string, targetIndex: number) => void
   readonly onClearAll: () => void
   readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onEdit?: (waypointId: string) => void
@@ -100,13 +100,15 @@ export function PersonalWaypointList({
 
   const moveWaypoint = (index: number, direction: -1 | 1): void => {
     const waypoint = visibleWaypoints[index]
-    const neighbor = visibleWaypoints[index + direction]
-    if (hasActiveFilter || !waypoint || !neighbor) return
+    const target = visibleWaypoints[index + direction]
+    if (hasActiveFilter || !waypoint || !target) return
+    const targetIndex = waypoints.findIndex(({ id }) => id === target.id)
+    if (targetIndex < 0) return
     pendingFocusRef.current = {
       waypointId: waypoint.id,
       action: direction === -1 ? 'move-up' : 'move-down',
     }
-    onMove(waypoint.id, neighbor.id)
+    onMove(waypoint.id, targetIndex)
   }
 
   return <section className="personal-waypoint-list" aria-labelledby="personal-waypoint-list-heading">

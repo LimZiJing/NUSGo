@@ -38,16 +38,12 @@ function StatefulPersonalWaypointList() {
       onRemove={(waypointId) => setSavedWaypoints((current) => (
         current.filter((waypoint) => waypoint.id !== waypointId)
       ))}
-      onMove={(waypointId, neighborId) => setSavedWaypoints((current) => {
+      onMove={(waypointId, targetIndex) => setSavedWaypoints((current) => {
         const from = current.findIndex((waypoint) => waypoint.id === waypointId)
-        const to = current.findIndex((waypoint) => waypoint.id === neighborId)
-        if (from < 0 || to < 0) return current
+        if (from < 0 || targetIndex < 0 || targetIndex >= current.length) return current
         const next = [...current]
-        const movedWaypoint = next[from]
-        const neighborWaypoint = next[to]
-        if (!movedWaypoint || !neighborWaypoint) return current
-        next[from] = neighborWaypoint
-        next[to] = movedWaypoint
+        const [movedWaypoint] = next.splice(from, 1)
+        next.splice(targetIndex, 0, movedWaypoint)
         return next
       })}
       onClearAll={() => setSavedWaypoints([])}
@@ -113,7 +109,7 @@ describe('PersonalWaypointList', () => {
     ])
 
     await user.click(screen.getByRole('button', { name: 'Move Tea room, Rest spot up' }))
-    expect(onMove).toHaveBeenCalledWith(waypoints[2]?.id, waypoints[0]?.id)
+    expect(onMove).toHaveBeenCalledWith(waypoints[2]?.id, 0)
 
     await user.type(screen.getByRole('searchbox', { name: 'Search Rest spot places' }), 'quiet')
     expect(screen.getByText('Quiet bench')).toBeTruthy()
@@ -161,7 +157,7 @@ describe('PersonalWaypointList', () => {
       .toBe(false)
 
     await user.click(screen.getByRole('button', { name: 'Move Tea room, Rest spot up' }))
-    expect(onMove).toHaveBeenCalledWith(waypoints[2].id, waypoints[1].id)
+    expect(onMove).toHaveBeenCalledWith(waypoints[2].id, 1)
 
     await user.click(screen.getByRole('button', { name: 'Remove Design studio, Study place' }))
     expect(onRemove).toHaveBeenCalledWith(waypoints[1].id)

@@ -160,16 +160,16 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     'Place removed.',
   ), [updateCollection])
 
-  const moveWaypoint = useCallback((waypointId: string, neighborId: string): boolean => updateCollection(
+  const moveWaypoint = useCallback((waypointId: string, targetIndex: number): boolean => updateCollection(
     (waypoints) => {
       const waypointIndex = waypoints.findIndex(({ id }) => id === waypointId)
-      const neighborIndex = waypoints.findIndex(({ id }) => id === neighborId)
-      if (waypointIndex < 0 || neighborIndex < 0 || waypointIndex === neighborIndex) return waypoints
+      if (waypointIndex < 0 || targetIndex < 0 || targetIndex >= waypoints.length || waypointIndex === targetIndex) {
+        return waypoints
+      }
 
       const nextWaypoints = [...waypoints]
-      const movedWaypoint = nextWaypoints[waypointIndex]
-      nextWaypoints[waypointIndex] = nextWaypoints[neighborIndex]
-      nextWaypoints[neighborIndex] = movedWaypoint
+      const [movedWaypoint] = nextWaypoints.splice(waypointIndex, 1)
+      nextWaypoints.splice(targetIndex, 0, movedWaypoint)
       return nextWaypoints
     },
     'Order saved.',

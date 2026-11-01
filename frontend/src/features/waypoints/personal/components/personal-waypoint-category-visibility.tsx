@@ -118,12 +118,19 @@ export function PersonalWaypointCategoryVisibility({
         )}
       </div>
       <div className="personal-waypoint-visibility-actions">
-        <Button
-          label="Clear"
-          variant="ghost"
-          onClick={onClear}
-          disabled={selectedCategories.length === 0}
-        />
+        <div className="personal-waypoint-visibility-actions-start">
+          <Button
+            label="Clear"
+            variant="ghost"
+            onClick={onClear}
+            disabled={selectedCategories.length === 0}
+          />
+          {unselectedCategories.length > 0 && <Button
+            label="Show all"
+            variant="ghost"
+            onClick={() => categories.forEach(({ category }) => onSetCategoryVisible(category, true))}
+          />}
+        </div>
         <div className="personal-waypoint-visibility-actions-end">
           <Button label="Cancel" onClick={onCancel} />
           <Button label={`Done (${selectedCategories.length})`} variant="primary" onClick={onDone} />

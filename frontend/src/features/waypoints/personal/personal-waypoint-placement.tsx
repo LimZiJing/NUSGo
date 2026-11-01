@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { isValidLocationCoordinates } from '../../../domain/location/coordinates'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
-import { ChevronDownIcon, LocateIcon, MapPinIcon } from '../../../ui/icons'
+import { ChevronDownIcon, MapPinIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -86,22 +86,16 @@ export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onC
     <p>Tap the map or drag the pin.</p>
     <div className="personal-waypoint-selected-location">
       <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
-      <span className="personal-waypoint-selected-location-copy">
-        <strong>Selected location</strong>
-        <span aria-live="polite">{formatSelectedCoordinate(coordinate)}</span>
+      <strong className="personal-waypoint-selected-location-label">Selected location</strong>
+      <span className="personal-waypoint-map-center">
+        <Button label="Use map centre" variant="ghost" onClick={useMapCenter} disabled={!mapCenter} />
       </span>
-      <Button
-        className="personal-waypoint-map-center"
-        label="Use map centre"
-        icon={<LocateIcon size={15} />}
-        variant="ghost"
-        onClick={useMapCenter}
-        disabled={!mapCenter}
-      />
+      <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
+        {formatSelectedCoordinate(coordinate)}
+      </span>
     </div>
     <div className="personal-waypoint-coordinate-disclosure">
       <Button
-        className="personal-waypoint-coordinate-toggle"
         label="Enter coordinates"
         trailingIcon={<ChevronDownIcon size={16} />}
         variant="ghost"

@@ -1651,6 +1651,7 @@ describe('MapSession', () => {
     })
     const map = fakeMapState.maps.at(-1) as {
       addedMarkers: Array<{
+        options: { anchor?: string }
         coordinate: unknown
         draggable: boolean
         setLngLat(coordinate: unknown): void

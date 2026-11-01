@@ -3,6 +3,7 @@ import { isIP } from 'node:net'
 import {
   LOCAL_DATA_VERSION,
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+  SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS,
   parseCorsOrigins,
   parseDataVersion,
 } from '@nusgo/shared'
@@ -220,7 +221,7 @@ export function loadBackendConfig(
   // Vehicle positions are polled separately from arrivals, so the expiry is checked against this interval.
   const vehicleRefreshIntervalMs = parseInteger(
     environment.NUS_VEHICLE_REFRESH_INTERVAL_MS,
-    30_000,
+    SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS,
     'NUS_VEHICLE_REFRESH_INTERVAL_MS',
     15_000,
     300_000,

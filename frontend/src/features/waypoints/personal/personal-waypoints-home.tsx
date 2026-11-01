@@ -153,7 +153,7 @@ export function PersonalWaypointsHome({
           category={activeCategory ?? undefined}
           canEdit={canManage}
           editing={editing}
-          onSelect={activeCategory ? onSelectWaypoint : undefined}
+          onSelect={onSelectWaypoint}
           onEdit={activeCategory || !canManage ? undefined : onEditWaypoint}
           onRemove={onRemove}
           onMove={onMove}

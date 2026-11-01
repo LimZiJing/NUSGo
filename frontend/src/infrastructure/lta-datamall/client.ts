@@ -55,7 +55,9 @@ function parseService(value: unknown): PublicBusServiceArrival {
       monitored: arrival.monitored === true,
     }
   })
-  return { status: parseStatus(value.status), arrivals }
+  const status = parseStatus(value.status)
+  if (status !== 'not-in-operation' || value.nextStartAt === undefined) return { status, arrivals }
+  return { status, arrivals, nextStartAt: parseTimestamp(value.nextStartAt, 'nextStartAt') }
 }
 
 function parseSnapshot(input: unknown): PublicBusArrivalSnapshot {

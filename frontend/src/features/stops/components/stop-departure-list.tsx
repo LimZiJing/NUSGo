@@ -135,11 +135,11 @@ export function StopDepartureList({
             </span>
           </li>
         ))}
-        {visiblePublicServices.map(({ serviceNumber, timings, status }) => (
+        {visiblePublicServices.map(({ serviceNumber, timings, status, startMessage }) => (
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
-              <span className="stop-departure-status">{publicTimingMessage(status)}</span>
+              <span className="stop-departure-status">{startMessage ?? publicTimingMessage(status)}</span>
             )}
           </li>
         ))}

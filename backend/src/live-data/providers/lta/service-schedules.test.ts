@@ -1,10 +1,121 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createLtaScheduleLoader, isLtaServiceOperating, parseLtaServiceSchedule } from './service-schedules.ts'
+import {
+  createLtaScheduleLoader,
+  getNextLtaServiceStart,
+  isLtaServiceOperating,
+  parseLtaServiceSchedule,
+} from './service-schedules.ts'
 
 const mappings = [{ stopId: 'STOP-A', busStopCode: '12345', services: ['95'] }]
 
 describe('LTA service schedules', () => {
+  it('uses the Sunday window on a weekday public holiday', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '0600',
+      SAT_LastBus: '2300',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+
+    assert.ok(schedule)
+    assert.equal(isLtaServiceOperating(schedule, Date.parse('2025-12-31T22:00:00Z')), false)
+  })
+
+  it('uses the Sunday first bus for the next start on a weekday public holiday', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '0600',
+      SAT_LastBus: '2300',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+
+    assert.ok(schedule)
+    assert.deepEqual(getNextLtaServiceStart(schedule, Date.parse('2025-12-31T21:00:00Z')), {
+      startAtMs: Date.parse('2025-12-31T23:00:00Z'),
+      minutesUntil: 120,
+    })
+  })
+
+  it('uses the next normal weekday window after a public holiday has ended', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '0600',
+      SAT_LastBus: '2300',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+
+    assert.ok(schedule)
+    assert.deepEqual(getNextLtaServiceStart(schedule, Date.parse('2026-01-01T15:30:00Z')), {
+      startAtMs: Date.parse('2026-01-01T21:30:00Z'),
+      minutesUntil: 360,
+    })
+  })
+
+  it('skips a public holiday with no Sunday window and starts on the next normal weekday', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '',
+      SAT_LastBus: '',
+      SUN_FirstBus: '',
+      SUN_LastBus: '',
+    })
+
+    assert.ok(schedule)
+    assert.equal(isLtaServiceOperating(schedule, Date.parse('2025-12-31T22:00:00Z')), false)
+    assert.deepEqual(getNextLtaServiceStart(schedule, Date.parse('2025-12-31T20:00:00Z')), {
+      startAtMs: Date.parse('2026-01-01T21:30:00Z'),
+      minutesUntil: 1_530,
+    })
+  })
+
+  it('uses the Sunday window on a Monday substitute public holiday', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '0600',
+      SAT_LastBus: '2300',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+
+    assert.ok(schedule)
+    assert.equal(isLtaServiceOperating(schedule, Date.parse('2026-08-09T22:00:00Z')), false)
+  })
+
+  it('keeps the weekday window on an ordinary weekday', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '0600',
+      SAT_LastBus: '2300',
+      SUN_FirstBus: '0700',
+      SUN_LastBus: '2300',
+    })
+
+    assert.ok(schedule)
+    assert.equal(isLtaServiceOperating(schedule, Date.parse('2026-10-04T22:00:00Z')), true)
+  })
+
   it('parses route operating windows', () => {
     const schedule = parseLtaServiceSchedule({
       ServiceNo: '95',
@@ -37,6 +148,22 @@ describe('LTA service schedules', () => {
     assert.ok(schedule)
     assert.equal(isLtaServiceOperating(schedule, Date.parse('2026-10-05T16:15:00Z')), true)
     assert.equal(isLtaServiceOperating(schedule, Date.parse('2026-10-05T17:00:00Z')), false)
+  })
+
+  it('uses the previous public holiday window for an after-midnight service', () => {
+    const schedule = parseLtaServiceSchedule({
+      ServiceNo: '95',
+      BusStopCode: '12345',
+      WD_FirstBus: '0530',
+      WD_LastBus: '2300',
+      SAT_FirstBus: '',
+      SAT_LastBus: '',
+      SUN_FirstBus: '2300',
+      SUN_LastBus: '0030',
+    })
+
+    assert.ok(schedule)
+    assert.equal(isLtaServiceOperating(schedule, Date.parse('2026-01-01T16:15:00Z')), true)
   })
 
   it('loads checked mappings once and limits schedule rows to mapped service-stop pairs', async () => {

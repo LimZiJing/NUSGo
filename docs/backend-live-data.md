@@ -15,6 +15,10 @@ All live-data routes accept GET:
 
 Requests are bounded and validated against the canonical network or checked-in LTA mapping. Unknown route or stop IDs return a safe 400 response. Public-bus data is for display only and is not consumed by Journey routing.
 
+### LTA public-holiday windows
+
+LTA schedule rows do not identify public holidays, so operating checks and next-start lookahead use the Sunday window on dates in the checked-in [Singapore Ministry of Manpower public-holiday calendar](https://www.mom.gov.sg/employment-practices/public-holidays). The list currently covers 2025–2027 and includes the Monday substitute dates MOM lists for holidays that fall on Sunday; those dates are treated as public holidays for schedule checks. Update the list annually when MOM publishes the next calendar. Dates outside the listed calendar use their ordinary weekday or Saturday/Sunday window. Applying LTA's Sunday fields to public holidays remains an inference from operator timetables; DataMall documents those fields only as Sunday schedules, so live confirmation is still needed.
+
 The health route reports process health. The ready route returns 503 until canonical data is loaded and the first bus-arrival snapshot generation is published. After a restart, readiness stays false until one complete cycle succeeds for all 33 stops. Once a complete generation exists, later partial cycles can publish by carrying each failed stop forward with its original observation time.
 
 ## Bus-arrival snapshot lifecycle

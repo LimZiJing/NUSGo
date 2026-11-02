@@ -185,6 +185,8 @@ function getLiveStopDepartures(
     const arrival = stopArrivals[routeId]
     if (!route || !arrival) return []
 
+    const firstArrivalSeconds = arrival.upcomingArrivalSeconds[0]
+    const firstArrivalStillUpcoming = firstArrivalSeconds !== undefined && firstArrivalSeconds >= ageSeconds
     const timings = arrival.upcomingArrivalSeconds
       .map((seconds) => seconds - ageSeconds)
       .filter((seconds) => seconds >= 0)
@@ -196,7 +198,7 @@ function getLiveStopDepartures(
       routeId,
       routeName: route.name,
       routeColor: route.color,
-      load: arrival.load ?? 'unknown',
+      load: firstArrivalStillUpcoming ? arrival.load ?? 'unknown' : 'unknown',
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
       reachableFavouriteStops: [],
     }]

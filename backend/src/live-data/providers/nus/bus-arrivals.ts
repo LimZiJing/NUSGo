@@ -162,13 +162,14 @@ function plateOrNull(value: string | null): string | null {
   return value && value !== '-' ? value : null
 }
 
-function parseNextBusPlate(record: RecordValue): string | null {
+function parseNextBusPlate(record: RecordValue, nextArrivalSeconds: number): string | null {
   const etas = getValue(record, ['_etas'])
-  const firstEtaPlate = Array.isArray(etas) && isRecord(etas[0])
-    ? getTextValue(etas[0], ['plate'])
+  const nextEta = Array.isArray(etas)
+    ? etas.find((eta) => isRecord(eta) && parseArrivalSeconds(eta) === nextArrivalSeconds)
     : null
+  const nextEtaPlate = isRecord(nextEta) ? getTextValue(nextEta, ['plate']) : null
   return plateOrNull(getTextValue(record, ['arrivalTime_veh_plate', 'nextBusPlate']))
-    ?? plateOrNull(firstEtaPlate)
+    ?? plateOrNull(nextEtaPlate)
 }
 
 function parseCandidate(
@@ -184,7 +185,7 @@ function parseCandidate(
     .filter((arrival, index, values) => values.indexOf(arrival) === index)
     .sort((first, second) => first - second)
   if (!routeId || upcoming.length === 0) return null
-  const nextBusPlate = parseNextBusPlate(record)
+  const nextBusPlate = parseNextBusPlate(record, upcoming[0])
   return {
     routeId,
     arrival: {

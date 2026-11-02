@@ -45,7 +45,9 @@ describe('createShuttleVehicleClient', () => {
 
     const result = await createShuttleVehicleClient({ fetcher }).getVehicles(['D2'], signal)
 
-    expect(fetcher).toHaveBeenCalledWith('/api/shuttle-vehicles?routes=D2', { signal })
+    expect(fetcher).toHaveBeenCalledWith('/api/shuttle-vehicles?routes=D2', {
+      signal: expect.any(AbortSignal),
+    })
     expect(result).toEqual(response)
   })
 

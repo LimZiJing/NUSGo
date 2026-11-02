@@ -528,6 +528,30 @@
     color: var(--text-muted);
   }
 
+  .stop-departure-load-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--text-secondary);
+    font: 500 var(--font-size-xs)/1 var(--sans);
+    white-space: nowrap;
+  }
+
+  .stop-departure-load-cue svg {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
+    fill: currentColor;
+  }
+
+  .stop-departure-load-cue[data-load-level='low'] rect:nth-child(n + 2) {
+    opacity: 0.25;
+  }
+
+  .stop-departure-load-cue[data-load-level='medium'] rect:nth-child(3) {
+    opacity: 0.25;
+  }
+
 @media (max-width: 768px) {
   .navigation-panel.stops-sheet {
     border: 1px solid var(--border-subtle);

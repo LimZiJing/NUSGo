@@ -88,7 +88,7 @@ export function StopDepartureList({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   const visiblePublicServices = noLiveData
-    ? publicServices.filter(({ timings }) => timings !== null)
+    ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
 
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {

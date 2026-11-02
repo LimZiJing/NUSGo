@@ -124,7 +124,7 @@ describe('StopDepartureList', () => {
       .toBe(`Arrives in 3 minutes. Estimated crowding: ${load}.`)
     expect(nextArrival.querySelector('[aria-hidden="true"]')?.textContent).toBe('3m')
     expect(nextArrival.querySelector('.stop-departure-load-cue')?.textContent).toBe(
-      `${load[0].toUpperCase()}${load.slice(1)}`,
+      `Estimated crowding: ${load[0].toUpperCase()}${load.slice(1)}`,
     )
     expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
     expect(screen.queryByText('Estimated crowding for the next bus on each route.')).toBeNull()

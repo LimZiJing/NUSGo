@@ -168,7 +168,10 @@ function parseNextBusPlate(record: RecordValue, nextArrivalSeconds: number): str
     ? etas.find((eta) => isRecord(eta) && parseArrivalSeconds(eta) === nextArrivalSeconds)
     : null
   const nextEtaPlate = isRecord(nextEta) ? getTextValue(nextEta, ['plate']) : null
-  return plateOrNull(getTextValue(record, ['arrivalTime_veh_plate', 'nextBusPlate']))
+  const recordPlate = parseArrivalSeconds(record) === nextArrivalSeconds
+    ? getTextValue(record, ['arrivalTime_veh_plate', 'nextBusPlate'])
+    : null
+  return plateOrNull(recordPlate)
     ?? plateOrNull(nextEtaPlate)
 }
 

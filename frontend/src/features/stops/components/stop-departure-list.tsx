@@ -34,9 +34,9 @@ function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string 
 }
 
 const VISIBLE_LOAD_LABELS: Partial<Record<ShuttleLoadLevel, string>> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
+  low: 'Estimated crowding: Low',
+  medium: 'Estimated crowding: Medium',
+  high: 'Estimated crowding: High',
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {

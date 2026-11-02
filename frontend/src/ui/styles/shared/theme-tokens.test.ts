@@ -103,6 +103,10 @@ describe('semantic theme tokens', () => {
       '--status-success',
       '--status-warning',
       '--status-error',
+      '--load-level-low',
+      '--load-level-medium',
+      '--load-level-high',
+      '--load-level-unknown',
       '--focus-ring',
       '--shadow-sm',
     ]))
@@ -177,5 +181,24 @@ describe('control token contrast', () => {
 
   it.each(themes)('defines --control-border in the %s theme', (themeName) => {
     expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
+  })
+
+  it.each(themes)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    const loadLevelTokens = [
+      '--load-level-low',
+      '--load-level-medium',
+      '--load-level-high',
+      '--load-level-unknown',
+    ] as const
+    const arrivalSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
+
+    for (const foreground of loadLevelTokens) {
+      for (const background of arrivalSurfaces) {
+        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
+
+        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
   })
 })

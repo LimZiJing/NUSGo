@@ -4,7 +4,7 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
-import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
+import { createTransferTransitNetwork, createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 
@@ -14,6 +14,7 @@ const appHarness = vi.hoisted(() => {
     navigateToEndpoint: vi.fn(),
     locateUser: vi.fn(),
     enableLocationTracking: vi.fn(),
+    setLiveVehicles: vi.fn(),
   }
   return {
     state: null as unknown,
@@ -27,6 +28,9 @@ const appHarness = vi.hoisted(() => {
     },
     serviceHoursClient: {
       getServiceWindows: vi.fn(),
+    },
+    vehiclesClient: {
+      getVehicles: vi.fn(),
     },
   }
 })
@@ -60,6 +64,10 @@ vi.mock('../infrastructure/shuttle-arrivals/client', () => ({
 
 vi.mock('../infrastructure/shuttle-service-hours/client', () => ({
   createShuttleServiceHoursClient: () => appHarness.serviceHoursClient,
+}))
+
+vi.mock('../infrastructure/shuttle-vehicles/client', () => ({
+  createShuttleVehicleClient: () => appHarness.vehiclesClient,
 }))
 
 const FAVORITE_STOPS_KEY = 'navus:favorite-stops:v1'
@@ -114,6 +122,21 @@ beforeEach(() => {
     },
   })
   appHarness.serviceHoursClient.getServiceWindows.mockResolvedValue({})
+  appHarness.vehiclesClient.getVehicles.mockResolvedValue({
+    observedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 90_000).toISOString(),
+    vehicles: [{
+      routeId: 'A1',
+      plate: 'TEST-BUS',
+      lat: 1,
+      lng: 103,
+      headingDegrees: 0,
+      speed: 0,
+      load: 'low',
+      observedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 90_000).toISOString(),
+    }],
+  })
   localStorage.setItem(FAVORITE_STOPS_KEY, JSON.stringify(['STOP-A']))
   appHarness.state = {
     ...createInitialNavigationSessionState(),
@@ -128,6 +151,8 @@ afterEach(() => {
   localStorage.clear()
   appHarness.arrivalsClient.getArrivals.mockReset()
   appHarness.serviceHoursClient.getServiceWindows.mockReset()
+  appHarness.vehiclesClient.getVehicles.mockReset()
+  appHarness.commands.setLiveVehicles.mockReset()
   appHarness.commands.navigateToEndpoint.mockReset()
   appHarness.commands.locateUser.mockReset()
   appHarness.commands.enableLocationTracking.mockReset()
@@ -136,6 +161,79 @@ afterEach(() => {
 })
 
 describe('mobile Stops tab state', () => {
+  it('shows only the focused stop routes and clears vehicles on returning to the list', async () => {
+    const user = userEvent.setup()
+    appHarness.state = {
+      ...createInitialNavigationSessionState(),
+      selectedRouteId: 'B1',
+      transitIndex: createTransitIndex(createTransferTransitNetwork()),
+    }
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Live buses' }))
+    expect(appHarness.vehiclesClient.getVehicles).not.toHaveBeenCalled()
+    expect(appHarness.commands.setLiveVehicles).toHaveBeenLastCalledWith([], false)
+
+    act(() => { appHarness.onStopSelected?.('STOP-A') })
+    await waitFor(() => expect(appHarness.vehiclesClient.getVehicles).toHaveBeenLastCalledWith(
+      ['A1'], expect.any(AbortSignal),
+    ))
+    act(() => { appHarness.onStopSelected?.('STOP-B') })
+    await waitFor(() => expect(appHarness.vehiclesClient.getVehicles).toHaveBeenLastCalledWith(
+      ['A1', 'B1'], expect.any(AbortSignal),
+    ))
+    await waitFor(() => expect(appHarness.commands.setLiveVehicles).toHaveBeenLastCalledWith(
+      [expect.objectContaining({ routeId: 'A1' })], true,
+    ))
+
+    await user.click(screen.getByRole('button', { name: 'Back to stops' }))
+    expect(appHarness.commands.setLiveVehicles).toHaveBeenLastCalledWith([], false)
+    expect(appHarness.vehiclesClient.getVehicles).toHaveBeenCalledTimes(2)
+    expect(screen.getByRole('button', { name: 'Live buses' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('narrows stop vehicles to a route chip and does not carry them into Plan', async () => {
+    const user = userEvent.setup()
+    appHarness.arrivalsClient.getArrivals.mockResolvedValue({
+      observedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      stops: {
+        'STOP-B': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    })
+    appHarness.state = {
+      ...createInitialNavigationSessionState(),
+      selectedRouteId: 'A1',
+      transitIndex: createTransitIndex(createTransferTransitNetwork()),
+    }
+    render(<App />)
+    act(() => { appHarness.onStopSelected?.('STOP-B') })
+    await user.click(screen.getByRole('button', { name: 'Live buses' }))
+    await waitFor(() => expect(appHarness.vehiclesClient.getVehicles).toHaveBeenLastCalledWith(
+      ['A1', 'B1'], expect.any(AbortSignal),
+    ))
+
+    await user.click(await screen.findByRole('button', { name: 'View A1 route details' }))
+    await waitFor(() => expect(appHarness.vehiclesClient.getVehicles).toHaveBeenLastCalledWith(
+      ['A1'], expect.any(AbortSignal),
+    ))
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    expect(appHarness.commands.setLiveVehicles).toHaveBeenLastCalledWith([], false)
+
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    await waitFor(() => expect(appHarness.vehiclesClient.getVehicles).toHaveBeenLastCalledWith(
+      ['A1', 'B1'], expect.any(AbortSignal),
+    ))
+    await user.click(screen.getByRole('button', { name: 'Live buses' }))
+    expect(appHarness.commands.setLiveVehicles).toHaveBeenLastCalledWith([], false)
+  })
+
   it('uses the shared Navigate command from stop details and opens Plan', async () => {
     const user = userEvent.setup()
     render(<App />)

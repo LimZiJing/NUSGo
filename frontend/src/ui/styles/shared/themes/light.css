@@ -81,6 +81,10 @@
   --status-error-strong: #b91c1c;
   --status-info: #1d4ed8;
   --status-info-surface: #dbeafe;
+  --load-level-low: var(--status-success);
+  --load-level-medium: var(--status-warning);
+  --load-level-high: var(--status-error);
+  --load-level-unknown: var(--text-muted);
   --status-marker-origin: #15803d;
   --status-marker-destination: #dc2626;
 

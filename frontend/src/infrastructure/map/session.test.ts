@@ -116,6 +116,7 @@ vi.mock('maplibre-gl', () => {
     readonly project = vi.fn(() => ({ x: 600, y: 400 }))
     readonly panBy = vi.fn()
     readonly getZoom = vi.fn(() => 15)
+    readonly getBearing = vi.fn(() => 0)
     readonly flyTo = vi.fn()
     readonly zoomIn = vi.fn()
     readonly zoomOut = vi.fn()

@@ -210,6 +210,54 @@ describe('createShuttleArrivalClient', () => {
     })
   })
 
+  it('preserves validated load levels on the next arrival', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: {
+        PGP: {
+          D2: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: null,
+            load: 'medium',
+          },
+        },
+      },
+    }), { status: 200 }))
+
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals(
+      [{ stopId: 'PGP', stopName: 'PGP' }],
+      new AbortController().signal,
+    )
+
+    expect(result.stops.PGP.D2.load).toBe('medium')
+  })
+
+  it('fails invalid load levels closed to unknown', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: {
+        PGP: {
+          D2: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: null,
+            load: 'crowded',
+          },
+        },
+      },
+    }), { status: 200 }))
+
+    const result = await createShuttleArrivalClient({ fetcher, now: () => nowMs }).getArrivals(
+      [{ stopId: 'PGP', stopName: 'PGP' }],
+      new AbortController().signal,
+    )
+
+    expect(result.stops.PGP.D2.load).toBe('unknown')
+  })
+
   it('rejects invalid snapshot timestamps', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       observedAt: 'not-a-date',

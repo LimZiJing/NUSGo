@@ -40,6 +40,7 @@ export function SavedListRow({
         <button
           className="saved-list-row-copy saved-list-row-select"
           type="button"
+          data-hover-filter="none"
           aria-label={selectLabel ?? [title, subtitle].filter(Boolean).join(', ')}
           onClick={onSelect}
         >

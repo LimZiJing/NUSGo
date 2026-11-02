@@ -2,7 +2,7 @@ import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import type { Path, PathLeg } from '@nusgo/shared/routing/path'
 import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import { pruneUnworthwhileCandidates } from '@nusgo/shared/routing/candidate-policy'
-import type { TripEndpoint } from '../../../domain/trip/types'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 
 const MAX_DISPLAYED_PATHS = 3
 const WALKING_FIRST_RATIO = 0.8
@@ -19,9 +19,13 @@ function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
-function isTripEndpoint(value: unknown): value is TripEndpoint {
+function isTripEndpoint(value: unknown): value is JourneyEndpoint {
   if (!isRecord(value)) return false
-  if (value.kind === 'current-location') {
+  if (value.kind === 'current-location' || value.kind === 'waypoint-coordinate') {
+    if (value.kind === 'waypoint-coordinate' && (
+      Object.keys(value).sort().join(',') !== 'coordinate,kind' ||
+      !isRecord(value.coordinate) || Object.keys(value.coordinate).sort().join(',') !== 'latitude,longitude'
+    )) return false
     if (!isRecord(value.coordinate)) return false
     const { longitude, latitude } = value.coordinate
     return typeof longitude === 'number' && Number.isFinite(longitude) &&
@@ -29,7 +33,8 @@ function isTripEndpoint(value: unknown): value is TripEndpoint {
       typeof latitude === 'number' && Number.isFinite(latitude) &&
       latitude >= -90 && latitude <= 90
   }
-  return (value.kind === 'venue' || value.kind === 'building' || value.kind === 'stop') && isNonEmptyString(value.id)
+  return (value.kind === 'venue' || value.kind === 'building' || value.kind === 'stop') &&
+    Object.keys(value).sort().join(',') === 'id,kind' && isNonEmptyString(value.id)
 }
 
 function isValidLineString(value: unknown): boolean {

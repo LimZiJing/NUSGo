@@ -5,6 +5,7 @@ import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../../domain/location/search'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { TripEndpoint, TripRequest } from '../../../domain/trip/types'
 
 export type JourneyTimelineEntry =
   | {
@@ -208,11 +209,18 @@ function getLocationEntry(
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null,
+  selectedEndpoint: TripEndpoint | null = null,
 ): Extract<JourneyTimelineEntry, { kind: 'location' }> {
+  const selectedWaypointLabel = endpoint.kind === 'waypoint-coordinate' &&
+    selectedEndpoint?.kind === 'personal-waypoint' &&
+    endpoint.coordinate.longitude === selectedEndpoint.coordinate.longitude &&
+    endpoint.coordinate.latitude === selectedEndpoint.coordinate.latitude
+    ? selectedEndpoint.label
+    : null
   return {
     kind: 'location',
     id,
-    label: getEndpointLabel(endpoint, venues, networkIndex, buildings),
+    label: selectedWaypointLabel ?? getEndpointLabel(endpoint, venues, networkIndex, buildings),
     locationKind: endpoint.kind,
   }
 }
@@ -226,19 +234,28 @@ export function getJourneyTimelineEntries(
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null = null,
+  tripRequest?: TripRequest,
 ): readonly JourneyTimelineEntry[] {
   const entries: JourneyTimelineEntry[] = [
-    getLocationEntry(path.origin, 'origin', venues, networkIndex, buildings),
+    getLocationEntry(path.origin, 'origin', venues, networkIndex, buildings, tripRequest?.origin ?? null),
   ]
 
   path.legs.forEach((leg, legIndex) => {
     entries.push(getLegEntry(leg, legIndex, networkIndex))
-    entries.push(getLocationEntry(leg.to, `location-${legIndex}`, venues, networkIndex, buildings))
+    const isDestination = legIndex === path.legs.length - 1 && sameEndpoint(leg.to, path.destination)
+    entries.push(getLocationEntry(
+      leg.to,
+      `location-${legIndex}`,
+      venues,
+      networkIndex,
+      buildings,
+      isDestination ? tripRequest?.destination ?? null : null,
+    ))
   })
 
   const lastLeg = path.legs[path.legs.length - 1]
   if (!lastLeg || !sameEndpoint(lastLeg.to, path.destination)) {
-    entries.push(getLocationEntry(path.destination, 'destination', venues, networkIndex, buildings))
+    entries.push(getLocationEntry(path.destination, 'destination', venues, networkIndex, buildings, tripRequest?.destination ?? null))
   }
 
   return entries

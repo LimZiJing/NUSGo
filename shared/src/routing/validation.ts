@@ -4,7 +4,7 @@ import type {
   PathGeometry,
   PathLeg,
   ScoredPathCandidate,
-  TripEndpoint,
+  JourneyEndpoint,
 } from './path.ts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -18,9 +18,17 @@ function isCoordinate(value: unknown): boolean {
     value.latitude >= -90 && value.latitude <= 90
 }
 
-function isEndpoint(value: unknown): value is TripEndpoint {
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  return Object.keys(value).sort().join(',') === [...keys].sort().join(',')
+}
+
+function isEndpoint(value: unknown): value is JourneyEndpoint {
   if (!isRecord(value)) return false
   if (value.kind === 'current-location') return isCoordinate(value.coordinate)
+  if (value.kind === 'waypoint-coordinate') {
+    return hasExactKeys(value, ['coordinate', 'kind']) && isRecord(value.coordinate) &&
+      hasExactKeys(value.coordinate, ['latitude', 'longitude']) && isCoordinate(value.coordinate)
+  }
   return (value.kind === 'venue' || value.kind === 'building' || value.kind === 'stop') &&
     typeof value.id === 'string' && value.id.length > 0 && value.id.length <= 128 && value.id.trim() === value.id
 }

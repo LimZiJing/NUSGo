@@ -2,8 +2,10 @@ import type {
   ApiJourneyPlanningError,
   ApiJourneyPlanningRequest,
   ApiJourneyPlanningResponse,
+  JourneyEndpoint,
 } from '@nusgo/shared/routing/path'
 import { parseApiJourneyPlanningResponse } from '@nusgo/shared/routing/validation'
+import type { TripEndpoint } from '../../domain/trip/types'
 import { buildApiUrl } from '../api/api-url.ts'
 
 export interface JourneyPlanningClientOptions {
@@ -13,8 +15,13 @@ export interface JourneyPlanningClientOptions {
   readonly getSimulatedDepartureMs?: () => number | null
 }
 
+export interface JourneyPlanningInput {
+  readonly origin: TripEndpoint
+  readonly destination: TripEndpoint
+}
+
 export type JourneyPlanningClient = (
-  request: ApiJourneyPlanningRequest,
+  request: JourneyPlanningInput,
   context: { readonly signal: AbortSignal },
 ) => Promise<ApiJourneyPlanningResponse>
 
@@ -32,6 +39,19 @@ export class JourneyPlanningRequestError extends Error {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function toApiEndpoint(endpoint: TripEndpoint): JourneyEndpoint {
+  if (endpoint.kind !== 'personal-waypoint') return endpoint
+
+  // Personal Waypoints stay local; journey requests need only their selected coordinate.
+  return {
+    kind: 'waypoint-coordinate',
+    coordinate: {
+      longitude: endpoint.coordinate.longitude,
+      latitude: endpoint.coordinate.latitude,
+    },
+  }
 }
 
 async function parseError(response: Response): Promise<JourneyPlanningRequestError> {
@@ -57,7 +77,7 @@ async function parseError(response: Response): Promise<JourneyPlanningRequestErr
   )
 }
 
-/** Sends endpoint identities only; the backend resolves all canonical data and routing geometry. */
+/** Sends endpoint references and coordinates only; the backend resolves canonical data and routing geometry. */
 export function createJourneyPlanningClient(
   options: JourneyPlanningClientOptions = {},
 ): JourneyPlanningClient {
@@ -66,9 +86,11 @@ export function createJourneyPlanningClient(
 
   return async (request, context) => {
     const simulatedDepartureMs = options.getSimulatedDepartureMs?.()
+    const origin = toApiEndpoint(request.origin)
+    const destination = toApiEndpoint(request.destination)
     const body: ApiJourneyPlanningRequest = simulatedDepartureMs === null || simulatedDepartureMs === undefined
-      ? { origin: request.origin, destination: request.destination }
-      : { origin: request.origin, destination: request.destination, simulatedDepartureMs }
+      ? { origin, destination }
+      : { origin, destination, simulatedDepartureMs }
 
     let response: Response
     try {

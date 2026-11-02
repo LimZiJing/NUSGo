@@ -67,6 +67,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     refitExploreTarget: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
+    setPersonalWaypointCollection: vi.fn(),
     navigateTo: vi.fn(),
     replanPath: vi.fn(),
     searchPaths: vi.fn(),

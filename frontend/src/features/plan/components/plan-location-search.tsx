@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { searchTripLocations } from '../../../domain/location/search'
+import { getPersonalWaypointSearchResults, searchTripLocations } from '../../../domain/location/search'
 import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import type { TransitIndex } from '../../../domain/transit'
 import type {
@@ -9,26 +9,29 @@ import type {
 } from '../../../domain/trip/types'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
+import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import { IconButton } from '../../../ui/button'
 import { ArrowLeftIcon, CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
 import type { OriginLocationRequestState } from './plan-trip-card'
 
-type KindFilter = 'all' | 'venue' | 'building' | 'stop'
-type ResultKind = Exclude<KindFilter, 'all'>
+type ResultKind = Exclude<TripEndpoint['kind'], 'current-location'>
+type KindFilter = 'all' | ResultKind
 
 const FILTERS: readonly { readonly id: KindFilter; readonly label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'venue', label: 'Rooms' },
   { id: 'building', label: 'Buildings' },
   { id: 'stop', label: 'Bus stops' },
+  { id: 'personal-waypoint', label: 'Personal Waypoints' },
 ]
 
 const GROUPS: readonly { readonly kind: ResultKind; readonly heading: string }[] = [
   { kind: 'building', heading: 'Buildings' },
   { kind: 'venue', heading: 'Rooms' },
   { kind: 'stop', heading: 'Bus stops' },
+  { kind: 'personal-waypoint', heading: 'Personal Waypoints' },
 ]
 
 interface PlanLocationSearchProps {
@@ -41,6 +44,7 @@ interface PlanLocationSearchProps {
   otherEndpointLabel: string | null
   /** Shown while nothing is typed, such as favourite stops. */
   suggestions?: readonly TripLocationSearchResult[]
+  personalWaypoints?: readonly PersonalWaypoint[]
   onSearchQueryChange: (query: string) => void
   onSelect: (endpoint: TripEndpoint) => void
   onBack: () => void
@@ -58,7 +62,7 @@ function isSameText(first: string, second: string): boolean {
 
 function getResultLabel(result: TripLocationSearchResult): string {
   // A building's stable ID is a slug, so its name is the meaningful title.
-  return result.endpoint.kind === 'current-location' || result.endpoint.kind === 'building'
+  return result.endpoint.kind === 'current-location' || result.endpoint.kind === 'building' || result.endpoint.kind === 'personal-waypoint'
     ? result.label
     : result.endpoint.id
 }
@@ -105,6 +109,7 @@ export function PlanLocationSearch({
   searchQuery,
   otherEndpointLabel,
   suggestions = [],
+  personalWaypoints = [],
   onSearchQueryChange,
   onSelect,
   onBack,
@@ -116,7 +121,7 @@ export function PlanLocationSearch({
   const statusId = `trip-${role}-search-status`
   const [filter, setFilter] = useState<KindFilter>('all')
   const inputRef = useRef<HTMLInputElement>(null)
-  const hasLocationData = venues !== null || networkIndex !== null || buildings !== null
+  const hasLocationData = venues !== null || networkIndex !== null || buildings !== null || personalWaypoints.length > 0
   const hasQuery = searchQuery.trim().length > 0
   const locating = originLocationRequest.status === 'requesting'
 
@@ -133,9 +138,14 @@ export function PlanLocationSearch({
         undefined,
         buildings ?? undefined,
         filter === 'all' ? undefined : [filter],
+        personalWaypoints,
       )
-      : suggestions.filter((result) => filter === 'all' || result.endpoint.kind === filter),
-    [hasQuery, searchQuery, networkIndex, venues, buildings, filter, suggestions],
+      : [
+        ...suggestions.filter((result) => filter === 'all' || result.endpoint.kind === filter),
+        ...getPersonalWaypointSearchResults(personalWaypoints)
+          .filter((result) => filter === 'all' || result.endpoint.kind === filter),
+      ],
+    [hasQuery, searchQuery, networkIndex, venues, buildings, filter, suggestions, personalWaypoints],
   )
 
   const groups = GROUPS
@@ -276,7 +286,7 @@ export function PlanLocationSearch({
           ) : (
             <div className="plan-search-empty">
               <p className="plan-search-empty-title">No matches for “{searchQuery.trim()}”</p>
-              <p>Try a building, room or bus stop name.</p>
+              <p>Try a Personal Waypoint name or category, building, room or bus stop.</p>
             </div>
           )}
         </div>

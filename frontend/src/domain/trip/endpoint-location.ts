@@ -27,6 +27,10 @@ export function getTripEndpointCoordinate(
       const { longitude, latitude } = endpoint.coordinate
       return isValidLocationCoordinates(longitude, latitude) ? { longitude, latitude } : null
     }
+    case 'personal-waypoint': {
+      const { longitude, latitude } = endpoint.coordinate
+      return isValidLocationCoordinates(longitude, latitude) ? { longitude, latitude } : null
+    }
     case 'venue': {
       const location = sources.venues?.[endpoint.id]?.location
       return location ? toCoordinate(location.x, location.y) : null

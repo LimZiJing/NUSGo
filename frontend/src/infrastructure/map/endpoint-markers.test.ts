@@ -79,3 +79,31 @@ describe('Current location endpoint markers', () => {
     markers.dispose()
   })
 })
+
+describe('Personal Waypoint endpoint markers', () => {
+  it('shows the local waypoint name without exposing its saved ID in the popup', () => {
+    const waypointId = '00000000-0000-4000-8000-000000000041'
+    const markers = createTripEndpointMarkers(
+      {} as Map,
+      {
+        origin: {
+          kind: 'personal-waypoint',
+          id: waypointId,
+          label: 'Quiet bench',
+          coordinate: { longitude: 103.78, latitude: 1.29 },
+        },
+        destination: null,
+      },
+      {},
+      null,
+    )
+
+    const marker = markerHarness.markers[0]
+    expect(marker?.coordinate).toEqual([103.78, 1.29])
+    expect(marker?.element.getAttribute('aria-label')).toBe('Origin: Quiet bench')
+    expect(marker?.popupContent?.textContent).toContain('Quiet bench')
+    expect(marker?.popupContent?.textContent).not.toContain(waypointId)
+
+    markers.dispose()
+  })
+})

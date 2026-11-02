@@ -1,7 +1,7 @@
 import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '@nusgo/shared/transit/index'
-import type { TripCoordinate, TripEndpoint, PathEndpointLocation } from '@nusgo/shared/routing/path'
+import type { JourneyEndpoint, TripCoordinate, TripEndpoint, PathEndpointLocation } from '@nusgo/shared/routing/path'
 
 export interface BuildingIndex {
   readonly byId: ReadonlyMap<string, { readonly location: Building['location'] }>
@@ -56,21 +56,24 @@ export function createCurrentLocationTripEndpoint(
   const frozen = { longitude, latitude }
   return isCoordinate(frozen) ? { kind: 'current-location', coordinate: frozen } : null
 }
-export function getTripEndpointKey(endpoint: TripEndpoint): string {
-  return endpoint.kind === 'current-location'
-    ? 'current-location:' + endpoint.coordinate.longitude + ':' + endpoint.coordinate.latitude
-    : endpoint.kind + ':' + endpoint.id
+export function getTripEndpointKey(endpoint: JourneyEndpoint): string {
+  if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
+    return endpoint.kind + ':' + endpoint.coordinate.longitude + ':' + endpoint.coordinate.latitude
+  }
+  return endpoint.kind + ':' + endpoint.id
 }
 
 export function getTripEndpointCoordinate(
-  endpoint: TripEndpoint,
+  endpoint: JourneyEndpoint,
   sources: {
     readonly venues: VenueLocationMap
     readonly buildings: BuildingIndex
     readonly transit: TransitIndex
   },
 ): TripCoordinate | null {
-  if (endpoint.kind === 'current-location') return isCoordinate(endpoint.coordinate) ? endpoint.coordinate : null
+  if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
+    return isCoordinate(endpoint.coordinate) ? endpoint.coordinate : null
+  }
   if (endpoint.kind === 'venue') {
     const location = sources.venues[endpoint.id]?.location
     if (location) {
@@ -92,7 +95,7 @@ export function getTripEndpointCoordinate(
 }
 
 export function hasCanonicalEndpoint(
-  endpoint: TripEndpoint,
+  endpoint: JourneyEndpoint,
   sources: { readonly venues: VenueLocationMap; readonly buildings: BuildingIndex; readonly transit: TransitIndex },
 ): boolean {
   return getTripEndpointCoordinate(endpoint, sources) !== null

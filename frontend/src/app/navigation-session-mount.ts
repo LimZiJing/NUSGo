@@ -91,6 +91,9 @@ export interface NavigationSessionCommands {
   readonly selectOriginEndpoint: (
     endpoint: Parameters<NavigationSession['setTripEndpoint']>[1],
   ) => void
+  readonly setPersonalWaypointCollection: (
+    waypoints: Parameters<NavigationSession['setPersonalWaypointCollection']>[0],
+  ) => void
   readonly clearOriginEndpoint: () => void
   readonly selectDestinationEndpoint: (
     endpoint: Parameters<NavigationSession['setTripEndpoint']>[1],
@@ -158,6 +161,7 @@ function createNavigationSessionCommands(
   return {
     swapTripEndpoints: () => session?.swapTripEndpoints(),
     selectOriginEndpoint: (endpoint) => session?.setTripEndpoint('origin', endpoint),
+    setPersonalWaypointCollection: (waypoints) => session?.setPersonalWaypointCollection(waypoints),
     clearOriginEndpoint: () => session?.clearTripEndpoint('origin'),
     selectDestinationEndpoint: (endpoint) => session?.setTripEndpoint('destination', endpoint),
     navigateToEndpoint: (endpoint) => session?.navigateTo(endpoint),

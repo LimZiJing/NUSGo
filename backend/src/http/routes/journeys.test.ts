@@ -34,6 +34,40 @@ describe('parseJourneyPlanningRequest', () => {
     })
   })
 
+  it('accepts a coordinate-only Personal Waypoint endpoint', () => {
+    assert.deepEqual(parseJourneyPlanningRequest({
+      origin: {
+        kind: 'waypoint-coordinate',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+      },
+      destination: { kind: 'stop', id: 'COM3' },
+    }, 'production'), {
+      origin: {
+        kind: 'waypoint-coordinate',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+      },
+      destination: { kind: 'stop', id: 'COM3' },
+    })
+  })
+
+  it('rejects waypoint IDs, labels, and invalid coordinates in Journey requests', () => {
+    assert.throws(() => parseJourneyPlanningRequest({
+      origin: {
+        kind: 'waypoint-coordinate',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        id: 'private-id',
+      },
+      destination: { kind: 'stop', id: 'COM3' },
+    }, 'production'), InvalidJourneyRequestError)
+    assert.throws(() => parseJourneyPlanningRequest({
+      origin: {
+        kind: 'waypoint-coordinate',
+        coordinate: { longitude: 181, latitude: 1.29 },
+      },
+      destination: { kind: 'stop', id: 'COM3' },
+    }, 'production'), InvalidJourneyRequestError)
+  })
+
   it('rejects malformed endpoint coordinates and client supplied canonical coordinates', () => {
     assert.throws(() => parseJourneyPlanningRequest({
       origin: { kind: 'current-location', coordinate: { longitude: 181, latitude: 1 } },

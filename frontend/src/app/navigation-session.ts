@@ -12,6 +12,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
+import { reconcilePersonalWaypointEndpoints } from '../domain/trip/personal-waypoint-endpoints'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -126,6 +127,7 @@ export interface NavigationSession {
   hideLocationMarker(): void
   showLocationMarker(): void
   setTripEndpoint(role: TripEndpointRole, endpoint: TripEndpoint): void
+  setPersonalWaypointCollection(waypoints: readonly PersonalWaypoint[] | null): void
   navigateTo(destination: TripEndpoint): void
   clearTripEndpoint(role: TripEndpointRole): void
   swapTripEndpoints(): void
@@ -216,6 +218,7 @@ export function createNavigationSession(
   let journeyPlanningAbortController: AbortController | null = null
   let journeyPlanningRequestId = 0
   let journeyPlanningRequested = false
+  let personalWaypointsById: ReadonlyMap<string, PersonalWaypoint> | null = null
   let originLocationRequestId = 0
   // Request id of an origin capture waiting for the first valid tracking fix.
   let pendingOriginCaptureId: number | null = null
@@ -519,7 +522,13 @@ export function createNavigationSession(
   }
 
   const setTripEndpointCommand = (role: TripEndpointRole, endpoint: TripEndpoint): void => {
-    const canonicalEndpoint = canonicalizeTripEndpoint(endpoint, state.venues, transitIndex, state.buildings)
+    const canonicalEndpoint = canonicalizeTripEndpoint(
+      endpoint,
+      state.venues,
+      transitIndex,
+      state.buildings,
+      personalWaypointsById,
+    )
     if (
       disposed ||
       !isTripEndpointRole(role) ||
@@ -885,8 +894,28 @@ export function createNavigationSession(
       setTripEndpointCommand(role, endpoint)
     },
 
+    setPersonalWaypointCollection(waypoints) {
+      enqueueTransition(() => {
+        if (disposed) return
+        if (waypoints === null) {
+          // A failed local read is not an empty collection; keep any selected waypoint endpoint.
+          personalWaypointsById = null
+          return
+        }
+        personalWaypointsById = new Map(waypoints.map((waypoint) => [waypoint.id, waypoint]))
+        const request = reconcilePersonalWaypointEndpoints(state.tripRequest, waypoints)
+        if (request !== state.tripRequest) updateTripRequest(request)
+      })
+    },
+
     navigateTo(destination) {
-      const canonicalDestination = canonicalizeTripEndpoint(destination, state.venues, transitIndex, state.buildings)
+      const canonicalDestination = canonicalizeTripEndpoint(
+        destination,
+        state.venues,
+        transitIndex,
+        state.buildings,
+        personalWaypointsById,
+      )
       if (disposed || canonicalDestination === null) return
       enqueueTransition(() => {
         if (disposed) return

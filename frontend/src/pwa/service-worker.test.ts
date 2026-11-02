@@ -13,7 +13,7 @@ function worker(cached: Response | undefined, fetch = vi.fn(() => new Promise<Re
       registration: { scope: 'https://nusgo.test/pwa/' },
       addEventListener: (name: string, handler: (event: unknown) => void) => handlers.set(name, handler),
     },
-    caches: { open: async () => cache }, fetch, URL, Response,
+    caches: { open: async () => cache }, fetch, URL, Response, console: { warn: vi.fn() },
   })
   function navigate(path = '/pwa/') {
     let response: Promise<Response> | undefined
@@ -23,7 +23,15 @@ function worker(cached: Response | undefined, fetch = vi.fn(() => new Promise<Re
     })
     return response
   }
-  return { navigate, fetch }
+  function asset() {
+    let response: Promise<Response> | undefined
+    handlers.get('fetch')?.({
+      request: { url: 'https://nusgo.test/pwa/extra.png', method: 'GET', destination: 'image' },
+      respondWith: (value: Promise<Response>) => { response = value },
+    })
+    return response
+  }
+  return { navigate, asset, fetch, cache }
 }
 
 describe('offline app launch', () => {
@@ -48,5 +56,36 @@ describe('offline app launch', () => {
     const runtime = worker(undefined, vi.fn().mockRejectedValue(new Error('offline')))
     const response = await runtime.navigate()
     expect(response?.status).toBe(503)
+  })
+})
+
+
+describe('runtime asset caching', () => {
+  it('returns a successful download even if storing it exceeds quota', async () => {
+    const response = new Response('image')
+    const runtime = worker(undefined, vi.fn().mockResolvedValue(response))
+    runtime.cache.put.mockRejectedValue(new Error('quota exceeded'))
+    expect(await runtime.asset()).toBe(response)
+  })
+
+  it.each([
+    new Response('private image', { headers: { 'Cache-Control': 'private, NO-STORE' } }),
+    new Response('partial image', { status: 206 }),
+  ])('returns an uncacheable download without storing it', async (response) => {
+    const runtime = worker(undefined, vi.fn().mockResolvedValue(response))
+    expect(await runtime.asset()).toBe(response)
+    expect(runtime.cache.put).not.toHaveBeenCalled()
+  })
+
+  it('stores a complete cacheable download', async () => {
+    const response = new Response('image')
+    const runtime = worker(undefined, vi.fn().mockResolvedValue(response))
+    expect(await runtime.asset()).toBe(response)
+    expect(runtime.cache.put).toHaveBeenCalledOnce()
+  })
+
+  it('returns an offline response when the download itself fails', async () => {
+    const runtime = worker(undefined, vi.fn().mockRejectedValue(new Error('offline')))
+    expect((await runtime.asset())?.status).toBe(504)
   })
 })

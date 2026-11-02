@@ -70,7 +70,15 @@ async function cacheFirst(request) {
 
   try {
     const response = await fetch(request)
-    if (response.ok) await cache.put(request, response.clone())
+    const noStore = /\bno-store\b/i.test(response.headers.get('Cache-Control') ?? '')
+    if (response.status === 200 && !noStore) {
+      try {
+        await cache.put(request, response.clone())
+      } catch (error) {
+        // Storage limits must not discard an otherwise successful download.
+        console.warn('NUSGo could not cache a downloaded asset.', error)
+      }
+    }
     return response
   } catch {
     return new Response('', { status: 504, statusText: 'Offline' })

@@ -135,6 +135,18 @@ function createMountDependencies(
 }
 
 describe('navigation session application seam', () => {
+  it('forwards fallback basemap status to the application', () => {
+    const onBasemapUnavailable = vi.fn()
+    const dependencies = createMountDependencies(createMapDouble(), createSessionDouble())
+    const mount = createNavigationSessionMount({} as HTMLElement, {
+      ...dependencies,
+      onBasemapUnavailable,
+    })
+    dependencies.getMapOptions()?.onBasemapUnavailable?.()
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    mount.dispose()
+  })
+
   it('installs one map/session pair per mount and disposes it on unmount', () => {
     const map = createMapDouble()
     const session = createSessionDouble()

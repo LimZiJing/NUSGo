@@ -20,7 +20,7 @@ How NUSGo plans a journey today. The accepted design is in [ADR 0002](adr/0002-n
 ## Scoring and what is shown
 
 - Walking time is divided by 0.8. The first bus wait and ride are unchanged. Each later bus leg is divided by 0.9.
-- Search returns up to three distinct bus Paths plus the best walking-only Path.
+- Search returns up to three bus Paths with distinct ordered route sequences plus the best walking-only Path. The highest-ranked complete Path is retained for each route sequence after waiting estimates are applied.
 - Plan shows up to three bus Paths and one walking Path. Walking goes first only when its adjusted duration is strictly under 80% of the fastest bus Path. Otherwise it follows the bus options.
 - The map draws every candidate and emphasises the selected one.
 

@@ -408,7 +408,7 @@ describe('mobile Stops tab state', () => {
 
     const placementHeading = screen.getByRole('heading', { name: 'Place waypoint' })
     expect(document.activeElement).toBe(placementHeading)
-    expect(document.activeElement).not.toBe(screen.getByRole('spinbutton', { name: 'Latitude' }))
+    expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 

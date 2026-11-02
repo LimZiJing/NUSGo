@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react'
 import { ChevronRightIcon, MapPinIcon, SettingsIcon } from '../../ui/icons'
 import './more-menu.css'
 
 /** Lists destinations while each destination screen stays with its owning feature. */
-export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings }: {
+export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, installSection }: {
+  readonly installSection?: ReactNode
   readonly waypointCount: number | null
   readonly onOpenWaypoints: () => void
   readonly onOpenSettings: () => void
@@ -40,5 +42,6 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings }: {
       </span>
       <ChevronRightIcon />
     </button>
+    {installSection}
   </div>
 }

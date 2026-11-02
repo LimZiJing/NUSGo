@@ -218,30 +218,34 @@ function App() {
     enableLocationTracking: commands.enableLocationTracking,
   })
   const liveBusRouteIds = useMemo(() => {
-    const routeIds = new Set<string>()
-    if (state.selectedRouteId) routeIds.add(state.selectedRouteId)
-    for (const leg of state.path.path?.legs ?? []) {
-      if (leg.mode === 'shuttle') routeIds.add(leg.routeId)
+    if (navigationState.state.activeView === 'stops') {
+      return [...state.transitIndex?.routeIdsByStopId.get(stopsWorkflow.state.focusedStopId ?? '') ?? []].sort()
     }
-    const focusedStopId = stopsWorkflow.state.focusedStopId
-    for (const routeId of state.transitIndex?.routeIdsByStopId.get(focusedStopId ?? '') ?? []) {
-      routeIds.add(routeId)
+    const routeIds = new Set<string>()
+    if (navigationState.state.activeView === 'explore') {
+      if (state.selectedRouteId) routeIds.add(state.selectedRouteId)
+    } else {
+      for (const leg of state.path.path?.legs ?? []) {
+        if (leg.mode === 'shuttle') routeIds.add(leg.routeId)
+      }
     }
     return [...routeIds].sort()
   }, [
+    navigationState.state.activeView,
     state.path.path,
     state.selectedRouteId,
     state.transitIndex,
     stopsWorkflow.state.focusedStopId,
   ])
+  const showLiveBusVehicles = liveBusLayerEnabled && liveBusRouteIds.length > 0
   const liveVehicles = useShuttleVehicles(
     loadShuttleVehicles,
-    liveBusLayerEnabled,
+    showLiveBusVehicles,
     liveBusRouteIds,
   )
   useEffect(() => {
-    commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], liveBusLayerEnabled)
-  }, [commands, liveBusLayerEnabled, liveVehicles.snapshot])
+    commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], showLiveBusVehicles)
+  }, [commands, liveVehicles.snapshot, showLiveBusVehicles])
   useLayoutEffect(() => {
     commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
   }, [commands, stopsWorkflow.nearbyHighlightStopIds])

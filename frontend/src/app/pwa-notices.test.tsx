@@ -4,6 +4,7 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MoreMenu } from '../features/more/more-menu'
+const originalUserAgent = navigator.userAgent
 let PwaNotices: typeof import('./pwa-notices').PwaNotices
 let PwaInstallSection: typeof import('./pwa-install-section').PwaInstallSection
 let getInstallPromptSnapshot: typeof import('../infrastructure/pwa/pwa-runtime').getInstallPromptSnapshot
@@ -37,6 +38,7 @@ describe('PWA notices', () => {
     refreshPwaInstallationStatus = runtime.refreshPwaInstallationStatus
     Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: undefined })
     window.localStorage.clear()
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent })
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => {
       window.dispatchEvent(new Event('online'))
@@ -187,6 +189,26 @@ describe('PWA notices', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Install NUSGo' }))
     expect(screen.getByText(/In Chrome, open the browser menu/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+  })
+
+  it('recognizes an installed web app reported by id without a manifest URL', async () => {
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', {
+      configurable: true,
+      value: vi.fn().mockResolvedValue([{ platform: 'webapp', id: new URL(import.meta.env.BASE_URL, window.location.origin).href }]),
+    })
+    render(<PwaNotices />)
+    dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+  })
+
+  it('keeps Edge Android installation in More without an automatic banner', async () => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/155.0.0.0 Mobile Safari/537.36 EdgA/155.0.4283.61' })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    const { prompt } = dispatchInstallPrompt()
+    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Install NUSGo' }))
+    expect(prompt).toHaveBeenCalledOnce()
   })
 
   it('hides installation controls in the installed app', () => {

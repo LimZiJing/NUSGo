@@ -50,10 +50,12 @@ export async function refreshPwaInstallationStatus(): Promise<void> {
     ])
     if (generation !== installationCheckGeneration) return
     if (!Array.isArray(apps)) throw new Error('Invalid installed-app response')
-    const manifestUrl = new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href
+    const appId = new URL(import.meta.env.BASE_URL, window.location.origin).href
+    const manifestUrl = new URL('manifest.webmanifest', appId).href
     installedRelatedApp = apps.some((app: unknown) => {
       if (!app || typeof app !== 'object') return false
-      return 'platform' in app && app.platform === 'webapp' && 'url' in app && app.url === manifestUrl
+      if (!('platform' in app) || app.platform !== 'webapp') return false
+      return ('url' in app && app.url === manifestUrl) || ('id' in app && app.id === appId)
     })
     installedThisVisit = false
     installationAccepted = false
@@ -122,7 +124,9 @@ export function getInstallPromptSnapshot(): DeferredInstallPromptEvent | null {
 }
 
 export function getInstallBannerSnapshot(): boolean {
-  return getInstallPromptSnapshot() !== null && !installBannerDismissed
+  // Edge Android can offer installation without reliably enumerating installed PWAs.
+  // Keep installation user-initiated in More on that browser, avoiding repeat banners.
+  return !/EdgA\//.test(navigator.userAgent) && getInstallPromptSnapshot() !== null && !installBannerDismissed
 }
 
 export function getInstalledSnapshot(): boolean {

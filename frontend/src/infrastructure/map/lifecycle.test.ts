@@ -494,6 +494,56 @@ describe('map lifecycle style readiness', () => {
 })
 
 describe('map lifecycle waypoint placement', () => {
+  it('does not treat a marker drag release as a placement tap', () => {
+    vi.stubGlobal('Element', FakeElement)
+    const listeners = new Map<string, (event: Event) => void>()
+    const container = {
+      addEventListener: vi.fn((type: string, handler: (event: Event) => void) => {
+        listeners.set(type, handler)
+      }),
+      removeEventListener: vi.fn((type: string) => {
+        listeners.delete(type)
+      }),
+      getBoundingClientRect: vi.fn(() => ({ left: 10, top: 20 })),
+    } as unknown as HTMLElement
+    const onEmptyMapClick = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container,
+      onMapError: vi.fn(),
+      onEmptyMapClick,
+    })
+    lifecycle.setWaypointPlacementActive(true)
+    const marker = new FakeElement('.maplibregl-marker')
+    const pointerEvent = (pointerId: number, target: FakeElement, x: number, y: number) => ({
+      pointerId,
+      target,
+      clientX: x,
+      clientY: y,
+    } as unknown as PointerEvent)
+    const clickEvent = (target: FakeElement) => ({
+      target,
+      clientX: 30,
+      clientY: 60,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent)
+    const firePointer = (name: string, event: PointerEvent): void => listeners.get(name)?.(event)
+
+    firePointer('pointerdown', pointerEvent(1, marker, 30, 60))
+    firePointer('pointermove', pointerEvent(1, marker, 42, 60))
+    firePointer('pointerup', pointerEvent(1, marker, 42, 60))
+    listeners.get('click')?.(clickEvent(marker))
+    expect(onEmptyMapClick).not.toHaveBeenCalled()
+
+    firePointer('pointerdown', pointerEvent(2, marker, 30, 60))
+    firePointer('pointerup', pointerEvent(2, marker, 30, 60))
+    listeners.get('click')?.(clickEvent(marker))
+    expect(onEmptyMapClick).toHaveBeenCalledOnce()
+
+    lifecycle.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('uses taps over markers and route lines while leaving map controls available', () => {
     vi.stubGlobal('Element', FakeElement)
     const listeners = new Map<string, (event: MouseEvent) => void>()
@@ -546,6 +596,10 @@ describe('map lifecycle waypoint placement', () => {
 
     lifecycle.dispose()
     expect(listeners.has('click')).toBe(false)
+    expect(listeners.has('pointerdown')).toBe(false)
+    expect(listeners.has('pointermove')).toBe(false)
+    expect(listeners.has('pointerup')).toBe(false)
+    expect(listeners.has('pointercancel')).toBe(false)
     vi.unstubAllGlobals()
   })
 })

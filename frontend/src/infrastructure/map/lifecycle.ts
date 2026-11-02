@@ -28,6 +28,8 @@ setWorkerUrl(maplibreWorkerUrl)
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const DOUBLE_TAP_MS = 300
 const TAP_SLOP_PX = 20
+// Match MapLibre's default click tolerance so minor pointer jitter still counts as a tap.
+const MARKER_DRAG_SLOP_PX = 3
 const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
 
@@ -106,13 +108,56 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   let visibleCenterZoom = false
   let applyingViewportInsets = false
   let waypointPlacementActive = false
+  let markerPointerGesture: { readonly pointerId: number; readonly x: number; readonly y: number; moved: boolean } | null = null
+  let suppressMarkerReleaseClick = false
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
   }
 
+  const handlePlacementPointerDown = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const target = pointer.target
+    const startedOnMarker = typeof Element !== 'undefined' && target instanceof Element
+      && target.closest('.maplibregl-marker') !== null
+    markerPointerGesture = !disposed && waypointPlacementActive && startedOnMarker
+      ? { pointerId: pointer.pointerId, x: pointer.clientX, y: pointer.clientY, moved: false }
+      : null
+    suppressMarkerReleaseClick = false
+  }
+
+  const handlePlacementPointerMove = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId || gesture.moved) return
+    if (Math.hypot(pointer.clientX - gesture.x, pointer.clientY - gesture.y) >= MARKER_DRAG_SLOP_PX) {
+      gesture.moved = true
+    }
+  }
+
+  const handlePlacementPointerUp = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId) return
+    suppressMarkerReleaseClick = gesture.moved
+    markerPointerGesture = null
+  }
+
+  const handlePlacementPointerCancel = (event: Event): void => {
+    const pointer = event as PointerEvent
+    if (!markerPointerGesture || pointer.pointerId !== markerPointerGesture.pointerId) return
+    markerPointerGesture = null
+    suppressMarkerReleaseClick = false
+  }
+
   const handlePlacementMapClick = (event: MouseEvent): void => {
     if (disposed || !waypointPlacementActive) return
+    if (suppressMarkerReleaseClick) {
+      suppressMarkerReleaseClick = false
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      return
+    }
     const target = event.target
     if (typeof Element !== 'undefined' && target instanceof Element && target.closest(
       '.maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
@@ -125,6 +170,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     event.stopImmediatePropagation()
   }
 
+  options.container.addEventListener?.('pointerdown', handlePlacementPointerDown, true)
+  options.container.addEventListener?.('pointermove', handlePlacementPointerMove, true)
+  options.container.addEventListener?.('pointerup', handlePlacementPointerUp, true)
+  options.container.addEventListener?.('pointercancel', handlePlacementPointerCancel, true)
   options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
   const getVisibleCenter = (
@@ -306,10 +355,18 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     setWaypointPlacementActive(active) {
       if (disposed) return
       waypointPlacementActive = active
+      if (!active) {
+        markerPointerGesture = null
+        suppressMarkerReleaseClick = false
+      }
     },
     dispose() {
       if (disposed) return
       disposed = true
+      options.container.removeEventListener?.('pointerdown', handlePlacementPointerDown, true)
+      options.container.removeEventListener?.('pointermove', handlePlacementPointerMove, true)
+      options.container.removeEventListener?.('pointerup', handlePlacementPointerUp, true)
+      options.container.removeEventListener?.('pointercancel', handlePlacementPointerCancel, true)
       options.container.removeEventListener?.('click', handlePlacementMapClick, true)
       controller.abort()
       map.off('error', handleMapError)

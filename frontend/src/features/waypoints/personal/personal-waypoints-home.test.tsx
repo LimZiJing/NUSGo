@@ -170,6 +170,7 @@ describe('PersonalWaypointsHome', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toHaveLength(1)
     await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
     expect(onEditWaypoint).toHaveBeenCalledWith(waypoint.id)
   })

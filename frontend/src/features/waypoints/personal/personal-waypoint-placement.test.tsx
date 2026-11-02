@@ -23,21 +23,32 @@ describe('PersonalWaypointPlacement', () => {
       />,
     )
 
+    const coordinateToggle = screen.getByRole('button', { name: 'Enter coordinates' })
+    expect(coordinateToggle.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
+    await user.click(coordinateToggle)
+
     const latitude = screen.getByRole('spinbutton', { name: 'Latitude' }) as HTMLInputElement
     const longitude = screen.getByRole('spinbutton', { name: 'Longitude' }) as HTMLInputElement
     await user.clear(latitude)
     await user.type(latitude, '91')
     await user.clear(longitude)
     await user.type(longitude, '104')
+    await user.click(coordinateToggle)
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
-    expect(screen.getByRole('alert').textContent).toContain('valid latitude and longitude')
+    expect(coordinateToggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('alert').textContent).toContain('Latitude must be between')
+    expect(latitude.getAttribute('aria-invalid')).toBe('true')
+    expect(longitude.getAttribute('aria-invalid')).toBe('false')
+    expect(document.activeElement).toBe(latitude)
 
     await user.click(screen.getByRole('button', { name: 'Use map centre' }))
 
-    expect(latitude.value).toBe(String(center.latitude))
-    expect(longitude.value).toBe(String(center.longitude))
+    expect(Number(latitude.value)).toBe(center.latitude)
+    expect(Number(longitude.value)).toBe(center.longitude)
     expect(screen.queryByRole('alert')).toBeNull()
+    expect(latitude.getAttribute('aria-invalid')).toBe('false')
     expect(onChange).toHaveBeenCalledWith(center)
   })
 })

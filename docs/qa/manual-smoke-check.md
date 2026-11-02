@@ -53,6 +53,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Personal Waypoints (#207)
 
+- [ ] Add a waypoint and verify the temporary marker is a pointed pin whose tip follows the selected location. Tap the map and drag the pin; check that the selected-coordinate readout updates. Open Enter coordinates, confirm visible Latitude and Longitude labels, apply valid values, then submit invalid values from the collapsed state and confirm the disclosure opens, the relevant field is identified, and focus moves to it. Check Use map centre, Cancel, and Continue at 390 × 844.
 - [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each row opens waypoint details and its separate Edit action opens the edit form directly.
 - [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.
 - [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.

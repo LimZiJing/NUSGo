@@ -32,6 +32,10 @@ function isStandaloneApp(): boolean {
   return safariStandalone || window.matchMedia?.('(display-mode: standalone)').matches === true
 }
 
+function isEdgeAndroidBrowser(): boolean {
+  return /EdgA\//.test(navigator.userAgent)
+}
+
 /** Query the browser rather than interpreting another install event as an uninstall. */
 export async function refreshPwaInstallationStatus(): Promise<void> {
   const browser = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown> }
@@ -50,15 +54,21 @@ export async function refreshPwaInstallationStatus(): Promise<void> {
     ])
     if (generation !== installationCheckGeneration) return
     if (!Array.isArray(apps)) throw new Error('Invalid installed-app response')
-    const appId = new URL(import.meta.env.BASE_URL, window.location.origin).href
-    const manifestUrl = new URL('manifest.webmanifest', appId).href
-    installedRelatedApp = apps.some((app: unknown) => {
+    const appId = new URL(__NUSGO_PWA_MANIFEST_ID__, window.location.origin).href
+    const baseUrl = new URL(import.meta.env.BASE_URL, window.location.origin)
+    const manifestUrl = new URL('manifest.webmanifest', baseUrl).href
+    const detectedInstalledApp = apps.some((app: unknown) => {
       if (!app || typeof app !== 'object') return false
       if (!('platform' in app) || app.platform !== 'webapp') return false
       return ('url' in app && app.url === manifestUrl) || ('id' in app && app.id === appId)
     })
-    installedThisVisit = false
-    installationAccepted = false
+    // Edge Android may return [] for an app whose installation just completed.
+    // Only reliable absence or positive evidence can replace the current confirmation.
+    if (!isEdgeAndroidBrowser() || detectedInstalledApp) {
+      installedRelatedApp = detectedInstalledApp
+      installedThisVisit = false
+      installationAccepted = false
+    }
   } catch (error) {
     // A failed check is not evidence that an installed app was removed.
     console.warn('NUSGo could not check installed app status.', error)
@@ -86,8 +96,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (event: Event) => {
     event.preventDefault()
     if (isStandaloneApp() || installedThisVisit || installationAccepted) return
-    installBannerDismissed = false
-
     deferredInstallPrompt = event as DeferredInstallPromptEvent
     void refreshPwaInstallationStatus()
     notify(installPromptListeners)
@@ -126,7 +134,7 @@ export function getInstallPromptSnapshot(): DeferredInstallPromptEvent | null {
 export function getInstallBannerSnapshot(): boolean {
   // Edge Android can offer installation without reliably enumerating installed PWAs.
   // Keep installation user-initiated in More on that browser, avoiding repeat banners.
-  return !/EdgA\//.test(navigator.userAgent) && getInstallPromptSnapshot() !== null && !installBannerDismissed
+  return !isEdgeAndroidBrowser() && getInstallPromptSnapshot() !== null && !installBannerDismissed
 }
 
 export function getInstalledSnapshot(): boolean {

@@ -56,6 +56,7 @@ describe('PWA notices', () => {
       if (name === 'visibilitychange') document.removeEventListener(name, listener, options)
     }
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
     window.localStorage.clear()
   })
 
@@ -126,9 +127,10 @@ describe('PWA notices', () => {
   })
 
   it('recognizes an installed web app reported by id without a manifest URL', async () => {
+    vi.stubEnv('BASE_URL', '/pwa-check/')
     Object.defineProperty(navigator, 'getInstalledRelatedApps', {
       configurable: true,
-      value: vi.fn().mockResolvedValue([{ platform: 'webapp', id: new URL(import.meta.env.BASE_URL, window.location.origin).href }]),
+      value: vi.fn().mockResolvedValue([{ platform: 'webapp', id: new URL('./', window.location.origin).href }]),
     })
     render(<PwaNotices />)
     dispatchInstallPrompt()
@@ -204,6 +206,25 @@ describe('PWA notices', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true')
     await userEvent.setup().click(button)
     expect(screen.queryByText(/Open your browser menu/)).toBeNull()
+  })
+
+  it('preserves completed installation on Edge Android after an empty focus refresh', async () => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15) EdgA/155.0.4283.61' })
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: vi.fn().mockResolvedValue([]) })
+    render(<PwaInstallSection />)
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    expect(screen.getByRole('status', { name: 'NUSGo is installed on this device' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
+  })
+
+  it('does not reoffer a dismissed banner after another eligibility event in the same visit', async () => {
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    dispatchInstallPrompt()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss install prompt' }))
+    dispatchInstallPrompt()
+    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
   })
 
   it('keeps Edge Android installation in More without an automatic banner', async () => {

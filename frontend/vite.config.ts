@@ -29,7 +29,7 @@ function createPwaServiceWorkerPlugin(basePath: string, publicDirectory: string,
       manifest.related_applications = [{
         platform: 'webapp',
         url: './manifest.webmanifest',
-        id: new URL(basePath, pwaOrigin).href,
+        id: new URL(manifest.id, pwaOrigin).href,
       }]
       const manifestSource = JSON.stringify(manifest, null, 2) + '\n'
       this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: manifestSource })
@@ -71,6 +71,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, ['VITE_', 'NUSGO_VITE_'])
   const allowedHost = env.NUSGO_VITE_ALLOWED_HOST?.trim()
   const buildSettings = resolveViteBuildSettings(mode, env.VITE_API_ORIGIN, env.VITE_BASE_PATH)
+  const manifestId: unknown = JSON.parse(readFileSync(resolve(process.cwd(), 'public/manifest.webmanifest'), 'utf8')).id
+  if (typeof manifestId !== 'string') throw new Error('PWA manifest must specify a string id')
   const dataVersion = parseDataVersion(
     env.VITE_DATA_VERSION?.trim() || process.env.GITHUB_SHA || LOCAL_DATA_VERSION,
     'VITE_DATA_VERSION',
@@ -84,6 +86,7 @@ export default defineConfig(({ mode }) => {
       outDir: buildSettings.outDir,
     },
     define: {
+      __NUSGO_PWA_MANIFEST_ID__: JSON.stringify(manifestId),
       __NUSGO_API_ORIGIN__: JSON.stringify(buildSettings.apiOrigin),
       __NUSGO_DATA_VERSION__: JSON.stringify(dataVersion),
     },

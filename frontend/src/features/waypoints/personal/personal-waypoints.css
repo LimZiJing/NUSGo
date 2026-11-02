@@ -6,10 +6,149 @@
 .personal-waypoint-placement > p { margin: 0; line-height: 1.45; }
 .personal-waypoint-empty { color: var(--text-secondary); }
 
+.personal-waypoints-status {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.personal-waypoints-status-problem { color: var(--status-error); }
+
+.personal-waypoints-limit {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .personal-waypoints-home > .button[data-variant='primary'] {
   width: 100%;
   min-height: 40px;
   border-radius: 12px;
+}
+
+.personal-waypoint-details {
+  display: grid;
+  gap: var(--space-4);
+  text-align: left;
+}
+
+.personal-waypoint-details-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.personal-waypoint-details-identity-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--control-height-lg);
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
+  border-radius: var(--radius-card);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.personal-waypoint-details-identity-copy {
+  min-width: 0;
+}
+
+.personal-waypoint-details h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-3xl);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.personal-waypoint-details-category {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.personal-waypoint-details-fields {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.personal-waypoint-details-note {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+}
+
+.personal-waypoint-details-label {
+  display: block;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.personal-waypoint-details-note-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.personal-waypoint-details-note p {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.personal-waypoint-details-location {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent);
+}
+
+.personal-waypoint-details-location dl {
+  min-width: 0;
+  margin: 0;
+}
+
+.personal-waypoint-details-location dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.personal-waypoint-details-location > svg {
+  flex: 0 0 18px;
+}
+
+.personal-waypoint-details-status {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  color: var(--text-warning);
+  background: var(--surface-warning);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.personal-waypoint-details-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
 .personal-waypoint-list {
@@ -40,38 +179,8 @@
   background: var(--surface-card);
 }
 
-.personal-waypoint-list-card .saved-list-header-trailing {
-  flex: 0 1 148px;
-}
-
-.personal-waypoint-category-filter {
-  box-sizing: border-box;
-  gap: 0;
-  width: 100%;
-  flex: 1 1 auto;
-}
-
-.personal-waypoint-category-filter .select-trigger {
-  min-height: 36px;
-  padding: 0 8px;
-  border-radius: 9px;
-  font-size: var(--font-size-xs);
-}
-
-.personal-waypoint-category-filter .select-trigger-chevron {
-  width: 13px;
-  height: 13px;
-}
-
 .personal-waypoint-list-filter-note {
   margin: 8px 10px 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  line-height: 1.35;
-}
-
-.personal-waypoint-privacy-note {
-  margin: 8px 0;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
   line-height: 1.35;
@@ -112,17 +221,22 @@
 }
 
 .personal-waypoint-grip {
-  display: grid;
-  width: 18px;
-  flex: 0 0 18px;
-  place-items: center;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
   color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
 }
+
+.personal-waypoint-grip:active { cursor: grabbing; }
 
 .personal-waypoint-grip svg {
   width: 15px;
   height: 15px;
 }
+
+.personal-waypoint-row-dragging { opacity: .55; }
 
 .personal-waypoint-list-edit-actions {
   display: flex;
@@ -141,7 +255,6 @@
   min-height: 40px;
 }
 
-.personal-waypoint-order-up svg { transform: rotate(180deg); }
 .personal-waypoint-remove { color: var(--text-error-strong); }
 
 .personal-waypoint-list-empty {
@@ -171,11 +284,503 @@
 }
 .personal-waypoint-form textarea { resize: vertical; }
 .personal-waypoint-form [aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-category-input-group {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+}
+
+.personal-waypoint-category-input-group:focus-within { border-color: var(--accent); }
+.personal-waypoint-category-input-group:has(input[aria-invalid='true']) { border-color: var(--text-error-strong); }
+
+.personal-waypoint-form .personal-waypoint-category-input {
+  min-width: 0;
+  min-height: 38px;
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+}
+
+.personal-waypoint-form .personal-waypoint-category-input:focus-visible { outline: none; }
+
+.personal-waypoint-category-trigger {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  min-height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.personal-waypoint-category-trigger:focus-visible,
+.personal-waypoint-category-item:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.personal-waypoint-category-positioner {
+  z-index: 31;
+  width: var(--anchor-width);
+  max-width: var(--available-width);
+}
+
+.personal-waypoint-category-popup {
+  box-sizing: border-box;
+  max-height: min(16rem, var(--available-height));
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-overlay-strong);
+  box-shadow: var(--glass-edge), var(--shadow-lg);
+  overscroll-behavior: contain;
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+}
+
+.personal-waypoint-category-list { display: grid; gap: 2px; }
+
+.personal-waypoint-category-item {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.personal-waypoint-category-item[data-highlighted='true'] { background: var(--accent-soft); }
+
+.personal-waypoint-category-empty {
+  padding: 10px 12px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-edit-conflict {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+.personal-waypoint-edit-conflict h3,
+.personal-waypoint-edit-conflict p { margin: 0; }
+.personal-waypoint-edit-conflict h3 {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+.personal-waypoint-edit-conflict p,
+.personal-waypoint-edit-conflict dt { color: var(--text-secondary); }
+.personal-waypoint-edit-conflict dl { display: grid; gap: var(--space-2); margin: 0; }
+.personal-waypoint-edit-conflict dl > div { display: grid; gap: var(--space-1); }
+.personal-waypoint-edit-conflict dt { font-size: var(--font-size-xs); font-weight: 600; }
+.personal-waypoint-edit-conflict dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
 .personal-waypoint-error { color: var(--text-error-strong); font-size: var(--font-size-sm); }
 .personal-waypoint-location { display: grid; gap: var(--space-2); }
 .personal-waypoint-location > span { color: var(--text-secondary); }
 .personal-waypoint-location .button { justify-self: start; }
 .personal-waypoint-save-note { color: var(--text-secondary); font-size: var(--font-size-sm); }
+
+.personal-waypoint-appearance {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.personal-waypoint-appearance-heading,
+.personal-waypoint-visibility-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.personal-waypoint-appearance-heading h3,
+.personal-waypoint-visibility-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+}
+
+.personal-waypoint-marker-preview {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 2px solid var(--surface-card);
+  border-radius: 50% 50% 50% 4px;
+  color: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transform: rotate(-45deg);
+}
+
+.personal-waypoint-marker-preview[data-color='blue'],
+.personal-waypoint-color-swatch[data-color='blue'] { background: var(--personal-waypoint-marker-blue); }
+.personal-waypoint-marker-preview[data-color='red'],
+.personal-waypoint-color-swatch[data-color='red'] { background: var(--personal-waypoint-marker-red); }
+.personal-waypoint-marker-preview[data-color='green'],
+.personal-waypoint-color-swatch[data-color='green'] { background: var(--personal-waypoint-marker-green); }
+.personal-waypoint-marker-preview[data-color='orange'],
+.personal-waypoint-color-swatch[data-color='orange'] { background: var(--personal-waypoint-marker-orange); }
+.personal-waypoint-marker-preview[data-color='yellow'],
+.personal-waypoint-color-swatch[data-color='yellow'] { background: var(--personal-waypoint-marker-yellow); }
+.personal-waypoint-marker-preview[data-color='cyan'],
+.personal-waypoint-color-swatch[data-color='cyan'] { background: var(--personal-waypoint-marker-cyan); }
+.personal-waypoint-marker-preview[data-color='purple'],
+.personal-waypoint-color-swatch[data-color='purple'] { background: var(--personal-waypoint-marker-purple); }
+.personal-waypoint-marker-preview[data-color='gray'],
+.personal-waypoint-color-swatch[data-color='gray'] { background: var(--personal-waypoint-marker-gray); }
+
+.personal-waypoint-marker-preview-icon { color: #172033; transform: rotate(45deg); }
+
+.personal-waypoint-choice-group {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.personal-waypoint-choice-group legend {
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.personal-waypoint-color-options {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 360px);
+}
+
+.personal-waypoint-icon-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(36px, 1fr));
+  gap: var(--space-2);
+  width: min(100%, 360px);
+}
+
+.personal-waypoint-form .personal-waypoint-color-option {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 38px;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.personal-waypoint-form .personal-waypoint-icon-option {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 40px;
+  place-items: center;
+  padding: 4px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  box-sizing: border-box;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.personal-waypoint-form .personal-waypoint-color-option input,
+.personal-waypoint-form .personal-waypoint-icon-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.personal-waypoint-icon-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.personal-waypoint-icon-option:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.personal-waypoint-color-swatch {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.personal-waypoint-color-option:has(input:checked) .personal-waypoint-color-swatch {
+  outline: 2px solid var(--surface-card);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.personal-waypoint-color-option:has(input:focus-visible) .personal-waypoint-color-swatch {
+  outline: 2px solid var(--focus-ring-strong);
+  outline-offset: 3px;
+}
+
+.personal-waypoint-color-check {
+  color: #172033;
+  opacity: 0;
+}
+
+.personal-waypoint-color-option:has(input:checked) .personal-waypoint-color-check {
+  opacity: 1;
+}
+
+.personal-waypoint-choice-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-visibility {
+  overflow: hidden;
+  margin-top: var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+  text-align: left;
+}
+
+.personal-waypoint-visibility-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 12px;
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.personal-waypoint-visibility-trigger > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: var(--text-secondary);
+  transition: transform var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
+.personal-waypoint-visibility-trigger[aria-expanded='true'] > svg { transform: rotate(180deg); }
+
+.personal-waypoint-visibility-summary {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.personal-waypoint-visibility-label { font-weight: 600; }
+
+.personal-waypoint-visibility-selection {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-waypoint-visibility-pending { color: var(--accent); }
+
+.personal-waypoint-category-picker { border-top: 1px solid var(--border-subtle); }
+
+.personal-waypoint-visibility-heading { margin: 0; }
+
+.personal-waypoint-visibility-heading strong { color: var(--accent); font-weight: 650; }
+
+.personal-waypoint-category-search { padding: 0 10px 8px; }
+
+.personal-waypoint-category-search .search-field {
+  min-height: 38px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.personal-waypoint-category-search input {
+  min-height: 38px;
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.personal-waypoint-category-options {
+  max-height: min(260px, 38vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.personal-waypoint-category-group { padding: 0 10px; }
+
+.personal-waypoint-category-group + .personal-waypoint-category-group { margin-top: 2px; }
+
+.personal-waypoint-category-group h3 {
+  margin: 0;
+  padding: 8px 4px 3px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.personal-waypoint-category-option {
+  display: grid;
+  min-height: 50px;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.personal-waypoint-category-link {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.personal-waypoint-category-link:hover { color: var(--accent); }
+
+.personal-waypoint-category-link > svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-category-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.personal-waypoint-category-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-waypoint-category-link small {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.personal-waypoint-category-toggle {
+  display: grid;
+  min-width: 40px;
+  min-height: 44px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.personal-waypoint-category-toggle input {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.personal-waypoint-category-toggle input:focus-visible {
+  outline: 2px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.personal-waypoint-category-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--text-secondary);
+}
+
+.personal-waypoint-visibility-actions {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.personal-waypoint-visibility-actions-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.personal-waypoint-visibility-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.personal-waypoint-category-back { margin-bottom: 6px; }
+
+.personal-waypoint-category-back .button { justify-self: start; }
+
+.personal-waypoint-category-back .button:only-child { margin-left: -8px; }
+
+.personal-waypoint-category-picker .button { min-height: 40px; }
+
+@media (max-width: 480px) {
+  .personal-waypoint-category-link { gap: 6px; padding-inline: 4px; }
+  .personal-waypoint-category-link small { padding-inline: 6px; }
+  .personal-waypoint-visibility-actions { padding-inline: 7px; }
+  .personal-waypoint-visibility-actions-end { gap: 4px; }
+}
+
 .personal-waypoint-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); }
 
 .personal-waypoint-placement {

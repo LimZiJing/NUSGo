@@ -59,10 +59,33 @@
 }
 
 .more-panel-body {
+  position: relative;
   display: flex;
   min-height: 0;
   flex: 1 1 auto;
   flex-direction: column;
+}
+
+.more-panel-status {
+  position: absolute;
+  z-index: 20;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  left: 12px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: min(360px, 100%);
+  padding: 8px 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+  font: var(--font-size-sm)/1.35 var(--sans);
+}
+
+.more-panel-body:has(.more-panel-status) .more-panel-content-scroll {
+  margin-bottom: 64px;
 }
 
 .more-panel-header {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Path, ScoredPathCandidate, TripEndpoint } from '@nusgo/shared/routing/path'
+import type { BusPathLeg, Path, ScoredPathCandidate, TripEndpoint } from '@nusgo/shared/routing/path'
 import { getTripEndpointKey } from '../endpoints.ts'
 import type { PathCandidateSearchResult } from '../search/search-path-candidates.ts'
 import type { WalkingRouteEngine } from '../walking/walking-contracts.ts'
@@ -24,7 +24,7 @@ function candidate(candidateKey: string, legs: Path['legs']): ScoredPathCandidat
   return { candidateKey, path, adjustedDurationSeconds: 100, score: 1 }
 }
 
-function shuttleLeg(routeId = 'A1'): Path['legs'][number] {
+function shuttleLeg(routeId = 'A1'): BusPathLeg {
   return {
     mode: 'shuttle',
     from: origin,
@@ -65,7 +65,6 @@ describe('completePathGeometry', () => {
       routeWalking: vi.fn(async () => { throw new Error('unexpected walking route') }),
     }
     const first = shuttleLeg()
-    if (first.mode !== 'shuttle') throw new Error('expected bus leg')
     const result = await completePathGeometry(routeEngine, search([
       candidate('a-fast', [first]),
       candidate('a-slow', [{ ...first, boardingStopId: 'STOP-C' }]),

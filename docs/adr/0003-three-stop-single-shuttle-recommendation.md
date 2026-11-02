@@ -53,9 +53,10 @@ Rank candidates by adjusted duration:
 
 The score is the reciprocal of adjusted duration. Deterministic tie-breaks use
 fewer boardings, shorter walking distance, fewer Path legs, then the lexical
-route and stop sequence. Bus candidates are distinct by ordered BusRoute legs and
-boarding/alighting stop IDs; different walking approaches alone do not make a
-new bus candidate.
+route and stop sequence. Returned bus candidates are distinct by their ordered BusRoute sequence.
+After waiting estimates are applied, the highest-ranked candidate with complete
+walking geometry wins for each sequence; alternatives remain available if geometry
+completion fails. Different boarding or alighting stops do not create a new option.
 
 The engine returns up to three distinct bus-inclusive candidates plus the
 highest-ranked walking-only candidate. Candidate generation does not apply

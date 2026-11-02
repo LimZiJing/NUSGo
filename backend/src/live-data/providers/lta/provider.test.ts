@@ -15,13 +15,34 @@ function jsonResponse(value: unknown, status = 200): Response {
 }
 
 describe('LTA public bus arrival provider', () => {
+  it('includes a scheduled next start for a service that is not yet operating', async () => {
+    const nextStartMs = Date.parse('2026-10-15T04:00:00.000Z')
+    const provider = createLtaPublicBusArrivalProvider({
+      accountKey: 'test-account-key',
+      mappings,
+      now: () => Date.parse('2026-10-15T03:00:00.000Z'),
+      scheduleLoader: async () => ({ operating: false, nextStartMs }),
+      fetcher: async () => jsonResponse({ Services: [] }),
+    })
+
+    const result = await provider.getArrivals(mappings.map(({ stopId }) => stopId), new AbortController().signal)
+
+    assert.deepEqual(result.stops['STOP-A']?.services['95'], {
+      status: 'not-in-operation',
+      arrivals: [],
+      nextStartAt: '2026-10-15T04:00:00.000Z',
+    })
+  })
+
   it('distinguishes live, no-estimate, and out-of-operation services and caches stop data', async () => {
     let fetchCount = 0
     const provider = createLtaPublicBusArrivalProvider({
       accountKey: 'test-account-key',
       mappings,
       now: () => Date.parse('2026-10-15T03:00:00.000Z'),
-      scheduleLoader: async (serviceNumber) => serviceNumber === '151' ? false : null,
+      scheduleLoader: async (serviceNumber) => serviceNumber === '151'
+        ? { operating: false, nextStartMs: Date.parse('2026-10-15T21:30:00.000Z') }
+        : null,
       fetcher: async () => {
         fetchCount += 1
         return jsonResponse({
@@ -44,7 +65,11 @@ describe('LTA public bus arrival provider', () => {
       status: 'live',
       arrivals: [{ estimatedAt: '2026-10-15T03:05:00.000Z', monitored: true }],
     })
-    assert.deepEqual(first.stops['STOP-A']?.services['151'], { status: 'not-in-operation', arrivals: [] })
+    assert.deepEqual(first.stops['STOP-A']?.services['151'], {
+      status: 'not-in-operation',
+      arrivals: [],
+      nextStartAt: '2026-10-15T21:30:00.000Z',
+    })
     assert.deepEqual(first.stops['STOP-A']?.services['96'], { status: 'no-estimate', arrivals: [] })
     assert.equal(first.stops['STOP-A'], second.stops['STOP-A'])
     assert.equal(fetchCount, 1)

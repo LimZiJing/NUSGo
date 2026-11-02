@@ -4,6 +4,66 @@ import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures
 import { getStopTimingData } from './stop-timing-data'
 
 describe('stop timing data', () => {
+  it('shows an LTA next start as Singapore local time', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const nowMs = Date.parse('2026-01-01T05:00:00+08:00')
+    const timingData = getStopTimingData(stop, index, {
+      nowMs,
+      publicArrivalSnapshot: {
+        source: 'lta-datamall',
+        observedAt: '2026-01-01T05:00:00+08:00',
+        expiresAt: '2026-01-01T05:01:00+08:00',
+        refreshedAt: '2026-01-01T05:00:00+08:00',
+        stops: {
+          'STOP-A': {
+            observedAt: '2026-01-01T05:00:00+08:00',
+            expiresAt: '2026-01-01T05:01:00+08:00',
+            services: {
+              '95': {
+                status: 'not-in-operation',
+                arrivals: [],
+                nextStartAt: '2026-01-01T07:00:00+08:00',
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts 7:00 AM')
+  })
+
+  it('labels an LTA next start on the following day as tomorrow', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const nowMs = Date.parse('2026-01-01T20:00:00+08:00')
+    const timingData = getStopTimingData(stop, index, {
+      nowMs,
+      publicArrivalSnapshot: {
+        source: 'lta-datamall',
+        observedAt: '2026-01-01T20:00:00+08:00',
+        expiresAt: '2026-01-01T20:01:00+08:00',
+        refreshedAt: '2026-01-01T20:00:00+08:00',
+        stops: {
+          'STOP-A': {
+            observedAt: '2026-01-01T20:00:00+08:00',
+            expiresAt: '2026-01-01T20:01:00+08:00',
+            services: {
+              '95': {
+                status: 'not-in-operation',
+                arrivals: [],
+                nextStartAt: '2026-01-02T05:30:00+08:00',
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts tomorrow 5:30 AM')
+  })
+
   it('labels arrivals under 30 seconds as Arr and rounds 30 seconds up to 1m', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const stop = index.stopById.get('STOP-A')!
@@ -157,5 +217,128 @@ describe('stop timing data', () => {
 
     expect(timingData.departures[0]?.timings).toEqual(['2 min', '5 min', '8 min'])
     expect(timingData.publicServices[0]?.timings).toEqual(['3 min', '-', '-'])
+  })
+
+  it('pins shuttle times to the poll, so a later clock does not count them down', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const options = {
+      minuteFormat: 'm' as const,
+      arrivalSnapshot: {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 100,
+              upcomingArrivalSeconds: [100, 300, 480],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      arrivalSnapshotReceivedAtMs: Date.parse('2026-09-30T00:00:00.000Z'),
+    }
+
+    const atPoll = getStopTimingData(stop, index, {
+      ...options,
+      nowMs: Date.parse('2026-09-30T00:00:00.000Z'),
+    })
+    const beforeNextPoll = getStopTimingData(stop, index, {
+      ...options,
+      nowMs: Date.parse('2026-09-30T00:00:25.000Z'),
+    })
+
+    expect(atPoll.departures[0]?.timings).toEqual(['2m', '5m', '8m'])
+    expect(beforeNextPoll.departures[0]?.timings).toEqual(['2m', '5m', '8m'])
+  })
+
+  it('keeps a late arrival at its last polled value instead of dropping it', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const timingData = getStopTimingData(stop, index, {
+      nowMs: Date.parse('2026-09-30T00:00:50.000Z'),
+      arrivalSnapshot: {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 20,
+              upcomingArrivalSeconds: [20],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      arrivalSnapshotReceivedAtMs: Date.parse('2026-09-30T00:00:00.000Z'),
+    })
+
+    expect(timingData.departures[0]?.timings).toEqual(['Arr', '-', '-'])
+  })
+
+  it('subtracts the delay before the shuttle snapshot reached the client', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const timingData = getStopTimingData(stop, index, {
+      minuteFormat: 'm',
+      nowMs: Date.parse('2026-09-30T00:00:10.000Z'),
+      arrivalSnapshot: {
+        observedAt: '2026-09-30T00:00:00.000Z',
+        expiresAt: '2026-09-30T00:01:00.000Z',
+        stops: {
+          'STOP-A': {
+            A1: {
+              nextArrivalSeconds: 100,
+              upcomingArrivalSeconds: [100],
+              headwaySeconds: null,
+            },
+          },
+        },
+      },
+      arrivalSnapshotReceivedAtMs: Date.parse('2026-09-30T00:00:10.000Z'),
+    })
+
+    expect(timingData.departures[0]?.timings).toEqual(['2m', '-', '-'])
+  })
+
+  it('pins public bus times to the poll and still expires stale snapshots on the clock', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const publicArrivalSnapshot = {
+      source: 'lta-datamall' as const,
+      observedAt: '2026-09-30T00:00:00.000Z',
+      expiresAt: '2026-09-30T00:01:00.000Z',
+      refreshedAt: '2026-09-30T00:00:00.000Z',
+      stops: {
+        'STOP-A': {
+          observedAt: '2026-09-30T00:00:00.000Z',
+          expiresAt: '2026-09-30T00:01:00.000Z',
+          services: {
+            '95': {
+              status: 'live' as const,
+              arrivals: [{ estimatedAt: '2026-09-30T00:05:00.000Z', monitored: true }],
+            },
+          },
+        },
+      },
+    }
+    const options = {
+      minuteFormat: 'm' as const,
+      publicArrivalSnapshot,
+      publicArrivalSnapshotReceivedAtMs: Date.parse('2026-09-30T00:00:00.000Z'),
+    }
+
+    const fresh = getStopTimingData(stop, index, {
+      ...options,
+      nowMs: Date.parse('2026-09-30T00:00:25.000Z'),
+    })
+    const stale = getStopTimingData(stop, index, {
+      ...options,
+      nowMs: Date.parse('2026-09-30T00:02:01.000Z'),
+    })
+
+    expect(fresh.publicServices[0]?.timings).toEqual(['5m', '-', '-'])
+    expect(stale.publicServices[0]?.status).toBe('provider-error')
   })
 })

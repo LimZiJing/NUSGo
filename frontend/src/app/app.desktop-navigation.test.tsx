@@ -147,6 +147,18 @@ function createJourneySelectionState() {
 
 beforeEach(() => {
   mockDesktopViewport()
+  vi.stubGlobal('IntersectionObserver', class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  })
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  })
+  Object.defineProperty(document, 'getAnimations', { configurable: true, value: () => [] })
+  Object.defineProperty(HTMLElement.prototype, 'getAnimations', { configurable: true, value: () => [] })
   appHarness.arrivalsClient.getArrivals.mockResolvedValue({
     observedAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 60_000).toISOString(),
@@ -161,6 +173,9 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
+  delete (document as unknown as Record<string, unknown>).getAnimations
+  delete (HTMLElement.prototype as unknown as Record<string, unknown>).getAnimations
   localStorage.clear()
   appHarness.onStopSelected = null
   appHarness.onMapStopInteraction = null
@@ -570,7 +585,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('edits an All places entry directly while preserving its details action', async () => {
+  it('keeps details and direct Edit actions separate for an All places entry', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -600,6 +615,44 @@ describe('More surface', () => {
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(screen.getByRole('heading', { name: 'All places 1' })).toBeTruthy()
     expect(screen.getByText('Shaded bench')).toBeTruthy()
+  })
+
+  it('uses Escape to cancel a keyboard reorder before More handles it', async () => {
+    const user = userEvent.setup()
+    const firstWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const secondWaypoint = {
+      ...firstWaypoint,
+      id: '00000000-0000-4000-8000-000000000002',
+      name: 'Library seat',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [firstWaypoint, secondWaypoint] }))
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
+    handle.focus()
+    await user.keyboard('{Space}')
+    await user.keyboard('{ArrowDown}')
+    await user.keyboard('{Escape}')
+
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy()
+    expect(screen.getByText('Reordering Quiet bench canceled.')).toBeTruthy()
+    expect(within(waypointsList).getAllByRole('listitem').map((row) => row.textContent?.trim()))
+      .toEqual(['Quiet benchRest spot', 'Library seatRest spot'])
+    expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints.map(({ id }: { id: string }) => id))
+      .toEqual([firstWaypoint.id, secondWaypoint.id])
   })
 
   it('opens category places, preserves visibility drafts, and returns from details to the category', async () => {
@@ -1041,7 +1094,7 @@ describe('More surface', () => {
     expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
     expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Move Quiet bench, Rest spot down' }).hasAttribute('disabled'))
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
       .toBe(true)
     await user.click(screen.getByRole('button', { name: 'Done' }))
 

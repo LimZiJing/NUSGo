@@ -33,6 +33,9 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Route geometry**: The geographic line that represents the physical path of a route between its ordered stops.
 - **Ride estimate**: The estimated time spent travelling by bus between boarding and alighting, excluding waiting.
 - **Waiting estimate**: The estimated time from reaching a boarding stop until the expected bus arrival. A bus leg includes both its waiting and ride estimates.
+- **Live bus**: A bus currently in service on a Bus route, with a vehicle plate, a position, a heading and an observation time. It is distinct from a Bus route and from a scheduled or estimated arrival. A Live bus that has not been refreshed recently is not shown.
+- **Load level**: The crowding of a Live bus, one of low, medium, high or unknown. Unknown is used when no reliable level is available; it is never guessed.
+- **Load estimate**: A Load level presented to users as an estimate, because the upstream source does not document it as a live passenger count.
 
 ## Map presentation
 

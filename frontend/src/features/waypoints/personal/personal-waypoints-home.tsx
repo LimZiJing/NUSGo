@@ -43,7 +43,7 @@ export function PersonalWaypointsHome({
   readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onEditWaypoint: (waypointId: string) => void
   readonly onRemove: (waypointId: string) => void
-  readonly onMove: (waypointId: string, neighborId: string) => void
+  readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onClearAll: () => void
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void

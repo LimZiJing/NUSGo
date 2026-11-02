@@ -50,6 +50,50 @@ describe('StopDepartureList', () => {
     ))).toEqual(['Arr', '1′', '12′'])
   })
 
+  it('stacks only min-formatted arrival timings and preserves their spoken labels', () => {
+    const { container } = render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          timings: ['1 min', '12 min', 'Arr'],
+        }, {
+          routeId: 'D1',
+          routeName: 'D1',
+          routeColor: '#654321',
+          timings: ['Left', '1m', '-'],
+        }]}
+        publicServices={[{
+          serviceNumber: '151',
+          timings: ['2m', '3′', '-'],
+          status: 'live',
+        }]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    const minuteLabels = [...container.querySelectorAll('.stop-departure-time-min')]
+    expect(minuteLabels.map((label) => [...label.children].map((part) => part.textContent)))
+      .toEqual([['1', 'min'], ['12', 'min']])
+    expect(minuteLabels.map((label) => label.parentElement?.getAttribute('aria-hidden')))
+      .toEqual(['true', 'true'])
+    expect([...container.querySelectorAll('.stop-departure-time .visually-hidden')]
+      .slice(0, 2)
+      .map((label) => label.textContent))
+      .toEqual(['1 minute', '12 minutes'])
+
+    const otherTimings = [...container.querySelectorAll('.stop-departure-time')].slice(2)
+    expect(otherTimings.every((timing) => !timing.querySelector('.stop-departure-time-min'))).toBe(true)
+    expect(otherTimings[0].getAttribute('data-timing-state')).toBe('Arr')
+    expect(otherTimings[1].getAttribute('data-timing-state')).toBe('Left')
+    expect(otherTimings[2].querySelector('[aria-hidden="true"]')?.textContent).toBe('1m')
+    expect(otherTimings[3].textContent).toBe('-')
+    expect(otherTimings[4].querySelector('[aria-hidden="true"]')?.textContent).toBe('2m')
+    expect(otherTimings[5].querySelector('[aria-hidden="true"]')?.textContent).toBe('3′')
+    expect(otherTimings[6].textContent).toBe('-')
+  })
+
   it('shows the first reachable favourite beside an internal route and the rest in a popover', async () => {
     const user = userEvent.setup()
     render(
@@ -167,6 +211,25 @@ describe('StopDepartureList', () => {
     expect(screen.getByText('No estimate available')).toBeTruthy()
     expect(screen.getByText('Not in operation')).toBeTruthy()
     expect(screen.getByText('Live timing unavailable')).toBeTruthy()
+  })
+
+  it('shows a public service start time when live arrivals are unavailable', () => {
+    render(
+      <StopDepartureList
+        departures={[]}
+        noLiveData
+        publicServices={[{
+          serviceNumber: '151',
+          timings: null,
+          status: 'not-in-operation',
+          startMessage: 'Starts 7:00 AM',
+        }]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Starts 7:00 AM')).toBeTruthy()
+    expect(screen.queryByText('Not in operation')).toBeNull()
   })
 
   it('keeps public arrival timings visible when live data is available', () => {

@@ -4,6 +4,7 @@ import type { Building } from '@nusgo/shared/venue/buildings'
 import type { TransitStop } from '@nusgo/shared/transit/types'
 import { buildBuildingIndex } from '../venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { PersonalWaypoint } from '../waypoints/personal/personal-waypoint'
 
 const venues: VenueLocationMap = {
   LT17: {
@@ -40,6 +41,20 @@ const stops: TransitStop[] = [
     latitude: 1.32,
     longitude: 103.79,
     services: ['A1'],
+  },
+]
+
+const personalWaypoints: PersonalWaypoint[] = [
+  {
+    id: '00000000-0000-4000-8000-000000000041',
+    name: 'Quiet bench',
+    category: 'Rest areas',
+    coordinate: { longitude: 103.78, latitude: 1.29 },
+    markerColor: 'blue',
+    markerIcon: 'dot',
+    note: 'Near the sheltered walkway',
+    createdAt: '2026-10-25T00:00:00.000Z',
+    updatedAt: '2026-10-25T00:00:00.000Z',
   },
 ]
 
@@ -91,6 +106,23 @@ describe('searchTripLocations', () => {
         detail: '',
       },
     ])
+  })
+
+  it('searches Personal Waypoints by name or category and exposes only the name and category', () => {
+    expect(searchTripLocations({}, [], 'quiet bench', 8, undefined, undefined, personalWaypoints)).toEqual([
+      {
+        endpoint: {
+          kind: 'personal-waypoint',
+          id: '00000000-0000-4000-8000-000000000041',
+          label: 'Quiet bench',
+          coordinate: { longitude: 103.78, latitude: 1.29 },
+        },
+        label: 'Quiet bench',
+        detail: 'Rest areas',
+      },
+    ])
+    expect(searchTripLocations({}, [], 'rest areas', 8, undefined, undefined, personalWaypoints)).toHaveLength(1)
+    expect(searchTripLocations({}, [], 'sheltered walkway', 8, undefined, undefined, personalWaypoints)).toEqual([])
   })
 
   it('ranks and limits results deterministically across venues and stops', () => {

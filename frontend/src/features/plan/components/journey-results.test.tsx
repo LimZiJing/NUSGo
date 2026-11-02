@@ -537,6 +537,37 @@ describe('JourneyResults', () => {
     expect(first).toMatchObject({ kind: 'location', label: 'COM3', locationKind: 'building' })
   })
 
+  it('uses the selected local Personal Waypoint name for its coordinate-only Journey endpoint', () => {
+    const coordinate = { longitude: 103.78, latitude: 1.29 }
+    const endpoint = {
+      kind: 'personal-waypoint' as const,
+      id: '00000000-0000-4000-8000-000000000041',
+      label: 'Quiet bench',
+      coordinate,
+    }
+    const waypointPath: Path = {
+      ...path,
+      origin: { kind: 'waypoint-coordinate', coordinate },
+      legs: [
+        { ...path.legs[0]!, from: { kind: 'waypoint-coordinate', coordinate } },
+        ...path.legs.slice(1),
+      ],
+    }
+    const [origin] = getJourneyTimelineEntries(
+      waypointPath,
+      venues,
+      networkIndex,
+      null,
+      { origin: endpoint, destination: { kind: 'venue', id: 'DESTINATION' } },
+    )
+
+    expect(origin).toMatchObject({
+      kind: 'location',
+      label: 'Quiet bench',
+      locationKind: 'waypoint-coordinate',
+    })
+  })
+
   it('keeps a venue and bus stop distinct when their journey names match', () => {
     const collidingVenues = {
       ...venues,

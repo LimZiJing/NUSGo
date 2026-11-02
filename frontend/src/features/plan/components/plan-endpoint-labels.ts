@@ -17,5 +17,6 @@ export function getEndpointKindLabel(endpoint: TripEndpoint): string | null {
   if (endpoint.kind === 'venue') return 'venue'
   if (endpoint.kind === 'building') return 'building'
   if (endpoint.kind === 'stop') return 'bus stop'
+  if (endpoint.kind === 'personal-waypoint') return 'Personal Waypoint'
   return null
 }

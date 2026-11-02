@@ -274,6 +274,10 @@ function App() {
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
+  const personalWaypointCollection = personalWaypoints.readResult.kind === 'ready' &&
+    personalWaypoints.readResult.rejectedRecords.count === 0
+    ? personalWaypoints.readResult.waypoints
+    : null
   const personalWaypointCategoryOptions = useMemo(
     () => getPersonalWaypointCategoryOptions(personalWaypointsForMap),
     [personalWaypointsForMap],
@@ -317,6 +321,9 @@ function App() {
       handlePersonalWaypointMapSelection,
     )
   }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
+  useEffect(() => {
+    commands.setPersonalWaypointCollection(personalWaypointCollection)
+  }, [commands, personalWaypointCollection])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -579,6 +586,7 @@ function App() {
   }, [state, stopsWorkflow.state.favoriteStopIds])
   const planContentProps: AppViewsProps['views']['plan'] = {
     searchSuggestions: planSearchSuggestions,
+    personalWaypoints: personalWaypointCollection ?? EMPTY_PERSONAL_WAYPOINTS,
     tripRequest: state.tripRequest,
     venues: state.venues,
     buildings: state.buildings,

@@ -3,6 +3,7 @@ import type { TransitIndex } from '../../domain/transit'
 import type { TripEndpointRole, TripLocationSearchResult, TripRequest } from '../../domain/trip/types.ts'
 import type { BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import { PlanTripCard, type OriginLocationRequestState } from './components/plan-trip-card.tsx'
 import { PlanLocationSearch } from './components/plan-location-search.tsx'
 import { getEndpointLabel } from './components/plan-endpoint-labels.ts'
@@ -19,6 +20,7 @@ interface PlanContentProps {
   form: PlanTripFormBindings
   /** Shown in the search before anything is typed, such as favourite stops. */
   searchSuggestions?: readonly TripLocationSearchResult[]
+  personalWaypoints?: readonly PersonalWaypoint[]
   onSearchFocus?: () => void
   onSearchCancel?: () => void
   onSearchResult?: () => void
@@ -41,6 +43,7 @@ export function PlanContent({
   networkIndex,
   form,
   searchSuggestions,
+  personalWaypoints = [],
   onSearchFocus,
   onSearchCancel,
   onSearchResult,
@@ -100,6 +103,7 @@ export function PlanContent({
             searchQuery={form.searchQueries[searchRole]}
             otherEndpointLabel={otherEndpoint ? getEndpointLabel(otherEndpoint, venues, networkIndex, buildings) : null}
             suggestions={searchSuggestions}
+            personalWaypoints={personalWaypoints}
             onSearchQueryChange={(query) => form.onSearchQueryChange(searchRole, query)}
             onSelect={(endpoint) => form.onSelectEndpoint(searchRole, endpoint)}
             onBack={closeSearch}
@@ -146,6 +150,7 @@ export function PlanContent({
               venues={venues}
               buildings={buildings}
               networkIndex={networkIndex}
+              tripRequest={tripRequest}
               onSelectCandidate={onSelectJourneyOption}
               onFitSelected={onFitSelectedJourney}
             />

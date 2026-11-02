@@ -570,7 +570,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('edits an All places entry directly without adding a separate details action', async () => {
+  it('edits an All places entry directly while preserving its details action', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -588,7 +588,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    expect(screen.queryByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
 
     const panel = document.querySelector('.more-panel-surface')

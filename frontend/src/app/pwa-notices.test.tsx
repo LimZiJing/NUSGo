@@ -86,7 +86,7 @@ describe('PWA notices', () => {
   })
 
   it('keeps installation available in More after dismissing the banner', async () => {
-    render(<><PwaNotices /><MoreMenu onOpenWaypoints={() => {}} onOpenSettings={() => {}}
+    render(<><PwaNotices /><MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}}
       installSection={<PwaInstallSection />} /></>)
     const { event, prompt } = dispatchInstallPrompt()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss install prompt' }))

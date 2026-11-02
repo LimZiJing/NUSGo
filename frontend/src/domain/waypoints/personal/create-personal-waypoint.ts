@@ -4,7 +4,8 @@ import {
   type PersonalWaypointValidationResult,
 } from './personal-waypoint'
 
-export type PersonalWaypointDraft = Pick<PersonalWaypoint, 'name' | 'category' | 'coordinate' | 'note'>
+export type PersonalWaypointDraft = Pick<PersonalWaypoint, 'name' | 'category' | 'coordinate' | 'note'> &
+  Partial<Pick<PersonalWaypoint, 'markerColor' | 'markerIcon'>>
 
 export interface PersonalWaypointCreationDependencies {
   readonly createId: () => string

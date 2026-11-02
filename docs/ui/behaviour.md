@@ -17,7 +17,9 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - Handle taps toggle partial and full, and a tap on the collapsed handle opens partial. Up and Down Arrow move one detent at a time. A swipe down from partial collapses.
 - A collapsed sheet shows a one-line summary of its tab, such as the Nearby stop count or the journey duration. The summary is part of the handle's accessible name.
 - Focusing a venue or endpoint search field opens the sheet at full height. Choosing a result returns it to partial. Dismissing search restores the earlier detent unless you changed it by hand.
-- The map's bottom inset follows the active sheet's detent, and the planned journey refits when the Plan detent changes or Plan becomes active again.
+
+- The map's bottom inset follows the active sheet's detent. In Stops → Nearby, map padding follows each detent so centre-anchored zoom stays on the crosshair without changing pitch or bearing. The planned journey refits when the Plan detent changes or Plan becomes active again.
+- More opens as a content-height sheet that keeps most of the map in view. Settings and My waypoints open full-height screens behind the tab pill; Back returns to More.
 - Sheets scroll natively, respect safe-area and visual-viewport sizes, honour reduced motion and are non-modal. Base UI Drawer handles swipes and snap points, while the app owns detent state.
 
 ## Explore
@@ -36,7 +38,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - **Focused stop:** selecting a stop (on mobile via the Stops tab) opens a detail sheet and places a neutral pin above it, with no popup. The pin stays after Back, shows only in Stops, and returns without moving the camera.
 - **Popups:** entering Stops closes any open popup. Other tab changes close bus-stop popups. Switching between Find venue and Bus routes inside Explore leaves them open.
 - **Route rows** show up to three downstream favourited stop nicknames per internal route, forward-only by stop ID and excluding transfers and the selected stop. Public-bus rows show LTA DataMall timings and separate the live, no-estimate, out-of-operation and provider-error states. Public buses are display-only and never used in journey routing.
-- **Arrival labels:** internal and public-bus arrivals show “Arr” only below 30 seconds; countdowns of 30 seconds or longer round up to whole minutes.
+- **Arrival labels:** internal and public-bus arrivals show “Arr” only below 30 seconds; countdowns of 30 seconds or longer round up to whole minutes. In the selected `min` format, each numeric arrival timing cell shows the number above `min`.
 
 ### Arrival freshness
 
@@ -65,15 +67,19 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Personal Waypoints
 
-- More → My waypoints → Add waypoint starts creation. Tap the map, drag the temporary pin or enter WGS84 coordinates to set the location. On mobile, the navigation sheets hide while placing the pin so the map remains usable.
-- Continue opens the name, free-form category and optional note form. Adjust on map returns to the pin. Nothing is stored until Save waypoint is pressed; Cancel discards the draft.
-- Saving uses the existing versioned browser store. My waypoints shows the saved names and categories. Invalid fields show inline errors. If saved data is unreadable or contains rejected records, creation pauses without overwriting it. Persistent map markers, waypoint details, edit/delete actions and Journey endpoints are follow-up work.
+- More → My waypoints → Add waypoint starts creation and remains on the main screen. Successful saves and list changes use a small polite confirmation at the bottom of the More panel for seven seconds. Limits and problems remain beside the relevant controls. The searchable All places list opens waypoint details from each row and keeps a separate Edit action per place. Categories are derived from saved waypoints; the compact Categories picker groups visible categories under Selected and hidden ones under All categories. Search filters the groups. The closed picker stays compact; when expanded, its single Categories header shows the selection count and search begins directly below it. A category name, count or chevron opens a list limited to that category, while its checkbox only changes pending map visibility.
+- Clear leaves no categories selected. When any category is hidden, Show all makes every saved category visible in the pending draft. Cancel discards pending visibility changes; Done saves them and updates map markers. Opening a category while visibility changes are pending keeps the draft, and Back to categories returns to the open picker. Both category rows and place rows have their own scrollable lists.
+- Category place rows and persistent map markers open the More-panel details view with the name, category, note and coordinates. Returning from category details restores that category; Back to categories returns to the picker. Returning from map details restores the previous More page and sheet position. List selection does not move the map camera or change the active navigation workflow.
+- Continue opens the name, editable category with existing category suggestions, optional note and map marker appearance controls. Choose a preset color and icon explicitly; category text does not select the icon. Create and edit use the same controls. Older saved records default to blue with the general icon.
+- Edit waypoint reuses the create form. Editing preserves the waypoint ID and creation time and updates its modification time. Delete and Clear all affect only Personal Waypoints; Clear all asks for confirmation. In Edit list, a dedicated handle supports pointer dragging and keyboard reordering: Space or Enter starts and saves, the arrow keys preview a position, and Escape cancels. Changed drops in unfiltered All places save once through the existing versioned browser store; cancel and no-op operations do not write. Search and category views disable reordering and show a note. Remove and confirmed Clear all remain available.
+- All places and category views use the same saved-waypoint search and list management. Edit list reveals the reorder handle and Remove action; reordering is available only in unfiltered All places. Editing a place can change its category, and categories update from the saved places. Visibility preferences use a separate key in this browser profile; pending changes affect the map only after Done.
+- Invalid fields show inline errors. If storage is unreadable or contains rejected records, writes pause until the user confirms a reset of the Personal Waypoints storage key or discards rejected records while keeping readable waypoints. A write conflict keeps the edit draft, shows the latest saved waypoint and requires an explicit “Replace saved version” action; if that version changes again before the action, the form refreshes the preview before saving. Journey endpoints remain follow-up work.
 
 ## Settings and themes
 
 - Settings opens from More. On desktop it uses the navigation column. On mobile it fills the screen behind the tab pill. Back returns to More, which returns to the earlier workflow state.
-- Appearance, Favourites and About expand independently, with Appearance open first. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. A choice applies at once for the current page, and a reload starts at System.
-- Favourites shows the saved-stop controls. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
+- Appearance, Favourites and About expand independently. Appearance starts collapsed, while Favourites starts expanded when saved stops exist. Appearance offers System, Light and Dark, plus the NUS, Matcha and Sakura palettes. Minute format offers `12m`, `12′` and `12 min`; its selection applies immediately, is restored on reload and formats timings in the Stops area, including bus details and first-bus countdowns.
+- Favourites lists saved stops. Edit list reveals inline move and remove buttons and a confirmed Clear all action; Done exits edit mode. Stop cards keep their existing star toggle. About has data-source links, the app build and feedback. On mobile a compact map-attribution row stays above the sections.
 - Browser location permission is managed by the browser. Settings shows no permission status and has no clear-location action.
 - Colours, radii, shadows and control heights come from semantic tokens, and tests check text and status contrast in each theme. Official bus route colours sit outside the theme contract.
 

@@ -93,4 +93,20 @@ describe('Stops state', () => {
     expect(allRemoved.favoriteStopIds).toEqual([])
     expect(allRemoved.list).toBe('favourites')
   })
+
+  it('reorders favourite stops without changing the selected list or expanded state', () => {
+    const initial = {
+      ...createInitialStopsState(['STOP-A', 'STOP-B', 'STOP-C']),
+      expandedStopIds: { nearby: [], favourites: ['STOP-B'] },
+    }
+    const reordered = stopsReducer(initial, {
+      type: 'reorder-favourites',
+      stopId: 'STOP-C',
+      neighborId: 'STOP-A',
+    })
+
+    expect(reordered.favoriteStopIds).toEqual(['STOP-C', 'STOP-B', 'STOP-A'])
+    expect(reordered.expandedStopIds).toEqual({ nearby: [], favourites: ['STOP-B'] })
+    expect(reordered.list).toBe('nearby')
+  })
 })

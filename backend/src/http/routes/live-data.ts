@@ -84,6 +84,13 @@ export function registerLiveDataRoutes(
       (service, routeIds) => service.getServiceWindows(routeIds),
     ))
     .all(methodNotAllowed())
+  app.route('/api/shuttle-vehicles')
+    .get(liveDataHandler(
+      liveData,
+      (request) => parseBusRouteSelection(request.query.routes, canonicalRouteIds),
+      (service, routeIds) => service.getVehicles(routeIds),
+    ))
+    .all(methodNotAllowed())
   app.route('/api/public-bus-arrivals')
     .get(liveDataHandler(
       liveData,

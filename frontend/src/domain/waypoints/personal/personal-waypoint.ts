@@ -5,6 +5,27 @@ export const PERSONAL_WAYPOINT_NAME_MAX_LENGTH = 80
 export const PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH = 40
 export const PERSONAL_WAYPOINT_NOTE_MAX_LENGTH = 500
 export const PERSONAL_WAYPOINTS_MAX_COUNT = 500
+export const PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS = [
+  { value: 'blue', label: 'Blue' },
+  { value: 'red', label: 'Red' },
+  { value: 'orange', label: 'Orange' },
+  { value: 'yellow', label: 'Yellow' },
+  { value: 'green', label: 'Green' },
+  { value: 'cyan', label: 'Cyan' },
+  { value: 'purple', label: 'Purple' },
+  { value: 'gray', label: 'Gray' },
+] as const
+export const PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS = [
+  { value: 'dot', label: 'General' },
+  { value: 'rest', label: 'Rest' },
+  { value: 'food', label: 'Food' },
+  { value: 'nature', label: 'Nature' },
+  { value: 'favorite', label: 'Favorite' },
+] as const
+export type PersonalWaypointMarkerColor = typeof PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS[number]['value']
+export type PersonalWaypointMarkerIcon = typeof PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS[number]['value']
+export const DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR: PersonalWaypointMarkerColor = 'blue'
+export const DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON: PersonalWaypointMarkerIcon = 'dot'
 export const DEFAULT_PERSONAL_WAYPOINT_COORDINATE: WaypointCoordinate = {
   longitude: 103.7844,
   latitude: 1.2933,
@@ -14,6 +35,8 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 export interface PersonalWaypoint extends Waypoint {
   readonly note?: string
+  readonly markerColor: PersonalWaypointMarkerColor
+  readonly markerIcon: PersonalWaypointMarkerIcon
   readonly createdAt: string
   readonly updatedAt: string
 }
@@ -26,6 +49,8 @@ export type PersonalWaypointValidationField =
   | 'category'
   | 'coordinate'
   | 'note'
+  | 'markerColor'
+  | 'markerIcon'
   | 'createdAt'
   | 'updatedAt'
 
@@ -49,6 +74,14 @@ export type PersonalWaypointsValidationResult =
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isPersonalWaypointMarkerColor(value: unknown): value is PersonalWaypointMarkerColor {
+  return PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.some(({ value: option }) => option === value)
+}
+
+function isPersonalWaypointMarkerIcon(value: unknown): value is PersonalWaypointMarkerIcon {
+  return PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.some(({ value: option }) => option === value)
 }
 
 function isUtcIsoDateTime(value: unknown): value is string {
@@ -116,6 +149,16 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
     addIssue(issues, 'note', 'Must be text when provided.')
   }
 
+  const markerColor = input.markerColor === undefined
+    ? DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR
+    : isPersonalWaypointMarkerColor(input.markerColor) ? input.markerColor : null
+  if (markerColor === null) addIssue(issues, 'markerColor', 'Must be a supported marker color.')
+
+  const markerIcon = input.markerIcon === undefined
+    ? DEFAULT_PERSONAL_WAYPOINT_MARKER_ICON
+    : isPersonalWaypointMarkerIcon(input.markerIcon) ? input.markerIcon : null
+  if (markerIcon === null) addIssue(issues, 'markerIcon', 'Must be a supported marker icon.')
+
   const createdAt = input.createdAt
   if (!isUtcIsoDateTime(createdAt)) addIssue(issues, 'createdAt', 'Must be a UTC ISO date-time.')
 
@@ -125,7 +168,14 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
     addIssue(issues, 'updatedAt', 'Must be on or after the creation timestamp.')
   }
 
-  if (issues.length > 0 || !coordinate || !isUtcIsoDateTime(createdAt) || !isUtcIsoDateTime(updatedAt)) {
+  if (
+    issues.length > 0 ||
+    !coordinate ||
+    markerColor === null ||
+    markerIcon === null ||
+    !isUtcIsoDateTime(createdAt) ||
+    !isUtcIsoDateTime(updatedAt)
+  ) {
     return { ok: false, issues }
   }
 
@@ -137,6 +187,8 @@ export function validatePersonalWaypoint(input: unknown): PersonalWaypointValida
       category,
       coordinate,
       ...(note ? { note } : {}),
+      markerColor,
+      markerIcon,
       createdAt,
       updatedAt,
     },

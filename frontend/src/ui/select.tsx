@@ -23,19 +23,21 @@ interface SelectProps {
 }
 
 const LIST_MAX_HEIGHT = 224
+const LIST_MIN_WIDTH = 160
 const LIST_GAP = 4
 const VIEWPORT_MARGIN = 8
 
 /** Fixed position for the list: under the trigger, or above it when there is more room there. */
 function placeList(trigger: HTMLElement): CSSProperties {
   const rect = trigger.getBoundingClientRect()
+  const width = Math.min(window.innerWidth - VIEWPORT_MARGIN * 2, Math.max(rect.width, LIST_MIN_WIDTH))
   const below = window.innerHeight - rect.bottom - LIST_GAP - VIEWPORT_MARGIN
   const above = rect.top - LIST_GAP - VIEWPORT_MARGIN
   const openAbove = below < Math.min(LIST_MAX_HEIGHT, 160) && above > below
-  const left = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, window.innerWidth - rect.width - VIEWPORT_MARGIN))
+  const left = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, window.innerWidth - width - VIEWPORT_MARGIN))
   return {
     left,
-    width: rect.width,
+    width,
     maxHeight: Math.max(96, Math.min(LIST_MAX_HEIGHT, openAbove ? above : below)),
     ...(openAbove
       ? { bottom: window.innerHeight - rect.top + LIST_GAP }

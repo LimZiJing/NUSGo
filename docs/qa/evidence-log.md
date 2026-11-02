@@ -2,6 +2,18 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Personal Waypoint conflict workflow — 2026-10-28
+
+Codex In-app Browser (Chromium-based; exact version unavailable), local Vite development server at `http://127.0.0.1:4175/`, 1280 × 720:
+
+- Opened More → My waypoints, added a temporary test waypoint, and confirmed the saved row and map marker appeared.
+- Opened details from the list and confirmed the name, category, note, and location. Started an edit in one tab, changed the saved note in a second tab, and returned to the first tab.
+- Saving the first draft showed the latest saved version, kept the unsaved name, and left the second tab's note intact. The explicit “Replace saved version” action then saved the draft.
+- Deleted the temporary test waypoint; the list returned to its empty state.
+- The Express backend was not started, so `/api/health` and live-timing proxy requests returned 502. The browser-profile waypoint flow remained usable; the map rendered static data and its markers.
+- Mobile layout was not verified. The browser viewport override left the page at 1280 × 720 (`innerWidth`/`innerHeight`); no other browser surface was available for device-size emulation.
+- This pass did not verify active stop/route selection or map-camera preservation. Automated coverage verifies marker updates do not trigger camera fitting and that marker-opened details restore the previous More page and sheet detent.
+
 ## Release record
 
 - Date: 2026-09-21

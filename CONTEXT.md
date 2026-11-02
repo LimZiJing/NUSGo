@@ -16,7 +16,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Walking connection**: A directed, validated walking link between two trip endpoints or bus stops, with travel distance and duration. A walking Path leg also has routed geometry.
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 - **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.
-- **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note and timestamps. It is not sent to NUSGo services.
+- **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note, marker color and icon, and timestamps. It is not sent to NUSGo services.
 - **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
 
 ## Bus transit
@@ -33,6 +33,9 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Route geometry**: The geographic line that represents the physical path of a route between its ordered stops.
 - **Ride estimate**: The estimated time spent travelling by bus between boarding and alighting, excluding waiting.
 - **Waiting estimate**: The estimated time from reaching a boarding stop until the expected bus arrival. A bus leg includes both its waiting and ride estimates.
+- **Live bus**: A bus currently in service on a Bus route, with a vehicle plate, a position, a heading and an observation time. It is distinct from a Bus route and from a scheduled or estimated arrival. A Live bus that has not been refreshed recently is not shown.
+- **Load level**: The crowding of a Live bus, one of low, medium, high or unknown. Unknown is used when no reliable level is available; it is never guessed.
+- **Load estimate**: A Load level presented to users as an estimate, because the upstream source does not document it as a live passenger count.
 
 ## Map presentation
 

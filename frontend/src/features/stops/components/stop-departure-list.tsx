@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -5,6 +6,42 @@ import type {
   StopScheduledDeparture,
 } from '../data/stop-timing-data'
 import { ReachableFavouriteStops } from './reachable-favourite-stops'
+
+function timingAccessibleLabel(timing: string): string {
+  if (timing === 'Arr') return 'Arriving now'
+  if (timing === 'Left') return 'Bus has left'
+  const minutes = /^(\d+)(?:m|′| min)$/.exec(timing)?.[1]
+  return minutes === undefined ? timing : `${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function departureStatusAccessibleLabel(message: string): string {
+  const minutes = /^First bus in (\d+)(?:m|′| min)$/.exec(message)?.[1]
+  return minutes === undefined
+    ? message
+    : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
+  if (typeof visual === 'string' && visual === spoken) return visual
+  return (
+    <>
+      <span aria-hidden="true">{visual}</span>
+      <span className="visually-hidden">{spoken}</span>
+    </>
+  )
+}
+
+function formatTimingVisual(timing: string): ReactNode {
+  const minutes = /^(\d+) min$/.exec(timing)
+  if (!minutes) return timing
+
+  return (
+    <span className="stop-departure-time-min">
+      <span>{minutes[1]}</span>
+      <span>min</span>
+    </span>
+  )
+}
 
 function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
   return (
@@ -15,7 +52,7 @@ function DepartureTimes({ timings }: { readonly timings: readonly [string, strin
           className="stop-departure-time"
           data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
         >
-          {timing}
+          <AccessibleTiming visual={formatTimingVisual(timing)} spoken={timingAccessibleLabel(timing)} />
         </span>
       ))}
     </span>
@@ -93,14 +130,16 @@ export function StopDepartureList({
               size="compact"
               onClick={() => onSelectRoute(routeId)}
             />
-            <span className="stop-departure-status">{message}</span>
+            <span className="stop-departure-status">
+              <AccessibleTiming visual={message} spoken={departureStatusAccessibleLabel(message)} />
+            </span>
           </li>
         ))}
-        {visiblePublicServices.map(({ serviceNumber, timings, status }) => (
+        {visiblePublicServices.map(({ serviceNumber, timings, status, startMessage }) => (
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
-              <span className="stop-departure-status">{publicTimingMessage(status)}</span>
+              <span className="stop-departure-status">{startMessage ?? publicTimingMessage(status)}</span>
             )}
           </li>
         ))}

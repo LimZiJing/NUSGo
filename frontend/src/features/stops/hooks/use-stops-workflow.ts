@@ -8,15 +8,18 @@ import {
 import type { ShuttleArrivalSnapshot } from '../../../domain/transit/arrivals'
 import { getStopDetailsModel, type StopDetailsModel } from '../data/stop-details-model'
 import { getStopsForList, getStopsWithinNearbyRadius, type StopListEntry } from '../data/stop-list-data'
-import { LIVE_TIMES_UNAVAILABLE_MESSAGE, type StopTimingDataOptions } from '../data/stop-timing-data'
-import { useStopsArrivals, type StopsArrivalLoader } from './use-stops-arrivals'
+import { LIVE_TIMES_UNAVAILABLE_MESSAGE, type StopPollState, type StopTimingDataOptions } from '../data/stop-timing-data'
+import { useStopsArrivals, type StopsArrivalLoader, type StopsArrivalsState } from './use-stops-arrivals'
 import { useStopsServiceWindows, type StopsServiceWindowsLoader } from './use-stops-service-windows'
 import { useStopsState } from '../state/use-stops-state'
 import type { StopsState } from '../state/stops-state'
+import type { MinuteFormat } from '../../../domain/trip/minute-format'
+import { DEFAULT_MINUTE_FORMAT } from '../../../domain/trip/minute-format'
 
 type Coordinate = { readonly longitude: number; readonly latitude: number }
 
 export interface StopsWorkflowOptions {
+  readonly minuteFormat?: MinuteFormat
   readonly transitIndex: TransitIndex | null
   readonly mapCenter: Coordinate | null
   readonly location: LocationTrackingState
@@ -48,10 +51,19 @@ export interface StopsWorkflow {
   readonly toggleFavorite: (stopId: string) => void
   readonly removeFavorite: (stopId: string) => void
   readonly clearFavoriteStops: () => void
+  readonly reorderFavorite: (stopId: string, neighborId: string) => void
   readonly toggleExpanded: (stopId: string) => void
   readonly dismissLocationNotice: () => void
   readonly backToStops: () => void
   readonly locateFromControl: () => void
+}
+
+// One failed poll is usually a blip, so the pill only turns red after two in a row.
+const FAILING_POLL_THRESHOLD = 2
+
+function getPollState({ status, failedPolls }: StopsArrivalsState<unknown>): StopPollState {
+  if (failedPolls >= FAILING_POLL_THRESHOLD) return 'failing'
+  return status === 'refreshing' ? 'refreshing' : 'idle'
 }
 
 function hasLocationError(location: LocationTrackingState): boolean {
@@ -59,6 +71,7 @@ function hasLocationError(location: LocationTrackingState): boolean {
 }
 
 export function useStopsWorkflow({
+  minuteFormat = DEFAULT_MINUTE_FORMAT,
   transitIndex,
   mapCenter,
   location,
@@ -126,16 +139,19 @@ export function useStopsWorkflow({
   }, [arrivalRequests, transitIndex])
   const stopServiceWindows = useStopsServiceWindows(loadServiceWindows, active, serviceRouteIds)
   const stopArrivalsUpdating = stopArrivals.status === 'refreshing' || stopArrivals.status === 'error'
-  const publicArrivalsUpdating = publicStopArrivals.status === 'refreshing' || publicStopArrivals.status === 'error'
 
   const timingOptions: StopTimingDataOptions = {
+    minuteFormat,
     favoriteStopIds: state.favoriteStopIds,
     arrivalSnapshot: stopArrivals.snapshot,
+    arrivalSnapshotReceivedAtMs: stopArrivals.snapshotReceivedAtMs,
+    publicArrivalSnapshotReceivedAtMs: publicStopArrivals.snapshotReceivedAtMs,
     nowMs: stopArrivals.nowMs,
     serviceWindows: stopServiceWindows.windows,
     isRefreshing: stopArrivalsUpdating,
     publicArrivalSnapshot: publicStopArrivals.snapshot,
-    publicIsRefreshing: publicArrivalsUpdating,
+    pollState: getPollState(stopArrivals),
+    publicPollState: getPollState(publicStopArrivals),
   }
   const selectedStop = focusedStop && transitIndex
     ? getStopDetailsModel(focusedStop, transitIndex, timingOptions)
@@ -208,6 +224,9 @@ export function useStopsWorkflow({
   const clearFavoriteStops = useCallback((): void => {
     dispatch({ type: 'clear-favorites' })
   }, [dispatch])
+  const reorderFavorite = useCallback((stopId: string, neighborId: string): void => {
+    dispatch({ type: 'reorder-favourites', stopId, neighborId })
+  }, [dispatch])
   const toggleExpanded = useCallback((stopId: string): void => {
     dispatch({ type: 'toggle-expanded', stopId })
   }, [dispatch])
@@ -247,6 +266,7 @@ export function useStopsWorkflow({
     toggleFavorite,
     removeFavorite,
     clearFavoriteStops,
+    reorderFavorite,
     toggleExpanded,
     dismissLocationNotice,
     backToStops,

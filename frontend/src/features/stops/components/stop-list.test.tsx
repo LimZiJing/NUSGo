@@ -17,6 +17,7 @@ const entries: readonly StopListEntry[] = [
       scheduledDepartures: [],
       publicServices: [{ serviceNumber: '151', timings: null, status: 'provider-error' }],
       live: false,
+      pollState: 'idle',
       liveArrivalMessage: null,
     },
     distanceMeters: 440,
@@ -37,6 +38,7 @@ const entries: readonly StopListEntry[] = [
       }],
       publicServices: [],
       live: false,
+      pollState: 'idle',
       liveArrivalMessage: null,
     },
     distanceMeters: 160,
@@ -72,5 +74,27 @@ describe('StopList', () => {
     expect(screen.queryByText('No live timing')).toBeNull()
     expect(screen.queryByText('Live timing unavailable')).toBeNull()
     expect(screen.queryByText('No bus timings available.')).toBeNull()
+  })
+
+  it('keeps favourite stops on the standard cards without list management controls', () => {
+    render(
+      <StopList
+        entries={entries}
+        selectedStopList="favourites"
+        loading={false}
+        locationNotice={null}
+        noLiveData={false}
+        liveArrivalMessage={null}
+        onSelectStopList={vi.fn()}
+        onToggleFavorite={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        onSelectRoute={vi.fn()}
+        onDismissLocationNotice={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Add Museum, bus stop to favourites' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Edit .* favourite stops/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
   })
 })

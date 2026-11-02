@@ -135,6 +135,34 @@ describe('backend live-data settings', () => {
     assert.equal(loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '33' }).liveData.minFirstSnapshotStops, 33)
   })
 
+  it('defaults vehicle polling to 30 s refresh, 90 s expiry, and 120 s idle timeout, and loads overrides', () => {
+    const defaults = loadBackendConfig({}, 'C:/nusgo/backend').liveData
+    assert.equal(defaults.vehicleRefreshIntervalMs, 30_000)
+    assert.equal(defaults.vehicleExpiryMs, 90_000)
+    assert.equal(defaults.vehicleIdleTimeoutMs, 120_000)
+
+    const overridden = loadBackendConfig({
+      NUS_VEHICLE_REFRESH_INTERVAL_MS: '20000',
+      NUS_VEHICLE_EXPIRY_MS: '60000',
+      NUS_VEHICLE_IDLE_TIMEOUT_MS: '300000',
+    }).liveData
+    assert.equal(overridden.vehicleRefreshIntervalMs, 20_000)
+    assert.equal(overridden.vehicleExpiryMs, 60_000)
+    assert.equal(overridden.vehicleIdleTimeoutMs, 300_000)
+  })
+
+  it('rejects vehicle refresh intervals below 15 s and expiries shorter than twice the refresh interval', () => {
+    assert.throws(() => loadBackendConfig({ NUS_VEHICLE_REFRESH_INTERVAL_MS: '14999' }), /NUS_VEHICLE_REFRESH_INTERVAL_MS/)
+    assert.throws(
+      () => loadBackendConfig({ NUS_VEHICLE_REFRESH_INTERVAL_MS: '30000', NUS_VEHICLE_EXPIRY_MS: '59999' }),
+      /NUS_VEHICLE_EXPIRY_MS must be at least twice NUS_VEHICLE_REFRESH_INTERVAL_MS/,
+    )
+    assert.equal(
+      loadBackendConfig({ NUS_VEHICLE_REFRESH_INTERVAL_MS: '30000', NUS_VEHICLE_EXPIRY_MS: '60000' }).liveData.vehicleExpiryMs,
+      60_000,
+    )
+  })
+
   it('loads NUS and LTA secrets only into backend configuration', () => {
     const config = loadBackendConfig({
       NUS_BUS_PROXY_BASE_URL: 'https://bus-proxy.nus.example',

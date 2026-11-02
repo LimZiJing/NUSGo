@@ -27,6 +27,7 @@ import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
+import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -78,6 +79,7 @@ type VenueCameraFit = {
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
+  const personalWaypointMarkers: PersonalWaypointMarkers = createPersonalWaypointMarkers(map)
   const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
     transitRouteLayers?.refreshTheme()
     shuttleStopMarkers?.refreshTheme()
@@ -160,7 +162,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (pendingCameraFit?.kind === 'venue' || pendingCameraFit?.kind === 'building') pendingCameraFit = null
   }
 
-  // Persistent map padding already moves the camera centre into the visible area.
+  // Active MapLibre padding already centers camera targets at the crosshair.
   const getFitOffset = (): [number, number] => visibleCenterZoomEnabled
     ? [0, 0]
     : [
@@ -624,7 +626,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     },
 
     setVisibleCenterZoom(enabled: boolean) {
-      if (disposed) return
+      if (disposed || visibleCenterZoomEnabled === enabled) return
       visibleCenterZoomEnabled = enabled
       lifecycle.setVisibleCenterZoom(enabled)
     },
@@ -660,6 +662,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         personalWaypointMarker.setLngLat([coordinate[0], coordinate[1]])
         personalWaypointMarker.setDraggable(editable)
       }
+    },
+
+    setPersonalWaypoints(waypoints, visible, onSelect) {
+      if (disposed) return
+      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
     },
 
     dismissStopPopup() {
@@ -772,6 +779,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       disposed = true
       pendingCameraFit = null
       clearVenueMarker()
+      personalWaypointMarkers.dispose()
       if (personalWaypointMarker && personalWaypointDragHandler) {
         personalWaypointMarker.off('dragend', personalWaypointDragHandler)
       }

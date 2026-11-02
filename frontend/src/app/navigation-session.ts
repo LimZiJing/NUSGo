@@ -11,6 +11,7 @@ import {
   swapTripEndpoints,
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
+import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -145,6 +146,11 @@ export interface NavigationSession {
     coordinate: MapCoordinate | null,
     editable: boolean,
     onChange: (coordinate: MapCoordinate) => void,
+  ): void
+  setPersonalWaypoints(
+    waypoints: readonly PersonalWaypoint[],
+    visible: boolean,
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
@@ -997,6 +1003,11 @@ export function createNavigationSession(
       if (disposed) return
       personalWaypointPlacementChange = coordinate && editable ? onChange : null
       dependencies.map.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    },
+
+    setPersonalWaypoints(waypoints, visible, onSelect) {
+      if (disposed) return
+      dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect)
     },
 
     dismissStopPopup() {

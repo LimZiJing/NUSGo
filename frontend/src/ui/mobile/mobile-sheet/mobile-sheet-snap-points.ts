@@ -14,6 +14,7 @@ export function createMobileSheetSnapPoints(
   viewportHeight: number,
   tabBarInset: number,
   collapsedHeight: number,
+  partialVisibleHeight?: number,
 ): MobileSheetSnapPoints {
   const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
   const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
@@ -24,12 +25,12 @@ export function createMobileSheetSnapPoints(
     maximumHeight,
     (Number.isFinite(collapsedHeight) ? Math.max(0, collapsedHeight) : 0) + visibleTabBarInset,
   )
+  const requestedPartialHeight = partialVisibleHeight !== undefined && Number.isFinite(partialVisibleHeight)
+    ? Math.max(0, partialVisibleHeight)
+    : visibleHeight * PARTIAL_VIEWPORT_RATIO
   const partial = Math.max(
     collapsed,
-    Math.min(
-      maximumHeight,
-      visibleHeight * PARTIAL_VIEWPORT_RATIO + visibleTabBarInset,
-    ),
+    Math.min(maximumHeight, requestedPartialHeight + visibleTabBarInset),
   )
 
   return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]

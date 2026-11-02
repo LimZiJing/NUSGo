@@ -18,6 +18,7 @@ interface MobileSheetProps {
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
+  readonly partialVisibleHeight?: number
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
@@ -37,6 +38,7 @@ export function MobileSheet({
   active,
   portalContainer,
   detent,
+  partialVisibleHeight,
   onDetentChange,
   onButtonRef,
   onPanelRef,
@@ -45,8 +47,16 @@ export function MobileSheet({
 }: MobileSheetProps) {
   const metrics = useContext(MobileSheetMetricsContext)
   const snapPoints = useMemo<MobileSheetSnapPoints>(() => metrics
-    ? createMobileSheetSnapPoints(metrics.viewportHeight, metrics.tabBarInset, metrics.collapsedHeight)
-    : INITIAL_SNAP_POINTS, [metrics])
+    ? createMobileSheetSnapPoints(
+      metrics.viewportHeight,
+      metrics.tabBarInset,
+      metrics.collapsedHeight,
+      partialVisibleHeight,
+    )
+    : partialVisibleHeight === undefined
+      ? INITIAL_SNAP_POINTS
+      : createMobileSheetSnapPoints(640, 0, 44, partialVisibleHeight),
+  [metrics, partialVisibleHeight])
 
   return (
     <Drawer.Root

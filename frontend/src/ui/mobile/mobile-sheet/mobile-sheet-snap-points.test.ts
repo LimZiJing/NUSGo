@@ -21,6 +21,13 @@ describe('mobile sheet snap points', () => {
     expect(points).toEqual(['124px', '230px', '300px'])
   })
 
+  it('supports a short content-height partial sheet for the More menu', () => {
+    const points = createMobileSheetSnapPoints(1000, 80, 44, 192)
+
+    expect(points).toEqual(['124px', '272px', '1000px'])
+    expect(Number.parseFloat(points[1]) - 80).toBe(192)
+  })
+
   it('maps snap point changes to navigation detents', () => {
     const points = createMobileSheetSnapPoints(1000, 80, 44)
 

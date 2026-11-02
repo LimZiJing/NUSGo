@@ -132,10 +132,8 @@
     white-space: nowrap;
   }
 
-  .pill.info-pill.stop-card-live {
+  .stop-card-live {
     grid-column: 2;
-    padding-right: calc(6px - 0.04em);
-    letter-spacing: 0.04em;
   }
 
   .stop-card-favorite-space {
@@ -270,6 +268,9 @@
   }
 
   .stop-id {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     color: var(--text-muted);
     font-size: var(--font-size-xs);
   }
@@ -492,6 +493,12 @@
     color: var(--text-strong);
     font: 600 var(--font-size-sm)/1 var(--sans);
     text-align: right;
+  }
+
+  .stop-departure-time-min {
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    justify-items: end;
   }
 
   .stop-departure-time[data-timing-state='Arr'] {

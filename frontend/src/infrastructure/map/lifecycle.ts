@@ -2,6 +2,7 @@ import {
   Map,
   NavigationControl,
   setWorkerUrl,
+  type StyleSpecification,
   type MapMouseEvent,
   type MapTouchEvent,
 } from 'maplibre-gl'
@@ -32,6 +33,9 @@ const TAP_SLOP_PX = 20
 const MARKER_DRAG_SLOP_PX = 3
 const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
+
+const STYLE_LOAD_TIMEOUT_MS = 4000
+const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
@@ -67,6 +71,7 @@ export interface MapLifecycle {
 export function waitForMapStyleLoaded(
   map: Map,
   signal: AbortSignal,
+  onBasemapUnavailable?: () => void,
 ): Promise<void> {
   if (signal.aborted) {
     return Promise.reject(new DOMException('The map style load was aborted', 'AbortError'))
@@ -75,7 +80,8 @@ export function waitForMapStyleLoaded(
 
   return new Promise((resolve, reject) => {
     const cleanup = () => {
-      map.off('load', handleLoad)
+      clearTimeout(fallbackTimer)
+      map.off('style.load', handleLoad)
       signal.removeEventListener('abort', handleAbort)
     }
     const handleLoad = () => {
@@ -87,16 +93,22 @@ export function waitForMapStyleLoaded(
       reject(new DOMException('The map style load was aborted', 'AbortError'))
     }
 
-    map.once('load', handleLoad)
+    // A missing remote style must not block local campus data indefinitely.
+    const fallbackTimer = setTimeout(() => {
+      onBasemapUnavailable?.()
+      map.setStyle(OFFLINE_STYLE)
+    }, STYLE_LOAD_TIMEOUT_MS)
+    map.once('style.load', handleLoad)
     signal.addEventListener('abort', handleAbort, { once: true })
   })
 }
 
 export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
+  const startsOffline = typeof navigator !== 'undefined' && !navigator.onLine
   const map = new Map({
     container: options.container,
-    style: MAP_STYLE,
+    style: startsOffline ? OFFLINE_STYLE : MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
     attributionControl: false,
@@ -310,7 +322,8 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     reportMapCenter()
   }
 
-  const ready = waitForMapStyleLoaded(map, controller.signal)
+  if (startsOffline) options.onBasemapUnavailable?.()
+  const ready = waitForMapStyleLoaded(map, controller.signal, options.onBasemapUnavailable)
 
   return {
     map,

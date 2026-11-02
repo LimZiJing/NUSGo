@@ -409,7 +409,7 @@ describe('map lifecycle style readiness', () => {
     controller.abort()
 
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
-    expect(map.off).toHaveBeenCalledWith('load', loadHandler)
+    expect(map.off).toHaveBeenCalledWith('style.load', loadHandler)
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
   })
 
@@ -431,7 +431,7 @@ describe('map lifecycle style readiness', () => {
     loadHandler?.()
 
     await expect(pending).resolves.toBeUndefined()
-    expect(map.off).toHaveBeenCalledWith('load', loadHandler)
+    expect(map.off).toHaveBeenCalledWith('style.load', loadHandler)
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
   })
 
@@ -601,5 +601,45 @@ describe('map lifecycle waypoint placement', () => {
     expect(listeners.has('pointerup')).toBe(false)
     expect(listeners.has('pointercancel')).toBe(false)
     vi.unstubAllGlobals()
+  })
+})
+
+
+describe('offline map startup', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('starts with a local style in airplane mode and reports the missing basemap', async () => {
+    vi.stubGlobal('navigator', { onLine: false })
+    const onBasemapUnavailable = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement, onMapError: vi.fn(), onEmptyMapClick: vi.fn(), onBasemapUnavailable,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    expect(map.options.style).toMatchObject({ version: 8, sources: {}, layers: [] })
+    await lifecycle.ready
+    lifecycle.dispose()
+  })
+
+  it('falls back to a local style when the remote style never arrives', async () => {
+    vi.useFakeTimers()
+    let loaded: (() => void) | undefined
+    const map = {
+      isStyleLoaded: () => false,
+      once: vi.fn((_event: string, handler: () => void) => { loaded = handler }),
+      off: vi.fn(),
+      setStyle: vi.fn(() => loaded?.()),
+    }
+    const onBasemapUnavailable = vi.fn()
+    const pending = waitForMapStyleLoaded(map as never, new AbortController().signal, onBasemapUnavailable)
+    expect(onBasemapUnavailable).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(4000)
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    expect(map.setStyle).toHaveBeenCalledWith({ version: 8, sources: {}, layers: [] })
+    await pending
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

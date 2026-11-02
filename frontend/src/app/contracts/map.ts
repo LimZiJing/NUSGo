@@ -19,6 +19,8 @@ export interface MapBuildingSelection {
 
 export interface MapSessionOptions {
   readonly container: HTMLElement
+  /** Reports use of a local style so the application can offer online recovery. */
+  readonly onBasemapUnavailable?: () => void
   readonly onMapError: (error: unknown) => void
   readonly onEmptyMapClick: (coordinate: MapCoordinate) => void
   /** Returns true when the mobile Stops sheet owns the stop context. */

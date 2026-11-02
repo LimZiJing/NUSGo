@@ -14,6 +14,7 @@ import {
   Coffee,
   CircleDot,
   DoorOpen,
+  Download,
   EllipsisVertical,
   ExternalLink,
   Footprints,
@@ -195,4 +196,8 @@ export function FavoriteIcon({ filled, ...props }: FavoriteIconProps) {
 
 export function CloseIcon(props: IconProps) {
   return renderDecorativeIcon(X, props)
+}
+
+export function DownloadIcon(props: IconProps) {
+  return renderDecorativeIcon(Download, props)
 }

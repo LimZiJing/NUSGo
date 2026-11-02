@@ -21,6 +21,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, and edit or remove saved places | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
+| PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
 | Express API | Journey planning, NUS and LTA arrivals, service windows, one shuttle snapshot poller | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
 | Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
 

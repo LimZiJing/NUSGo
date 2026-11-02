@@ -1,3 +1,4 @@
+import { PwaInstallSection } from './pwa-install-section'
 import {
   lazy,
   Suspense,
@@ -10,6 +11,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { LocationControl } from '../ui/location-control'
+import { PwaNotices } from './pwa-notices'
 import { NearbyCrosshair } from '../ui/nearby-crosshair'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
@@ -117,6 +119,7 @@ function App() {
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
+  const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
@@ -532,6 +535,7 @@ function App() {
     const mount = createNavigationSessionMount(mapContainer.current, {
       createMapSession,
       createNavigationSession,
+      onBasemapUnavailable: () => setBasemapUnavailable(true),
       loadVenues: services.loadVenues,
       loadTransit: services.loadTransit,
       pathfinder: services.pathfinder,
@@ -855,6 +859,7 @@ function App() {
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
+        <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
           ref={mapContainer}
           className="map"
@@ -948,7 +953,7 @@ function App() {
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
-            content: morePage === 'menu' ? <MoreMenu
+            content: morePage === 'menu' ? <MoreMenu installSection={<PwaInstallSection />}
               waypointCount={personalWaypoints.readResult.kind === 'ready'
                 ? personalWaypoints.readResult.waypoints.length
                 : null}

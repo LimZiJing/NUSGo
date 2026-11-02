@@ -69,6 +69,7 @@ export interface MapLifecycle {
 export function waitForMapStyleLoaded(
   map: Map,
   signal: AbortSignal,
+  onBasemapUnavailable?: () => void,
 ): Promise<void> {
   if (signal.aborted) {
     return Promise.reject(new DOMException('The map style load was aborted', 'AbortError'))
@@ -91,7 +92,10 @@ export function waitForMapStyleLoaded(
     }
 
     // A missing remote style must not block local campus data indefinitely.
-    const fallbackTimer = setTimeout(() => map.setStyle(OFFLINE_STYLE), STYLE_LOAD_TIMEOUT_MS)
+    const fallbackTimer = setTimeout(() => {
+      onBasemapUnavailable?.()
+      map.setStyle(OFFLINE_STYLE)
+    }, STYLE_LOAD_TIMEOUT_MS)
     map.once('style.load', handleLoad)
     signal.addEventListener('abort', handleAbort, { once: true })
   })
@@ -99,9 +103,10 @@ export function waitForMapStyleLoaded(
 
 export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
+  const startsOffline = typeof navigator !== 'undefined' && !navigator.onLine
   const map = new Map({
     container: options.container,
-    style: typeof navigator !== 'undefined' && !navigator.onLine ? OFFLINE_STYLE : MAP_STYLE,
+    style: startsOffline ? OFFLINE_STYLE : MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
     attributionControl: false,
@@ -268,7 +273,8 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     reportMapCenter()
   }
 
-  const ready = waitForMapStyleLoaded(map, controller.signal)
+  if (startsOffline) options.onBasemapUnavailable?.()
+  const ready = waitForMapStyleLoaded(map, controller.signal, options.onBasemapUnavailable)
 
   return {
     map,

@@ -76,6 +76,24 @@ describe('PWA notices', () => {
     expect(screen.queryByRole('status')).toBeNull()
   })
 
+  it('offers a reload for the fallback basemap after reconnecting', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false })
+    act(() => { window.dispatchEvent(new Event('offline')) })
+    const reload = vi.fn()
+    render(<PwaNotices basemapUnavailable onReload={reload} />)
+    expect(screen.queryByRole('button', { name: 'Reload map' })).toBeNull()
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
+    act(() => { window.dispatchEvent(new Event('online')) })
+    expect(screen.getByText('The background map is unavailable. Reload to try again.')).toBeTruthy()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Reload map' }))
+    expect(reload).toHaveBeenCalledOnce()
+  })
+
+  it('offers a reload when an online map request has fallen back', () => {
+    render(<PwaNotices basemapUnavailable />)
+    expect(screen.getByRole('button', { name: 'Reload map' })).toBeTruthy()
+  })
+
   it('keeps native installation available while a background check is pending', async () => {
     const apps = vi.fn().mockResolvedValue([])
     Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: apps })

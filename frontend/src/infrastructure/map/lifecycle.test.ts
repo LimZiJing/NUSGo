@@ -557,12 +557,14 @@ describe('offline map startup', () => {
     vi.unstubAllGlobals()
   })
 
-  it('starts with a local style in airplane mode', async () => {
+  it('starts with a local style in airplane mode and reports the missing basemap', async () => {
     vi.stubGlobal('navigator', { onLine: false })
+    const onBasemapUnavailable = vi.fn()
     const lifecycle = createMapLifecycle({
-      container: {} as HTMLElement, onMapError: vi.fn(), onEmptyMapClick: vi.fn(),
+      container: {} as HTMLElement, onMapError: vi.fn(), onEmptyMapClick: vi.fn(), onBasemapUnavailable,
     })
     const map = fakeMapState.maps.at(-1) as FakeMap
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
     expect(map.options.style).toMatchObject({ version: 8, sources: {}, layers: [] })
     await lifecycle.ready
     lifecycle.dispose()
@@ -577,8 +579,11 @@ describe('offline map startup', () => {
       off: vi.fn(),
       setStyle: vi.fn(() => loaded?.()),
     }
-    const pending = waitForMapStyleLoaded(map as never, new AbortController().signal)
+    const onBasemapUnavailable = vi.fn()
+    const pending = waitForMapStyleLoaded(map as never, new AbortController().signal, onBasemapUnavailable)
+    expect(onBasemapUnavailable).not.toHaveBeenCalled()
     await vi.advanceTimersByTimeAsync(4000)
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
     expect(map.setStyle).toHaveBeenCalledWith({ version: 8, sources: {}, layers: [] })
     await pending
     expect(vi.getTimerCount()).toBe(0)

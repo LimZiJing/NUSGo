@@ -119,6 +119,7 @@ function App() {
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
+  const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
@@ -534,6 +535,7 @@ function App() {
     const mount = createNavigationSessionMount(mapContainer.current, {
       createMapSession,
       createNavigationSession,
+      onBasemapUnavailable: () => setBasemapUnavailable(true),
       loadVenues: services.loadVenues,
       loadTransit: services.loadTransit,
       pathfinder: services.pathfinder,
@@ -857,7 +859,7 @@ function App() {
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage">
-        <PwaNotices />
+        <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
           ref={mapContainer}
           className="map"

@@ -14,7 +14,15 @@ import {
 } from '../infrastructure/pwa/pwa-runtime'
 import './pwa-notices.css'
 
-export function PwaNotices() {
+interface PwaNoticesProps {
+  readonly basemapUnavailable?: boolean
+  readonly onReload?: () => void
+}
+
+export function PwaNotices({
+  basemapUnavailable = false,
+  onReload = () => window.location.reload(),
+}: PwaNoticesProps = {}) {
   const isOnline = useSyncExternalStore(
     subscribeToOnlineStatus,
     getOnlineStatusSnapshot,
@@ -31,7 +39,7 @@ export function PwaNotices() {
     () => false,
   )
 
-  if (isOnline && !installPrompt && !updateAvailable) return null
+  if (isOnline && !basemapUnavailable && !installPrompt && !updateAvailable) return null
 
   return (
     <div className="pwa-notices">
@@ -39,6 +47,12 @@ export function PwaNotices() {
         <p className="pwa-notice pwa-notice-offline" role="status" aria-live="polite">
           You're offline. Bus arrivals will stop updating until you're back online.
         </p>
+      )}
+      {isOnline && basemapUnavailable && (
+        <section className="pwa-notice" role="status" aria-live="polite">
+          <p>The background map is unavailable. Reload to try again.</p>
+          <Button label="Reload map" onClick={onReload} />
+        </section>
       )}
       {installPrompt && (
         <section className="pwa-notice pwa-notice-install" role="status" aria-live="polite">

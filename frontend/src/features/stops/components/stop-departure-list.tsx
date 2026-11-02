@@ -22,20 +22,6 @@ function departureStatusAccessibleLabel(message: string): string {
     : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
 }
 
-const LOAD_LEVEL_LABELS: Readonly<Record<ShuttleLoadLevel, string | null>> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  unknown: null,
-}
-
-const LOAD_LEVEL_BAR_COUNTS: Readonly<Record<ShuttleLoadLevel, number>> = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  unknown: 0,
-}
-
 function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string {
   const timingLabel = timingAccessibleLabel(timing)
   const arrivalLabel = timing === 'Arr' || timing === 'Left' || timing === '-'
@@ -45,22 +31,6 @@ function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string 
   return load === 'unknown'
     ? `${arrivalLabel}. Crowding estimate unavailable.`
     : `${arrivalLabel}. Estimated crowding: ${load}.`
-}
-
-function LoadLevelCue({ load }: { readonly load: ShuttleLoadLevel }) {
-  const label = LOAD_LEVEL_LABELS[load]
-  if (!label) return null
-
-  return (
-    <span className="stop-departure-load-cue" data-load-level={load} aria-hidden="true">
-      <span className="stop-departure-load-label">{label}</span>
-      <span className="stop-departure-load-bars">
-        {Array.from({ length: LOAD_LEVEL_BAR_COUNTS[load] }, (_, index) => (
-          <span key={index} />
-        ))}
-      </span>
-    </span>
-  )
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
@@ -110,7 +80,6 @@ function DepartureTimes({
                 ? arrivalAccessibleLabel(timing, nextBusLoad)
                 : timingAccessibleLabel(timing)}
             />
-            {nextBusLoad && <LoadLevelCue load={nextBusLoad} />}
           </span>
         )
       })}
@@ -146,7 +115,6 @@ export function StopDepartureList({
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onSelectRoute: (routeId: string) => void
 }) {
-  const hasLoadEstimate = departures.some(({ load }) => load !== 'unknown')
   const visiblePublicServices = noLiveData
     ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
@@ -162,9 +130,6 @@ export function StopDepartureList({
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
         </p>
-      )}
-      {hasLoadEstimate && (
-        <p className="stop-load-estimate-note">Estimated crowding for the next bus on each route.</p>
       )}
       <ul className="stop-departure-list" aria-label="Bus timings">
         {departures.map((departure) => (

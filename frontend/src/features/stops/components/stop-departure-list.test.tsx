@@ -98,10 +98,10 @@ describe('StopDepartureList', () => {
   })
 
   it.each([
-    ['low', 'Low', 1],
-    ['medium', 'Medium', 2],
-    ['high', 'High', 3],
-  ] as const)('labels only the next arrival with estimated %s crowding', (load, label, barCount) => {
+    'low',
+    'medium',
+    'high',
+  ] as const)('colours only the next arrival for %s crowding without extra visible labels', (load) => {
     const { container } = render(
       <StopDepartureList
         departures={[{
@@ -118,16 +118,14 @@ describe('StopDepartureList', () => {
 
     const times = [...container.querySelectorAll('.stop-departure-time')]
     const nextArrival = times[0]
-    const cue = nextArrival.querySelector('.stop-departure-load-cue')
 
     expect(nextArrival.getAttribute('data-load-level')).toBe(load)
     expect(nextArrival.querySelector('.visually-hidden')?.textContent)
       .toBe(`Arrives in 3 minutes. Estimated crowding: ${load}.`)
-    expect(cue?.getAttribute('aria-hidden')).toBe('true')
-    expect(cue?.querySelector('.stop-departure-load-label')?.textContent).toBe(label)
-    expect(cue?.querySelectorAll('.stop-departure-load-bars > span')).toHaveLength(barCount)
+    expect(nextArrival.querySelector('[aria-hidden="true"]')?.textContent).toBe('3m')
+    expect(nextArrival.querySelector('.stop-departure-load-cue')).toBeNull()
     expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
-    expect(screen.getByText('Estimated crowding for the next bus on each route.')).toBeTruthy()
+    expect(screen.queryByText('Estimated crowding for the next bus on each route.')).toBeNull()
   })
 
   it('keeps unknown load neutral and explains that the estimate is unavailable', () => {

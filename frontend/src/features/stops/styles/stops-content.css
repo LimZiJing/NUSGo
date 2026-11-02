@@ -56,14 +56,6 @@
     font-size: var(--font-size-xs);
   }
 
-  .stop-load-estimate-note {
-    margin: 0;
-    padding: 0 var(--space-2) var(--space-1);
-    color: var(--text-muted);
-    font-size: var(--font-size-xs);
-    text-align: right;
-  }
-
   .stops-empty {
     padding: var(--space-4) 4px;
     color: var(--text-muted);
@@ -504,41 +496,6 @@
     color: var(--text-strong);
     font: 600 var(--font-size-sm)/1 var(--sans);
     text-align: right;
-  }
-
-  .stop-departure-load-cue {
-    display: grid;
-    justify-items: end;
-    gap: 1px;
-    color: inherit;
-    font-size: var(--font-size-xs);
-    font-weight: 500;
-    line-height: 1;
-  }
-
-  .stop-departure-load-bars {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 1px;
-    height: 8px;
-  }
-
-  .stop-departure-load-bars > span {
-    width: 2px;
-    border-radius: 1px 1px 0 0;
-    background: currentColor;
-  }
-
-  .stop-departure-load-bars > span:nth-child(1) {
-    height: 3px;
-  }
-
-  .stop-departure-load-bars > span:nth-child(2) {
-    height: 5px;
-  }
-
-  .stop-departure-load-bars > span:nth-child(3) {
-    height: 7px;
   }
 
   .stop-departure-time-min {

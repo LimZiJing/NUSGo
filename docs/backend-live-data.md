@@ -8,7 +8,7 @@ During local development, Vite forwards `/api` requests to Express at `http://12
 
 All live-data routes accept GET:
 
-- /api/shuttle-arrivals?stops=<JSON array> returns selected canonical stop IDs from the latest bus-arrival snapshot. It includes a snapshot version and observation and expiry times for each stop. It also returns `unavailableStopIds`, the requested stops that had no fresh result in the latest cycle (see the snapshot lifecycle below); clients should show these as having no live data, not as having no buses.
+- /api/shuttle-arrivals?stops=<JSON array> returns selected canonical stop IDs from the latest bus-arrival snapshot. It includes a snapshot version and observation and expiry times for each stop. It also returns `unavailableStopIds`, the requested stops that had no fresh result in the latest cycle (see the snapshot lifecycle below); clients should show these as having no live data, not as having no buses. Each route entry carries the best-effort `load` of its next bus, or `unknown` when no fresh vehicle matches the arrival plate on that route. Vehicle plates remain backend-only. Arrival requests keep active-bus polling warm so the load stays current while arrivals are requested.
 - /api/shuttle-service-windows?routes=<comma-separated route IDs> returns NUS service windows and their observation and expiry times.
 - /api/shuttle-vehicles?routes=<comma-separated route IDs> returns the latest vehicle positions and Load levels for those routes, with snapshot observation and expiry times and `unavailableRouteIds` for routes without fresh data. An empty vehicles list with all routes unavailable means data has not arrived yet or NUS failed, not that no buses are running. The first request after an idle spell starts polling.
 - /api/public-bus-arrivals?stops=<JSON array> accepts mapped canonical stop IDs and returns LTA arrivals with per-service live, no-estimate, not-in-operation, or provider-error status. A not-in-operation service may include `nextStartAt`, an ISO timestamp for its next known first bus. LTA schedules use Sunday windows on Singapore public holidays.
@@ -44,6 +44,12 @@ A failed route keeps its last good vehicles, with their original observation tim
 NUS's Acceptable Use Policy applies to this traffic. Keep upstream requests modest, and do not shorten the vehicle refresh interval without checking the policy and the request budget first. The minimum interval is 15 seconds.
 
 Only one Express instance may poll NUS for vehicles. Each instance keeps its own in-memory snapshot and polls on its own, so running two instances multiplies the upstream traffic. The same single-instance rule as the arrival snapshot applies.
+
+## Browser presentation
+
+The Live buses map layer is off by default. When enabled, its routes follow the active view: Stops shows only routes serving the focused bus stop, Explore shows the selected bus route, and Plan shows routes used by the selected Path. The Stops list shows no vehicles until a stop is selected. Opening a route chip from a stop switches to that route in Explore and narrows the vehicles accordingly; returning to the Stops list clears the stop's vehicles. Remembered selections in other views do not add routes to the current layer. The browser polls on the 30-second vehicle interval while the page is visible and aborts an in-flight request when the page becomes hidden. It never calls NUS directly.
+
+Vehicle markers snap to the checked-in route geometry and interpolate between fresh positions. The browser applies updates directly when reduced motion is enabled. Markers show a stylised single-deck CSS 3D bus and an upright route ID badge using the canonical route colour and contrasting text; the vehicle follows its heading relative to the map bearing. Unknown route colours fall back to neutral theme colours. Markers become visually stale during the final refresh interval and are removed at expiry. Crowding stays in the accessible marker description and popup, alongside the route and next stop. The next-stop row opens Stop details, and map popups render above vehicles. An unavailable route displays a short status message. Polling failures retain safe category/status diagnostics once per failure episode, with no raw response data or request details logged.
 
 ## Backend configuration
 

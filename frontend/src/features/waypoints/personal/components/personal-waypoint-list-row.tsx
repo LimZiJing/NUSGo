@@ -4,7 +4,7 @@ import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/per
 import { useSortable } from '@dnd-kit/react/sortable'
 import { IconButton, Button } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { CloseIcon, GripVerticalIcon, MapPinIcon } from '../../../../ui/icons'
+import { CloseIcon, GripVerticalIcon, LocateIcon, MapPinIcon } from '../../../../ui/icons'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
@@ -12,6 +12,7 @@ interface PersonalWaypointListRowProps {
   readonly handleDisabled: boolean
   readonly onRemove: (waypointId: string) => void
   readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
+  readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
   readonly onEdit?: (waypointId: string) => void
   readonly onHandleRef?: (waypointId: string, element: HTMLButtonElement | null) => void
   readonly rowRef?: Ref<HTMLLIElement>
@@ -29,6 +30,7 @@ export function PersonalWaypointListRow({
   handleDisabled,
   onRemove,
   onSelect,
+  onFocusWaypoint,
   onEdit,
   onHandleRef,
   rowRef,
@@ -80,14 +82,20 @@ export function PersonalWaypointListRow({
             onClick={() => onRemove(waypoint.id)}
           />
         </div>
-      ) : onEdit ? (
+      ) : onFocusWaypoint || onEdit ? (
         <div className="personal-waypoint-row-actions">
-          <Button
+          {onEdit && <Button
             label="Edit"
             ariaLabel={`Edit ${label}`}
             variant="ghost"
             onClick={() => onEdit(waypoint.id)}
-          />
+          />}
+          {onFocusWaypoint && <IconButton
+            className="personal-waypoint-focus"
+            label={`Show ${label} on map`}
+            icon={<LocateIcon />}
+            onClick={() => onFocusWaypoint(waypoint)}
+          />}
         </div>
       ) : undefined}
     />

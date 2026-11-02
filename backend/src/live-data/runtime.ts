@@ -6,6 +6,7 @@ import type {
   ApiShuttleServiceWindowsResponse,
   ApiShuttleVehiclesResponse,
   PublicBusArrivalSnapshot,
+  ShuttleLoadLevel,
 } from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
@@ -19,7 +20,11 @@ import { createNusBusArrivalProvider } from './providers/nus/bus-arrivals.ts'
 import { loadNusBusStopMapping } from './providers/nus/bus-stop-mapping.ts'
 import { createNusServiceWindowsProvider } from './providers/nus/service-windows.ts'
 import { createNusActiveBusProvider } from './providers/nus/active-buses.ts'
-import { createBusArrivalSnapshotStore, type BusArrivalStop } from './bus-arrivals/snapshot.ts'
+import {
+  createBusArrivalSnapshotStore,
+  type BusArrivalStop,
+  type ShuttleRouteArrivalWithPlate,
+} from './bus-arrivals/snapshot.ts'
 import { createBusVehicleSnapshotStore } from './bus-vehicles/snapshot.ts'
 import { mapWithConcurrency } from './upstream/concurrency.ts'
 import { fetchWithRetry } from './upstream/retry.ts'
@@ -260,11 +265,28 @@ export async function createBackendLiveData(
       if (!snapshot) {
         throw new LiveDataRequestError(503, 'not_ready', 'Shuttle arrival snapshot is not ready')
       }
+      vehicleStore?.touch()
+      const vehicleSnapshot = vehicleStore?.getSnapshot() ?? null
+      const responseNow = now()
+      const loadFor = (routeId: string, nextBusPlate: string | undefined): ShuttleLoadLevel => {
+        if (!nextBusPlate || !vehicleSnapshot) return 'unknown'
+        const vehicle = vehicleSnapshot.vehicles.find((candidate) =>
+          candidate.routeId === routeId && candidate.plate === nextBusPlate)
+        return vehicle && Date.parse(vehicle.expiresAt) > responseNow ? vehicle.load : 'unknown'
+      }
+      const withLoads = (routes: Readonly<Record<string, ShuttleRouteArrivalWithPlate>>) =>
+        Object.fromEntries(Object.entries(routes).map(([routeId, arrival]) => {
+          const { nextBusPlate, ...publicArrival } = arrival
+          return [routeId, {
+            ...publicArrival,
+            load: loadFor(routeId, nextBusPlate),
+          }]
+        }))
       const selected = {
         ...snapshot,
         stops: Object.fromEntries(stopIds.map((stopId) => [
           stopId,
-          snapshot.stops[stopId] ?? {},
+          withLoads(snapshot.stops[stopId] ?? {}),
         ])),
         stopObservations: Object.fromEntries(stopIds.flatMap((stopId) => {
           const observation = snapshot.stopObservations?.[stopId]

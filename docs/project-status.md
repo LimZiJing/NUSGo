@@ -20,9 +20,9 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | More and Settings | My waypoints and Settings entry points; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
-| Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
+| Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
-| Express API | Journey planning, NUS and LTA arrivals, service windows, one shuttle snapshot poller | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
+| Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
 | Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
 
 Also in place:

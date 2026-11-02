@@ -27,6 +27,7 @@ describe('StopDepartureList', () => {
           routeId: 'A2',
           routeName: 'A2',
           routeColor: '#123456',
+          load: 'unknown',
           timings: ['Arr', '1′', '12′'],
         }]}
         scheduledDepartures={[{
@@ -42,7 +43,7 @@ describe('StopDepartureList', () => {
 
     expect([...container.querySelectorAll('.stop-departure-time .visually-hidden')].map((element) => (
       element.textContent
-    ))).toEqual(['Arriving now', '1 minute', '12 minutes'])
+    ))).toEqual(['Arriving now. Crowding estimate unavailable.', '1 minute', '12 minutes'])
     expect(container.querySelector('.stop-departure-status .visually-hidden')?.textContent)
       .toBe('First bus in 12 minutes')
     expect([...container.querySelectorAll('.stop-departure-time [aria-hidden="true"]')].map((element) => (
@@ -57,11 +58,13 @@ describe('StopDepartureList', () => {
           routeId: 'A2',
           routeName: 'A2',
           routeColor: '#123456',
+          load: 'unknown',
           timings: ['1 min', '12 min', 'Arr'],
         }, {
           routeId: 'D1',
           routeName: 'D1',
           routeColor: '#654321',
+          load: 'unknown',
           timings: ['Left', '1m', '-'],
         }]}
         publicServices={[{
@@ -81,7 +84,7 @@ describe('StopDepartureList', () => {
     expect([...container.querySelectorAll('.stop-departure-time .visually-hidden')]
       .slice(0, 2)
       .map((label) => label.textContent))
-      .toEqual(['1 minute', '12 minutes'])
+      .toEqual(['Arrives in 1 minute. Crowding estimate unavailable.', '12 minutes'])
 
     const otherTimings = [...container.querySelectorAll('.stop-departure-time')].slice(2)
     expect(otherTimings.every((timing) => !timing.querySelector('.stop-departure-time-min'))).toBe(true)
@@ -94,6 +97,87 @@ describe('StopDepartureList', () => {
     expect(otherTimings[6].textContent).toBe('-')
   })
 
+  it.each([
+    'low',
+    'medium',
+    'high',
+  ] as const)('shows a visible non-colour cue for the next arrival with %s crowding', (load) => {
+    const { container } = render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          load,
+          timings: ['3m', '6m', '9m'],
+        }]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    const times = [...container.querySelectorAll('.stop-departure-time')]
+    const nextArrival = times[0]
+
+    expect(nextArrival.getAttribute('data-load-level')).toBe(load)
+    expect(nextArrival.querySelector('.visually-hidden')?.textContent)
+      .toBe(`Arrives in 3 minutes. Estimated crowding: ${load}.`)
+    expect(nextArrival.querySelector('[aria-hidden="true"]')?.textContent).toBe('3m')
+    expect(nextArrival.querySelector('.stop-departure-load-cue')?.textContent).toBe(
+      `${load[0].toUpperCase()}${load.slice(1)}`,
+    )
+    expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
+    expect(screen.getByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .not.toBeNull()
+  })
+
+  it('keeps unknown load neutral and explains that the estimate is unavailable', () => {
+    const { container } = render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          load: 'unknown',
+          timings: ['3m', '6m', '9m'],
+        }]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    const nextArrival = container.querySelector('.stop-departure-time')
+
+    expect(nextArrival?.getAttribute('data-load-level')).toBe('unknown')
+    expect(nextArrival?.querySelector('.stop-departure-load-cue')).toBeNull()
+    expect(nextArrival?.querySelector('.visually-hidden')?.textContent)
+      .toBe('Arrives in 3 minutes. Crowding estimate unavailable.')
+    expect(screen.queryByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .toBeNull()
+  })
+
+  it('keeps load cues out of keyboard navigation', async () => {
+    const user = userEvent.setup()
+    render(
+      <StopDepartureList
+        departures={[{
+          routeId: 'A2',
+          routeName: 'A2',
+          routeColor: '#123456',
+          load: 'medium',
+          timings: ['3m', '6m', '9m'],
+        }]}
+        publicServices={[]}
+        onSelectRoute={vi.fn()}
+      />,
+    )
+
+    await user.tab()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'View A2 route details' }))
+    await user.tab()
+    expect(document.activeElement).toBe(document.body)
+  })
+
   it('shows the first reachable favourite beside an internal route and the rest in a popover', async () => {
     const user = userEvent.setup()
     render(
@@ -102,6 +186,7 @@ describe('StopDepartureList', () => {
           routeId: 'A2',
           routeName: 'A2',
           routeColor: '#123456',
+          load: 'unknown',
           timings: ['9m', '11m', '13m'],
           reachableFavouriteStops: [
             { id: 'STOP-LIBRARY', name: 'Library', isOpposite: false },
@@ -139,6 +224,7 @@ describe('StopDepartureList', () => {
             routeId: 'A2',
             routeName: 'A2',
             routeColor: '#123456',
+            load: 'unknown',
             timings: ['9m', '11m', '13m'],
             reachableFavouriteStops: [
               { id: 'STOP-LIBRARY', name: 'Library', isOpposite: false },
@@ -164,6 +250,7 @@ describe('StopDepartureList', () => {
           routeId: 'A2',
           routeName: 'A2',
           routeColor: '#123456',
+          load: 'unknown',
           timings: ['9m', '11m', '13m'],
           reachableFavouriteStops: [{ id: 'STOP-LIBRARY', name: 'Library', isOpposite: false }],
         }]}

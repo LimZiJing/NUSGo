@@ -62,6 +62,8 @@
   cursor: pointer;
 }
 
+.saved-list-row-select:hover strong { color: var(--accent); }
+
 .saved-list-row-select:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 1px;

@@ -1,4 +1,5 @@
 import { buildApiUrl } from '../api/api-url'
+import { SHUTTLE_LOAD_LEVELS, type ShuttleLoadLevel } from '@nusgo/shared'
 import type {
   ShuttleArrivalObservation,
   ShuttleArrivalSnapshot,
@@ -59,6 +60,11 @@ function parseOptionalVersion(value: unknown): string | undefined {
   return value
 }
 
+function normalizeLoadLevel(value: unknown): ShuttleLoadLevel | undefined {
+  if (value === undefined) return undefined
+  return SHUTTLE_LOAD_LEVELS.find((level) => level === value) ?? 'unknown'
+}
+
 function normalizeHeadway(
   value: unknown,
   arrivals: readonly number[],
@@ -88,10 +94,12 @@ function normalizeRouteData(value: unknown): ShuttleRouteArrivalData | null {
     ...upcoming,
   ].filter((arrival, index, values) => values.indexOf(arrival) === index).sort((first, second) => first - second)
   if (arrivals.length === 0) return null
+  const load = normalizeLoadLevel(value.load)
   return {
     nextArrivalSeconds: arrivals[0],
     upcomingArrivalSeconds: arrivals,
     headwaySeconds: normalizeHeadway(value.headwaySeconds, arrivals),
+    ...(load !== undefined ? { load } : {}),
   }
 }
 

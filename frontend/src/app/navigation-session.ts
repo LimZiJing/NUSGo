@@ -16,6 +16,7 @@ import { reconcilePersonalWaypointEndpoints } from '../domain/trip/personal-wayp
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import {
   createInitialResourceStatus,
@@ -117,6 +118,7 @@ export interface NavigationSession {
   setStopsPinVisible(visible: boolean): void
   setNearbyStopHighlight(stopIds: readonly string[]): void
   setPlanLayersVisible(visible: boolean): void
+  setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean): void
   enableLocationTracking(): void
   disableLocationTracking(): void
   locateUser(): void
@@ -154,6 +156,7 @@ export interface NavigationSession {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
@@ -778,6 +781,11 @@ export function createNavigationSession(
       dependencies.map.setPlanLayersVisible(visible)
     },
 
+    setLiveVehicles(vehicles, visible) {
+      if (disposed) return
+      dependencies.map.setLiveVehicles(vehicles, visible)
+    },
+
     enableLocationTracking() {
       if (disposed) return
       if (!state.locationMarkerVisible) {
@@ -1037,6 +1045,11 @@ export function createNavigationSession(
     setPersonalWaypoints(waypoints, visible, onSelect) {
       if (disposed) return
       dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect)
+    },
+
+    focusPersonalWaypoint(waypoint) {
+      if (disposed) return
+      dependencies.map.focusPersonalWaypoint(waypoint)
     },
 
     dismissStopPopup() {

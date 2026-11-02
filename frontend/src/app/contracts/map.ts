@@ -8,6 +8,7 @@ import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
 export interface MapBuildingSelection {
@@ -25,6 +26,8 @@ export interface MapSessionOptions {
   readonly onEmptyMapClick: (coordinate: MapCoordinate) => void
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
+  /** Opens Stop details after a person chooses that action in a live bus popup. */
+  readonly onStopDetailsSelected?: (stopId: string) => void
   /** Selects a displayed Journey option from a map route or duration label. */
   readonly onJourneyOptionSelected?: (candidateKey: string) => void
   /** Centre of the map area left visible by the current overlays. */
@@ -67,6 +70,8 @@ export interface MapSession {
     selection: MapRouteSelection,
     onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
   ): void
+  /** Updates live bus markers; hidden layers release markers and expiry timers. */
+  setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean): void
   setRouteSelection(selection: MapRouteSelection, fit?: boolean): void
   refitRoute(): void
   focusStop(stopId: string): void
@@ -113,6 +118,8 @@ export interface MapSession {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
+  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

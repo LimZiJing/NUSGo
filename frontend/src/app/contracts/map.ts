@@ -9,6 +9,7 @@ import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
 export interface MapBuildingSelection {
   readonly name: string
@@ -108,6 +109,12 @@ export interface MapSession {
     coordinate: MapCoordinate | null,
     editable: boolean,
     onDrag: (coordinate: MapCoordinate) => void,
+  ): void
+  /** Shows saved Personal Waypoint markers without changing the map camera. */
+  setPersonalWaypoints(
+    waypoints: readonly PersonalWaypoint[],
+    visible: boolean,
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean

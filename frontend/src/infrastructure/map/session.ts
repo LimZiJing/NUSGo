@@ -29,6 +29,7 @@ import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
+import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -80,6 +81,7 @@ type VenueCameraFit = {
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
+  const personalWaypointMarkers: PersonalWaypointMarkers = createPersonalWaypointMarkers(map)
   const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
     transitRouteLayers?.refreshTheme()
     shuttleStopMarkers?.refreshTheme()
@@ -671,6 +673,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    setPersonalWaypoints(waypoints, visible, onSelect) {
+      if (disposed) return
+      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+    },
+
     dismissStopPopup() {
       if (disposed) return false
       return shuttleStopMarkers?.dismissPopup() ?? false
@@ -781,6 +788,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       disposed = true
       pendingCameraFit = null
       clearVenueMarker()
+      personalWaypointMarkers.dispose()
       if (personalWaypointMarker && personalWaypointDragHandler) {
         personalWaypointMarker.off('dragend', personalWaypointDragHandler)
       }

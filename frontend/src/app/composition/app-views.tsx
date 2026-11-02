@@ -30,6 +30,8 @@ export interface AppViewsProps {
     readonly open: boolean
     readonly page: MorePanelPage
     readonly detent: MobileSheetDetent
+    readonly statusMessage: string | null
+    readonly statusRevision: number
     readonly headerAction?: ReactNode
     readonly title: string
     readonly initialFocusRef: Ref<HTMLButtonElement>
@@ -167,6 +169,8 @@ export function AppViews({
             <MorePanelSurface
               page={morePanel.page}
               title={morePanel.title}
+              statusMessage={morePanel.statusMessage}
+              statusRevision={morePanel.statusRevision}
               headerAction={morePanel.headerAction}
               initialFocusRef={morePanel.initialFocusRef}
               onClose={morePanel.onClose}

@@ -157,7 +157,7 @@ function formatSingaporeClock(ms: number): string {
 
 function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | undefined {
   const startMs = Date.parse(nextStartAt)
-  if (!Number.isFinite(startMs)) return undefined
+  if (!Number.isFinite(startMs) || startMs <= nowMs) return undefined
   const daysAway = singaporeDayNumber(startMs) - singaporeDayNumber(nowMs)
   const clock = formatSingaporeClock(startMs)
   if (daysAway <= 0) return `Starts ${clock}`

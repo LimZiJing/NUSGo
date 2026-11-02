@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@dnd-kit/helpers": "0.5.3",
+    "@dnd-kit/react": "0.5.3",
     "@nusgo/shared": "0.0.0",
     "lucide-react": "^1.52.0",
     "maplibre-gl": "^6.8.0",

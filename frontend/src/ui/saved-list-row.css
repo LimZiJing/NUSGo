@@ -49,3 +49,20 @@
   font-size: var(--font-size-xs);
   line-height: 1.2;
 }
+
+.saved-list-row-select {
+  min-height: 36px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-list-row-select:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 1px;
+}

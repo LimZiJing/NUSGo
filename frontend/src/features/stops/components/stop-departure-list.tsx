@@ -148,7 +148,7 @@ export function StopDepartureList({
 }) {
   const hasLoadEstimate = departures.some(({ load }) => load !== 'unknown')
   const visiblePublicServices = noLiveData
-    ? publicServices.filter(({ timings }) => timings !== null)
+    ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
 
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {

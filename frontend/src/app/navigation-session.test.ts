@@ -3,9 +3,11 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
 import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
+import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
+import type { TripEndpoint as CanonicalTripEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -151,7 +153,7 @@ async function waitForState(
   })
 }
 
-function createPath(destination: TripEndpoint, durationSeconds = 60): Path {
+function createPath(destination: CanonicalTripEndpoint, durationSeconds = 60): Path {
   return {
     origin: { kind: 'venue', id: 'COM1' },
     destination,
@@ -991,6 +993,58 @@ describe('navigation session', () => {
     unmappedSession.setTripEndpoint('origin', { kind: 'venue', id: 'UNMAPPED' })
     expect(unmappedSession.getState()).toBe(unmappedStateBefore)
     expect(unmappedMap.setTripRequest).toHaveBeenCalledTimes(unmappedMapCallCount)
+  })
+
+  it('canonicalizes, clears, and reconciles waypoint selections against a valid collection', async () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    await session.start(new AbortController().signal)
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000041',
+      name: 'Quiet bench',
+      category: 'Rest areas',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-25T00:00:00.000Z',
+      updatedAt: '2026-10-25T00:00:00.000Z',
+    }
+
+    session.setPersonalWaypointCollection([waypoint])
+    session.setTripEndpoint('origin', {
+      kind: 'personal-waypoint',
+      id: waypoint.id,
+      label: 'Caller-provided name',
+      coordinate: { longitude: 0, latitude: 0 },
+    })
+    expect(session.getState().tripRequest.origin).toEqual({
+      kind: 'personal-waypoint',
+      id: waypoint.id,
+      label: 'Quiet bench',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    })
+
+    session.setTripEndpoint('destination', { kind: 'stop', id: 'STOP-A' })
+    session.clearTripEndpoint('origin')
+    expect(session.getState().tripRequest).toEqual({
+      origin: null,
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+
+    session.setTripEndpoint('origin', {
+      kind: 'personal-waypoint',
+      id: waypoint.id,
+      label: 'Caller-provided name',
+      coordinate: { longitude: 0, latitude: 0 },
+    })
+
+    session.setPersonalWaypointCollection(null)
+    expect(session.getState().tripRequest.origin?.kind).toBe('personal-waypoint')
+    session.setPersonalWaypointCollection([])
+    expect(session.getState().tripRequest).toEqual({
+      origin: null,
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
   })
 
   it('publishes immutable controller-owned snapshots without cloning canonical loaded values', async () => {

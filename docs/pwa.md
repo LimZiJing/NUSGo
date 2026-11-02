@@ -5,11 +5,11 @@ NUSGo is an installable web app for Chrome on Android and desktop. The service w
 ## Cache policy
 
 - The app shell, built JavaScript and CSS, icons, and files under `frontend/public` are precached before the service worker can activate.
-- Page navigation uses the network first and falls back to the cached app shell when the network is unavailable.
+- Page navigation serves the versioned cached app shell immediately, without waiting for a network timeout. Updates arrive through the service-worker update flow, keeping HTML and built assets from the same version together. The network is used only when the shell is missing.
 - Built assets and static campus data use the cache first. The cache is versioned from the built and public asset contents.
 - Requests to another origin bypass the service worker. Same-origin requests with an `api` path segment also bypass it, as do non-GET requests. The Express API also sends `Cache-Control: no-store`, so live NUS and LTA arrivals are not served from either cache.
 - The arrival clients continue applying their existing freshness limits to data already held in memory. The offline notice says that arrival data will stop refreshing.
-- External map tiles and the Express API are not cached. The app shell and static campus data work offline, while the basemap and live arrival updates need a connection.
+- External map tiles and the Express API are not cached. The app shell and static campus data work offline, while the basemap and live arrival updates need a connection. Offline launches use a local empty map style so campus overlays can initialize. If an online remote style takes more than four seconds, a local style takes its place; reload online to restore the basemap.
 
 A new worker precaches the new build before it waits to activate. When an update is ready, NUSGo offers an Update now action. Activating the update reloads controlled tabs after the new worker takes control, then removes older NUSGo caches.
 

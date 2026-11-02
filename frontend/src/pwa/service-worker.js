@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
   if (!url.pathname.startsWith(scope.pathname)) return
 
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, new URL('./', scope).href))
+    event.respondWith(appShellFirst(request, new URL('./', scope).href))
     return
   }
 
@@ -47,19 +47,15 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(cacheFirst(request))
 })
 
-async function networkFirst(request, appShellUrl) {
-  try {
-    const response = await fetch(request)
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME)
-      await cache.put(appShellUrl, response.clone())
-    }
-    return response
-  } catch {
-    const cache = await caches.open(CACHE_NAME)
-    const appShell = await cache.match(appShellUrl, { ignoreVary: true })
-    if (appShell) return appShell
+async function appShellFirst(request, appShellUrl) {
+  const cache = await caches.open(CACHE_NAME)
+  const appShell = await cache.match(appShellUrl, { ignoreVary: true })
+  // Keep HTML paired with this worker's versioned assets, without a network wait.
+  if (appShell) return appShell
 
+  try {
+    return await fetch(request)
+  } catch {
     return new Response('NUSGo is offline. Connect to the internet to load the app.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },

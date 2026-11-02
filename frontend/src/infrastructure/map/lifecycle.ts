@@ -2,6 +2,7 @@ import {
   Map,
   NavigationControl,
   setWorkerUrl,
+  type StyleSpecification,
   type MapMouseEvent,
   type MapTouchEvent,
 } from 'maplibre-gl'
@@ -30,6 +31,9 @@ const DOUBLE_TAP_MS = 300
 const TAP_SLOP_PX = 20
 const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
+
+const STYLE_LOAD_TIMEOUT_MS = 4000
+const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
@@ -73,7 +77,8 @@ export function waitForMapStyleLoaded(
 
   return new Promise((resolve, reject) => {
     const cleanup = () => {
-      map.off('load', handleLoad)
+      clearTimeout(fallbackTimer)
+      map.off('style.load', handleLoad)
       signal.removeEventListener('abort', handleAbort)
     }
     const handleLoad = () => {
@@ -85,7 +90,9 @@ export function waitForMapStyleLoaded(
       reject(new DOMException('The map style load was aborted', 'AbortError'))
     }
 
-    map.once('load', handleLoad)
+    // A missing remote style must not block local campus data indefinitely.
+    const fallbackTimer = setTimeout(() => map.setStyle(OFFLINE_STYLE), STYLE_LOAD_TIMEOUT_MS)
+    map.once('style.load', handleLoad)
     signal.addEventListener('abort', handleAbort, { once: true })
   })
 }
@@ -94,7 +101,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
   const map = new Map({
     container: options.container,
-    style: MAP_STYLE,
+    style: typeof navigator !== 'undefined' && !navigator.onLine ? OFFLINE_STYLE : MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
     attributionControl: false,

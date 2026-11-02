@@ -124,10 +124,11 @@ describe('StopDepartureList', () => {
       .toBe(`Arrives in 3 minutes. Estimated crowding: ${load}.`)
     expect(nextArrival.querySelector('[aria-hidden="true"]')?.textContent).toBe('3m')
     expect(nextArrival.querySelector('.stop-departure-load-cue')?.textContent).toBe(
-      `Estimated crowding: ${load[0].toUpperCase()}${load.slice(1)}`,
+      `${load[0].toUpperCase()}${load.slice(1)}`,
     )
     expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
-    expect(screen.queryByText('Estimated crowding for the next bus on each route.')).toBeNull()
+    expect(screen.getByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .not.toBeNull()
   })
 
   it('keeps unknown load neutral and explains that the estimate is unavailable', () => {
@@ -151,7 +152,8 @@ describe('StopDepartureList', () => {
     expect(nextArrival?.querySelector('.stop-departure-load-cue')).toBeNull()
     expect(nextArrival?.querySelector('.visually-hidden')?.textContent)
       .toBe('Arrives in 3 minutes. Crowding estimate unavailable.')
-    expect(screen.queryByText('Estimated crowding for the next bus on each route.')).toBeNull()
+    expect(screen.queryByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .toBeNull()
   })
 
   it('keeps load cues out of keyboard navigation', async () => {

@@ -34,9 +34,9 @@ function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string 
 }
 
 const VISIBLE_LOAD_LABELS: Partial<Record<ShuttleLoadLevel, string>> = {
-  low: 'Estimated crowding: Low',
-  medium: 'Estimated crowding: Medium',
-  high: 'Estimated crowding: High',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
@@ -139,6 +139,7 @@ export function StopDepartureList({
   const visiblePublicServices = noLiveData
     ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
+  const hasVisibleCrowdingEstimate = departures.some(({ load }) => load !== undefined && load !== 'unknown')
 
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
     if (noLiveData) return null
@@ -150,6 +151,11 @@ export function StopDepartureList({
       {!noLiveData && liveArrivalMessage && (
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
+        </p>
+      )}
+      {hasVisibleCrowdingEstimate && (
+        <p className="stop-departure-load-legend">
+          Low, Medium, and High indicate the estimated crowding level for the next bus on each route.
         </p>
       )}
       <ul className="stop-departure-list" aria-label="Bus timings">

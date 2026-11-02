@@ -18,6 +18,17 @@ const response = {
 }
 
 describe('createShuttleVehicleClient', () => {
+  it.each([
+    [new Response('private response', { status: 503 }), 'http', 503],
+    [new Response('invalid JSON'), 'invalid-response', undefined],
+    [new Response('{}'), 'invalid-response', undefined],
+  ])('retains safe diagnostic metadata for unsuccessful responses', async (response, reason, status) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response)
+    await expect(createShuttleVehicleClient({ fetcher }).getVehicles(
+      ['D2'], new AbortController().signal,
+    )).rejects.toMatchObject({ reason, status })
+  })
+
   it('requests vehicles for the selected routes and validates the response', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(response), { status: 200 }))
     const signal = new AbortController().signal

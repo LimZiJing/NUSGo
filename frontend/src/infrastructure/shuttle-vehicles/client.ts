@@ -1,13 +1,8 @@
 import { buildApiUrl } from '../api/api-url'
 import { parseApiShuttleVehiclesResponse } from '@nusgo/shared'
 import type { ShuttleVehicleClient } from '../../app/contracts/shuttle-vehicles'
-
-export class ShuttleVehicleFetchError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options)
-    this.name = 'ShuttleVehicleFetchError'
-  }
-}
+import { ShuttleVehicleFetchError } from '../../app/contracts/shuttle-vehicle-error'
+export { ShuttleVehicleFetchError } from '../../app/contracts/shuttle-vehicle-error'
 
 interface ShuttleVehicleClientOptions {
   readonly apiOrigin?: string
@@ -16,7 +11,7 @@ interface ShuttleVehicleClientOptions {
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError'
+  return (error instanceof Error || error instanceof DOMException) && error.name === 'AbortError'
 }
 
 export function createShuttleVehicleClient(
@@ -29,7 +24,7 @@ export function createShuttleVehicleClient(
     async getVehicles(routeIds, signal) {
       const uniqueRouteIds = [...new Set(routeIds)]
       if (uniqueRouteIds.length === 0) {
-        throw new ShuttleVehicleFetchError('At least one shuttle route is required')
+        throw new ShuttleVehicleFetchError('At least one shuttle route is required', 'invalid-request')
       }
 
       try {
@@ -37,14 +32,17 @@ export function createShuttleVehicleClient(
           `${endpoint}?routes=${encodeURIComponent(uniqueRouteIds.join(','))}`,
           { signal },
         )
-        if (!response.ok) throw new Error(`bus vehicle request failed: ${response.status}`)
-        const payload = await response.json() as unknown
+        if (!response.ok) throw new ShuttleVehicleFetchError('Live bus request failed', 'http', response.status)
+        const payload: unknown = await response.json().catch(() => {
+          throw new ShuttleVehicleFetchError('Live bus response was invalid', 'invalid-response')
+        })
         const vehicles = parseApiShuttleVehiclesResponse(payload)
-        if (!vehicles) throw new Error('bus vehicle response was invalid')
+        if (!vehicles) throw new ShuttleVehicleFetchError('Live bus response was invalid', 'invalid-response')
         return vehicles
       } catch (error: unknown) {
         if (isAbortError(error)) throw error
-        throw new ShuttleVehicleFetchError('Live bus vehicle data could not be fetched', { cause: error })
+        if (error instanceof ShuttleVehicleFetchError) throw error
+        throw new ShuttleVehicleFetchError('Live bus vehicle data could not be fetched', 'network', undefined, { cause: error })
       }
     },
   }

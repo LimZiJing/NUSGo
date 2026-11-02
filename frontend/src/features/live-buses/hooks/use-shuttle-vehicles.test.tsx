@@ -3,6 +3,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ApiShuttleVehiclesResponse } from '@nusgo/shared'
+import { ShuttleVehicleFetchError } from '../../../app/contracts/shuttle-vehicle-error'
 import {
   type ShuttleVehicleLoader,
   useShuttleVehicles,
@@ -11,6 +12,7 @@ import {
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 const firstSnapshot: ApiShuttleVehiclesResponse = {
@@ -57,6 +59,36 @@ function setVisibility(state: DocumentVisibilityState): void {
 }
 
 describe('useShuttleVehicles', () => {
+  it('logs safe failure metadata once per outage and reports again after recovery', async () => {
+    vi.useFakeTimers()
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const loader = vi.fn<ShuttleVehicleLoader>()
+      .mockRejectedValueOnce(new ShuttleVehicleFetchError('private response', 'http', 503))
+      .mockRejectedValueOnce(new Error('secret request URL'))
+      .mockResolvedValueOnce(firstSnapshot)
+      .mockRejectedValueOnce(new ShuttleVehicleFetchError('private payload', 'invalid-response'))
+    render(<Probe loader={loader} />)
+    await act(async () => undefined)
+    expect(screen.getByTestId('vehicle-state').textContent).toBe('error:none')
+    expect(warning).toHaveBeenCalledExactlyOnceWith('Live bus polling failed', { reason: 'http', status: 503 })
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000) })
+    expect(warning).toHaveBeenCalledTimes(1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000) })
+    expect(screen.getByTestId('vehicle-state').textContent).toBe('ready:PD726D')
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000) })
+    expect(warning).toHaveBeenCalledTimes(2)
+    expect(warning).toHaveBeenLastCalledWith('Live bus polling failed', { reason: 'invalid-response', status: undefined })
+    expect(JSON.stringify(warning.mock.calls)).not.toMatch(/private|secret/)
+  })
+
+  it('does not log expected aborts', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const loader = vi.fn<ShuttleVehicleLoader>().mockRejectedValue(new DOMException('Aborted', 'AbortError'))
+    render(<Probe loader={loader} />)
+    await act(async () => undefined)
+    expect(warning).not.toHaveBeenCalled()
+  })
+
   it('pauses polling while hidden and refreshes when the page becomes visible', async () => {
     vi.useFakeTimers()
     const visibilityDescriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState')

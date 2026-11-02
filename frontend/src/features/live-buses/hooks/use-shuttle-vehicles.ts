@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ShuttleVehicleFetchError } from '../../../app/contracts/shuttle-vehicle-error'
 import {
   SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS,
   type ApiShuttleVehiclesResponse,
@@ -21,7 +22,7 @@ interface ShuttleVehiclesRequestState extends ShuttleVehiclesState {
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError'
+  return (error instanceof Error || error instanceof DOMException) && error.name === 'AbortError'
 }
 
 export function useShuttleVehicles(
@@ -37,6 +38,7 @@ export function useShuttleVehicles(
   const routeKey = [...new Set(routeIds)].sort().join('\u0001')
   const hasActiveRoutes = active && routeIds.length > 0
   const latestRouteIdsRef = useRef(routeIds)
+  const failureReportedRef = useRef(false)
 
   useEffect(() => {
     latestRouteIdsRef.current = routeIds
@@ -65,9 +67,17 @@ export function useShuttleVehicles(
       try {
         const snapshot = await loadVehicles(latestRouteIdsRef.current, requestController.signal)
         if (disposed || currentRequestVersion !== requestVersion) return
+        failureReportedRef.current = false
         setState({ routeKey, status: 'ready', snapshot })
       } catch (error: unknown) {
         if (disposed || currentRequestVersion !== requestVersion || isAbortError(error)) return
+        if (!failureReportedRef.current) {
+          console.warn('Live bus polling failed', {
+            reason: error instanceof ShuttleVehicleFetchError ? error.reason : 'unexpected',
+            status: error instanceof ShuttleVehicleFetchError ? error.status : undefined,
+          })
+          failureReportedRef.current = true
+        }
         setState((previous) => ({
           routeKey,
           status: 'error',

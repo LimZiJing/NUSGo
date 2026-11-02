@@ -1,12 +1,12 @@
 import type { ShuttleTimingData, ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
 import type { TransitGeoJsonPosition, BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { TransitIndex } from '@nusgo/shared/transit/index'
-import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { Path, PathEndpointLocation, PathGeometry, PathLeg, ScoredPathCandidate } from '../path.ts'
 
 export interface PathWalkingConnection {
-  readonly from: TripEndpoint
-  readonly to: TripEndpoint
+  readonly from: JourneyEndpoint
+  readonly to: JourneyEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
   readonly geometry: PathGeometry

@@ -1,6 +1,6 @@
 import type { ShuttleArrivalSnapshot } from '@nusgo/shared/transit/live-arrivals'
 import type { TransitIndex } from '@nusgo/shared/transit/index'
-import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from './endpoints.ts'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
@@ -37,8 +37,8 @@ const SEARCH_YIELD_EVERY = 64
 const MAX_CANDIDATE_SEARCH_DURATION_MS = 300
 
 export interface FindPathsRequest {
-  readonly origin: TripEndpoint
-  readonly destination: TripEndpoint
+  readonly origin: JourneyEndpoint
+  readonly destination: JourneyEndpoint
   readonly simulatedDepartureMs?: number
   readonly venues: VenueLocationMap
   readonly buildings?: BuildingIndex | null

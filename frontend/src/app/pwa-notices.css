@@ -78,27 +78,35 @@
 }
 
 .pwa-install-section {
-  padding: 16px;
+  padding: var(--space-3);
   border: 1px solid var(--border-card);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: var(--surface-card);
   color: var(--text-primary);
 }
 
-.pwa-install-heading {
+.pwa-install-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
-.pwa-install-heading h2 {
+.pwa-install-logo {
+  flex: 0 0 44px;
+  object-fit: contain;
+  border-radius: var(--radius-control);
+}
+
+.pwa-install-row h2 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 1rem;
   line-height: 1.4;
 }
 
-.pwa-install-section p {
-  margin: 12px 0;
+.pwa-install-help {
+  margin: var(--space-3) 0 0;
   color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.5;

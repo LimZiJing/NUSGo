@@ -18,7 +18,7 @@ A new worker precaches the new build before it waits to activate. When an update
 ### Chrome on Android
 
 1. Open the deployed HTTPS NUSGo site in Chrome while online.
-2. Use the in-app Install prompt or Chrome's menu and choose **Install app**.
+2. Use the in-app Install prompt, the install section in **More**, or Chrome's menu and choose **Install app**.
 3. Open the installed NUSGo app and confirm it starts in standalone mode.
 
 ### Chrome on desktop
@@ -33,6 +33,8 @@ A new worker precaches the new build before it waits to activate. When an update
 2. Turn off the device network and reload the page. The app shell and static campus data should load with the offline notice; map tiles and live arrivals should not load.
 3. Keep an older app tab open, deploy a new build, then revisit or reload NUSGo while online. Choose **Update now** when it appears and confirm the app reloads to the new build.
 4. In Chrome DevTools, open **Application** to inspect the manifest, icons, service worker and Cache Storage. Run the **Lighthouse** PWA category against the deployed HTTPS site for installability checks.
+
+The install banner can be dismissed for the current visit while installation remains available in More. No permanent dismissal or installed flag is stored. More provides browser-menu instructions when a native prompt is unavailable, and confirms installation inside the standalone app.
 
 ## Known gaps
 

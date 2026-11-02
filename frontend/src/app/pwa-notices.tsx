@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import { X } from 'lucide-react'
+import { Button, IconButton } from '../ui/button'
+import { DownloadIcon, CloseIcon } from '../ui/icons'
 import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
-  getInstallPromptSnapshot,
+  getInstallBannerSnapshot,
   getOnlineStatusSnapshot,
   getServiceWorkerUpdateSnapshot,
   requestInstall,
@@ -21,8 +22,8 @@ export function PwaNotices() {
   )
   const installPrompt = useSyncExternalStore(
     subscribeToInstallPrompt,
-    getInstallPromptSnapshot,
-    () => null,
+    getInstallBannerSnapshot,
+    () => false,
   )
   const updateAvailable = useSyncExternalStore(
     subscribeToServiceWorkerUpdate,
@@ -41,23 +42,14 @@ export function PwaNotices() {
       )}
       {installPrompt && (
         <section className="pwa-notice pwa-notice-install" role="status" aria-live="polite">
+          <span className="pwa-install-icon"><DownloadIcon size={22} /></span>
           <div className="pwa-notice-content">
-            <strong className="pwa-notice-title">Install NUSGo</strong>
-            <p>Open campus navigation quickly from your home screen.</p>
+            <strong className="pwa-notice-title">NUSGo, one tap away</strong>
+            <p>Add it to your home screen for quick access, even offline.</p>
+            <Button className="pwa-install-action" size="lg" label="Install NUSGo" onClick={() => void requestInstall()} />
           </div>
-          <div className="pwa-notice-actions">
-            <button className="pwa-notice-action" type="button" onClick={() => void requestInstall()}>
-              Install
-            </button>
-            <button
-              className="pwa-notice-dismiss"
-              type="button"
-              aria-label="Dismiss install prompt"
-              onClick={dismissInstallPrompt}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-          </div>
+          <IconButton label="Dismiss install prompt" icon={<CloseIcon />} variant="ghost"
+            size="lg" onClick={dismissInstallPrompt} />
         </section>
       )}
       {updateAvailable && (
@@ -66,13 +58,7 @@ export function PwaNotices() {
             <strong className="pwa-notice-title">Update ready</strong>
             <p>Reload NUSGo to use the latest version.</p>
           </div>
-          <button
-            className="pwa-notice-action"
-            type="button"
-            onClick={activateServiceWorkerUpdate}
-          >
-            Update now
-          </button>
+          <Button label="Update now" onClick={activateServiceWorkerUpdate} />
         </section>
       )}
     </div>

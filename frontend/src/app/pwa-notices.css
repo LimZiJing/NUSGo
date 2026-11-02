@@ -55,43 +55,53 @@
   line-height: 1.35;
 }
 
-.pwa-notice-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 4px;
+.pwa-notice-install {
+  align-items: flex-start;
+  padding: 16px;
+  background: var(--surface-raised);
 }
 
-.pwa-notice-action,
-.pwa-notice-dismiss {
+.pwa-install-action {
+  margin-top: 12px;
+}
+
+.pwa-install-icon {
   display: inline-flex;
-  min-width: 44px;
-  min-height: 44px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  border: 0;
-  border-radius: 8px;
-  font: inherit;
-  cursor: pointer;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
-.pwa-notice-action {
-  padding: 0 12px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-weight: 600;
+.pwa-install-section {
+  padding: 16px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  background: var(--surface-card);
+  color: var(--text-primary);
 }
 
-.pwa-notice-dismiss {
-  padding: 0;
-  background: transparent;
+.pwa-install-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pwa-install-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.pwa-install-section p {
+  margin: 12px 0;
   color: var(--text-secondary);
-}
-
-.pwa-notice-action:focus-visible,
-.pwa-notice-dismiss:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 @media (min-width: 769px) {
@@ -104,16 +114,12 @@
 }
 
 @media (max-width: 480px) {
-  .pwa-notice-install,
-  .pwa-notice-update {
-    flex-wrap: wrap;
+  .pwa-notice-install {
+    gap: 8px;
+    padding: 12px;
   }
 
-  .pwa-notice-content {
-    flex-basis: calc(100% - 16px);
-  }
-
-  .pwa-notice-actions {
-    margin-inline-start: auto;
+  .pwa-notice-install > .pwa-install-icon {
+    display: none;
   }
 }

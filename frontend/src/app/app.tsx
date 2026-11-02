@@ -1,3 +1,4 @@
+import { PwaInstallSection } from './pwa-install-section'
 import {
   lazy,
   Suspense,
@@ -662,7 +663,7 @@ function App() {
                 : morePage === 'settings' ? 'Settings' : 'More',
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
-            content: morePage === 'menu' ? <MoreMenu
+            content: morePage === 'menu' ? <MoreMenu installSection={<PwaInstallSection />}
               onOpenWaypoints={openWaypoints}
               onOpenSettings={() => setMorePage('settings')}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome

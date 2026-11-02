@@ -1,5 +1,3 @@
-export const INSTALL_PROMPT_DISMISSED_KEY = 'nusgo.pwa.install-prompt-dismissed'
-
 export interface DeferredInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{
@@ -11,6 +9,8 @@ export interface DeferredInstallPromptEvent extends Event {
 type Listener = () => void
 
 let isOnline = typeof navigator === 'undefined' ? true : navigator.onLine
+let installBannerDismissed = false
+let installedThisVisit = false
 let deferredInstallPrompt: DeferredInstallPromptEvent | null = null
 let waitingServiceWorker: ServiceWorker | null = null
 let serviceWorkerRegistrationStarted = false
@@ -23,27 +23,13 @@ function notify(listeners: ReadonlySet<Listener>): void {
   listeners.forEach((listener) => listener())
 }
 
-function isInstallPromptDismissed(): boolean {
-  try {
-    return window.localStorage.getItem(INSTALL_PROMPT_DISMISSED_KEY) === 'true'
-  } catch {
-    return false
-  }
-}
-
-function rememberInstallPromptDismissal(): void {
-  try {
-    window.localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, 'true')
-  } catch {
-    // Keep the current page quiet when browser storage is unavailable.
-  }
-}
-
 function isStandaloneApp(): boolean {
   const safariStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true
   return safariStandalone || window.matchMedia?.('(display-mode: standalone)').matches === true
 }
 
+// This singleton deliberately owns page-lifetime browser listeners, which the browser
+// removes on page teardown; React subscribers have their own explicit unsubscribe paths.
 if (typeof window !== 'undefined') {
   const updateOnlineStatus = (): void => {
     const nextStatus = navigator.onLine
@@ -56,14 +42,15 @@ if (typeof window !== 'undefined') {
   window.addEventListener('offline', updateOnlineStatus)
   window.addEventListener('beforeinstallprompt', (event: Event) => {
     event.preventDefault()
-    if (isStandaloneApp() || isInstallPromptDismissed()) return
+    if (isStandaloneApp() || installedThisVisit) return
+    installBannerDismissed = false
 
     deferredInstallPrompt = event as DeferredInstallPromptEvent
     notify(installPromptListeners)
   })
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null
-    rememberInstallPromptDismissal()
+    installedThisVisit = true
     notify(installPromptListeners)
   })
 }
@@ -86,24 +73,31 @@ export function getInstallPromptSnapshot(): DeferredInstallPromptEvent | null {
   return deferredInstallPrompt
 }
 
+export function getInstallBannerSnapshot(): boolean {
+  return getInstallPromptSnapshot() !== null && !installBannerDismissed
+}
+
+export function getInstalledSnapshot(): boolean {
+  return installedThisVisit || isStandaloneApp()
+}
+
 export function dismissInstallPrompt(): void {
-  deferredInstallPrompt = null
-  rememberInstallPromptDismissal()
+  installBannerDismissed = true
   notify(installPromptListeners)
 }
 
 export async function requestInstall(): Promise<void> {
-  const prompt = deferredInstallPrompt
+  const prompt = getInstallPromptSnapshot()
   if (!prompt) return
+  deferredInstallPrompt = null
+  notify(installPromptListeners)
 
   try {
     await prompt.prompt()
-    const choice = await prompt.userChoice
-    if (choice.outcome === 'dismissed') rememberInstallPromptDismissal()
+    await prompt.userChoice
   } catch (error) {
     console.error('NUSGo install prompt failed.', error)
   } finally {
-    deferredInstallPrompt = null
     notify(installPromptListeners)
   }
 }

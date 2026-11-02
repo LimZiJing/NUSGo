@@ -86,6 +86,15 @@ function validateEndpoint(
   return null
 }
 
+function areSameLocation(origin: TripEndpoint, destination: TripEndpoint): boolean {
+  if (getTripEndpointKey(origin) === getTripEndpointKey(destination)) return true
+
+  return origin.kind === 'personal-waypoint' &&
+    destination.kind === 'personal-waypoint' &&
+    origin.coordinate.longitude === destination.coordinate.longitude &&
+    origin.coordinate.latitude === destination.coordinate.latitude
+}
+
 export function validateTripRequest(request: TripRequest): string | null {
   const origin = request.origin
   const destination = request.destination
@@ -98,7 +107,7 @@ export function validateTripRequest(request: TripRequest): string | null {
 
   if (origin === null || destination === null) return null
 
-  if (getTripEndpointKey(origin) === getTripEndpointKey(destination)) {
+  if (areSameLocation(origin, destination)) {
     return 'Origin and destination must be different locations.'
   }
 

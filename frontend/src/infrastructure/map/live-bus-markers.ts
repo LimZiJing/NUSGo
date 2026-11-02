@@ -1,4 +1,6 @@
 import { Marker, Popup, type Map } from 'maplibre-gl'
+import { createElement, type ReactElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS,
   type ShuttleVehiclePosition,
@@ -7,14 +9,12 @@ import type { TransitGeoJsonPosition, TransitStop } from '@nusgo/shared/transit/
 import type { LoadedTransitData } from '../../app/contracts/data'
 import { isClosedRoute, interpolateRoutePosition, snapToRoute } from './live-bus-routing'
 import { createPopupCoordinator, type PopupContent } from './popup'
+import { getRouteContrastTextColor } from '../../domain/transit/route-color'
+import { CloseIcon } from '../../ui/icons'
+import { IconButton } from '../../ui/button'
+import { LiveBusVehicle } from './live-bus-vehicle'
 
 const STALE_REMAINING_MS = SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS
-const LOAD_LEVEL_BAR_COUNTS: Readonly<Record<ShuttleVehiclePosition['load'], number>> = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  unknown: 0,
-}
 
 interface LiveBusMarkerRecord {
   readonly marker: Marker
@@ -67,47 +67,85 @@ function getNextStop(
   return isClosedRoute(routeCoordinates) ? stops[0]?.stop ?? null : null
 }
 
+// Render the shared controls into MapLibre-owned DOM; native listeners are disposed below.
+function createPopupButton(control: ReactElement): HTMLButtonElement {
+  const template = document.createElement('template')
+  template.innerHTML = renderToStaticMarkup(control)
+  const button = template.content.firstElementChild
+  if (!(button instanceof HTMLButtonElement)) throw new Error('Expected a popup button')
+  return button
+}
+
 function createLiveBusPopupContent(
   routeName: string,
   vehicle: ShuttleVehiclePosition,
   nextStop: TransitStop | null,
+  routeColor: string | undefined,
+  onClose: () => void,
   onSelectStop?: (stopId: string) => void,
 ): PopupContent {
   const element = document.createElement('div')
   element.className = 'map-popup-content live-bus-popup-content'
-  const title = document.createElement('strong')
-  title.className = 'map-popup-title'
-  title.textContent = routeName
-  element.append(title)
+  updateMarkerRouteColor(element, routeColor)
+  const header = document.createElement('div')
+  header.className = 'live-bus-popup-header'
+  const routeBadge = document.createElement('strong')
+  routeBadge.className = 'live-bus-popup-route'
+  routeBadge.textContent = vehicle.routeId
+  routeBadge.title = routeName
+  const loadValue = document.createElement('span')
+  loadValue.className = 'live-bus-popup-load-value'
+  loadValue.dataset.loadLevel = vehicle.load
+  loadValue.textContent = vehicle.load === 'unknown'
+    ? 'Crowding unknown'
+    : `${vehicle.load[0].toUpperCase() + vehicle.load.slice(1)} crowding`
+  loadValue.setAttribute('aria-label', vehicle.load === 'unknown'
+    ? 'Crowding estimate unavailable'
+    : `Estimated crowding: ${vehicle.load}`)
+  loadValue.title = 'Estimated crowding'
+  const closeButton = createPopupButton(createElement(IconButton, {
+    label: 'Close bus details', icon: createElement(CloseIcon), variant: 'plain',
+    className: 'live-bus-popup-close', onClick: onClose,
+  }))
+  closeButton.addEventListener('click', onClose)
+  header.append(routeBadge, loadValue, closeButton)
+  element.append(header)
 
   const nextStopDetail = document.createElement('div')
-  nextStopDetail.className = 'map-popup-detail'
-  nextStopDetail.textContent = nextStop ? `Next stop: ${nextStop.longName}` : 'Next stop unavailable'
+  nextStopDetail.className = 'live-bus-popup-next-stop'
+  const nextStopLabel = document.createElement('span')
+  nextStopLabel.className = 'live-bus-popup-label'
+  nextStopLabel.textContent = 'Next stop'
+  const button = nextStop && onSelectStop ? document.createElement('button') : null
+  const nextStopName = document.createElement('strong')
+  nextStopName.className = 'live-bus-popup-next-name'
+  nextStopName.textContent = nextStop?.longName ?? 'Unavailable'
+  nextStopDetail.append(nextStopLabel)
   element.append(nextStopDetail)
 
-  const loadDetail = document.createElement('div')
-  loadDetail.className = 'map-popup-detail'
-  loadDetail.textContent = vehicle.load === 'unknown'
-    ? 'Estimated crowding unavailable'
-    : `Estimated crowding: ${vehicle.load}`
-  element.append(loadDetail)
-
-  const button = nextStop && onSelectStop ? document.createElement('button') : null
   const handleSelectStop = nextStop && onSelectStop
     ? () => onSelectStop(nextStop.id)
     : null
   if (button && nextStop) {
     button.type = 'button'
     button.className = 'live-bus-popup-stop-action'
-    button.textContent = 'View stop details'
+    button.dataset.hoverFilter = 'none'
     button.setAttribute('aria-label', `View details for ${nextStop.longName} bus stop`)
+    const chevron = document.createElement('span')
+    chevron.className = 'live-bus-popup-chevron'
+    chevron.setAttribute('aria-hidden', 'true')
+    chevron.textContent = '›'
+    button.append(nextStopName, chevron)
     if (handleSelectStop) button.addEventListener('click', handleSelectStop)
-    element.append(button)
+    nextStopDetail.append(button)
+  } else {
+    nextStopDetail.append(nextStopName)
   }
 
   return {
     element,
     dispose() {
+      closeButton.removeEventListener('click', onClose)
       if (button && handleSelectStop) button.removeEventListener('click', handleSelectStop)
     },
   }
@@ -117,6 +155,8 @@ function createMarkerElement(
   vehicle: ShuttleVehiclePosition,
   routeName: string,
   nextStop: TransitStop | null,
+  routeColor: string | undefined,
+  mapBearing: number,
 ): HTMLButtonElement {
   const element = document.createElement('button')
   element.type = 'button'
@@ -128,23 +168,35 @@ function createMarkerElement(
   heading.className = 'live-bus-marker-heading'
   heading.setAttribute('aria-hidden', 'true')
   element.append(heading)
-  const loadCue = document.createElement('span')
-  loadCue.className = 'live-bus-marker-load'
-  loadCue.setAttribute('aria-hidden', 'true')
-  updateMarkerLoadCue(loadCue, vehicle.load)
-  element.append(loadCue)
+  const body = document.createElement('span')
+  body.className = 'live-bus-marker-body'
+  body.setAttribute('aria-hidden', 'true')
+  body.innerHTML = renderToStaticMarkup(createElement(LiveBusVehicle))
+  heading.append(body)
+  const badge = document.createElement('span')
+  badge.className = 'live-bus-marker-route'
+  badge.setAttribute('aria-hidden', 'true')
+  badge.textContent = vehicle.routeId
+  element.append(badge)
+  updateMarkerRouteColor(element, routeColor)
+  updateMarkerHeading(element, vehicle.headingDegrees, mapBearing)
   updateMarkerLabel(element, routeName, vehicle, nextStop)
   return element
 }
 
-function updateMarkerLoadCue(
-  element: HTMLSpanElement,
-  load: ShuttleVehiclePosition['load'],
-): void {
-  element.replaceChildren(...Array.from({ length: LOAD_LEVEL_BAR_COUNTS[load] }, () => {
-    const bar = document.createElement('span')
-    return bar
-  }))
+function updateMarkerRouteColor(element: HTMLElement, routeColor: string | undefined): void {
+  if (routeColor) {
+    element.style.setProperty('--live-bus-route-color', routeColor)
+    element.style.setProperty('--live-bus-route-text', getRouteContrastTextColor(routeColor))
+  } else {
+    element.style.removeProperty('--live-bus-route-color')
+    element.style.removeProperty('--live-bus-route-text')
+  }
+}
+
+function updateMarkerHeading(element: HTMLElement, headingDegrees: number, mapBearing: number): void {
+  const heading = element.querySelector<HTMLElement>('.live-bus-marker-heading')
+  if (heading) heading.style.transform = `rotateX(45deg) rotateZ(${headingDegrees - mapBearing}deg)`
 }
 
 function updateMarkerLabel(
@@ -191,6 +243,15 @@ export function createLiveBusMarkers(
   let disposed = false
   let activeVehicles: readonly ShuttleVehiclePosition[] = []
   let visible = false
+
+  // Rotate only the arrow; the bus and route badge stay readable in screen space.
+  const updateHeadings = (): void => {
+    const mapBearing = map.getBearing()
+    for (const record of records.values()) {
+      updateMarkerHeading(record.element, record.vehicle.headingDegrees, mapBearing)
+    }
+  }
+  map.on('rotate', updateHeadings)
 
   const removeRecord = (key: string): void => {
     const record = records.get(key)
@@ -287,7 +348,8 @@ export function createLiveBusMarkers(
     const routePosition = routeCoordinates
       ? snapToRoute([vehicle.lng, vehicle.lat], routeCoordinates)
       : null
-    const routeName = transitData?.index.routeById.get(vehicle.routeId)?.name ?? vehicle.routeId
+    const route = transitData?.index.routeById.get(vehicle.routeId)
+    const routeName = route?.name ?? vehicle.routeId
     const nextStop = getNextStop(
       vehicle,
       routePosition?.progressMeters ?? null,
@@ -299,12 +361,12 @@ export function createLiveBusMarkers(
     record.vehicle = vehicle
     record.routeCoordinates = routeCoordinates
     record.element.dataset.loadLevel = vehicle.load
-    updateMarkerLoadCue(record.element.querySelector('.live-bus-marker-load')!, vehicle.load)
+    updateMarkerRouteColor(record.element, route?.color)
+    updateMarkerHeading(record.element, vehicle.headingDegrees, map.getBearing())
     updateMarkerLabel(record.element, routeName, vehicle, nextStop)
     record.popupContent.dispose()
-    record.popupContent = createLiveBusPopupContent(routeName, vehicle, nextStop, onSelectStop)
+    record.popupContent = createLiveBusPopupContent(routeName, vehicle, nextStop, route?.color, () => record.popup.remove(), onSelectStop)
     record.popup.setDOMContent(record.popupContent.element)
-    record.marker.setRotation(vehicle.headingDegrees)
 
     if (
       sameRoute &&
@@ -354,22 +416,27 @@ export function createLiveBusMarkers(
       const routePosition = routeCoordinates
         ? snapToRoute([vehicle.lng, vehicle.lat], routeCoordinates)
         : null
-      const routeName = transitData?.index.routeById.get(vehicle.routeId)?.name ?? vehicle.routeId
+      const route = transitData?.index.routeById.get(vehicle.routeId)
+      const routeName = route?.name ?? vehicle.routeId
       const nextStop = getNextStop(
         vehicle,
         routePosition?.progressMeters ?? null,
         routeCoordinates,
         transitData,
       )
-      const element = createMarkerElement(vehicle, routeName, nextStop)
-      const popupContent = createLiveBusPopupContent(routeName, vehicle, nextStop, onSelectStop)
-      const popup = new Popup({ closeButton: true, offset: 18 }).setDOMContent(popupContent.element)
+      const element = createMarkerElement(vehicle, routeName, nextStop, route?.color, map.getBearing())
+      const popup = new Popup({
+        className: 'live-bus-popup',
+        closeButton: false,
+        offset: 18,
+        maxWidth: 'none',
+      })
+      const popupContent = createLiveBusPopupContent(routeName, vehicle, nextStop, route?.color, () => popup.remove(), onSelectStop)
+      popup.setDOMContent(popupContent.element)
       const unregisterPopup = popupCoordinator.register(popup)
       const record: LiveBusMarkerRecord = {
-        marker: new Marker({ element, anchor: 'center' })
-          .setRotationAlignment('map')
+        marker: new Marker({ element, anchor: 'center', rotationAlignment: 'viewport', pitchAlignment: 'viewport' })
           .setLngLat(routePosition ? toMutableCoordinate(routePosition.coordinate) : [vehicle.lng, vehicle.lat])
-          .setRotation(vehicle.headingDegrees)
           .setPopup(popup)
           .addTo(map),
         element,
@@ -412,6 +479,7 @@ export function createLiveBusMarkers(
     dispose() {
       if (disposed) return
       disposed = true
+      map.off('rotate', updateHeadings)
       clearRecords()
       popupCoordinator.dispose()
     },

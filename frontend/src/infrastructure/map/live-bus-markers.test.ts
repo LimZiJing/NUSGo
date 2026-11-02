@@ -6,7 +6,7 @@ import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { LoadedTransitData } from '../../app/contracts/data'
 import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import { createTransitIndex } from '../../domain/transit'
-import { createValidTransitNetwork } from '../../domain/transit/test-fixtures'
+import { createTransferTransitNetwork, createValidTransitNetwork } from '../../domain/transit/test-fixtures'
 
 const markerHarness = vi.hoisted(() => ({
   markers: [] as Array<{
@@ -93,6 +93,10 @@ import { createLiveBusMarkers } from './live-bus-markers'
 
 const observedAt = '2026-11-01T00:00:00.000Z'
 
+function createMap(): Map {
+  return { getBearing: vi.fn(() => 0), on: vi.fn(), off: vi.fn() } as unknown as Map
+}
+
 function createVehicle(overrides: Partial<ShuttleVehiclePosition> = {}): ShuttleVehiclePosition {
   return {
     routeId: 'A1',
@@ -136,28 +140,83 @@ afterEach(() => {
 
 describe('live bus markers', () => {
   it.each([
-    ['low', 1, 'Estimated crowding: low.'],
-    ['medium', 2, 'Estimated crowding: medium.'],
-    ['high', 3, 'Estimated crowding: high.'],
-    ['unknown', 0, 'Crowding estimate unavailable.'],
-  ] as const)('uses a distinct accessible load cue for %s', (load, barCount, label) => {
+    ['low', 'Estimated crowding: low.'],
+    ['medium', 'Estimated crowding: medium.'],
+    ['high', 'Estimated crowding: high.'],
+    ['unknown', 'Crowding estimate unavailable.'],
+  ] as const)('keeps %s crowding accessible without adding visual load bars', (load, label) => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(observedAt))
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
 
     markers.setVehicles([createVehicle({ load })], true)
 
     const marker = markerHarness.markers[0]?.element
     expect(marker?.dataset.loadLevel).toBe(load)
     expect(marker?.getAttribute('aria-label')).toContain(label)
-    expect(marker?.querySelectorAll('.live-bus-marker-load > span')).toHaveLength(barCount)
+    expect(marker?.querySelector('.live-bus-marker-load')).toBeNull()
+    expect(marker?.querySelector('.live-bus-marker-route')?.textContent).toBe('A1')
+    expect(marker?.style.getPropertyValue('--live-bus-route-color')).toBe('')
     markers.dispose()
+  })
+
+  it('distinguishes routes by their visible ID and canonical colour with contrasting badge text', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const markers = createLiveBusMarkers(createMap())
+    const network = createTransferTransitNetwork()
+    network.routes[0].color = '#ffff00'
+    network.routes[1].color = '#123456'
+    markers.setTransitData({ ...createTransitData(), index: createTransitIndex(network) })
+
+    markers.setVehicles([createVehicle(), createVehicle({ routeId: 'B1' })], true)
+
+    const [first, second] = markerHarness.markers.map(({ element }) => element)
+    expect(first.querySelector('.live-bus-marker-route')?.textContent).toBe('A1')
+    expect(second.querySelector('.live-bus-marker-route')?.textContent).toBe('B1')
+    expect(first.style.getPropertyValue('--live-bus-route-color')).toBe('#ffff00')
+    expect(second.style.getPropertyValue('--live-bus-route-color')).toBe('#123456')
+    expect(first.style.getPropertyValue('--live-bus-route-text')).toBe('#000000')
+    expect(second.style.getPropertyValue('--live-bus-route-text')).toBe('#ffffff')
+    expect(first.querySelector('.live-bus-model')).not.toBeNull()
+    markers.dispose()
+  })
+
+  it('rotates the vehicle while keeping the route label upright, and releases the map listener', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    let rotate: () => void = () => undefined
+    const map = {
+      getBearing: vi.fn(() => 30),
+      on: vi.fn((_event: string, handler: () => void) => { rotate = handler }),
+      off: vi.fn(),
+    }
+    const markers = createLiveBusMarkers(map as unknown as Map)
+    markers.setVehicles([createVehicle({ headingDegrees: 90 })], true)
+    const record = markerHarness.markers[0]
+    const arrow = record.element.querySelector<HTMLElement>('.live-bus-marker-heading')
+    const badge = record.element.querySelector<HTMLElement>('.live-bus-marker-route')
+    expect(arrow?.querySelector('.live-bus-model')).not.toBeNull()
+    expect(arrow?.style.transform).toBe('rotateX(45deg) rotateZ(60deg)')
+    expect(record.rotation).toBe(0)
+    expect(badge?.style.transform).toBe('')
+
+    map.getBearing.mockReturnValue(90)
+    rotate()
+    expect(arrow?.style.transform).toBe('rotateX(45deg) rotateZ(0deg)')
+    markers.setVehicles([createVehicle({ headingDegrees: 180 })], true)
+    expect(arrow?.style.transform).toBe('rotateX(45deg) rotateZ(90deg)')
+    expect(badge?.textContent).toBe('A1')
+    expect(record.rotation).toBe(0)
+
+    markers.dispose()
+    expect(map.off).toHaveBeenCalledWith('rotate', rotate)
   })
 
   it('snaps markers onto the route geometry', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(observedAt))
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
     markers.setTransitData(createTransitData())
 
     markers.setVehicles([createVehicle({ lng: 103.785, lat: 1.301 })], true)
@@ -171,19 +230,43 @@ describe('live bus markers', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(observedAt))
     const onSelectStop = vi.fn()
-    const markers = createLiveBusMarkers({} as Map, onSelectStop)
+    const markers = createLiveBusMarkers(createMap(), onSelectStop)
     markers.setTransitData(createTransitData())
     markers.setVehicles([createVehicle({ lng: 103.785 })], true)
 
     const record = markerHarness.markers[0]
     expect(record?.element.getAttribute('aria-label')).toContain('A1 bus')
     expect(record?.element.getAttribute('aria-label')).toContain('Next stop: Stop B')
-    expect(record?.popupContent?.textContent).toContain('A1')
-    expect(record?.popupContent?.textContent).toContain('Next stop: Stop B')
-    expect(record?.popupContent?.textContent).toContain('Estimated crowding: medium')
-    record?.popupContent?.querySelector('button')?.click()
+    const popup = record?.popupContent
+    expect(popup?.querySelector('.live-bus-popup-route')?.textContent).toBe('A1')
+    expect(popup?.style.getPropertyValue('--live-bus-route-color')).toBe('#123456')
+    expect(popup?.style.getPropertyValue('--live-bus-route-text')).toBe('#ffffff')
+    expect(popup?.querySelector('.live-bus-popup-next-name')?.textContent).toBe('Stop B')
+    expect(popup?.querySelector('.live-bus-popup-load-value')?.textContent).toBe('Medium crowding')
+    expect(popup?.querySelector('.live-bus-popup-load-value')?.getAttribute('aria-label')).toBe('Estimated crowding: medium')
+    expect(popup?.querySelector('.live-bus-popup-load-value')?.getAttribute('data-load-level')).toBe('medium')
+    const stopAction = popup?.querySelector<HTMLButtonElement>('.live-bus-popup-stop-action')
+    expect(stopAction?.textContent).toBe('Stop B›')
+    expect(stopAction?.getAttribute('aria-label')).toBe('View details for Stop B bus stop')
+    stopAction?.click()
     expect(onSelectStop).toHaveBeenCalledWith('STOP-B')
 
+    markers.dispose()
+    stopAction?.click()
+    expect(onSelectStop).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps missing stop and crowding estimates explicit without an unavailable stop action', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const markers = createLiveBusMarkers(createMap(), vi.fn())
+    markers.setVehicles([createVehicle({ load: 'unknown' })], true)
+
+    const popup = markerHarness.markers[0]?.popupContent
+    expect(popup?.querySelector('.live-bus-popup-next-name')?.textContent).toBe('Unavailable')
+    expect(popup?.querySelector('.live-bus-popup-load-value')?.textContent).toBe('Crowding unknown')
+    expect(popup?.querySelector('.live-bus-popup-stop-action')).toBeNull()
+    expect(popup?.style.getPropertyValue('--live-bus-route-color')).toBe('')
     markers.dispose()
   })
 
@@ -193,7 +276,7 @@ describe('live bus markers', () => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
     const requestFrame = vi.fn(() => 1)
     vi.stubGlobal('requestAnimationFrame', requestFrame)
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
     markers.setTransitData(createTransitData())
     const first = createVehicle({ lng: 103.781, lat: 1.3 })
     markers.setVehicles([first], true)
@@ -220,7 +303,7 @@ describe('live bus markers', () => {
       return animationFrames.length
     }))
     vi.stubGlobal('cancelAnimationFrame', vi.fn())
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
     markers.setTransitData(createTransitData())
     const first = createVehicle({ lng: 103.781, lat: 1.3 })
     markers.setVehicles([first], true)
@@ -243,13 +326,15 @@ describe('live bus markers', () => {
   it('marks aging vehicles stale, then removes them at expiry', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(observedAt))
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
 
     markers.setVehicles([createVehicle()], true)
 
     const record = markerHarness.markers[0]
     expect(record?.coordinate).toEqual([103.78, 1.3])
-    expect(record?.rotation).toBe(90)
+    expect(record?.rotation).toBe(0)
+    expect(record?.element.querySelector<HTMLElement>('.live-bus-marker-heading')?.style.transform)
+      .toBe('rotateX(45deg) rotateZ(90deg)')
     expect(record?.element.dataset.loadLevel).toBe('medium')
     expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(false)
 
@@ -266,7 +351,7 @@ describe('live bus markers', () => {
   it('removes markers when hidden or disposed', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(observedAt))
-    const markers = createLiveBusMarkers({} as Map)
+    const markers = createLiveBusMarkers(createMap())
     markers.setVehicles([createVehicle()], true)
 
     const record = markerHarness.markers[0]

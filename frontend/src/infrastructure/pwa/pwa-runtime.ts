@@ -11,6 +11,10 @@ type Listener = () => void
 let isOnline = typeof navigator === 'undefined' ? true : navigator.onLine
 let installBannerDismissed = false
 let installedThisVisit = false
+let installationAccepted = false
+let installedRelatedApp = false
+let installationCheckPending = false
+let installationCheckGeneration = 0
 let deferredInstallPrompt: DeferredInstallPromptEvent | null = null
 let waitingServiceWorker: ServiceWorker | null = null
 let serviceWorkerRegistrationStarted = false
@@ -28,6 +32,43 @@ function isStandaloneApp(): boolean {
   return safariStandalone || window.matchMedia?.('(display-mode: standalone)').matches === true
 }
 
+/** Query the browser rather than interpreting another install event as an uninstall. */
+export async function refreshPwaInstallationStatus(): Promise<void> {
+  const browser = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown> }
+  if (!browser.getInstalledRelatedApps || isStandaloneApp()) return
+
+  const generation = ++installationCheckGeneration
+  installationCheckPending = true
+  notify(installPromptListeners)
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    const apps = await Promise.race([
+      browser.getInstalledRelatedApps(),
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error('Installed app check timed out')), 2000)
+      }),
+    ])
+    if (generation !== installationCheckGeneration) return
+    if (!Array.isArray(apps)) throw new Error('Invalid installed-app response')
+    const manifestUrl = new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href
+    installedRelatedApp = apps.some((app: unknown) => {
+      if (!app || typeof app !== 'object') return false
+      return 'platform' in app && app.platform === 'webapp' && 'url' in app && app.url === manifestUrl
+    })
+    installedThisVisit = false
+    installationAccepted = false
+  } catch (error) {
+    // A failed check is not evidence that an installed app was removed.
+    console.warn('NUSGo could not check installed app status.', error)
+  } finally {
+    clearTimeout(timeout)
+    if (generation === installationCheckGeneration) {
+      installationCheckPending = false
+      notify(installPromptListeners)
+    }
+  }
+}
+
 // This singleton deliberately owns page-lifetime browser listeners, which the browser
 // removes on page teardown; React subscribers have their own explicit unsubscribe paths.
 if (typeof window !== 'undefined') {
@@ -42,15 +83,22 @@ if (typeof window !== 'undefined') {
   window.addEventListener('offline', updateOnlineStatus)
   window.addEventListener('beforeinstallprompt', (event: Event) => {
     event.preventDefault()
-    if (isStandaloneApp() || installedThisVisit) return
+    if (isStandaloneApp() || installedThisVisit || installationAccepted) return
     installBannerDismissed = false
 
     deferredInstallPrompt = event as DeferredInstallPromptEvent
+    void refreshPwaInstallationStatus()
     notify(installPromptListeners)
+  })
+  window.addEventListener('focus', () => { void refreshPwaInstallationStatus() })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void refreshPwaInstallationStatus()
   })
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null
     installedThisVisit = true
+    installationCheckGeneration += 1
+    installationCheckPending = false
     notify(installPromptListeners)
   })
 }
@@ -70,7 +118,7 @@ export function subscribeToInstallPrompt(listener: Listener): () => void {
 }
 
 export function getInstallPromptSnapshot(): DeferredInstallPromptEvent | null {
-  return deferredInstallPrompt
+  return getInstalledSnapshot() || installationAccepted || installationCheckPending ? null : deferredInstallPrompt
 }
 
 export function getInstallBannerSnapshot(): boolean {
@@ -78,7 +126,7 @@ export function getInstallBannerSnapshot(): boolean {
 }
 
 export function getInstalledSnapshot(): boolean {
-  return installedThisVisit || isStandaloneApp()
+  return installedThisVisit || installedRelatedApp || isStandaloneApp()
 }
 
 export function dismissInstallPrompt(): void {
@@ -94,7 +142,12 @@ export async function requestInstall(): Promise<void> {
 
   try {
     await prompt.prompt()
-    await prompt.userChoice
+    const choice = await prompt.userChoice
+    if (choice.outcome === 'accepted') {
+      installationAccepted = true
+      installationCheckGeneration += 1
+      installationCheckPending = false
+    }
   } catch (error) {
     console.error('NUSGo install prompt failed.', error)
   } finally {

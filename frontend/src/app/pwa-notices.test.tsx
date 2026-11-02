@@ -7,6 +7,7 @@ import { MoreMenu } from '../features/more/more-menu'
 let PwaNotices: typeof import('./pwa-notices').PwaNotices
 let PwaInstallSection: typeof import('./pwa-install-section').PwaInstallSection
 let getInstallPromptSnapshot: typeof import('../infrastructure/pwa/pwa-runtime').getInstallPromptSnapshot
+let refreshPwaInstallationStatus: () => Promise<void>
 
 function dispatchInstallPrompt(outcome: 'accepted' | 'dismissed' = 'accepted') {
   const event = new Event('beforeinstallprompt', { cancelable: true }) as Event & {
@@ -33,6 +34,7 @@ describe('PWA notices', () => {
     ;({ PwaInstallSection } = await import('./pwa-install-section'))
     const runtime = await import('../infrastructure/pwa/pwa-runtime')
     getInstallPromptSnapshot = runtime.getInstallPromptSnapshot
+    refreshPwaInstallationStatus = runtime.refreshPwaInstallationStatus
     Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: undefined })
     window.localStorage.clear()
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
@@ -90,6 +92,67 @@ describe('PWA notices', () => {
     expect(getInstallPromptSnapshot()).toBe(event)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Install NUSGo' }))
     expect(prompt).toHaveBeenCalledOnce()
+  })
+
+  it('offers installation again after a previously detected app is uninstalled', async () => {
+    const apps = vi.fn().mockResolvedValue([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: apps })
+    window.localStorage.setItem('nusgo.pwa.install-prompt-dismissed', 'true')
+    render(<PwaNotices />)
+    dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    apps.mockResolvedValue([])
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+  })
+
+  it('does not show an install banner in Chrome when the related PWA is installed', async () => {
+    let resolveApps!: (apps: unknown[]) => void
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', {
+      configurable: true,
+      value: vi.fn(() => new Promise<unknown[]>((resolve) => { resolveApps = resolve })),
+    })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    dispatchInstallPrompt()
+    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    await act(async () => {
+      resolveApps([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
+    })
+    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.getByText('NUSGo is installed on this device.')).toBeTruthy()
+  })
+
+  it('ignores unrelated installed apps and preserves a positive result if checking later fails', async () => {
+    const apps = vi.fn().mockResolvedValue([{ platform: 'play', url: 'https://other.test/manifest.json' }])
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: apps })
+    render(<PwaNotices />)
+    dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+    apps.mockResolvedValue([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    apps.mockRejectedValue(new Error('unavailable'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(warn).toHaveBeenCalledOnce()
+  })
+
+  it('detects uninstall after installation in the same Chrome tab', async () => {
+    const apps = vi.fn().mockResolvedValue([])
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: apps })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+    expect(screen.getByText('NUSGo is installed on this device.')).toBeTruthy()
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.queryByText('NUSGo is installed on this device.')).toBeNull()
+    expect(screen.getByText('NUSGo, one tap away')).toBeTruthy()
   })
 
   it('does not claim installation is complete just because the dialog was accepted', async () => {

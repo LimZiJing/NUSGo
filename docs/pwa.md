@@ -34,10 +34,16 @@ A new worker precaches the new build before it waits to activate. When an update
 3. Keep an older app tab open, deploy a new build, then revisit or reload NUSGo while online. Choose **Update now** when it appears and confirm the app reloads to the new build.
 4. In Chrome DevTools, open **Application** to inspect the manifest, icons, service worker and Cache Storage. Run the **Lighthouse** PWA category against the deployed HTTPS site for installability checks.
 
-The install banner can be dismissed for the current visit while installation remains available in More. No permanent dismissal or installed flag is stored. More provides browser-menu instructions when a native prompt is unavailable, and confirms installation inside the standalone app.
+The install banner can be dismissed for the current visit while installation remains available in More. No permanent dismissal or installed flag is stored. Before exposing installation controls, supported browsers are checked with `getInstalledRelatedApps()`. A matching installed NUSGo app suppresses the banner even in a regular Chrome tab; repeated eligibility events cannot undo installation confirmed during this visit. Checks run on startup and when the tab becomes active. After uninstall, a successful empty result permits a fresh eligible prompt. Browsers control when they report eligibility; detection is limited to the same browser/profile and origin. More provides browser-menu instructions when a native prompt is unavailable, and confirms installation when detected.
 
 ## Known gaps
 
 - Offline map tiles are out of scope. The map can appear without its external basemap while offline.
 - Live NUS and public-bus arrival updates require the API and network. Service-worker caching cannot extend the existing arrival freshness limits.
 - Browsers that do not dispatch `beforeinstallprompt` do not show the in-app install prompt; their own install flow may still be available.
+
+## Installation detection configuration
+
+The manifest references itself under `related_applications`. Production builds also add the absolute app id required by desktop Chromium, using `VITE_PWA_ORIGIN` (default `https://nusgo.app`) and `VITE_BASE_PATH`. For a custom HTTPS preview, set `VITE_PWA_ORIGIN` to its origin when building, for example `https://your-device.your-tailnet.ts.net`. Keep it consistent with the URL used to install the PWA. Changing this detection setting does not change the app's existing relative manifest id.
+
+Chrome supports checking a same-scope installed PWA on Android 84+ and desktop 140+. See [Chrome's installation detection guide](https://developer.chrome.com/docs/capabilities/get-installed-related-apps). Unsupported browsers retain their native installation flow and More instructions; a universal installed/uninstalled signal is unavailable.

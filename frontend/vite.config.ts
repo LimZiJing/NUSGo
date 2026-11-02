@@ -17,13 +17,22 @@ function collectPublicFiles(root: string, directory = root): string[] {
   })
 }
 
-function createPwaServiceWorkerPlugin(basePath: string, publicDirectory: string): Plugin {
+function createPwaServiceWorkerPlugin(basePath: string, publicDirectory: string, pwaOrigin: string): Plugin {
   const serviceWorkerPath = resolve(process.cwd(), 'src/pwa/service-worker.js')
 
   return {
     name: 'nusgo-pwa-service-worker',
     apply: 'build',
     generateBundle(_options, bundle) {
+      // Desktop Chromium requires an absolute related-app id; Android uses the manifest URL.
+      const manifest = JSON.parse(readFileSync(resolve(publicDirectory, 'manifest.webmanifest'), 'utf8'))
+      manifest.related_applications = [{
+        platform: 'webapp',
+        url: './manifest.webmanifest',
+        id: new URL(basePath, pwaOrigin).href,
+      }]
+      const manifestSource = JSON.stringify(manifest, null, 2) + '\n'
+      this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: manifestSource })
       const publicFiles = collectPublicFiles(publicDirectory).sort()
       const outputFiles = Object.keys(bundle)
         .filter((fileName) => fileName !== 'sw.js' && !fileName.endsWith('.map'))
@@ -39,7 +48,7 @@ function createPwaServiceWorkerPlugin(basePath: string, publicDirectory: string)
       }
       for (const fileName of publicFiles) {
         versionHash.update(fileName).update('\0')
-        versionHash.update(readFileSync(resolve(publicDirectory, fileName)))
+        versionHash.update(fileName === 'manifest.webmanifest' ? manifestSource : readFileSync(resolve(publicDirectory, fileName)))
       }
 
       const cacheVersion = versionHash.digest('hex').slice(0, 16)
@@ -80,7 +89,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      createPwaServiceWorkerPlugin(buildSettings.base, resolve(process.cwd(), 'public')),
+      createPwaServiceWorkerPlugin(buildSettings.base, resolve(process.cwd(), 'public'), env.VITE_PWA_ORIGIN?.trim() || 'https://nusgo.app'),
     ],
     test: {
       // App integration tests render the full shell; the 5 s default is too tight

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ShuttleVehicleFetchError } from '../../../app/contracts/shuttle-vehicle-error'
+import { ShuttleVehicleFetchError } from '../../../domain/transit/shuttle-vehicle-error'
 import {
   SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS,
   type ApiShuttleVehiclesResponse,

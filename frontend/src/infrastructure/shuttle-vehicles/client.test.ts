@@ -18,6 +18,16 @@ const response = {
 }
 
 describe('createShuttleVehicleClient', () => {
+  it('preserves cancellation while reading the response body', async () => {
+    const abortError = new DOMException('Aborted', 'AbortError')
+    const response = new Response('{}')
+    vi.spyOn(response, 'json').mockRejectedValue(abortError)
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response)
+    await expect(createShuttleVehicleClient({ fetcher }).getVehicles(
+      ['D2'], new AbortController().signal,
+    )).rejects.toBe(abortError)
+  })
+
   it.each([
     [new Response('private response', { status: 503 }), 'http', 503],
     [new Response('invalid JSON'), 'invalid-response', undefined],

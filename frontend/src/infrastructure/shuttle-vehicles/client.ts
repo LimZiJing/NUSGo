@@ -1,8 +1,8 @@
 import { buildApiUrl } from '../api/api-url'
 import { parseApiShuttleVehiclesResponse } from '@nusgo/shared'
 import type { ShuttleVehicleClient } from '../../app/contracts/shuttle-vehicles'
-import { ShuttleVehicleFetchError } from '../../app/contracts/shuttle-vehicle-error'
-export { ShuttleVehicleFetchError } from '../../app/contracts/shuttle-vehicle-error'
+import { ShuttleVehicleFetchError } from '../../domain/transit/shuttle-vehicle-error'
+export { ShuttleVehicleFetchError } from '../../domain/transit/shuttle-vehicle-error'
 
 interface ShuttleVehicleClientOptions {
   readonly apiOrigin?: string
@@ -33,7 +33,8 @@ export function createShuttleVehicleClient(
           { signal },
         )
         if (!response.ok) throw new ShuttleVehicleFetchError('Live bus request failed', 'http', response.status)
-        const payload: unknown = await response.json().catch(() => {
+        const payload: unknown = await response.json().catch((error: unknown) => {
+          if (isAbortError(error)) throw error
           throw new ShuttleVehicleFetchError('Live bus response was invalid', 'invalid-response')
         })
         const vehicles = parseApiShuttleVehiclesResponse(payload)

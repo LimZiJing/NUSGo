@@ -58,6 +58,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -331,6 +332,27 @@ describe('navigation session', () => {
     session.setPersonalWaypoints([waypoint], true, onSelect)
 
     expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect)
+    expect(dependencies.map.resetView).not.toHaveBeenCalled()
+    expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+  })
+
+  it('focuses a saved Personal Waypoint through the map session', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue' as const,
+      markerIcon: 'dot' as const,
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+
+    session.focusPersonalWaypoint(waypoint)
+
+    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
   })

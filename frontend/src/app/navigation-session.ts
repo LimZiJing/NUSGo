@@ -152,6 +152,7 @@ export interface NavigationSession {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
@@ -1008,6 +1009,11 @@ export function createNavigationSession(
     setPersonalWaypoints(waypoints, visible, onSelect) {
       if (disposed) return
       dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect)
+    },
+
+    focusPersonalWaypoint(waypoint) {
+      if (disposed) return
+      dependencies.map.focusPersonalWaypoint(waypoint)
     },
 
     dismissStopPopup() {

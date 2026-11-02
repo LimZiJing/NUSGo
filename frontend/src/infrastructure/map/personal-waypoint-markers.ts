@@ -32,6 +32,7 @@ export interface PersonalWaypointMarkers {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  focusWaypoint(waypoint: PersonalWaypoint): void
   dispose(): void
 }
 
@@ -93,6 +94,34 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
     record.attached = false
   }
 
+  const getOrCreateRecord = (waypoint: PersonalWaypoint): PersonalWaypointMarkerRecord => {
+    const existingRecord = markerRecords.get(waypoint.id)
+    if (existingRecord) {
+      updateMarkerElement(existingRecord.element, existingRecord.icon, waypoint)
+      existingRecord.marker.setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
+      return existingRecord
+    }
+
+    const { element, icon } = createMarkerElement(waypoint)
+    const handleClick = (event: MouseEvent): void => {
+      event.stopPropagation()
+      if (!visible || disposed) return
+      onSelect(waypoint.id, element)
+    }
+    element.addEventListener('click', handleClick)
+    const marker = new Marker({ anchor: 'bottom', element })
+      .setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
+    const record = { marker, element, icon, handleClick, attached: false }
+    markerRecords.set(waypoint.id, record)
+    return record
+  }
+
+  const attach = (record: PersonalWaypointMarkerRecord): void => {
+    if (record.attached) return
+    record.marker.addTo(map)
+    record.attached = true
+  }
+
   return {
     setWaypoints(waypoints, nextVisible, nextOnSelect) {
       if (disposed) return
@@ -112,31 +141,20 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
       }
 
       for (const waypoint of validWaypoints) {
-        let record = markerRecords.get(waypoint.id)
-        if (!record) {
-          const { element, icon } = createMarkerElement(waypoint)
-          const handleClick = (event: MouseEvent): void => {
-            event.stopPropagation()
-            if (!visible || disposed) return
-            onSelect(waypoint.id, element)
-          }
-          element.addEventListener('click', handleClick)
-          const marker = new Marker({ anchor: 'bottom', element })
-            .setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
-          record = { marker, element, icon, handleClick, attached: false }
-          markerRecords.set(waypoint.id, record)
-        } else {
-          updateMarkerElement(record.element, record.icon, waypoint)
-          record.marker.setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
-        }
+        const record = getOrCreateRecord(waypoint)
 
         if (visible && !record.attached) {
-          record.marker.addTo(map)
-          record.attached = true
+          attach(record)
         } else if (!visible) {
           detach(record)
         }
       }
+    },
+
+    focusWaypoint(waypoint) {
+      if (disposed || !visible) return
+      if (!isValidLocationCoordinates(waypoint.coordinate.longitude, waypoint.coordinate.latitude)) return
+      attach(getOrCreateRecord(waypoint))
     },
 
     dispose() {

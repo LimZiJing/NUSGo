@@ -12,6 +12,7 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
@@ -667,6 +668,19 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setPersonalWaypoints(waypoints, visible, onSelect) {
       if (disposed) return
       personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+    },
+
+    focusPersonalWaypoint(waypoint: PersonalWaypoint) {
+      if (disposed) return
+      pendingCameraFit = null
+      personalWaypointMarkers.focusWaypoint(waypoint)
+      map.flyTo({
+        center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
     },
 
     dismissStopPopup() {

@@ -117,6 +117,25 @@ describe('createPersonalWaypointMarkers', () => {
     expect(markerState.instances[0]?.added).toBe(false)
   })
 
+  it('adds a hidden saved waypoint marker when focusing it', () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    markers.setWaypoints([], true, () => undefined)
+
+    markers.focusWaypoint(waypoint)
+
+    const button = document.querySelector<HTMLButtonElement>('.personal-waypoint-marker')
+    expect(button?.getAttribute('aria-label'))
+      .toBe('Open Quiet bench, Rest spot details. General icon, Blue marker.')
+    expect(markerState.instances).toHaveLength(1)
+    expect(markerState.instances[0]?.coordinates).toEqual([103.78, 1.29])
+    expect(markerState.instances[0]?.added).toBe(true)
+
+    markers.setWaypoints([], true, () => undefined)
+    expect(document.querySelector('.personal-waypoint-marker')).toBeNull()
+    expect(markerState.instances[0]?.added).toBe(false)
+    markers.dispose()
+  })
+
   it('hides markers during placement and removes their listeners on disposal', () => {
     const onSelect = vi.fn()
     const markers = createPersonalWaypointMarkers({} as Map)

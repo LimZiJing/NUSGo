@@ -134,6 +134,9 @@ export interface NavigationSessionCommands {
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
   ) => void
+  readonly focusPersonalWaypoint: (
+    waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -189,6 +192,7 @@ function createNavigationSessionCommands(
     setPersonalWaypoints: (waypoints, visible, onSelect) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
+    focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

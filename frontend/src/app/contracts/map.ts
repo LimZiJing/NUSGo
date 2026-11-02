@@ -111,6 +111,8 @@ export interface MapSession {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
+  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

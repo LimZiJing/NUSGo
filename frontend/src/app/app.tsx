@@ -223,6 +223,9 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
+    commands.focusPersonalWaypoint(waypoint)
+  }, [commands])
   const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
     // Restore the originating control after the details page has closed.
@@ -963,6 +966,7 @@ function App() {
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointPlacement}
+              onFocusWaypoint={focusPersonalWaypoint}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}
               onEditWaypoint={editPersonalWaypointFromList}

@@ -35,6 +35,7 @@ function createMapDouble(): MapSession {
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -57,6 +58,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -270,6 +272,18 @@ describe('navigation session application seam', () => {
     expect(session.searchPaths).toHaveBeenCalledOnce()
     firstCommands.selectJourneyOption('option-a')
     expect(session.selectJourneyOption).toHaveBeenCalledWith('option-a')
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue' as const,
+      markerIcon: 'dot' as const,
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    firstCommands.focusPersonalWaypoint(waypoint)
+    expect(session.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
     firstCommands.fitJourneyRoutes()
     expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)

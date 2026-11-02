@@ -1715,6 +1715,84 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('centers a visible saved Personal Waypoint without duplicating its marker', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: unknown[]
+      flyTo: ReturnType<typeof vi.fn>
+    }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const initialMarkerCount = map.addedMarkers.length
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+    session.setPersonalWaypoints([waypoint], true, vi.fn())
+    const visibleMarkerCount = map.addedMarkers.length
+
+    session.focusPersonalWaypoint(waypoint)
+
+    expect(visibleMarkerCount).toBe(initialMarkerCount + 1)
+    expect(map.addedMarkers).toHaveLength(visibleMarkerCount)
+    expect(map.flyTo).toHaveBeenLastCalledWith({
+      center: [103.78, 1.29],
+      zoom: 16,
+      duration: 500,
+      offset: [0, -50],
+      essential: true,
+    })
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('shows a hidden saved Personal Waypoint marker while focusing it', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { addedMarkers: Array<{
+      coordinate: unknown
+      element: FakeElement
+      remove: ReturnType<typeof vi.fn>
+    }> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+
+    session.setPersonalWaypoints([], true, vi.fn())
+    session.focusPersonalWaypoint(waypoint)
+
+    const focusedMarker = map.addedMarkers.at(-1)!
+    expect(focusedMarker.coordinate).toEqual([103.78, 1.29])
+    expect(focusedMarker.element.attributes.get('aria-label'))
+      .toBe('Open Quiet bench, Rest spot details. General icon, Blue marker.')
+
+    session.setPersonalWaypoints([], true, vi.fn())
+    expect(focusedMarker.remove).toHaveBeenCalledOnce()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('replaces transit installations and makes disposal idempotent', async () => {
     vi.stubGlobal('document', { createElement: () => new FakeElement() })
     const session = createMapSession({

@@ -1,6 +1,7 @@
 import { PERSONAL_WAYPOINTS_MAX_COUNT } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/personal/personal-waypoint-category-visibility'
+import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
@@ -11,6 +12,7 @@ export function PersonalWaypointsHome({
   readResult,
   status,
   onAdd,
+  onFocusWaypoint,
   editing,
   onSelectWaypoint,
   onEditWaypoint,
@@ -39,6 +41,7 @@ export function PersonalWaypointsHome({
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
   readonly onAdd: () => void
+  readonly onFocusWaypoint: (waypoint: PersonalWaypoint) => void
   readonly editing: boolean
   readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onEditWaypoint: (waypointId: string) => void
@@ -153,6 +156,7 @@ export function PersonalWaypointsHome({
           category={activeCategory ?? undefined}
           canEdit={canManage}
           editing={editing}
+          onFocusWaypoint={onFocusWaypoint}
           onSelect={onSelectWaypoint}
           onEdit={activeCategory || !canManage ? undefined : onEditWaypoint}
           onRemove={onRemove}

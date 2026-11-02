@@ -195,7 +195,6 @@
   overflow-y: auto;
   list-style: none;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
 
@@ -246,13 +245,13 @@
 .personal-waypoint-row-actions {
   display: flex;
   flex: 0 0 auto;
-  gap: 0;
+  gap: 4px;
 }
 
 .personal-waypoint-row-actions .button.icon-button {
-  width: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .personal-waypoint-remove { color: var(--text-error-strong); }

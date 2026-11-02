@@ -15,10 +15,10 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | --- | --- | --- |
 | Explore | Search 729 venues and 249 buildings, open venue details, browse the 8 shuttle routes | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
-| Plan | Walking and bus journeys with up to three bus options and one walking option | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
+| Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
 | More and Settings | My waypoints and Settings entry points; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes) |
-| Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, and edit or remove saved places | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
+| Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
@@ -27,7 +27,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 
 Also in place:
 - A local Express container rehearsal (`backend/Dockerfile`, `docker-compose.rehearsal.yml`) with live NUS and LTA arrivals, checked locally on 22/10/2026. Results are in [local services](local-services.md#local-rehearsal-evidence--22-october-2026).
-- Personal waypoint model, versioned local store, compact category picker, category-scoped searchable lists, persistent map markers with custom color and icon, staged category visibility, direct All places details and editing, category details, reorder and removal flows are in place. Recovery for unreadable and rejected data and concurrent-edit handling are also covered. Journey endpoints remain follow-up work. See [UI behaviour](ui/behaviour.md#personal-waypoints) and [data and map](data-and-map.md#code-layout).
+- Personal waypoint model, versioned local store, compact category picker, category-scoped searchable lists, persistent map markers with custom color and icon, staged category visibility, direct All places details and editing, category details, reorder and removal flows are in place. Recovery for unreadable and rejected data and concurrent-edit handling are also covered. Plan accepts Personal Waypoints and sends only the selected coordinate after `Get route`. See [UI behaviour](ui/behaviour.md#personal-waypoints) and [data and map](data-and-map.md#code-layout).
 - A dev-only simulated clock for planning. See [Pathfinding](pathfinding.md#development-clock).
 - A dev-only component gallery at `/?gallery`. See [Interface controls](ui/controls.md).
 - Automated checks for resource validation, immutable indexes, loader failures and the transit manifest. The browser checklist is in [the manual smoke checklist](qa/manual-smoke-check.md), with past results in the [evidence log](qa/evidence-log.md).

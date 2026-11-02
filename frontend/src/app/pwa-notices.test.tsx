@@ -76,6 +76,21 @@ describe('PWA notices', () => {
     expect(screen.queryByRole('status')).toBeNull()
   })
 
+  it('keeps native installation available while a background check is pending', async () => {
+    const apps = vi.fn().mockResolvedValue([])
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', { configurable: true, value: apps })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    const { prompt } = dispatchInstallPrompt()
+    await act(async () => { await refreshPwaInstallationStatus() })
+    let resolveApps!: (apps: unknown[]) => void
+    apps.mockImplementation(() => new Promise((resolve) => { resolveApps = resolve }))
+    act(() => { window.dispatchEvent(new Event('focus')) })
+    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
+    expect(prompt).toHaveBeenCalledOnce()
+    await act(async () => { resolveApps([]) })
+  })
+
   it('uses the browser install prompt after a user action', async () => {
     render(<PwaNotices />)
     const { event, prompt } = dispatchInstallPrompt()

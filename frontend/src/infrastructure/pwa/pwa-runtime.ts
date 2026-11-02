@@ -13,6 +13,7 @@ let installBannerDismissed = false
 let installedThisVisit = false
 let installationAccepted = false
 let installedRelatedApp = false
+let installationStatusChecked = false
 let installationCheckPending = false
 let installationCheckGeneration = 0
 let deferredInstallPrompt: DeferredInstallPromptEvent | null = null
@@ -42,8 +43,10 @@ export async function refreshPwaInstallationStatus(): Promise<void> {
   if (!browser.getInstalledRelatedApps || isStandaloneApp()) return
 
   const generation = ++installationCheckGeneration
-  installationCheckPending = true
-  notify(installPromptListeners)
+  if (!installationStatusChecked) {
+    installationCheckPending = true
+    notify(installPromptListeners)
+  }
   let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     const apps = await Promise.race([
@@ -75,6 +78,7 @@ export async function refreshPwaInstallationStatus(): Promise<void> {
   } finally {
     clearTimeout(timeout)
     if (generation === installationCheckGeneration) {
+      installationStatusChecked = true
       installationCheckPending = false
       notify(installPromptListeners)
     }
@@ -107,6 +111,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null
     installedThisVisit = true
+    installationStatusChecked = true
     installationCheckGeneration += 1
     installationCheckPending = false
     notify(installPromptListeners)
@@ -157,6 +162,7 @@ export async function requestInstall(): Promise<void> {
     const choice = await prompt.userChoice
     if (choice.outcome === 'accepted') {
       installationAccepted = true
+      installationStatusChecked = true
       installationCheckGeneration += 1
       installationCheckPending = false
     }

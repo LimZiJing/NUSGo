@@ -47,9 +47,6 @@ function parseStatus(value: unknown): PublicBusServiceArrivalStatus {
 
 function parseService(value: unknown): PublicBusServiceArrival {
   if (!isRecord(value) || !Array.isArray(value.arrivals)) throw new Error('Public bus arrival response has an invalid service')
-  const nextStartAt = value.nextStartAt === undefined
-    ? undefined
-    : parseTimestamp(value.nextStartAt, 'nextStartAt')
   const arrivals: PublicBusEstimatedArrival[] = value.arrivals.map((arrival) => {
     if (!isRecord(arrival)) throw new Error('Public bus arrival response has an invalid arrival')
     if (typeof arrival.monitored !== 'boolean') throw new Error('Public bus arrival response has an invalid monitored flag')
@@ -58,11 +55,9 @@ function parseService(value: unknown): PublicBusServiceArrival {
       monitored: arrival.monitored === true,
     }
   })
-  return {
-    status: parseStatus(value.status),
-    arrivals,
-    ...(nextStartAt ? { nextStartAt } : {}),
-  }
+  const status = parseStatus(value.status)
+  if (status !== 'not-in-operation' || value.nextStartAt === undefined) return { status, arrivals }
+  return { status, arrivals, nextStartAt: parseTimestamp(value.nextStartAt, 'nextStartAt') }
 }
 
 function parseSnapshot(input: unknown): PublicBusArrivalSnapshot {

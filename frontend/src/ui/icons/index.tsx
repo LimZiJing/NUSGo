@@ -4,12 +4,14 @@ import {
   ArrowRight,
   ArrowUpRight,
   ArrowLeft,
+  Armchair,
   Building2,
   BusFront,
   Check,
   ChevronDown,
   ChevronRight,
   Compass,
+  Coffee,
   CircleDot,
   DoorOpen,
   EllipsisVertical,
@@ -32,6 +34,7 @@ import {
   Settings,
   Star,
   Sun,
+  TreePine,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -56,6 +59,10 @@ export function ArrowUpRightIcon(props: IconProps) {
 
 export function ArrowLeftIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowLeft, props)
+}
+
+export function ArmchairIcon(props: IconProps) {
+  return renderDecorativeIcon(Armchair, props)
 }
 
 export function BuildingIcon(props: IconProps) {
@@ -84,6 +91,10 @@ export function CheckIcon(props: IconProps) {
 
 export function CompassIcon(props: IconProps) {
   return renderDecorativeIcon(Compass, props)
+}
+
+export function CoffeeIcon(props: IconProps) {
+  return renderDecorativeIcon(Coffee, props)
 }
 
 export function CircleDotIcon(props: IconProps) {
@@ -156,6 +167,10 @@ export function InfoIcon(props: IconProps) {
 
 export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
+}
+
+export function TreePineIcon(props: IconProps) {
+  return renderDecorativeIcon(TreePine, props)
 }
 
 export function SearchIcon(props: IconProps) {

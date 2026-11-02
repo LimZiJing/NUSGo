@@ -8,6 +8,8 @@ const waypoint = {
   name: 'Water fountain',
   category: 'Water',
   coordinate: { longitude: 103.78, latitude: 1.29 },
+  markerColor: 'blue' as const,
+  markerIcon: 'dot' as const,
   createdAt: '2026-10-22T00:00:00.000Z',
   updatedAt: '2026-10-22T00:00:00.000Z',
 }
@@ -55,6 +57,15 @@ describe('local personal waypoint store', () => {
     expect(storage.values.get('other-nusgo-data')).toBe('keep')
   })
 
+  it('round-trips a selected marker appearance through the existing waypoint store', () => {
+    const storage = createMemoryStorage()
+    const store = createLocalPersonalWaypointStore(() => storage)
+    const selectedAppearance = { ...waypoint, markerColor: 'purple' as const, markerIcon: 'nature' as const }
+
+    expect(store.replaceAll([selectedAppearance], null).kind).toBe('saved')
+    expect(store.read()).toMatchObject({ kind: 'ready', waypoints: [selectedAppearance] })
+  })
+
   it('loads known waypoint fields when stored records contain fields from a newer version', () => {
     const stored = JSON.stringify({
       version: 1,
@@ -66,6 +77,20 @@ describe('local personal waypoint store', () => {
     expect(store.read()).toMatchObject({
       kind: 'ready',
       waypoints: [waypoint],
+      rejectedRecords: { count: 0, issues: [] },
+    })
+    expect(storage.values.get(PERSONAL_WAYPOINTS_KEY)).toBe(stored)
+  })
+
+  it('loads older v1 records with marker defaults without rewriting the saved data', () => {
+    const legacyWaypoint = { ...waypoint, markerColor: undefined, markerIcon: undefined }
+    const stored = JSON.stringify({ version: 1, waypoints: [legacyWaypoint] })
+    const storage = createMemoryStorage({ [PERSONAL_WAYPOINTS_KEY]: stored })
+    const store = createLocalPersonalWaypointStore(() => storage)
+
+    expect(store.read()).toMatchObject({
+      kind: 'ready',
+      waypoints: [{ ...waypoint }],
       rejectedRecords: { count: 0, issues: [] },
     })
     expect(storage.values.get(PERSONAL_WAYPOINTS_KEY)).toBe(stored)

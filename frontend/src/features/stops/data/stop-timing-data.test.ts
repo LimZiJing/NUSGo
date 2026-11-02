@@ -31,7 +31,7 @@ describe('stop timing data', () => {
       },
     })
 
-    expect(timingData.publicServices[0]?.nextStartMessage).toBe('Starts 7:00 AM')
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts 7:00 AM')
   })
 
   it('labels an LTA next start on the following day as tomorrow', () => {
@@ -61,7 +61,7 @@ describe('stop timing data', () => {
       },
     })
 
-    expect(timingData.publicServices[0]?.nextStartMessage).toBe('Starts tomorrow 5:30 AM')
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts tomorrow 5:30 AM')
   })
 
   it('labels arrivals under 30 seconds as Arr and rounds 30 seconds up to 1m', () => {

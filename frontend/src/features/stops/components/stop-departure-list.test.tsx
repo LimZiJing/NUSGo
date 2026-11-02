@@ -222,7 +222,7 @@ describe('StopDepartureList', () => {
           serviceNumber: '151',
           timings: null,
           status: 'not-in-operation',
-          nextStartMessage: 'Starts 7:00 AM',
+          startMessage: 'Starts 7:00 AM',
         }]}
         onSelectRoute={vi.fn()}
       />,

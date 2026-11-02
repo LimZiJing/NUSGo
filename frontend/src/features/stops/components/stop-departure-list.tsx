@@ -88,7 +88,7 @@ export function StopDepartureList({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   const visiblePublicServices = noLiveData
-    ? publicServices.filter(({ timings, nextStartMessage }) => timings !== null || nextStartMessage !== undefined)
+    ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
 
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
@@ -135,11 +135,11 @@ export function StopDepartureList({
             </span>
           </li>
         ))}
-        {visiblePublicServices.map(({ serviceNumber, timings, status, nextStartMessage }) => (
+        {visiblePublicServices.map(({ serviceNumber, timings, status, startMessage }) => (
           <li key={`public-${serviceNumber}`} className="stop-departure-row">
             <PublicServiceChip serviceNumber={serviceNumber} size="compact" />
             {timings ? <DepartureTimes timings={timings} /> : (
-              <span className="stop-departure-status">{nextStartMessage ?? publicTimingMessage(status)}</span>
+              <span className="stop-departure-status">{startMessage ?? publicTimingMessage(status)}</span>
             )}
           </li>
         ))}

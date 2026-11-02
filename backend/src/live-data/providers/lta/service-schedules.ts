@@ -14,9 +14,9 @@ export interface LtaServiceSchedule {
   readonly sunday: LtaServiceOperatingWindow | null
 }
 
-export interface LtaServiceScheduleStatus {
+export interface LtaServiceOperation {
   readonly operating: boolean
-  readonly nextStartAtMs: number | null
+  readonly nextStartMs: number | null
 }
 
 export type LtaScheduleLoader = (
@@ -24,7 +24,7 @@ export type LtaScheduleLoader = (
   busStopCode: string,
   atMs: number,
   signal: AbortSignal,
-) => Promise<LtaServiceScheduleStatus | null>
+) => Promise<LtaServiceOperation | null>
 
 interface RecordValue {
   readonly [key: string]: unknown
@@ -134,11 +134,6 @@ function windowForDate(schedule: LtaServiceSchedule, date: SingaporeDateTime): L
   return isSingaporePublicHoliday(dateKey(date)) ? schedule.sunday : windowFor(schedule, date.weekday)
 }
 
-export interface LtaServiceStart {
-  readonly startAtMs: number
-  readonly minutesUntil: number
-}
-
 function minutesFromTime(value: string): number | null {
   const time = parseTime(value)
   if (!time) return null
@@ -154,7 +149,8 @@ function startAtMs(date: SingaporeDateTime, minutes: number): number {
   return Date.parse(`${dateKey(startDate)}T${hour}:${minute}:00+08:00`)
 }
 
-export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: number): LtaServiceStart | null {
+/** Next first bus strictly after `atMs`, using Singapore holiday windows through a week ahead. */
+export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: number): number | null {
   const date = localParts(atMs)
   for (let offset = 0; offset <= 7; offset += 1) {
     const candidateDate = dateOffset(date, offset)
@@ -164,10 +160,7 @@ export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: numbe
 
     const candidateStartAtMs = startAtMs(candidateDate, firstBus)
     if (candidateStartAtMs <= atMs) continue
-    return {
-      startAtMs: candidateStartAtMs,
-      minutesUntil: (candidateStartAtMs - atMs) / 60_000,
-    }
+    return candidateStartAtMs
   }
   return null
 }
@@ -197,7 +190,7 @@ export function createLtaScheduleLoader(options: {
   readonly baseUrl?: string
   readonly mappings: readonly LtaPublicBusStopMapping[]
 }): LtaScheduleLoader {
-  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusRoutes'
+  const baseUrl = options.baseUrl ?? 'https://datamall2.mytransport.sg/ltaodataservice/BusRoutes'
   const wanted = new Set(options.mappings.flatMap(({ busStopCode, services }) => services.map((service) => scheduleKey(service, busStopCode))))
   let schedulesPromise: Promise<ReadonlyMap<string, readonly LtaServiceSchedule[]>> | null = null
 
@@ -231,17 +224,12 @@ export function createLtaScheduleLoader(options: {
     const schedules = await schedulesPromise
     const matches = schedules.get(scheduleKey(serviceNumber, busStopCode))
     if (!matches?.length) return null
-
-    let operating = false
-    let nextStartAtMs: number | null = null
-    for (const schedule of matches) {
-      if (isLtaServiceOperating(schedule, atMs)) operating = true
-      const nextStart = getNextLtaServiceStart(schedule, atMs)
-      if (nextStart && (nextStartAtMs === null || nextStart.startAtMs < nextStartAtMs)) {
-        nextStartAtMs = nextStart.startAtMs
-      }
+    const nextStarts = matches
+      .map((schedule) => getNextLtaServiceStart(schedule, atMs))
+      .filter((start): start is number => start !== null)
+    return {
+      operating: matches.some((schedule) => isLtaServiceOperating(schedule, atMs)),
+      nextStartMs: nextStarts.length > 0 ? Math.min(...nextStarts) : null,
     }
-
-    return { operating, nextStartAtMs }
   }
 }

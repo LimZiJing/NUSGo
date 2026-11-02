@@ -94,11 +94,9 @@ export function createLtaPublicBusArrivalProvider(
         if (!scheduleLoader) return [serviceNumber, emptyService('no-estimate')] as const
         try {
           const schedule = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
-          const notInOperation = schedule !== null && !schedule.operating
-          const nextStartAt = notInOperation && schedule.nextStartAtMs !== null
-            ? toIso(schedule.nextStartAtMs)
-            : undefined
-          return [serviceNumber, emptyService(notInOperation ? 'not-in-operation' : 'no-estimate', nextStartAt)] as const
+          if (schedule?.operating !== false) return [serviceNumber, emptyService('no-estimate')] as const
+          const nextStartAt = schedule.nextStartMs === null ? undefined : toIso(schedule.nextStartMs)
+          return [serviceNumber, emptyService('not-in-operation', nextStartAt)] as const
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') throw error
           console.warn('LTA public bus schedule lookup failed.', {

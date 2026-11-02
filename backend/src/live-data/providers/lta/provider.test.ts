@@ -16,12 +16,12 @@ function jsonResponse(value: unknown, status = 200): Response {
 
 describe('LTA public bus arrival provider', () => {
   it('includes a scheduled next start for a service that is not yet operating', async () => {
-    const nextStartAtMs = Date.parse('2026-10-15T04:00:00.000Z')
+    const nextStartMs = Date.parse('2026-10-15T04:00:00.000Z')
     const provider = createLtaPublicBusArrivalProvider({
       accountKey: 'test-account-key',
       mappings,
       now: () => Date.parse('2026-10-15T03:00:00.000Z'),
-      scheduleLoader: async () => ({ operating: false, nextStartAtMs }),
+      scheduleLoader: async () => ({ operating: false, nextStartMs }),
       fetcher: async () => jsonResponse({ Services: [] }),
     })
 
@@ -41,7 +41,7 @@ describe('LTA public bus arrival provider', () => {
       mappings,
       now: () => Date.parse('2026-10-15T03:00:00.000Z'),
       scheduleLoader: async (serviceNumber) => serviceNumber === '151'
-        ? { operating: false, nextStartAtMs: null }
+        ? { operating: false, nextStartMs: Date.parse('2026-10-15T21:30:00.000Z') }
         : null,
       fetcher: async () => {
         fetchCount += 1
@@ -65,7 +65,11 @@ describe('LTA public bus arrival provider', () => {
       status: 'live',
       arrivals: [{ estimatedAt: '2026-10-15T03:05:00.000Z', monitored: true }],
     })
-    assert.deepEqual(first.stops['STOP-A']?.services['151'], { status: 'not-in-operation', arrivals: [] })
+    assert.deepEqual(first.stops['STOP-A']?.services['151'], {
+      status: 'not-in-operation',
+      arrivals: [],
+      nextStartAt: '2026-10-15T21:30:00.000Z',
+    })
     assert.deepEqual(first.stops['STOP-A']?.services['96'], { status: 'no-estimate', arrivals: [] })
     assert.equal(first.stops['STOP-A'], second.stops['STOP-A'])
     assert.equal(fetchCount, 1)

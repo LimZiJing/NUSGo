@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode, Ref } from 'react'
 import './saved-list-row.css'
 
 interface SavedListRowProps {
@@ -8,6 +8,9 @@ interface SavedListRowProps {
   readonly trailing?: ReactNode
   readonly density?: 'compact' | 'regular'
   readonly className?: string
+  readonly rowRef?: Ref<HTMLLIElement>
+  readonly onSelect?: (event: MouseEvent<HTMLButtonElement>) => void
+  readonly selectLabel?: string
 }
 
 export function SavedListRow({
@@ -17,14 +20,32 @@ export function SavedListRow({
   trailing,
   density = 'regular',
   className,
+  rowRef,
+  onSelect,
+  selectLabel,
 }: SavedListRowProps) {
+  const copy = <>
+    <strong>{title}</strong>
+    {subtitle && <span>{subtitle}</span>}
+  </>
+
   return (
-    <li className={['saved-list-row', className].filter(Boolean).join(' ')} data-density={density}>
+    <li
+      ref={rowRef}
+      className={['saved-list-row', className].filter(Boolean).join(' ')}
+      data-density={density}
+    >
       <div className="saved-list-row-leading">{leading}</div>
-      <div className="saved-list-row-copy">
-        <strong>{title}</strong>
-        {subtitle && <span>{subtitle}</span>}
-      </div>
+      {onSelect ? (
+        <button
+          className="saved-list-row-copy saved-list-row-select"
+          type="button"
+          aria-label={selectLabel ?? [title, subtitle].filter(Boolean).join(', ')}
+          onClick={onSelect}
+        >
+          {copy}
+        </button>
+      ) : <div className="saved-list-row-copy">{copy}</div>}
       {trailing}
     </li>
   )

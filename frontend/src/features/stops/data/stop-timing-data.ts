@@ -1,11 +1,9 @@
 import { getReachableFavoriteStops, type TransitIndex } from '../../../domain/transit'
 import {
-  SHUTTLE_ARRIVAL_FRESHNESS_MS,
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../../domain/transit/arrivals'
 import {
-  PUBLIC_BUS_ARRIVAL_FRESHNESS_MS,
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
 } from '../../../domain/transit/public-bus-arrivals'
@@ -40,7 +38,8 @@ export interface PublicServiceTiming {
   readonly serviceNumber: string
   readonly timings: readonly [string, string, string] | null
   readonly status?: 'live' | 'no-estimate' | 'not-in-operation' | 'provider-error'
-  readonly nextStartMessage?: string
+  /** Set for a `not-in-operation` service whose next first bus is known. */
+  readonly startMessage?: string
 }
 
 export interface StopScheduledDeparture {
@@ -57,6 +56,11 @@ interface StopRouteAvailability {
   readonly scheduledDepartures: readonly StopScheduledDeparture[]
 }
 
+/** What the live pill shows about polling: `refreshing` pulses, `failing` means repeated failed polls. */
+export type StopPollState = 'idle' | 'refreshing' | 'failing'
+
+const POLL_STATE_SEVERITY: Readonly<Record<StopPollState, number>> = { idle: 0, refreshing: 1, failing: 2 }
+
 export interface StopTimingDataOptions {
   readonly minuteFormat?: MinuteFormat
   readonly favoriteStopIds?: readonly string[]
@@ -69,7 +73,8 @@ export interface StopTimingDataOptions {
   readonly serviceWindows?: StopsServiceWindows | null
   readonly isRefreshing?: boolean
   readonly publicArrivalSnapshot?: PublicBusArrivalSnapshot | null
-  readonly publicIsRefreshing?: boolean
+  readonly pollState?: StopPollState
+  readonly publicPollState?: StopPollState
 }
 
 export interface StopTimingData {
@@ -77,71 +82,10 @@ export interface StopTimingData {
   readonly departures: readonly StopDeparture[]
   readonly scheduledDepartures: readonly StopScheduledDeparture[]
   readonly live: boolean
+  readonly pollState: StopPollState
   readonly liveArrivalMessage: string | null
 }
 export const LIVE_TIMES_UNAVAILABLE_MESSAGE = 'Live times unavailable'
-
-const SINGAPORE_DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Asia/Singapore',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'Asia/Singapore',
-  weekday: 'long',
-})
-const SINGAPORE_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'Asia/Singapore',
-  hour: 'numeric',
-  minute: '2-digit',
-  hour12: true,
-})
-
-interface SingaporeDate {
-  readonly year: number
-  readonly month: number
-  readonly day: number
-}
-
-function singaporeDate(timestampMs: number): SingaporeDate {
-  const parts = SINGAPORE_DATE_FORMATTER.formatToParts(new Date(timestampMs))
-  return {
-    year: Number(parts.find((part) => part.type === 'year')?.value),
-    month: Number(parts.find((part) => part.type === 'month')?.value),
-    day: Number(parts.find((part) => part.type === 'day')?.value),
-  }
-}
-
-function dateKey(date: SingaporeDate): string {
-  return `${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`
-}
-
-function tomorrowDateKey(date: SingaporeDate): string {
-  const tomorrow = new Date(Date.UTC(date.year, date.month - 1, date.day + 1))
-  return dateKey({
-    year: tomorrow.getUTCFullYear(),
-    month: tomorrow.getUTCMonth() + 1,
-    day: tomorrow.getUTCDate(),
-  })
-}
-
-function nextStartMessage(nextStartAt: string | undefined, nowMs: number): string | null {
-  if (!nextStartAt) return null
-  const startAtMs = Date.parse(nextStartAt)
-  if (!Number.isFinite(startAtMs) || startAtMs <= nowMs) return null
-
-  const startDateKey = dateKey(singaporeDate(startAtMs))
-  const nowDate = singaporeDate(nowMs)
-  const nowDateKey = dateKey(nowDate)
-  const dayLabel = startDateKey === nowDateKey
-    ? ''
-    : startDateKey === tomorrowDateKey(nowDate)
-      ? 'tomorrow '
-      : `${SINGAPORE_WEEKDAY_FORMATTER.format(new Date(startAtMs))} `
-  const time = SINGAPORE_TIME_FORMATTER.format(new Date(startAtMs))
-  return `Starts ${dayLabel}${time}`
-}
 
 function formatArrivalSeconds(seconds: number, minuteFormat: MinuteFormat): string {
   return seconds < 30 ? 'Arr' : formatMinutes(Math.ceil(seconds / 60), minuteFormat)
@@ -176,15 +120,10 @@ function getPublicServiceTimings(
     if (!service) return { serviceNumber, timings: null, status: 'provider-error' as const }
     if (stale) return { serviceNumber, timings: null, status: 'provider-error' as const }
     if (service.status !== 'live') {
-      const message = service.status === 'not-in-operation'
-        ? nextStartMessage(service.nextStartAt, nowMs)
-        : null
-      return {
-        serviceNumber,
-        timings: null,
-        status: service.status,
-        ...(message ? { nextStartMessage: message } : {}),
-      }
+      const startMessage = service.status === 'not-in-operation' && service.nextStartAt
+        ? formatPublicServiceStart(service.nextStartAt, nowMs)
+        : undefined
+      return { serviceNumber, timings: null, status: service.status, ...(startMessage && { startMessage }) }
     }
     const timings = service.arrivals
       .map(({ estimatedAt }) => Math.max(0, (Date.parse(estimatedAt) - receivedAtMs) / 1_000))
@@ -199,6 +138,29 @@ function getPublicServiceTimings(
       }
       : { serviceNumber, timings: null, status: 'no-estimate' as const }
   })
+}
+
+const SINGAPORE_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore' })
+const SINGAPORE_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', weekday: 'long' })
+
+function singaporeDayNumber(ms: number): number {
+  return Date.parse(`${SINGAPORE_DAY_FORMATTER.format(ms)}T00:00:00Z`) / 86_400_000
+}
+
+function formatSingaporeClock(ms: number): string {
+  const minutes = Math.floor(((ms + 8 * 3_600_000) % 86_400_000) / 60_000)
+  const hour = Math.floor(minutes / 60)
+  return `${hour % 12 || 12}:${String(minutes % 60).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`
+}
+
+function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | undefined {
+  const startMs = Date.parse(nextStartAt)
+  if (!Number.isFinite(startMs) || startMs <= nowMs) return undefined
+  const daysAway = singaporeDayNumber(startMs) - singaporeDayNumber(nowMs)
+  const clock = formatSingaporeClock(startMs)
+  if (daysAway <= 0) return `Starts ${clock}`
+  if (daysAway === 1) return `Starts tomorrow ${clock}`
+  return `Starts ${SINGAPORE_WEEKDAY_FORMATTER.format(startMs)} at ${clock}`
 }
 
 function getLiveStopDepartures(
@@ -320,7 +282,8 @@ export function getStopTimingData(
     serviceWindows = null,
     isRefreshing = false,
     publicArrivalSnapshot = null,
-    publicIsRefreshing = false,
+    pollState = 'idle',
+    publicPollState = 'idle',
   }: StopTimingDataOptions,
 ): StopTimingData {
   const favorites = new Set(favoriteStopIds)
@@ -352,15 +315,13 @@ export function getStopTimingData(
     publicArrivalSnapshotReceivedAtMs ?? nowMs,
     minuteFormat,
   )
-  const live = (
-    !shuttleUnavailable && !isRefreshing && departures.length > 0 && arrivalSnapshot !== null &&
-    getArrivalAgeMs(arrivalSnapshot, stop.id, nowMs) <= SHUTTLE_ARRIVAL_FRESHNESS_MS
-  ) || (
-    !isRefreshing && !publicIsRefreshing &&
-    publicServices.some(({ timings, status }) => timings !== null && status === 'live') &&
-    publicArrivalSnapshot !== null &&
-    getPublicArrivalAgeMs(publicArrivalSnapshot, stop.id, nowMs) <= PUBLIC_BUS_ARRIVAL_FRESHNESS_MS
-  )
+  // The pill follows the rows on screen: it stays on through a refresh or a failing poll, and goes
+  // only when the rows are too old to show (MAX_AGE), so it does not blink out before each 30s poll.
+  const live = (!shuttleUnavailable && departures.length > 0) ||
+    publicServices.some(({ timings, status }) => timings !== null && status === 'live')
+  // Public bus polling only counts for stops that have public bus services.
+  const publicPoll = publicServices.length > 0 ? publicPollState : 'idle'
+  const stopPollState = POLL_STATE_SEVERITY[publicPoll] > POLL_STATE_SEVERITY[pollState] ? publicPoll : pollState
   const liveArrivalMessage = shuttleUnavailable
     ? LIVE_TIMES_UNAVAILABLE_MESSAGE
     : getLiveArrivalMessage(
@@ -378,6 +339,7 @@ export function getStopTimingData(
     departures,
     scheduledDepartures,
     live,
+    pollState: stopPollState,
     liveArrivalMessage,
   }
 }

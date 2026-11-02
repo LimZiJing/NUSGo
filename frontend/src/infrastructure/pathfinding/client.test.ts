@@ -51,6 +51,41 @@ describe('Journey planning client', () => {
     })
   })
 
+  it('sends only a waypoint coordinate and never its saved identity or details', async () => {
+    let capturedBody = ''
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      capturedBody = String(init?.body)
+      return response({ outcome: 'no-path' })
+    })
+    const client = createJourneyPlanningClient({ endpoint: '/api/journeys', fetcher })
+    const personalWaypoint = {
+      kind: 'personal-waypoint',
+      id: '00000000-0000-4000-8000-000000000041',
+      label: 'Quiet bench',
+      coordinate: { longitude: 103.78, latitude: 1.29, metadata: 'coordinate detail' },
+      category: 'Rest areas',
+      note: 'Near the sheltered walkway',
+      updatedAt: '2026-10-25T00:00:00.000Z',
+    } as const
+
+    await client({
+      origin: personalWaypoint,
+      destination: { kind: 'stop', id: 'STOP-A' },
+    }, { signal: new AbortController().signal })
+
+    expect(JSON.parse(capturedBody)).toEqual({
+      origin: {
+        kind: 'waypoint-coordinate',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+      },
+      destination: { kind: 'stop', id: 'STOP-A' },
+    })
+    expect(capturedBody).not.toContain('Quiet bench')
+    expect(capturedBody).not.toContain('Near the sheltered walkway')
+    expect(capturedBody).not.toContain(personalWaypoint.id)
+    expect(capturedBody).not.toContain('coordinate detail')
+  })
+
   it('keeps provider errors as failures and preserves their structured code', async () => {
     const client = createJourneyPlanningClient({
       endpoint: '/api/journeys',

@@ -54,6 +54,14 @@ function snapshotTripRequest(request: TripRequest): TripRequest {
         coordinate: freeze({ ...endpoint.coordinate }),
       })
     }
+    if (endpoint.kind === 'personal-waypoint') {
+      return freeze({
+        kind: 'personal-waypoint',
+        id: endpoint.id,
+        label: endpoint.label,
+        coordinate: freeze({ ...endpoint.coordinate }),
+      })
+    }
     return freeze({ kind: endpoint.kind, id: endpoint.id })
   }
   return freeze({

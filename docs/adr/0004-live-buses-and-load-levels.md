@@ -31,7 +31,7 @@ Epic #500 adds moving buses to the map and a crowding colour on stop arrival tim
 
 **Labelling.** Load is shown as an estimate ("Estimated crowding") because NUS does not document `loadInfo` as live passenger counts. We drop the word "estimate" only if NUS confirms the meaning.
 
-**Accessibility.** Colour is never the only cue. Each Load level also gets text (Low, Medium, High, or no label for `unknown`) and a distinct icon or fill pattern. Colour tokens must keep contrast against both the arrival row and the map.
+**Accessibility.** Stop arrival timings use Load level colour as their only visual crowding cue. Their accessible labels include the estimate (Low, Medium, High) or say it is unavailable; `unknown` stays neutral. Colour tokens must keep contrast against both the arrival row and the map.
 
 **Matching arrivals to buses.** Join by plate within the route, best effort. When there is no match, show the arrival time with no crowding cue (Load level `unknown`), never a guessed one.
 

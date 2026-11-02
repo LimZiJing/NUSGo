@@ -33,12 +33,6 @@ function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string 
     : `${arrivalLabel}. Estimated crowding: ${load}.`
 }
 
-const VISIBLE_LOAD_LABELS: Partial<Record<ShuttleLoadLevel, string>> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-}
-
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
   if (typeof visual === 'string' && visual === spoken) return visual
   return (
@@ -72,7 +66,6 @@ function DepartureTimes({
     <span className="stop-departure-times">
       {timings.map((timing, index) => {
         const nextBusLoad = index === 0 ? load : undefined
-        const loadLabel = nextBusLoad ? VISIBLE_LOAD_LABELS[nextBusLoad] : undefined
 
         return (
           <span
@@ -87,20 +80,6 @@ function DepartureTimes({
                 ? arrivalAccessibleLabel(timing, nextBusLoad)
                 : timingAccessibleLabel(timing)}
             />
-            {loadLabel && nextBusLoad && (
-              <span
-                aria-hidden="true"
-                className="stop-departure-load-cue"
-                data-load-level={nextBusLoad}
-              >
-                <svg focusable="false" viewBox="0 0 12 12">
-                  <rect x="1" y="8" width="2" height="3" rx="1" />
-                  <rect x="5" y="5" width="2" height="6" rx="1" />
-                  <rect x="9" y="2" width="2" height="9" rx="1" />
-                </svg>
-                {loadLabel}
-              </span>
-            )}
           </span>
         )
       })}

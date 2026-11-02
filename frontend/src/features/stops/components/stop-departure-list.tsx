@@ -139,8 +139,6 @@ export function StopDepartureList({
   const visiblePublicServices = noLiveData
     ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
-  const hasVisibleCrowdingEstimate = departures.some(({ load }) => load !== undefined && load !== 'unknown')
-
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
     if (noLiveData) return null
     return <p className="stop-departure-list-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
@@ -151,11 +149,6 @@ export function StopDepartureList({
       {!noLiveData && liveArrivalMessage && (
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
-        </p>
-      )}
-      {hasVisibleCrowdingEstimate && (
-        <p className="stop-departure-load-legend">
-          Low, Medium, and High indicate the estimated crowding level for the next bus on each route.
         </p>
       )}
       <ul className="stop-departure-list" aria-label="Bus timings">

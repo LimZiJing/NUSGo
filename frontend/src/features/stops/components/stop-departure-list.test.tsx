@@ -127,8 +127,8 @@ describe('StopDepartureList', () => {
       `${load[0].toUpperCase()}${load.slice(1)}`,
     )
     expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
-    expect(screen.getByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
-      .not.toBeNull()
+    expect(screen.queryByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .toBeNull()
   })
 
   it('keeps unknown load neutral and explains that the estimate is unavailable', () => {

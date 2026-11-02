@@ -343,15 +343,6 @@
     list-style: none;
   }
 
-  .stop-departure-load-legend {
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: var(--space-1) var(--space-2);
-    color: var(--text-muted);
-    font: var(--font-size-xs)/1.25 var(--sans);
-  }
-
   .stop-departure-row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;

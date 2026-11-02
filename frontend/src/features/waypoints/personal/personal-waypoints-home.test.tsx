@@ -28,6 +28,7 @@ const readyResult: PersonalWaypointStoreReadResult = {
 
 const noop = () => undefined
 const waypointHomeCallbacks = {
+  onFocusWaypoint: noop,
   onEditWaypoint: noop,
   categoryOptions: [],
   hiddenCategories: [],

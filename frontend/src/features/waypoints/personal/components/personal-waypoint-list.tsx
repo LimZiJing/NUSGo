@@ -26,6 +26,7 @@ interface PersonalWaypointListProps {
   readonly category?: string
   readonly canEdit: boolean
   readonly editing: boolean
+  readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onClearAll: () => void
@@ -39,6 +40,7 @@ export function PersonalWaypointList({
   category,
   canEdit,
   editing,
+  onFocusWaypoint,
   onRemove,
   onMove,
   onClearAll,
@@ -211,6 +213,7 @@ export function PersonalWaypointList({
           onRemove(id)
         },
         onSelect: onSelect ? (id: string, trigger: HTMLButtonElement) => onSelect(id, trigger) : undefined,
+        onFocusWaypoint,
         onEdit,
         onHandleRef: registerHandleRef,
       }

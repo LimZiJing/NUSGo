@@ -17,6 +17,7 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
   }
   return {
     state: null as unknown,

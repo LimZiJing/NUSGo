@@ -291,6 +291,34 @@ describe('PersonalWaypointList', () => {
     expect(onSelect).toHaveBeenCalledWith(waypoints[0]?.id, detailsButton)
   })
 
+  it('keeps map focus separate from opening saved-place details', async () => {
+    const user = userEvent.setup()
+    const onFocusWaypoint = vi.fn()
+    const onSelect = vi.fn()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing={false}
+        onFocusWaypoint={onFocusWaypoint}
+        onSelect={onSelect}
+        onRemove={() => undefined}
+        onMove={() => true}
+        onClearAll={() => undefined}
+      />,
+    )
+
+    const focusButton = screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' })
+    const detailsButton = screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })
+    focusButton.focus()
+    await user.keyboard('{Enter}')
+    expect(onFocusWaypoint).toHaveBeenCalledWith(waypoints[0])
+    expect(onSelect).not.toHaveBeenCalled()
+
+    await user.click(detailsButton)
+    expect(onSelect).toHaveBeenCalledWith(waypoints[0]?.id, detailsButton)
+  })
+
   it('keeps clear-all separate and confirms it before clearing', async () => {
     const user = userEvent.setup()
     const onClearAll = vi.fn()

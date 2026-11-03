@@ -23,12 +23,13 @@ describe('Appearance settings', () => {
     expect((screen.getByRole('radio', { name: 'System' }) as HTMLInputElement).checked).toBe(true)
     expect(screen.getByRole('radio', { name: 'Light' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
 
     await user.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(onChange).toHaveBeenCalledExactlyOnceWith('dark')
   })
 
-  it('shows the selected palette and exposes choices in an expandable radio group', async () => {
+  it('shows the selected palette in a dropdown and exposes choices in a listbox', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     const { container } = render(
@@ -40,20 +41,21 @@ describe('Appearance settings', () => {
       />,
     )
 
-    const summary = screen.getByText('Other themes')
-    const disclosure = summary.closest('details')
-    expect(disclosure?.open).toBe(false)
-    expect(screen.getByText('Matcha', { selector: '.settings-theme-selected' })).toBeTruthy()
-    expect(container.querySelector('.settings-theme-selected [data-theme-choice="matcha"]')).toBeTruthy()
+    const heading = screen.getByText('Other themes', { selector: '.settings-choice-heading' })
+    const trigger = screen.getByRole('button', { name: /Other themes Matcha/ })
+    expect(heading).toBeTruthy()
+    expect(trigger.getAttribute('data-size')).toBe('lg')
+    expect(trigger.querySelector('[data-theme-choice="matcha"]')).toBeTruthy()
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(container.querySelector('.settings-theme-disclosure')).toBeNull()
 
-    await user.click(summary)
-    expect(disclosure?.open).toBe(true)
-    const choices = screen.getByRole('radiogroup', { name: 'Other themes' })
-    expect(choices.querySelectorAll('input[type="radio"]')).toHaveLength(3)
-    expect((screen.getByRole('radio', { name: 'Matcha' }) as HTMLInputElement).checked).toBe(true)
-    expect(container.querySelectorAll('.settings-theme-check')).toHaveLength(1)
+    await user.click(trigger)
+    const choices = screen.getByRole('listbox', { name: 'Other themes' })
+    expect(choices.querySelectorAll('[role="option"]')).toHaveLength(3)
+    expect(screen.getByRole('option', { name: 'Matcha' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('option', { name: 'Matcha' }).querySelector('.select-option-check')).toBeTruthy()
 
-    await user.click(screen.getByRole('radio', { name: 'NUS' }))
+    await user.click(screen.getByRole('option', { name: 'NUS' }))
     expect(onChange).toHaveBeenCalledExactlyOnceWith('nus')
   })
 })

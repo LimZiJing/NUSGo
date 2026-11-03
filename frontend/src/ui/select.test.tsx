@@ -28,6 +28,7 @@ describe('Select', () => {
     expect(screen.getByText('Building').tagName).toBe('LABEL')
     expect(trigger.textContent).toBe('Block A')
     expect(trigger.getAttribute('title')).toBe('Block A')
+    expect(screen.getByRole('button', { name: 'Building Block A' })).toBeTruthy()
     expect(screen.queryByRole('listbox')).toBeNull()
   })
 
@@ -36,6 +37,57 @@ describe('Select', () => {
 
     expect(screen.getByText('Building').className).toContain('visually-hidden')
     expect(screen.getByRole('button', { name: /Building/ })).toBeTruthy()
+  })
+
+  it('shows a placeholder when no option is selected and supports a large trigger', () => {
+    render(
+      <Select
+        label="Theme"
+        value="unselected"
+        placeholder="Choose"
+        size="lg"
+        options={options}
+        onChange={vi.fn()}
+      />,
+    )
+
+    const trigger = screen.getByRole('button', { name: /Theme Choose/ })
+    expect(trigger.getAttribute('data-size')).toBe('lg')
+    expect(trigger.getAttribute('data-placeholder')).toBe('true')
+    expect(trigger.textContent).toBe('Choose')
+  })
+
+  it('shows decorative leading content in the trigger and list options', async () => {
+    const user = userEvent.setup()
+    const optionsWithLeading = [
+      { value: 'a', label: 'Block A', leading: <span data-testid="leading-mark" /> },
+    ]
+    render(<Select label="Building" value="a" options={optionsWithLeading} onChange={vi.fn()} />)
+
+    const trigger = screen.getByRole('button', { name: /Building Block A/ })
+    expect(trigger.querySelector('.select-trigger-leading [data-testid="leading-mark"]')).toBeTruthy()
+
+    await user.click(trigger)
+    const option = screen.getByRole('option', { name: 'Block A' })
+    expect(option.querySelector('.select-option-leading [data-testid="leading-mark"]')).toBeTruthy()
+    expect(option.firstElementChild?.classList.contains('select-option-check')).toBe(true)
+  })
+
+  it('can place the selected check after an option label', async () => {
+    const user = userEvent.setup()
+    render(
+      <Select
+        label="Theme"
+        value="a"
+        options={options}
+        onChange={vi.fn()}
+        checkPosition="end"
+      />,
+    )
+
+    await user.click(screen.getByRole('button'))
+    const option = screen.getByRole('option', { name: 'Block A' })
+    expect(option.lastElementChild?.classList.contains('select-option-check')).toBe(true)
   })
 
   it('opens and lists all options', async () => {

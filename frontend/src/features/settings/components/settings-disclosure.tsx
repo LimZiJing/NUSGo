@@ -8,7 +8,6 @@ interface SettingsDisclosureProps {
   readonly subtitle: string
   readonly trailing?: ReactNode
   readonly children: ReactNode
-  readonly defaultOpen?: boolean
 }
 
 export function SettingsDisclosure({
@@ -17,10 +16,9 @@ export function SettingsDisclosure({
   subtitle,
   trailing,
   children,
-  defaultOpen = false,
 }: SettingsDisclosureProps) {
   return (
-    <details className="settings-disclosure" open={defaultOpen}>
+    <details className="settings-disclosure">
       <summary className="settings-disclosure-summary">
         <span className="settings-disclosure-icon">{icon}</span>
         <span className="settings-disclosure-label">

@@ -1,6 +1,7 @@
 import type { ThemePreference } from '../../../ui/theme'
 import type { MinuteFormat } from '../../../domain/trip/minute-format'
-import { CheckIcon, ChevronRightIcon, MonitorIcon, MoonIcon, SunIcon } from '../../../ui/icons'
+import { MonitorIcon, MoonIcon, SunIcon } from '../../../ui/icons'
+import { Select } from '../../../ui/select'
 
 interface AppearanceSectionProps {
   readonly preference: ThemePreference
@@ -21,6 +22,12 @@ const OTHER_THEME_CHOICES = [
   { value: 'sakura', label: 'Sakura' },
 ] as const
 
+const OTHER_THEME_OPTIONS = OTHER_THEME_CHOICES.map(({ value, label }) => ({
+  value,
+  label,
+  leading: <span className="settings-theme-swatch" data-theme-choice={value} />,
+}))
+
 const MINUTE_FORMAT_CHOICES = [
   { value: 'm', label: '12m', accessibleLabel: '12 minutes shown as 12m' },
   { value: 'prime', label: '12′', accessibleLabel: '12 minutes shown as 12′' },
@@ -34,6 +41,11 @@ export function AppearanceSection({
   onMinuteFormatChange,
 }: AppearanceSectionProps) {
   const selectedOtherTheme = OTHER_THEME_CHOICES.find(({ value }) => preference === value)
+
+  function handleOtherThemeChange(value: string) {
+    const choice = OTHER_THEME_CHOICES.find((theme) => theme.value === value)
+    if (choice) onChange(choice.value)
+  }
 
   return (
     <div className="settings-appearance-card">
@@ -65,48 +77,20 @@ export function AppearanceSection({
           ))}
         </div>
       </div>
-      <details className="settings-theme-disclosure">
-        <summary className="settings-theme-summary">
-          <span className="settings-theme-title">Other themes</span>
-          {selectedOtherTheme ? (
-            <span className="settings-theme-selected">
-              <span
-                className="settings-theme-swatch"
-                data-theme-choice={selectedOtherTheme.value}
-                aria-hidden="true"
-              />
-              {selectedOtherTheme.label}
-            </span>
-          ) : (
-            <span className="settings-theme-selected">Choose</span>
-          )}
-          <ChevronRightIcon className="settings-theme-chevron" size={18} />
-        </summary>
-        <div className="settings-theme-options" role="radiogroup" aria-label="Other themes">
-          {OTHER_THEME_CHOICES.map(({ value, label }) => (
-            <label
-              className="settings-theme-choice"
-              data-selected={preference === value}
-              key={value}
-            >
-              <input
-                type="radio"
-                name="theme-preference"
-                value={value}
-                checked={preference === value}
-                onChange={() => onChange(value)}
-              />
-              <span
-                className="settings-theme-swatch"
-                data-theme-choice={value}
-                aria-hidden="true"
-              />
-              <span>{label}</span>
-              {preference === value && <CheckIcon className="settings-theme-check" size={16} />}
-            </label>
-          ))}
-        </div>
-      </details>
+      <div className="settings-choice-group">
+        <div className="settings-choice-heading">Other themes</div>
+        <Select
+          label="Other themes"
+          value={selectedOtherTheme?.value ?? ''}
+          placeholder="Choose"
+          options={OTHER_THEME_OPTIONS}
+          onChange={handleOtherThemeChange}
+          size="lg"
+          checkPosition="end"
+          hideLabel
+          className="settings-theme-select"
+        />
+      </div>
       <div
         className="settings-choice-group"
         role="radiogroup"

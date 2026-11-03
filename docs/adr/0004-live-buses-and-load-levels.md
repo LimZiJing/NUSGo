@@ -33,7 +33,7 @@ Epic #500 adds moving buses to the map and a crowding colour on stop arrival tim
 
 **Accessibility.** Stop arrival timings use Load level colour as their only visual crowding cue. Their accessible labels include the estimate (Low, Medium, High) or say it is unavailable; `unknown` stays neutral. Colour tokens must keep contrast against both the arrival row and the map.
 
-**Matching arrivals to buses.** Join by plate within the route, best effort. When there is no match, show the arrival time with no crowding cue (Load level `unknown`), never a guessed one.
+**Matching arrivals to buses.** Join each ETA's plate to a Live bus within the route, best effort. When there is no match, its Load level is `unknown`, never guessed. Keep the response's Load levels aligned with the upcoming arrival times; never expose vehicle plates to the browser.
 
 ## Consequences
 

@@ -13,7 +13,9 @@ export interface ShuttleRouteArrivalData {
   readonly nextArrivalSeconds: number
   readonly upcomingArrivalSeconds: readonly number[]
   readonly headwaySeconds: ShuttleHeadwaySeconds | null
-  /** Load level of the next bus. Absent when no load data was joined. */
+  /** Best-effort Load levels aligned by index with upcomingArrivalSeconds. */
+  readonly upcomingLoads?: readonly ShuttleLoadLevel[]
+  /** Load level of the next bus, kept for older clients. */
   readonly load?: ShuttleLoadLevel
 }
 

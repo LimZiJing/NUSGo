@@ -58,26 +58,30 @@ function formatTimingVisual(timing: string): ReactNode {
 function DepartureTimes({
   timings,
   load,
+  loads,
 }: {
   readonly timings: readonly [string, string, string]
   readonly load?: ShuttleLoadLevel
+  readonly loads?: readonly [ShuttleLoadLevel, ShuttleLoadLevel, ShuttleLoadLevel]
 }) {
   return (
     <span className="stop-departure-times">
       {timings.map((timing, index) => {
-        const nextBusLoad = index === 0 ? load : undefined
+        const arrivalLoad = timing === '-'
+          ? undefined
+          : loads?.[index] ?? (index === 0 ? load : undefined)
 
         return (
           <span
             key={index}
             className="stop-departure-time"
             data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-            data-load-level={nextBusLoad}
+            data-load-level={arrivalLoad}
           >
             <AccessibleTiming
               visual={formatTimingVisual(timing)}
-              spoken={nextBusLoad
-                ? arrivalAccessibleLabel(timing, nextBusLoad)
+              spoken={arrivalLoad
+                ? arrivalAccessibleLabel(timing, arrivalLoad)
                 : timingAccessibleLabel(timing)}
             />
           </span>
@@ -143,7 +147,7 @@ export function StopDepartureList({
               onClick={() => onSelectRoute(departure.routeId)}
             />
             <ReachableFavouriteStops stops={departure.reachableFavouriteStops ?? []} />
-            <DepartureTimes timings={departure.timings} load={departure.load} />
+            <DepartureTimes timings={departure.timings} load={departure.load} loads={departure.loads} />
           </li>
         ))}
         {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (

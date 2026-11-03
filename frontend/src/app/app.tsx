@@ -715,11 +715,11 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
-  const beginWaypointPlacement = (): void => {
+  const beginWaypointCreation = (): void => {
     setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnPage(null)
-    setMorePage('placing')
+    setMorePage('creating')
   }
   const beginWaypointLocationAdjustment = (): void => {
     setPlacementReturnPage(morePage === 'editing-waypoint' ? 'editing-waypoint' : 'creating')
@@ -921,8 +921,6 @@ function App() {
         />
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
-          mapCenter={mapCenter}
-          onChange={(coordinate) => personalWaypoints.updateDraft({ coordinate })}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
@@ -1009,7 +1007,8 @@ function App() {
             title: morePage === 'waypoints'
               ? activePersonalWaypointCategory ?? 'My waypoints'
               : morePage === 'waypoint-details' ? 'Waypoint details'
-                : morePage === 'creating' ? 'Add waypoint'
+              : morePage === 'creating' ? 'Add waypoint'
+                : morePage === 'placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
                     : morePage === 'settings' ? 'Settings' : 'More',
             initialFocusRef: moreInitialFocusRef,
@@ -1024,7 +1023,7 @@ function App() {
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
-              onAdd={beginWaypointPlacement}
+              onAdd={beginWaypointCreation}
               onFocusWaypoint={focusPersonalWaypoint}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}

@@ -39,6 +39,19 @@ describe('mobile sheet at the full detent', () => {
   })
 })
 
+describe('mobile sheet movement', () => {
+  it('transitions the popup transform without animating content padding', () => {
+    const popup = styles.match(/\.navigation-panel\.mobile-sheet-popup\s*{([^}]*)}/s)?.[1] ?? ''
+
+    expect(popup).toMatch(/transition:\s*transform\s+var\(--motion-duration-panel\)\s+var\(--motion-ease-standard\);/)
+    expect(popup).not.toMatch(/padding-bottom\s+var\(--motion-duration-panel\)/)
+    const padding = popup.match(/padding:\s*([^;]*);/s)?.[1] ?? ''
+    expect(padding).toContain('--drawer-snap-point-offset')
+    expect(padding).not.toContain('--drawer-swipe-movement-y')
+    expect(popup).toMatch(/transform:\s*translateY\([^;]*var\(--drawer-swipe-movement-y, 0px\)/s)
+  })
+})
+
 describe('collapsed sheet summary', () => {
   it('truncates a long summary on one line instead of wrapping', () => {
     const summary = styles.match(/\.mobile-sheet-summary\s*{([^}]*)}/s)?.[1] ?? ''

@@ -13,6 +13,20 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+function stubAnimationFrames() {
+  let nextId = 0
+  const callbacks = new Map<number, FrameRequestCallback>()
+  const request = vi.fn((callback: FrameRequestCallback) => {
+    const id = ++nextId
+    callbacks.set(id, callback)
+    return id
+  })
+  const cancel = vi.fn((id: number) => callbacks.delete(id))
+  vi.stubGlobal('requestAnimationFrame', request)
+  vi.stubGlobal('cancelAnimationFrame', cancel)
+  return { callbacks, request, cancel }
+}
+
 const navigation: NavigationState = createInitialNavigationState()
 
 function setBounds(
@@ -35,6 +49,7 @@ function Probe({
   navigationState = navigation,
   sheetClassName,
   explorePanelMountsLate = false,
+  toggleExplorePanel = false,
   setViewportInsets,
   onMeasurementsApplied,
 }: {
@@ -42,6 +57,7 @@ function Probe({
   readonly navigationState?: NavigationState
   readonly sheetClassName?: string
   readonly explorePanelMountsLate?: boolean
+  readonly toggleExplorePanel?: boolean
   readonly setViewportInsets: (insets: { top: number; right: number; bottom: number; left: number }) => void
   readonly onMeasurementsApplied: () => void
 }) {
@@ -82,12 +98,18 @@ function Probe({
         {explorePanelMounted && (
           <div className={sheetClassName} ref={setBounds(explorePanelRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
         )}
+        {toggleExplorePanel && (
+          <button type="button" onClick={() => setExplorePanelMounted((mounted) => !mounted)}>
+            Toggle sheet
+          </button>
+        )}
       </div>
       <div ref={setBounds(tripControlsRef, { top: 20, right: 390, bottom: 112, left: 0, width: 390, height: 92 } as DOMRect)} />
       <div ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
-      <div ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
+      <div data-testid="main-navigation" ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
       <div ref={setBounds(navigationColumnRef, { top: 0, right: 390, bottom: 844, left: 30, width: 360, height: 844 } as DOMRect)} />
       <output data-testid="navigation-width">{layout.navigationColumnWidth}</output>
+      <output data-testid="map-bottom-inset">{layout.mapInsets.bottom}</output>
     </>
   )
 }
@@ -144,6 +166,120 @@ describe('useMapOverlayLayout', () => {
     )
   })
 
+  it('coalesces rapid viewport and observer events, applies the final inset, and cancels queued work', () => {
+    const frames = stubAnimationFrames()
+    const observers: Array<{ callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }> = []
+    class MockResizeObserver {
+      readonly disconnect = vi.fn()
+      readonly observe = vi.fn()
+      readonly unobserve = vi.fn()
+      readonly callback: ResizeObserverCallback
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback
+        observers.push(this)
+      }
+      notify() {
+        this.callback([], this as unknown as ResizeObserver)
+      }
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver)
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',
+    }))
+    vi.stubGlobal('innerHeight', 844)
+    vi.stubGlobal('innerWidth', 390)
+
+    const visualViewportListeners = new Map<string, Set<EventListener>>()
+    const visualViewport = {
+      height: 844,
+      offsetTop: 0,
+      addEventListener: vi.fn((type: string, listener: EventListener) => {
+        const listeners = visualViewportListeners.get(type) ?? new Set<EventListener>()
+        listeners.add(listener)
+        visualViewportListeners.set(type, listeners)
+      }),
+      removeEventListener: vi.fn((type: string, listener: EventListener) => {
+        visualViewportListeners.get(type)?.delete(listener)
+      }),
+    }
+    vi.stubGlobal('visualViewport', visualViewport as unknown as VisualViewport)
+
+    const setViewportInsets = vi.fn()
+    const onMeasurementsApplied = vi.fn()
+    const explore: NavigationState = {
+      ...navigation,
+      activeView: 'explore',
+      sheets: { ...navigation.sheets, explore: { ...navigation.sheets.explore, detent: 'partial' } },
+    }
+    const view = render(
+      <Probe
+        isMobileViewport
+        navigationState={explore}
+        sheetClassName="mobile-sheet-popup"
+        setViewportInsets={setViewportInsets}
+        onMeasurementsApplied={onMeasurementsApplied}
+      />,
+    )
+    const shell = view.container.querySelector('.map-shell') as HTMLElement
+    const tabBar = screen.getByTestId('main-navigation')
+    let shellBottom = 844
+    let tabBarTop = 780
+    const shellBounds = vi.fn(() => ({ bottom: shellBottom } as DOMRect))
+    const tabBarBounds = vi.fn(() => ({ top: tabBarTop, height: 64 } as DOMRect))
+    Object.defineProperty(shell, 'getBoundingClientRect', { configurable: true, value: shellBounds })
+    Object.defineProperty(tabBar, 'getBoundingClientRect', { configurable: true, value: tabBarBounds })
+
+    expect(setViewportInsets).toHaveBeenCalledTimes(1)
+    expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
+
+    visualViewport.height = 500
+    visualViewport.offsetTop = 12
+    shellBottom = 500
+    tabBarTop = 436
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+      for (const type of ['resize', 'scroll']) {
+        for (const listener of visualViewportListeners.get(type) ?? []) listener(new Event(type))
+      }
+      observers.forEach((observer) => {
+        observer.callback([], observer as unknown as ResizeObserver)
+        observer.callback([], observer as unknown as ResizeObserver)
+      })
+      visualViewport.height = 640
+      visualViewport.offsetTop = 24
+      shellBottom = 640
+      tabBarTop = 576
+      window.dispatchEvent(new Event('resize'))
+    })
+
+    // Each existing measurement effect owns one frame; event bursts never queue one per event.
+    expect(frames.callbacks).toHaveProperty('size', 2)
+    expect(setViewportInsets).toHaveBeenCalledTimes(1)
+    expect(onMeasurementsApplied).toHaveBeenCalledOnce()
+
+    const pending = [...frames.callbacks.values()]
+    frames.callbacks.clear()
+    act(() => pending.forEach((callback) => callback(0)))
+
+    expect(shellBounds).toHaveBeenCalledTimes(2)
+    expect(tabBarBounds).toHaveBeenCalledTimes(2)
+    expect(shell.style.getPropertyValue('--mobile-viewport-height')).toBe('640px')
+    expect(shell.style.getPropertyValue('--mobile-viewport-offset-top')).toBe('24px')
+    expect(setViewportInsets).toHaveBeenCalledTimes(2)
+    expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 396 }))
+    expect(screen.getByTestId('map-bottom-inset').textContent).toBe('396')
+    expect(onMeasurementsApplied).toHaveBeenCalledTimes(2)
+
+    act(() => window.dispatchEvent(new Event('resize')))
+    const cancelledFrames = [...frames.callbacks.keys()]
+    expect(cancelledFrames).toHaveLength(2)
+    act(() => view.unmount())
+    expect(frames.callbacks.size).toBe(0)
+    expect(frames.cancel).toHaveBeenCalledTimes(2)
+    expect(observers.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true)
+    expect(setViewportInsets).toHaveBeenCalledTimes(2)
+  })
+
   it('sizes the bottom inset from the detent so it is correct before the sheet finishes moving', () => {
     vi.stubGlobal('getComputedStyle', () => ({
       getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',
@@ -186,11 +322,16 @@ describe('useMapOverlayLayout', () => {
     }))
     vi.stubGlobal('innerHeight', 844)
     vi.stubGlobal('innerWidth', 390)
-    vi.stubGlobal('ResizeObserver', class {
-      observe = vi.fn()
-      unobserve = vi.fn()
-      disconnect = vi.fn()
-    })
+    const observers: Array<{ observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }> = []
+    class MockResizeObserver {
+      readonly observe = vi.fn()
+      readonly unobserve = vi.fn()
+      readonly disconnect = vi.fn()
+      constructor() {
+        observers.push(this)
+      }
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver)
     const setViewportInsets = vi.fn()
     const explore: NavigationState = {
       ...navigation,
@@ -198,12 +339,13 @@ describe('useMapOverlayLayout', () => {
       sheets: { ...navigation.sheets, explore: { ...navigation.sheets.explore, detent: 'partial' } },
     }
 
-    render(
+    const view = render(
       <Probe
         isMobileViewport
         navigationState={explore}
         sheetClassName="mobile-sheet-popup"
         explorePanelMountsLate
+        toggleExplorePanel
         setViewportInsets={setViewportInsets}
         onMeasurementsApplied={vi.fn()}
       />,
@@ -213,5 +355,22 @@ describe('useMapOverlayLayout', () => {
     await waitFor(() => {
       expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
     })
+    const firstSheet = view.container.querySelector('.mobile-sheet-popup')
+    expect(firstSheet).not.toBeNull()
+    expect(observers.some(({ observe }) => observe.mock.calls.some(([element]) => element === firstSheet))).toBe(true)
+
+    act(() => screen.getByRole('button', { name: 'Toggle sheet' }).click())
+    await waitFor(() => {
+      expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 76 }))
+    })
+    expect(observers.some(({ disconnect }) => disconnect.mock.calls.length > 0)).toBe(true)
+
+    act(() => screen.getByRole('button', { name: 'Toggle sheet' }).click())
+    await waitFor(() => {
+      expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
+    })
+    const remountedSheet = view.container.querySelector('.mobile-sheet-popup')
+    expect(remountedSheet).not.toBe(firstSheet)
+    expect(observers.at(-1)?.observe.mock.calls.some(([element]) => element === remountedSheet)).toBe(true)
   })
 })

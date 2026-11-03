@@ -162,17 +162,24 @@ function plateOrNull(value: string | null): string | null {
   return value && value !== '-' ? value : null
 }
 
-function parseNextBusPlate(record: RecordValue, nextArrivalSeconds: number): string | null {
+function parseBusPlateForArrival(record: RecordValue, arrivalSeconds: number): string | null {
   const etas = getValue(record, ['_etas'])
-  const nextEta = Array.isArray(etas)
-    ? etas.find((eta) => isRecord(eta) && parseArrivalSeconds(eta) === nextArrivalSeconds)
+  const matchingEta = Array.isArray(etas)
+    ? etas.find((eta) => isRecord(eta) && parseArrivalSeconds(eta) === arrivalSeconds)
     : null
-  const nextEtaPlate = isRecord(nextEta) ? getTextValue(nextEta, ['plate']) : null
-  const recordPlate = parseArrivalSeconds(record) === nextArrivalSeconds
+  const etaPlate = isRecord(matchingEta) ? getTextValue(matchingEta, ['plate']) : null
+  const recordPlate = parseArrivalSeconds(record) === arrivalSeconds
     ? getTextValue(record, ['arrivalTime_veh_plate', 'nextBusPlate'])
     : null
   return plateOrNull(recordPlate)
-    ?? plateOrNull(nextEtaPlate)
+    ?? plateOrNull(etaPlate)
+}
+
+function parseUpcomingBusPlates(
+  record: RecordValue,
+  upcomingArrivalSeconds: readonly number[],
+): readonly (string | null)[] {
+  return upcomingArrivalSeconds.map((arrivalSeconds) => parseBusPlateForArrival(record, arrivalSeconds))
 }
 
 function parseCandidate(
@@ -188,7 +195,8 @@ function parseCandidate(
     .filter((arrival, index, values) => values.indexOf(arrival) === index)
     .sort((first, second) => first - second)
   if (!routeId || upcoming.length === 0) return null
-  const nextBusPlate = parseNextBusPlate(record, upcoming[0])
+  const upcomingBusPlates = parseUpcomingBusPlates(record, upcoming)
+  const nextBusPlate = upcomingBusPlates[0]
   return {
     routeId,
     arrival: {
@@ -196,6 +204,7 @@ function parseCandidate(
       upcomingArrivalSeconds: upcoming,
       headwaySeconds: createHeadwaySeconds(upcoming),
       ...(nextBusPlate ? { nextBusPlate } : {}),
+      ...(upcomingBusPlates.some(Boolean) ? { upcomingBusPlates } : {}),
     },
   }
 }

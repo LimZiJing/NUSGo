@@ -343,15 +343,6 @@
     list-style: none;
   }
 
-  .stop-departure-load-legend {
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: var(--space-1) var(--space-2);
-    color: var(--text-muted);
-    font: var(--font-size-xs)/1.25 var(--sans);
-  }
-
   .stop-departure-row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -535,30 +526,6 @@
 
   .stop-departure-time[data-load-level='unknown'] {
     color: var(--text-muted);
-  }
-
-  .stop-departure-load-cue {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    color: var(--text-secondary);
-    font: 500 var(--font-size-xs)/1 var(--sans);
-    white-space: nowrap;
-  }
-
-  .stop-departure-load-cue svg {
-    width: 12px;
-    height: 12px;
-    flex: 0 0 auto;
-    fill: currentColor;
-  }
-
-  .stop-departure-load-cue[data-load-level='low'] rect:nth-child(n + 2) {
-    opacity: 0.25;
-  }
-
-  .stop-departure-load-cue[data-load-level='medium'] rect:nth-child(3) {
-    opacity: 0.25;
   }
 
 @media (max-width: 768px) {

@@ -268,18 +268,20 @@ export async function createBackendLiveData(
       vehicleStore?.touch()
       const vehicleSnapshot = vehicleStore?.getSnapshot() ?? null
       const responseNow = now()
-      const loadFor = (routeId: string, nextBusPlate: string | undefined): ShuttleLoadLevel => {
-        if (!nextBusPlate || !vehicleSnapshot) return 'unknown'
+      const loadFor = (routeId: string, plate: string | null | undefined): ShuttleLoadLevel => {
+        if (!plate || !vehicleSnapshot) return 'unknown'
         const vehicle = vehicleSnapshot.vehicles.find((candidate) =>
-          candidate.routeId === routeId && candidate.plate === nextBusPlate)
+          candidate.routeId === routeId && candidate.plate === plate)
         return vehicle && Date.parse(vehicle.expiresAt) > responseNow ? vehicle.load : 'unknown'
       }
       const withLoads = (routes: Readonly<Record<string, ShuttleRouteArrivalWithPlate>>) =>
         Object.fromEntries(Object.entries(routes).map(([routeId, arrival]) => {
-          const { nextBusPlate, ...publicArrival } = arrival
+          const { nextBusPlate, upcomingBusPlates, ...publicArrival } = arrival
+          const upcomingLoads = upcomingBusPlates?.map((plate) => loadFor(routeId, plate))
           return [routeId, {
             ...publicArrival,
-            load: loadFor(routeId, nextBusPlate),
+            load: upcomingLoads?.[0] ?? loadFor(routeId, nextBusPlate),
+            ...(upcomingLoads ? { upcomingLoads } : {}),
           }]
         }))
       const selected = {

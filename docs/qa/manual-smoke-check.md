@@ -24,7 +24,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Repeat the Plan layout check in both light and dark themes.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
-- [ ] Native MapLibre controls and attribution remain visible and usable.
+- [ ] Native MapLibre navigation controls remain usable on desktop.
 
 ## Mobile — 390 × 844
 
@@ -38,6 +38,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
 ## Responsive boundary — 768 / 769px
 

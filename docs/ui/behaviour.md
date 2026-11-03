@@ -4,7 +4,7 @@ How the app behaves today, by area. For a one-page summary see [project status](
 
 ## Layout
 
-The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stops is the default tab. The map's More button opens My waypoints and Settings.
+The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stops is the default tab. The map's More button opens My waypoints and Settings, followed by a quiet Download NUSGo row while the app is not installed.
 
 **Desktop (769px and wider)**
 - One persistent left column holds the tabs. The map reserves the column's measured width as its left inset.

@@ -44,6 +44,11 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
+## More menu and PWA installation
+
+- [ ] More lists My waypoints, Settings, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
+- [ ] Confirm Download NUSGo reveals the existing browser instructions when no native install prompt is available, uses the browser prompt when one is available, and is hidden in an installed app.
+
 ## Settings, Stops and Plan additions
 
 - [ ] Settings opens from the map gear. Appearance, Favourites and About expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.

@@ -1,17 +1,12 @@
 import type { ComponentProps, ReactNode, Ref } from 'react'
 import { ExploreContent } from '../../features/explore/explore-content.tsx'
 import { PlanContent } from '../../features/plan/plan-content.tsx'
-import { StopsContent } from '../../features/stops/stops-content.tsx'
 import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
 import { MorePanelSurface, type MorePanelPage } from '../../ui/more-panel-surface'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
-import {
-  getExploreSheetSummary,
-  getPlanSheetSummary,
-  getStopsSheetSummary,
-} from './mobile-sheet-summary'
+import { getExploreSheetSummary, getPlanSheetSummary } from './mobile-sheet-summary'
 
 interface PanelShellBindings {
   readonly ref: Ref<HTMLElement>
@@ -44,12 +39,11 @@ export interface AppViewsProps {
     readonly mainNavigationRef: Ref<HTMLElement>
     readonly plan: PanelShellBindings
     readonly explore: PanelShellBindings
-    readonly stops: PanelShellBindings
   }
   readonly views: {
     readonly plan: ComponentProps<typeof PlanContent>
     readonly explore: ExploreContentProps
-    readonly stops: ComponentProps<typeof StopsContent>
+    readonly stops: ReactNode
   }
 }
 
@@ -70,10 +64,6 @@ export function AppViews({
     explore: {
       ref: exploreSheetRef,
       onDetentChange: onExploreDetentChange,
-    },
-    stops: {
-      ref: stopsSheetRef,
-      onDetentChange: onStopsDetentChange,
     },
   },
   views,
@@ -132,21 +122,7 @@ export function AppViews({
           </NavigationPanelShell>
         </NavigationViewShell>
         <NavigationViewShell id="stops-panel" active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'stops'}>
-          <NavigationPanelShell
-            className="stops-sheet"
-            label="Stops panel"
-            summary={getStopsSheetSummary(views.stops)}
-            controlsId="stops-content"
-            detent={isMobileViewport ? navigation.sheets.stops.detent : 'partial'}
-            enabled={isMobileViewport}
-            active={!morePanel.open && !waypointPlacementActive && navigation.activeView === 'stops'}
-            portalContainer={sheetPortalContainer}
-            onDetentChange={onStopsDetentChange}
-            sectionProps={{ 'aria-label': 'Stops' }}
-            shellRef={stopsSheetRef}
-          >
-            <StopsContent {...views.stops} />
-          </NavigationPanelShell>
+          {views.stops}
         </NavigationViewShell>
         <NavigationViewShell id="more-panel" active={morePanel.open}>
           <NavigationPanelShell

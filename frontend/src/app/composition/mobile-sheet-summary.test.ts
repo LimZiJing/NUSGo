@@ -28,6 +28,15 @@ describe('mobile sheet summaries', () => {
         .toBe('Stops · 2 favourites')
     })
 
+    it('summarises a list from its count without requiring its entries', () => {
+      expect(getStopsSheetSummary({ stopListCount: 2, selectedStopList: 'nearby' }))
+        .toBe('Stops · 2 nearby')
+      expect(getStopsSheetSummary({ stopListCount: 1, selectedStopList: 'favourites' }))
+        .toBe('Stops · 1 favourite')
+      expect(getStopsSheetSummary({ stopListCount: 0, stopListLoading: true, selectedStopList: 'nearby' }))
+        .toBe('Stops · Finding nearby stops')
+    })
+
     it('explains empty and loading lists', () => {
       expect(getStopsSheetSummary({ stopListEntries: [], selectedStopList: 'nearby' }))
         .toBe('Stops · No stops nearby')

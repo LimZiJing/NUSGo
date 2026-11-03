@@ -10,9 +10,16 @@ export type TripEndpoint = (
   | { readonly kind: 'current-location'; readonly coordinate: TripCoordinate }
 )
 
+export interface WaypointCoordinateEndpoint {
+  readonly kind: 'waypoint-coordinate'
+  readonly coordinate: TripCoordinate
+}
+
+export type JourneyEndpoint = TripEndpoint | WaypointCoordinateEndpoint
+
 export interface ApiJourneyPlanningRequest {
-  readonly origin: TripEndpoint
-  readonly destination: TripEndpoint
+  readonly origin: JourneyEndpoint
+  readonly destination: JourneyEndpoint
   /** Available only in development for deterministic local planning and benchmark runs. */
   readonly simulatedDepartureMs?: number
 }
@@ -24,8 +31,8 @@ export interface PathGeometry {
 
 /** One ordered travel-mode segment; its geometry is kept with the segment for map rendering. */
 interface PathLegBase {
-  readonly from: TripEndpoint
-  readonly to: TripEndpoint
+  readonly from: JourneyEndpoint
+  readonly to: JourneyEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
   readonly geometry: PathGeometry
@@ -49,8 +56,8 @@ export type PathQuality = 'exact' | 'bounded'
 
 /** One complete option between the selected endpoints, with ordered walking and bus legs. */
 export interface Path {
-  readonly origin: TripEndpoint
-  readonly destination: TripEndpoint
+  readonly origin: JourneyEndpoint
+  readonly destination: JourneyEndpoint
   readonly legs: readonly PathLeg[]
   readonly totalDurationSeconds: number
   readonly totalDistanceMeters: number
@@ -67,7 +74,7 @@ export interface ScoredPathCandidate {
 }
 
 export interface PathEndpointLocation {
-  readonly endpoint: TripEndpoint
+  readonly endpoint: JourneyEndpoint
   readonly coordinate: TripCoordinate
 }
 

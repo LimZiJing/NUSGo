@@ -6,7 +6,7 @@ How NUSGo plans a journey today. The accepted design is in [ADR 0002](adr/0002-n
 
 - `backend/src/pathfinding/` holds the engine. `find-paths.ts` coordinates endpoint resolution, walking connection selection, bounded search, the bus-wait policy and geometry completion.
 - `walking/` owns the directed stop-graph provider and the Valhalla client. `search/` owns indexing, enumeration, ranking and the search budget.
-- `POST /api/journeys` accepts endpoint references or a frozen Current location coordinate, and resolves canonical data on the server. The frontend sends endpoint identities only, and gets back complete scored Paths with geometry.
+- `POST /api/journeys` accepts canonical endpoint references, frozen Current location coordinates, or a coordinate-only Personal Waypoint endpoint, and resolves canonical data on the server. Selecting a Personal Waypoint sends its WGS84 coordinate only; its saved ID and details remain in the browser. The frontend gets back complete scored Paths with geometry.
 - The app session owns request identity and cancellation. Plan owns the display policy. MapLibre renders the Paths.
 
 ## What it compares
@@ -20,7 +20,7 @@ How NUSGo plans a journey today. The accepted design is in [ADR 0002](adr/0002-n
 ## Scoring and what is shown
 
 - Walking time is divided by 0.8. The first bus wait and ride are unchanged. Each later bus leg is divided by 0.9.
-- Search returns up to three distinct bus Paths plus the best walking-only Path.
+- Search returns up to three bus Paths with distinct ordered route sequences plus the best walking-only Path. The highest-ranked complete Path is retained for each route sequence after waiting estimates are applied.
 - Plan shows up to three bus Paths and one walking Path. Walking goes first only when its adjusted duration is strictly under 80% of the fastest bus Path. Otherwise it follows the bus options.
 - The map draws every candidate and emphasises the selected one.
 

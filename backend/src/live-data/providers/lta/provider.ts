@@ -40,8 +40,15 @@ function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
 }
 
-function emptyService(status: PublicBusServiceArrival['status']): PublicBusServiceArrival {
-  return { status, arrivals: [] }
+function emptyService(
+  status: PublicBusServiceArrival['status'],
+  nextStartAt?: string,
+): PublicBusServiceArrival {
+  return {
+    status,
+    arrivals: [],
+    ...(nextStartAt ? { nextStartAt } : {}),
+  }
 }
 
 function asFutureArrivals(arrivals: readonly PublicBusEstimatedArrival[], nowMs: number): readonly PublicBusEstimatedArrival[] {
@@ -86,13 +93,10 @@ export function createLtaPublicBusArrivalProvider(
         }
         if (!scheduleLoader) return [serviceNumber, emptyService('no-estimate')] as const
         try {
-          const operating = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
-          if (operating?.operating !== false) return [serviceNumber, emptyService('no-estimate')] as const
-          return [serviceNumber, {
-            status: 'not-in-operation',
-            arrivals: [],
-            ...(operating.nextStartMs !== null && { nextStartAt: toIso(operating.nextStartMs) }),
-          }] as const
+          const schedule = await scheduleLoader(serviceNumber, mapping.busStopCode, requestStartedAt, signal)
+          if (schedule?.operating !== false) return [serviceNumber, emptyService('no-estimate')] as const
+          const nextStartAt = schedule.nextStartMs === null ? undefined : toIso(schedule.nextStartMs)
+          return [serviceNumber, emptyService('not-in-operation', nextStartAt)] as const
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') throw error
           console.warn('LTA public bus schedule lookup failed.', {

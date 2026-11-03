@@ -4,13 +4,21 @@ import type {
   ShuttleRouteArrivalData,
 } from '@nusgo/shared'
 
+export interface ShuttleRouteArrivalWithPlate extends ShuttleRouteArrivalData {
+  readonly nextBusPlate?: string
+}
+
+export interface BusArrivalSnapshot extends ShuttleArrivalSnapshot {
+  readonly stops: Readonly<Record<string, Readonly<Record<string, ShuttleRouteArrivalWithPlate>>>>
+}
+
 export interface BusArrivalStop {
   readonly stopId: string
   readonly stopName: string
 }
 
 export interface BusArrivalStopResult extends DataFreshness {
-  readonly routes: Readonly<Record<string, ShuttleRouteArrivalData>>
+  readonly routes: Readonly<Record<string, ShuttleRouteArrivalWithPlate>>
 }
 
 export type BusArrivalStopLoader = (
@@ -24,14 +32,14 @@ export interface BusArrivalStopFailure {
 }
 
 export interface BusArrivalSnapshotRefreshResult {
-  readonly snapshot: ShuttleArrivalSnapshot | null
+  readonly snapshot: BusArrivalSnapshot | null
   readonly published: boolean
   readonly successfulStopIds: readonly string[]
   readonly failures: readonly BusArrivalStopFailure[]
 }
 
 export interface RefreshBusArrivalSnapshotOptions {
-  readonly previousSnapshot?: ShuttleArrivalSnapshot | null
+  readonly previousSnapshot?: BusArrivalSnapshot | null
   readonly snapshotVersion: string
   readonly refreshIntervalMs: number
   readonly nextRefreshAtMs?: number
@@ -68,7 +76,7 @@ export interface BusArrivalSnapshotStore {
   start(): void
   stop(): Promise<void>
   refreshNow(): Promise<BusArrivalSnapshotRefreshResult>
-  getSnapshot(): ShuttleArrivalSnapshot | null
+  getSnapshot(): BusArrivalSnapshot | null
 }
 
 function toIso(timestampMs: number): string {
@@ -158,7 +166,7 @@ export async function refreshBusArrivalSnapshot(
   }
 
   const previous = options.previousSnapshot
-  const stopsSnapshot: Record<string, Readonly<Record<string, ShuttleRouteArrivalData>>> = {}
+  const stopsSnapshot: Record<string, Readonly<Record<string, ShuttleRouteArrivalWithPlate>>> = {}
   const stopObservations: Record<string, DataFreshness> = {}
   const unavailableStopIds: string[] = []
 
@@ -186,7 +194,7 @@ export async function refreshBusArrivalSnapshot(
   const nextRefreshAtMs = Math.max(refreshedAtMs, options.nextRefreshAtMs ?? refreshedAtMs + options.refreshIntervalMs)
   const nextRefreshAt = toIso(nextRefreshAtMs)
   const observationTimes = Object.values(stopObservations).map(({ observedAt }) => observedAt)
-  const snapshot: ShuttleArrivalSnapshot = {
+  const snapshot: BusArrivalSnapshot = {
     observedAt: earliestTimestamp(observationTimes, refreshedAt),
     expiresAt: toIso(refreshedAtMs + options.refreshIntervalMs),
     snapshotVersion: options.snapshotVersion,
@@ -209,7 +217,7 @@ export function createBusArrivalSnapshotStore(
   options: BusArrivalSnapshotStoreOptions,
 ): BusArrivalSnapshotStore {
   const now = options.now ?? Date.now
-  let currentSnapshot: ShuttleArrivalSnapshot | null = null
+  let currentSnapshot: BusArrivalSnapshot | null = null
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
   let refreshInFlight: Promise<BusArrivalSnapshotRefreshResult> | null = null
   let activeController: AbortController | null = null

@@ -4,6 +4,7 @@ import './ui/theme-startup'
 import './index.css'
 import App from './app/app.tsx'
 import { checkApiDataVersion } from './infrastructure/api/compatibility'
+import { refreshPwaInstallationStatus, registerPwaServiceWorker } from './infrastructure/pwa/pwa-runtime'
 
 // Dev-only controls gallery at /?gallery. import.meta.env.DEV is a build-time constant, so
 // production builds drop this dynamic import, the gallery module and its CSS.
@@ -11,6 +12,9 @@ const Gallery = import.meta.env.DEV
   ? lazy(() => import('./ui/gallery/gallery').then((module) => ({ default: module.Gallery })))
   : null
 const showGallery = Gallery !== null && new URLSearchParams(window.location.search).has('gallery')
+
+registerPwaServiceWorker()
+void refreshPwaInstallationStatus()
 
 if (import.meta.env.DEV || __NUSGO_API_ORIGIN__) {
   void checkApiDataVersion(__NUSGO_API_ORIGIN__, __NUSGO_DATA_VERSION__).catch((error: unknown) => {

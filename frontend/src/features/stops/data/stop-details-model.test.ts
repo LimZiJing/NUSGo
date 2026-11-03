@@ -52,6 +52,7 @@ describe('selected stop details model', () => {
     })
 
     expect(selection.departures[0]?.timings).toEqual(['2m', '5m', '8m'])
+    expect(selection.departures[0]?.load).toBe('unknown')
   })
 
   it('maps a fresh arrival snapshot to canonical route departures and adjusts for snapshot age', () => {
@@ -65,6 +66,7 @@ describe('selected stop details model', () => {
             nextArrivalSeconds: 30,
             upcomingArrivalSeconds: [30, 330, 930],
             headwaySeconds: { min: 300, median: 300, max: 300 },
+            load: 'high',
           },
         },
       },
@@ -80,6 +82,7 @@ describe('selected stop details model', () => {
 
     expect(selection.departures.map(({ routeId }) => routeId)).toEqual(['A1'])
     expect(selection.departures[0]?.timings).toEqual(['Arr', '6′', '16′'])
+    expect(selection.departures[0]?.load).toBe('high')
     expect(selection.live).toBe(true)
     expect(selection.liveArrivalMessage).toBeNull()
   })

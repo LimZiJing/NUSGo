@@ -545,6 +545,95 @@ async function waitForVehicleCycle(
   assert.fail('the first vehicle cycle should publish the expected unavailable routes')
 }
 
+function createShuttleLoadFetcher(
+  arrivalPlate: string,
+  activeBusRequests: string[],
+  activeBusPlate = arrivalPlate,
+  activeBusRouteId = 'D1',
+): typeof fetch {
+  return async (input, init) => {
+    const url = String(input)
+    if (url.endsWith('/shuttle-service')) {
+      return jsonResponse({
+        data: [{
+          routeId: 'D1',
+          nextArrivalSeconds: 120,
+          upcomingArrivalSeconds: [120, 480],
+          arrivalTime_veh_plate: arrivalPlate,
+        }],
+      })
+    }
+    if (!url.endsWith('/active-bus')) throw new Error('Unexpected upstream request: ' + url)
+    const routeCode = (JSON.parse(String(init?.body)) as { route_code: string }).route_code
+    activeBusRequests.push(routeCode)
+    const hasVehicle = routeCode === activeBusRouteId
+    return jsonResponse({
+      data: {
+        ActiveBusCount: hasVehicle ? '1' : '0',
+        activebus: hasVehicle ? [{
+          vehplate: activeBusPlate,
+          lat: 1.291666,
+          lng: 103.783352,
+          speed: 15,
+          direction: 309.8,
+          loadInfo: { crowdLevel: 'low' },
+        }] : [],
+      },
+    })
+  }
+}
+
+async function waitForActiveBusRequests(requests: readonly string[], count: number): Promise<void> {
+  const deadline = Date.now() + 5_000
+  while (requests.length < count && Date.now() < deadline) await sleepFor(5)
+  assert.ok(requests.length >= count, 'the vehicle cycle should call active-bus')
+}
+
+type ShuttleLoadFixture = {
+  readonly arrivalPlate: string
+  readonly activeBusPlate?: string
+  readonly activeBusRouteId?: string
+}
+
+type ShuttleLoadContext = {
+  readonly liveData: Awaited<ReturnType<typeof createBackendLiveData>>
+  readonly clock: { nowMs: number }
+  readonly config: ReturnType<typeof createConfig>
+  readonly routeIds: readonly string[]
+  readonly stopId: string
+  readonly activeBusRequests: string[]
+}
+
+async function withShuttleLoads(
+  fixture: ShuttleLoadFixture,
+  run: (context: ShuttleLoadContext) => Promise<void>,
+): Promise<void> {
+  const config = createConfig()
+  const routeIds = backendData.network.routes.map((route) => route.id)
+  const stop = backendData.network.stops[0]
+  assert.ok(stop)
+  const clock = { nowMs: fixedNow }
+  const activeBusRequests: string[] = []
+  const liveData = await createBackendLiveData(config, backendData, {
+    fetcher: createShuttleLoadFetcher(
+      fixture.arrivalPlate,
+      activeBusRequests,
+      fixture.activeBusPlate,
+      fixture.activeBusRouteId,
+    ),
+    now: () => clock.nowMs,
+    ltaMappings: [],
+  })
+
+  try {
+    liveData.start()
+    await waitForSnapshot(liveData)
+    await run({ liveData, clock, config, routeIds, stopId: stop.id, activeBusRequests })
+  } finally {
+    await liveData.stop()
+  }
+}
+
 describe('Live vehicle positions', () => {
   it('serves vehicle positions for the requested routes after a successful cycle', async () => {
     const routeIds = backendData.network.routes.map((route) => route.id)
@@ -642,5 +731,72 @@ describe('Live vehicle positions', () => {
     } finally {
       await liveData.stop()
     }
+  })
+})
+
+describe('Shuttle arrival loads', () => {
+  it('joins the next bus load to its arrival without exposing the vehicle plate', async () => {
+    const arrivalPlate = 'PDMATCH'
+    await withShuttleLoads({ arrivalPlate }, async ({ liveData, routeIds, stopId, activeBusRequests }) => {
+      liveData.getBusArrivals([stopId])
+      await waitForActiveBusRequests(activeBusRequests, 1)
+      await waitForVehicleCycle(liveData, routeIds, [])
+
+      const response = liveData.getBusArrivals([stopId])
+      assert.equal(response.stops[stopId]?.D1?.load, 'low')
+      assert.equal(JSON.stringify(response).includes(arrivalPlate), false)
+      assert.equal(JSON.stringify(response).includes('nextBusPlate'), false)
+    })
+  })
+
+  it('reports unknown when the next arrival does not match a live vehicle', async () => {
+    await withShuttleLoads({ arrivalPlate: 'PDNOPE', activeBusPlate: 'PDMATCH' }, async ({
+      liveData,
+      routeIds,
+      stopId,
+      activeBusRequests,
+    }) => {
+      liveData.getBusArrivals([stopId])
+      await waitForActiveBusRequests(activeBusRequests, 1)
+      await waitForVehicleCycle(liveData, routeIds, [])
+
+      assert.equal(liveData.getBusArrivals([stopId]).stops[stopId]?.D1?.load, 'unknown')
+    })
+  })
+
+  it('does not join the same plate when the vehicle belongs to another route', async () => {
+    const otherRouteId = backendData.network.routes.find((route) => route.id !== 'D1')?.id
+    assert.ok(otherRouteId)
+    await withShuttleLoads({
+      arrivalPlate: 'PDMATCH',
+      activeBusPlate: 'PDMATCH',
+      activeBusRouteId: otherRouteId,
+    }, async ({ liveData, routeIds, stopId, activeBusRequests }) => {
+      liveData.getBusArrivals([stopId])
+      await waitForActiveBusRequests(activeBusRequests, 1)
+      await waitForVehicleCycle(liveData, routeIds, [])
+
+      assert.equal(liveData.getBusArrivals([stopId]).stops[stopId]?.D1?.load, 'unknown')
+    })
+  })
+
+  it('reports unknown when the matched vehicle has expired', async () => {
+    await withShuttleLoads({ arrivalPlate: 'PDMATCH' }, async ({
+      liveData,
+      routeIds,
+      stopId,
+      clock,
+      config,
+      activeBusRequests,
+    }) => {
+      liveData.getBusArrivals([stopId])
+      await waitForActiveBusRequests(activeBusRequests, 1)
+      await waitForVehicleCycle(liveData, routeIds, [])
+      assert.equal(liveData.getBusArrivals([stopId]).stops[stopId]?.D1?.load, 'low')
+
+      clock.nowMs += config.liveData.vehicleExpiryMs + 1
+
+      assert.equal(liveData.getBusArrivals([stopId]).stops[stopId]?.D1?.load, 'unknown')
+    })
   })
 })

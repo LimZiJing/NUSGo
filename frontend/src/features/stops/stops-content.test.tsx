@@ -14,8 +14,8 @@ const selectedStop: StopDetailsModel = {
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },
   publicServices: [{ serviceNumber: '95', timings: null }],
   departures: [
-    { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', timings: ['Arr', '8m', '17m'] },
-    { routeId: 'D2', routeName: 'D2', routeColor: '#6e1d72', timings: ['4m', '12m', '-'] },
+    { routeId: 'A1', routeName: 'A1', routeColor: '#0b7258', load: 'unknown', timings: ['Arr', '8m', '17m'] },
+    { routeId: 'D2', routeName: 'D2', routeColor: '#6e1d72', load: 'unknown', timings: ['4m', '12m', '-'] },
   ],
   scheduledDepartures: [],
   live: true,

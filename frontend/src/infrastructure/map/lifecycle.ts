@@ -2,6 +2,7 @@ import {
   Map,
   NavigationControl,
   setWorkerUrl,
+  type StyleSpecification,
   type MapMouseEvent,
   type MapTouchEvent,
 } from 'maplibre-gl'
@@ -28,8 +29,13 @@ setWorkerUrl(maplibreWorkerUrl)
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const DOUBLE_TAP_MS = 300
 const TAP_SLOP_PX = 20
+// Match MapLibre's default click tolerance so minor pointer jitter still counts as a tap.
+const MARKER_DRAG_SLOP_PX = 3
 const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
+
+const STYLE_LOAD_TIMEOUT_MS = 4000
+const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
@@ -66,6 +72,7 @@ export interface MapLifecycle {
 export function waitForMapStyleLoaded(
   map: Map,
   signal: AbortSignal,
+  onBasemapUnavailable?: () => void,
 ): Promise<void> {
   if (signal.aborted) {
     return Promise.reject(new DOMException('The map style load was aborted', 'AbortError'))
@@ -74,7 +81,8 @@ export function waitForMapStyleLoaded(
 
   return new Promise((resolve, reject) => {
     const cleanup = () => {
-      map.off('load', handleLoad)
+      clearTimeout(fallbackTimer)
+      map.off('style.load', handleLoad)
       signal.removeEventListener('abort', handleAbort)
     }
     const handleLoad = () => {
@@ -86,16 +94,22 @@ export function waitForMapStyleLoaded(
       reject(new DOMException('The map style load was aborted', 'AbortError'))
     }
 
-    map.once('load', handleLoad)
+    // A missing remote style must not block local campus data indefinitely.
+    const fallbackTimer = setTimeout(() => {
+      onBasemapUnavailable?.()
+      map.setStyle(OFFLINE_STYLE)
+    }, STYLE_LOAD_TIMEOUT_MS)
+    map.once('style.load', handleLoad)
     signal.addEventListener('abort', handleAbort, { once: true })
   })
 }
 
 export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
+  const startsOffline = typeof navigator !== 'undefined' && !navigator.onLine
   const map = new Map({
     container: options.container,
-    style: MAP_STYLE,
+    style: startsOffline ? OFFLINE_STYLE : MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
     attributionControl: false,
@@ -108,13 +122,56 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   let visibleCenterZoom = false
   let applyingViewportInsets = false
   let waypointPlacementActive = false
+  let markerPointerGesture: { readonly pointerId: number; readonly x: number; readonly y: number; moved: boolean } | null = null
+  let suppressMarkerReleaseClick = false
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
   }
 
+  const handlePlacementPointerDown = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const target = pointer.target
+    const startedOnMarker = typeof Element !== 'undefined' && target instanceof Element
+      && target.closest('.maplibregl-marker') !== null
+    markerPointerGesture = !disposed && waypointPlacementActive && startedOnMarker
+      ? { pointerId: pointer.pointerId, x: pointer.clientX, y: pointer.clientY, moved: false }
+      : null
+    suppressMarkerReleaseClick = false
+  }
+
+  const handlePlacementPointerMove = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId || gesture.moved) return
+    if (Math.hypot(pointer.clientX - gesture.x, pointer.clientY - gesture.y) >= MARKER_DRAG_SLOP_PX) {
+      gesture.moved = true
+    }
+  }
+
+  const handlePlacementPointerUp = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId) return
+    suppressMarkerReleaseClick = gesture.moved
+    markerPointerGesture = null
+  }
+
+  const handlePlacementPointerCancel = (event: Event): void => {
+    const pointer = event as PointerEvent
+    if (!markerPointerGesture || pointer.pointerId !== markerPointerGesture.pointerId) return
+    markerPointerGesture = null
+    suppressMarkerReleaseClick = false
+  }
+
   const handlePlacementMapClick = (event: MouseEvent): void => {
     if (disposed || !waypointPlacementActive) return
+    if (suppressMarkerReleaseClick) {
+      suppressMarkerReleaseClick = false
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      return
+    }
     const target = event.target
     if (typeof Element !== 'undefined' && target instanceof Element && target.closest(
       '.maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
@@ -127,6 +184,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     event.stopImmediatePropagation()
   }
 
+  options.container.addEventListener?.('pointerdown', handlePlacementPointerDown, true)
+  options.container.addEventListener?.('pointermove', handlePlacementPointerMove, true)
+  options.container.addEventListener?.('pointerup', handlePlacementPointerUp, true)
+  options.container.addEventListener?.('pointercancel', handlePlacementPointerCancel, true)
   options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
   const getVisibleCenter = (
@@ -294,7 +355,8 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     reportMapCenter()
   }
 
-  const ready = waitForMapStyleLoaded(map, controller.signal)
+  if (startsOffline) options.onBasemapUnavailable?.()
+  const ready = waitForMapStyleLoaded(map, controller.signal, options.onBasemapUnavailable)
 
   return {
     map,
@@ -335,10 +397,18 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     setWaypointPlacementActive(active) {
       if (disposed) return
       waypointPlacementActive = active
+      if (!active) {
+        markerPointerGesture = null
+        suppressMarkerReleaseClick = false
+      }
     },
     dispose() {
       if (disposed) return
       disposed = true
+      options.container.removeEventListener?.('pointerdown', handlePlacementPointerDown, true)
+      options.container.removeEventListener?.('pointermove', handlePlacementPointerMove, true)
+      options.container.removeEventListener?.('pointerup', handlePlacementPointerUp, true)
+      options.container.removeEventListener?.('pointercancel', handlePlacementPointerCancel, true)
       options.container.removeEventListener?.('click', handlePlacementMapClick, true)
       controller.abort()
       map.off('error', handleMapError)

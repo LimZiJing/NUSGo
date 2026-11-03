@@ -59,6 +59,8 @@ export interface AppNavigation {
   /** Explore mode captured when the stop was opened from Explore; null otherwise. */
   readonly stopReturnMode: ExploreMode | null
   readonly handleStopSelected: (stopId: string) => boolean
+  /** Opens Stop details from an explicit action inside a live bus popup. */
+  readonly openStopDetailsFromMap: (stopId: string) => void
   readonly handleMapStopInteraction: (stopId: string) => void
   readonly selectView: (view: NavigationView, stopsList?: 'nearby' | 'favourites') => void
   readonly navigateToVenue: (venueCode: string) => void
@@ -162,6 +164,12 @@ export function useAppNavigation({
     openStopInStops(stopId)
     return true
   }, [openStopFromExplore, openStopInStops])
+
+  const openStopDetailsFromMap = useCallback((stopId: string): void => {
+    returnToExploreRef.current = null
+    setStopReturn(null)
+    openStopInStops(stopId)
+  }, [openStopInStops])
 
   const handleMapStopInteraction = useCallback((stopId: string): void => {
     if (isMobileViewportRef.current) return
@@ -333,6 +341,7 @@ export function useAppNavigation({
     stopFocusRequest,
     focusStopAfterMapLayout,
     openStopInStops,
+    openStopDetailsFromMap,
     openStopFromExplore,
     backFromStopDetails,
     stopReturnTarget: stopReturn ? 'explore' : null,

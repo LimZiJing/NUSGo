@@ -2,6 +2,7 @@ import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import type {
   NavigationSession,
@@ -18,9 +19,11 @@ export interface NavigationSessionMountDependencies {
   readonly pathfinder: JourneyPlanningClient
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
+  readonly onStopDetailsSelected?: (stopId: string) => void
   readonly onMapStopInteraction?: (stopId: string) => void
   readonly onMapStopDestinationSet?: (stopId: string) => void
   readonly onMapJourneyOptionSelected?: (candidateKey: string) => void
+  readonly onBasemapUnavailable?: MapSessionOptions['onBasemapUnavailable']
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
 }
 
@@ -39,6 +42,7 @@ export function createNavigationSessionMount(
     onMapError: (error) => session?.reportMapError(error),
     onEmptyMapClick: (coordinate) => session?.handleMapClick(coordinate),
     onStopSelected: dependencies.onStopSelected,
+    onStopDetailsSelected: dependencies.onStopDetailsSelected,
     onJourneyOptionSelected: (candidateKey) => {
       if (!session) return
       const isDisplayed = session.getState().path.displayedCandidates.some(({ candidateKey: key }) => (
@@ -49,6 +53,7 @@ export function createNavigationSessionMount(
       dependencies.onMapJourneyOptionSelected?.(candidateKey)
     },
     onMapCenterChange: dependencies.onMapCenterChange,
+    onBasemapUnavailable: dependencies.onBasemapUnavailable,
   })
   session = dependencies.createNavigationSession({
     map,
@@ -86,6 +91,9 @@ export interface NavigationSessionCommands {
   readonly selectOriginEndpoint: (
     endpoint: Parameters<NavigationSession['setTripEndpoint']>[1],
   ) => void
+  readonly setPersonalWaypointCollection: (
+    waypoints: Parameters<NavigationSession['setPersonalWaypointCollection']>[0],
+  ) => void
   readonly clearOriginEndpoint: () => void
   readonly selectDestinationEndpoint: (
     endpoint: Parameters<NavigationSession['setTripEndpoint']>[1],
@@ -116,6 +124,7 @@ export interface NavigationSessionCommands {
   readonly setStopsPinVisible: (visible: boolean) => void
   readonly setNearbyStopHighlight: (stopIds: readonly string[]) => void
   readonly setPlanLayersVisible: (visible: boolean) => void
+  readonly setLiveVehicles: (vehicles: readonly ShuttleVehiclePosition[], visible: boolean) => void
   readonly enableLocationTracking: () => void
   readonly locateUser: () => void
   readonly useCurrentLocationForOrigin: () => void
@@ -135,6 +144,9 @@ export interface NavigationSessionCommands {
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
   ) => void
+  readonly focusPersonalWaypoint: (
+    waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -150,6 +162,7 @@ function createNavigationSessionCommands(
   return {
     swapTripEndpoints: () => session?.swapTripEndpoints(),
     selectOriginEndpoint: (endpoint) => session?.setTripEndpoint('origin', endpoint),
+    setPersonalWaypointCollection: (waypoints) => session?.setPersonalWaypointCollection(waypoints),
     clearOriginEndpoint: () => session?.clearTripEndpoint('origin'),
     selectDestinationEndpoint: (endpoint) => session?.setTripEndpoint('destination', endpoint),
     navigateToEndpoint: (endpoint) => session?.navigateTo(endpoint),
@@ -176,6 +189,7 @@ function createNavigationSessionCommands(
     setStopsPinVisible: (visible) => session?.setStopsPinVisible(visible),
     setNearbyStopHighlight: (stopIds) => session?.setNearbyStopHighlight(stopIds),
     setPlanLayersVisible: (visible) => session?.setPlanLayersVisible(visible),
+    setLiveVehicles: (vehicles, visible) => session?.setLiveVehicles(vehicles, visible),
     enableLocationTracking: () => session?.enableLocationTracking(),
     locateUser: () => session?.locateUser(),
     useCurrentLocationForOrigin: () => session?.useCurrentLocationForOrigin(),
@@ -191,6 +205,7 @@ function createNavigationSessionCommands(
     setPersonalWaypoints: (waypoints, visible, onSelect) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
+    focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

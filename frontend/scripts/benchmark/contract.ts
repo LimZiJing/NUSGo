@@ -4,7 +4,7 @@ import type { ShuttleArrivalClient } from '../../src/app/contracts/shuttle-arriv
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import type { Path } from '../../../backend/src/pathfinding/path.js'
 import type { PathSearchInput } from '../../../backend/src/pathfinding/search/search-path-candidates.js'
-import type { TripEndpoint } from '../../src/domain/trip/types.js'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type { ShuttleServiceHoursClient } from '../../src/infrastructure/shuttle-service-hours/client.js'
@@ -25,8 +25,8 @@ export interface PathfindingBenchmarkDurationBounds {
 export interface PathfindingBenchmarkCase {
   readonly id: string
   readonly label: string
-  readonly origin: TripEndpoint
-  readonly destination: TripEndpoint
+  readonly origin: JourneyEndpoint
+  readonly destination: JourneyEndpoint
   readonly arrivalSeconds: number
   readonly group?: PathfindingBenchmarkGroup
   readonly scenario?: PathfindingBenchmarkScenario

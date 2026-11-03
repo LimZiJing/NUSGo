@@ -3,7 +3,7 @@ import type { ShuttleServiceWindow } from '@nusgo/shared/transit/service-hours'
 import type { TransitIndex } from '@nusgo/shared/transit/index'
 import type { TransitNetwork, BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
-import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type {
   WalkingConnection,
@@ -20,8 +20,8 @@ export interface TestTransitData {
 }
 
 interface TestTripRequest {
-  readonly origin: TripEndpoint | null
-  readonly destination: TripEndpoint | null
+  readonly origin: JourneyEndpoint | null
+  readonly destination: JourneyEndpoint | null
 }
 
 interface TestRequest {

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -19,6 +20,23 @@ function departureStatusAccessibleLabel(message: string): string {
   return minutes === undefined
     ? message
     : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string {
+  const timingLabel = timingAccessibleLabel(timing)
+  const arrivalLabel = timing === 'Arr' || timing === 'Left' || timing === '-'
+    ? timingLabel
+    : `Arrives in ${timingLabel}`
+
+  return load === 'unknown'
+    ? `${arrivalLabel}. Crowding estimate unavailable.`
+    : `${arrivalLabel}. Estimated crowding: ${load}.`
+}
+
+const VISIBLE_LOAD_LABELS: Partial<Record<ShuttleLoadLevel, string>> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
@@ -43,18 +61,49 @@ function formatTimingVisual(timing: string): ReactNode {
   )
 }
 
-function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
+function DepartureTimes({
+  timings,
+  load,
+}: {
+  readonly timings: readonly [string, string, string]
+  readonly load?: ShuttleLoadLevel
+}) {
   return (
     <span className="stop-departure-times">
-      {timings.map((timing, index) => (
-        <span
-          key={index}
-          className="stop-departure-time"
-          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-        >
-          <AccessibleTiming visual={formatTimingVisual(timing)} spoken={timingAccessibleLabel(timing)} />
-        </span>
-      ))}
+      {timings.map((timing, index) => {
+        const nextBusLoad = index === 0 ? load : undefined
+        const loadLabel = nextBusLoad ? VISIBLE_LOAD_LABELS[nextBusLoad] : undefined
+
+        return (
+          <span
+            key={index}
+            className="stop-departure-time"
+            data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+            data-load-level={nextBusLoad}
+          >
+            <AccessibleTiming
+              visual={formatTimingVisual(timing)}
+              spoken={nextBusLoad
+                ? arrivalAccessibleLabel(timing, nextBusLoad)
+                : timingAccessibleLabel(timing)}
+            />
+            {loadLabel && nextBusLoad && (
+              <span
+                aria-hidden="true"
+                className="stop-departure-load-cue"
+                data-load-level={nextBusLoad}
+              >
+                <svg focusable="false" viewBox="0 0 12 12">
+                  <rect x="1" y="8" width="2" height="3" rx="1" />
+                  <rect x="5" y="5" width="2" height="6" rx="1" />
+                  <rect x="9" y="2" width="2" height="9" rx="1" />
+                </svg>
+                {loadLabel}
+              </span>
+            )}
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -88,8 +137,9 @@ export function StopDepartureList({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   const visiblePublicServices = noLiveData
-    ? publicServices.filter(({ timings }) => timings !== null)
+    ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
+  const hasVisibleCrowdingEstimate = departures.some(({ load }) => load !== undefined && load !== 'unknown')
 
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
     if (noLiveData) return null
@@ -101,6 +151,11 @@ export function StopDepartureList({
       {!noLiveData && liveArrivalMessage && (
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
+        </p>
+      )}
+      {hasVisibleCrowdingEstimate && (
+        <p className="stop-departure-load-legend">
+          Low, Medium, and High indicate the estimated crowding level for the next bus on each route.
         </p>
       )}
       <ul className="stop-departure-list" aria-label="Bus timings">
@@ -116,7 +171,7 @@ export function StopDepartureList({
               onClick={() => onSelectRoute(departure.routeId)}
             />
             <ReachableFavouriteStops stops={departure.reachableFavouriteStops ?? []} />
-            <DepartureTimes timings={departure.timings} />
+            <DepartureTimes timings={departure.timings} load={departure.load} />
           </li>
         ))}
         {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (

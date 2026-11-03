@@ -29,6 +29,7 @@ export interface ShuttleArrivalSnapshot extends DataFreshness {
 }
 
 export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000
+export const SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS = 30_000
 export const SHUTTLE_ARRIVAL_FRESHNESS_MS = 30_000
 export const SHUTTLE_ARRIVAL_MAX_AGE_MS = 120_000
 

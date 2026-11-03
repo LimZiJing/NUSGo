@@ -3,6 +3,7 @@ import {
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../../domain/transit/arrivals'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import {
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
@@ -30,6 +31,7 @@ export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
+  readonly load: ShuttleLoadLevel
   readonly timings: readonly [string, string, string]
   readonly reachableFavouriteStops?: readonly StopFavouriteDestination[]
 }
@@ -155,7 +157,7 @@ function formatSingaporeClock(ms: number): string {
 
 function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | undefined {
   const startMs = Date.parse(nextStartAt)
-  if (!Number.isFinite(startMs)) return undefined
+  if (!Number.isFinite(startMs) || startMs <= nowMs) return undefined
   const daysAway = singaporeDayNumber(startMs) - singaporeDayNumber(nowMs)
   const clock = formatSingaporeClock(startMs)
   if (daysAway <= 0) return `Starts ${clock}`
@@ -183,6 +185,8 @@ function getLiveStopDepartures(
     const arrival = stopArrivals[routeId]
     if (!route || !arrival) return []
 
+    const firstArrivalSeconds = arrival.upcomingArrivalSeconds[0]
+    const firstArrivalStillUpcoming = firstArrivalSeconds !== undefined && firstArrivalSeconds >= ageSeconds
     const timings = arrival.upcomingArrivalSeconds
       .map((seconds) => seconds - ageSeconds)
       .filter((seconds) => seconds >= 0)
@@ -194,6 +198,7 @@ function getLiveStopDepartures(
       routeId,
       routeName: route.name,
       routeColor: route.color,
+      load: firstArrivalStillUpcoming ? arrival.load ?? 'unknown' : 'unknown',
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
       reachableFavouriteStops: [],
     }]

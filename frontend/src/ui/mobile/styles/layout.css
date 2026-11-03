@@ -59,6 +59,22 @@
     --map-control-row-step: calc(var(--control-height-lg) + var(--space-2));
   }
 
+  .live-bus-toggle {
+    position: absolute;
+    z-index: 13;
+    top: calc(var(--map-control-inset-top) + var(--map-control-row-step));
+    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+  }
+
+  .live-bus-status {
+    position: absolute;
+    z-index: 13;
+    top: calc(
+      var(--map-control-inset-top) + var(--map-control-row-step) + var(--map-control-row-step)
+    );
+    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+  }
+
   .map-legend {
     display: none;
   }

@@ -584,7 +584,7 @@ describe('findPaths', () => {
     }
     const walkingConnectionProvider = {
       getWalkingConnections: vi.fn(async () => [
-        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 100, durationSeconds: 100 },
+        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 1, durationSeconds: 1 },
         { fromKey: 'stop:STOP-D', toKey: 'stop:STOP-C', distanceMeters: 100, durationSeconds: 100 },
         { fromKey: 'stop:STOP-A', toKey: 'stop:STOP-D', distanceMeters: 5_000, durationSeconds: 5_000 },
       ]),
@@ -647,7 +647,7 @@ describe('findPaths', () => {
     }
     const walkingConnectionProvider = {
       getWalkingConnections: vi.fn(async () => [
-        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 100, durationSeconds: 100 },
+        { fromKey: 'stop:STOP-C', toKey: 'stop:STOP-D', distanceMeters: 1, durationSeconds: 1 },
         { fromKey: 'stop:STOP-A', toKey: 'stop:STOP-D', distanceMeters: 5_000, durationSeconds: 5_000 },
       ]),
     }

@@ -18,6 +18,7 @@ const appHarness = vi.hoisted(() => {
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
   }
   return {
     state: null as unknown,
@@ -586,7 +587,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('keeps details and Edit actions separate for an All places entry', async () => {
+  it('keeps details and direct Edit actions separate for an All places entry', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -897,6 +898,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Enter coordinates' }))
 
     const latitude = screen.getByRole('spinbutton', { name: 'Latitude' })
     const longitude = screen.getByRole('spinbutton', { name: 'Longitude' })
@@ -907,7 +909,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
-    expect(screen.getByRole('alert').textContent).toContain('valid latitude and longitude')
+    expect(screen.getByRole('alert').textContent).toContain('Latitude must be between')
     expect(screen.queryByLabelText('Name')).toBeNull()
 
     await user.clear(latitude)

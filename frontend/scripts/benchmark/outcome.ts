@@ -5,7 +5,7 @@ import type {
 } from '../../../backend/src/pathfinding/walking/walking-contracts.js'
 import type { Path, PathGeometry } from '../../../backend/src/pathfinding/path.js'
 import type { ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
-import type { TripEndpoint } from '../../src/domain/trip/types.js'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
@@ -48,13 +48,13 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0
 }
 
-function endpointKey(endpoint: TripEndpoint): string {
+function endpointKey(endpoint: JourneyEndpoint): string {
   return getTripEndpointKey(endpoint)
 }
 
-function isEndpoint(value: unknown): value is TripEndpoint {
+function isEndpoint(value: unknown): value is JourneyEndpoint {
   if (!isRecord(value)) return false
-  if (value.kind === 'current-location') {
+  if (value.kind === 'current-location' || value.kind === 'waypoint-coordinate') {
     return createCurrentLocationTripEndpoint(value.coordinate) !== null
   }
   return (value.kind === 'venue' || value.kind === 'stop') &&
@@ -82,11 +82,11 @@ function isLineString(value: unknown): value is PathGeometry {
 }
 
 function endpointCoordinate(
-  endpoint: TripEndpoint,
+  endpoint: JourneyEndpoint,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
 ): readonly [number, number] | null {
-  if (endpoint.kind === 'current-location') {
+  if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
     return [endpoint.coordinate.longitude, endpoint.coordinate.latitude]
   }
   if (endpoint.kind === 'stop') {
@@ -115,8 +115,8 @@ function distanceMeters(
 
 function validateLegGeometry(
   value: unknown,
-  from: TripEndpoint,
-  to: TripEndpoint,
+  from: JourneyEndpoint,
+  to: JourneyEndpoint,
   mode: unknown,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
@@ -149,7 +149,7 @@ function validateLegGeometry(
 }
 
 function validateEndpointReference(
-  endpoint: TripEndpoint,
+  endpoint: JourneyEndpoint,
   transit: LoadedTransitData,
   venues: VenueLocationMap,
   label: string,
@@ -163,13 +163,13 @@ function validateEndpointReference(
 }
 
 interface WalkingMetricConnection {
-  readonly from: TripEndpoint
-  readonly to: TripEndpoint
+  readonly from: JourneyEndpoint
+  readonly to: JourneyEndpoint
   readonly durationSeconds: number
   readonly distanceMeters: number
 }
 
-function isSameEndpoint(first: TripEndpoint, second: TripEndpoint): boolean {
+function isSameEndpoint(first: JourneyEndpoint, second: JourneyEndpoint): boolean {
   return endpointKey(first) === endpointKey(second)
 }
 
@@ -198,7 +198,7 @@ function walkingConnectionsForValidation(
     return null
   }
 
-  const endpointByKey = new Map<string, TripEndpoint>()
+  const endpointByKey = new Map<string, JourneyEndpoint>()
   for (const endpoint of [
     benchmarkCase.origin,
     benchmarkCase.destination,
@@ -271,8 +271,8 @@ function walkingConnectionsForValidation(
 
 function hasWalkingEvidencePath(
   connections: readonly WalkingMetricConnection[],
-  from: TripEndpoint,
-  to: TripEndpoint,
+  from: JourneyEndpoint,
+  to: JourneyEndpoint,
   durationSeconds?: number,
   distanceMeters?: number,
 ): boolean {
@@ -317,8 +317,8 @@ function hasWalkingEvidencePath(
 }
 
 function validateWalkingMetrics(
-  from: TripEndpoint,
-  to: TripEndpoint,
+  from: JourneyEndpoint,
+  to: JourneyEndpoint,
   durationSeconds: unknown,
   distanceMeters: unknown,
   benchmarkCase: PathfindingBenchmarkCase,

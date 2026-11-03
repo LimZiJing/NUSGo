@@ -1,5 +1,5 @@
 import type { TransitIndex } from '@nusgo/shared/transit/index'
-import type { TripEndpoint } from '@nusgo/shared/routing/path'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { getTripEndpointCoordinate, getTripEndpointKey, type BuildingIndex, type ResolvedPathLocation } from '../endpoints.ts'
 
@@ -10,7 +10,7 @@ export interface ResolvedPathEndpoints {
 }
 
 function resolveEndpoint(
-  endpoint: TripEndpoint,
+  endpoint: JourneyEndpoint,
   sources: { readonly venues: VenueLocationMap; readonly buildings: BuildingIndex; readonly transit: TransitIndex },
 ): ResolvedPathLocation | null {
   const coordinate = getTripEndpointCoordinate(endpoint, sources)
@@ -25,8 +25,8 @@ function addLocation(
 }
 
 export function resolvePathEndpoints(
-  originEndpoint: TripEndpoint,
-  destinationEndpoint: TripEndpoint,
+  originEndpoint: JourneyEndpoint,
+  destinationEndpoint: JourneyEndpoint,
   venues: VenueLocationMap,
   transit: TransitIndex,
   buildings: BuildingIndex = { byId: new Map() },
@@ -40,7 +40,7 @@ export function resolvePathEndpoints(
   addLocation(locations, origin)
   addLocation(locations, destination)
   for (const stop of transit.stops) {
-    const endpoint: TripEndpoint = { kind: 'stop', id: stop.id }
+    const endpoint: JourneyEndpoint = { kind: 'stop', id: stop.id }
     const coordinate = getTripEndpointCoordinate(endpoint, sources)
     if (!coordinate) continue
     addLocation(locations, { key: getTripEndpointKey(endpoint), endpoint, coordinate })

@@ -43,4 +43,23 @@ describe('resolvePathEndpoints with buildings', () => {
       resolvePathEndpoints({ kind: 'building', id: 'gone' }, { kind: 'stop', id: 'COM3' }, {}, transit, buildBuildingIndex([com3])),
     ).toBeNull()
   })
+
+  it('resolves a coordinate-only waypoint endpoint without canonical data', () => {
+    const waypoint = {
+      kind: 'waypoint-coordinate',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    } as const
+    const resolved = resolvePathEndpoints(
+      waypoint,
+      { kind: 'stop', id: 'COM3' },
+      {},
+      transit,
+    )
+
+    expect(resolved?.origin).toMatchObject({
+      key: 'waypoint-coordinate:103.78:1.29',
+      endpoint: waypoint,
+      coordinate: waypoint.coordinate,
+    })
+  })
 })

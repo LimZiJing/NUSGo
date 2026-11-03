@@ -1,4 +1,5 @@
 import type { LoadedTransitData } from '../../app/contracts/data'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import { Marker } from 'maplibre-gl'
 import type {
   MapCoordinate,
@@ -12,12 +13,14 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
+import { createLiveBusMarkers } from './live-bus-markers'
 import {
   createShuttleStopMarkers,
   type JourneyStopRoute,
@@ -93,6 +96,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
+  const liveBusMarkers = createLiveBusMarkers(map, options.onStopDetailsSelected)
   let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
@@ -410,6 +414,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearTransitData()
       transitData = data
       currentTransitIndex = data.index
+      liveBusMarkers.setTransitData(data)
       if (stopsPinStopId && !data.index.stopById.has(stopsPinStopId)) stopsPinStopId = null
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       const routeColors = new Map(data.index.routes.map(({ id, color }) => [id, color] as const))
@@ -434,6 +439,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
       installJourneyRouteLayers()
+    },
+
+    setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean) {
+      if (disposed) return
+      liveBusMarkers.setVehicles(vehicles, visible)
     },
 
     setRouteSelection(selection: MapRouteSelection, fit = true) {
@@ -654,7 +664,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         const element = document.createElement('div')
         element.className = 'personal-waypoint-placement-marker'
         element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ element, draggable: editable })
+        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
         personalWaypointDragHandler = () => {
@@ -672,6 +682,19 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     setPersonalWaypoints(waypoints, visible, onSelect) {
       if (disposed) return
       personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+    },
+
+    focusPersonalWaypoint(waypoint: PersonalWaypoint) {
+      if (disposed) return
+      pendingCameraFit = null
+      personalWaypointMarkers.focusWaypoint(waypoint)
+      map.flyTo({
+        center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
     },
 
     dismissStopPopup() {
@@ -795,6 +818,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
+      liveBusMarkers.dispose()
       buildingLabels?.dispose()
       buildingLabels = null
       groupLabels?.dispose()

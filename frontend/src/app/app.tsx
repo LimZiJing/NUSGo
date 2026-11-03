@@ -1,3 +1,4 @@
+import { PwaInstallSection } from './pwa-install-section'
 import {
   lazy,
   Suspense,
@@ -10,6 +11,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { LocationControl } from '../ui/location-control'
+import { PwaNotices } from './pwa-notices'
 import { NearbyCrosshair } from '../ui/nearby-crosshair'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
@@ -49,6 +51,8 @@ import { AppViews, type AppViewsProps } from './composition/app-views'
 import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-panel-focus'
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
+import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
+import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
@@ -118,6 +122,7 @@ function App() {
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
+  const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
@@ -141,6 +146,7 @@ function App() {
   const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
+  const [liveBusLayerEnabled, setLiveBusLayerEnabled] = useState(false)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
@@ -193,6 +199,12 @@ function App() {
     (routeIds, signal) => services.shuttleServiceHoursClient.getServiceWindows(routeIds, signal),
     [services],
   )
+  const loadShuttleVehicles = useCallback(
+    (routeIds: readonly string[], signal: AbortSignal) => (
+      services.shuttleVehicleClient.getVehicles(routeIds, signal)
+    ),
+    [services],
+  )
   const requestNearbyLocation = useCallback((): void => {
     session?.locateUser()
   }, [session])
@@ -209,6 +221,35 @@ function App() {
     locateFromControl: commands.locateUser,
     enableLocationTracking: commands.enableLocationTracking,
   })
+  const liveBusRouteIds = useMemo(() => {
+    if (navigationState.state.activeView === 'stops') {
+      return [...state.transitIndex?.routeIdsByStopId.get(stopsWorkflow.state.focusedStopId ?? '') ?? []].sort()
+    }
+    const routeIds = new Set<string>()
+    if (navigationState.state.activeView === 'explore') {
+      if (state.selectedRouteId) routeIds.add(state.selectedRouteId)
+    } else {
+      for (const leg of state.path.path?.legs ?? []) {
+        if (leg.mode === 'shuttle') routeIds.add(leg.routeId)
+      }
+    }
+    return [...routeIds].sort()
+  }, [
+    navigationState.state.activeView,
+    state.path.path,
+    state.selectedRouteId,
+    state.transitIndex,
+    stopsWorkflow.state.focusedStopId,
+  ])
+  const showLiveBusVehicles = liveBusLayerEnabled && liveBusRouteIds.length > 0
+  const liveVehicles = useShuttleVehicles(
+    loadShuttleVehicles,
+    showLiveBusVehicles,
+    liveBusRouteIds,
+  )
+  useEffect(() => {
+    commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], showLiveBusVehicles)
+  }, [commands, liveVehicles.snapshot, showLiveBusVehicles])
   useLayoutEffect(() => {
     commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
   }, [commands, stopsWorkflow.nearbyHighlightStopIds])
@@ -221,6 +262,9 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
+    commands.focusPersonalWaypoint(waypoint)
+  }, [commands])
   const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
     // Restore the originating control after the details page has closed.
@@ -272,6 +316,10 @@ function App() {
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
+  const personalWaypointCollection = personalWaypoints.readResult.kind === 'ready' &&
+    personalWaypoints.readResult.rejectedRecords.count === 0
+    ? personalWaypoints.readResult.waypoints
+    : null
   const personalWaypointCategoryOptions = useMemo(
     () => getPersonalWaypointCategoryOptions(personalWaypointsForMap),
     [personalWaypointsForMap],
@@ -315,6 +363,9 @@ function App() {
       handlePersonalWaypointMapSelection,
     )
   }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
+  useEffect(() => {
+    commands.setPersonalWaypointCollection(personalWaypointCollection)
+  }, [commands, personalWaypointCollection])
   const appNavigation = useAppNavigation({
     ...navigationState,
     commands,
@@ -535,11 +586,13 @@ function App() {
     const mount = createNavigationSessionMount(mapContainer.current, {
       createMapSession,
       createNavigationSession,
+      onBasemapUnavailable: () => setBasemapUnavailable(true),
       loadVenues: services.loadVenues,
       loadTransit: services.loadTransit,
       pathfinder: services.pathfinder,
       locationTracker: services.createLocationTracker(),
       onStopSelected: appNavigation.handleStopSelected,
+      onStopDetailsSelected: appNavigation.openStopDetailsFromMap,
       onMapStopInteraction: appNavigation.handleMapStopInteraction,
       onMapStopDestinationSet: appNavigation.openPlan,
       onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
@@ -553,6 +606,7 @@ function App() {
   }, [
     appNavigation.handleMapStopInteraction,
     appNavigation.handleStopSelected,
+    appNavigation.openStopDetailsFromMap,
     appNavigation.openPlan,
     handleMapJourneyOptionSelected,
     services,
@@ -578,6 +632,7 @@ function App() {
   }, [state, stopsWorkflow.state.favoriteStopIds])
   const planContentProps: AppViewsProps['views']['plan'] = {
     searchSuggestions: planSearchSuggestions,
+    personalWaypoints: personalWaypointCollection ?? EMPTY_PERSONAL_WAYPOINTS,
     tripRequest: state.tripRequest,
     venues: state.venues,
     buildings: state.buildings,
@@ -858,6 +913,7 @@ function App() {
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage" ref={mapPresentationRef}>
+        <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
           ref={mapContainer}
           className="map"
@@ -909,6 +965,14 @@ function App() {
             }}
             onClick={toggleMore}
           />
+          <LiveBusToggle
+            enabled={liveBusLayerEnabled}
+            onToggle={setLiveBusLayerEnabled}
+          />
+          {liveBusLayerEnabled && (
+            liveVehicles.status === 'error' ||
+            (liveVehicles.snapshot?.unavailableRouteIds?.length ?? 0) > 0
+          ) && <p className="live-bus-status" role="status">Live buses unavailable</p>}
           <aside
             className="map-legend"
             aria-label="Map legend"
@@ -951,7 +1015,7 @@ function App() {
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
-            content: morePage === 'menu' ? <MoreMenu
+            content: morePage === 'menu' ? <MoreMenu installSection={<PwaInstallSection />}
               waypointCount={personalWaypoints.readResult.kind === 'ready'
                 ? personalWaypoints.readResult.waypoints.length
                 : null}
@@ -961,6 +1025,7 @@ function App() {
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointPlacement}
+              onFocusWaypoint={focusPersonalWaypoint}
               editing={isEditingPersonalWaypoints}
               onSelectWaypoint={handlePersonalWaypointRowSelection}
               onEditWaypoint={editPersonalWaypointFromList}

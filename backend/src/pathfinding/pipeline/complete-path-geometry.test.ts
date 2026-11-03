@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Path, ScoredPathCandidate, TripEndpoint } from '@nusgo/shared/routing/path'
+import type { BusPathLeg, Path, ScoredPathCandidate, TripEndpoint } from '@nusgo/shared/routing/path'
 import { getTripEndpointKey } from '../endpoints.ts'
 import type { PathCandidateSearchResult } from '../search/search-path-candidates.ts'
 import type { WalkingRouteEngine } from '../walking/walking-contracts.ts'
@@ -24,12 +24,12 @@ function candidate(candidateKey: string, legs: Path['legs']): ScoredPathCandidat
   return { candidateKey, path, adjustedDurationSeconds: 100, score: 1 }
 }
 
-function shuttleLeg(): Path['legs'][number] {
+function shuttleLeg(routeId = 'A1'): BusPathLeg {
   return {
     mode: 'shuttle',
     from: origin,
     to: destination,
-    routeId: 'A1',
+    routeId,
     boardingStopId: 'STOP-A',
     alightingStopId: 'STOP-B',
     waitingSeconds: 0,
@@ -58,6 +58,22 @@ function search(rankedCandidates: readonly ScoredPathCandidate[]): PathCandidate
 }
 
 describe('completePathGeometry', () => {
+
+  it('returns the highest-ranked complete Path for each ordered bus route sequence', async () => {
+    const routeEngine: WalkingRouteEngine = {
+      matrixWalking: vi.fn(async () => []),
+      routeWalking: vi.fn(async () => { throw new Error('unexpected walking route') }),
+    }
+    const first = shuttleLeg()
+    const result = await completePathGeometry(routeEngine, search([
+      candidate('a-fast', [first]),
+      candidate('a-slow', [{ ...first, boardingStopId: 'STOP-C' }]),
+      candidate('b', [{ ...first, routeId: 'B1' }]),
+    ]), [], new AbortController().signal, 350, () => 0)
+
+    expect(result?.candidates.map(({ candidateKey }) => candidateKey)).toEqual(['a-fast', 'b'])
+  })
+
   it('keeps completed candidates bounded when a later candidate hits the geometry deadline', async () => {
     vi.useFakeTimers()
     let monotonicTime = 0
@@ -83,7 +99,7 @@ describe('completePathGeometry', () => {
     }
     const pending = completePathGeometry(routeEngine, search([
       candidate('complete-bus', [shuttleLeg()]),
-      candidate('pending-bus', [walkingLeg, shuttleLeg()]),
+      candidate('pending-bus', [walkingLeg, shuttleLeg('B1')]),
     ]), [
       { key: getTripEndpointKey(origin), endpoint: origin, coordinate: origin.coordinate },
       { key: getTripEndpointKey(destination), endpoint: destination, coordinate: { longitude: 103.01, latitude: 1.01 } },
@@ -112,7 +128,7 @@ describe('completePathGeometry', () => {
     }
   })
 
-  it('retains a lower-ranked prefetch completed before the deadline when the first candidate stalls', async () => {
+  it('retains a different-stop same-route fallback completed before the deadline', async () => {
     vi.useFakeTimers()
     let monotonicTime = 0
     let markFirstRouteStarted = (): void => {}
@@ -155,7 +171,10 @@ describe('completePathGeometry', () => {
     }
     const pending = completePathGeometry(routeEngine, search([
       candidate('highest-ranked', [firstWalkingLeg, shuttleLeg()]),
-      candidate('prefetched-before-deadline', [secondWalkingLeg, shuttleLeg()]),
+      candidate('prefetched-before-deadline', [
+        secondWalkingLeg,
+        { ...shuttleLeg(), boardingStopId: 'STOP-C' },
+      ]),
     ]), [
       { key: getTripEndpointKey(origin), endpoint: origin, coordinate: origin.coordinate },
       { key: getTripEndpointKey(destination), endpoint: destination, coordinate: { longitude: 103.01, latitude: 1.01 } },

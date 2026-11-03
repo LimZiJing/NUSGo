@@ -95,6 +95,10 @@
 }
 
 .settings-theme-selected {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
 }
@@ -143,6 +147,11 @@
   clip-path: inset(50%);
 }
 
+.settings-theme-check {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--accent);
+}
 .settings-theme-choice[data-selected='true'] {
   border-color: var(--accent);
   color: var(--text-primary);
@@ -156,23 +165,23 @@
 }
 
 .settings-theme-swatch {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 12px;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
   background: var(--accent);
 }
 
-.settings-theme-choice[data-theme-choice='nus'] .settings-theme-swatch {
+.settings-theme-swatch[data-theme-choice='nus'] {
   background: linear-gradient(90deg, #003d7c 50%, #ef7c00 50%);
 }
 
-.settings-theme-choice[data-theme-choice='matcha'] .settings-theme-swatch {
+.settings-theme-swatch[data-theme-choice='matcha'] {
   background: #69846a;
 }
 
-.settings-theme-choice[data-theme-choice='sakura'] .settings-theme-swatch {
+.settings-theme-swatch[data-theme-choice='sakura'] {
   background: #b8798f;
 }
 

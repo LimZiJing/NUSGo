@@ -1,6 +1,6 @@
 import type { ThemePreference } from '../../../ui/theme'
 import type { MinuteFormat } from '../../../domain/trip/minute-format'
-import { ChevronRightIcon, MonitorIcon, MoonIcon, SunIcon } from '../../../ui/icons'
+import { CheckIcon, ChevronRightIcon, MonitorIcon, MoonIcon, SunIcon } from '../../../ui/icons'
 
 interface AppearanceSectionProps {
   readonly preference: ThemePreference
@@ -68,7 +68,18 @@ export function AppearanceSection({
       <details className="settings-theme-disclosure">
         <summary className="settings-theme-summary">
           <span className="settings-theme-title">Other themes</span>
-          {selectedOtherTheme && <span className="settings-theme-selected">{selectedOtherTheme.label}</span>}
+          {selectedOtherTheme ? (
+            <span className="settings-theme-selected">
+              <span
+                className="settings-theme-swatch"
+                data-theme-choice={selectedOtherTheme.value}
+                aria-hidden="true"
+              />
+              {selectedOtherTheme.label}
+            </span>
+          ) : (
+            <span className="settings-theme-selected">Choose</span>
+          )}
           <ChevronRightIcon className="settings-theme-chevron" size={18} />
         </summary>
         <div className="settings-theme-options" role="group" aria-label="Other themes">
@@ -76,7 +87,6 @@ export function AppearanceSection({
             <label
               className="settings-theme-choice"
               data-selected={preference === value}
-              data-theme-choice={value}
               key={value}
             >
               <input
@@ -86,8 +96,13 @@ export function AppearanceSection({
                 checked={preference === value}
                 onChange={() => onChange(value)}
               />
-              <span className="settings-theme-swatch" aria-hidden="true" />
+              <span
+                className="settings-theme-swatch"
+                data-theme-choice={value}
+                aria-hidden="true"
+              />
               <span>{label}</span>
+              {preference === value && <CheckIcon className="settings-theme-check" size={16} />}
             </label>
           ))}
         </div>

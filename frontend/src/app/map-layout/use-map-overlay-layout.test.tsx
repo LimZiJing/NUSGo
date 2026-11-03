@@ -28,6 +28,7 @@ function stubAnimationFrames() {
 }
 
 const navigation: NavigationState = createInitialNavigationState()
+const NOOP_PRESENTATION_INSET = (): void => undefined
 
 function setBounds(
   ref: RefObject<HTMLDivElement | null>,
@@ -51,6 +52,8 @@ function Probe({
   explorePanelMountsLate = false,
   toggleExplorePanel = false,
   setViewportInsets,
+  setPresentationBottomInset = NOOP_PRESENTATION_INSET,
+  observeStopsPresentation = false,
   onMeasurementsApplied,
 }: {
   readonly isMobileViewport: boolean
@@ -59,6 +62,8 @@ function Probe({
   readonly explorePanelMountsLate?: boolean
   readonly toggleExplorePanel?: boolean
   readonly setViewportInsets: (insets: { top: number; right: number; bottom: number; left: number }) => void
+  readonly setPresentationBottomInset?: (bottom: number | null) => void
+  readonly observeStopsPresentation?: boolean
   readonly onMeasurementsApplied: () => void
 }) {
   // Mirrors a sheet whose portalled popup mounts after the first commit, without a view change.
@@ -69,23 +74,26 @@ function Probe({
     return () => clearTimeout(timer)
   }, [explorePanelMountsLate])
   const mapShellRef = useRef<HTMLDivElement>(null)
+  const mapPresentationRef = useRef<HTMLDivElement>(null)
   const tripControlsRef = useRef<HTMLDivElement>(null)
   const explorePanelRef = useRef<HTMLDivElement>(null)
   const stopsSheetRef = useRef<HTMLDivElement>(null)
   const mainNavigationRef = useRef<HTMLDivElement>(null)
   const navigationColumnRef = useRef<HTMLDivElement>(null)
-  const commands = useMemo(() => ({ setViewportInsets }), [setViewportInsets])
+  const commands = useMemo(() => ({ setViewportInsets, setPresentationBottomInset }), [setPresentationBottomInset, setViewportInsets])
   const layout = useMapOverlayLayout({
     commands,
     isMobileViewport,
     navigation: navigationState,
     mapShellRef,
+    mapPresentationRef,
     tripControlsRef,
     explorePanelRef,
     stopsSheetRef,
     mainNavigationRef,
     navigationColumnRef,
     onMeasurementsApplied,
+    observeStopsPresentation,
   })
 
   return (
@@ -94,6 +102,7 @@ function Probe({
         className="map-shell"
         ref={setBounds(mapShellRef, { top: 0, right: 390, bottom: 844, left: 0, width: 390, height: 844 } as DOMRect)}
       >
+        <div className="map-stage" ref={mapPresentationRef} />
         {/* Like the real popup, the late sheet is portalled into the map shell. */}
         {explorePanelMounted && (
           <div className={sheetClassName} ref={setBounds(explorePanelRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
@@ -105,7 +114,7 @@ function Probe({
         )}
       </div>
       <div ref={setBounds(tripControlsRef, { top: 20, right: 390, bottom: 112, left: 0, width: 390, height: 92 } as DOMRect)} />
-      <div ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
+      <div className="stops-sheet" ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div data-testid="main-navigation" ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
       <div ref={setBounds(navigationColumnRef, { top: 0, right: 390, bottom: 844, left: 30, width: 360, height: 844 } as DOMRect)} />
       <output data-testid="navigation-width">{layout.navigationColumnWidth}</output>
@@ -149,6 +158,9 @@ describe('useMapOverlayLayout', () => {
     expect(setViewportInsets).toHaveBeenCalled()
     expect(onMeasurementsApplied).toHaveBeenCalledOnce()
     expect(observe).toHaveBeenCalledTimes(7)
+    expect(observe.mock.calls.some(([element, options]) => (
+      element instanceof HTMLElement && element.classList.contains('stops-sheet') && options?.box === 'border-box'
+    ))).toBe(true)
     expect(screen.getByTestId('navigation-width').textContent).toBe('0')
 
     const resizeHandlers = addEventListener.mock.calls
@@ -372,5 +384,66 @@ describe('useMapOverlayLayout', () => {
     const remountedSheet = view.container.querySelector('.mobile-sheet-popup')
     expect(remountedSheet).not.toBe(firstSheet)
     expect(observers.at(-1)?.observe.mock.calls.some(([element]) => element === remountedSheet)).toBe(true)
+  })
+
+  it('forwards each measured Stops sheet position to the transient map command', () => {
+    const stops: NavigationState = {
+      ...navigation,
+      activeView: 'stops',
+      sheets: { ...navigation.sheets, stops: { ...navigation.sheets.stops, detent: 'partial' } },
+    }
+    vi.stubGlobal('ResizeObserver', class {
+      observe = vi.fn()
+      disconnect = vi.fn()
+    })
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' }))
+    let nextFrameId = 0
+    const frames = new Map<number, FrameRequestCallback>()
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      const id = ++nextFrameId
+      frames.set(id, callback)
+      return id
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => { frames.delete(id) })
+    const setViewportInsets = vi.fn()
+    const setPresentationBottomInset = vi.fn()
+    const view = render(
+      <Probe
+        isMobileViewport
+        navigationState={stops}
+        setViewportInsets={setViewportInsets}
+        setPresentationBottomInset={setPresentationBottomInset}
+        observeStopsPresentation
+        onMeasurementsApplied={vi.fn()}
+      />,
+    )
+    const sheet = view.container.querySelector('.stops-sheet') as HTMLElement
+    let sheetTop = 200
+    const runFrame = (): void => {
+      const [id, callback] = [...frames.entries()][0] ?? []
+      if (id === undefined || !callback) throw new Error('No animation frame scheduled')
+      frames.delete(id)
+      callback(16)
+    }
+    vi.spyOn(sheet, 'getBoundingClientRect').mockImplementation(() => ({
+      x: 0, y: sheetTop, top: sheetTop, left: 0, right: 390, bottom: 844,
+      width: 390, height: 844 - sheetTop, toJSON: () => ({}),
+    }))
+
+    act(() => sheet.dispatchEvent(new Event('pointerdown', { bubbles: true })))
+    sheetTop = 150
+    act(runFrame)
+    expect(setPresentationBottomInset).toHaveBeenLastCalledWith(706)
+
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'))
+      runFrame()
+    })
+    expect(setPresentationBottomInset).toHaveBeenLastCalledWith(null)
+    expect(setViewportInsets).toHaveBeenCalledTimes(1)
+    expect(setPresentationBottomInset.mock.calls.map(([bottom]) => bottom)).toEqual([656, 656, 706, null])
+    expect(setPresentationBottomInset.mock.invocationCallOrder[1]).toBeLessThan(
+      setViewportInsets.mock.invocationCallOrder[0],
+    )
   })
 })

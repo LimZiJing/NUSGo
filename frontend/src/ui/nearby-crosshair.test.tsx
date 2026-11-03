@@ -28,7 +28,7 @@ describe('NearbyCrosshair', () => {
 
     expect(markup).toContain('--nearby-crosshair-top:10px')
     expect(markup).toContain('--nearby-crosshair-right:20px')
-    expect(markup).toContain('--nearby-crosshair-bottom:30px')
+    expect(markup).toContain('--nearby-crosshair-bottom:var(--map-sheet-presentation-bottom-inset, 30px)')
     expect(markup).toContain('--nearby-crosshair-left:40px')
   })
 })

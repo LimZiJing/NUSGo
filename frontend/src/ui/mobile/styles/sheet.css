@@ -186,6 +186,11 @@
     will-change: transform;
   }
 
+  /* Stops has a large scroll tree; resizing it every snap frame forces repeated layout. */
+  .mobile-sheet-popup.stops-sheet {
+    transition: transform var(--motion-duration-panel) var(--motion-ease-standard);
+  }
+
   .mobile-sheet-viewport[data-starting-style],
   .mobile-sheet-popup[data-starting-style] {
     transition: none;

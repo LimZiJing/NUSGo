@@ -21,7 +21,7 @@ export function NearbyCrosshair({ insets }: NearbyCrosshairProps) {
       style={{
         '--nearby-crosshair-top': `${insets.top}px`,
         '--nearby-crosshair-right': `${insets.right}px`,
-        '--nearby-crosshair-bottom': `${insets.bottom}px`,
+        '--nearby-crosshair-bottom': `var(--map-sheet-presentation-bottom-inset, ${insets.bottom}px)`,
         '--nearby-crosshair-left': `${insets.left}px`,
       } as CSSProperties}
     >

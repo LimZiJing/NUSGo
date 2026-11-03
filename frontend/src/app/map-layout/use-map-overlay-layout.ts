@@ -3,6 +3,8 @@ import type { NavigationSessionCommands } from '../navigation-session-mount'
 import type { NavigationState, NavigationView } from '../navigation/navigation-state'
 import type { MapViewportInsets } from '../map-camera'
 import { applyMapOverlayMeasurements } from './map-insets-controller'
+import { MAP_OVERLAY_MARGIN } from '../map-camera'
+import { observeMobileSheetPresentation } from './mobile-sheet-presentation'
 import {
   createMobileSheetSnapPoints,
   getMobileSheetOccupiedHeight,
@@ -14,11 +16,12 @@ import {
 } from '../../ui/mobile/mobile-sheet/mobile-sheet-metrics'
 
 export interface UseMapOverlayLayoutOptions {
-  readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets'>
+  readonly commands: Pick<NavigationSessionCommands, 'setViewportInsets' | 'setPresentationBottomInset'>
   readonly isMobileViewport: boolean
   readonly waypointPlacementActive?: boolean
   readonly navigation: NavigationState
   readonly mapShellRef: RefObject<HTMLElement | null>
+  readonly mapPresentationRef: RefObject<HTMLElement | null>
   readonly sheetPortalContainer?: HTMLElement | null
   readonly tripControlsRef: RefObject<HTMLElement | null>
   readonly explorePanelRef: RefObject<HTMLElement | null>
@@ -26,6 +29,7 @@ export interface UseMapOverlayLayoutOptions {
   readonly mainNavigationRef: RefObject<HTMLElement | null>
   readonly navigationColumnRef: RefObject<HTMLElement | null>
   readonly onMeasurementsApplied?: () => void
+  readonly observeStopsPresentation?: boolean
 }
 
 export interface MapOverlayLayout {
@@ -44,6 +48,7 @@ export function useMapOverlayLayout({
   waypointPlacementActive = false,
   navigation,
   mapShellRef,
+  mapPresentationRef,
   sheetPortalContainer,
   tripControlsRef,
   explorePanelRef,
@@ -51,6 +56,7 @@ export function useMapOverlayLayout({
   mainNavigationRef,
   navigationColumnRef,
   onMeasurementsApplied,
+  observeStopsPresentation = false,
 }: UseMapOverlayLayoutOptions): MapOverlayLayout {
   const refs = useMemo(() => ({
     mapShell: mapShellRef,
@@ -148,6 +154,20 @@ export function useMapOverlayLayout({
   }, [isMobileViewport, refs])
 
   useLayoutEffect(() => {
+    const shell = refs.mapShell.current
+    const sheet = refs.stopsSheet.current
+    const presentationTarget = mapPresentationRef.current
+    if (!shell || !sheet || !presentationTarget || !isMobileViewport || !observeStopsPresentation) return
+    return observeMobileSheetPresentation(
+      shell,
+      sheet,
+      window,
+      presentationTarget,
+      commands.setPresentationBottomInset,
+    )
+  }, [commands, isMobileViewport, mapPresentationRef, observeStopsPresentation, refs, sheetElementsRevision])
+
+  useLayoutEffect(() => {
     let frame: number | null = null
     const updateInsets = (): void => {
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth
@@ -175,9 +195,18 @@ export function useMapOverlayLayout({
           createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
         ) - tabBarInset)
         : activeSheetBounds?.height ?? 0
+      // Read geometry before publishing state or map updates.
+      const presentationBottomInset = isMobileViewport && observeStopsPresentation && activeSheetBounds && mapShellElement
+        ? Math.max(0, mapShellElement.getBoundingClientRect().bottom - activeSheetBounds.top + MAP_OVERLAY_MARGIN)
+        : null
       setNavigationColumnWidth((current) => (
         current === measuredNavigationWidth ? current : measuredNavigationWidth
       ))
+      // React applies the target detent before transitionrun. Hold the rendered
+      // padding here so keyboard snaps cannot jump to the target for one frame.
+      if (presentationBottomInset !== null) {
+        commands.setPresentationBottomInset(presentationBottomInset)
+      }
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
         viewportHeight,
@@ -212,11 +241,11 @@ export function useMapOverlayLayout({
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
       : new ResizeObserver(scheduleInsetUpdate)
-    if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current)
-    if (refs.explorePanel.current) resizeObserver?.observe(refs.explorePanel.current)
-    if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current)
-    if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current)
-    if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current)
+    if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current, { box: 'border-box' })
+    if (refs.explorePanel.current) resizeObserver?.observe(refs.explorePanel.current, { box: 'border-box' })
+    if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current, { box: 'border-box' })
+    if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current, { box: 'border-box' })
+    if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current, { box: 'border-box' })
 
     return () => {
       if (frame !== null) window.cancelAnimationFrame(frame)
@@ -235,6 +264,7 @@ export function useMapOverlayLayout({
     sheetElementsRevision,
     refs,
     onMeasurementsApplied,
+    observeStopsPresentation,
   ])
 
   return { mobileSheetMetrics, mapInsets, navigationColumnWidth }

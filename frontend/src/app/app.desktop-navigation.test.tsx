@@ -147,6 +147,15 @@ function createJourneySelectionState() {
   }
 }
 
+function selectPersonalWaypointFromMap(waypointId: string): HTMLButtonElement {
+  const trigger = document.createElement('button')
+  document.body.append(trigger)
+  const onSelectWaypoint = appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[2]
+  if (typeof onSelectWaypoint !== 'function') throw new Error('Personal Waypoint map selection callback is missing')
+  act(() => onSelectWaypoint(waypointId, trigger))
+  return trigger
+}
+
 beforeEach(() => {
   mockDesktopViewport()
   vi.stubGlobal('IntersectionObserver', class {
@@ -587,7 +596,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('keeps details and direct Edit actions separate for an All places entry', async () => {
+  it('shows a waypoint on the map and starts Plan from its Directions action', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -605,18 +614,18 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
 
-    const panel = document.querySelector('.more-panel-surface')
-    expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
-    await user.clear(screen.getByLabelText('Name'))
-    await user.type(screen.getByLabelText('Name'), 'Shaded bench')
-    await user.click(screen.getByRole('button', { name: 'Save changes' }))
-
-    expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    expect(screen.getByRole('heading', { name: 'All places 1' })).toBeTruthy()
-    expect(screen.getByText('Shaded bench')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'personal-waypoint',
+      id: waypoint.id,
+      label: waypoint.name,
+      coordinate: waypoint.coordinate,
+    }))
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
   })
 
   it('uses Escape to cancel a keyboard reorder before More handles it', async () => {
@@ -641,6 +650,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
     const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
     const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
@@ -649,7 +659,7 @@ describe('More surface', () => {
     await user.keyboard('{ArrowDown}')
     await user.keyboard('{Escape}')
 
-    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy()
+    expect(waypointsList.getAttribute('data-editing')).toBe('true')
     expect(screen.getByText('Reordering Quiet bench canceled.')).toBeTruthy()
     expect(within(waypointsList).getAllByRole('listitem').map((row) => row.textContent?.trim()))
       .toEqual(['Quiet benchRest spot', 'Library seatRest spot'])
@@ -657,7 +667,7 @@ describe('More surface', () => {
       .toEqual([firstWaypoint.id, secondWaypoint.id])
   })
 
-  it('opens category places, preserves visibility drafts, and returns from details to the category', async () => {
+  it('opens category places, preserves visibility drafts, and shows category places on the map', async () => {
     const quietBench = {
       id: '00000000-0000-4000-8000-000000000011',
       name: 'Quiet bench',
@@ -694,16 +704,15 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
 
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
     expect(screen.getByText('Quiet bench')).toBeTruthy()
     expect(screen.queryByText('Campus cafe')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
-    expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledWith(quietBench)
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back to categories' }))
     expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked)
@@ -734,7 +743,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
-    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+    const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
 
     const panel = document.querySelector('.more-panel-surface')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
@@ -758,6 +767,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
+    mapTrigger.remove()
   })
 
   it('shows the latest saved waypoint before allowing a conflicted edit to replace it', async () => {
@@ -779,7 +789,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
-    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+    const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
     await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
     await user.clear(screen.getByLabelText('Name'))
     await user.type(screen.getByLabelText('Name'), 'My unsaved edit')
@@ -809,6 +819,7 @@ describe('More surface', () => {
     const saved = JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints[0]
     expect(saved.name).toBe('My unsaved edit')
     expect(saved.note).toBe('Near the garden')
+    mapTrigger.remove()
   })
 
   it('restores the More page and sheet position after details opened from a map marker', async () => {
@@ -967,14 +978,17 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
-    expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
+    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    expect(waypointsList.getAttribute('data-editing')).toBe('true')
 
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(confirm).toHaveBeenCalledWith(
       'Clear all personal waypoints, including places hidden by filters?',
     )
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Done' })).toBeNull())
+    await waitFor(() => expect(screen.getByText('No saved waypoints yet. Add a waypoint to start your list.')).toBeTruthy())
 
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
@@ -982,16 +996,16 @@ describe('More surface', () => {
     await user.type(screen.getByLabelText('Category'), 'Food')
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Edit list' }).getAttribute('aria-pressed')).toBe('false')
-      expect(screen.queryByRole('button', { name: 'Done' })).toBeNull()
-    })
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
+    const createdWaypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    expect(createdWaypointsList.getAttribute('data-editing')).toBe('false')
 
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    expect(createdWaypointsList.getAttribute('data-editing')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(screen.getByRole('button', { name: 'Edit list' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('list', { name: 'Saved Personal Waypoints' }).getAttribute('data-editing')).toBe('false')
 
     confirm.mockRestore()
     vi.unstubAllGlobals()
@@ -1111,10 +1125,13 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-page')).toBe('waypoints')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
+    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
-    expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
+    expect(waypointsList.getAttribute('data-editing')).toBe('true')
     expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
       .toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Done' }))
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))

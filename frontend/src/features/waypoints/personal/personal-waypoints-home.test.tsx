@@ -29,7 +29,6 @@ const readyResult: PersonalWaypointStoreReadResult = {
 const noop = () => undefined
 const waypointHomeCallbacks = {
   onFocusWaypoint: noop,
-  onEditWaypoint: noop,
   categoryOptions: [],
   hiddenCategories: [],
   draftHiddenCategories: [],
@@ -55,7 +54,6 @@ function StatefulPersonalWaypointsHome() {
       status={null}
       onAdd={() => undefined}
       editing
-      onSelectWaypoint={() => undefined}
       onRemove={(waypointId) => setReadResult((current) => {
         if (current.kind !== 'ready') return current
         return {
@@ -64,7 +62,6 @@ function StatefulPersonalWaypointsHome() {
         }
       })}
       onMove={() => true}
-      onClearAll={() => undefined}
       onResetUnreadableData={() => undefined}
       onDiscardRejectedRecords={() => undefined}
       categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -84,10 +81,8 @@ describe('PersonalWaypointsHome', () => {
       readResult: readyResult,
       status: 'Waypoint order saved.',
       onAdd: () => undefined,
-      onSelectWaypoint: () => undefined,
       onRemove: () => undefined,
       onMove: () => true,
-      onClearAll: () => undefined,
       onResetUnreadableData: () => undefined,
       onDiscardRejectedRecords: () => undefined,
       categoryOptions: [{ category: 'Rest spot', waypointCount: 1 }],
@@ -120,10 +115,8 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         editing={false}
-        onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[
@@ -149,31 +142,35 @@ describe('PersonalWaypointsHome', () => {
     expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
   })
 
-  it('keeps details and Edit actions separate for each place on the main list', async () => {
+  it('shows a place on the map from its flat row and offers Directions separately', async () => {
     const user = userEvent.setup()
-    const onEditWaypoint = vi.fn()
+    const onFocusWaypoint = vi.fn()
+    const onDirectionsWaypoint = vi.fn()
     render(
       <PersonalWaypointsHome
         {...waypointHomeCallbacks}
         readResult={readyResult}
         status={null}
         onAdd={() => undefined}
+        onFocusWaypoint={onFocusWaypoint}
+        onDirectionsWaypoint={onDirectionsWaypoint}
         editing={false}
-        onSelectWaypoint={() => undefined}
-        onEditWaypoint={onEditWaypoint}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toHaveLength(1)
-    await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
-    expect(onEditWaypoint).toHaveBeenCalledWith(waypoint.id)
+    expect(screen.getByRole('button', { name: /Categories.*1 of 1 shown/ })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'All places 1' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
+    expect(onFocusWaypoint).toHaveBeenCalledWith(waypoint)
+    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
+    expect(onDirectionsWaypoint).toHaveBeenCalledWith(waypoint)
   })
 
   it('shows only the selected category and keeps Add waypoint on the main screen', async () => {
@@ -186,10 +183,8 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         editing={false}
-        onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -199,7 +194,7 @@ describe('PersonalWaypointsHome', () => {
     )
 
     expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Rest spot 1' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Back to categories' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back to categories' }))
@@ -212,10 +207,8 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         editing={false}
-        onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -253,10 +246,8 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         editing={false}
-        onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={onResetUnreadableData}
         onDiscardRejectedRecords={() => undefined}
       />,
@@ -288,10 +279,8 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         editing={false}
-        onSelectWaypoint={() => undefined}
         onRemove={() => undefined}
         onMove={() => true}
-        onClearAll={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={onDiscardRejectedRecords}
       />,

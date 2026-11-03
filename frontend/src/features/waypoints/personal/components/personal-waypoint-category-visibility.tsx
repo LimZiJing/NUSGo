@@ -41,9 +41,6 @@ export function PersonalWaypointCategoryVisibility({
   )
   const visibleSelectedCategories = filterCategories(selectedCategories)
   const visibleUnselectedCategories = filterCategories(unselectedCategories)
-  const selectedSummary = selectedCategories.length === 0
-    ? 'No categories selected'
-    : `${selectedCategories.slice(0, 3).map(({ category }) => category).join(', ')}${selectedCategories.length > 3 ? ` +${selectedCategories.length - 3} more` : ''}`
   const hasPendingChanges = categories.some(({ category }) => draftHidden.has(category) !== committedHidden.has(category))
 
   const renderCategory = ({ category, waypointCount }: PersonalWaypointCategoryOption) => {
@@ -86,9 +83,7 @@ export function PersonalWaypointCategoryVisibility({
         <span className="personal-waypoint-visibility-summary">
           <span className="personal-waypoint-visibility-label">Categories</span>
           <span className="personal-waypoint-visibility-selection" aria-live="polite">
-            {pickerOpen
-              ? <>Selected <strong>{selectedCategories.length}</strong></>
-              : <>{selectedCategories.length} selected <span aria-hidden="true">·</span> {selectedSummary}</>}
+            {selectedCategories.length} of {categories.length} shown
             {hasPendingChanges && <span className="personal-waypoint-visibility-pending"> · Changes pending</span>}
           </span>
         </span>

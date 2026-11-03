@@ -10,6 +10,11 @@ describe('NUS bus-arrival response parsing', () => {
         next_arrival_minutes: 4,
         next_arrival_seconds: 264,
         upcoming_arrival_seconds: [264, 624, 982],
+        _etas: [
+          { eta_s: 264, plate: 'PD-FIRST' },
+          { eta_s: 624, plate: 'PD-SECOND' },
+          { eta_s: 982, plate: 'PD-THIRD' },
+        ],
       }],
     })
 
@@ -19,6 +24,8 @@ describe('NUS bus-arrival response parsing', () => {
         nextArrivalSeconds: 264,
         upcomingArrivalSeconds: [264, 624, 982],
         headwaySeconds: { min: 358, max: 360, median: 359 },
+        nextBusPlate: 'PD-FIRST',
+        upcomingBusPlates: ['PD-FIRST', 'PD-SECOND', 'PD-THIRD'],
       },
     })
     assert.throws(() => parseNusBusArrivalResponse({ error: 'unavailable' }), /response was invalid/)

@@ -6,6 +6,7 @@ import type {
 
 export interface ShuttleRouteArrivalWithPlate extends ShuttleRouteArrivalData {
   readonly nextBusPlate?: string
+  readonly upcomingBusPlates?: readonly (string | null)[]
 }
 
 export interface BusArrivalSnapshot extends ShuttleArrivalSnapshot {

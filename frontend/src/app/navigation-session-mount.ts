@@ -132,6 +132,7 @@ export interface NavigationSessionCommands {
   readonly hideLocationMarker: () => void
   readonly showLocationMarker: () => void
   readonly setViewportInsets: (insets: MapViewportInsets) => void
+  readonly setPresentationBottomInset: (bottom: number | null) => void
   readonly setVisibleCenterZoom: (enabled: boolean) => void
   readonly setPersonalWaypointPlacement: (
     coordinate: Parameters<NavigationSession['setPersonalWaypointPlacement']>[0],
@@ -196,6 +197,7 @@ function createNavigationSessionCommands(
     hideLocationMarker: () => session?.hideLocationMarker(),
     showLocationMarker: () => session?.showLocationMarker(),
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
+    setPresentationBottomInset: (bottom) => session?.setPresentationBottomInset(bottom),
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
     setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
       session?.setPersonalWaypointPlacement(coordinate, editable, onChange)

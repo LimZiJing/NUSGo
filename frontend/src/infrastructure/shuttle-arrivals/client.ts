@@ -94,12 +94,24 @@ function normalizeRouteData(value: unknown): ShuttleRouteArrivalData | null {
     ...upcoming,
   ].filter((arrival, index, values) => values.indexOf(arrival) === index).sort((first, second) => first - second)
   if (arrivals.length === 0) return null
-  const load = normalizeLoadLevel(value.load)
+  const nextLoad = normalizeLoadLevel(value.load)
+  const rawUpcomingLoads = Array.isArray(value.upcomingLoads) ? value.upcomingLoads : undefined
+  const upcomingLoads = rawUpcomingLoads
+    ? arrivals.map((arrival) => {
+      const sourceIndex = upcoming.indexOf(arrival)
+      const loadValue = sourceIndex >= 0
+        ? rawUpcomingLoads[sourceIndex]
+        : arrival === nextArrival ? value.load : undefined
+      return normalizeLoadLevel(loadValue) ?? 'unknown'
+    })
+    : undefined
+  const load = upcomingLoads?.[0] ?? nextLoad
   return {
     nextArrivalSeconds: arrivals[0],
     upcomingArrivalSeconds: arrivals,
     headwaySeconds: normalizeHeadway(value.headwaySeconds, arrivals),
     ...(load !== undefined ? { load } : {}),
+    ...(upcomingLoads ? { upcomingLoads } : {}),
   }
 }
 

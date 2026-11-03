@@ -17,6 +17,27 @@
   list-style: none;
 }
 
+.settings-disclosure-summary,
+.settings-theme-summary {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.settings-disclosure-summary:active,
+.settings-theme-summary:active {
+  background: var(--surface-raised);
+  transform: scale(0.99);
+}
+
+@media (hover: hover) {
+  .settings-disclosure-summary:hover,
+  .settings-theme-summary:hover {
+    background: var(--surface-raised);
+  }
+}
+
 .settings-disclosure-summary::-webkit-details-marker {
   display: none;
 }
@@ -88,5 +109,10 @@
 @media (prefers-reduced-motion: reduce) {
   .settings-disclosure-chevron {
     transition: none;
+  }
+
+  .settings-disclosure-summary:active,
+  .settings-theme-summary:active {
+    transform: none;
   }
 }

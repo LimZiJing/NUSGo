@@ -32,6 +32,7 @@ export interface StopDeparture {
   readonly routeName: string
   readonly routeColor: string
   readonly load: ShuttleLoadLevel
+  readonly loads?: readonly [ShuttleLoadLevel, ShuttleLoadLevel, ShuttleLoadLevel]
   readonly timings: readonly [string, string, string]
   readonly reachableFavouriteStops?: readonly StopFavouriteDestination[]
 }
@@ -185,20 +186,28 @@ function getLiveStopDepartures(
     const arrival = stopArrivals[routeId]
     if (!route || !arrival) return []
 
-    const firstArrivalSeconds = arrival.upcomingArrivalSeconds[0]
-    const firstArrivalStillUpcoming = firstArrivalSeconds !== undefined && firstArrivalSeconds >= ageSeconds
-    const timings = arrival.upcomingArrivalSeconds
-      .map((seconds) => seconds - ageSeconds)
-      .filter((seconds) => seconds >= 0)
+    const upcoming = arrival.upcomingArrivalSeconds
+      .map((seconds, arrivalIndex) => ({
+        seconds: seconds - ageSeconds,
+        load: arrival.upcomingLoads?.[arrivalIndex] ?? (arrivalIndex === 0 ? arrival.load : undefined) ?? 'unknown',
+      }))
+      .filter(({ seconds }) => seconds >= 0)
       .slice(0, 3)
-      .map((seconds) => formatArrivalSeconds(seconds, minuteFormat))
-    if (timings.length === 0) return []
+    if (upcoming.length === 0) return []
+
+    const timings = upcoming.map(({ seconds }) => formatArrivalSeconds(seconds, minuteFormat))
+    const loads = [0, 1, 2].map((index) => upcoming[index]?.load ?? 'unknown') as [
+      ShuttleLoadLevel,
+      ShuttleLoadLevel,
+      ShuttleLoadLevel,
+    ]
 
     return [{
       routeId,
       routeName: route.name,
       routeColor: route.color,
-      load: firstArrivalStillUpcoming ? arrival.load ?? 'unknown' : 'unknown',
+      load: loads[0],
+      loads,
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
       reachableFavouriteStops: [],
     }]

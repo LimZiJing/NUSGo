@@ -164,6 +164,7 @@ describe('stop timing data', () => {
               nextArrivalSeconds: 120,
               upcomingArrivalSeconds: [120, 300, 480],
               headwaySeconds: null,
+              upcomingLoads: ['low', 'medium', 'high'],
             },
           },
         },
@@ -174,6 +175,7 @@ describe('stop timing data', () => {
     expect(timingData.liveArrivalMessage).toBeNull()
     expect(timingData.live).toBe(true)
     expect(timingData.departures[0]?.timings).toEqual(['2′', '5′', '8′'])
+    expect(timingData.departures[0]?.loads).toEqual(['low', 'medium', 'high'])
   })
 
   it('applies the selected format to shuttle and public arrivals', () => {

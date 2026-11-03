@@ -63,7 +63,6 @@ export function SettingsContent({
         title="Favourites"
         icon={<FavoriteIcon filled />}
         subtitle={`${favoriteStops.length} saved ${favoriteStops.length === 1 ? 'bus stop' : 'bus stops'}`}
-        defaultOpen={favoriteStops.length > 0}
       >
         <FavouritesSection
           stops={favoriteStops}

@@ -1,4 +1,9 @@
 :root {
+  /* Fixed palette identity colors shown in the Appearance theme picker. */
+  --theme-swatch-nus: linear-gradient(90deg, #003d7c 50%, #ef7c00 50%);
+  --theme-swatch-matcha: #69846a;
+  --theme-swatch-sakura: #b8798f;
+
   --blur-overlay: blur(16px) saturate(1.6);
   --space-1: 4px;
   --space-2: 8px;

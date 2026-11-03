@@ -130,7 +130,6 @@ export function AppViews({
             label="More panel"
             controlsId="more-panel-content"
             detent={isMobileViewport ? morePanel.detent : 'partial'}
-            partialVisibleHeight={morePanel.page === 'menu' ? 192 : undefined}
             enabled={isMobileViewport}
             active={morePanel.open}
             portalContainer={sheetPortalContainer}

@@ -635,6 +635,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    setPresentationBottomInset(bottom: number | null) {
+      if (disposed) return
+      lifecycle.setPresentationBottomInset(bottom)
+    },
+
     setVisibleCenterZoom(enabled: boolean) {
       if (disposed || visibleCenterZoomEnabled === enabled) return
       visibleCenterZoomEnabled = enabled

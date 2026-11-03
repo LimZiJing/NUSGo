@@ -101,7 +101,7 @@ describe('StopDepartureList', () => {
     'low',
     'medium',
     'high',
-  ] as const)('shows a visible non-colour cue for the next arrival with %s crowding', (load) => {
+  ] as const)('colors each displayed arrival and keeps its crowding label accessible with %s load', (load) => {
     const { container } = render(
       <StopDepartureList
         departures={[{
@@ -109,6 +109,7 @@ describe('StopDepartureList', () => {
           routeName: 'A2',
           routeColor: '#123456',
           load,
+          loads: [load, load, load],
           timings: ['3m', '6m', '9m'],
         }]}
         publicServices={[]}
@@ -119,16 +120,16 @@ describe('StopDepartureList', () => {
     const times = [...container.querySelectorAll('.stop-departure-time')]
     const nextArrival = times[0]
 
-    expect(nextArrival.getAttribute('data-load-level')).toBe(load)
-    expect(nextArrival.querySelector('.visually-hidden')?.textContent)
-      .toBe(`Arrives in 3 minutes. Estimated crowding: ${load}.`)
+    expect(times.map((time) => time.getAttribute('data-load-level'))).toEqual([load, load, load])
+    expect(times.map((time) => time.querySelector('.visually-hidden')?.textContent)).toEqual([
+      `Arrives in 3 minutes. Estimated crowding: ${load}.`,
+      `Arrives in 6 minutes. Estimated crowding: ${load}.`,
+      `Arrives in 9 minutes. Estimated crowding: ${load}.`,
+    ])
     expect(nextArrival.querySelector('[aria-hidden="true"]')?.textContent).toBe('3m')
-    expect(nextArrival.querySelector('.stop-departure-load-cue')?.textContent).toBe(
-      `${load[0].toUpperCase()}${load.slice(1)}`,
-    )
-    expect(times.slice(1).every((time) => time.getAttribute('data-load-level') === null)).toBe(true)
-    expect(screen.getByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
-      .not.toBeNull()
+    expect(nextArrival.querySelector('.stop-departure-load-cue')).toBeNull()
+    expect(screen.queryByText('Low, Medium, and High indicate the estimated crowding level for the next bus on each route.'))
+      .toBeNull()
   })
 
   it('keeps unknown load neutral and explains that the estimate is unavailable', () => {

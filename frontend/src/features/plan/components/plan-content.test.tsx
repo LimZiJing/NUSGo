@@ -77,9 +77,11 @@ const noopControls = {
 function TripHarness({
   onPlanJourney = () => undefined,
   onSearchResult,
+  personalWaypoints: waypointOptions = [],
 }: {
   onPlanJourney?: () => void
   onSearchResult?: () => void
+  personalWaypoints?: readonly PersonalWaypoint[]
 }) {
   const [tripRequest, setTripRequest] = useState<TripRequest>(createEmptyTripRequest())
 
@@ -88,6 +90,7 @@ function TripHarness({
       tripRequest={tripRequest}
       venues={venues}
       networkIndex={networkIndex}
+      personalWaypoints={waypointOptions}
       onSwap={() => setTripRequest((current) => swapTripEndpoints(current))}
       onSelectOriginEndpoint={(endpoint) => setTripRequest((current) => setTripEndpoint(current, 'origin', endpoint))}
       onClearOriginEndpoint={() => setTripRequest((current) => clearTripEndpoint(current, 'origin'))}
@@ -196,6 +199,16 @@ describe('PlanContent trip card', () => {
     expect(screen.getByRole('button', { name: 'Choose destination' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Trip actions' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Plan trip' }).className).toContain('visually-hidden')
+  })
+
+  it('accepts a Personal Waypoint as the destination', async () => {
+    const user = userEvent.setup()
+    render(<TripHarness personalWaypoints={personalWaypoints} />)
+
+    await user.click(screen.getByRole('button', { name: 'Choose destination' }))
+    await user.click(screen.getByRole('button', { name: 'Set destination to Quiet bench, Personal Waypoint' }))
+
+    expect(screen.getByRole('button', { name: 'Destination: Quiet bench. Change destination' })).toBeTruthy()
   })
 
   it('shows both ends by name and enables swap only when both are set', () => {

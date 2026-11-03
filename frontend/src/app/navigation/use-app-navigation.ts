@@ -66,6 +66,9 @@ export interface AppNavigation {
   readonly navigateToVenue: (venueCode: string) => void
   readonly navigateToBuilding: (buildingId: string, partId?: string) => void
   readonly navigateToStop: (stopId: string) => void
+  readonly navigateToEndpoint: (
+    endpoint: Parameters<NavigationSessionCommands['navigateToEndpoint']>[0],
+  ) => void
   readonly openPlan: () => void
   readonly selectRouteFromStops: (routeId: string) => void
   readonly beginMobileSearch: (view: 'explore' | 'plan') => void
@@ -352,6 +355,7 @@ export function useAppNavigation({
     navigateToVenue,
     navigateToBuilding,
     navigateToStop,
+    navigateToEndpoint,
     openPlan,
     selectRouteFromStops,
     beginMobileSearch,

@@ -39,7 +39,6 @@ import {
   type ThemePreference,
 } from '../ui/theme'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
-import { Button } from '../ui/button'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
 const JourneyTestTimeControl = import.meta.env.DEV
@@ -65,6 +64,7 @@ import {
   PersonalWaypointDetails,
   PersonalWaypointPlacement,
   PersonalWaypointsHome,
+  PersonalWaypointListActions,
   usePersonalWaypointWorkflow,
   usePersonalWaypointCategoryVisibility,
 } from '../features/waypoints/personal'
@@ -80,6 +80,7 @@ import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
+import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
@@ -127,6 +128,7 @@ function App() {
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
+  const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
   const [personalWaypointDetails, setPersonalWaypointDetails] = useState<PersonalWaypointDetailsSelection | null>(null)
@@ -310,9 +312,6 @@ function App() {
     }
     openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
   }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails])
-  const handlePersonalWaypointRowSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
-    openPersonalWaypointDetails(waypointId, 'waypoints', moreSheetDetent, trigger)
-  }, [moreSheetDetent, openPersonalWaypointDetails])
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
@@ -378,6 +377,16 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
+    const endpoint = createPersonalWaypointTripEndpoint(waypoint)
+    if (!endpoint) return
+
+    skipMoreFocusRestoreRef.current = true
+    appNavigation.navigateToEndpoint(endpoint)
+    setMorePage('closed')
+    setMoreSheetDetent('partial')
+    setIsEditingPersonalWaypoints(false)
+  }, [appNavigation])
   // Feature hooks own view behavior; App wires their bindings into the content components.
   const explorePanelFocus = useExplorePanelFocus({
     state: state.exploreState,
@@ -705,6 +714,7 @@ function App() {
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
     setIsEditingPersonalWaypoints(false)
+    setHasPersonalWaypointSearchFilter(false)
     focusCategoryPickerAfterBackRef.current = false
     setSelectedPersonalWaypointCategory(null)
     setMoreSheetDetent('full')
@@ -735,6 +745,7 @@ function App() {
   const clearPersonalWaypoints = (): void => {
     personalWaypoints.clearAll()
     setIsEditingPersonalWaypoints(false)
+    setHasPersonalWaypointSearchFilter(false)
   }
   const removePersonalWaypoint = (waypointId: string): boolean => {
     const removingLastWaypoint = personalWaypoints.readResult.kind === 'ready' &&
@@ -834,21 +845,12 @@ function App() {
     setMorePage('editing-waypoint')
     setMoreSheetDetent('full')
   }
-  const editPersonalWaypointFromList = (waypointId: string): void => {
-    if (personalWaypoints.readResult.kind !== 'ready') return
-    const waypoint = personalWaypoints.readResult.waypoints.find(({ id }) => id === waypointId)
-    if (waypoint) {
-      setSelectedPersonalWaypointCategory(null)
-      beginPersonalWaypointEdit(waypoint, 'waypoints')
-    }
-  }
   const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
-    ? <Button
-      className="more-panel-header-action"
-      label={isEditingPersonalWaypoints ? 'Done' : 'Edit list'}
-      variant="ghost"
-      pressed={isEditingPersonalWaypoints}
-      onClick={() => setIsEditingPersonalWaypoints((editing) => !editing)}
+    ? <PersonalWaypointListActions
+      editing={isEditingPersonalWaypoints}
+      hasSearchFilter={hasPersonalWaypointSearchFilter}
+      onToggleEditing={() => setIsEditingPersonalWaypoints((editing) => !editing)}
+      onClearAll={clearPersonalWaypoints}
     />
     : undefined
 
@@ -1026,12 +1028,11 @@ function App() {
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointPlacement}
               onFocusWaypoint={focusPersonalWaypoint}
+              onDirectionsWaypoint={navigateToPersonalWaypoint}
+              onSearchFilterChange={setHasPersonalWaypointSearchFilter}
               editing={isEditingPersonalWaypoints}
-              onSelectWaypoint={handlePersonalWaypointRowSelection}
-              onEditWaypoint={editPersonalWaypointFromList}
               onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
-              onClearAll={clearPersonalWaypoints}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}

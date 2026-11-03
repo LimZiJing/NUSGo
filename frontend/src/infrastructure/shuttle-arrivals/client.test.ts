@@ -221,6 +221,7 @@ describe('createShuttleArrivalClient', () => {
             upcomingArrivalSeconds: [300, 600],
             headwaySeconds: null,
             load: 'medium',
+            upcomingLoads: ['medium', 'high'],
           },
         },
       },
@@ -232,6 +233,7 @@ describe('createShuttleArrivalClient', () => {
     )
 
     expect(result.stops.PGP.D2.load).toBe('medium')
+    expect(result.stops.PGP.D2.upcomingLoads).toEqual(['medium', 'high'])
   })
 
   it('fails invalid load levels closed to unknown', async () => {

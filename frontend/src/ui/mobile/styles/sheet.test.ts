@@ -39,6 +39,15 @@ describe('mobile sheet at the full detent', () => {
   })
 })
 
+describe('Stops sheet release snap', () => {
+  it('animates the sheet position without animating its scroll viewport padding', () => {
+    const stopsPopup = styles.match(/\.mobile-sheet-popup\.stops-sheet\s*{([^}]*)}/s)?.[1] ?? ''
+
+    expect(stopsPopup).toMatch(/transition:\s*transform\s+var\(--motion-duration-panel\)\s+var\(--motion-ease-standard\);/)
+    expect(stopsPopup).not.toMatch(/padding-bottom/)
+  })
+})
+
 describe('collapsed sheet summary', () => {
   it('truncates a long summary on one line instead of wrapping', () => {
     const summary = styles.match(/\.mobile-sheet-summary\s*{([^}]*)}/s)?.[1] ?? ''

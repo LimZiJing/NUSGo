@@ -11,11 +11,20 @@
   background: var(--surface-card);
 }
 
+.settings-appearance-card > .settings-choice-group,
+.settings-appearance-card > .settings-theme-disclosure {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.settings-appearance-card > * + * {
+  border-top: 1px solid var(--border-subtle);
+}
+
 .settings-choice-group {
   min-width: 0;
   margin: 0;
-  padding: var(--space-2) var(--space-3) var(--space-3);
-  border-bottom: 1px solid var(--border-subtle);
 }
 
 .settings-choice-heading {
@@ -58,16 +67,12 @@
   clip-path: inset(50%);
 }
 
-.settings-theme-disclosure {
-  margin: 0;
-}
-
 .settings-theme-summary {
   display: flex;
   min-height: 44px;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-3);
+  padding: 0;
   color: var(--text-primary);
   cursor: pointer;
   list-style: none;
@@ -108,7 +113,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-1);
-  padding: 0 var(--space-3) var(--space-3);
+  padding: 0;
 }
 
 .settings-theme-choice {

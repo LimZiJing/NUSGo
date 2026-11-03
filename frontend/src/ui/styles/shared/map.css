@@ -35,6 +35,10 @@
   pointer-events: none;
 }
 
+.map-stage.map-sheet-occludes-crosshair .nearby-crosshair-area {
+  visibility: hidden;
+}
+
 /* Centre dot: a solid accent circle with the same glow ring as .bus-stop-marker-nearby. */
 .nearby-crosshair {
   display: block;

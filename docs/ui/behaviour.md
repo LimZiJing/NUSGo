@@ -18,9 +18,10 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - A collapsed sheet shows a one-line summary of its tab, such as the Nearby stop count or the journey duration. The summary is part of the handle's accessible name.
 - Focusing a venue or endpoint search field opens the sheet at full height. Choosing a result returns it to partial. Dismissing search restores the earlier detent unless you changed it by hand.
 
-- The map's bottom inset follows the active sheet's detent. In Stops → Nearby, map padding follows each detent so centre-anchored zoom stays on the crosshair without changing pitch or bearing. The planned journey refits when the Plan detent changes or Plan becomes active again.
+- The map's bottom inset follows the active sheet's detent. In Stops → Nearby, map padding follows each detent so centre-anchored zoom stays on the crosshair without changing pitch or bearing. During a Stops sheet drag or settle, map padding, the decorative crosshair, and mobile map attribution follow the same measured sheet position. The crosshair hides when the full sheet covers its usable map area and returns as the sheet moves away; this presentation state does not change centre-anchored zoom. The planned journey refits when the Plan detent changes or Plan becomes active again.
 - More opens as a content-height sheet that keeps most of the map in view. Settings and My waypoints open full-height screens behind the tab pill; Back returns to More.
 - Sheets scroll natively, respect safe-area and visual-viewport sizes, honour reduced motion and are non-modal. Base UI Drawer handles swipes and snap points, while the app owns detent state.
+- Stops timing displays and their chevrons update without disclosure animations during sheet movement; directly expanding or collapsing a stop retains its normal animation.
 
 ## Explore
 

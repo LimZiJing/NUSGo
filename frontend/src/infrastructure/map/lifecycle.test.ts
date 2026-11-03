@@ -244,6 +244,45 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
+  it('uses measured presentation padding during sheet motion and publishes only the settled centre', () => {
+    const onMapCenterChange = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+      onMapCenterChange,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    map.setPadding.mockImplementation(() => map.emit('moveend', undefined))
+    const target = { top: 0, right: 0, bottom: 500, left: 0 }
+
+    lifecycle.setViewportInsets(target)
+    lifecycle.setVisibleCenterZoom(true)
+    onMapCenterChange.mockClear()
+    lifecycle.setPresentationBottomInset(320)
+    lifecycle.setPresentationBottomInset(410)
+    lifecycle.setViewportInsets(target)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ ...target, bottom: 410 })
+    expect(onMapCenterChange).not.toHaveBeenCalled()
+
+    lifecycle.setPresentationBottomInset(null)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith(target)
+    expect(onMapCenterChange).toHaveBeenCalledOnce()
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 172])
+    lifecycle.dispose()
+  })
+
+  it('clamps full-sheet padding to a valid map viewport', () => {
+    const { lifecycle, map } = createLifecycle()
+    lifecycle.setVisibleCenterZoom(true)
+    lifecycle.setViewportInsets({ top: 20, right: 500, bottom: 900, left: 500 })
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 20, right: 0, bottom: 823, left: 389 })
+    lifecycle.dispose()
+  })
+
   describe('double-click and double-tap zoom', () => {
     const touch = (x: number, y: number) => ({ clientX: x, clientY: y })
     const tap = (map: FakeMap, x = 100, y = 200) => {

@@ -9,6 +9,11 @@ const routeListStyles = readFileSync(resolve(stylesDirectory, 'bus-route-list.cs
 const stopsStyles = readFileSync(resolve(stylesDirectory, '../../stops/styles/stops-content.css'), 'utf8')
 
 describe('route browser visual contracts', () => {
+  it('suppresses only stop timing disclosure motion while the mobile sheet moves', () => {
+    expect(stopsStyles).toMatch(/\[data-mobile-sheet\]\[data-content-motion-suppressed\]\s+\.stop-card-timings,\s*\[data-mobile-sheet\]\[data-content-motion-suppressed\]\s+\.stop-card-chevron\s*{\s*transition:\s*none;/s)
+    expect(stopsStyles).toMatch(/\.stop-card-timings\s*{[^}]*transition:\s*grid-template-rows/s)
+  })
+
   it('keeps feature button defaults from overriding shared route chips', () => {
     // The Stops screen no longer restyles buttons by element type, so it cannot override route chips.
     expect(stopsStyles).not.toMatch(/\.stops-content button\b/)

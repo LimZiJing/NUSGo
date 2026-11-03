@@ -141,6 +141,7 @@ export interface NavigationSession {
   closeToRoot(): void
   handleMapClick(coordinate: MapCoordinate): void
   setViewportInsets(insets: MapViewportInsets): void
+  setPresentationBottomInset(bottom: number | null): void
   setVisibleCenterZoom(enabled: boolean): void
   setPersonalWaypointPlacement(
     coordinate: MapCoordinate | null,
@@ -992,6 +993,11 @@ export function createNavigationSession(
       if (disposed) return
       viewportInsets = { ...insets }
       dependencies.map.setViewportInsets(viewportInsets)
+    },
+
+    setPresentationBottomInset(bottom: number | null) {
+      if (disposed) return
+      dependencies.map.setPresentationBottomInset(bottom)
     },
 
     setVisibleCenterZoom(enabled: boolean) {

@@ -55,6 +55,7 @@ export interface MapLifecycle {
   readonly map: Map
   readonly ready: Promise<void>
   setViewportInsets(insets: MapViewportInsets): void
+  setPresentationBottomInset(bottom: number | null): void
   /** While on, zoom keeps the visible-area centre (where the crosshair sits) fixed. */
   setVisibleCenterZoom(enabled: boolean): void
   /** While on, map taps place the waypoint even when they land on existing map features. */
@@ -103,6 +104,7 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const attributionControl = new NusgoAttributionControl()
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  let presentationBottomInset: number | null = null
   let visibleCenterZoom = false
   let applyingViewportInsets = false
   let waypointPlacementActive = false
@@ -139,8 +141,9 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const reportMapCenter = (): void => {
     if (disposed || applyingViewportInsets || !options.onMapCenterChange) return
     const { clientWidth, clientHeight } = map.getContainer()
+    const insets = visibleCenterZoom ? getEffectiveInsets() : viewportInsets
     const center = clientWidth > 0 && clientHeight > 0
-      ? map.unproject(getVisibleCenter(viewportInsets, clientWidth, clientHeight))
+      ? map.unproject(getVisibleCenter(insets, clientWidth, clientHeight))
       : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
   }
@@ -151,6 +154,36 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const isPaddingApplied = (padding: MapViewportInsets): boolean =>
     padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
     padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
+
+  const getEffectiveInsets = (): MapViewportInsets => {
+    const { clientWidth, clientHeight } = map.getContainer()
+    const insets = presentationBottomInset === null
+      ? viewportInsets
+      : { ...viewportInsets, bottom: presentationBottomInset }
+    const maxHorizontal = Math.max(0, clientWidth - 1)
+    const maxVertical = Math.max(0, clientHeight - 1)
+    const left = Math.min(insets.left, maxHorizontal)
+    const top = Math.min(insets.top, maxVertical)
+    return {
+      top,
+      right: Math.max(0, Math.min(insets.right, maxHorizontal - left)),
+      bottom: Math.max(0, Math.min(insets.bottom, maxVertical - top)),
+      left,
+    }
+  }
+
+  const applyEffectiveInsets = (): void => {
+    if (!visibleCenterZoom) return
+    const insets = getEffectiveInsets()
+    if (isPaddingApplied(insets)) return
+    applyingViewportInsets = true
+    try {
+      appliedPadding = { ...insets }
+      map.setPadding(insets)
+    } finally {
+      applyingViewportInsets = false
+    }
+  }
 
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
     if (isPaddingApplied(padding)) return
@@ -268,24 +301,20 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     ready,
     setViewportInsets(insets) {
       if (disposed) return
-      viewportInsets = insets
-      if (visibleCenterZoom) {
-        applyingViewportInsets = true
-        try {
-          if (!isPaddingApplied(insets)) {
-            appliedPadding = { ...insets }
-            map.setPadding(insets)
-          }
-        } finally {
-          applyingViewportInsets = false
-        }
-      }
-      reportMapCenter()
+      viewportInsets = { ...insets }
+      applyEffectiveInsets()
+      if (presentationBottomInset === null) reportMapCenter()
+    },
+    setPresentationBottomInset(bottom) {
+      if (disposed) return
+      presentationBottomInset = bottom === null ? null : Math.max(0, bottom)
+      applyEffectiveInsets()
+      if (presentationBottomInset === null) reportMapCenter()
     },
     setVisibleCenterZoom(enabled) {
       if (disposed || enabled === visibleCenterZoom) return
       visibleCenterZoom = enabled
-      setPaddingKeepingView(enabled ? viewportInsets : { top: 0, right: 0, bottom: 0, left: 0 })
+      setPaddingKeepingView(enabled ? getEffectiveInsets() : { top: 0, right: 0, bottom: 0, left: 0 })
       // `around: 'center'` follows the padded centre; plain enable() restores pointer-anchored zoom.
       // enable() ignores new options while already enabled, so the handlers are reset first.
       const zoomOptions = enabled ? { around: 'center' as const } : undefined

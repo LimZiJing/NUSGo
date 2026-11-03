@@ -98,6 +98,7 @@ const EMPTY_PERSONAL_WAYPOINTS: readonly PersonalWaypoint[] = []
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
+  const mapPresentationRef = useRef<HTMLDivElement>(null)
   const locationControlRef = useRef<HTMLDivElement>(null)
   const mapShellRef = useRef<HTMLElement>(null)
   const [sheetPortalContainer, setSheetPortalContainer] = useState<HTMLElement | null>(null)
@@ -379,6 +380,7 @@ function App() {
     waypointPlacementActive: morePage === 'placing',
     navigation,
     mapShellRef,
+    mapPresentationRef,
     sheetPortalContainer,
     tripControlsRef,
     explorePanelRef,
@@ -386,6 +388,7 @@ function App() {
     mainNavigationRef,
     navigationColumnRef,
     onMeasurementsApplied: appNavigation.focusStopAfterMapLayout,
+    observeStopsPresentation: isCrosshairVisible && navigation.activeView === 'stops',
   })
   useMobilePlanRefit({
     commands,
@@ -854,11 +857,11 @@ function App() {
       data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
-      <div className="map-stage">
+      <div className="map-stage" ref={mapPresentationRef}>
         <div
           ref={mapContainer}
           className="map"
-          style={{ '--map-overlay-bottom-inset': `${mapInsets.bottom}px` } as CSSProperties}
+          style={{ '--map-overlay-bottom-inset': `var(--map-sheet-presentation-bottom-inset, ${mapInsets.bottom}px)` } as CSSProperties}
         />
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}

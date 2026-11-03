@@ -197,6 +197,11 @@
     opacity: 1;
   }
 
+  [data-mobile-sheet][data-content-motion-suppressed] .stop-card-timings,
+  [data-mobile-sheet][data-content-motion-suppressed] .stop-card-chevron {
+    transition: none;
+  }
+
   .stop-card-timings-inner {
     min-height: 0;
     overflow: hidden;

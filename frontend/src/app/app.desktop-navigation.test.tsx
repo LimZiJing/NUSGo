@@ -1253,6 +1253,23 @@ describe('More surface', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
+  it('lets an open settings dropdown handle Escape before More navigates back', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    expect(screen.getByRole('listbox', { name: 'Other themes' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('listbox', { name: 'Other themes' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
+  })
+
   it('closes with Escape and returns focus to the More button', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()

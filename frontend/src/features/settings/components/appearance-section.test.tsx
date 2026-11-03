@@ -28,12 +28,12 @@ describe('Appearance settings', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('dark')
   })
 
-  it('shows other palettes in a dropdown and reports their selection', async () => {
+  it('shows the selected palette and exposes choices in an expandable radio group', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(
+    const { container } = render(
       <AppearanceSection
-        preference="system"
+        preference="matcha"
         onChange={onChange}
         minuteFormat="prime"
         onMinuteFormatChange={() => undefined}
@@ -43,14 +43,17 @@ describe('Appearance settings', () => {
     const summary = screen.getByText('Other themes')
     const disclosure = summary.closest('details')
     expect(disclosure?.open).toBe(false)
+    expect(screen.getByText('Matcha', { selector: '.settings-theme-selected' })).toBeTruthy()
+    expect(container.querySelector('.settings-theme-selected [data-theme-choice="matcha"]')).toBeTruthy()
 
     await user.click(summary)
     expect(disclosure?.open).toBe(true)
-    expect(screen.getByRole('radio', { name: 'NUS' })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: 'Matcha' })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: 'Sakura' })).toBeTruthy()
+    const choices = screen.getByRole('radiogroup', { name: 'Other themes' })
+    expect(choices.querySelectorAll('input[type="radio"]')).toHaveLength(3)
+    expect((screen.getByRole('radio', { name: 'Matcha' }) as HTMLInputElement).checked).toBe(true)
+    expect(container.querySelectorAll('.settings-theme-check')).toHaveLength(1)
 
-    await user.click(screen.getByRole('radio', { name: 'Matcha' }))
-    expect(onChange).toHaveBeenCalledExactlyOnceWith('matcha')
+    await user.click(screen.getByRole('radio', { name: 'NUS' }))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('nus')
   })
 })

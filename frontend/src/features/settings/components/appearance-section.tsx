@@ -82,7 +82,7 @@ export function AppearanceSection({
           )}
           <ChevronRightIcon className="settings-theme-chevron" size={18} />
         </summary>
-        <div className="settings-theme-options" role="group" aria-label="Other themes">
+        <div className="settings-theme-options" role="radiogroup" aria-label="Other themes">
           {OTHER_THEME_CHOICES.map(({ value, label }) => (
             <label
               className="settings-theme-choice"

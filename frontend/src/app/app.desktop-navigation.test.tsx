@@ -17,6 +17,7 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
   }
   return {
@@ -1041,6 +1042,23 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Close More' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+  })
+
+  it('keeps the Nearby crosshair mounted while presentation visibility follows sheet geometry', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('full')
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    expect(appHarness.commands.setVisibleCenterZoom).toHaveBeenLastCalledWith(true)
+
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    expect(appHarness.commands.setVisibleCenterZoom).toHaveBeenLastCalledWith(true)
   })
 
   it('opens More at the partial mobile sheet detent and lets the user expand it', async () => {

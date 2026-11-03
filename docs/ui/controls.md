@@ -69,11 +69,11 @@ A neutral control sits on a similar neutral surface, so its border is what marks
 
 ## Select
 
-`Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible, above the trigger, and the listbox name), `value`, `options` (`{ value, label }[]`), `onChange(value)`, and optional `id` and `className` (layout only).
+`Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible above the trigger and used as the listbox name), `value`, `options` (`{ value, label, leading? }[]`), `onChange(value)`, and optional `placeholder`, `size` (`sm` or `lg`), `checkPosition` (`start` or `end`, default `start`), `hideLabel`, `id`, and `className` (layout only). `leading` is decorative content shown before an option label and is hidden from assistive technology.
 
-- The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses the secondary look: `--border-control`, `--surface-muted`, 40px minimum height, one line with ellipsis. A chevron shows the open state.
+- The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses the secondary look: `--control-border`, `--surface-control`, a 36px `sm` or 44px `lg` minimum height, and one line with ellipsis. A chevron shows the open state. If the current value has no matching option, `placeholder` supplies the displayed trigger text without adding a selectable option.
 - The list floats over the page in a **portal** on `document.body`, fixed to the trigger and as wide as it. It never pushes content down, and scroll containers and the mobile bottom sheet cannot clip it. It opens below the trigger, or above when there is more room there, is capped at 14rem (less when the viewport is short) and scrolls inside itself, and follows the trigger through scrolls and resizes.
-- The selected option has a check icon. The active option has an `--accent-soft` tint, and hover moves the active option.
+- The selected option has a check icon at `checkPosition`. The active option has an `--accent-soft` tint, and hover moves the active option.
 - `onChange` fires only when the value changes. Selecting closes the list and returns focus to the trigger.
 
 Keyboard: Enter, Space or ArrowDown on the trigger opens the list with the selected option active. ArrowUp and ArrowDown move the active option, Home and End jump to the first and last. Enter or Space selects it. Escape closes without selecting and returns focus. Tab, or a click outside, closes the list.

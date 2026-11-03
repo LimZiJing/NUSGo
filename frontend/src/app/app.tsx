@@ -895,7 +895,7 @@ function App() {
     if (morePage === 'closed') return
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
-      if (event.target instanceof Element && event.target.closest('[data-keyboard-reordering="true"]')) return
+      if (event.target instanceof Element && event.target.closest('[data-keyboard-reordering="true"], [role="listbox"]')) return
       event.preventDefault()
       event.stopPropagation()
       goBackInMore()

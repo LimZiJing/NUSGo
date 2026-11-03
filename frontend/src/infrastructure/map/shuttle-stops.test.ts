@@ -291,6 +291,7 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
   it('exposes a safe action for assigning a bus stop as the destination', () => {
     const documentStub = {
       createElement: (tagName: string) => new FakeElement(tagName),
+      createElementNS: (_namespace: string, tagName: string) => new FakeElement(tagName),
     }
     vi.stubGlobal('document', documentStub)
     const onSetEndpoint = vi.fn()

@@ -10,6 +10,7 @@ const markerState = vi.hoisted(() => ({
   instances: [] as Array<{
     readonly element: HTMLElement
     coordinates: readonly [number, number] | null
+    setLngLatCalls: number
     added: boolean
   }>,
 }))
@@ -18,6 +19,7 @@ vi.mock('maplibre-gl', () => {
   class FakeMarker {
     readonly element: HTMLElement
     coordinates: readonly [number, number] | null = null
+    setLngLatCalls = 0
     added = false
 
     constructor(options: { readonly element: HTMLElement }) {
@@ -27,6 +29,7 @@ vi.mock('maplibre-gl', () => {
 
     setLngLat(coordinates: readonly [number, number]) {
       this.coordinates = coordinates
+      this.setLngLatCalls += 1
       return this
     }
 
@@ -97,6 +100,7 @@ describe('createPersonalWaypointMarkers', () => {
     const revisedWaypoint = {
       ...waypoint,
       name: 'Shaded bench',
+      category: 'Quiet place',
       coordinate: { longitude: 103.79, latitude: 1.30 },
       markerColor: 'purple' as const,
       markerIcon: 'rest' as const,
@@ -108,13 +112,92 @@ describe('createPersonalWaypointMarkers', () => {
     expect(markerState.instances).toHaveLength(1)
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('aria-label'))
-      .toBe('Open Shaded bench, Rest spot details. Rest icon, Purple marker.')
+      .toBe('Open Shaded bench, Quiet place details. Rest icon, Purple marker.')
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-color')).toBe('purple')
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-icon')).toBe('rest')
 
     markers.setWaypoints([], true, () => undefined)
     expect(document.querySelector('.personal-waypoint-marker')).toBeNull()
     expect(markerState.instances[0]?.added).toBe(false)
+  })
+
+  it('does no marker presentation work for ten unchanged waypoint refreshes', async () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    markers.setWaypoints([waypoint], true, () => undefined)
+
+    const button = document.querySelector<HTMLButtonElement>('.personal-waypoint-marker')!
+    const icon = button.querySelector('.personal-waypoint-marker-icon')!
+    const mutations: MutationRecord[] = []
+    const observer = new MutationObserver((records) => mutations.push(...records))
+    observer.observe(button, { attributes: true, attributeOldValue: true })
+    observer.observe(icon, { childList: true })
+
+    for (let refresh = 0; refresh < 10; refresh += 1) {
+      markers.setWaypoints([{ ...waypoint }], true, () => undefined)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    observer.disconnect()
+
+    const markerMutations = mutations.filter(({ target }) => target === button)
+    expect({
+      coordinateWrites: markerState.instances[0]?.setLngLatCalls,
+      accessibleLabelWrites: markerMutations.filter(({ attributeName }) => attributeName === 'aria-label').length,
+      colorWrites: markerMutations.filter(({ attributeName }) => attributeName === 'data-marker-color').length,
+      iconNameWrites: markerMutations.filter(({ attributeName }) => attributeName === 'data-marker-icon').length,
+      iconSubtreeReplacements: mutations.filter(({ target }) => target === icon && target instanceof Element).length,
+    }).toEqual({
+      coordinateWrites: 1,
+      accessibleLabelWrites: 0,
+      colorWrites: 0,
+      iconNameWrites: 0,
+      iconSubtreeReplacements: 0,
+    })
+
+    markers.dispose()
+  })
+
+  it('uses a safe general glyph and accessible label for an unknown icon value', () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    const unrecognizedWaypoint = {
+      ...waypoint,
+      name: '<img src=x onerror=alert(1)>',
+      category: 'Custom place',
+      markerIcon: 'unrecognized' as PersonalWaypoint['markerIcon'],
+    }
+
+    markers.setWaypoints([unrecognizedWaypoint], true, () => undefined)
+
+    const button = document.querySelector<HTMLButtonElement>('.personal-waypoint-marker')
+    expect(button?.getAttribute('aria-label')).toBe(
+      'Open <img src=x onerror=alert(1)>, Custom place details. General icon, Blue marker.',
+    )
+    expect(button?.querySelector('img')).toBeNull()
+    expect(button?.querySelector('svg circle')).not.toBeNull()
+
+    markers.dispose()
+  })
+
+  it('keeps marker identity through reorder and uses the latest selection callback', () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    const secondWaypoint = { ...waypoint, id: '00000000-0000-4000-8000-000000000002', name: 'Quiet lawn' }
+    const staleSelection = vi.fn()
+    const currentSelection = vi.fn()
+
+    markers.setWaypoints([waypoint, secondWaypoint], true, staleSelection)
+    const firstButton = markerState.instances[0]?.element
+    const secondButton = markerState.instances[1]?.element
+    markers.setWaypoints([secondWaypoint, waypoint], true, currentSelection)
+    firstButton?.click()
+    secondButton?.click()
+
+    expect(markerState.instances).toHaveLength(2)
+    expect(markerState.instances[0]?.element).toBe(firstButton)
+    expect(markerState.instances[1]?.element).toBe(secondButton)
+    expect(staleSelection).not.toHaveBeenCalled()
+    expect(currentSelection).toHaveBeenNthCalledWith(1, waypoint.id, firstButton)
+    expect(currentSelection).toHaveBeenNthCalledWith(2, secondWaypoint.id, secondButton)
+
+    markers.dispose()
   })
 
   it('adds a hidden saved waypoint marker when focusing it', () => {

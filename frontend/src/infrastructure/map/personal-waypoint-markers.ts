@@ -1,6 +1,4 @@
 import { Marker, type Map } from 'maplibre-gl'
-import { createElement, type ReactNode } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { isValidLocationCoordinates } from '../../domain/location/coordinates'
 import {
   PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS,
@@ -8,15 +6,15 @@ import {
   type PersonalWaypoint,
   type PersonalWaypointMarkerIcon,
 } from '../../domain/waypoints/personal/personal-waypoint'
-import {
-  ArmchairIcon,
-  CircleDotIcon,
-  CoffeeIcon,
-  FavoriteIcon,
-  TreePineIcon,
-  type IconProps,
-} from '../../ui/icons'
+import { createMapSvgIcon, type MapSvgIconName } from './svg-icons'
 import './personal-waypoint-markers.css'
+
+interface PersonalWaypointMarkerPresentation {
+  readonly name: string
+  readonly category: string
+  readonly markerColor: PersonalWaypoint['markerColor']
+  readonly markerIcon: PersonalWaypointMarkerIcon
+}
 
 interface PersonalWaypointMarkerRecord {
   readonly marker: Marker
@@ -24,6 +22,8 @@ interface PersonalWaypointMarkerRecord {
   readonly icon: HTMLSpanElement
   readonly handleClick: (event: MouseEvent) => void
   attached: boolean
+  presentation: PersonalWaypointMarkerPresentation
+  coordinate: [number, number]
 }
 
 export interface PersonalWaypointMarkers {
@@ -36,38 +36,66 @@ export interface PersonalWaypointMarkers {
   dispose(): void
 }
 
-const markerIconProps: IconProps = { className: 'personal-waypoint-marker-glyph', size: 13 }
-const markerIconElements: Record<PersonalWaypointMarkerIcon, () => ReactNode> = {
-  dot: () => createElement(CircleDotIcon, markerIconProps),
-  rest: () => createElement(ArmchairIcon, markerIconProps),
-  food: () => createElement(CoffeeIcon, markerIconProps),
-  nature: () => createElement(TreePineIcon, markerIconProps),
-  favorite: () => createElement(FavoriteIcon, { ...markerIconProps, filled: false }),
+const markerSvgIconNames: Record<PersonalWaypointMarkerIcon, MapSvgIconName> = {
+  dot: 'circle-dot',
+  rest: 'armchair',
+  food: 'coffee',
+  nature: 'tree-pine',
+  favorite: 'star',
 }
 
-function getMarkerIconLabel(waypoint: PersonalWaypoint): string {
-  return PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.find(({ value }) => value === waypoint.markerIcon)?.label ?? 'General'
+function getMarkerPresentation(waypoint: PersonalWaypoint): PersonalWaypointMarkerPresentation {
+  return {
+    name: waypoint.name,
+    category: waypoint.category,
+    markerColor: waypoint.markerColor,
+    markerIcon: waypoint.markerIcon,
+  }
 }
 
-function getMarkerColorLabel(waypoint: PersonalWaypoint): string {
-  return PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.find(({ value }) => value === waypoint.markerColor)?.label ?? 'Blue'
+function getMarkerIconLabel(markerIcon: PersonalWaypointMarkerIcon): string {
+  return PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.find(({ value }) => value === markerIcon)?.label ?? 'General'
+}
+
+function getMarkerColorLabel(markerColor: PersonalWaypoint['markerColor']): string {
+  return PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.find(({ value }) => value === markerColor)?.label ?? 'Blue'
 }
 
 function updateMarkerElement(
   element: HTMLButtonElement,
   icon: HTMLSpanElement,
   waypoint: PersonalWaypoint,
+  previous: PersonalWaypointMarkerPresentation | null,
 ): void {
-  element.dataset.markerColor = waypoint.markerColor
-  element.dataset.markerIcon = waypoint.markerIcon
-  element.setAttribute(
-    'aria-label',
-    `Open ${waypoint.name}, ${waypoint.category} details. ${getMarkerIconLabel(waypoint)} icon, ${getMarkerColorLabel(waypoint)} marker.`,
-  )
-  icon.innerHTML = renderToStaticMarkup(markerIconElements[waypoint.markerIcon]())
+  if (previous?.markerColor !== waypoint.markerColor) {
+    element.dataset.markerColor = waypoint.markerColor
+  }
+  if (previous?.markerIcon !== waypoint.markerIcon) {
+    element.dataset.markerIcon = waypoint.markerIcon
+    const iconName = markerSvgIconNames[waypoint.markerIcon] ?? 'circle-dot'
+    icon.replaceChildren(createMapSvgIcon(iconName, {
+      className: 'personal-waypoint-marker-glyph',
+      size: 13,
+    }))
+  }
+  if (
+    previous === null ||
+    previous.name !== waypoint.name ||
+    previous.category !== waypoint.category ||
+    previous.markerColor !== waypoint.markerColor ||
+    previous.markerIcon !== waypoint.markerIcon
+  ) {
+    element.setAttribute(
+      'aria-label',
+      `Open ${waypoint.name}, ${waypoint.category} details. ${getMarkerIconLabel(waypoint.markerIcon)} icon, ${getMarkerColorLabel(waypoint.markerColor)} marker.`,
+    )
+  }
 }
 
-function createMarkerElement(waypoint: PersonalWaypoint): { readonly element: HTMLButtonElement; readonly icon: HTMLSpanElement } {
+function createMarkerElement(waypoint: PersonalWaypoint): {
+  readonly element: HTMLButtonElement
+  readonly icon: HTMLSpanElement
+} {
   const element = document.createElement('button')
   element.type = 'button'
   element.className = 'personal-waypoint-marker'
@@ -78,7 +106,7 @@ function createMarkerElement(waypoint: PersonalWaypoint): { readonly element: HT
   icon.setAttribute('aria-hidden', 'true')
   pin.append(icon)
   element.append(pin)
-  updateMarkerElement(element, icon, waypoint)
+  updateMarkerElement(element, icon, waypoint, null)
   return { element, icon }
 }
 
@@ -97,8 +125,19 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
   const getOrCreateRecord = (waypoint: PersonalWaypoint): PersonalWaypointMarkerRecord => {
     const existingRecord = markerRecords.get(waypoint.id)
     if (existingRecord) {
-      updateMarkerElement(existingRecord.element, existingRecord.icon, waypoint)
-      existingRecord.marker.setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
+      updateMarkerElement(existingRecord.element, existingRecord.icon, waypoint, existingRecord.presentation)
+      existingRecord.presentation = getMarkerPresentation(waypoint)
+      const nextCoordinate: [number, number] = [
+        waypoint.coordinate.longitude,
+        waypoint.coordinate.latitude,
+      ]
+      if (
+        existingRecord.coordinate[0] !== nextCoordinate[0] ||
+        existingRecord.coordinate[1] !== nextCoordinate[1]
+      ) {
+        existingRecord.marker.setLngLat(nextCoordinate)
+        existingRecord.coordinate = nextCoordinate
+      }
       return existingRecord
     }
 
@@ -109,9 +148,17 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
       onSelect(waypoint.id, element)
     }
     element.addEventListener('click', handleClick)
-    const marker = new Marker({ anchor: 'bottom', element })
-      .setLngLat([waypoint.coordinate.longitude, waypoint.coordinate.latitude])
-    const record = { marker, element, icon, handleClick, attached: false }
+    const coordinate: [number, number] = [waypoint.coordinate.longitude, waypoint.coordinate.latitude]
+    const marker = new Marker({ anchor: 'bottom', element }).setLngLat(coordinate)
+    const record = {
+      marker,
+      element,
+      icon,
+      handleClick,
+      attached: false,
+      presentation: getMarkerPresentation(waypoint),
+      coordinate,
+    }
     markerRecords.set(waypoint.id, record)
     return record
   }

@@ -304,6 +304,10 @@ class FakeElement {
     this.children.push(...children)
   }
 
+  replaceChildren(...children: FakeElement[]) {
+    this.children.splice(0, this.children.length, ...children)
+  }
+
   addEventListener() {}
 
   removeEventListener() {}
@@ -1681,7 +1685,10 @@ describe('MapSession', () => {
   })
 
   it('adds saved waypoint markers and removes them when the collection changes', () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1717,7 +1724,10 @@ describe('MapSession', () => {
   })
 
   it('centers a visible saved Personal Waypoint without duplicating its marker', () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1758,7 +1768,10 @@ describe('MapSession', () => {
   })
 
   it('shows a hidden saved Personal Waypoint marker while focusing it', () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),

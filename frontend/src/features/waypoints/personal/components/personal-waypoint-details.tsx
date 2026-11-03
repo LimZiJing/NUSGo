@@ -3,9 +3,10 @@ import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/per
 import { CompassIcon, MapPinIcon } from '../../../../ui/icons'
 import { Button } from '../../../../ui/button'
 
-export function PersonalWaypointDetails({ waypoint, canManage, onEdit, onDelete }: {
+export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
   readonly waypoint: PersonalWaypoint | null
   readonly canManage: boolean
+  readonly onDirections: () => void
   readonly onEdit: () => void
   readonly onDelete: () => void
 }) {
@@ -41,7 +42,9 @@ export function PersonalWaypointDetails({ waypoint, canManage, onEdit, onDelete 
         <MapPinIcon size={18} />
         <dl>
           <dt className="personal-waypoint-details-label">Location</dt>
-          <dd>{waypoint.coordinate.latitude.toFixed(6)}, {waypoint.coordinate.longitude.toFixed(6)}</dd>
+          <dd className="personal-waypoint-details-coordinate">
+            {waypoint.coordinate.latitude.toFixed(6)}, {waypoint.coordinate.longitude.toFixed(6)}
+          </dd>
         </dl>
       </div>
     </div>
@@ -50,8 +53,24 @@ export function PersonalWaypointDetails({ waypoint, canManage, onEdit, onDelete 
       Editing and deleting are unavailable until saved data is recovered.
     </p>}
     <div className="personal-waypoint-details-actions">
-      <Button label="Edit waypoint" variant="primary" size="lg" disabled={!canManage} onClick={onEdit} />
-      <Button label="Delete waypoint" variant="secondary" size="lg" disabled={!canManage} onClick={onDelete} />
+      <Button
+        className="personal-waypoint-details-directions"
+        label="Directions"
+        variant="primary"
+        size="lg"
+        onClick={onDirections}
+      />
+      <div className="personal-waypoint-details-secondary-actions">
+        <Button label="Edit waypoint" variant="ghost" size="sm" disabled={!canManage} onClick={onEdit} />
+        <Button
+          className="personal-waypoint-details-delete"
+          label="Delete waypoint"
+          variant="ghost"
+          size="sm"
+          disabled={!canManage}
+          onClick={onDelete}
+        />
+      </div>
     </div>
   </section>
 }

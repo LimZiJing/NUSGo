@@ -756,6 +756,10 @@ function App() {
   }
   const deleteSelectedPersonalWaypoint = (): void => {
     if (!selectedPersonalWaypointId) return
+    const waypoint = personalWaypoints.readResult.kind === 'ready'
+      ? personalWaypoints.readResult.waypoints.find(({ id }) => id === selectedPersonalWaypointId)
+      : undefined
+    if (!waypoint || !window.confirm(`Delete "${waypoint.name}"? This cannot be undone.`)) return
     const returnTarget = personalWaypointDetails?.returnTarget
     if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
     const focusTarget = returnTarget?.page === 'waypoints' && activePersonalWaypointCategory === null
@@ -1054,6 +1058,9 @@ function App() {
             /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
               waypoint={selectedPersonalWaypoint}
               canManage={canManageSelectedPersonalWaypoint}
+              onDirections={() => {
+                if (selectedPersonalWaypoint) navigateToPersonalWaypoint(selectedPersonalWaypoint)
+              }}
               onEdit={() => {
                 if (!selectedPersonalWaypoint || !canManageSelectedPersonalWaypoint) return
                 beginPersonalWaypointEdit(selectedPersonalWaypoint, 'waypoint-details')

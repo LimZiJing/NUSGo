@@ -125,8 +125,8 @@
 
 .personal-waypoint-details-location dd {
   margin: 0;
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -147,8 +147,16 @@
 
 .personal-waypoint-details-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+.personal-waypoint-details-directions { width: 100%; }
+.personal-waypoint-details-secondary-actions {
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
+}
+.personal-waypoint-details-actions .button[data-variant='ghost'].personal-waypoint-details-delete {
+  color: var(--text-error-strong);
 }
 
 .personal-waypoint-list {

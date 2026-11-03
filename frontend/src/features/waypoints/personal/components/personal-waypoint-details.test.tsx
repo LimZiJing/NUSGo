@@ -21,26 +21,52 @@ const waypoint: PersonalWaypoint = {
 afterEach(cleanup)
 
 describe('PersonalWaypointDetails', () => {
-  it('shows waypoint details and offers separate edit and delete actions', async () => {
+  it('shows waypoint details and offers Directions before quiet edit and delete actions', async () => {
     const user = userEvent.setup()
+    const onDirections = vi.fn()
     const onEdit = vi.fn()
     const onDelete = vi.fn()
-    render(<PersonalWaypointDetails waypoint={waypoint} canManage onEdit={onEdit} onDelete={onDelete} />)
+    render(<PersonalWaypointDetails
+      waypoint={waypoint}
+      canManage
+      onDirections={onDirections}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />)
 
     expect(screen.getByRole('heading', { name: 'Quiet bench' })).toBeTruthy()
     expect(screen.getByText('Rest spot')).toBeTruthy()
     expect(screen.getByText('Near the garden')).toBeTruthy()
-    expect(screen.getByText('1.290000, 103.780000')).toBeTruthy()
+    expect(screen.getByText('1.290000, 103.780000').className)
+      .toContain('personal-waypoint-details-coordinate')
 
-    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    const directions = screen.getByRole('button', { name: 'Directions' })
+    const edit = screen.getByRole('button', { name: 'Edit waypoint' })
+    const remove = screen.getByRole('button', { name: 'Delete waypoint' })
+    expect(directions.getAttribute('data-variant')).toBe('primary')
+    expect(edit.getAttribute('data-variant')).toBe('ghost')
+    expect(remove.getAttribute('data-variant')).toBe('ghost')
+    expect(remove.className).toContain('personal-waypoint-details-delete')
+    expect(screen.getAllByRole('button')).toEqual([directions, edit, remove])
+
+    await user.click(directions)
+    expect(onDirections).toHaveBeenCalledOnce()
+
+    await user.click(edit)
     expect(onEdit).toHaveBeenCalledOnce()
 
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await user.click(remove)
     expect(onDelete).toHaveBeenCalledOnce()
   })
 
   it('explains when the selected waypoint is no longer available', () => {
-    render(<PersonalWaypointDetails waypoint={null} canManage={false} onEdit={() => undefined} onDelete={() => undefined} />)
+    render(<PersonalWaypointDetails
+      waypoint={null}
+      canManage={false}
+      onDirections={() => undefined}
+      onEdit={() => undefined}
+      onDelete={() => undefined}
+    />)
 
     expect(screen.getByRole('status').textContent).toContain('no longer available')
   })

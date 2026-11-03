@@ -596,7 +596,7 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
-  it('shows a waypoint on the map and starts Plan from its Directions action', async () => {
+  it('uses the shared Directions action from the list and details', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -626,6 +626,21 @@ describe('More surface', () => {
     }))
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
+    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledTimes(2)
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({
+      kind: 'personal-waypoint',
+      id: waypoint.id,
+      label: waypoint.name,
+      coordinate: waypoint.coordinate,
+    }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
+    mapTrigger.remove()
   })
 
   it('uses Escape to cancel a keyboard reorder before More handles it', async () => {
@@ -725,7 +740,7 @@ describe('More surface', () => {
       .toBe(true)
   })
 
-  it('opens category waypoint details, edits the record, and deletes only that waypoint', async () => {
+  it('opens category waypoint details, edits the record, and confirms deletion', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000001',
       name: 'Quiet bench',
@@ -736,6 +751,7 @@ describe('More surface', () => {
       updatedAt: '2026-10-26T00:00:00.000Z',
     }
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const user = userEvent.setup()
     render(<App />)
 
@@ -765,8 +781,16 @@ describe('More surface', () => {
     expect(saved.updatedAt).not.toBe(waypoint.updatedAt)
 
     await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    expect(confirm).toHaveBeenCalledWith('Delete "Shaded bench"? This cannot be undone.')
+    expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
+    expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints)
+      .toHaveLength(1)
+
+    confirm.mockReturnValue(true)
+    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
+    confirm.mockRestore()
     mapTrigger.remove()
   })
 
@@ -877,10 +901,12 @@ describe('More surface', () => {
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
 
     marker.remove()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+    confirm.mockRestore()
   })
 
   it('hides the desktop navigation column while placing a Personal Waypoint', async () => {

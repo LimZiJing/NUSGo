@@ -30,7 +30,7 @@ export function LocationControl({
       style={{ '--location-control-top': `${Math.max(0, topOffset)}px` } as CSSProperties}
     >
       <Button
-        className="location-control-chip map-overlay-button"
+        className="map-overlay-button"
         type="button"
         aria-label={buttonLabel}
         aria-busy={searching}

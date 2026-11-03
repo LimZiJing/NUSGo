@@ -52,51 +52,22 @@
     visibility: hidden;
   }
 
-  /* Mobile overlay buttons are absolutely positioned; these tokens are the single source of their vertical rhythm. */
+  /* Mobile map actions use one pinned column with a consistent 8px gap. */
   .map-control-stack {
     display: contents;
     --map-control-inset-top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px));
     --map-control-row-step: calc(var(--control-height-lg) + var(--space-2));
   }
 
-  .live-bus-toggle {
+  .map-control-actions {
     position: absolute;
     z-index: 13;
-    top: calc(var(--map-control-inset-top) + var(--map-control-row-step));
-    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
-  }
-
-  .live-bus-status {
-    position: absolute;
-    z-index: 13;
-    top: calc(
-      var(--map-control-inset-top) + var(--map-control-row-step) + var(--map-control-row-step)
-    );
+    top: var(--map-control-inset-top);
     left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
   }
 
   .map-legend {
     display: none;
-  }
-
-  .location-control {
-    position: absolute;
-    z-index: 13;
-    top: var(--map-control-inset-top);
-    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
-    pointer-events: auto;
-  }
-
-  .more-entry-button {
-    position: absolute;
-    z-index: 13;
-    top: var(--map-control-inset-top);
-    right: max(12px, env(safe-area-inset-right));
-    pointer-events: auto;
-  }
-
-  .location-control-chip {
-    min-height: var(--control-height-lg);
   }
 
   .main-navigation {

@@ -550,6 +550,8 @@ function createShuttleLoadFetcher(
   activeBusRequests: string[],
   activeBusPlate = arrivalPlate,
   activeBusRouteId = 'D1',
+  nextArrivalPlate = arrivalPlate,
+  nextActiveBusPlate = activeBusPlate,
 ): typeof fetch {
   return async (input, init) => {
     const url = String(input)
@@ -560,6 +562,10 @@ function createShuttleLoadFetcher(
           nextArrivalSeconds: 120,
           upcomingArrivalSeconds: [120, 480],
           arrivalTime_veh_plate: arrivalPlate,
+          _etas: [
+            { eta_s: 120, plate: arrivalPlate },
+            { eta_s: 480, plate: nextArrivalPlate },
+          ],
         }],
       })
     }
@@ -567,17 +573,21 @@ function createShuttleLoadFetcher(
     const routeCode = (JSON.parse(String(init?.body)) as { route_code: string }).route_code
     activeBusRequests.push(routeCode)
     const hasVehicle = routeCode === activeBusRouteId
+    const activeBuses = [
+      { plate: activeBusPlate, crowdLevel: 'low' },
+      { plate: nextActiveBusPlate, crowdLevel: 'high' },
+    ]
     return jsonResponse({
       data: {
-        ActiveBusCount: hasVehicle ? '1' : '0',
-        activebus: hasVehicle ? [{
-          vehplate: activeBusPlate,
+        ActiveBusCount: hasVehicle ? String(activeBuses.length) : '0',
+        activebus: hasVehicle ? activeBuses.map(({ plate, crowdLevel }) => ({
+          vehplate: plate,
           lat: 1.291666,
           lng: 103.783352,
           speed: 15,
           direction: 309.8,
-          loadInfo: { crowdLevel: 'low' },
-        }] : [],
+          loadInfo: { crowdLevel },
+        })) : [],
       },
     })
   }
@@ -593,6 +603,8 @@ type ShuttleLoadFixture = {
   readonly arrivalPlate: string
   readonly activeBusPlate?: string
   readonly activeBusRouteId?: string
+  readonly nextArrivalPlate?: string
+  readonly nextActiveBusPlate?: string
 }
 
 type ShuttleLoadContext = {
@@ -620,6 +632,8 @@ async function withShuttleLoads(
       activeBusRequests,
       fixture.activeBusPlate,
       fixture.activeBusRouteId,
+      fixture.nextArrivalPlate,
+      fixture.nextActiveBusPlate,
     ),
     now: () => clock.nowMs,
     ltaMappings: [],
@@ -735,16 +749,23 @@ describe('Live vehicle positions', () => {
 })
 
 describe('Shuttle arrival loads', () => {
-  it('joins the next bus load to its arrival without exposing the vehicle plate', async () => {
+  it('joins each displayed arrival to its bus load without exposing vehicle plates', async () => {
     const arrivalPlate = 'PDMATCH'
-    await withShuttleLoads({ arrivalPlate }, async ({ liveData, routeIds, stopId, activeBusRequests }) => {
+    const nextArrivalPlate = 'PDNEXT'
+    await withShuttleLoads({
+      arrivalPlate,
+      nextArrivalPlate,
+      nextActiveBusPlate: nextArrivalPlate,
+    }, async ({ liveData, routeIds, stopId, activeBusRequests }) => {
       liveData.getBusArrivals([stopId])
       await waitForActiveBusRequests(activeBusRequests, 1)
       await waitForVehicleCycle(liveData, routeIds, [])
 
       const response = liveData.getBusArrivals([stopId])
       assert.equal(response.stops[stopId]?.D1?.load, 'low')
+      assert.deepEqual(response.stops[stopId]?.D1?.upcomingLoads, ['low', 'high'])
       assert.equal(JSON.stringify(response).includes(arrivalPlate), false)
+      assert.equal(JSON.stringify(response).includes(nextArrivalPlate), false)
       assert.equal(JSON.stringify(response).includes('nextBusPlate'), false)
     })
   })

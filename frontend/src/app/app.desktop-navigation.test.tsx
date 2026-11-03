@@ -17,6 +17,7 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
   }
   return {
@@ -1043,7 +1044,24 @@ describe('More surface', () => {
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
-  it('opens More at the partial mobile sheet detent and lets the user expand it', async () => {
+  it('keeps the Nearby crosshair mounted while presentation visibility follows sheet geometry', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('full')
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    expect(appHarness.commands.setVisibleCenterZoom).toHaveBeenLastCalledWith(true)
+
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
+    expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
+    expect(appHarness.commands.setVisibleCenterZoom).toHaveBeenLastCalledWith(true)
+  })
+
+  it('opens More at the shared partial mobile sheet detent and lets the user expand it', async () => {
     mockMobileViewport()
     const user = userEvent.setup()
     render(<App />)
@@ -1233,6 +1251,23 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
     expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('lets an open settings dropdown handle Escape before More navigates back', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    expect(screen.getByRole('listbox', { name: 'Other themes' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('listbox', { name: 'Other themes' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
   })
 
   it('closes with Escape and returns focus to the More button', async () => {

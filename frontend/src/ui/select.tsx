@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { joinClassNames } from './class-names'
 import { DisclosureChevron } from './disclosure-chevron'
@@ -7,6 +7,7 @@ import { CheckIcon } from './icons'
 export interface SelectOption {
   readonly value: string
   readonly label: string
+  readonly leading?: ReactNode
 }
 
 interface SelectProps {
@@ -15,6 +16,9 @@ interface SelectProps {
   readonly value: string
   readonly options: readonly SelectOption[]
   readonly onChange: (value: string) => void
+  readonly placeholder?: string
+  readonly size?: 'sm' | 'lg'
+  readonly checkPosition?: 'start' | 'end'
   readonly id?: string
   /** Hides the label visually (it stays the accessible name) when the context already says what the control is. */
   readonly hideLabel?: boolean
@@ -49,10 +53,22 @@ function placeList(trigger: HTMLElement): CSSProperties {
  * A themed dropdown. The option list floats over the page in a portal (fixed to the trigger), so
  * it never pushes other content down and no scroll container or bottom sheet clips it.
  */
-export function Select({ label, value, options, onChange, id, hideLabel, className }: SelectProps) {
+export function Select({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  size = 'sm',
+  checkPosition = 'start',
+  id,
+  hideLabel,
+  className,
+}: SelectProps) {
   const generatedId = useId()
   const baseId = id ?? `select-${generatedId}`
   const labelId = `${baseId}-label`
+  const valueId = `${baseId}-value`
   const listId = `${baseId}-list`
   const optionId = (index: number) => `${baseId}-option-${index}`
 
@@ -63,7 +79,8 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
   const [listStyle, setListStyle] = useState<CSSProperties>({})
 
   const selectedIndex = options.findIndex((option) => option.value === value)
-  const selectedLabel = options[selectedIndex]?.label ?? ''
+  const selectedOption = options[selectedIndex]
+  const selectedLabel = selectedOption?.label ?? placeholder ?? ''
   const lastIndex = Math.max(options.length - 1, 0)
 
   // The list is fixed to the viewport, so it follows the trigger through scrolls and resizes.
@@ -178,14 +195,21 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
-        aria-labelledby={`${labelId} ${baseId}`}
+        aria-labelledby={`${labelId} ${valueId}`}
+        data-size={size}
+        data-placeholder={selectedIndex < 0 ? 'true' : undefined}
         data-hover-filter="none"
         title={selectedLabel}
         onClick={handleTriggerClick}
         onMouseDown={handleTriggerMouseDown}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span className="select-trigger-value">{selectedLabel}</span>
+        {selectedOption?.leading && (
+          <span className="select-trigger-leading" aria-hidden="true">
+            {selectedOption.leading}
+          </span>
+        )}
+        <span className="select-trigger-value" id={valueId}>{selectedLabel}</span>
         <DisclosureChevron expanded={open} className="select-trigger-chevron" />
       </button>
       {open && createPortal(
@@ -194,6 +218,7 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
           id={listId}
           className="select-list"
           style={listStyle}
+          data-size={size}
           role="listbox"
           tabIndex={-1}
           aria-labelledby={labelId}
@@ -213,8 +238,14 @@ export function Select({ label, value, options, onChange, id, hideLabel, classNa
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(index)}
               >
-                <CheckIcon className="select-option-check" />
+                {checkPosition === 'start' && <CheckIcon className="select-option-check" />}
+                {option.leading && (
+                  <span className="select-option-leading" aria-hidden="true">
+                    {option.leading}
+                  </span>
+                )}
                 <span className="select-option-label">{option.label}</span>
+                {checkPosition === 'end' && <CheckIcon className="select-option-check" />}
               </li>
             )
           })}

@@ -104,6 +104,8 @@ export interface MapSession {
    * inset reports update padding without refitting the user's camera.
    */
   setViewportInsets(insets: MapViewportInsets): void
+  /** Updates the transient Stops sheet position; null restores canonical viewport insets. */
+  setPresentationBottomInset(bottom: number | null): void
   /** Zoom around the visible-area centre while a centre crosshair is shown. */
   setVisibleCenterZoom(enabled: boolean): void
   /** Shows the temporary Personal Waypoint pin; only placement mode permits dragging it. */

@@ -1061,7 +1061,7 @@ describe('More surface', () => {
     expect(appHarness.commands.setVisibleCenterZoom).toHaveBeenLastCalledWith(true)
   })
 
-  it('opens More at the partial mobile sheet detent and lets the user expand it', async () => {
+  it('opens More at the shared partial mobile sheet detent and lets the user expand it', async () => {
     mockMobileViewport()
     const user = userEvent.setup()
     render(<App />)

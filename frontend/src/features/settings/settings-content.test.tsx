@@ -8,7 +8,7 @@ import { SettingsContent } from './settings-content'
 afterEach(cleanup)
 
 describe('Settings sections', () => {
-  it('opens sections independently and starts Favourites expanded only when saved stops exist', async () => {
+  it('starts all sections collapsed and opens them independently when saved stops exist', async () => {
     const user = userEvent.setup()
     render(
       <SettingsContent
@@ -38,18 +38,18 @@ describe('Settings sections', () => {
     const about = getSection('About')
 
     expect(appearance.open).toBe(false)
-    expect(favourites.open).toBe(true)
+    expect(favourites.open).toBe(false)
     expect(about.open).toBe(false)
 
     await user.click(screen.getByText('Appearance'))
     await user.click(screen.getByText('About'))
     expect(appearance.open).toBe(true)
-    expect(favourites.open).toBe(true)
+    expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
 
     await user.click(screen.getByText('Favourites'))
     expect(appearance.open).toBe(true)
-    expect(favourites.open).toBe(false)
+    expect(favourites.open).toBe(true)
     expect(about.open).toBe(true)
   })
 

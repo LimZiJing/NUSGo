@@ -233,11 +233,22 @@ export function useMapOverlayLayout({
         updateInsets()
       })
     }
+    const stopsSheet = refs.stopsSheet.current
+    const cancelPendingInsetUpdate = (event: TransitionEvent): void => {
+      if (event.target !== stopsSheet || event.propertyName !== 'transform' || frame === null) return
+      // The presentation observer clears its transient inset before this listener runs.
+      // Do not let a resize queued during the transition restore it afterward.
+      window.cancelAnimationFrame(frame)
+      frame = null
+    }
 
     updateInsets()
     window.addEventListener('resize', scheduleInsetUpdate)
     window.visualViewport?.addEventListener('resize', scheduleInsetUpdate)
     window.visualViewport?.addEventListener('scroll', scheduleInsetUpdate)
+    if (isMobileViewport && observeStopsPresentation && navigation.activeView === 'stops') {
+      stopsSheet?.addEventListener('transitionend', cancelPendingInsetUpdate)
+    }
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
       : new ResizeObserver(scheduleInsetUpdate)
@@ -252,6 +263,7 @@ export function useMapOverlayLayout({
       window.removeEventListener('resize', scheduleInsetUpdate)
       window.visualViewport?.removeEventListener('resize', scheduleInsetUpdate)
       window.visualViewport?.removeEventListener('scroll', scheduleInsetUpdate)
+      stopsSheet?.removeEventListener('transitionend', cancelPendingInsetUpdate)
       resizeObserver?.disconnect()
     }
   }, [

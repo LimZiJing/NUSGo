@@ -446,4 +446,61 @@ describe('useMapOverlayLayout', () => {
       setViewportInsets.mock.invocationCallOrder[0],
     )
   })
+
+  it('cancels a queued inset publication when the Stops presentation ends', () => {
+    const frames = new Map<number, FrameRequestCallback>()
+    const cancelledFrames: number[] = []
+    let nextFrameId = 0
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      const id = ++nextFrameId
+      frames.set(id, callback)
+      return id
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      cancelledFrames.push(id)
+      frames.delete(id)
+    })
+    vi.stubGlobal('ResizeObserver', class {
+      observe = vi.fn()
+      disconnect = vi.fn()
+    })
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' }))
+    const stops: NavigationState = {
+      ...navigation,
+      activeView: 'stops',
+      sheets: { ...navigation.sheets, stops: { ...navigation.sheets.stops, detent: 'partial' } },
+    }
+    const setPresentationBottomInset = vi.fn()
+    const view = render(
+      <Probe
+        isMobileViewport
+        navigationState={stops}
+        setViewportInsets={vi.fn()}
+        setPresentationBottomInset={setPresentationBottomInset}
+        observeStopsPresentation
+        onMeasurementsApplied={vi.fn()}
+      />,
+    )
+    const sheet = view.container.querySelector('.stops-sheet') as HTMLElement
+
+    act(() => {
+      sheet.dispatchEvent(new TransitionEvent('transitionrun', { bubbles: true, propertyName: 'transform' }))
+      window.dispatchEvent(new Event('resize'))
+    })
+    const queuedInsetUpdate = [...frames.entries()].at(-1)
+    expect(queuedInsetUpdate).toBeDefined()
+    expect(setPresentationBottomInset).toHaveBeenLastCalledWith(expect.any(Number))
+
+    act(() => {
+      sheet.dispatchEvent(new TransitionEvent('transitionend', { bubbles: true, propertyName: 'transform' }))
+    })
+
+    expect(setPresentationBottomInset).toHaveBeenLastCalledWith(null)
+    expect(cancelledFrames).toContain(queuedInsetUpdate?.[0])
+    expect(frames.has(queuedInsetUpdate?.[0] ?? -1)).toBe(false)
+
+    // A canceled animation frame cannot run after transitionend.
+    for (const callback of frames.values()) callback(16)
+    expect(setPresentationBottomInset).toHaveBeenLastCalledWith(null)
+  })
 })

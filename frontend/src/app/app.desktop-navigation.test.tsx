@@ -656,6 +656,8 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
 
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
@@ -668,6 +670,7 @@ describe('More surface', () => {
       label: waypoint.name,
       coordinate: waypoint.coordinate,
     }))
+    expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     mapTrigger.remove()
   })

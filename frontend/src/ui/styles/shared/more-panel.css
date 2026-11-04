@@ -42,7 +42,6 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.more-entry-icon,
 .more-back-button svg,
 .more-close-button svg {
   width: 20px;

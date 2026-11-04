@@ -70,6 +70,11 @@ describe('PersonalWaypointAppearanceFields', () => {
     expect(onChange).toHaveBeenNthCalledWith(1, { markerColor: 'purple' })
     expect(onChange).toHaveBeenNthCalledWith(2, { markerIcon: 'rest' })
     expect(screen.getByRole('button', { name: /Marker style/ }).getAttribute('aria-label')).toBe('Marker style, Purple marker, Rest icon')
+    const preview = screen.getByRole('button', { name: /Marker style/ })
+      .querySelector('.personal-waypoint-marker-preview')
+    expect(preview?.getAttribute('data-color')).toBe('purple')
+    expect(preview?.querySelector('svg.lucide-armchair')).not.toBeNull()
+    expect(preview?.querySelector('svg.lucide-circle-dot')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /Marker style/ }))
     expect(screen.queryByRole('radio')).toBeNull()

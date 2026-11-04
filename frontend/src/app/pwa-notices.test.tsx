@@ -30,6 +30,10 @@ function getInstallNotice(): HTMLElement {
   return screen.getByText('Download NUSGo', { selector: 'span' }).closest('section') as HTMLElement
 }
 
+function getReloadNotice(): HTMLElement {
+  return screen.getByText('Map unavailable').closest('section') as HTMLElement
+}
+
 describe('PWA notices', () => {
   beforeEach(async () => {
     vi.spyOn(window, 'addEventListener')
@@ -89,14 +93,15 @@ describe('PWA notices', () => {
     expect(screen.queryByRole('button', { name: 'Reload map' })).toBeNull()
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => { window.dispatchEvent(new Event('online')) })
-    expect(screen.getByText('The background map is unavailable. Reload to try again.')).toBeTruthy()
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Reload map' }))
+    expect(getReloadNotice().getAttribute('role')).toBe('status')
+    await userEvent.setup().click(within(getReloadNotice()).getByRole('button', { name: 'Reload map' }))
     expect(reload).toHaveBeenCalledOnce()
   })
 
   it('offers a reload when an online map request has fallen back', () => {
     render(<PwaNotices basemapUnavailable />)
-    expect(screen.getByRole('button', { name: 'Reload map' })).toBeTruthy()
+    expect(getReloadNotice().className).toContain('pwa-pill-reload')
+    expect(within(getReloadNotice()).getByRole('button', { name: 'Reload map' })).toBeTruthy()
   })
 
   it('shows the install pill with an app icon, a download button and a separate dismiss bubble', async () => {

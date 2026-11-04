@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { Button, IconButton } from '../ui/button'
-import { CloseIcon, CloudOffIcon, DownloadIcon } from '../ui/icons'
+import { IconButton } from '../ui/button'
+import { CloseIcon, CloudOffIcon, DownloadIcon, RefreshIcon } from '../ui/icons'
 import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
@@ -51,9 +51,10 @@ export function PwaNotices({
         </p>
       )}
       {isOnline && basemapUnavailable && (
-        <section className="pwa-notice" role="status" aria-live="polite">
-          <p>The background map is unavailable. Reload to try again.</p>
-          <Button label="Reload map" onClick={onReload} />
+        <section className="pwa-pill pwa-pill-reload" role="status" aria-live="polite">
+          <span>Map unavailable</span>
+          <IconButton label="Reload map" icon={<RefreshIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={onReload} />
         </section>
       )}
       {installPrompt && (
@@ -68,12 +69,10 @@ export function PwaNotices({
         </section>
       )}
       {updateAvailable && (
-        <section className="pwa-notice pwa-notice-update" role="status" aria-live="polite">
-          <div className="pwa-notice-content">
-            <strong className="pwa-notice-title">Update ready</strong>
-            <p>Reload NUSGo to use the latest version.</p>
-          </div>
-          <Button label="Update now" onClick={activateServiceWorkerUpdate} />
+        <section className="pwa-pill pwa-pill-update" role="status" aria-live="polite">
+          <span>Update NUSGo</span>
+          <IconButton label="Update NUSGo" icon={<RefreshIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={activateServiceWorkerUpdate} />
         </section>
       )}
     </div>

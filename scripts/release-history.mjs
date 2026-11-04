@@ -136,26 +136,48 @@ export function assertReleaseIdentity(existingReleases, notes, sha) {
   return 'new'
 }
 
+function releaseIdFromProductionTitle(title) {
+  if (typeof title !== 'string') return null
+  const id = title.match(/(?:^|\s)(\d{4}-\d{2}-\d{2}\.[1-9]\d*)$/)?.[1]
+  return id && isDate(id.slice(0, 10)) ? id : null
+}
+
+export function hasSuccessfulProductionDeploymentAttempt(attemptJobs) {
+  if (!Array.isArray(attemptJobs)) return false
+  return attemptJobs.some((jobs) => Array.isArray(jobs) && jobs.some((job) => (
+    job?.name === 'Build and deploy the production frontend (Cloudflare Pages)'
+    && job.conclusion === 'success'
+    && Array.isArray(job.steps)
+    && job.steps.some((step) => step?.name === 'Deploy to Cloudflare Pages' && step.conclusion === 'success')
+  )))
+}
+
 export function assertReleasePromotionAvailable(releaseId, sha, productionRuns) {
   if (typeof releaseId !== 'string' || !releaseIdPattern.test(releaseId)) throw new Error('Release ID must use YYYY-MM-DD.N')
   if (typeof sha !== 'string' || !shaPattern.test(sha)) throw new Error('Release commit must be a full commit SHA')
   if (!Array.isArray(productionRuns)) throw new Error('Production workflow history must be an array')
 
-  const releaseTitle = `Production frontend release ${releaseId}`
   for (const run of productionRuns) {
-    if (run?.display_title !== releaseTitle || run.conclusion !== 'success') continue
+    if (run?.hasSuccessfulDeploymentAttempt !== true) continue
+    const previousReleaseId = releaseIdFromProductionTitle(run.display_title)
+    const sameReleaseId = previousReleaseId === releaseId
+    const sameCommit = typeof run.head_sha === 'string' && run.head_sha.toLowerCase() === sha.toLowerCase()
+    if (!sameReleaseId && !(previousReleaseId && sameCommit)) continue
     if (typeof run.head_sha !== 'string' || !shaPattern.test(run.head_sha)) {
       throw new Error(`Successful production run for ${releaseId} has no valid commit SHA`)
     }
-    if (run.head_sha.toLowerCase() !== sha.toLowerCase()) {
+    if (sameReleaseId && !sameCommit) {
       throw new Error(
         `Release ${releaseId} already completed production for another commit (${run.head_sha}); retry publication from that run instead of deploying this ID`,
       )
     }
+    if (previousReleaseId && previousReleaseId !== releaseId && sameCommit) {
+      throw new Error(`Commit ${sha} already completed production under release ${previousReleaseId}; reuse that release ID instead`)
+    }
   }
 }
 
-async function listProductionRuns(repository, token) {
+async function listProductionRuns(repository, token, releaseId, sha) {
   const runs = []
   for (let page = 1; ; page += 1) {
     const response = await fetch(
@@ -171,7 +193,39 @@ async function listProductionRuns(repository, token) {
     if (!response.ok) throw new Error(`Unable to read production workflow history (HTTP ${response.status})`)
     const result = await response.json()
     if (!Array.isArray(result.workflow_runs)) throw new Error('Production workflow history is invalid')
-    runs.push(...result.workflow_runs)
+    for (const run of result.workflow_runs) {
+      const previousReleaseId = releaseIdFromProductionTitle(run?.display_title)
+      const sameReleaseId = previousReleaseId === releaseId
+      const sameCommit = typeof run?.head_sha === 'string' && run.head_sha.toLowerCase() === sha.toLowerCase()
+      if (!sameReleaseId && !(previousReleaseId && sameCommit)) continue
+      if (!Number.isInteger(run.id) || !Number.isInteger(run.run_attempt) || run.run_attempt < 1) {
+        throw new Error('Relevant production workflow run has invalid attempt history')
+      }
+
+      const attemptJobs = []
+      for (let attempt = 1; attempt <= run.run_attempt; attempt += 1) {
+        const jobsResponse = await fetch(
+          `https://api.github.com/repos/${repository}/actions/runs/${run.id}/attempts/${attempt}/jobs?per_page=100`,
+          {
+            headers: {
+              accept: 'application/vnd.github+json',
+              authorization: `Bearer ${token}`,
+              'x-github-api-version': '2022-11-28',
+            },
+          },
+        )
+        if (!jobsResponse.ok) throw new Error(`Unable to read production attempt ${attempt} jobs (HTTP ${jobsResponse.status})`)
+        const jobs = await jobsResponse.json()
+        if (!Array.isArray(jobs.jobs)) throw new Error(`Production attempt ${attempt} job history is invalid`)
+        attemptJobs.push(jobs.jobs)
+      }
+
+      runs.push({
+        display_title: run.display_title,
+        head_sha: run.head_sha,
+        hasSuccessfulDeploymentAttempt: hasSuccessfulProductionDeploymentAttempt(attemptJobs),
+      })
+    }
     if (result.workflow_runs.length < 100) return runs
   }
 }
@@ -185,7 +239,7 @@ async function main() {
   const repository = process.env.GITHUB_REPOSITORY
   if (!notesPath || !outputPath || !releaseId || !sha || !token || !repository) throw new Error('Release history inputs are incomplete')
   const notes = validateReleaseNotes(JSON.parse(await readFile(notesPath, 'utf8')), releaseId)
-  const productionRuns = await listProductionRuns(repository, token)
+  const productionRuns = await listProductionRuns(repository, token, releaseId, sha)
   assertReleasePromotionAvailable(releaseId, sha, productionRuns)
   const releases = []
   for (let page = 1; ; page += 1) {

@@ -1,6 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assertReleaseIdentity, assertReleasePromotionAvailable, buildReleaseHistory, formatReleaseNotes, validateReleaseNotes } from './release-history.mjs'
+import {
+  assertReleaseIdentity,
+  assertReleasePromotionAvailable,
+  buildReleaseHistory,
+  formatReleaseNotes,
+  hasSuccessfulProductionDeploymentAttempt,
+  validateReleaseNotes,
+} from './release-history.mjs'
 
 const sha = 'a'.repeat(40)
 const nextSha = 'b'.repeat(40)
@@ -55,18 +62,54 @@ test('rejects assigning a published release ID to another commit', () => {
 test('reserves a release ID for its first successful deployment while publication is pending', () => {
   const productionRuns = [{
     display_title: `Production frontend release ${notes.id}`,
-    conclusion: 'success',
+    conclusion: 'failure',
     head_sha: sha,
+    hasSuccessfulDeploymentAttempt: true,
   }]
   assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, sha, productionRuns))
   assert.throws(() => assertReleasePromotionAvailable(notes.id, nextSha, productionRuns), /already completed production for another commit/)
 })
 
-test('ignores failed promotions and successful runs for other release IDs', () => {
+test('prevents a successful commit from being assigned a different tracked release ID', () => {
+  const productionRuns = [{
+    display_title: `Other workflow title ${notes.id.slice(0, 10)}.1`,
+    head_sha: sha,
+    hasSuccessfulDeploymentAttempt: true,
+  }]
+  assert.throws(() => assertReleasePromotionAvailable(notes.id, sha, productionRuns), /reuse that release ID instead/)
+  assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, nextSha, productionRuns))
+})
+
+test('ignores failed deployments and legacy successful runs without a tracked release ID', () => {
   assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, nextSha, [
-    { display_title: `Production frontend release ${notes.id}`, conclusion: 'failure', head_sha: sha },
-    { display_title: 'Production frontend release 2026-11-03.1', conclusion: 'success', head_sha: sha },
+    { display_title: `Production frontend release ${notes.id}`, head_sha: sha, hasSuccessfulDeploymentAttempt: false },
+    { display_title: 'deploy-frontend-production', head_sha: nextSha, hasSuccessfulDeploymentAttempt: true },
   ]))
+  assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, sha, [
+    { display_title: 'deploy-frontend-production', head_sha: sha, hasSuccessfulDeploymentAttempt: true },
+  ]))
+})
+
+test('recognizes a successful earlier deployment attempt after a failed rerun', () => {
+  assert.equal(hasSuccessfulProductionDeploymentAttempt([
+    [{
+      name: 'Build and deploy the production frontend (Cloudflare Pages)',
+      conclusion: 'success',
+      steps: [{ name: 'Deploy to Cloudflare Pages', conclusion: 'success' }],
+    }],
+    [{
+      name: 'Build and deploy the production frontend (Cloudflare Pages)',
+      conclusion: 'failure',
+      steps: [{ name: 'Deploy to Cloudflare Pages', conclusion: 'failure' }],
+    }],
+  ]), true)
+  assert.equal(hasSuccessfulProductionDeploymentAttempt([
+    [{
+      name: 'Build and deploy the production frontend (Cloudflare Pages)',
+      conclusion: 'success',
+      steps: [{ name: 'Install dependencies', conclusion: 'success' }],
+    }],
+  ]), false)
 })
 
 test('uses resolved tag commits and reuses a release identity on rollback', () => {

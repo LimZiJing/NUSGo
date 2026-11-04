@@ -51,6 +51,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Explore**: The product area for finding venues and browsing bus routes. Its feature content is shown inside the shared mobile sheet.
 - **Stops**: The product area for browsing nearby or favourite bus stops and viewing a selected stop's details.
 - **Plan**: The product area for choosing trip endpoints and viewing a recommended journey or its planning status.
+- **Website release**: A frontend version that has completed a production deployment to nusgo.app. Its identity is separate from the transit-data compatibility version.
 - **Segmented control**: An in-feature selector. Find venue and Bus routes are Explore choices; Nearby and Favourites are Stops choices.
 - **Find venue**: The Explore workflow for searching venues and opening venue details.
 - **Bus routes**: The Explore workflow for browsing internal routes and their ordered stops.

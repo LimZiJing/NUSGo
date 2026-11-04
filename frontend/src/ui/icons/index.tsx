@@ -17,6 +17,7 @@ import {
   Download,
   EllipsisVertical,
   ExternalLink,
+  FileText,
   Footprints,
   GripVertical,
   Info,
@@ -180,6 +181,10 @@ export function SearchIcon(props: IconProps) {
 
 export function SettingsIcon(props: IconProps) {
   return renderDecorativeIcon(Settings, props)
+}
+
+export function FileTextIcon(props: IconProps) {
+  return renderDecorativeIcon(FileText, props)
 }
 
 export interface FavoriteIconProps extends IconProps {

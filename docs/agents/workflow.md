@@ -24,6 +24,8 @@ For a local preview, follow [`docs/local-services.md`](../local-services.md) to 
 
 The timing generator rejects a symlink target. Remove a linked `frontend/public/data/shuttle-timing.json` before any generation command, including root `npm run dev`, `npm run build`, and `npm run build:local-rehearsal`, so generation writes a local file. Restore a link only after removing any generated local timing file. For a built preview, serve only `frontend/dist-local-rehearsal`; the Pages workflow publishes `frontend/dist`.
 
+Never run `npm install` or `npm ci` while `node_modules` is linked from the shared checkout: it will try to rewrite the shared folder and can leave `main` without working dependencies. Run `node scripts/worktree/setup.mjs --unlink` first, then install inside the worktree. If a tool reports a missing `node_modules/.bin` or an unresolved package, check `Get-Item node_modules` for a link that does not resolve before installing anything.
+
 If an environment command fails, diagnose the path, permission, runtime, or process-lifecycle cause before retrying it. Start long-lived development servers with a known port and an explicit cleanup path.
 
 ## 3. Inspect within an output budget
@@ -65,7 +67,7 @@ Finish with a concise record of:
 
 - what changed and what stayed out of scope;
 - exact checks and their results;
-- browser or manual verification performed and limitations;
+- browser or manual verification performed, with the head commit, viewports and interactions used, and any evidence that is now stale;
 - issue, branch, commit, and pull-request references;
 - follow-up work that should become a separate task.
 

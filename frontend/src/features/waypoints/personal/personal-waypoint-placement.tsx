@@ -112,7 +112,7 @@ export function PersonalWaypointPlacement({
             Selected location
           </strong>
           {editing
-            ? <form className="personal-waypoint-coordinate-entry" onSubmit={submit} noValidate>
+            ? <form className="personal-waypoint-coordinate-entry" data-owns-escape="true" onSubmit={submit} noValidate>
               <input
                 ref={inputRef}
                 type="text"

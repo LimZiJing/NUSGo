@@ -1003,6 +1003,26 @@ describe('More surface', () => {
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 
+  it('closes coordinate entry on Escape without leaving the Adjust location screen', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('textbox', { name: 'Selected location' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Adjust waypoint location' })).toBeNull()
+  })
+
   it('creates a Personal Waypoint only after Save waypoint', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('crypto', { randomUUID: () => '4a85589b-4941-4a85-8d47-7c46f5d47400' })

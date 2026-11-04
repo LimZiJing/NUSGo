@@ -921,6 +921,7 @@ function App() {
         />
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
+          onUseMapCentre={mapCenter ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}

@@ -916,6 +916,15 @@ describe('More surface', () => {
     expect((screen.getByLabelText('Note (optional)') as HTMLTextAreaElement).value).toBe('Near the garden')
     expect(screen.getByText('1.500000, 104.250000')).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    await user.keyboard('{Tab}')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use map centre' }))
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('1.000000° N · 103.000000° E')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    expect(screen.getByText('1.000000, 103.000000')).toBeTruthy()
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 
   it('creates a Personal Waypoint only after Save waypoint', async () => {

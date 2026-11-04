@@ -23,7 +23,7 @@ describe('PersonalWaypointPlacement', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Adjust waypoint location' })).toBeTruthy()
-    expect(screen.getByText('Tap the map to move the pin, then return to your form.')).toBeTruthy()
+    expect(screen.getByText('Tap the map or use its centre to move the pin, then return to your form.')).toBeTruthy()
     expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
     expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
     expect(screen.queryByRole('spinbutton', { name: 'Longitude' })).toBeNull()

@@ -67,7 +67,8 @@ describe('PWA notices', () => {
     act(() => {
       window.dispatchEvent(new Event('offline'))
     })
-    expect(screen.getByRole('status').textContent).toContain("You're offline.")
+    expect(screen.getByRole('status').textContent).toBe('Offline. Bus arrivals have stopped updating.')
+    expect(screen.getByText('Offline').className).not.toContain('visually-hidden')
 
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => {

@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  CloudOff,
   Compass,
   Coffee,
   CircleDot,
@@ -88,6 +89,10 @@ export function ChevronRightIcon(props: IconProps) {
 
 export function CheckIcon(props: IconProps) {
   return renderDecorativeIcon(Check, props)
+}
+
+export function CloudOffIcon(props: IconProps) {
+  return renderDecorativeIcon(CloudOff, props)
 }
 
 export function CompassIcon(props: IconProps) {

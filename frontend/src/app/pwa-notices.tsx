@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { Button, IconButton } from '../ui/button'
-import { DownloadIcon, CloseIcon } from '../ui/icons'
+import { CloseIcon, CloudOffIcon, DownloadIcon } from '../ui/icons'
 import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
@@ -44,8 +44,10 @@ export function PwaNotices({
   return (
     <div className="pwa-notices">
       {!isOnline && (
-        <p className="pwa-notice pwa-notice-offline" role="status" aria-live="polite">
-          You're offline. Bus arrivals will stop updating until you're back online.
+        <p className="pwa-pill pwa-pill-offline" role="status" aria-live="polite">
+          <CloudOffIcon size={18} />
+          <span>Offline</span>
+          <span className="visually-hidden">. Bus arrivals have stopped updating.</span>
         </p>
       )}
       {isOnline && basemapUnavailable && (

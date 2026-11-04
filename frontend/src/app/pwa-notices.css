@@ -35,6 +35,41 @@
   line-height: 1.4;
 }
 
+.pwa-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-self: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--border-card);
+  border-radius: 999px;
+  background: var(--surface-overlay-strong);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+.pwa-pill-offline {
+  border-color: var(--border-warning);
+  background: var(--surface-warning);
+  color: var(--text-warning);
+}
+
+.pwa-pill-action {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+}
+
 .pwa-notice-content {
   min-width: 0;
   flex: 1;

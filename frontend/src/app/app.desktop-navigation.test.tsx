@@ -596,6 +596,35 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
+  it.each(['trigger', 'menu item'])('closes only the waypoint options menu on Escape from its %s', async (focusTarget) => {
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const trigger = screen.getByRole('button', { name: 'Waypoint list options' })
+    await user.click(trigger)
+    if (focusTarget === 'menu item') screen.getByRole('button', { name: 'Edit list' }).focus()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('group', { name: 'Waypoint list actions' })).toBeNull()
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(trigger)
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
+  })
+
   it('shows a waypoint on the map and starts Plan from its Directions action', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',

@@ -907,6 +907,7 @@
 }
 .personal-waypoint-coordinate-note:not(:empty) { margin-top: var(--space-2); }
 .personal-waypoint-location-group > .personal-waypoint-error { margin: var(--space-2) 0 0; }
+.personal-waypoint-use-centre { width: 100%; margin-top: var(--space-2); }
 .personal-waypoint-placement > .personal-waypoint-actions {
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);

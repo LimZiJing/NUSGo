@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
-import { MapPinIcon } from '../../../ui/icons'
+import { LocateIcon, MapPinIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -144,8 +144,14 @@ export function PersonalWaypointPlacement({
       </div>
       {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
       <p className="personal-waypoint-coordinate-note" role="status">{visibleWarning}</p>
+      <Button
+        className="personal-waypoint-use-centre"
+        label="Use map centre"
+        icon={<LocateIcon size={16} />}
+        disabled={!onUseMapCentre}
+        onClick={() => onUseMapCentre?.()}
+      />
     </div>
-    <Button label="Use map centre" variant="ghost" disabled={!onUseMapCentre} onClick={() => onUseMapCentre?.()} />
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />
       <Button label="Done adjusting location" variant="primary" onClick={done} />

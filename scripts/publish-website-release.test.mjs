@@ -31,8 +31,17 @@ function event() {
   return { workflow_run: { ...run, display_title: `Production frontend release ${releaseId}` } }
 }
 
-function fakeApi({ runOverride = {}, existingReleases = [], tagSha, priorRuns = [], failedAttempts = [], failReleaseOnce = false } = {}) {
+function fakeApi({
+  runOverride = {},
+  existingReleases = [],
+  tagSha,
+  priorRuns = [],
+  failedAttempts = [],
+  failReleaseOnce = false,
+  preparedNotes = [notes],
+} = {}) {
   const writes = []
+  const releaseNotesReads = []
   let createdTagSha = tagSha
   const api = async (path, options = {}, allowNotFound = false) => {
     if (path.startsWith('actions/workflows/19/runs?event=workflow_dispatch&per_page=100&page=')) return { workflow_runs: priorRuns }
@@ -45,10 +54,16 @@ function fakeApi({ runOverride = {}, existingReleases = [], tagSha, priorRuns = 
       conclusion: failedAttempts.includes(Number(attemptMatch[1])) ? 'failure' : 'success',
       steps: [{ name: 'Deploy to Cloudflare Pages', conclusion: failedAttempts.includes(Number(attemptMatch[1])) ? 'failure' : 'success', started_at: '2026-11-04T12:30:00Z', completed_at: deployedAt }],
     }] }
-    if (path === `contents/frontend/releases?ref=${sha}`) return [{ name: `${releaseId}.json`, type: 'file' }]
-    if (path === `contents/frontend/releases/${releaseId}.json?ref=${sha}`) return {
-      encoding: 'base64',
-      content: Buffer.from(JSON.stringify(notes)).toString('base64'),
+    if (path === `contents/frontend/releases?ref=${sha}`) {
+      return preparedNotes.map((item) => ({ name: `${item.id}.json`, type: 'file' }))
+    }
+    const notePath = path.match(/^contents\/frontend\/releases\/([^?]+)\?ref=/)
+    if (notePath) {
+      releaseNotesReads.push(path)
+      const noteId = decodeURIComponent(notePath[1]).replace(/\.json$/, '')
+      const selectedNotes = preparedNotes.find((item) => item.id === noteId)
+      if (!selectedNotes) throw new Error(`Unexpected release notes file: ${notePath[1]}`)
+      return { encoding: 'base64', content: Buffer.from(JSON.stringify(selectedNotes)).toString('base64') }
     }
     if (path.startsWith('releases?per_page=100&page=')) return existingReleases
     if (path === `git/ref/tags/release-${releaseId}`) {
@@ -75,16 +90,36 @@ function fakeApi({ runOverride = {}, existingReleases = [], tagSha, priorRuns = 
     }
     throw new Error(`Unexpected API call: ${options.method ?? 'GET'} ${path}`)
   }
-  return { api, writes }
+  return { api, writes, releaseNotesReads }
 }
 
 test('publishes an immutable GitHub tag and release only after the verified production step', async () => {
-  const { api, writes } = fakeApi()
+  const { api, writes, releaseNotesReads } = fakeApi()
   await publishWebsiteRelease(event(), api, cloudflareApi)
   assert.equal(writes.length, 2)
   assert.equal(writes[0].body.ref, `refs/tags/release-${releaseId}`)
   assert.equal(writes[0].body.sha, sha)
   assert.match(writes[1].body.body, new RegExp(`deployed-at=${deployedAt.replace('Z', '.000Z')} sha=${sha} production-run=42`))
+  assert.deepEqual(releaseNotesReads, [`contents/frontend/releases/${releaseId}.json?ref=${sha}`])
+})
+
+test('ignores unselected draft notes while publishing the selected release', async () => {
+  const draft = { id: '2026-11-05.1', title: 'Prepared release', sections: { Added: [], Improved: [], Fixed: [] } }
+  const { api, writes, releaseNotesReads } = fakeApi({ preparedNotes: [notes, draft] })
+  await publishWebsiteRelease(event(), api, cloudflareApi)
+  assert.equal(writes.length, 2)
+  assert.deepEqual(releaseNotesReads, [`contents/frontend/releases/${releaseId}.json?ref=${sha}`])
+})
+
+test('accepts a fractional Cloudflare completion time just after GitHub whole-second time', async () => {
+  const { api, writes } = fakeApi()
+  const fractionalTime = async () => {
+    const response = await cloudflareApi()
+    response.result[1].latest_stage.ended_on = '2026-11-04T12:34:56.999Z'
+    return response
+  }
+  await publishWebsiteRelease(event(), api, fractionalTime)
+  assert.match(writes[1].body.body, /deployed-at=2026-11-04T12:34:56\.999Z/)
 })
 
 test('refuses to publish when the production run failed', async () => {
@@ -121,7 +156,7 @@ test('refuses a successful named step without an actual matching Cloudflare depl
 })
 
 test('refuses Cloudflare records for another commit, environment, run or failed deployment', async () => {
-  for (const change of ['commit', 'environment', 'run', 'status', 'time']) {
+  for (const change of ['commit', 'environment', 'run', 'status', 'time', 'fractional-too-late']) {
     const { api, writes } = fakeApi()
     const verify = async () => {
       const response = await cloudflareApi()
@@ -131,6 +166,7 @@ test('refuses Cloudflare records for another commit, environment, run or failed 
         if (change === 'run') deployment.deployment_trigger.metadata.commit_message = 'another run'
         if (change === 'status') deployment.latest_stage.status = 'failure'
         if (change === 'time') deployment.latest_stage.ended_on = '2026-11-03T12:34:56Z'
+        if (change === 'fractional-too-late') deployment.latest_stage.ended_on = '2026-11-04T12:34:57.001Z'
       }
       return response
     }

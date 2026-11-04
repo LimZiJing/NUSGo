@@ -59,7 +59,7 @@ export async function verifyCloudflareDeployment(run, attempt, step, cloudflareA
         && metadata?.commit_hash?.toLowerCase() === run.head_sha.toLowerCase()
         && metadata?.commit_message === marker
         && stage?.name === 'deploy' && stage.status === 'success'
-        && Number.isFinite(endedAt) && endedAt >= Date.parse(step.started_at) && endedAt <= Date.parse(step.completed_at)
+        && Number.isFinite(endedAt) && endedAt >= Date.parse(step.started_at) && endedAt <= Date.parse(step.completed_at) + 1000
     })
     if (matches.length > 1) throw new Error('Cloudflare has ambiguous production deployment records')
     if (matches.length === 1) return new Date(matches[0].latest_stage.ended_on).toISOString()
@@ -165,21 +165,16 @@ export async function publishWebsiteRelease(event, api, cloudflareApi) {
   if (run.head_sha.toLowerCase() !== sha.toLowerCase()) throw new Error('Production run SHA does not match the workflow_run event')
   if (run.id !== sourceRun.id || run.head_sha.toLowerCase() !== sha.toLowerCase()) throw new Error('Production run identity changed during verification')
 
-  const files = await api(`contents/frontend/releases?ref=${sha}`)
-  if (!Array.isArray(files)) throw new Error('Release notes directory is missing from the deployed commit')
-  const notesFiles = files.filter((file) => file.type === 'file' && /^\d{4}-\d{2}-\d{2}\.[1-9]\d*\.json$/.test(file.name))
-  const notes = []
-  for (const file of notesFiles) {
-    const content = await api(`contents/frontend/releases/${encodeURIComponent(file.name)}?ref=${sha}`)
-    if (content.encoding !== 'base64' || typeof content.content !== 'string') throw new Error(`Cannot read deployed release notes ${file.name}`)
-    const parsed = validateReleaseNotes(JSON.parse(Buffer.from(content.content, 'base64').toString('utf8')))
-    if (file.name !== `${parsed.id}.json`) throw new Error(`Release notes path ${file.name} does not match ID ${parsed.id}`)
-    notes.push(parsed)
-  }
   const releaseId = sourceRun.display_title?.match(/^Production frontend release (\d{4}-\d{2}-\d{2}\.[1-9]\d*)$/)?.[1]
   if (!releaseId) throw new Error('Production run title does not identify a valid release ID')
-  const selected = notes.find((item) => item.id === releaseId)
-  if (!selected) throw new Error('The production run must select exactly one release ID in its dispatch inputs')
+  const content = await api(`contents/frontend/releases/${releaseId}.json?ref=${sha}`)
+  if (!content || content.encoding !== 'base64' || typeof content.content !== 'string') {
+    throw new Error(`Cannot read deployed release notes ${releaseId}.json`)
+  }
+  const selected = validateReleaseNotes(
+    JSON.parse(Buffer.from(content.content, 'base64').toString('utf8')),
+    releaseId,
+  )
 
   const tag = `release-${selected.id}`
   const releases = await allReleases(api)

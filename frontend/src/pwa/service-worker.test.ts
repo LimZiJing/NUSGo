@@ -31,7 +31,15 @@ function worker(cached: Response | undefined, fetch = vi.fn(() => new Promise<Re
     })
     return response
   }
-  return { navigate, asset, fetch, cache }
+  function releaseIndex() {
+    let response: Promise<Response> | undefined
+    handlers.get('fetch')?.({
+      request: { url: 'https://nusgo.test/pwa/releases/index.json', method: 'GET', destination: '', mode: 'cors' },
+      respondWith: (value: Promise<Response>) => { response = value },
+    })
+    return response
+  }
+  return { navigate, asset, releaseIndex, fetch, cache }
 }
 
 describe('offline app launch', () => {
@@ -61,6 +69,13 @@ describe('offline app launch', () => {
 
 
 describe('runtime asset caching', () => {
+  it('serves the precached release index to programmatic requests while offline', async () => {
+    const index = new Response('{"releases":[]}')
+    const runtime = worker(index)
+    expect(await runtime.releaseIndex()).toBe(index)
+    expect(runtime.fetch).not.toHaveBeenCalled()
+  })
+
   it('returns a successful download even if storing it exceeds quota', async () => {
     const response = new Response('image')
     const runtime = worker(undefined, vi.fn().mockResolvedValue(response))

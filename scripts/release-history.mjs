@@ -136,6 +136,46 @@ export function assertReleaseIdentity(existingReleases, notes, sha) {
   return 'new'
 }
 
+export function assertReleasePromotionAvailable(releaseId, sha, productionRuns) {
+  if (typeof releaseId !== 'string' || !releaseIdPattern.test(releaseId)) throw new Error('Release ID must use YYYY-MM-DD.N')
+  if (typeof sha !== 'string' || !shaPattern.test(sha)) throw new Error('Release commit must be a full commit SHA')
+  if (!Array.isArray(productionRuns)) throw new Error('Production workflow history must be an array')
+
+  const releaseTitle = `Production frontend release ${releaseId}`
+  for (const run of productionRuns) {
+    if (run?.display_title !== releaseTitle || run.conclusion !== 'success') continue
+    if (typeof run.head_sha !== 'string' || !shaPattern.test(run.head_sha)) {
+      throw new Error(`Successful production run for ${releaseId} has no valid commit SHA`)
+    }
+    if (run.head_sha.toLowerCase() !== sha.toLowerCase()) {
+      throw new Error(
+        `Release ${releaseId} already completed production for another commit (${run.head_sha}); retry publication from that run instead of deploying this ID`,
+      )
+    }
+  }
+}
+
+async function listProductionRuns(repository, token) {
+  const runs = []
+  for (let page = 1; ; page += 1) {
+    const response = await fetch(
+      `https://api.github.com/repos/${repository}/actions/workflows/deploy-frontend-production.yml/runs?event=workflow_dispatch&per_page=100&page=${page}`,
+      {
+        headers: {
+          accept: 'application/vnd.github+json',
+          authorization: `Bearer ${token}`,
+          'x-github-api-version': '2022-11-28',
+        },
+      },
+    )
+    if (!response.ok) throw new Error(`Unable to read production workflow history (HTTP ${response.status})`)
+    const result = await response.json()
+    if (!Array.isArray(result.workflow_runs)) throw new Error('Production workflow history is invalid')
+    runs.push(...result.workflow_runs)
+    if (result.workflow_runs.length < 100) return runs
+  }
+}
+
 async function main() {
   const notesPath = process.env.RELEASE_NOTES_PATH
   const outputPath = process.env.RELEASE_HISTORY_OUTPUT
@@ -145,6 +185,8 @@ async function main() {
   const repository = process.env.GITHUB_REPOSITORY
   if (!notesPath || !outputPath || !releaseId || !sha || !token || !repository) throw new Error('Release history inputs are incomplete')
   const notes = validateReleaseNotes(JSON.parse(await readFile(notesPath, 'utf8')), releaseId)
+  const productionRuns = await listProductionRuns(repository, token)
+  assertReleasePromotionAvailable(releaseId, sha, productionRuns)
   const releases = []
   for (let page = 1; ; page += 1) {
     const response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}`, {

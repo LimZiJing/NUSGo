@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assertReleaseIdentity, buildReleaseHistory, formatReleaseNotes, validateReleaseNotes } from './release-history.mjs'
+import { assertReleaseIdentity, assertReleasePromotionAvailable, buildReleaseHistory, formatReleaseNotes, validateReleaseNotes } from './release-history.mjs'
 
 const sha = 'a'.repeat(40)
 const nextSha = 'b'.repeat(40)
@@ -50,6 +50,23 @@ test('rejects assigning a published release ID to another commit', () => {
     tag_name: 'release-2026-11-04.1', target_commitish: 'main', tag_commit_sha: sha,
     body: `# Earlier\n\n## Fixed\n- A fix.\n\n<!-- release-meta: deployed-at=2026-11-04T12:00:00.000Z sha=${sha} production-run=123 -->`,
   }], notes, sha), /already belongs to another release ID/)
+})
+
+test('reserves a release ID for its first successful deployment while publication is pending', () => {
+  const productionRuns = [{
+    display_title: `Production frontend release ${notes.id}`,
+    conclusion: 'success',
+    head_sha: sha,
+  }]
+  assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, sha, productionRuns))
+  assert.throws(() => assertReleasePromotionAvailable(notes.id, nextSha, productionRuns), /already completed production for another commit/)
+})
+
+test('ignores failed promotions and successful runs for other release IDs', () => {
+  assert.doesNotThrow(() => assertReleasePromotionAvailable(notes.id, nextSha, [
+    { display_title: `Production frontend release ${notes.id}`, conclusion: 'failure', head_sha: sha },
+    { display_title: 'Production frontend release 2026-11-03.1', conclusion: 'success', head_sha: sha },
+  ]))
 })
 
 test('uses resolved tag commits and reuses a release identity on rollback', () => {

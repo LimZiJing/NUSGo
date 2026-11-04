@@ -12,7 +12,9 @@ on:
         required: true
         type: string
 
+# Read deployment history so a completed promotion reserves its ID while publication retries.
 permissions:
+  actions: read
   contents: read
 
 concurrency:

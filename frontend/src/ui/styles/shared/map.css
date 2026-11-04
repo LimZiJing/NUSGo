@@ -73,12 +73,18 @@
   justify-items: start;
 }
 
+.map-control-action-slot {
+  display: grid;
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
+}
+
 .map-control-actions > * {
   pointer-events: auto;
 }
 
-.map-control-actions > .location-control {
-  position: static;
+.map-control-actions > .map-control-action-slot {
+  pointer-events: none;
 }
 
 @media (min-width: 769px) {
@@ -136,10 +142,6 @@
 }
 
 .location-control {
-  position: absolute;
-  z-index: 13;
-  top: var(--location-control-top, 76px);
-  left: 12px;
   display: grid;
   gap: var(--space-1);
   pointer-events: auto;
@@ -178,6 +180,13 @@
   width: 20px;
   height: 20px;
   stroke-width: 2;
+}
+
+.location-control-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .location-control-icon circle:last-of-type {

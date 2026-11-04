@@ -66,6 +66,18 @@
     left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
   }
 
+  @media (max-height: 420px) {
+    .map-control-actions {
+      right: max(12px, calc(env(safe-area-inset-right, 0px) + 12px));
+    }
+
+    .map-control-actions > .more-entry-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+
   .map-legend {
     display: none;
   }

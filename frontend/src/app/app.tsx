@@ -952,17 +952,18 @@ function App() {
               enabled={liveBusLayerEnabled}
               onToggle={setLiveBusLayerEnabled}
             />
-            <LocationControl
-              visible={!isMobileViewport || !(
-                navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
-              )}
-              onRootChange={(root) => {
-                locationControlRef.current = root
-              }}
-              topOffset={mapInsets.top || 76}
-              searching={state.location.status === 'requesting'}
-              onLocate={stopsWorkflow.locateFromControl}
-            />
+            <div className="map-control-action-slot">
+              <LocationControl
+                visible={!isMobileViewport || !(
+                  navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
+                )}
+                onRootChange={(root) => {
+                  locationControlRef.current = root
+                }}
+                searching={state.location.status === 'requesting'}
+                onLocate={stopsWorkflow.locateFromControl}
+              />
+            </div>
             <MoreEntryButton
               expanded={isMoreOpen}
               buttonRef={(button) => {

@@ -25,6 +25,7 @@ export interface NavigationSessionMountDependencies {
   readonly onMapJourneyOptionSelected?: (candidateKey: string) => void
   readonly onBasemapUnavailable?: MapSessionOptions['onBasemapUnavailable']
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
+  readonly liveBusRouteMatching?: MapSessionOptions['liveBusRouteMatching']
 }
 
 export interface NavigationSessionMount {
@@ -54,6 +55,7 @@ export function createNavigationSessionMount(
     },
     onMapCenterChange: dependencies.onMapCenterChange,
     onBasemapUnavailable: dependencies.onBasemapUnavailable,
+    liveBusRouteMatching: dependencies.liveBusRouteMatching,
   })
   session = dependencies.createNavigationSession({
     map,

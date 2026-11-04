@@ -7,7 +7,14 @@ import {
 } from '@nusgo/shared'
 import type { TransitGeoJsonPosition, TransitStop } from '@nusgo/shared/transit/types'
 import type { LoadedTransitData } from '../../app/contracts/data'
-import { isClosedRoute, interpolateRoutePosition, snapToRoute } from './live-bus-routing'
+import type { LiveBusRouteMatchingOptions } from '../../app/contracts/map'
+import type { RoutePositionBaseline } from './live-bus-routing'
+import {
+  isClosedRoute,
+  interpolateRoutePosition,
+  matchVehicleRoutePosition,
+  snapToRoute,
+} from './live-bus-routing'
 import { createPopupCoordinator, type PopupContent } from './popup'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import { CloseIcon } from '../../ui/icons'
@@ -25,9 +32,13 @@ interface LiveBusMarkerRecord {
   vehicle: ShuttleVehiclePosition
   routeCoordinates: readonly TransitGeoJsonPosition[] | null
   progressMeters: number | null
+  acceptedBaseline: RoutePositionBaseline | null
+  acceptedExpiresAtMs: number | null
+  positionUncertain: boolean
   animation: {
     readonly fromProgressMeters: number
     readonly toProgressMeters: number
+    readonly progressDeltaMeters: number
     readonly startedAt: number
     readonly durationMs: number
   } | null
@@ -35,6 +46,8 @@ interface LiveBusMarkerRecord {
   staleTimer: ReturnType<typeof setTimeout> | null
   expiryTimer: ReturnType<typeof setTimeout> | null
 }
+
+type LiveBusPositionStatus = 'current' | 'stale' | 'uncertain'
 
 export interface LiveBusMarkers {
   setTransitData(data: Pick<LoadedTransitData, 'index' | 'geometry'>): void
@@ -196,7 +209,13 @@ function updateMarkerRouteColor(element: HTMLElement, routeColor: string | undef
 
 function updateMarkerHeading(element: HTMLElement, headingDegrees: number, mapBearing: number): void {
   const heading = element.querySelector<HTMLElement>('.live-bus-marker-heading')
-  if (heading) heading.style.transform = `rotateX(45deg) rotateZ(${headingDegrees - mapBearing}deg)`
+  if (!heading) return
+  if (!Number.isFinite(headingDegrees)) {
+    heading.style.visibility = 'hidden'
+    return
+  }
+  heading.style.visibility = ''
+  heading.style.transform = `rotateX(45deg) rotateZ(${headingDegrees - mapBearing}deg)`
 }
 
 function updateMarkerLabel(
@@ -204,12 +223,18 @@ function updateMarkerLabel(
   routeName: string,
   vehicle: ShuttleVehiclePosition,
   nextStop: TransitStop | null,
+  positionStatus: LiveBusPositionStatus = 'current',
 ): void {
   const crowding = vehicle.load === 'unknown'
     ? 'Crowding estimate unavailable.'
     : `Estimated crowding: ${vehicle.load}.`
   const nextStopLabel = nextStop ? ` Next stop: ${nextStop.longName}.` : ''
-  element.setAttribute('aria-label', `${routeName} bus.${nextStopLabel} ${crowding}`)
+  const positionLabel = positionStatus === 'uncertain'
+    ? ' Position uncertain; held at the last accepted location.'
+    : positionStatus === 'stale'
+      ? ' Position is stale.'
+      : ''
+  element.setAttribute('aria-label', `${routeName} bus.${nextStopLabel} ${crowding}${positionLabel}`)
 }
 
 function clearTimer(timer: ReturnType<typeof setTimeout> | null): void {
@@ -235,6 +260,7 @@ function stopAnimation(record: LiveBusMarkerRecord): void {
 export function createLiveBusMarkers(
   map: Map,
   onSelectStop?: (stopId: string) => void,
+  routeMatchingOptions?: LiveBusRouteMatchingOptions,
 ): LiveBusMarkers {
   const records = new globalThis.Map<string, LiveBusMarkerRecord>()
   const routeCoordinatesById = new globalThis.Map<string, readonly TransitGeoJsonPosition[]>()
@@ -266,21 +292,41 @@ export function createLiveBusMarkers(
     records.delete(key)
   }
 
+  const updateRecordLabel = (record: LiveBusMarkerRecord, positionStatus: LiveBusPositionStatus): void => {
+    const routeName = transitData?.index.routeById.get(record.vehicle.routeId)?.name ?? record.vehicle.routeId
+    const nextStop = getNextStop(
+      record.vehicle,
+      record.acceptedBaseline?.progressMeters ?? null,
+      record.routeCoordinates,
+      transitData,
+    )
+    updateMarkerLabel(record.element, routeName, record.vehicle, nextStop, positionStatus)
+  }
+
   const scheduleLifecycle = (key: string, record: LiveBusMarkerRecord): void => {
     clearTimer(record.staleTimer)
     clearTimer(record.expiryTimer)
     const now = Date.now()
-    const expiresAt = Date.parse(record.vehicle.expiresAt)
+    const expiresAt = record.acceptedExpiresAtMs ?? Date.parse(record.vehicle.expiresAt)
     const staleAt = expiresAt - STALE_REMAINING_MS
 
-    if (staleAt <= now) {
+    const positionStatus = record.positionUncertain
+      ? 'uncertain'
+      : staleAt <= now
+        ? 'stale'
+        : 'current'
+    if (positionStatus !== 'current') {
       record.element.classList.add('live-bus-marker-stale')
     } else {
       record.element.classList.remove('live-bus-marker-stale')
       record.staleTimer = setTimeout(() => {
-        if (records.get(key) === record) record.element.classList.add('live-bus-marker-stale')
+        if (records.get(key) === record) {
+          record.element.classList.add('live-bus-marker-stale')
+          updateRecordLabel(record, 'stale')
+        }
       }, staleAt - now)
     }
+    updateRecordLabel(record, positionStatus)
 
     record.expiryTimer = setTimeout(() => removeRecord(key), Math.max(0, expiresAt - now))
   }
@@ -300,6 +346,7 @@ export function createLiveBusMarkers(
       animation.fromProgressMeters,
       animation.toProgressMeters,
       progress,
+      animation.progressDeltaMeters,
     )
     if (routePosition) {
       record.progressMeters = routePosition.progressMeters
@@ -322,12 +369,59 @@ export function createLiveBusMarkers(
   ): void => {
     const now = Date.now()
     const previousRouteCoordinates = record.routeCoordinates
+    const sameRoute = record.vehicle.routeId === vehicle.routeId &&
+      previousRouteCoordinates === routeCoordinates
+    const nextObservedAt = Date.parse(vehicle.observedAt)
+    const baseline = record.acceptedBaseline
+
+    if (
+      baseline &&
+      nextObservedAt <= baseline.observedAtMs &&
+      vehicle.lng === record.vehicle.lng &&
+      vehicle.lat === record.vehicle.lat
+    ) return
+
+    const match = routeCoordinates
+      ? matchVehicleRoutePosition(
+        [vehicle.lng, vehicle.lat],
+        vehicle.headingDegrees,
+        routeCoordinates,
+        baseline,
+        nextObservedAt,
+        routeMatchingOptions,
+      )
+      : null
+    if (match?.kind === 'rejected') {
+      stopAnimation(record)
+      const acceptedPosition = record.routeCoordinates && baseline
+        ? interpolateRoutePosition(
+          record.routeCoordinates,
+          baseline.progressMeters,
+          baseline.progressMeters,
+          0,
+        )
+        : null
+      if (acceptedPosition) {
+        record.progressMeters = acceptedPosition.progressMeters
+        record.marker.setLngLat(toMutableCoordinate(acceptedPosition.coordinate))
+      }
+      record.positionUncertain = true
+      record.element.classList.add('live-bus-marker-stale')
+      updateRecordLabel(record, 'uncertain')
+      return
+    }
+
+    const routePosition = match?.kind === 'matched' ? match.position : null
+    const progressDeltaMeters = match?.kind === 'matched' && match.continuity === 'continuous'
+      ? match.progressDeltaMeters
+      : null
     const previousPosition = previousRouteCoordinates && record.animation
       ? interpolateRoutePosition(
         previousRouteCoordinates,
         record.animation.fromProgressMeters,
         record.animation.toProgressMeters,
         (now - record.animation.startedAt) / record.animation.durationMs,
+        record.animation.progressDeltaMeters,
       )
       : previousRouteCoordinates && record.progressMeters !== null
         ? interpolateRoutePosition(
@@ -337,17 +431,12 @@ export function createLiveBusMarkers(
           0,
         )
         : null
-    const sameRoute = record.vehicle.routeId === vehicle.routeId &&
-      previousRouteCoordinates === routeCoordinates
-    const previousObservedAt = Date.parse(record.vehicle.observedAt)
-    const nextObservedAt = Date.parse(vehicle.observedAt)
-    const observedInterval = nextObservedAt - previousObservedAt
+    const observedInterval = baseline === null
+      ? Number.NaN
+      : nextObservedAt - baseline.observedAtMs
     const durationMs = Number.isFinite(observedInterval) && observedInterval > 0
       ? Math.min(observedInterval, SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS)
       : SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS
-    const routePosition = routeCoordinates
-      ? snapToRoute([vehicle.lng, vehicle.lat], routeCoordinates)
-      : null
     const route = transitData?.index.routeById.get(vehicle.routeId)
     const routeName = route?.name ?? vehicle.routeId
     const nextStop = getNextStop(
@@ -358,8 +447,13 @@ export function createLiveBusMarkers(
     )
 
     stopAnimation(record)
+    record.positionUncertain = false
     record.vehicle = vehicle
     record.routeCoordinates = routeCoordinates
+    record.acceptedBaseline = routePosition
+      ? { progressMeters: routePosition.progressMeters, observedAtMs: nextObservedAt }
+      : null
+    record.acceptedExpiresAtMs = Date.parse(vehicle.expiresAt)
     record.element.dataset.loadLevel = vehicle.load
     updateMarkerRouteColor(record.element, route?.color)
     updateMarkerHeading(record.element, vehicle.headingDegrees, map.getBearing())
@@ -370,6 +464,7 @@ export function createLiveBusMarkers(
 
     if (
       sameRoute &&
+      progressDeltaMeters !== null &&
       routeCoordinates &&
       previousPosition &&
       routePosition &&
@@ -381,6 +476,7 @@ export function createLiveBusMarkers(
       record.animation = {
         fromProgressMeters: previousPosition.progressMeters,
         toProgressMeters: routePosition.progressMeters,
+        progressDeltaMeters,
         startedAt: now,
         durationMs,
       }
@@ -413,9 +509,17 @@ export function createLiveBusMarkers(
         continue
       }
 
-      const routePosition = routeCoordinates
-        ? snapToRoute([vehicle.lng, vehicle.lat], routeCoordinates)
+      const match = routeCoordinates
+        ? matchVehicleRoutePosition(
+          [vehicle.lng, vehicle.lat],
+          vehicle.headingDegrees,
+          routeCoordinates,
+          null,
+          Date.parse(vehicle.observedAt),
+          routeMatchingOptions,
+        )
         : null
+      const routePosition = match?.kind === 'matched' ? match.position : null
       const route = transitData?.index.routeById.get(vehicle.routeId)
       const routeName = route?.name ?? vehicle.routeId
       const nextStop = getNextStop(
@@ -446,6 +550,11 @@ export function createLiveBusMarkers(
         vehicle,
         routeCoordinates,
         progressMeters: routePosition?.progressMeters ?? null,
+        acceptedBaseline: routePosition
+          ? { progressMeters: routePosition.progressMeters, observedAtMs: Date.parse(vehicle.observedAt) }
+          : null,
+        acceptedExpiresAtMs: Date.parse(vehicle.expiresAt),
+        positionUncertain: false,
         animation: null,
         animationFrame: null,
         staleTimer: null,

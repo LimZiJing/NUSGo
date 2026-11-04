@@ -37,3 +37,20 @@ Each of three repetitions sent one eight-move canvas pan and one ten-event wheel
 Pan maximum rAF intervals ranged from 8.4–58.4 ms on base and 8.4–66.6 ms after. Zoom maxima ranged from 33.3–50 ms on base and 41.6–83.3 ms after. Each side had one pan sample with a long task (58 ms base, 70 ms after); neither had zoom long tasks. The wheel workload reduced marker attribute records, while pan records varied. All 33 markers were visible at the sampled zoom checkpoints, so this browser scenario did not observe a threshold crossing; threshold correctness remains covered by the focused module tests.
 
 This is browser-rendered application work, but the input dispatch durations are not an isolated MapLibre zoom-handler profile. rAF intervals are scheduling samples, not compositor or GPU dropped-frame measurements. The maximum intervals did not improve consistently, so these data do not establish a general frame-smoothness improvement. The three pan repetitions moved the camera cumulatively in one direction.
+
+## Review follow-up — 4 November 2026
+
+The exact PR source head at the start of this follow-up was `1112a9739c6dbcc65e59d2cd95feb6bb444a4c0a`. The canonical marker-work test now explicitly checks visibility at both sides of the cutoff: all 33 markers have an empty inline `display` at zoom 14 and `display: none` at 13.99. The existing write-count assertions remain in the test.
+
+The test change is in source commit `d496e89a` (`test(map): assert shuttle stop zoom threshold visibility`).
+
+I exercised the exact worktree in a fresh Incognito preview using its Vite server on port 5189, with API origin set to `https://api.nusgo.invalid`. The static map loaded 33 stop marker elements. A one-step MapLibre Zoom out across the visibility cutoff changed the DOM count from 33 visible markers to 0; Zoom in restored all 33. The preview did not expose its numeric MapLibre zoom value, so the exact 14/13.99 values are pinned by the module test while the browser confirms the real map control and marker visibility transition. No request reached the shared API service; the expected compatibility check to the reserved `.invalid` API origin failed with `TypeError: Failed to fetch`. The map style also logged missing-image warnings for `office`, `swimming_pool`, and `lift_gate`.
+
+### Follow-up checks on `d496e89a`
+
+- `npm test`: passed — 22 shared, 1,283 frontend, 136 backend, and 105 pathfinding tests (1,546 total).
+- `npm run lint`: passed — CSS selector check reported no new bare button selectors.
+- `VITE_API_ORIGIN=https://api.nusgo.invalid npm run build`: passed — Vite reported the existing main-chunk size advisory.
+- `git diff --check`: passed.
+
+An initial attempt to run test, lint, and build concurrently exhausted the machine's memory and failed. The processes were stopped and all three checks passed when rerun separately.

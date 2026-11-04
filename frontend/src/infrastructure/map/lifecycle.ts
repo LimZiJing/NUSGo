@@ -209,6 +209,15 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     options.onMapCenterChange([center.lng, center.lat])
   }
 
+  const handleMoveStart = (): void => {
+    if (!disposed) options.onMapMovingChange?.(true)
+  }
+  const handleMoveEnd = (): void => {
+    if (disposed) return
+    reportMapCenter()
+    options.onMapMovingChange?.(false)
+  }
+
   // Active padding aligns MapLibre's centre with the crosshair. Identical padding
   // must be skipped because MapLibre's setPadding calls jumpTo and cancels a running flyTo.
   let appliedPadding: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
@@ -349,8 +358,9 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   map.addControl(attributionControl, 'bottom-right')
   map.on('error', handleMapError)
   map.on('click', handleMapClick)
+  map.on('movestart', handleMoveStart)
+  map.on('moveend', handleMoveEnd)
   if (options.onMapCenterChange) {
-    map.on('moveend', reportMapCenter)
     map.on('resize', reportMapCenter)
     reportMapCenter()
   }
@@ -413,9 +423,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
+      map.off('movestart', handleMoveStart)
+      map.off('moveend', handleMoveEnd)
       removeDoubleZoomHandlers()
       if (options.onMapCenterChange) {
-        map.off('moveend', reportMapCenter)
         map.off('resize', reportMapCenter)
       }
       map.removeControl(navigationControl)

@@ -174,6 +174,7 @@ function App() {
   const [mapJourneySelectionRevision, setMapJourneySelectionRevision] = useState(0)
   const pendingMapJourneySelectionRef = useRef<string | null>(null)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
+  const [isMapMoving, setIsMapMoving] = useState(false)
   const focusTripControlAfterOverlayRef = useRef(false)
   const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
     mapShellRef.current = shell
@@ -606,6 +607,7 @@ function App() {
       onMapStopDestinationSet: appNavigation.openPlan,
       onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
+      onMapMovingChange: setIsMapMoving,
     })
     setSession(mount.session)
 
@@ -725,11 +727,11 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
-  const beginWaypointPlacement = (): void => {
+  const beginWaypointCreation = (): void => {
     setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnPage(null)
-    setMorePage('placing')
+    setMorePage('creating')
   }
   const beginWaypointLocationAdjustment = (): void => {
     setPlacementReturnPage(morePage === 'editing-waypoint' ? 'editing-waypoint' : 'creating')
@@ -923,8 +925,7 @@ function App() {
         />
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
-          mapCenter={mapCenter}
-          onChange={(coordinate) => personalWaypoints.updateDraft({ coordinate })}
+          onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
@@ -1011,7 +1012,8 @@ function App() {
             title: morePage === 'waypoints'
               ? activePersonalWaypointCategory ?? 'My waypoints'
               : morePage === 'waypoint-details' ? 'Waypoint details'
-                : morePage === 'creating' ? 'Add waypoint'
+              : morePage === 'creating' ? 'Add waypoint'
+                : morePage === 'placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
                     : morePage === 'settings' ? 'Settings' : 'More',
             initialFocusRef: moreInitialFocusRef,
@@ -1026,7 +1028,7 @@ function App() {
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
-              onAdd={beginWaypointPlacement}
+              onAdd={beginWaypointCreation}
               onFocusWaypoint={focusPersonalWaypoint}
               onDirectionsWaypoint={navigateToPersonalWaypoint}
               onSearchFilterChange={setHasPersonalWaypointSearchFilter}

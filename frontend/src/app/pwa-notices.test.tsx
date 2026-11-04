@@ -267,6 +267,27 @@ describe('PWA notices', () => {
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
   })
 
+  it('keeps startup installed-app detection silent when it resolves after render', async () => {
+    let resolveApps!: (apps: unknown[]) => void
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', {
+      configurable: true,
+      value: vi.fn(() => new Promise<unknown[]>((resolve) => { resolveApps = resolve })),
+    })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    const installationStatus = screen.getByRole('status', { name: 'Installation status' })
+    dispatchInstallPrompt()
+
+    await act(async () => {
+      resolveApps([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
+    })
+
+    expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
+    expect(installationStatus.textContent).toBe('')
+
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+    expect(installationStatus.textContent).toBe('NUSGo is installed on this device')
+  })
+
   it('does not let another eligibility event override a completed installation', () => {
     render(<PwaNotices />)
     dispatchInstallPrompt()

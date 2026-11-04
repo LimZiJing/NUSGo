@@ -5,6 +5,7 @@ import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
   getInstallBannerSnapshot,
+  getInstallationCompletionSnapshot,
   getInstalledSnapshot,
   getOnlineStatusSnapshot,
   getServiceWorkerUpdateSnapshot,
@@ -22,12 +23,28 @@ interface PwaNoticesProps {
 
 function PwaInstallationStatus() {
   const installed = useSyncExternalStore(subscribeToInstallPrompt, getInstalledSnapshot, () => false)
-  const [installationStatus, setInstallationStatus] = useState({ installed, notice: '' })
+  const installationCompletion = useSyncExternalStore(
+    subscribeToInstallPrompt,
+    getInstallationCompletionSnapshot,
+    () => 0,
+  )
+  const [installationStatus, setInstallationStatus] = useState({
+    installed,
+    completion: installationCompletion,
+    notice: '',
+  })
 
-  if (installed !== installationStatus.installed) {
+  if (installationCompletion !== installationStatus.completion) {
     setInstallationStatus({
       installed,
-      notice: installed ? 'NUSGo is installed on this device' : '',
+      completion: installationCompletion,
+      notice: 'NUSGo is installed on this device',
+    })
+  } else if (installed !== installationStatus.installed) {
+    setInstallationStatus({
+      ...installationStatus,
+      installed,
+      notice: installed ? installationStatus.notice : '',
     })
   }
 

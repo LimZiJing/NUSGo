@@ -423,10 +423,13 @@ describe('bus-stop presentation', () => {
       vi.mocked(map.setLayerZoomRange).mock.calls.length +
       vi.mocked(map.setPaintProperty).mock.calls.length
 
-    for (const nextZoom of [14, 13.99]) {
-      zoom = nextZoom
-      handleZoom?.()
-    }
+    zoom = 14
+    handleZoom?.()
+    expect(elements.every((element) => element.style.display === '')).toBe(true)
+
+    zoom = 13.99
+    handleZoom?.()
+    expect(elements.every((element) => element.style.display === 'none')).toBe(true)
     const crossingDomWrites = elements.reduce((total, element) => total + element.domWrites, 0) -
       sameSideDomWrites
     const crossingMapWrites = vi.mocked(map.setFilter).mock.calls.length +

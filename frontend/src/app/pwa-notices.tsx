@@ -57,15 +57,14 @@ export function PwaNotices({
         </section>
       )}
       {installPrompt && (
-        <section className="pwa-notice pwa-notice-install" role="status" aria-live="polite">
-          <span className="pwa-install-icon"><DownloadIcon size={22} /></span>
-          <div className="pwa-notice-content">
-            <strong className="pwa-notice-title">NUSGo, one tap away</strong>
-            <p>Add it to your home screen for quick access, even offline.</p>
-            <Button className="pwa-install-action" size="lg" label="Install NUSGo" onClick={() => void requestInstall()} />
-          </div>
-          <IconButton label="Dismiss install prompt" icon={<CloseIcon />} variant="ghost"
-            size="lg" onClick={dismissInstallPrompt} />
+        <section className="pwa-pill pwa-pill-install" role="status" aria-live="polite">
+          <img className="pwa-pill-app-icon" src={`${import.meta.env.BASE_URL}icons/pwa-icon-192.png`}
+            width="24" height="24" alt="" />
+          <span>Download NUSGo</span>
+          <IconButton label="Download NUSGo" icon={<DownloadIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={() => void requestInstall()} />
+          <IconButton label="Dismiss install prompt" icon={<CloseIcon size={12} />} variant="secondary"
+            size="sm" className="pwa-pill-dismiss" onClick={dismissInstallPrompt} />
         </section>
       )}
       {updateAvailable && (

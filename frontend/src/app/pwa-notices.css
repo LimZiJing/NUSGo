@@ -53,6 +53,34 @@
   pointer-events: auto;
 }
 
+.pwa-pill-install {
+  position: relative;
+}
+
+.pwa-pill-app-icon {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.pwa-pill-dismiss {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex: 0 0 24px;
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: 999px;
+  background: var(--surface-overlay-strong);
+  color: var(--text-primary);
+}
+
 .pwa-pill-offline {
   border-color: var(--border-warning);
   background: var(--surface-warning);
@@ -88,28 +116,6 @@
   color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.35;
-}
-
-.pwa-notice-install {
-  align-items: flex-start;
-  padding: 16px;
-  background: var(--surface-raised);
-}
-
-.pwa-install-action {
-  margin-top: 12px;
-}
-
-.pwa-install-icon {
-  display: inline-flex;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
 }
 
 .pwa-install-section {
@@ -153,16 +159,5 @@
     left: auto;
     width: min(34rem, calc(100% - var(--desktop-navigation-width, 0px) - 24px));
     transform: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .pwa-notice-install {
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .pwa-notice-install > .pwa-install-icon {
-    display: none;
   }
 }

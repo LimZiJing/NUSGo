@@ -49,6 +49,23 @@ rAF p95 interval was 12.5 ms on the one base drag and 4.3 ms in both current tra
 
 The app DOM did not expose the MapLibre camera instance to this harness. Route, venue, stop, and journey camera-flight centers remain unverified; physical-device touch, a software keyboard, and a real GPU also remain unverified.
 
+## Review follow-up — 4 November 2026
+
+The exact PR source head at the start of this follow-up was `7a3eb6b76342728bba8208da61df9ce295244634`. A regression test reproduced the review's resize/transition ordering: `resize` queued inset frame 3, then `transitionend` cleared the transient presentation inset but only canceled presentation frame 1. The test failed before the fix. The inset effect now cancels its pending resize publication on the matching Stops transform transition end, after the presentation observer clears the transient inset. The test passes with the fix and also checks that no inset frame remains queued.
+
+The fix and regression test are in source commit `43886efe` (`fix(map): cancel stale inset frame after Stops transition`).
+
+A local Vite server from this worktree was exercised in an isolated Incognito preview at 390 × 844 CSS pixels. The Stops handle expanded and reduced the sheet; ArrowDown collapsed it while focus stayed on the handle. The MapLibre canvas remained 390 × 844. Selecting route A1 and focusing Kent Ridge Bus Terminal left its stop marker within the map at (188, 162). Searching for Central Library and selecting Central Library Seminar Room opened venue details; the Central Library stop marker was within the map at (64, 195). These DOM observations establish that the controls and map targets were present; they do not establish complete route or journey camera framing.
+
+The preview's Vite output reported MapLibre missing-image warnings for `office`, `swimming_pool`, and `lift_gate`, plus one `Map cannot fit within canvas with the given bounds, padding, and/or offset` warning during the camera flow. The exact action that emitted the camera warning was not isolated, so route/venue framing is not reported as fully passed. No Journey request was sent to the shared API service. Physical-device touch, a native keyboard, and Journey camera framing remain unverified. The browser page itself reported no console errors.
+
+### Follow-up checks on `43886efe`
+
+- `npm test`: passed — 22 shared, 1,285 frontend, 136 backend, and 105 pathfinding tests (1,548 total).
+- `npm run lint`: passed — CSS selector check reported no new bare button selectors.
+- `VITE_API_ORIGIN=https://api.nusgo.invalid npm run build`: passed — Vite reported the existing main-chunk size advisory.
+- `git diff --check`: passed.
+
 ## Required checks
 
 - `npm test`: passed — 22 shared, 1,263 frontend, 136 backend, and 105 pathfinding tests (1,526 total).

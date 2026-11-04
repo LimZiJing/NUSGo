@@ -60,6 +60,7 @@ import {
   saveMinuteFormatPreference,
 } from '../ui/minute-format-preference'
 import { MoreMenu } from '../features/more/more-menu'
+import { ReleaseNotes } from '../features/releases/release-notes'
 import {
   PersonalWaypointForm,
   PersonalWaypointDetails,
@@ -717,6 +718,11 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
+  const openReleaseNotes = (): void => {
+    setIsEditingPersonalWaypoints(false)
+    setMoreSheetDetent('full')
+    setMorePage('release-notes')
+  }
   const beginWaypointCreation = (): void => {
     setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
@@ -781,6 +787,11 @@ function App() {
     }
     if (morePage === 'menu') {
       setMorePage('closed')
+      setMoreSheetDetent('partial')
+      return
+    }
+    if (morePage === 'release-notes' || morePage === 'settings') {
+      setMorePage('menu')
       setMoreSheetDetent('partial')
       return
     }
@@ -1016,7 +1027,8 @@ function App() {
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
-                    : morePage === 'settings' ? 'Settings' : 'More',
+                    : morePage === 'settings' ? 'Settings'
+                      : morePage === 'release-notes' ? 'Release notes' : 'More',
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
@@ -1026,6 +1038,7 @@ function App() {
                 : null}
               onOpenWaypoints={openWaypoints}
               onOpenSettings={openSettings}
+              onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
@@ -1091,7 +1104,7 @@ function App() {
                   }
                 }
               }}
-            /> : morePage === 'settings' ? (
+            /> : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}

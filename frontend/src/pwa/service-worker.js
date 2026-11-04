@@ -42,7 +42,8 @@ self.addEventListener('fetch', (event) => {
 
   const pathWithinScope = url.pathname.slice(scope.pathname.length)
   const isStaticData = pathWithinScope.split('/').includes('data')
-  if (!STATIC_DESTINATIONS.has(request.destination) && !isStaticData) return
+  const isReleaseHistory = pathWithinScope === 'releases/index.json'
+  if (!STATIC_DESTINATIONS.has(request.destination) && !isStaticData && !isReleaseHistory) return
 
   event.respondWith(cacheFirst(request))
 })

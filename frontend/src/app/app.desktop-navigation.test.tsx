@@ -594,6 +594,44 @@ describe('mobile drawer tab switches', () => {
 })
 
 describe('More surface', () => {
+  it('opens Release notes as a full mobile destination and returns to the More menu', async () => {
+    mockMobileViewport()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ releases: [] }) }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Release notes' }))
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('release-notes')
+    expect(panel?.getAttribute('data-detent')).toBe('full')
+    expect(screen.getByRole('heading', { name: 'Release notes' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(panel?.getAttribute('data-page')).toBe('menu')
+  })
+
+  it('opens Release notes as a dedicated desktop destination and returns through More on Escape', async () => {
+    mockDesktopViewport()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ releases: [] }) }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Release notes' }))
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('release-notes')
+    expect(screen.getByRole('heading', { name: 'Release notes' })).toBeTruthy()
+    expect(screen.getByText('No release history is available yet.')).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    await user.keyboard('{Escape}')
+    expect(panel?.getAttribute('data-page')).toBe('menu')
+    await user.keyboard('{Escape}')
+    expect(panel?.getAttribute('data-page')).toBe('closed')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More' }))
+  })
+
   it('keeps details and direct Edit actions separate for an All places entry', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',

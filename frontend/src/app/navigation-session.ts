@@ -158,6 +158,7 @@ export interface NavigationSession {
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  panToCoordinate(coordinate: MapCoordinate): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
   zoomIn(): void
@@ -1056,6 +1057,11 @@ export function createNavigationSession(
     focusPersonalWaypoint(waypoint) {
       if (disposed) return
       dependencies.map.focusPersonalWaypoint(waypoint)
+    },
+
+    panToCoordinate(coordinate) {
+      if (disposed) return
+      dependencies.map.panToCoordinate(coordinate)
     },
 
     dismissStopPopup() {

@@ -20,6 +20,7 @@ const appHarness = vi.hoisted(() => {
     setPersonalWaypointPlacement: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
   }
   return {
     state: null as unknown,
@@ -968,11 +969,37 @@ describe('More surface', () => {
       appHarness.onMapMovingChange?.(false)
     })
     await user.keyboard('{Tab}')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.keyboard('{Tab}')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use map centre' }))
     await user.keyboard('{Enter}')
     expect(screen.getByText('2.000000° N · 105.000000° E')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
     expect(screen.getByText('2.000000, 105.000000')).toBeTruthy()
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
+  })
+
+  it('applies a pasted coordinate, pans the map to it and returns it to the form', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.type(screen.getByLabelText('Name'), 'Quiet bench')
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    appHarness.commands.panToCoordinate.mockClear()
+
+    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    const input = screen.getByRole('textbox', { name: 'Selected location' })
+    await user.clear(input)
+    await user.type(input, '1.2966, 103.7764{Enter}')
+
+    expect(appHarness.commands.panToCoordinate).toHaveBeenCalledWith([103.7764, 1.2966])
+    expect(screen.getByText('1.296600° N · 103.776400° E')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    expect(screen.getByText('1.296600, 103.776400')).toBeTruthy()
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 

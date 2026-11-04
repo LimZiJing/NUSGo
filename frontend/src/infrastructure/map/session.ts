@@ -701,6 +701,13 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       })
     },
 
+    panToCoordinate(coordinate: MapCoordinate) {
+      if (disposed) return
+      pendingCameraFit = null
+      // Not `essential`, so MapLibre skips the animation when the person prefers reduced motion.
+      map.easeTo({ center: [coordinate[0], coordinate[1]], duration: 250, offset: getFitOffset() })
+    },
+
     dismissStopPopup() {
       if (disposed) return false
       return shuttleStopMarkers?.dismissPopup() ?? false

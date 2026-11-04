@@ -880,6 +880,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.personal-waypoint-selected-location[data-editing] .personal-waypoint-selected-location-copy {
+  height: auto;
+  gap: var(--space-1);
+  overflow: visible;
+}
+.personal-waypoint-coordinate-entry input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+.personal-waypoint-coordinate-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+.personal-waypoint-coordinate-note:not(:empty) { margin-top: var(--space-2); }
+.personal-waypoint-location-group > .personal-waypoint-error { margin: var(--space-2) 0 0; }
 .personal-waypoint-placement > .personal-waypoint-actions {
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);

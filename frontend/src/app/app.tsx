@@ -82,6 +82,7 @@ import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
+import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -264,6 +265,11 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  // A typed or pasted coordinate can be anywhere, so bring the pin into view as well as moving it.
+  const applyTypedWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
+    updatePersonalWaypointDraft({ coordinate })
+    commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
+  }, [commands, updatePersonalWaypointDraft])
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
@@ -935,6 +941,7 @@ function App() {
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
           onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
+          onApplyCoordinate={applyTypedWaypointCoordinate}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}

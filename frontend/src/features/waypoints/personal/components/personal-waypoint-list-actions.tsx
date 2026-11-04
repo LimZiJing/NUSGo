@@ -46,6 +46,7 @@ export function PersonalWaypointListActions({
     onKeyDown={(event) => {
       if (event.key !== 'Escape') return
       event.preventDefault()
+      event.stopPropagation()
       closeMenu()
     }}
   >

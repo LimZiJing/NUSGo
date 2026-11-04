@@ -96,7 +96,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
-  const liveBusMarkers = createLiveBusMarkers(map, options.onStopDetailsSelected)
+  const liveBusMarkers = createLiveBusMarkers(
+    map,
+    options.onStopDetailsSelected,
+    options.liveBusRouteMatching,
+  )
   let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null

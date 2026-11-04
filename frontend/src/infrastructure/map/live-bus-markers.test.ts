@@ -92,6 +92,7 @@ vi.mock('maplibre-gl', () => ({
 import { createLiveBusMarkers } from './live-bus-markers'
 
 const observedAt = '2026-11-01T00:00:00.000Z'
+const internalRouteIds = ['A1', 'A2', 'D1', 'D2', 'K', 'P', 'R1', 'R2'] as const
 
 function createMap(): Map {
   return { getBearing: vi.fn(() => 0), on: vi.fn(), off: vi.fn() } as unknown as Map
@@ -112,23 +113,47 @@ function createVehicle(overrides: Partial<ShuttleVehiclePosition> = {}): Shuttle
   }
 }
 
-function createTransitData(): Pick<LoadedTransitData, 'index' | 'geometry'> {
+function createTransitData(routeIds: readonly string[] = ['A1']): Pick<LoadedTransitData, 'index' | 'geometry'> {
   const network = createValidTransitNetwork()
+  const routeTemplate = network.routes[0]
+  network.routes = routeIds.map((routeId) => ({ ...routeTemplate, id: routeId, name: routeId }))
+  for (const stop of network.stops) {
+    stop.services = [...stop.services.filter((service) => service !== 'A1'), ...routeIds]
+  }
   network.stops[0].longitude = 103.78
   network.stops[0].latitude = 1.3
   network.stops[1].longitude = 103.79
   network.stops[1].latitude = 1.3
   const geometry: BusRouteGeometry = {
     type: 'FeatureCollection',
-    features: [{
+    features: routeIds.map((routeId) => ({
       type: 'Feature',
-      properties: { routeId: 'A1', name: 'A1', color: '#123456' },
+      properties: { routeId, name: routeId, color: '#123456' },
       geometry: { type: 'LineString', coordinates: [[103.78, 1.3], [103.79, 1.3]] },
-    }],
+    })),
   }
   return {
     index: createTransitIndex(network),
     geometry,
+  }
+}
+
+function createLoopTransitData(routeId = 'A1'): Pick<LoadedTransitData, 'index' | 'geometry'> {
+  return {
+    ...createTransitData([routeId]),
+    geometry: {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { routeId, name: routeId, color: '#123456' },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [103.78, 1.3], [103.8, 1.3], [103.8, 1.31], [103.78, 1.31], [103.78, 1.3],
+          ],
+        },
+      }],
+    },
   }
 }
 
@@ -167,7 +192,7 @@ describe('live bus markers', () => {
     const network = createTransferTransitNetwork()
     network.routes[0].color = '#ffff00'
     network.routes[1].color = '#123456'
-    markers.setTransitData({ ...createTransitData(), index: createTransitIndex(network) })
+    markers.setTransitData({ ...createTransitData(['A1', 'B1']), index: createTransitIndex(network) })
 
     markers.setVehicles([createVehicle(), createVehicle({ routeId: 'B1' })], true)
 
@@ -223,6 +248,251 @@ describe('live bus markers', () => {
 
     expect(markerHarness.markers[0]?.coordinate?.[0]).toBeCloseTo(103.785, 6)
     expect(markerHarness.markers[0]?.coordinate?.[1]).toBeCloseTo(1.3, 6)
+    markers.dispose()
+  })
+
+  it.each(internalRouteIds)('holds the last accepted position after an isolated implausible %s bus fix', (routeId) => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
+    const animationFrames: Array<FrameRequestCallback> = []
+    const cancelFrame = vi.fn()
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      animationFrames.push(callback)
+      return animationFrames.length
+    }))
+    vi.stubGlobal('cancelAnimationFrame', cancelFrame)
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createLoopTransitData(routeId))
+    const first = createVehicle({
+      routeId,
+      lng: 103.785,
+      lat: 1.3,
+      expiresAt: '2026-11-01T00:01:30.000Z',
+    })
+    markers.setVehicles([first], true)
+
+    const record = markerHarness.markers[0]
+    markers.setVehicles([{
+      ...first,
+      lng: 103.786,
+      observedAt: '2026-11-01T00:00:30.000Z',
+      expiresAt: '2026-11-01T00:02:00.000Z',
+    }], true)
+    vi.setSystemTime(new Date('2026-11-01T00:00:15.000Z'))
+    markers.setVehicles([{
+      ...first,
+      lng: 103.785,
+      lat: 1.31,
+      observedAt: '2026-11-01T00:01:00.000Z',
+      expiresAt: '2026-11-01T00:02:30.000Z',
+    }], true)
+
+    expect(record?.coordinate).toEqual([103.786, 1.3])
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(true)
+    expect(record?.element.getAttribute('aria-label')).toContain(
+      'Position uncertain; held at the last accepted location.',
+    )
+    expect(cancelFrame).toHaveBeenCalledWith(1)
+    animationFrames[0]?.(0)
+    expect(record?.coordinate).toEqual([103.786, 1.3])
+
+    markers.setVehicles([{
+      ...first,
+      lng: 103.787,
+      lat: 1.3,
+      observedAt: '2026-11-01T00:01:30.000Z',
+      expiresAt: '2026-11-01T00:03:00.000Z',
+    }], true)
+    vi.setSystemTime(new Date('2026-11-01T00:00:45.000Z'))
+    animationFrames[1]?.(0)
+
+    expect(record?.coordinate?.[0]).toBeCloseTo(103.787, 6)
+    expect(record?.coordinate?.[1]).toBeCloseTo(1.3, 6)
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(false)
+    expect(record?.element.getAttribute('aria-label')).not.toContain('Position uncertain')
+    markers.dispose()
+  })
+
+  it('snaps a first position by GPS when the bus heading is missing', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createTransitData())
+    markers.setVehicles([createVehicle({ lng: 103.781, headingDegrees: Number.NaN })], true)
+
+    const record = markerHarness.markers[0]
+    expect(record?.coordinate).toEqual([103.781, 1.3])
+    expect(record?.element.querySelector<HTMLElement>('.live-bus-marker-heading')?.style.visibility)
+      .toBe('hidden')
+    markers.dispose()
+  })
+
+  it('clears matching continuity when the same bus changes routes', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const requestFrame = vi.fn(() => 1)
+    vi.stubGlobal('requestAnimationFrame', requestFrame)
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createTransitData(['A1', 'D1']))
+    const first = createVehicle({ routeId: 'A1', lng: 103.781 })
+    markers.setVehicles([first], true)
+    const previous = markerHarness.markers[0]
+
+    markers.setVehicles([{
+      ...first,
+      routeId: 'D1',
+      lng: 103.789,
+      observedAt: '2026-11-01T00:00:30.000Z',
+      expiresAt: '2026-11-01T00:02:00.000Z',
+    }], true)
+
+    const current = markerHarness.markers[1]
+    expect(previous?.removed).toBe(true)
+    expect(current?.coordinate).toEqual([103.789, 1.3])
+    expect(current?.element.dataset.routeId).toBe('D1')
+    expect(requestFrame).not.toHaveBeenCalled()
+    markers.dispose()
+  })
+
+  it('ignores an out-of-order fix and continues from the last accepted observation', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
+    const animationFrames: Array<FrameRequestCallback> = []
+    const cancelFrame = vi.fn()
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      animationFrames.push(callback)
+      return animationFrames.length
+    }))
+    vi.stubGlobal('cancelAnimationFrame', cancelFrame)
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createTransitData())
+    const first = createVehicle({ lng: 103.781 })
+    markers.setVehicles([first], true)
+    const record = markerHarness.markers[0]
+    markers.setVehicles([{
+      ...first,
+      lng: 103.782,
+      observedAt: '2026-11-01T00:00:30.000Z',
+      expiresAt: '2026-11-01T00:02:00.000Z',
+    }], true)
+    vi.setSystemTime(new Date('2026-11-01T00:00:30.000Z'))
+    markers.setVehicles([{
+      ...first,
+      lng: 103.79,
+      lat: 1.31,
+      observedAt: '2026-11-01T00:00:20.000Z',
+      expiresAt: '2026-11-01T00:02:30.000Z',
+    }], true)
+
+    expect(record?.coordinate).toEqual([103.782, 1.3])
+    expect(record?.element.getAttribute('aria-label')).toContain('Position uncertain')
+    expect(cancelFrame).toHaveBeenCalledWith(1)
+
+    vi.setSystemTime(new Date('2026-11-01T00:00:45.000Z'))
+    markers.setVehicles([{
+      ...first,
+      lng: 103.783,
+      observedAt: '2026-11-01T00:00:45.000Z',
+      expiresAt: '2026-11-01T00:02:15.000Z',
+    }], true)
+    vi.setSystemTime(new Date('2026-11-01T00:01:00.000Z'))
+    animationFrames[1]?.(0)
+
+    expect(record?.coordinate).toEqual([103.783, 1.3])
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(false)
+    expect(record?.element.getAttribute('aria-label')).not.toContain('Position uncertain')
+    markers.dispose()
+  })
+
+  it('does not extend marker expiry when rejected fixes keep arriving', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createLoopTransitData())
+    const first = createVehicle({
+      lng: 103.785,
+      lat: 1.3,
+      expiresAt: '2026-11-01T00:01:30.000Z',
+    })
+    markers.setVehicles([first], true)
+
+    markers.setVehicles([{
+      ...first,
+      lat: 1.31,
+      observedAt: '2026-11-01T00:00:30.000Z',
+      expiresAt: '2026-11-01T00:02:00.000Z',
+    }], true)
+    markers.setVehicles([{
+      ...first,
+      lat: 1.31,
+      observedAt: '2026-11-01T00:01:00.000Z',
+      expiresAt: '2026-11-01T00:02:30.000Z',
+    }], true)
+
+    const record = markerHarness.markers[0]
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(true)
+    vi.advanceTimersByTime(90_000)
+
+    expect(record?.removed).toBe(true)
+    markers.dispose()
+  })
+
+  it('recreates at the new position without animation after a continuity gap expires', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
+    const requestFrame = vi.fn(() => 1)
+    vi.stubGlobal('requestAnimationFrame', requestFrame)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const markers = createLiveBusMarkers(createMap())
+    markers.setTransitData(createTransitData())
+    const first = createVehicle({ lng: 103.781, lat: 1.3 })
+    markers.setVehicles([first], true)
+    const expiredRecord = markerHarness.markers[0]
+
+    vi.advanceTimersByTime(90_000)
+    expect(expiredRecord?.removed).toBe(true)
+    vi.setSystemTime(new Date('2026-11-01T00:02:00.000Z'))
+    markers.setVehicles([{
+      ...first,
+      lng: 103.79,
+      observedAt: '2026-11-01T00:02:00.000Z',
+      expiresAt: '2026-11-01T00:03:30.000Z',
+    }], true)
+
+    const record = markerHarness.markers[1]
+    expect(record?.coordinate).toEqual([103.79, 1.3])
+    expect(requestFrame).not.toHaveBeenCalled()
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(false)
+    markers.dispose()
+  })
+
+  it('uses configured route matching limits in the marker controller', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(observedAt))
+    const markers = createLiveBusMarkers(createMap(), undefined, {
+      maximumSpeedMetersPerSecond: 1,
+      gpsMovementToleranceMeters: 0,
+      branchDistanceToleranceMeters: 25,
+      headingPreferenceWeight: 1.5,
+      continuityHorizonMs: 90_000,
+    })
+    markers.setTransitData(createTransitData())
+    const first = createVehicle({ lng: 103.781, lat: 1.3 })
+    markers.setVehicles([first], true)
+    const record = markerHarness.markers[0]
+
+    markers.setVehicles([{
+      ...first,
+      lng: 103.782,
+      observedAt: '2026-11-01T00:00:30.000Z',
+      expiresAt: '2026-11-01T00:02:00.000Z',
+    }], true)
+
+    expect(record?.coordinate).toEqual([103.781, 1.3])
+    expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(true)
     markers.dispose()
   })
 
@@ -283,12 +553,12 @@ describe('live bus markers', () => {
 
     markers.setVehicles([{
       ...first,
-      lng: 103.789,
+      lng: 103.783,
       observedAt: '2026-11-01T00:00:30.000Z',
       expiresAt: '2026-11-01T00:02:00.000Z',
     }], true)
 
-    expect(markerHarness.markers[0]?.coordinate).toEqual([103.789, 1.3])
+    expect(markerHarness.markers[0]?.coordinate).toEqual([103.783, 1.3])
     expect(requestFrame).not.toHaveBeenCalled()
     markers.dispose()
   })
@@ -309,7 +579,7 @@ describe('live bus markers', () => {
     markers.setVehicles([first], true)
     markers.setVehicles([{
       ...first,
-      lng: 103.789,
+      lng: 103.783,
       observedAt: '2026-11-01T00:00:30.000Z',
       expiresAt: '2026-11-01T00:02:00.000Z',
     }], true)
@@ -318,7 +588,7 @@ describe('live bus markers', () => {
     vi.setSystemTime(new Date('2026-11-01T00:00:15.000Z'))
     animationFrames[0]?.(0)
 
-    expect(markerHarness.markers[0]?.coordinate?.[0]).toBeCloseTo(103.785, 6)
+    expect(markerHarness.markers[0]?.coordinate?.[0]).toBeCloseTo(103.782, 6)
     expect(markerHarness.markers[0]?.coordinate?.[1]).toBeCloseTo(1.3, 6)
     markers.dispose()
   })
@@ -340,6 +610,7 @@ describe('live bus markers', () => {
 
     vi.advanceTimersByTime(60_000)
     expect(record?.element.classList.contains('live-bus-marker-stale')).toBe(true)
+    expect(record?.element.getAttribute('aria-label')).toContain('Position is stale.')
     expect(record?.removed).toBe(false)
 
     vi.advanceTimersByTime(30_000)

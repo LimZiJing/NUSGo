@@ -8,6 +8,8 @@ const DEFAULT_MAXIMUM_SPEED_METERS_PER_SECOND = 18
 const DEFAULT_GPS_MOVEMENT_TOLERANCE_METERS = 100
 // Keep alternate branches within 25 m of the nearest GPS projection available for scoring.
 const DEFAULT_BRANCH_DISTANCE_TOLERANCE_METERS = 25
+// Each metre of GPS distance difference contributes two score units when comparing nearby candidates.
+const GPS_DISTANCE_PREFERENCE_WEIGHT = 2
 // A 180-degree disagreement adds 270 score units, enough to distinguish the close-branch fixture.
 const DEFAULT_HEADING_PREFERENCE_WEIGHT = 1.5
 // The 90-second horizon matches three misses at the existing 30-second polling cadence.
@@ -204,7 +206,7 @@ export function matchVehicleRoutePosition(
       candidate.distanceMeters <= nearest.distanceMeters + options.branchDistanceToleranceMeters,
     )
     const scoreInitialCandidate = (candidate: RouteCandidate): number => (
-      (candidate.distanceMeters - nearest.distanceMeters) * 2 +
+      (candidate.distanceMeters - nearest.distanceMeters) * GPS_DISTANCE_PREFERENCE_WEIGHT +
       (usableHeadingDegrees === null
         ? 0
         : headingDifference(usableHeadingDegrees, candidate.headingDegrees) * options.headingPreferenceWeight)
@@ -246,7 +248,8 @@ export function matchVehicleRoutePosition(
       const headingError = usableHeadingDegrees === null
         ? 0
         : headingDifference(usableHeadingDegrees, travelHeading)
-      const score = movementMeters + (candidate.distanceMeters - nearestDistance) * 2 +
+      const score = movementMeters +
+        (candidate.distanceMeters - nearestDistance) * GPS_DISTANCE_PREFERENCE_WEIGHT +
         headingError * options.headingPreferenceWeight
       if (score < bestScore) {
         bestScore = score

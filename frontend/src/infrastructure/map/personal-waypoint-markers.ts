@@ -72,7 +72,9 @@ function updateMarkerElement(
   }
   if (previous?.markerIcon !== waypoint.markerIcon) {
     element.dataset.markerIcon = waypoint.markerIcon
-    const iconName = markerSvgIconNames[waypoint.markerIcon] ?? 'circle-dot'
+    const iconName = Object.prototype.hasOwnProperty.call(markerSvgIconNames, waypoint.markerIcon)
+      ? markerSvgIconNames[waypoint.markerIcon]
+      : 'circle-dot'
     icon.replaceChildren(createMapSvgIcon(iconName, {
       className: 'personal-waypoint-marker-glyph',
       size: 13,

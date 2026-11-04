@@ -115,6 +115,7 @@ describe('createPersonalWaypointMarkers', () => {
       .toBe('Open Shaded bench, Quiet place details. Rest icon, Purple marker.')
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-color')).toBe('purple')
     expect(document.querySelector('.personal-waypoint-marker')?.getAttribute('data-marker-icon')).toBe('rest')
+    expect(document.querySelector('.personal-waypoint-marker-icon > svg.lucide-armchair')).not.toBeNull()
 
     markers.setWaypoints([], true, () => undefined)
     expect(document.querySelector('.personal-waypoint-marker')).toBeNull()
@@ -174,6 +175,21 @@ describe('createPersonalWaypointMarkers', () => {
     expect(button?.querySelector('img')).toBeNull()
     expect(button?.querySelector('svg circle')).not.toBeNull()
 
+    markers.dispose()
+  })
+
+  it('falls back to the general glyph for an inherited icon name', () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    const inheritedIconWaypoint = {
+      ...waypoint,
+      markerIcon: 'constructor' as PersonalWaypoint['markerIcon'],
+    }
+
+    markers.setWaypoints([inheritedIconWaypoint], true, () => undefined)
+
+    const button = document.querySelector<HTMLButtonElement>('.personal-waypoint-marker')
+    expect(button?.getAttribute('aria-label')).toContain('General icon')
+    expect(button?.querySelector('svg.lucide-circle-dot')).not.toBeNull()
     markers.dispose()
   })
 

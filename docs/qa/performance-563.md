@@ -1,6 +1,6 @@
 # Issue #563 map icon performance evidence
 
-Recorded 3 November 2026 on branch `t3/waypoint-marker-render-performance`. The starting and ending Git revision is `f21964595968dde261973f7e2cb965ce0ba600b7`; the implementation remains uncommitted.
+This note combines measurements recorded 3 November 2026 with the exact-head browser check below. Each section records its own source and limits.
 
 ## Production asset sizes
 
@@ -72,4 +72,12 @@ The same-base normal production JS assets measured 2,038,971 raw / 582,878 gzip 
 
 For a map interaction check, a single synthetic waypoint was seeded into a fresh temporary profile before app startup. Its marker rendered with the expected accessible label, one SVG, and four SVG paths. A DOM-dispatched button click opened the “Waypoint details” panel and left the fixture record unchanged. Pointer hit-testing at the marker center hit the Map canvas rather than the button, so a trusted pointer click was not verified. The temporary profile was deleted after the run; no user profile, saved waypoint, or bus-stop selection was used.
 
-The earlier automatic-review denials concerning persistent-profile waypoint creation and bus-stop selection remain respected. No new automatic-review denial occurred. The page used only local fixtures and did not call live providers. The temporary CDP runner was not added to the repository; the fixture page was prepared with the existing `frontend/scripts/performance/prepare-page.mjs` and `fixtures.mjs` sources.
+The earlier automatic-review denials concerning persistent-profile waypoint creation and bus-stop selection remain respected. No new automatic-review denial occurred. The page used only local fixtures and did not call live providers. The temporary CDP runner was not added to the repository; the fixture page was prepared with the existing frontend/scripts/performance/prepare-page.mjs and fixtures.mjs sources.
+
+## Review follow-up: trusted marker pointer click — 4 November 2026
+
+The published PR head e66af2c453ff4693c15577b8b7f48be9347cddcc was served from its 589 worktree at http://127.0.0.1:15989/ and opened in headless Microsoft Edge at a 1280 × 800 viewport. A single valid Personal Waypoint fixture was stored under navus:personal-waypoints:v1 in a fresh temporary Edge user-data directory. The directory was removed after the run; no default browser profile or saved user waypoint was read or changed.
+
+After opening My waypoints, the marker's 40 × 40 button was visible at approximately (614, 514). A CDP mouse move, press, and release at the marker center produced a trusted click (event.isTrusted === true) whose target was the marker's SVG child. The app opened Waypoint details for “Disposable review waypoint” and showed its “Review fixture” category and note. This verifies pointer selection at the published head; it is not a frame-time or performance measurement.
+
+The test used an isolated fixture and local Vite server. It did not submit a Journey or change persistent browser data. The exact head was e66af2c453ff4693c15577b8b7f48be9347cddcc; the later inherited-icon fallback does not alter this selection path.

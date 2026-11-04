@@ -9,10 +9,21 @@ NUSGo is an installable web app for Chrome on Android and desktop. The service w
 - Built assets and static campus data use the cache first. Runtime downloads are cached only for complete HTTP 200 responses without `Cache-Control: no-store`; cache-write failures leave successful network responses usable. The cache is versioned from the built and public asset contents.
 - Release notes are read from the same-origin `releases/index.json` asset, which is part of the public-file precache. Each installed app therefore reads the history bundled with its own build while offline; the running version is matched by its embedded commit SHA. Release metadata is independent of `VITE_DATA_VERSION`. The browser does not call the GitHub API for release history.
 - Requests to another origin bypass the service worker. Same-origin requests with an `api` path segment also bypass it, as do non-GET requests. The Express API also sends `Cache-Control: no-store`, so live NUS and LTA arrivals are not served from either cache.
-- The arrival clients continue applying their existing freshness limits to data already held in memory. The offline notice says that arrival data will stop refreshing.
+- The arrival clients continue applying their existing freshness limits to data already held in memory. The offline pill says that bus arrivals have stopped updating.
 - External map tiles and the Express API are not cached. The app shell and static campus data work offline, while the basemap and live arrival updates need a connection. Offline launches use a local empty map style so campus overlays can initialize. If an online remote style takes more than four seconds, a local style takes its place; once online, an in-app **Reload map** action offers to reload the app and restore the basemap. The app keeps campus overlays available until the user chooses to reload.
 
-A new worker precaches the new build before it waits to activate. When an update is ready, NUSGo offers an Update now action. Activating the update reloads controlled tabs after the new worker takes control, then removes older NUSGo caches.
+A new worker precaches the new build before it waits to activate. When an update is ready, an **Update NUSGo** pill offers to activate it. Activating the update reloads controlled tabs after the new worker takes control, then removes older NUSGo caches.
+
+## Map notices
+
+Notices are compact pills at the top centre of the map. Each pill has a `role="status"` live region.
+
+- **Offline**: shown when the device is offline. Its accessible text is "Offline. Bus arrivals have stopped updating."
+- **Download NUSGo**: shown when the install prompt is available. Its close bubble sits on the top-left corner of the pill and dismisses the prompt for the current visit.
+- **Update NUSGo**: shown when a new service worker is ready.
+- **Map unavailable**: shown online when the basemap fails to load, with a **Reload map** button.
+
+The notices are compact pills that stay centred at the top of the map. At 320px wide they fit between the map controls without covering them.
 
 ## Install and verify
 
@@ -31,8 +42,8 @@ A new worker precaches the new build before it waits to activate. When an update
 ### Offline and update checks
 
 1. Load NUSGo while online and wait for the service worker to finish installing.
-2. Turn off the device network and reload the page. The app shell and static campus data should load with the offline notice; map tiles and live arrivals should not load.
-3. Keep an older app tab open, deploy a new build, then revisit or reload NUSGo while online. Choose **Update now** when it appears and confirm the app reloads to the new build.
+2. Turn off the device network and reload the page. The app shell and static campus data should load with the Offline pill; map tiles and live arrivals should not load.
+3. Keep an older app tab open, deploy a new build, then revisit or reload NUSGo while online. Choose **Update NUSGo** when it appears and confirm the app reloads to the new build.
 4. In Chrome DevTools, open **Application** to inspect the manifest, icons, service worker and Cache Storage. Inspect the manifest/installability diagnostics on the deployed HTTPS site. Lighthouse removed its PWA category; do not interpret ordinary Lighthouse scores as PWA validation. See the [official removal notice](https://github.com/GoogleChrome/lighthouse/blob/main/changelog.md#pwa-category-removal) and [Chrome PWA debugging guide](https://developer.chrome.com/docs/devtools/progressive-web-apps/).
 
 The install banner can be dismissed for the current page visit while installation remains available in More. Repeated eligibility events do not reset dismissal; a reload or new visit can offer installation again when eligible. No permanent dismissal or installed flag is stored. Before exposing installation controls, supported browsers are checked with `getInstalledRelatedApps()`. A matching installed NUSGo app suppresses the banner even in a regular Chrome tab; repeated eligibility events cannot undo installation confirmed during this visit. Checks run on startup and when the tab becomes active. Only the initial check hides installation controls while pending; later background checks retain the last known state until they complete. After uninstall, a successful empty result in a browser with reliable enumeration permits a fresh eligible prompt. On Edge Android, empty enumeration does not erase an installation confirmed during the current visit; reload to start a fresh detection session. Browsers control when they report eligibility; detection is limited to the same browser/profile and origin. More provides browser-menu instructions when a native prompt is unavailable, and confirms installation when detected.

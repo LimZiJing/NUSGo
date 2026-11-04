@@ -57,6 +57,8 @@ The Plan workflow changed the query to `Kent Ridge MRT`, selected the Bus stops 
 
 ## Startup and assets
 
+### Historical cold-start comparison
+
 Each cold-start sample used a fresh browser profile. The page's marker-ready time includes controlled-fixture loading and excludes live basemap tile loading.
 
 | Startup measure (`n=5` per build) | Base median / p95 (range) | Combined median / p95 (range) |
@@ -65,7 +67,23 @@ Each cold-start sample used a fresh browser profile. The page's marker-ready tim
 | First Contentful Paint | 936 / 1,200 ms (852–1,200) | 860 / 940 ms (820–940) |
 | DOMContentLoaded | 510.1 / 783.2 ms (444.2–783.2) | 471.9 / 538.0 ms (451.4–538.0) |
 
-The startup ranges overlap, so these samples do not establish a cold-start gain.
+The startup ranges overlap, so these samples do not establish a cold-start gain. These historical results are cold-only; the supplemental PR-head measurements below do not alter this table or compare revisions.
+
+### Supplemental PR-head startup samples (not historical comparison results)
+
+A bounded 20-minute attempt to recover the historical combined frontend source did not reproduce its recorded fingerprint. The guarded collector matched base `f21964595968dde261973f7e2cb965ce0ba600b7` and the static-data fingerprint, but rejected the available frontend source (`0947c9e16c73d4fcb7f33f9f66c1a5d9961d0bd614d169539681a8299604ae54`, 393 files) against the expected combined fingerprint (`a85ff7013dc6899b163d901168adb2e2b110128287c7f7f162b3506a2290379e`, 396 files). The fingerprint guard remains unchanged. These samples were collected on 4 November 2026 from PR head `9df872729ada98be3ab8f52c64b444b5fae20592`; they describe neither the historical combined source nor baseline `29d9a884197a90125aab8afaea702076294ce8db`.
+
+Five independent fresh-profile pairs each recorded one cold first navigation and one warm repeat navigation in the same profile after the document completed and fixture markers were ready. Browser cache remained enabled; service-worker requests were bypassed. Same-origin transfer was 621,281 bytes on cold starts and 2,700–3,000 bytes on warm starts, consistent with browser-cache reuse. The controlled fixture and empty basemap exclude live tile and provider startup. Marker readiness includes the polling interval and is not an exact first-usable-map time. The service-worker controller flag was `true` on cold pages and `false` on warm pages; because requests were bypassed, this flag does not show that the service worker served requests.
+
+| Startup measure (`n=5` per condition) | Cold median (range) | Warm median (range) |
+| --- | ---: | ---: |
+| Marker ready | 1,619 ms (1,306–1,743) | 1,119 ms (970–1,195) |
+| First Contentful Paint | 560 ms (436–592) | 208 ms (184–252) |
+| DOMContentLoaded | 202 ms (148–222) | 109 ms (100–151) |
+
+Raw reports remain under ignored `.cache/performance-orchestration/real-performance/pr-head-startups/verified-2` through `verified-6`. They record PR head `9df8727`, frontend source fingerprint `0947c9e…` (393 files), and static-data fingerprint `ac7c05c4d070181eff83210f36302a9fc8412eebd862dcd096a82386796b98b4`. The measurements used the local startup sampler added for this review; only frontend source and static data are fingerprinted in the raw report.
+
+### Compressed assets from the historical builds
 
 | Compressed production assets | Base | Combined | Change |
 | --- | ---: | ---: | ---: |

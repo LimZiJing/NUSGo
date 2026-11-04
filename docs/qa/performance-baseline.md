@@ -26,6 +26,19 @@ $env:PERF_VIEWPORT = 'mobile'
 node frontend/scripts/performance/baseline.mjs
 ```
 
+To collect startup evidence separately from interaction runs, use startup-only mode. Each invocation pairs the cold first navigation in a fresh browser profile with one or more repeated warm navigations in that same profile after the cold document completes and fixture markers appear. The default is five warm navigations; set it to `1` and run five times with distinct output directories for five independent cold/warm pairs. The startup-only mode keeps browser cache enabled and bypasses service-worker requests.
+
+```powershell
+$env:PERF_STARTUP_ONLY = '1'
+$env:PERF_STARTUP_REPETITIONS = '1'
+1..5 | ForEach-Object {
+  $env:PERF_OUTPUT = ".cache/performance-baseline/startup-pair-$_"
+  node frontend/scripts/performance/baseline.mjs
+}
+Remove-Item Env:PERF_STARTUP_ONLY, Env:PERF_STARTUP_REPETITIONS
+Remove-Item Env:PERF_OUTPUT -ErrorAction SilentlyContinue
+```
+
 Each invocation opens and closes its own headless browser using a fresh profile. Default widths are 1440 × 900 and 390 × 844, at DPR 1. The mobile run changes CSS viewport size; it does **not** emulate a mobile CPU, GPU, browser or software keyboard. Keep the browser version, hardware and background workload constant for comparisons. Run benchmarks alone, after tests/builds finish. Retain all three repetitions and compare scenario distributions rather than selecting the fastest result.
 
 Reports and isolated profiles are written under ignored `.cache/performance-baseline`. Override `PERF_OUTPUT`, `PERF_URL` and `PERF_ASSETS` when needed; the runner accepts only a loopback application URL. Raw reports, generated `performance.html`, profiles, traces and local configuration must not be committed. Build output remains local rehearsal output and must not be deployed.
@@ -63,7 +76,7 @@ The report stores root commit counts, phases, actual durations and base duration
 - `validFrameSample: false`, zero frames, a hidden document or a timeout invalidates frame conclusions. Intervals around one second in longer headless runs are recorded as constrained evidence requiring a foreground/physical-device rerun; they are not attributed to application code.
 - Long tasks come from the browser Long Tasks API when supported; unsupported metrics are null. Layout/style counts and durations plus script/task durations are CDP deltas across the complete three-repetition scenario, including waits, probe activity and browser work. Durations are seconds. They do not isolate one component or prove a particular call caused the cost.
 - Heap samples are browser-reported estimates without forced GC. DOM, marker and canvas counts are lifecycle proxies. They cannot establish retained-memory leaks or count every listener, worker, timer or GPU allocation. Use allocation/retainer traces and a longer repeated-navigation soak for those claims.
-- Cold startup records navigation timing and the first poll observing installed stop markers. This includes polling/automation delay, uses a fixture basemap and is not an exact first-usable-map metric. Warm startup, production script parse/compile attribution, full-basemap readiness and live-provider startup remain separate measurements.
+- Cold and warm startup each record navigation timing and the first poll observing installed stop markers after the document reaches `complete`. This includes polling/automation delay, uses a fixture basemap and is not an exact first-usable-map metric. The original 29d9a884 historical baseline remains cold-only; the separate PR-head warm samples and their source limitation are recorded in the [production performance comparison](performance-comparison.md). Production script parse/compile attribution, full-basemap readiness and live-provider startup remain unmeasured.
 - The probe, fixture payload construction and CDP traffic add overhead. Compare using the same probe, data, action sequence and build mode. The root React Profiler adds separate overhead. Absolute timings from different modes must not be combined.
 
 ## Initial environment and observations
@@ -97,7 +110,7 @@ The third mobile refresh repetition had a 1029 ms maximum interval and seven lon
 
 Mobile sheet transitions produced **391 layouts across three repetitions** (12 key-driven detent changes), versus 15 during the three query repetitions. The mobile sheet scenario accumulated about 346 ms layout time and 2.57 seconds script time across its complete measured windows. That is concrete evidence to prioritise investigating sheet sizing/measurements; it does not prove which observer or CSS declaration caused every layout. Desktop zoom accumulated 314 style recalculations and about 1.86 seconds script time across its windows, supporting a focused marker/label trace.
 
-Cold fixture marker-ready observations were approximately 1525 ms desktop and 1317 ms mobile-width, each from a fresh browser cache. These include automation polling and exclude full live-basemap loading. They are not representative startup SLAs or a desktop-versus-mobile speed comparison. No warm-start sample was collected.
+Cold fixture marker-ready observations were approximately 1525 ms desktop and 1317 ms mobile-width, each from a fresh browser cache. These include automation polling and exclude full live-basemap loading. They are not representative startup SLAs or a desktop-versus-mobile speed comparison. The historical baseline at 29d9a884 contains no warm-start sample; supplemental warm-start evidence was collected on the PR head and is reported separately in the production comparison, not backfilled into this baseline or the historical f219645 comparison.
 
 ## Coverage and remaining evidence
 
@@ -110,7 +123,7 @@ Cold fixture marker-ready observations were approximately 1525 ms desktop and 13
 | Arrival/location overlap | Visibility-triggered cache refresh, delivered location updates and tab changes measured. A genuinely changed arrival generation during a physical gesture remains follow-up evidence. |
 | Keyboard resizing | Extended runner provides a CSS viewport-resize proxy. Native visual viewport, safe-area and software-keyboard behaviour require a physical device. |
 | Lifecycle | Repeated-navigation tooling samples counts and heap. Short runs do not establish leak freedom; constrained extended samples require rerun. |
-| Startup | Exact asset/compressed sizes recorded. Cold marker readiness is a fixture observation; warm cache, script parse attribution and full live-map usability need separate traces. |
+| Startup | Exact asset/compressed sizes recorded. The 29d9a884 historical baseline and f219645 comparison remain cold-only; the production comparison also records separately identified PR-head cold/warm samples. Production script parse attribution and full live-map usability remain unverified. |
 
 ## Priorities and initial comparison budgets
 
@@ -134,4 +147,4 @@ For each implementation, require unchanged observable behaviour, a repeatable re
 - `git diff --check` and syntax checks for the six non-test diagnostic modules: exit 0.
 - Browser evidence: validated fixture Path loaded through real application UI; production desktop/mobile-width core scenarios and separate desktop React profiling completed. Native device, live-provider and full-basemap checks remain unverified as described above.
 
-The durable findings are also published in the tracking issue. Diagnostic scripts and documentation are local, uncommitted changes; no branch push or pull request was authorised or performed.
+The durable findings are also published in the tracking issue. Diagnostic scripts are tracked under frontend/scripts/performance/; generated reports, profiles and performance.html remain ignored.

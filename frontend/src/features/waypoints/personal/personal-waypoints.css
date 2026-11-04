@@ -3,7 +3,6 @@
 
 .personal-waypoints-home > p,
 .personal-waypoint-form > p,
-.personal-waypoint-placement > p { margin: 0; line-height: 1.45; }
 .personal-waypoint-empty { color: var(--text-secondary); }
 
 .personal-waypoints-status {
@@ -269,8 +268,7 @@
 .personal-waypoint-form label { font-weight: 600; }
 .personal-waypoint-form label span { color: var(--text-secondary); font-weight: 400; }
 .personal-waypoint-form input,
-.personal-waypoint-form textarea,
-.personal-waypoint-coordinate-fields input {
+.personal-waypoint-form textarea {
   width: 100%;
   min-height: 40px;
   padding: var(--space-2);
@@ -872,7 +870,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.personal-waypoint-map-centre.button { padding-inline: var(--space-1); white-space: nowrap; }
 .personal-waypoint-selected-location-coordinate {
   min-width: 0;
   overflow: hidden;
@@ -883,64 +880,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.personal-waypoint-coordinate-disclosure {
-  overflow: hidden;
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
-.personal-waypoint-coordinate-disclosure > .button[data-variant='ghost'] {
-  display: flex;
-  width: 100%;
-  min-height: 40px;
-  justify-content: flex-start;
-  padding-inline: var(--space-3);
-  text-align: left;
-}
-.personal-waypoint-coordinate-disclosure > .button > svg {
-  margin-inline-start: auto;
-  color: var(--text-secondary);
-  transition: transform var(--motion-duration-standard) var(--motion-ease-standard);
-}
-.personal-waypoint-coordinate-disclosure > .button[aria-expanded='true'] > svg { transform: rotate(180deg); }
-.personal-waypoint-coordinate-content {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
-}
-.personal-waypoint-coordinate-content[hidden] { display: none; }
-.personal-waypoint-coordinate-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-.personal-waypoint-coordinate-field {
-  display: grid;
-  min-width: 0;
-  gap: var(--space-1);
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-}
-.personal-waypoint-coordinate-field input {
-  width: 100%;
-  min-width: 0;
-  min-height: var(--control-height-sm);
-  box-sizing: border-box;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-control);
-  color: var(--text-primary);
-  background: var(--surface-card);
-  font: 400 var(--font-size-sm)/1.2 var(--sans);
-  font-variant-numeric: tabular-nums;
-}
-/* Match native number steppers to the active NUSGo theme, not the operating-system preference. */
-:root:not([data-theme='dark']) .personal-waypoint-coordinate-field input { color-scheme: light; }
-:root[data-theme='dark'] .personal-waypoint-coordinate-field input { color-scheme: dark; }
-.personal-waypoint-coordinate-actions { display: flex; justify-content: flex-end; }
-.personal-waypoint-coordinate-actions > .button.personal-waypoint-apply { min-width: 78px; }
 .personal-waypoint-placement > .personal-waypoint-actions {
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);

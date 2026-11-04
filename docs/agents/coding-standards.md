@@ -32,8 +32,8 @@ Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-b
 - Every commit described as buildable MUST pass the applicable checks at that point in history.
 - If a named script is unavailable on the intended base, report that fact rather than silently substituting another command. Add the script only when the current feature requires it.
 - Browser evidence MUST name the head commit it was gathered on, the viewport (mobile 390×844, desktop 1280×800, set by resizing the actual viewport), and the interaction performed. A later push that touches the affected code MUST re-run the check or mark the earlier evidence stale in the PR.
-- Verify the behaviour that changed, not a nearby one: a trusted pointer click for marker or control changes, the keyboard path (Escape, focus return, Tab order) for overlays, menus and sheets, and both sides of any threshold such as a zoom level. Module tests do not replace crossing the threshold in a browser.
-- Performance changes MUST show a repeatable user-facing result (interaction time, frame time, or visible jank), with cold and warm start reported separately. Allocation or byte counts alone are not enough. Claim only the acceptance criteria that were met, and narrow the issue or PR scope for the rest.
+- Verify the behaviour that changed, not a nearby one: a trusted pointer click for marker or control changes, the keyboard path (Escape, focus return, Tab order) for overlays, menus and sheets, and both sides of any threshold such as a zoom level. When a threshold changes what is rendered on screen or on the map, module tests do not replace crossing it in a browser.
+- Performance evidence MUST be repeatable and MUST match the claim: allocation or byte counts support an allocation or size claim, while a user-facing claim needs a user-facing result (interaction time, frame time, or visible jank). When startup is measured, report cold and warm start separately. Claim only the acceptance criteria that were met, and narrow the issue or PR scope for the rest.
 - Automated checks are required for applicable changes. UI and map changes SHOULD include targeted local-browser smoke testing for affected interactions. Full responsive, keyboard, and map smoke testing MUST be completed before a release or when those behaviors change materially. If browser testing is unavailable, document the unverified areas and the environment blocker.
 
 ## Comments and documentation
@@ -43,7 +43,7 @@ Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-b
 - Comments about external data SHOULD identify the source or reason when that information matters for future maintenance.
 - TODO and FIXME comments MUST represent real follow-up work, include enough context to explain the intended change, and reference a tracking issue when possible. Remove stale comments.
 - MUST update the relevant documentation in the same PR when behavior, architecture, data provenance, public interfaces, or non-obvious constraints change. Do not duplicate one rule across several documents.
-- Before handoff, search `docs/` (at least `docs/ui/behaviour.md`, `docs/qa/manual-smoke-check.md` and the feature's own doc) for wording that describes the old behaviour, and report what was updated. Remove claims that are no longer true, such as "not yet committed".
+- Before handoff, search `docs/` (the feature's own doc and, for UI changes, `docs/ui/behaviour.md` and `docs/qa/manual-smoke-check.md`) for wording that describes the old behaviour, and report what was updated. Remove claims that are no longer true, such as "not yet committed".
 
 ## Formatting and linting
 
@@ -74,6 +74,7 @@ Prefer the simplest explicit design that meets the requirement. Add abstractions
 - Keep one canonical source of truth for domain data. Update types, representative fixtures, validation, metadata, and provenance together when a schema or source changes.
 - Validate external and static payloads before they reach rendering, routing, or other side effects.
 - Do not duplicate route metadata, colors, stop membership, or geometry facts in UI code when the validated transit model already owns them.
+- A malformed payload is a failure, not an empty result: a missing or wrongly typed field MUST NOT replace last-good data with an empty value. Treat empty or whitespace-only identifiers as invalid.
 
 ## Side effects and lifecycle
 
@@ -99,13 +100,15 @@ Prefer the simplest explicit design that meets the requirement. Add abstractions
 - Co-locate tests with the module they exercise, use domain vocabulary in test names, and keep fixtures small and representative.
 - Prefer deterministic offline tests. Mock at external boundaries rather than calling live map or data services from unit tests.
 - Add regression coverage for discovered bugs and test both success and failure states when the behavior has meaningful failure modes.
+- Test both sides of each boundary, including wraparound cases such as the end of a week or day.
 - For UI changes, cover semantic output, keyboard behavior, accessibility announcements, and state transitions where practical. Automated tests do not replace targeted browser verification when the changed behavior depends on layout, focus, keyboard interaction, MapLibre rendering, or external map resources.
 
 ## UI, accessibility, and map code
 
 - Prefer native semantic controls, visible focus, keyboard operation, and text alternatives for state changes.
-- Status announcements (install complete, save failed) MUST use a live region that stays in the DOM and sits outside any element that re-renders or unmounts. Initial state MUST be silent; announce only changes.
-- Do not rely on color alone to communicate route identity, selection, status, or errors.
+- Status announcements (install complete, save failed) MUST use a live region that stays in the DOM and sits outside any element that is conditionally rendered or unmounted. Initial state MUST be silent; announce only changes.
+- Do not rely on color alone to communicate route identity, selection, status, or errors. A cue that relies on motion MUST keep a static equivalent under `prefers-reduced-motion`.
+- When an action removes, hides, or disables the focused control (move, remove, clear, close), move focus to a sensible remaining target.
 - Prefer semantic class-based CSS, keep dynamic library styling localized, preserve responsive behavior, and avoid unexplained magic values.
 - Style colours with the theme tokens in `frontend/src/ui/styles/shared/themes/` (`--text-*`, `--border-*`, `--surface-*`) and do not hard-code hex values in component CSS.
 - Confirm a token exists in every theme file before using it. Prefer a token that works in all themes over a `:root[data-theme='dark']` override, and explain any theme-specific override in a one-line comment.
@@ -119,7 +122,8 @@ Stop and surface the question, with a recommendation, instead of choosing silent
 
 - reduces or hides attribution or licence credit (for example OpenStreetMap, OpenMapTiles or OpenFreeMap on the map);
 - changes what is stored, sent to a backend, or shown about a user's location or Personal Waypoints;
-- removes or reverses a behaviour that an issue or earlier review explicitly agreed.
+- removes or reverses a behaviour that an issue or earlier review explicitly agreed;
+- amends an accepted ADR, or changes existing wording or behaviour that the issue does not ask to change.
 
 Record the outcome in the issue or epic, so a later reviewer can see what was decided and why.
 

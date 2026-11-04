@@ -35,12 +35,14 @@ const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
 
 const STYLE_LOAD_TIMEOUT_MS = 4000
+const ATTRIBUTION_DISPLAY_DURATION_MS = 5000
 const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
 class NusgoAttributionControl {
   private container: HTMLElement | null = null
+  private dismissTimeout: ReturnType<typeof setTimeout> | null = null
 
   onAdd(): HTMLElement {
     const container = document.createElement('div')
@@ -48,10 +50,17 @@ class NusgoAttributionControl {
     container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
       + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     this.container = container
+    this.dismissTimeout = setTimeout(() => {
+      this.container?.remove()
+      this.container = null
+      this.dismissTimeout = null
+    }, ATTRIBUTION_DISPLAY_DURATION_MS)
     return container
   }
 
   onRemove(): void {
+    if (this.dismissTimeout !== null) clearTimeout(this.dismissTimeout)
+    this.dismissTimeout = null
     this.container?.remove()
     this.container = null
   }
@@ -209,6 +218,15 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     options.onMapCenterChange([center.lng, center.lat])
   }
 
+  const handleMoveStart = (): void => {
+    if (!disposed) options.onMapMovingChange?.(true)
+  }
+  const handleMoveEnd = (): void => {
+    if (disposed) return
+    reportMapCenter()
+    options.onMapMovingChange?.(false)
+  }
+
   // Active padding aligns MapLibre's centre with the crosshair. Identical padding
   // must be skipped because MapLibre's setPadding calls jumpTo and cancels a running flyTo.
   let appliedPadding: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
@@ -349,8 +367,9 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   map.addControl(attributionControl, 'bottom-right')
   map.on('error', handleMapError)
   map.on('click', handleMapClick)
+  map.on('movestart', handleMoveStart)
+  map.on('moveend', handleMoveEnd)
   if (options.onMapCenterChange) {
-    map.on('moveend', reportMapCenter)
     map.on('resize', reportMapCenter)
     reportMapCenter()
   }
@@ -413,9 +432,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
+      map.off('movestart', handleMoveStart)
+      map.off('moveend', handleMoveEnd)
       removeDoubleZoomHandlers()
       if (options.onMapCenterChange) {
-        map.off('moveend', reportMapCenter)
         map.off('resize', reportMapCenter)
       }
       map.removeControl(navigationControl)

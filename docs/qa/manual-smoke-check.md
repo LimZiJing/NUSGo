@@ -24,7 +24,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Repeat the Plan layout check in both light and dark themes.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
-- [ ] Native MapLibre controls and attribution remain visible and usable.
+- [ ] Native MapLibre navigation controls remain usable on desktop.
 
 ## Mobile — 390 × 844
 
@@ -38,6 +38,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
 ## Responsive boundary — 768 / 769px
 
@@ -53,8 +54,9 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Personal Waypoints (#207)
 
-- [ ] Add a waypoint and verify the temporary marker is a pointed pin whose tip follows the selected location. Tap the map and drag the pin; check that the selected-coordinate readout updates. Open Enter coordinates, confirm visible Latitude and Longitude labels, apply valid values, then submit invalid values from the collapsed state and confirm the disclosure opens, the relevant field is identified, and focus moves to it. Check Use map centre, Cancel, and Continue at 390 × 844.
+- [ ] Add a waypoint and confirm the form opens immediately with the visible map centre as its location. Enter name, category and note, then use Adjust on map; tap the map or drag the pointed pin, confirm the selected-coordinate readout updates, and return to the form with entries preserved. Also pan the focused map with the arrow keys, confirm Use map centre is disabled during movement and enabled once the map settles, then Tab to Use map centre and activate it with Enter; confirm the selected coordinate updates and Done preserves the form entries. Coordinate entry is removed. Check Save and Cancel at 390 × 844 and a desktop viewport.
 - [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each row opens waypoint details and its separate Edit action opens the edit form directly.
+- [ ] In Add and Edit forms, confirm Marker style starts collapsed with the current preview. Expand it with touch and keyboard, choose a different colour and icon, confirm the preview updates, save, reopen Edit, and confirm the saved choices remain selected.
 - [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.
 - [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.
 - [ ] Confirm the collapsed Categories summary is unchanged. When expanded, confirm there is one Categories heading, with the search field directly below it.

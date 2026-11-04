@@ -34,6 +34,8 @@ export interface MapSessionOptions {
   readonly onJourneyOptionSelected?: (candidateKey: string) => void
   /** Centre of the map area left visible by the current overlays. */
   readonly onMapCenterChange?: (center: MapCoordinate) => void
+  /** True during camera movement; false after the settled visible centre has been reported. */
+  readonly onMapMovingChange?: (moving: boolean) => void
 }
 
 export interface LiveBusRouteMatchingOptions {

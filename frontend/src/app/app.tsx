@@ -172,6 +172,7 @@ function App() {
   const [mapJourneySelectionRevision, setMapJourneySelectionRevision] = useState(0)
   const pendingMapJourneySelectionRef = useRef<string | null>(null)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
+  const [isMapMoving, setIsMapMoving] = useState(false)
   const focusTripControlAfterOverlayRef = useRef(false)
   const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
     mapShellRef.current = shell
@@ -597,6 +598,7 @@ function App() {
       onMapStopDestinationSet: appNavigation.openPlan,
       onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
+      onMapMovingChange: setIsMapMoving,
     })
     setSession(mount.session)
 
@@ -921,7 +923,7 @@ function App() {
         />
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
-          onUseMapCentre={mapCenter ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
+          onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}

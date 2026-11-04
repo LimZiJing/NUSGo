@@ -27,6 +27,8 @@ const appHarness = vi.hoisted(() => {
     onMapStopInteraction: null as ((stopId: string) => void) | null,
     onMapStopDestinationSet: null as ((stopId: string) => void) | null,
     onMapJourneyOptionSelected: null as ((candidateKey: string) => void) | null,
+    onMapMovingChange: null as ((moving: boolean) => void) | null,
+    onMapCenterChange: null as ((center: readonly [number, number]) => void) | null,
     session: {
       locateUser: vi.fn(),
       enableLocationTracking: vi.fn(),
@@ -52,6 +54,7 @@ vi.mock('./navigation-session-mount', () => ({
       onMapStopDestinationSet?: (stopId: string) => void
       onMapJourneyOptionSelected?: (candidateKey: string) => void
       onMapCenterChange?: (center: readonly [number, number]) => void
+      onMapMovingChange?: (moving: boolean) => void
     },
   ) => {
     appHarness.onStopSelected = dependencies.onStopSelected ?? null
@@ -59,6 +62,8 @@ vi.mock('./navigation-session-mount', () => ({
     appHarness.onMapStopDestinationSet = dependencies.onMapStopDestinationSet ?? null
     appHarness.onMapJourneyOptionSelected = dependencies.onMapJourneyOptionSelected ?? null
     dependencies.onMapCenterChange?.([103, 1])
+    appHarness.onMapMovingChange = dependencies.onMapMovingChange ?? null
+    appHarness.onMapCenterChange = dependencies.onMapCenterChange ?? null
     return {
       session: appHarness.session,
       dispose: () => undefined,
@@ -918,12 +923,18 @@ describe('More surface', () => {
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
 
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    act(() => appHarness.onMapMovingChange?.(true))
+    expect((screen.getByRole('button', { name: 'Use map centre' }) as HTMLButtonElement).disabled).toBe(true)
+    act(() => {
+      appHarness.onMapCenterChange?.([105, 2])
+      appHarness.onMapMovingChange?.(false)
+    })
     await user.keyboard('{Tab}')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use map centre' }))
     await user.keyboard('{Enter}')
-    expect(screen.getByText('1.000000° N · 103.000000° E')).toBeTruthy()
+    expect(screen.getByText('2.000000° N · 105.000000° E')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
-    expect(screen.getByText('1.000000, 103.000000')).toBeTruthy()
+    expect(screen.getByText('2.000000, 105.000000')).toBeTruthy()
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 

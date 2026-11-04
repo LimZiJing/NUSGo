@@ -225,11 +225,15 @@ describe('PWA notices', () => {
 
   it('does not claim installation is complete just because the dialog was accepted', async () => {
     render(<PwaInstallSection />)
+    const installationStatus = screen.getByRole('status')
+    expect(installationStatus.textContent).toBe('')
     dispatchInstallPrompt('accepted')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
     expect(screen.queryByRole('status', { name: 'NUSGo is installed on this device' })).toBeNull()
     act(() => { window.dispatchEvent(new Event('appinstalled')) })
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
+    expect(screen.getByRole('status')).toBe(installationStatus)
+    expect(installationStatus.textContent).toBe('NUSGo is installed on this device')
   })
 
   it('does not let another eligibility event override a completed installation', () => {

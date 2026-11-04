@@ -67,13 +67,13 @@ describe('PWA notices', () => {
     act(() => {
       window.dispatchEvent(new Event('offline'))
     })
-    expect(screen.getByRole('status').textContent).toContain("You're offline.")
+    expect(screen.getByText(/You're offline\./).getAttribute('role')).toBe('status')
 
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => {
       window.dispatchEvent(new Event('online'))
     })
-    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.queryByText(/You're offline\./)).toBeNull()
   })
 
   it('offers a reload for the fallback basemap after reconnecting', async () => {
@@ -224,16 +224,47 @@ describe('PWA notices', () => {
   })
 
   it('does not claim installation is complete just because the dialog was accepted', async () => {
-    render(<PwaInstallSection />)
-    const installationStatus = screen.getByRole('status')
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    const installationStatus = screen.getByRole('status', { name: 'Installation status' })
     expect(installationStatus.textContent).toBe('')
     dispatchInstallPrompt('accepted')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
-    expect(screen.queryByRole('status', { name: 'NUSGo is installed on this device' })).toBeNull()
+    expect(installationStatus.textContent).toBe('')
     act(() => { window.dispatchEvent(new Event('appinstalled')) })
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
-    expect(screen.getByRole('status')).toBe(installationStatus)
+    expect(screen.getByRole('status', { name: 'Installation status' })).toBe(installationStatus)
     expect(installationStatus.textContent).toBe('NUSGo is installed on this device')
+  })
+
+  it('announces installation even when the More installation controls are unmounted', () => {
+    render(<PwaNotices />)
+    const installationStatus = screen.getByRole('status', { name: 'Installation status' })
+    expect(installationStatus.textContent).toBe('')
+
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+
+    expect(screen.getByRole('status', { name: 'Installation status' })).toBe(installationStatus)
+    expect(installationStatus.textContent).toBe('NUSGo is installed on this device')
+    expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
+  })
+
+  it('stays silent on an installed mount and announces reinstall after an observed uninstall', async () => {
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+    render(<><PwaNotices /><PwaInstallSection /></>)
+    const installationStatus = screen.getByRole('status', { name: 'Installation status' })
+    expect(installationStatus.textContent).toBe('')
+
+    Object.defineProperty(navigator, 'getInstalledRelatedApps', {
+      configurable: true,
+      value: vi.fn().mockResolvedValue([]),
+    })
+    await act(async () => { await refreshPwaInstallationStatus() })
+    expect(screen.getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
+    expect(installationStatus.textContent).toBe('')
+
+    act(() => { window.dispatchEvent(new Event('appinstalled')) })
+    expect(installationStatus.textContent).toBe('NUSGo is installed on this device')
+    expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
   })
 
   it('does not let another eligibility event override a completed installation', () => {

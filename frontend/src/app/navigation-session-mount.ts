@@ -151,6 +151,9 @@ export interface NavigationSessionCommands {
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
   ) => void
+  readonly panToCoordinate: (
+    coordinate: Parameters<NavigationSession['panToCoordinate']>[0],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -210,6 +213,7 @@ function createNavigationSessionCommands(
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
     focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
+    panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

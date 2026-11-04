@@ -139,6 +139,8 @@ export interface MapSession {
   ): void
   /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  /** Moves the camera to a coordinate without changing zoom, keeping existing overlays in view. */
+  panToCoordinate(coordinate: MapCoordinate): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

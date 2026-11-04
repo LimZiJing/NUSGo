@@ -2,10 +2,11 @@ import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { performance, PerformanceObserver } from 'node:perf_hooks'
 import { Session } from 'node:inspector/promises'
+import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 const baseRevision = process.env.PERF_BASE_REV ?? 'f21964595968dde261973f7e2cb965ce0ba600b7'
-const repo = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')
+const repo = fileURLToPath(new URL('../../../', import.meta.url))
 const modulePath = 'frontend/src/app/navigation-session-snapshot.ts'
 const updateCount = Number(process.env.PERF_UPDATES ?? 60)
 const coordinateCount = Number(process.env.PERF_COORDINATES ?? 1000)
@@ -129,6 +130,7 @@ async function runSample(variant, profileAllocations) {
   const durationMs = performance.now() - start
   const profile = profileAllocations ? (await session.post('HeapProfiler.stopSampling')).profile : null
   await new Promise((resolve) => setImmediate(resolve))
+  gcEntries.push(...observer.takeRecords())
   const gc = gcEntries.slice(gcBoundary)
   return {
     durationMs: Number(durationMs.toFixed(3)),
@@ -137,8 +139,8 @@ async function runSample(variant, profileAllocations) {
     liveHeapDeltaBytes: process.memoryUsage().heapUsed - heapBefore,
     gcCount: gc.length,
     gcDurationMs: Number(gc.reduce((sum, entry) => sum + entry.duration, 0).toFixed(3)),
-    sampledAllocationBytes: profile ? profileBytes(profile.head) : null,
-    allocationSampleCount: profile?.samples?.length ?? null,
+    retainedSampledBytesAtProfileStop: profile ? profileBytes(profile.head) : null,
+    retainedSampleCountAtProfileStop: profile?.samples?.length ?? null,
   }
 }
 

@@ -42,6 +42,7 @@ export function PersonalWaypointListActions({
   return <div
     ref={rootRef}
     className="personal-waypoint-list-actions"
+    data-menu-open={open ? 'true' : undefined}
     onKeyDown={(event) => {
       if (event.key !== 'Escape') return
       event.preventDefault()

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
+import { stopTree } from './servers/process.mjs'
 
 const repositoryRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const frontendRoot = resolve(repositoryRoot, 'frontend')
@@ -11,19 +12,23 @@ let shutdownRequested = false
 let resolveShutdown
 const shutdownEvent = new Promise((resolvePromise) => { resolveShutdown = resolvePromise })
 
+/** Cancel setup immediately and let the main lifecycle await owned-child cleanup. */
 function requestShutdown(code) {
   if (shutdownRequested) return
   shutdownRequested = true
   exitCode = code
   resolveShutdown()
-  for (const child of activeProcesses.keys()) child.kill('SIGTERM')
+  for (const child of activeProcesses.keys()) void stopTree(child, { group: false }).catch(console.error)
 }
 
 process.once('SIGINT', () => requestShutdown(130))
 process.once('SIGTERM', () => requestShutdown(143))
 
+/** Track each setup or service child until its streams close so shutdown can await all work. */
 function launch(command, args, cwd) {
-  const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true })
+  const child = spawn(command, args, {
+    cwd, stdio: 'inherit', windowsHide: true,
+  })
   const done = new Promise((resolvePromise, reject) => {
     child.once('error', (error) => {
       activeProcesses.delete(child)
@@ -38,6 +43,7 @@ function launch(command, args, cwd) {
   return { child, done }
 }
 
+/** Serialize prerequisites and report failed setup unless cancellation already owns the result. */
 async function runSetup(command, args, cwd) {
   const { done } = launch(command, args, cwd)
   const outcome = await done
@@ -47,6 +53,7 @@ async function runSetup(command, args, cwd) {
   }
 }
 
+/** Bound the shared routing-service probe so shutdown is not blocked by a hung request. */
 async function valhallaIsReady() {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 1500)
@@ -60,17 +67,14 @@ async function valhallaIsReady() {
   }
 }
 
+/** Await tree termination and stream closure for every remaining owned setup or service process. */
 async function stopChildren() {
   const processes = [...activeProcesses.entries()]
-  for (const [child] of processes) child.kill('SIGTERM')
-  await Promise.race([
-    Promise.allSettled(processes.map(([, done]) => done)),
-    new Promise((resolvePromise) => setTimeout(resolvePromise, 5000)),
-  ])
-  for (const [child] of activeProcesses) child.kill('SIGKILL')
+  await Promise.all(processes.map(([child]) => stopTree(child, { group: false })))
   await Promise.allSettled([...activeProcesses.values()])
 }
 
+/** Release routing only when this unmanaged launcher created it, retaining cleanup failures in the exit code. */
 async function stopValhalla() {
   try {
     await runSetup('docker', ['compose', '-f', 'docker-compose.valhalla.yml', 'down'], repositoryRoot)
@@ -80,6 +84,7 @@ async function stopValhalla() {
   }
 }
 
+/** Start prerequisites and services, then clean up on cancellation, failure, or either service exiting. */
 async function main() {
   let shouldStopValhalla = false
   try {
@@ -90,7 +95,8 @@ async function main() {
     ], repositoryRoot)
     if (shutdownRequested) return
 
-    shouldStopValhalla = !(await valhallaIsReady())
+    // Managed worktrees share Valhalla; stopping one group must not stop another's routing service.
+    shouldStopValhalla = !process.env.NUSGO_MANAGED_SERVERS && !(await valhallaIsReady())
     await runSetup(process.execPath, ['scripts/start-valhalla.mjs'], repositoryRoot)
     if (shutdownRequested) return
 
@@ -101,7 +107,10 @@ async function main() {
       'src/server.ts',
     ], backendRoot)
     const viteCli = resolve(repositoryRoot, 'node_modules/vite/bin/vite.js')
-    const frontend = launch(process.execPath, [viteCli, '--config', 'vite.config.ts'], frontendRoot)
+    const frontend = launch(process.execPath, [
+      viteCli, '--config', 'vite.config.ts', '--strictPort',
+      '--host', '127.0.0.1', '--port', process.env.NUSGO_FRONTEND_PORT || '5173',
+    ], frontendRoot)
 
     const firstResult = await Promise.race([
       backend.done.then((result) => ({ name: 'backend', result })),

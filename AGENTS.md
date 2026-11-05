@@ -21,6 +21,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 
 ## Mandatory repository rules
 
+- Use `npm run servers:start` to start or reuse this worktree's managed development group; inspect `npm run servers:status` before starting additional services. Use `npm run servers:stop` when the group is no longer needed. Run temporary previews with `npm run servers:preview -- --port <port> -- node <check-script>` so owned processes are stopped when the check ends. Do not launch Vite or backend servers directly for agent work. See [managed local servers](docs/local-services.md#managed-worktree-servers).
 - Inspect repository status before editing and preserve unrelated user changes.
 - Keep the shared checkout on local `main`. Unless the user explicitly requests otherwise, create a fresh managed worktree from local `main` for each ticket and implement it on one direct, descriptive branch there; do not use a `codex/` prefix or reuse a worktree from another ticket.
 - After a ticket's pull request is accepted and merged, archive or remove its worktree, then run `git worktree prune` to clear stale metadata. Do not clean up worktrees for active tasks or open pull requests.

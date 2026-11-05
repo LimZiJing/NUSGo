@@ -102,13 +102,15 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '0.0.0.0',
+      strictPort: true,
       ...(allowedHost ? { allowedHosts: [allowedHost] } : {}),
       // Development forwards API calls to Express; it does not implement API routes.
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:3001',
+          target: process.env.NUSGO_DEV_API_ORIGIN || 'http://127.0.0.1:3001',
         },
       },
     },
+    preview: { strictPort: true },
   }
 })

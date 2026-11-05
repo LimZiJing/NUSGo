@@ -26,7 +26,9 @@ Files: [`docker-compose.prod.yml`](../docker-compose.prod.yml), [`scripts/deploy
 | --- | --- | --- | --- |
 | `backend-production` | `deploy-backend-production` | API on the VM | Push to `main` that touches backend inputs (see the `paths` list), or manual. Waits for approval. |
 | `frontend-development` | `deploy-frontend-development` | GitHub Pages | Push to `main` that touches frontend inputs, or manual. |
-| `frontend-production` | `deploy-frontend-production` | Cloudflare Pages | Manual only. Choose the commit SHA to promote (default `main`). |
+| `frontend-production` | `deploy-frontend-production` | Cloudflare Pages | Manual only. Select the commit ref to promote and provide its reviewed website release ID. |
+
+After the Cloudflare Pages step succeeds, `publish-website-release` verifies that production run, then creates or reuses the matching immutable Git tag and GitHub Release. If publication fails, rerun that publisher workflow; do not redeploy just to retry release publication. See [website release notes](release-notes.md) for the release checklist and rollback rules.
 
 The development frontend calls the production API, so keep API changes backwards-compatible: add the new behaviour, deploy the backend, switch the frontend over, and remove the old behaviour in a later change. Deploy the backend before promoting a frontend that needs it.
 

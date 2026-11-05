@@ -1,11 +1,9 @@
 import { Button } from '@base-ui/react/button'
-import type { CSSProperties } from 'react'
 import { LocateIcon } from './icons'
 
 export interface LocationControlProps {
   readonly visible?: boolean
   readonly onRootChange?: (root: HTMLDivElement | null) => void
-  readonly topOffset: number
   readonly searching: boolean
   readonly onLocate: () => void
 }
@@ -13,7 +11,6 @@ export interface LocationControlProps {
 export function LocationControl({
   visible = true,
   onRootChange,
-  topOffset,
   searching,
   onLocate,
 }: LocationControlProps) {
@@ -27,10 +24,9 @@ export function LocationControl({
     <div
       className="location-control"
       ref={onRootChange}
-      style={{ '--location-control-top': `${Math.max(0, topOffset)}px` } as CSSProperties}
     >
       <Button
-        className="location-control-chip map-overlay-button"
+        className="map-overlay-button"
         type="button"
         aria-label={buttonLabel}
         aria-busy={searching}

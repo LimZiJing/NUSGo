@@ -10,6 +10,7 @@ export type MorePanelPage =
   | 'creating'
   | 'editing-waypoint'
   | 'settings'
+  | 'release-notes'
 
 interface MorePanelSurfaceProps {
   readonly page: MorePanelPage

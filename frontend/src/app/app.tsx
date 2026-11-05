@@ -525,7 +525,7 @@ function App() {
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
-  }, [activeView])
+  }, [activeView, isMoreOpen])
 
   useLayoutEffect(() => {
     if (activeView !== 'explore') return

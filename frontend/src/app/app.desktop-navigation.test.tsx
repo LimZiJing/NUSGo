@@ -743,8 +743,9 @@ describe('More surface', () => {
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
   })
 
-  it('moves focus into Plan when Directions closes More over an already-active Plan view', async () => {
-    mockDesktopViewport()
+  it.each(['desktop', 'mobile'])('moves focus into Plan when Directions closes More over an already-active Plan view on %s', async (viewport) => {
+    if (viewport === 'mobile') mockMobileViewport()
+    else mockDesktopViewport()
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -764,8 +765,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
-    expect(document.activeElement).not.toBe(document.body)
-    expect(document.activeElement?.closest('.more-panel-surface')).toBeNull()
+    expect(document.activeElement?.closest('.plan-sheet')).toBeTruthy()
+    expect(document.activeElement?.matches('input, select, button')).toBe(true)
   })
 
   it('uses Escape to cancel a keyboard reorder before More handles it', async () => {

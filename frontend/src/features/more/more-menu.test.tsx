@@ -12,11 +12,13 @@ describe('MoreMenu', () => {
     const user = userEvent.setup()
     const onOpenWaypoints = vi.fn()
     const onOpenSettings = vi.fn()
+    const onOpenReleaseNotes = vi.fn()
     render(
       <MoreMenu
         waypointCount={12}
         onOpenWaypoints={onOpenWaypoints}
         onOpenSettings={onOpenSettings}
+        onOpenReleaseNotes={onOpenReleaseNotes}
       />,
     )
 
@@ -24,7 +26,9 @@ describe('MoreMenu', () => {
     expect(screen.getByText('Appearance and favourites')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Release notes' }))
     expect(onOpenWaypoints).toHaveBeenCalledOnce()
     expect(onOpenSettings).toHaveBeenCalledOnce()
+    expect(onOpenReleaseNotes).toHaveBeenCalledOnce()
   })
 })

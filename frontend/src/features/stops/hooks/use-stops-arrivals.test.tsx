@@ -328,6 +328,13 @@ describe('useStopsArrivals', () => {
     await act(async () => undefined)
     expect(client).toHaveBeenCalledTimes(2)
     expect(screen.getByTestId('status').textContent).toBe('ready')
+
+    rerender(<Probe client={client} active stops={otherStops} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150)
+    })
+    expect(client).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(client).mock.calls[2]?.[0]).toEqual(otherStops)
   })
 
   it('aborts an in-flight request and removes its visibility listener on unmount', async () => {

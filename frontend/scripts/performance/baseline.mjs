@@ -4,6 +4,7 @@ import { resolve, join } from 'node:path'
 import { cpus, platform, release, totalmem } from 'node:os'
 import { gzipSync, brotliCompressSync } from 'node:zlib'
 import { setTimeout as delay } from 'node:timers/promises'
+import { baseRevision, variant } from './build-variant.mjs'
 
 const url = process.env.PERF_URL ?? 'http://127.0.0.1:5173/performance.html'
 const executable = process.env.PERF_BROWSER
@@ -11,7 +12,7 @@ const output = resolve(process.env.PERF_OUTPUT ?? '.cache/performance-baseline')
 const assets = resolve(process.env.PERF_ASSETS ?? 'frontend/dist-local-rehearsal/assets')
 const mobile = process.env.PERF_VIEWPORT === 'mobile'
 const profiling = process.env.PERF_REACT_PROFILE === '1'
-const reportPath = join(output, `baseline-${profiling ? 'profile-' : ''}${mobile ? 'mobile' : 'desktop'}.json`)
+const reportPath = join(output, `baseline-${variant}-${profiling ? 'profile-' : ''}${mobile ? 'mobile' : 'desktop'}.json`)
 if (!executable) throw new Error('Set PERF_BROWSER to a Chromium/Edge executable')
 if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(url).hostname)) throw new Error('Use a local production build')
 await mkdir(output, { recursive: true })
@@ -56,10 +57,22 @@ try {
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text)
     return result.result.value
   }
+  const waitFor = async (expression, label, timeoutMs = 5000) => {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      if (await evaluate(`!!(${expression})`)) return
+      await delay(25)
+    }
+    throw new Error(`Timed out waiting for ${label}`)
+  }
   await send('Page.enable')
   await send('Performance.enable')
   const report = {
+    variant,
     revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+    baseRevision: variant === 'base'
+      ? execFileSync('git', ['rev-parse', baseRevision], { encoding: 'utf8' }).trim()
+      : null,
     recordedAt: new Date().toISOString(),
     environment: { platform: platform(), release: release(), cpu: cpus()[0]?.model, logicalCpus: cpus().length, memoryBytes: totalmem(), node: process.version },
     conditions: { url, headless: true, cpuThrottling: 'none', networkThrottling: 'none', build: profiling ? 'React profiling diagnostic build' : 'production local rehearsal', cache: 'fresh isolated profile; one cold-browser-cache navigation; no warm-start sample', physicalMobile: false, repetitions: 3, warmupMs: 2000, basemap: 'controlled empty background; excludes real tile/GPU load', api: 'controlled browser fixtures; one synthetic 1000-coordinate walking Path; not live-provider evidence', input: 'DOM actions for standard cases; CDP mouse/touch for drag/pan; not input latency measurements' },
@@ -110,10 +123,11 @@ try {
       console.log(`${viewport.width} ${label}: ${samples.map((sample) => sample.frameIntervalP95Ms?.toFixed(2) ?? 'INVALID:no frames').join(', ')} ms p95`)
     }
     if (process.env.PERF_CORE_ONLY !== '1') {
+    await waitFor(`document.querySelector('.main-navigation button[aria-controls="explore-panel"]')`, 'Explore tab')
     await evaluate(`document.querySelector('.main-navigation button[aria-controls="explore-panel"]').click()`)
-    await delay(100)
+    await waitFor(`Array.from(document.querySelectorAll('button')).find((element) => element.textContent.trim() === 'Bus routes')`, 'Bus routes button')
     await evaluate(`Array.from(document.querySelectorAll('button')).find((element) => element.textContent.trim() === 'Bus routes').click()`)
-    await delay(100)
+    await waitFor(`document.querySelector('.explore-bus-route-list button[data-route-id="D2"]')`, 'D2 route button')
     await evaluate(`document.querySelector('.explore-bus-route-list button[data-route-id="D2"]').click()`)
     await delay(800)
     const selectedZoom = await evaluate(`runNusgoPerformance('zoom')`)

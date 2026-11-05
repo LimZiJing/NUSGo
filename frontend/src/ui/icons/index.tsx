@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  CloudOff,
   Compass,
   Coffee,
   CircleDot,
@@ -17,6 +18,7 @@ import {
   Download,
   EllipsisVertical,
   ExternalLink,
+  FileText,
   Footprints,
   GripVertical,
   Info,
@@ -88,6 +90,10 @@ export function ChevronRightIcon(props: IconProps) {
 
 export function CheckIcon(props: IconProps) {
   return renderDecorativeIcon(Check, props)
+}
+
+export function CloudOffIcon(props: IconProps) {
+  return renderDecorativeIcon(CloudOff, props)
 }
 
 export function CompassIcon(props: IconProps) {
@@ -180,6 +186,10 @@ export function SearchIcon(props: IconProps) {
 
 export function SettingsIcon(props: IconProps) {
   return renderDecorativeIcon(Settings, props)
+}
+
+export function FileTextIcon(props: IconProps) {
+  return renderDecorativeIcon(FileText, props)
 }
 
 export interface FavoriteIconProps extends IconProps {

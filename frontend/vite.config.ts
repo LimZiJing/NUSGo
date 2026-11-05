@@ -89,6 +89,7 @@ export default defineConfig(({ mode }) => {
       __NUSGO_PWA_MANIFEST_ID__: JSON.stringify(manifestId),
       __NUSGO_API_ORIGIN__: JSON.stringify(buildSettings.apiOrigin),
       __NUSGO_DATA_VERSION__: JSON.stringify(dataVersion),
+      __NUSGO_RELEASE_SHA__: JSON.stringify(process.env.VITE_RELEASE_SHA?.trim() || 'development'),
     },
     plugins: [
       react(),

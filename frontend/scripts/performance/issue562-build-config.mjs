@@ -2,8 +2,8 @@ import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { mergeConfig } from 'vite'
 import baseConfig from '../../vite.config.ts'
+import { baseRevision, variant } from './build-variant.mjs'
 
-const baseRevision = process.env.PERF_BASE_REV ?? 'f21964595968dde261973f7e2cb965ce0ba600b7'
 const frontendRoot = resolve(process.cwd().endsWith('/frontend') || process.cwd().endsWith('\\frontend')
   ? process.cwd()
   : resolve(process.cwd(), 'frontend'))
@@ -18,7 +18,7 @@ const baselinePlugin = {
   name: 'performance-562-base-views',
   enforce: 'pre',
   load(id) {
-    if (process.env.PERF_VARIANT !== 'base') return null
+    if (variant !== 'base') return null
     const normalizedId = resolve(id.split('?')[0])
     for (const [localPath, gitPath] of baseFiles) {
       if (normalizedId === resolve(frontendRoot, localPath)) {

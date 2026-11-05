@@ -11,7 +11,7 @@ describe('LocationControl', () => {
   it('provides one direct locate action with an accessible target label', async () => {
     const user = userEvent.setup()
     const onLocate = vi.fn()
-    render(<LocationControl topOffset={76} searching={false} onLocate={onLocate} />)
+    render(<LocationControl searching={false} onLocate={onLocate} />)
 
     const button = screen.getByRole('button', { name: 'Show my location' })
     expect(button.getAttribute('title')).toBe('Show my location')
@@ -24,7 +24,7 @@ describe('LocationControl', () => {
   it('activates the locate action with the keyboard', async () => {
     const user = userEvent.setup()
     const onLocate = vi.fn()
-    render(<LocationControl topOffset={76} searching={false} onLocate={onLocate} />)
+    render(<LocationControl searching={false} onLocate={onLocate} />)
 
     screen.getByRole('button', { name: 'Show my location' }).focus()
     await user.keyboard('{Enter}')
@@ -33,7 +33,7 @@ describe('LocationControl', () => {
   })
 
   it('shows a quiet searching state while waiting for the first fix', () => {
-    render(<LocationControl topOffset={76} searching onLocate={vi.fn()} />)
+    render(<LocationControl searching onLocate={vi.fn()} />)
 
     const button = screen.getByRole('button', { name: 'Recenter map while finding your location' })
     expect(button.hasAttribute('disabled')).toBe(false)
@@ -45,7 +45,7 @@ describe('LocationControl', () => {
   it('keeps the recenter action available while searching and shows one loading indicator', async () => {
     const user = userEvent.setup()
     const onLocate = vi.fn()
-    render(<LocationControl topOffset={76} searching onLocate={onLocate} />)
+    render(<LocationControl searching onLocate={onLocate} />)
 
     const button = screen.getByRole('button', { name: 'Recenter map while finding your location' })
     await user.click(button)
@@ -58,8 +58,18 @@ describe('LocationControl', () => {
   })
 
   it('is absent while the mobile Plan sheet is expanded', () => {
-    render(<LocationControl visible={false} topOffset={76} searching={false} onLocate={vi.fn()} />)
+    render(<LocationControl visible={false} searching={false} onLocate={vi.fn()} />)
 
     expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()
+  })
+
+  it('keeps the locate icon as a current-color outline', () => {
+    render(<LocationControl searching={false} onLocate={vi.fn()} />)
+
+    const icon = screen.getByRole('button', { name: 'Show my location' }).querySelector('svg')
+    expect(icon?.getAttribute('fill')).toBe('none')
+    expect(icon?.getAttribute('stroke')).toBe('currentColor')
+    expect(icon?.getAttribute('stroke-linecap')).toBe('round')
+    expect(icon?.getAttribute('stroke-linejoin')).toBe('round')
   })
 })

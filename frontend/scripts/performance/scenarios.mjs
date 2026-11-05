@@ -1,6 +1,15 @@
 // Repeatable application work; DOM actions are synthetic and do not measure input latency.
 export async function runPerformanceScenarios(scenario, repetitions = 3) {
   const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  const waitFor = async (predicate, label, timeoutMs = 5000) => {
+    const deadline = performance.now() + timeoutMs
+    while (performance.now() < deadline) {
+      const value = predicate()
+      if (value) return value
+      await pause(25)
+    }
+    throw new Error(`Timed out waiting for ${label}`)
+  }
   const click = (selector) => {
     const element = document.querySelector(selector)
     if (!element) throw new Error(`Missing action target: ${selector}`)
@@ -15,21 +24,23 @@ export async function runPerformanceScenarios(scenario, repetitions = 3) {
   if (!document.querySelector('.bus-stop-marker')) throw new Error('Wait for map and stop markers before sampling')
   const actions = {
     async setup() {
+      await waitFor(() => document.querySelector('.main-navigation button[aria-controls="plan-panel"]'), 'Plan tab')
       click('.main-navigation button[aria-controls="plan-panel"]')
-      await pause(100)
       for (const [role, query] of [['origin', 'COM 3'], ['destination', 'University Town']]) {
+        await waitFor(() => document.querySelector(`.plan-trip-line-${role} .plan-trip-line-main`), `${role} endpoint control`)
         click(`.plan-trip-line-${role} .plan-trip-line-main`)
-        await pause(100)
+        await waitFor(() => document.querySelector('.plan-search-input'), 'plan search input')
         type('.plan-search-input', query)
-        await pause(100)
-        Array.from(document.querySelectorAll('.plan-search-chip')).find((element) => element.textContent === 'Bus stops').click()
-        await pause(100)
-        click('.plan-search-result')
-        await pause(100)
+        const busStops = await waitFor(() => Array.from(document.querySelectorAll('.plan-search-chip')).find((element) => element.textContent === 'Bus stops'), 'Bus stops chip')
+        busStops.click()
+        const result = await waitFor(() => busStops.getAttribute('aria-pressed') === 'true' &&
+          Array.from(document.querySelectorAll('.plan-search-result')).find((element) => element.textContent.includes(query)), `${query} bus stop result`)
+        result.click()
+        await waitFor(() => !document.querySelector('.plan-search-input'), `${role} selection to close search`)
       }
+      await waitFor(() => document.querySelector('button[aria-label="Get route"]:not(:disabled)'), 'Get route button')
       click('button[aria-label="Get route"]')
-      await pause(700)
-      if (!document.querySelector('.journey-results-item')) throw new Error(`Validated fixture Path did not load: ${document.querySelector('.plan-content')?.innerText}`)
+      await waitFor(() => document.querySelector('.journey-results-item'), 'validated fixture Path')
       document.querySelector('.location-control-chip')?.click()
       await pause(600)
     },

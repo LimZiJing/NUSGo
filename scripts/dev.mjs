@@ -12,6 +12,7 @@ let shutdownRequested = false
 let resolveShutdown
 const shutdownEvent = new Promise((resolvePromise) => { resolveShutdown = resolvePromise })
 
+/** Cancel setup immediately and let the main lifecycle await owned-child cleanup. */
 function requestShutdown(code) {
   if (shutdownRequested) return
   shutdownRequested = true
@@ -23,6 +24,7 @@ function requestShutdown(code) {
 process.once('SIGINT', () => requestShutdown(130))
 process.once('SIGTERM', () => requestShutdown(143))
 
+/** Track each setup or service child until its streams close so shutdown can await all work. */
 function launch(command, args, cwd) {
   const child = spawn(command, args, {
     cwd, stdio: 'inherit', windowsHide: true,
@@ -41,6 +43,7 @@ function launch(command, args, cwd) {
   return { child, done }
 }
 
+/** Serialize prerequisites and report failed setup unless cancellation already owns the result. */
 async function runSetup(command, args, cwd) {
   const { done } = launch(command, args, cwd)
   const outcome = await done
@@ -50,6 +53,7 @@ async function runSetup(command, args, cwd) {
   }
 }
 
+/** Bound the shared routing-service probe so shutdown is not blocked by a hung request. */
 async function valhallaIsReady() {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 1500)
@@ -63,12 +67,14 @@ async function valhallaIsReady() {
   }
 }
 
+/** Await tree termination and stream closure for every remaining owned setup or service process. */
 async function stopChildren() {
   const processes = [...activeProcesses.entries()]
   await Promise.all(processes.map(([child]) => stopTree(child, { group: false })))
   await Promise.allSettled([...activeProcesses.values()])
 }
 
+/** Release routing only when this unmanaged launcher created it, retaining cleanup failures in the exit code. */
 async function stopValhalla() {
   try {
     await runSetup('docker', ['compose', '-f', 'docker-compose.valhalla.yml', 'down'], repositoryRoot)
@@ -78,6 +84,7 @@ async function stopValhalla() {
   }
 }
 
+/** Start prerequisites and services, then clean up on cancellation, failure, or either service exiting. */
 async function main() {
   let shouldStopValhalla = false
   try {

@@ -1,11 +1,23 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { contact, runPreviewCheck, startGroup, stopGroup } from './servers.mjs'
+import { stopTree } from './servers/process.mjs'
+
+/** Poll observable shutdown rather than assuming a loaded runner meets a narrow timing margin. */
+async function waitUntilGone(record, timeoutMs = 30000) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (!await contact(record)) return
+    await new Promise((done) => setTimeout(done, 100))
+  }
+  assert.fail('Manager remained reachable after the shutdown deadline.')
+}
 
 async function freePort() {
   const server = createServer()
@@ -91,7 +103,8 @@ test('temporary preview rejects another group and expires without its wrapper le
   const options = await fixture(t, 'preview')
   const first = await startGroup(options)
   await assert.rejects(startGroup(options), /already owns this worktree/)
-  await new Promise((done) => setTimeout(done, 16500))
+  await waitUntilGone(first.record)
+  assert.ok(Date.now() - Date.parse(first.record.startedAt) >= 15000, 'Preview must retain its lease before expiring.')
   assert.equal(await contact(first.record), null)
   await assert.rejects(fetch(`http://127.0.0.1:${options.ports[0]}`))
 })
@@ -119,7 +132,94 @@ test('launcher exit also stops its descendant HTTP listener', async (t) => {
   const source = await readFile(parent, 'utf8')
   await writeFile(parent, source.replace('setInterval(() => {}, 1000)', 'setTimeout(() => process.exit(1), 2000)'))
   const { record } = await startGroup(options)
-  await new Promise((done) => setTimeout(done, 3000))
+  await waitUntilGone(record)
   assert.equal(await contact(record), null)
   await assert.rejects(fetch(`http://127.0.0.1:${options.ports[0]}`))
+})
+
+test('preview cleanup preserves exit codes and spawn errors after its manager disappears', async (t) => {
+  const options = await fixture(t, 'preview')
+  const { record } = await startGroup(options)
+  await stopGroup(record)
+  assert.equal(await runPreviewCheck(record, ['node', '-e', 'process.exit(7)'], options.worktree), 7)
+  await assert.rejects(
+    runPreviewCheck(record, [join(options.worktree, 'missing-command')], options.worktree),
+    { code: 'ENOENT' },
+  )
+})
+
+test('cancellation during port and control-server acquisition cannot create orphaned services', async (t) => {
+  for (const cancelAtListen of [1, 2]) {
+    await t.test(`cancel at listener ${cancelAtListen}`, async (t) => {
+      const options = await fixture(t)
+      await mkdir(options.registry)
+      const preload = join(options.worktree, 'cancel-startup.mjs')
+      await writeFile(preload, `
+import { Server } from 'node:net'
+const listen = Server.prototype.listen
+let count = 0
+Server.prototype.listen = function (...args) {
+  const callback = args.pop()
+  const cancel = ++count === ${cancelAtListen}
+  return listen.call(this, ...args, (...values) => {
+    if (cancel) process.emit('SIGTERM')
+    callback(...values)
+  })
+}
+`)
+      const child = spawn(process.execPath, [
+        '--import', pathToFileURL(preload).href, fileURLToPath(new URL('./servers.mjs', import.meta.url)),
+        'supervise', JSON.stringify({ ...options, identity: 'cancel-startup' }),
+      ], { cwd: options.worktree, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'ignore', 'pipe'] })
+      let errors = ''
+      child.stderr.on('data', (chunk) => { errors += chunk })
+      t.after(() => stopTree(child))
+      const result = await new Promise((done, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Cancelled supervisor did not exit.')), 10000)
+        child.once('error', (error) => { clearTimeout(timeout); reject(error) })
+        child.once('exit', (code) => { clearTimeout(timeout); done(code) })
+      })
+      assert.equal(result, 0, errors)
+      const files = await readdir(options.registry)
+      assert.equal(files.some((file) => file.endsWith('.json') || file.endsWith('.lock')), false)
+      await assert.rejects(fetch(`http://127.0.0.1:${options.ports[0]}`))
+    })
+  }
+})
+
+test('POSIX termination allows a delayed graceful shutdown before escalation', { skip: process.platform === 'win32' }, async (t) => {
+  const options = await fixture(t)
+  for (const group of [false, true]) {
+    const marker = join(options.worktree, `graceful-${group}.txt`)
+    const child = spawn(process.execPath, ['-e', `
+const { writeFileSync } = require('node:fs')
+process.on('SIGTERM', () => setTimeout(() => {
+  writeFileSync(process.argv[1], 'drained')
+  process.exit(0)
+}, 700))
+setInterval(() => {}, 1000)
+console.log('ready')
+`, marker], { detached: group, stdio: ['ignore', 'pipe', 'inherit'] })
+    t.after(() => stopTree(child, { group }))
+    const exited = new Promise((done) => child.once('exit', (code, signal) => done({ code, signal })))
+    await new Promise((done) => child.stdout.once('data', done))
+    await stopTree(child, { group })
+    assert.deepEqual(await exited, { code: 0, signal: null })
+    assert.equal(await readFile(marker, 'utf8'), 'drained')
+  }
+})
+
+test('POSIX termination escalates when an owned process ignores SIGTERM', { skip: process.platform === 'win32' }, async (t) => {
+  const child = spawn(process.execPath, ['-e', `
+process.on('SIGTERM', () => {})
+setInterval(() => {}, 1000)
+console.log('ready')
+`], { stdio: ['ignore', 'pipe', 'inherit'] })
+  t.after(() => stopTree(child, { group: false }))
+  const exited = new Promise((done) => child.once('exit', (code, signal) => done({ code, signal })))
+  await new Promise((done) => child.stdout.once('data', done))
+  const started = Date.now()
+  await stopTree(child, { group: false })
+  assert.deepEqual(await exited, { code: null, signal: 'SIGKILL' })
+  assert.ok(Date.now() - started >= 5000, 'Escalation must allow the full grace period.')
 })

@@ -4,7 +4,7 @@ This is a dated record of past browser passes, not a standing checklist. The reu
 
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
-Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch:
+Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:
 
 - Seeded two temporary Personal Waypoints in isolated browser storage, used Show on map, closed My waypoints and clicked the actual persistent map marker. Details opened with the correct name, category, note and coordinates at both sizes.
 - Confirmed Directions was the only filled details action. Edit and Delete used quiet text buttons; Delete was danger-coloured. Coordinates rendered at 12px in secondary text. Neither viewport had horizontal overflow.
@@ -14,6 +14,17 @@ Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vi
 - Both viewport runs completed without page errors. The basemap and persistent markers rendered. This targeted check covers waypoint navigation and local storage; it does not verify live arrivals, device geolocation or backend Journey calculation.
 
 `CONTEXT.md` reviewed; no update needed.
+
+## My waypoints review verification — 2026-11-05
+
+PR #597, application head `ed0e804af8e266863fe8015860467d9ff01b582f`, local Vite development server, headless Chromium 131.0.6778.33 with Playwright. Each viewport used a fresh isolated browser context with three temporary waypoints in two categories; `innerWidth` and `innerHeight` confirmed the actual page sizes.
+
+- At both 390 × 844 and 1280 × 800, opened More → My waypoints → Waypoint list options. With focus on the trigger, Escape closed only the options menu, restored trigger focus, and kept My waypoints open. Repeated with keyboard Tab moving focus to Edit list before Escape; the same assertions passed.
+- The mobile sheet stayed at its `full` detent for both focus targets. The desktop panel retained its `partial` detent. These results replace the earlier incomplete mobile Escape verification recorded in the PR discussion.
+- At both sizes, selecting a place row kept the waypoint list open. Directions closed More and opened Plan with the selected waypoint as its destination.
+- Repeated Directions after opening My waypoints while Plan was already active. Focus returned to a control inside Plan: the Plan panel handle on mobile and Choose origin on desktop.
+- No page-level JavaScript errors occurred. The Express backend was not started; live arrivals and route calculation were outside this check. Physical-device gestures and the broader release checklist were not repeated.
+- CONTEXT.md reviewed; no update needed.
 
 ## Personal Waypoint conflict workflow — 2026-10-28
 

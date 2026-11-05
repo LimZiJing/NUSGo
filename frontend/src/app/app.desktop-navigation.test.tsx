@@ -806,6 +806,32 @@ describe('More surface', () => {
     }
   })
 
+  it.each(['desktop', 'mobile'])('moves focus into Plan when Directions closes More over an already-active Plan view on %s', async (viewport) => {
+    if (viewport === 'mobile') mockMobileViewport()
+    else mockDesktopViewport()
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
+
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
+    expect(document.activeElement?.closest('.plan-sheet')).toBeTruthy()
+    expect(document.activeElement?.matches('input, select, button')).toBe(true)
+  })
+
   it('uses Escape to cancel a keyboard reorder before More handles it', async () => {
     const user = userEvent.setup()
     const firstWaypoint = {

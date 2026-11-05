@@ -5,8 +5,11 @@ import { expect, it } from 'vitest'
 const repoRoot = resolve(import.meta.dirname, '../../..')
 const script = resolve(repoRoot, 'frontend/scripts/performance/summarize-sheet-evidence.mjs')
 
-it('rejects duplicate input report paths before reading reports', () => {
-  const result = spawnSync(process.execPath, [script, 'same-report.json', 'same-report.json'], {
+it.each([
+  ['same-report.json', 'same-report.json'],
+  ['report.json', './report.json'],
+])('rejects duplicate input report paths %s and %s before reading reports', (first, second) => {
+  const result = spawnSync(process.execPath, [script, first, second], {
     cwd: repoRoot,
     encoding: 'utf8',
   })

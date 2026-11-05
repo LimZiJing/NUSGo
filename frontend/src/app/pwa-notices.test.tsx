@@ -375,7 +375,7 @@ describe('PWA notices', () => {
     const { prompt } = dispatchInstallPrompt()
     expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
-    expect(screen.queryByRole('status', { name: 'NUSGo is installed on this device' })).toBeNull()
+    expect(screen.getByRole('status', { name: 'Installation status' }).textContent).toBe('')
     expect(prompt).not.toHaveBeenCalled()
     Object.defineProperty(navigator, 'standalone', { configurable: true, value: false })
   })

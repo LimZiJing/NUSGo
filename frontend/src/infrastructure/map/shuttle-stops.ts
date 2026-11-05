@@ -185,6 +185,7 @@ type ShuttleStopMarkerState = {
   selectedStopId: string | null
   pinVisible: boolean
   focusedStopIds: Set<string>
+  markerVisibility: WeakMap<Marker, boolean>
   handleZoom: () => void
 }
 
@@ -228,6 +229,7 @@ export function isBusStopDimmed(
 }
 
 function updateBusStopMarkerElement(
+  state: ShuttleStopMarkerState,
   marker: Marker,
   isSelected: boolean,
   isVisible: boolean,
@@ -239,6 +241,7 @@ function updateBusStopMarkerElement(
 ): void {
   const element = marker.getElement()
   const button = element as HTMLButtonElement
+  setBusStopMarkerVisibility(state, marker, isVisible)
   element.style.setProperty('--bus-stop-selected-color', selectedRouteColor ?? '')
   element.style.setProperty('--bus-stop-journey-color', getJourneyStopColor(journeyRoutes))
   element.classList.toggle('bus-stop-marker-selected', isSelected)
@@ -246,9 +249,7 @@ function updateBusStopMarkerElement(
   element.classList.toggle('bus-stop-marker-dimmed', isDimmed)
   element.classList.toggle('bus-stop-marker-nearby', isNearby)
   element.classList.toggle('bus-stop-marker-disabled', isDisabled)
-  element.classList.toggle('bus-stop-marker-hidden', !isVisible)
   marker.setOpacity(isDimmed ? BUS_STOP_INACTIVE_OPACITY : 1)
-  element.style.display = isVisible ? '' : 'none'
   element.style.pointerEvents = isDisabled ? 'none' : ''
   button.disabled = isDisabled
   button.tabIndex = isDisabled ? -1 : 0
@@ -266,7 +267,21 @@ function updateBusStopMarkerElement(
   }
 
   const popup = marker.getPopup()
-  if ((!isVisible || isDisabled) && popup?.isOpen()) popup.remove()
+  if (isDisabled && popup?.isOpen()) popup.remove()
+}
+
+function setBusStopMarkerVisibility(
+  state: ShuttleStopMarkerState,
+  marker: Marker,
+  isVisible: boolean,
+): void {
+  if (state.markerVisibility.get(marker) === isVisible) return
+  state.markerVisibility.set(marker, isVisible)
+  const element = marker.getElement()
+  element.classList.toggle('bus-stop-marker-hidden', !isVisible)
+  element.style.display = isVisible ? '' : 'none'
+  const popup = marker.getPopup()
+  if (!isVisible && popup?.isOpen()) popup.remove()
 }
 
 function getJourneyStopColor(routes: readonly JourneyStopRoute[] | null): string {
@@ -344,6 +359,7 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
       : isBusStopDimmed(routeSelected, isSelected, isFocused)
     const isDisabled = journeyActive && !isSelected && !isFocused
     updateBusStopMarkerElement(
+      state,
       marker,
       isSelected,
       isVisible,
@@ -358,6 +374,22 @@ function updateBusStopMarkerPresentation(state: ShuttleStopMarkerState): void {
   }
 
   updateBusStopLabelPresentation(state)
+}
+
+function updateBusStopMarkerVisibility(state: ShuttleStopMarkerState): void {
+  const zoom = state.map.getZoom()
+  const journeyActive = state.journeyStopRoutes !== null
+  const routeSelected = journeyActive || state.selectedStopIds !== null
+
+  for (const marker of state.markers) {
+    const stopId = marker.getElement().dataset.stopId ?? ''
+    const isContextSelected = state.pinVisible && state.selectedStopId === stopId
+    const isFocused = state.focusedStopIds.has(stopId) || isContextSelected
+    const isSelected = (state.journeyStopRoutes?.has(stopId) ?? state.selectedStopIds?.has(stopId) ?? false) ||
+      isContextSelected
+    const isVisible = journeyActive || isBusStopVisible(zoom, routeSelected && isSelected, isFocused)
+    setBusStopMarkerVisibility(state, marker, isVisible)
+  }
 }
 
 export function createShuttleStopMarkers(
@@ -384,7 +416,8 @@ export function createShuttleStopMarkers(
     selectedStopId: null,
     pinVisible: false,
     focusedStopIds: new Set<string>(),
-    handleZoom: () => updateBusStopMarkerPresentation(state),
+    markerVisibility: new WeakMap<Marker, boolean>(),
+    handleZoom: () => updateBusStopMarkerVisibility(state),
   }
   const ownsSource = !map.getSource(BUS_STOP_LABEL_SOURCE_ID)
   const ownsInactiveLayer = !map.getLayer(BUS_STOP_INACTIVE_LABEL_LAYER_ID)

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import type { Map as MapLibreMap, Popup } from 'maplibre-gl'
 import {
   BUS_STOP_INACTIVE_OPACITY,
@@ -190,6 +191,7 @@ describe('createPopupCoordinator', () => {
 })
 
 class FakeElement {
+  domWrites = 0
   children: FakeElement[] = []
   attributes = new Map<string, string>()
   listeners = new Map<string, Array<{ handler: (event: Event) => void; capture: boolean }>>()
@@ -197,6 +199,7 @@ class FakeElement {
   classes = new Set<string>()
   classList = {
     toggle: (name: string, force: boolean) => {
+      this.domWrites += 1
       if (force) this.classes.add(name)
       else this.classes.delete(name)
     },
@@ -205,7 +208,7 @@ class FakeElement {
     display: '',
     opacity: '',
     pointerEvents: '',
-    setProperty: vi.fn(),
+    setProperty: vi.fn(() => { this.domWrites += 1 }),
   }
   dataset: Record<string, string> = {}
   textContent = ''
@@ -213,11 +216,39 @@ class FakeElement {
   firstElementChild: FakeElement | null = null
   type = ''
   tagName: string
-  disabled = false
-  tabIndex = 0
+  private disabledValue = false
+  private tabIndexValue = 0
+
+  get disabled() {
+    return this.disabledValue
+  }
+
+  set disabled(value: boolean) {
+    this.domWrites += 1
+    this.disabledValue = value
+  }
+
+  get tabIndex() {
+    return this.tabIndexValue
+  }
+
+  set tabIndex(value: number) {
+    this.domWrites += 1
+    this.tabIndexValue = value
+  }
 
   constructor(tagName: string) {
     this.tagName = tagName.toUpperCase()
+    const styleValues = { display: '', opacity: '', pointerEvents: '' }
+    for (const property of Object.keys(styleValues) as Array<keyof typeof styleValues>) {
+      Object.defineProperty(this.style, property, {
+        get: () => styleValues[property],
+        set: (value: string) => {
+          this.domWrites += 1
+          styleValues[property] = value
+        },
+      })
+    }
   }
 
   set innerHTML(value: string) {
@@ -247,10 +278,12 @@ class FakeElement {
   }
 
   setAttribute(name: string, value: string) {
+    this.domWrites += 1
     this.attributes.set(name, value)
   }
 
   removeAttribute(name: string) {
+    this.domWrites += 1
     this.attributes.delete(name)
   }
 
@@ -291,6 +324,7 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
   it('exposes a safe action for assigning a bus stop as the destination', () => {
     const documentStub = {
       createElement: (tagName: string) => new FakeElement(tagName),
+      createElementNS: (_namespace: string, tagName: string) => new FakeElement(tagName),
     }
     vi.stubGlobal('document', documentStub)
     const onSetEndpoint = vi.fn()
@@ -351,6 +385,131 @@ describe('trip endpoint markers and shuttle-stop actions', () => {
 })
 
 describe('bus-stop presentation', () => {
+  it('measures marker and label work across a canonical zoom sequence', () => {
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+    })
+    const { stops: canonicalStops } = JSON.parse(readFileSync(
+      new URL('../../../public/data/shuttle-network.json', import.meta.url),
+      'utf8',
+    )) as { stops: TransitStop[] }
+    let zoom = BUS_STOP_MIN_ZOOM - 1
+    let handleZoom: (() => void) | undefined
+    const map = {
+      getSource: vi.fn(() => ({})),
+      getLayer: vi.fn(() => ({})),
+      hasImage: vi.fn(() => true),
+      setFilter: vi.fn(),
+      setLayerZoomRange: vi.fn(),
+      setPaintProperty: vi.fn(),
+      getZoom: vi.fn(() => zoom),
+      on: vi.fn((event: string, handler: () => void) => {
+        if (event === 'zoom') handleZoom = handler
+      }),
+      off: vi.fn(),
+    } as unknown as MapLibreMap
+    const adapter = createShuttleStopMarkers(map, canonicalStops)
+    const elements = adapter.markers.map((marker) => marker.getElement() as unknown as FakeElement)
+    for (const element of elements) element.domWrites = 0
+    vi.mocked(map.setFilter).mockClear()
+    vi.mocked(map.setLayerZoomRange).mockClear()
+    vi.mocked(map.setPaintProperty).mockClear()
+
+    for (const nextZoom of [13.25, 13.75, 13.99]) {
+      zoom = nextZoom
+      handleZoom?.()
+    }
+    const sameSideDomWrites = elements.reduce((total, element) => total + element.domWrites, 0)
+    const sameSideMapWrites = vi.mocked(map.setFilter).mock.calls.length +
+      vi.mocked(map.setLayerZoomRange).mock.calls.length +
+      vi.mocked(map.setPaintProperty).mock.calls.length
+
+    zoom = 14
+    handleZoom?.()
+    expect(elements.every((element) => element.style.display === '')).toBe(true)
+
+    zoom = 13.99
+    handleZoom?.()
+    expect(elements.every((element) => element.style.display === 'none')).toBe(true)
+    const crossingDomWrites = elements.reduce((total, element) => total + element.domWrites, 0) -
+      sameSideDomWrites
+    const crossingMapWrites = vi.mocked(map.setFilter).mock.calls.length +
+      vi.mocked(map.setLayerZoomRange).mock.calls.length +
+      vi.mocked(map.setPaintProperty).mock.calls.length - sameSideMapWrites
+
+    expect(elements).toHaveLength(canonicalStops.length)
+    expect(sameSideDomWrites).toBe(0)
+    expect(sameSideMapWrites).toBe(0)
+    expect(crossingDomWrites).toBe(4 * canonicalStops.length)
+    expect(crossingMapWrites).toBe(0)
+
+    vi.mocked(map.setFilter).mockClear()
+    vi.mocked(map.setLayerZoomRange).mockClear()
+    vi.mocked(map.setPaintProperty).mockClear()
+    adapter.setSelection(['OTH'], '#123456')
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('')
+    expect(map.setFilter).toHaveBeenCalledTimes(2)
+    expect(map.setLayerZoomRange).toHaveBeenCalledWith(
+      BUS_STOP_ACTIVE_LABEL_LAYER_ID,
+      0,
+      24,
+    )
+    expect(map.setPaintProperty).toHaveBeenCalledWith(
+      BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      'text-opacity',
+      BUS_STOP_INACTIVE_OPACITY,
+    )
+
+    vi.stubGlobal('document', {
+      createElement: (tagName: string) => new FakeElement(tagName),
+      documentElement: { dataset: { theme: 'dark' } },
+    })
+    adapter.refreshTheme()
+    expect(map.setPaintProperty).toHaveBeenCalledWith(
+      BUS_STOP_INACTIVE_LABEL_LAYER_ID,
+      'text-color',
+      '#e2e8f0',
+    )
+
+    for (const element of elements) element.domWrites = 0
+    zoom = 13.5
+    handleZoom?.()
+    expect(elements.reduce((total, element) => total + element.domWrites, 0)).toBe(0)
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('')
+
+    adapter.setSelection(null)
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('none')
+    expect(adapter.setStopsPin('OTH', true)).toBe(true)
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('')
+    for (const element of elements) element.domWrites = 0
+    zoom = 13.4
+    handleZoom?.()
+    expect(elements.reduce((total, element) => total + element.domWrites, 0)).toBe(0)
+    adapter.setStopsPin('OTH', false)
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('none')
+    expect(adapter.openStopPopup('OTH')).toBe(true)
+    for (const element of elements) element.domWrites = 0
+    zoom = 13.25
+    handleZoom?.()
+    expect(elements.reduce((total, element) => total + element.domWrites, 0)).toBe(0)
+    expect(elements.find((element) => element.dataset.stopId === 'OTH')?.style.display).toBe('')
+
+    adapter.setJourneyStops(new Map([['OTH', [{
+      routeId: 'A1',
+      routeName: 'A1',
+      color: '#123456',
+    }]]]))
+    expect(elements.every((element) => element.style.display === '')).toBe(true)
+    for (const element of elements) element.domWrites = 0
+    zoom = 13.75
+    handleZoom?.()
+    expect(elements.reduce((total, element) => total + element.domWrites, 0)).toBe(0)
+
+    adapter.dispose()
+    expect(map.off).toHaveBeenCalledWith('zoom', expect.any(Function))
+    vi.unstubAllGlobals()
+  })
+
   const stops: TransitStop[] = [
     {
       id: 'STOP-A',

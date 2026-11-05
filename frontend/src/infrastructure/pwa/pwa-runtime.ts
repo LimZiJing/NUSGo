@@ -13,6 +13,7 @@ let installBannerDismissed = false
 let installedThisVisit = false
 let installationAccepted = false
 let installedRelatedApp = false
+let installationCompletionCount = 0
 let installationStatusChecked = false
 let installationCheckPending = false
 let installationCheckGeneration = 0
@@ -111,6 +112,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null
     installedThisVisit = true
+    installationCompletionCount += 1
     installationStatusChecked = true
     installationCheckGeneration += 1
     installationCheckPending = false
@@ -144,6 +146,10 @@ export function getInstallBannerSnapshot(): boolean {
 
 export function getInstalledSnapshot(): boolean {
   return installedThisVisit || installedRelatedApp || isStandaloneApp()
+}
+
+export function getInstallationCompletionSnapshot(): number {
+  return installationCompletionCount
 }
 
 export function dismissInstallPrompt(): void {

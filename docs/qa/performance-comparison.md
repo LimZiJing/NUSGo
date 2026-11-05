@@ -109,9 +109,15 @@ Run from the repository root with the existing dependencies and an installed Chr
 
 The guard now also pins `pageGeneration`: the page preparer, fixture installer, browser probe, scenario runner and fingerprint helper, as defined in the [baseline procedure](performance-baseline.md). The collector checks it before generating pages or starting previews/browsers, and includes it in new reports. The summarizer requires the same pinned fingerprint. Historical reports above predate this provenance field and are rejected by the updated summarizer; no fingerprint has been retroactively assigned to their workloads. The pin identifies the current guarded harness, not a verified historical harness. Recollect a separately identified dataset with the guarded harness before using the updated summarizer; the published historical numbers remain unchanged.
 
+The test that compares the live page-generation inputs with the recorded pin is opt-in so ordinary frontend edits do not fail the default test suite. Before guarded collection, run it explicitly with `NUSGO_GUARDED_PERFORMANCE_COLLECTION=1`; the independent per-input drift and provenance tests remain in the default suite.
+
 ```powershell
 $env:PERF_BROWSER = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
 powershell -NoProfile -File 'frontend/scripts/performance/prepare-builds.ps1'
+
+$env:NUSGO_GUARDED_PERFORMANCE_COLLECTION = '1'
+npm --workspace @nusgo/frontend run test -- scripts/performance/page-inputs.test.mjs
+Remove-Item Env:NUSGO_GUARDED_PERFORMANCE_COLLECTION
 
 $env:PERF_OUTPUT = '.cache/performance-orchestration/real-performance/plan-cold-five.json'
 $env:PERF_SCENARIOS = 'plan-query-candidate-location'

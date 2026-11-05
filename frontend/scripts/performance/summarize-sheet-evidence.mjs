@@ -10,6 +10,7 @@ const defaultInputs = [
   'sheet-touch-validated-comparison.json',
 ]
 const inputs = process.argv.slice(2).length ? process.argv.slice(2) : defaultInputs
+if (new Set(inputs).size !== inputs.length) throw new Error('Input report paths must be unique')
 const expectedBase = 'f21964595968dde261973f7e2cb965ce0ba600b7'
 const expected = JSON.parse(await readFile(new URL('./recorded-comparison.json', import.meta.url), 'utf8'))
 const reports = []

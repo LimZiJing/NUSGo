@@ -7,7 +7,7 @@ import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
 
 const inputNames = ['frontend/index.html', 'browser-metrics.mjs', 'fixtures.mjs', 'page-inputs.mjs', 'prepare-page.mjs', 'scenarios.mjs']
 
-it('matches the page-generation fingerprint pinned for guarded collection', async () => {
+it.runIf(process.env.NUSGO_GUARDED_PERFORMANCE_COLLECTION === '1')('matches the page-generation fingerprint pinned for guarded collection', async () => {
   const expected = JSON.parse(await readFile(new URL('./recorded-comparison.json', import.meta.url), 'utf8'))
   const actual = await fingerprintPageInputs()
   expect(() => assertPageInputs(actual, expected.pageGeneration)).not.toThrow()

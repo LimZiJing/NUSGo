@@ -13,12 +13,11 @@ export function PersonalWaypointsHome({
   status,
   onAdd,
   onFocusWaypoint,
+  onDirectionsWaypoint,
+  onSearchFilterChange,
   editing,
-  onSelectWaypoint,
-  onEditWaypoint,
   onRemove,
   onMove,
-  onClearAll,
   onResetUnreadableData,
   onDiscardRejectedRecords,
   categoryOptions,
@@ -42,12 +41,11 @@ export function PersonalWaypointsHome({
   readonly status: string | null
   readonly onAdd: () => void
   readonly onFocusWaypoint: (waypoint: PersonalWaypoint) => void
+  readonly onDirectionsWaypoint?: (waypoint: PersonalWaypoint) => void
+  readonly onSearchFilterChange?: (active: boolean) => void
   readonly editing: boolean
-  readonly onSelectWaypoint: (waypointId: string, trigger: HTMLButtonElement) => void
-  readonly onEditWaypoint: (waypointId: string) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
-  readonly onClearAll: () => void
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
   readonly categoryOptions: readonly PersonalWaypointCategoryOption[]
@@ -135,19 +133,7 @@ export function PersonalWaypointsHome({
               ref={categoryBackButtonRef}
             />
           </div>
-          : categoryOptions.length > 0 && <PersonalWaypointCategoryVisibility
-          categories={categoryOptions}
-          hiddenCategories={hiddenCategories}
-          draftHiddenCategories={draftHiddenCategories}
-          pickerOpen={categoryPickerOpen}
-          onTogglePicker={onToggleCategoryPicker}
-          onSetCategoryVisible={onSetCategoryVisible}
-          onOpenCategory={onOpenCategory}
-          triggerRef={categoryPickerTriggerRef}
-          onClear={() => onClearCategoryVisibilityChanges(categoryOptions.map(({ category }) => category))}
-          onCancel={onCancelCategoryVisibilityChanges}
-          onDone={onDoneCategoryVisibilityChanges}
-        />}
+          : null}
         {!activeCategory && categoryVisibilityStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">
           {categoryVisibilityStatus}
         </p>}
@@ -156,12 +142,24 @@ export function PersonalWaypointsHome({
           category={activeCategory ?? undefined}
           canEdit={canManage}
           editing={editing}
+          categoryPicker={!activeCategory && categoryOptions.length > 0 ? <PersonalWaypointCategoryVisibility
+            categories={categoryOptions}
+            hiddenCategories={hiddenCategories}
+            draftHiddenCategories={draftHiddenCategories}
+            pickerOpen={categoryPickerOpen}
+            onTogglePicker={onToggleCategoryPicker}
+            onSetCategoryVisible={onSetCategoryVisible}
+            onOpenCategory={onOpenCategory}
+            triggerRef={categoryPickerTriggerRef}
+            onClear={() => onClearCategoryVisibilityChanges(categoryOptions.map(({ category }) => category))}
+            onCancel={onCancelCategoryVisibilityChanges}
+            onDone={onDoneCategoryVisibilityChanges}
+          /> : undefined}
           onFocusWaypoint={onFocusWaypoint}
-          onSelect={onSelectWaypoint}
-          onEdit={activeCategory || !canManage ? undefined : onEditWaypoint}
+          onDirections={onDirectionsWaypoint}
+          onSearchFilterChange={onSearchFilterChange}
           onRemove={onRemove}
           onMove={onMove}
-          onClearAll={onClearAll}
           onEditAnnouncement={setEditAnnouncement}
         />
       </>

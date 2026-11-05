@@ -4,16 +4,15 @@ import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/per
 import { useSortable } from '@dnd-kit/react/sortable'
 import { IconButton, Button } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { CloseIcon, GripVerticalIcon, LocateIcon, MapPinIcon } from '../../../../ui/icons'
+import { CloseIcon, GripVerticalIcon, MapPinIcon } from '../../../../ui/icons'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
   readonly editing: boolean
   readonly handleDisabled: boolean
   readonly onRemove: (waypointId: string) => void
-  readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
-  readonly onEdit?: (waypointId: string) => void
+  readonly onDirections?: (waypoint: PersonalWaypoint) => void
   readonly onHandleRef?: (waypointId: string, element: HTMLButtonElement | null) => void
   readonly rowRef?: Ref<HTMLLIElement>
   readonly handleRef?: (element: HTMLButtonElement | null) => void
@@ -29,9 +28,8 @@ export function PersonalWaypointListRow({
   editing,
   handleDisabled,
   onRemove,
-  onSelect,
   onFocusWaypoint,
-  onEdit,
+  onDirections,
   onHandleRef,
   rowRef,
   handleRef,
@@ -69,10 +67,8 @@ export function PersonalWaypointListRow({
       </>}
       title={waypoint.name}
       subtitle={waypoint.category}
-      onSelect={onSelect
-        ? (event) => onSelect(waypoint.id, event.currentTarget)
-        : undefined}
-      selectLabel={`Open ${label} details`}
+      onSelect={onFocusWaypoint ? () => onFocusWaypoint(waypoint) : undefined}
+      selectLabel={`Show ${label} on map`}
       trailing={editing ? (
         <div className="personal-waypoint-row-actions">
           <IconButton
@@ -82,20 +78,15 @@ export function PersonalWaypointListRow({
             onClick={() => onRemove(waypoint.id)}
           />
         </div>
-      ) : onFocusWaypoint || onEdit ? (
+      ) : onDirections ? (
         <div className="personal-waypoint-row-actions">
-          {onEdit && <Button
-            label="Edit"
-            ariaLabel={`Edit ${label}`}
+          <Button
+            className="personal-waypoint-directions"
+            label="Directions"
+            ariaLabel={`Directions to ${label}`}
             variant="ghost"
-            onClick={() => onEdit(waypoint.id)}
-          />}
-          {onFocusWaypoint && <IconButton
-            className="personal-waypoint-focus"
-            label={`Show ${label} on map`}
-            icon={<LocateIcon />}
-            onClick={() => onFocusWaypoint(waypoint)}
-          />}
+            onClick={() => onDirections(waypoint)}
+          />
         </div>
       ) : undefined}
     />

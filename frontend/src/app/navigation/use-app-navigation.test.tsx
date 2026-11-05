@@ -81,6 +81,23 @@ describe('useAppNavigation', () => {
     expect(options.dispatch).toHaveBeenCalledWith({ type: 'select-view', view: 'plan' })
   })
 
+  it('navigates to a Personal Waypoint and opens Plan with its endpoint', () => {
+    const options = createOptions(true, 'explore')
+    const { result } = renderHook(() => useAppNavigation(options))
+    const endpoint = {
+      kind: 'personal-waypoint' as const,
+      id: '00000000-0000-4000-8000-000000000001',
+      label: 'Quiet bench',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    }
+
+    act(() => result.current.navigateToEndpoint(endpoint))
+
+    expect(options.commands.navigateToEndpoint).toHaveBeenCalledWith(endpoint)
+    expect(options.pendingViewFocusRef.current).toBe('plan')
+    expect(options.dispatch).toHaveBeenCalledWith({ type: 'open-plan' })
+  })
+
   it('opens an Explore stop in Stops and returns to its prior control', () => {
     const options = createOptions(true, 'explore')
     options.state = navigationReducer(options.state, {

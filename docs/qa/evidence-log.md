@@ -8,17 +8,29 @@ Application revision `29d9a884`; local production rehearsal and a separate diagn
 
 The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
 
-## More installation row review verification — 2026-11-05
+## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
-PR [#596](https://github.com/LimZiJing/NUSGo/pull/596), after merging `origin/main`: Microsoft Edge 156.0.4314.58 headless, Playwright 1.64.1, built local-rehearsal frontend at `http://127.0.0.1:5596/`.
+Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:
 
-- Separate fresh browser contexts reported actual `innerWidth`/`innerHeight` of 390 × 844 (mobile/touch emulation) and 1280 × 800. The shared preview's freeform and device-preset resize both remained at 1280 × 800, so this pass used local Playwright.
-- At both sizes, More listed My waypoints, Settings, Release notes, then Download NUSGo. Download used the shared row style, measured 54px tall, fit within the viewport, and loaded `/icons/pwa-icon-192.png` with natural dimensions 192 × 192.
-- With no native prompt, pressing the row revealed browser instructions and set `aria-expanded` to true; pressing again hid the instructions and reset the attribute.
-- A simulated `beforeinstallprompt` invoked its prompt exactly once from the row. Accepting the prompt left the installation status silent. With More closed, a simulated `appinstalled` updated the same persistent status node to “NUSGo is installed on this device”; reopening More showed no Download row.
-- Both contexts reported zero uncaught page errors. Screenshots were inspected for the mobile instructions layout. API requests received a controlled 503 response; live provider behavior was outside this menu check.
-- These browser events verify application handling without installing on the host. A real OS install dialog, spoken screen-reader output, and physical-device browser behavior were not verified.
-- `CONTEXT.md` reviewed; no update needed.
+- Seeded two temporary Personal Waypoints in isolated browser storage, used Show on map, closed My waypoints and clicked the actual persistent map marker. Details opened with the correct name, category, note and coordinates at both sizes.
+- Confirmed Directions was the only filled details action. Edit and Delete used quiet text buttons; Delete was danger-coloured. Coordinates rendered at 12px in secondary text. Neither viewport had horizontal overflow.
+- Checked keyboard order from Directions through Edit waypoint and Delete waypoint. Pressing Enter on Directions closed details, selected Plan, set the correct destination and moved focus into Plan.
+- Reopened details from the same marker with Plan still active and repeated keyboard Directions. Focus returned into Plan again. A different waypoint marker then opened its own details. On mobile, Escape collapsed the Plan sheet to expose the markers while retaining Plan as the active tab.
+- Edited the second waypoint and saved its new name. Cancelling Delete preserved both saved records; confirming Delete removed only that waypoint and kept the first one.
+- Both viewport runs completed without page errors. The basemap and persistent markers rendered. This targeted check covers waypoint navigation and local storage; it does not verify live arrivals, device geolocation or backend Journey calculation.
+
+`CONTEXT.md` reviewed; no update needed.
+
+## My waypoints review verification — 2026-11-05
+
+PR #597, application head `ed0e804af8e266863fe8015860467d9ff01b582f`, local Vite development server, headless Chromium 131.0.6778.33 with Playwright. Each viewport used a fresh isolated browser context with three temporary waypoints in two categories; `innerWidth` and `innerHeight` confirmed the actual page sizes.
+
+- At both 390 × 844 and 1280 × 800, opened More → My waypoints → Waypoint list options. With focus on the trigger, Escape closed only the options menu, restored trigger focus, and kept My waypoints open. Repeated with keyboard Tab moving focus to Edit list before Escape; the same assertions passed.
+- The mobile sheet stayed at its `full` detent for both focus targets. The desktop panel retained its `partial` detent. These results replace the earlier incomplete mobile Escape verification recorded in the PR discussion.
+- At both sizes, selecting a place row kept the waypoint list open. Directions closed More and opened Plan with the selected waypoint as its destination.
+- Repeated Directions after opening My waypoints while Plan was already active. Focus returned to a control inside Plan: the Plan panel handle on mobile and Choose origin on desktop.
+- No page-level JavaScript errors occurred. The Express backend was not started; live arrivals and route calculation were outside this check. Physical-device gestures and the broader release checklist were not repeated.
+- CONTEXT.md reviewed; no update needed.
 
 ## Personal Waypoint conflict workflow — 2026-10-28
 

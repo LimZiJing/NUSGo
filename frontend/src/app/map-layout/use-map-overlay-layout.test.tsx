@@ -114,7 +114,7 @@ function Probe({
         )}
       </div>
       <div ref={setBounds(tripControlsRef, { top: 20, right: 390, bottom: 112, left: 0, width: 390, height: 92 } as DOMRect)} />
-      <div className="stops-sheet" ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
+      <div className={`stops-sheet ${sheetClassName ?? ''}`} ref={setBounds(stopsSheetRef, { top: 200, right: 390, bottom: 500, left: 0, width: 390, height: 300 } as DOMRect)} />
       <div data-testid="main-navigation" ref={setBounds(mainNavigationRef, { top: 780, right: 390, bottom: 844, left: 0, width: 390, height: 64 } as DOMRect)} />
       <div ref={setBounds(navigationColumnRef, { top: 0, right: 390, bottom: 844, left: 30, width: 360, height: 844 } as DOMRect)} />
       <output data-testid="navigation-width">{layout.navigationColumnWidth}</output>
@@ -447,7 +447,10 @@ describe('useMapOverlayLayout', () => {
     )
   })
 
-  it('cancels a queued inset publication when the Stops presentation ends', () => {
+  it('preserves a queued viewport update without restoring the finished Stops presentation', () => {
+    vi.stubGlobal('innerHeight', 844)
+    vi.stubGlobal('innerWidth', 390)
+    vi.stubGlobal('visualViewport', undefined)
     const frames = new Map<number, FrameRequestCallback>()
     const cancelledFrames: number[] = []
     let nextFrameId = 0
@@ -470,21 +473,25 @@ describe('useMapOverlayLayout', () => {
       activeView: 'stops',
       sheets: { ...navigation.sheets, stops: { ...navigation.sheets.stops, detent: 'partial' } },
     }
+    const setViewportInsets = vi.fn()
     const setPresentationBottomInset = vi.fn()
     const view = render(
       <Probe
         isMobileViewport
         navigationState={stops}
-        setViewportInsets={vi.fn()}
+        sheetClassName="mobile-sheet-popup"
+        setViewportInsets={setViewportInsets}
         setPresentationBottomInset={setPresentationBottomInset}
         observeStopsPresentation
         onMeasurementsApplied={vi.fn()}
       />,
     )
     const sheet = view.container.querySelector('.stops-sheet') as HTMLElement
+    expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 498 }))
 
     act(() => {
       sheet.dispatchEvent(new TransitionEvent('transitionrun', { bubbles: true, propertyName: 'transform' }))
+      vi.stubGlobal('innerHeight', 500)
       window.dispatchEvent(new Event('resize'))
     })
     const queuedInsetUpdate = [...frames.entries()].at(-1)
@@ -499,8 +506,11 @@ describe('useMapOverlayLayout', () => {
     expect(cancelledFrames).toContain(queuedInsetUpdate?.[0])
     expect(frames.has(queuedInsetUpdate?.[0] ?? -1)).toBe(false)
 
-    // A canceled animation frame cannot run after transitionend.
-    for (const callback of frames.values()) callback(16)
+    const pending = [...frames.values()]
+    frames.clear()
+    act(() => pending.forEach((callback) => callback(16)))
+    expect(setViewportInsets).toHaveBeenLastCalledWith(expect.objectContaining({ bottom: 326 }))
+    expect(screen.getByTestId('map-bottom-inset').textContent).toBe('326')
     expect(setPresentationBottomInset).toHaveBeenLastCalledWith(null)
   })
 })

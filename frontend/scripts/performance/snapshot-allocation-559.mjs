@@ -127,11 +127,14 @@ async function runSample(variant, profileAllocations) {
       },
     })
   }
-  const durationMs = performance.now() - start
+  const end = performance.now()
+  const durationMs = end - start
   const profile = profileAllocations ? (await session.post('HeapProfiler.stopSampling')).profile : null
   await new Promise((resolve) => setImmediate(resolve))
   gcEntries.push(...observer.takeRecords())
-  const gc = gcEntries.slice(gcBoundary)
+  const gc = gcEntries.slice(gcBoundary).filter((entry) => (
+    entry.startTime >= start && entry.startTime < end
+  ))
   return {
     durationMs: Number(durationMs.toFixed(3)),
     updatesPerSecond: Number((updateCount * 1000 / durationMs).toFixed(1)),

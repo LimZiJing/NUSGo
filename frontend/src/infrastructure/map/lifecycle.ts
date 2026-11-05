@@ -2,6 +2,7 @@ import {
   Map,
   NavigationControl,
   setWorkerUrl,
+  type StyleSpecification,
   type MapMouseEvent,
   type MapTouchEvent,
 } from 'maplibre-gl'
@@ -28,13 +29,20 @@ setWorkerUrl(maplibreWorkerUrl)
 const KENT_RIDGE_LOCATION: [number, number] = [103.7844, 1.2933]
 const DOUBLE_TAP_MS = 300
 const TAP_SLOP_PX = 20
+// Match MapLibre's default click tolerance so minor pointer jitter still counts as a tap.
+const MARKER_DRAG_SLOP_PX = 3
 const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
+
+const STYLE_LOAD_TIMEOUT_MS = 4000
+const ATTRIBUTION_DISPLAY_DURATION_MS = 5000
+const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
 class NusgoAttributionControl {
   private container: HTMLElement | null = null
+  private dismissTimeout: ReturnType<typeof setTimeout> | null = null
 
   onAdd(): HTMLElement {
     const container = document.createElement('div')
@@ -42,10 +50,17 @@ class NusgoAttributionControl {
     container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
       + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     this.container = container
+    this.dismissTimeout = setTimeout(() => {
+      this.container?.remove()
+      this.container = null
+      this.dismissTimeout = null
+    }, ATTRIBUTION_DISPLAY_DURATION_MS)
     return container
   }
 
   onRemove(): void {
+    if (this.dismissTimeout !== null) clearTimeout(this.dismissTimeout)
+    this.dismissTimeout = null
     this.container?.remove()
     this.container = null
   }
@@ -55,6 +70,7 @@ export interface MapLifecycle {
   readonly map: Map
   readonly ready: Promise<void>
   setViewportInsets(insets: MapViewportInsets): void
+  setPresentationBottomInset(bottom: number | null): void
   /** While on, zoom keeps the visible-area centre (where the crosshair sits) fixed. */
   setVisibleCenterZoom(enabled: boolean): void
   /** While on, map taps place the waypoint even when they land on existing map features. */
@@ -65,6 +81,7 @@ export interface MapLifecycle {
 export function waitForMapStyleLoaded(
   map: Map,
   signal: AbortSignal,
+  onBasemapUnavailable?: () => void,
 ): Promise<void> {
   if (signal.aborted) {
     return Promise.reject(new DOMException('The map style load was aborted', 'AbortError'))
@@ -73,7 +90,8 @@ export function waitForMapStyleLoaded(
 
   return new Promise((resolve, reject) => {
     const cleanup = () => {
-      map.off('load', handleLoad)
+      clearTimeout(fallbackTimer)
+      map.off('style.load', handleLoad)
       signal.removeEventListener('abort', handleAbort)
     }
     const handleLoad = () => {
@@ -85,16 +103,22 @@ export function waitForMapStyleLoaded(
       reject(new DOMException('The map style load was aborted', 'AbortError'))
     }
 
-    map.once('load', handleLoad)
+    // A missing remote style must not block local campus data indefinitely.
+    const fallbackTimer = setTimeout(() => {
+      onBasemapUnavailable?.()
+      map.setStyle(OFFLINE_STYLE)
+    }, STYLE_LOAD_TIMEOUT_MS)
+    map.once('style.load', handleLoad)
     signal.addEventListener('abort', handleAbort, { once: true })
   })
 }
 
 export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const controller = new AbortController()
+  const startsOffline = typeof navigator !== 'undefined' && !navigator.onLine
   const map = new Map({
     container: options.container,
-    style: MAP_STYLE,
+    style: startsOffline ? OFFLINE_STYLE : MAP_STYLE,
     center: KENT_RIDGE_LOCATION,
     zoom: 15,
     attributionControl: false,
@@ -103,16 +127,60 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const attributionControl = new NusgoAttributionControl()
   let disposed = false
   let viewportInsets: MapViewportInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+  let presentationBottomInset: number | null = null
   let visibleCenterZoom = false
   let applyingViewportInsets = false
   let waypointPlacementActive = false
+  let markerPointerGesture: { readonly pointerId: number; readonly x: number; readonly y: number; moved: boolean } | null = null
+  let suppressMarkerReleaseClick = false
 
   const handleMapError = (event: { error?: unknown }) => {
     if (!disposed) options.onMapError(event.error)
   }
 
+  const handlePlacementPointerDown = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const target = pointer.target
+    const startedOnMarker = typeof Element !== 'undefined' && target instanceof Element
+      && target.closest('.maplibregl-marker') !== null
+    markerPointerGesture = !disposed && waypointPlacementActive && startedOnMarker
+      ? { pointerId: pointer.pointerId, x: pointer.clientX, y: pointer.clientY, moved: false }
+      : null
+    suppressMarkerReleaseClick = false
+  }
+
+  const handlePlacementPointerMove = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId || gesture.moved) return
+    if (Math.hypot(pointer.clientX - gesture.x, pointer.clientY - gesture.y) >= MARKER_DRAG_SLOP_PX) {
+      gesture.moved = true
+    }
+  }
+
+  const handlePlacementPointerUp = (event: Event): void => {
+    const pointer = event as PointerEvent
+    const gesture = markerPointerGesture
+    if (!gesture || pointer.pointerId !== gesture.pointerId) return
+    suppressMarkerReleaseClick = gesture.moved
+    markerPointerGesture = null
+  }
+
+  const handlePlacementPointerCancel = (event: Event): void => {
+    const pointer = event as PointerEvent
+    if (!markerPointerGesture || pointer.pointerId !== markerPointerGesture.pointerId) return
+    markerPointerGesture = null
+    suppressMarkerReleaseClick = false
+  }
+
   const handlePlacementMapClick = (event: MouseEvent): void => {
     if (disposed || !waypointPlacementActive) return
+    if (suppressMarkerReleaseClick) {
+      suppressMarkerReleaseClick = false
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      return
+    }
     const target = event.target
     if (typeof Element !== 'undefined' && target instanceof Element && target.closest(
       '.maplibregl-popup, .maplibregl-control, .maplibregl-ctrl, .location-control',
@@ -125,6 +193,10 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     event.stopImmediatePropagation()
   }
 
+  options.container.addEventListener?.('pointerdown', handlePlacementPointerDown, true)
+  options.container.addEventListener?.('pointermove', handlePlacementPointerMove, true)
+  options.container.addEventListener?.('pointerup', handlePlacementPointerUp, true)
+  options.container.addEventListener?.('pointercancel', handlePlacementPointerCancel, true)
   options.container.addEventListener?.('click', handlePlacementMapClick, true)
 
   const getVisibleCenter = (
@@ -139,10 +211,20 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const reportMapCenter = (): void => {
     if (disposed || applyingViewportInsets || !options.onMapCenterChange) return
     const { clientWidth, clientHeight } = map.getContainer()
+    const insets = visibleCenterZoom ? getEffectiveInsets() : viewportInsets
     const center = clientWidth > 0 && clientHeight > 0
-      ? map.unproject(getVisibleCenter(viewportInsets, clientWidth, clientHeight))
+      ? map.unproject(getVisibleCenter(insets, clientWidth, clientHeight))
       : map.getCenter()
     options.onMapCenterChange([center.lng, center.lat])
+  }
+
+  const handleMoveStart = (): void => {
+    if (!disposed) options.onMapMovingChange?.(true)
+  }
+  const handleMoveEnd = (): void => {
+    if (disposed) return
+    reportMapCenter()
+    options.onMapMovingChange?.(false)
   }
 
   // Active padding aligns MapLibre's centre with the crosshair. Identical padding
@@ -151,6 +233,36 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   const isPaddingApplied = (padding: MapViewportInsets): boolean =>
     padding.top === appliedPadding.top && padding.right === appliedPadding.right &&
     padding.bottom === appliedPadding.bottom && padding.left === appliedPadding.left
+
+  const getEffectiveInsets = (): MapViewportInsets => {
+    const { clientWidth, clientHeight } = map.getContainer()
+    const insets = presentationBottomInset === null
+      ? viewportInsets
+      : { ...viewportInsets, bottom: presentationBottomInset }
+    const maxHorizontal = Math.max(0, clientWidth - 1)
+    const maxVertical = Math.max(0, clientHeight - 1)
+    const left = Math.min(insets.left, maxHorizontal)
+    const top = Math.min(insets.top, maxVertical)
+    return {
+      top,
+      right: Math.max(0, Math.min(insets.right, maxHorizontal - left)),
+      bottom: Math.max(0, Math.min(insets.bottom, maxVertical - top)),
+      left,
+    }
+  }
+
+  const applyEffectiveInsets = (): void => {
+    if (!visibleCenterZoom) return
+    const insets = getEffectiveInsets()
+    if (isPaddingApplied(insets)) return
+    applyingViewportInsets = true
+    try {
+      appliedPadding = { ...insets }
+      map.setPadding(insets)
+    } finally {
+      applyingViewportInsets = false
+    }
+  }
 
   const setPaddingKeepingView = (padding: MapViewportInsets): void => {
     if (isPaddingApplied(padding)) return
@@ -255,37 +367,35 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
   map.addControl(attributionControl, 'bottom-right')
   map.on('error', handleMapError)
   map.on('click', handleMapClick)
+  map.on('movestart', handleMoveStart)
+  map.on('moveend', handleMoveEnd)
   if (options.onMapCenterChange) {
-    map.on('moveend', reportMapCenter)
     map.on('resize', reportMapCenter)
     reportMapCenter()
   }
 
-  const ready = waitForMapStyleLoaded(map, controller.signal)
+  if (startsOffline) options.onBasemapUnavailable?.()
+  const ready = waitForMapStyleLoaded(map, controller.signal, options.onBasemapUnavailable)
 
   return {
     map,
     ready,
     setViewportInsets(insets) {
       if (disposed) return
-      viewportInsets = insets
-      if (visibleCenterZoom) {
-        applyingViewportInsets = true
-        try {
-          if (!isPaddingApplied(insets)) {
-            appliedPadding = { ...insets }
-            map.setPadding(insets)
-          }
-        } finally {
-          applyingViewportInsets = false
-        }
-      }
-      reportMapCenter()
+      viewportInsets = { ...insets }
+      applyEffectiveInsets()
+      if (presentationBottomInset === null) reportMapCenter()
+    },
+    setPresentationBottomInset(bottom) {
+      if (disposed) return
+      presentationBottomInset = bottom === null ? null : Math.max(0, bottom)
+      applyEffectiveInsets()
+      if (presentationBottomInset === null) reportMapCenter()
     },
     setVisibleCenterZoom(enabled) {
       if (disposed || enabled === visibleCenterZoom) return
       visibleCenterZoom = enabled
-      setPaddingKeepingView(enabled ? viewportInsets : { top: 0, right: 0, bottom: 0, left: 0 })
+      setPaddingKeepingView(enabled ? getEffectiveInsets() : { top: 0, right: 0, bottom: 0, left: 0 })
       // `around: 'center'` follows the padded centre; plain enable() restores pointer-anchored zoom.
       // enable() ignores new options while already enabled, so the handlers are reset first.
       const zoomOptions = enabled ? { around: 'center' as const } : undefined
@@ -306,17 +416,26 @@ export function createMapLifecycle(options: MapSessionOptions): MapLifecycle {
     setWaypointPlacementActive(active) {
       if (disposed) return
       waypointPlacementActive = active
+      if (!active) {
+        markerPointerGesture = null
+        suppressMarkerReleaseClick = false
+      }
     },
     dispose() {
       if (disposed) return
       disposed = true
+      options.container.removeEventListener?.('pointerdown', handlePlacementPointerDown, true)
+      options.container.removeEventListener?.('pointermove', handlePlacementPointerMove, true)
+      options.container.removeEventListener?.('pointerup', handlePlacementPointerUp, true)
+      options.container.removeEventListener?.('pointercancel', handlePlacementPointerCancel, true)
       options.container.removeEventListener?.('click', handlePlacementMapClick, true)
       controller.abort()
       map.off('error', handleMapError)
       map.off('click', handleMapClick)
+      map.off('movestart', handleMoveStart)
+      map.off('moveend', handleMoveEnd)
       removeDoubleZoomHandlers()
       if (options.onMapCenterChange) {
-        map.off('moveend', reportMapCenter)
         map.off('resize', reportMapCenter)
       }
       map.removeControl(navigationControl)

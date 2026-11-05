@@ -4,9 +4,12 @@ import type {
   TripEndpoint,
   TripLocationSearchResult,
 } from '../trip/types'
+import type { PersonalWaypoint } from '../waypoints/personal/personal-waypoint'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
+import { createPersonalWaypointTripEndpoint } from '../trip/personal-waypoint-endpoints'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../venue/building-index'
 
 const MAX_RESULTS = 8
@@ -33,17 +36,39 @@ function getStops(source: TransitStopSource): readonly TransitStop[] {
   return source === null ? [] : 'stops' in source ? source.stops : source
 }
 
+function getPersonalWaypointSearchResult(waypoint: PersonalWaypoint): TripLocationSearchResult | null {
+  const endpoint = createPersonalWaypointTripEndpoint(waypoint)
+  if (!endpoint) return null
+  return {
+    endpoint,
+    label: waypoint.name,
+    detail: waypoint.category,
+  }
+}
+
+export function getPersonalWaypointSearchResults(
+  waypoints: readonly PersonalWaypoint[],
+): TripLocationSearchResult[] {
+  return waypoints
+    .map((waypoint) => getPersonalWaypointSearchResult(waypoint))
+    .filter((result): result is TripLocationSearchResult => result !== null)
+    .sort((first, second) => compareText(normalize(first.label), normalize(second.label)))
+    .slice(0, MAX_RESULTS)
+}
+
 function getStop(source: TransitStopSource, id: string): TransitStop | undefined {
   return source === null ? undefined : 'stopById' in source ? source.stopById.get(id) : source.find((stop) => stop.id === id)
 }
 
 export function getTripEndpointLabel(
-  endpoint: TripEndpoint,
+  endpoint: TripEndpoint | JourneyEndpoint,
   venues: VenueLocationMap,
   stops: TransitStopSource,
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): string {
   if (endpoint.kind === 'current-location') return 'Current location'
+  if (endpoint.kind === 'waypoint-coordinate') return 'Personal waypoint'
+  if (endpoint.kind === 'personal-waypoint') return endpoint.label
   if (endpoint.kind === 'building') {
     const entry = buildings.byId.get(endpoint.id)
     if (entry) return entry.name
@@ -64,6 +89,7 @@ export function searchTripLocations(
   limit = MAX_RESULTS,
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
   kinds?: readonly TripEndpoint['kind'][],
+  personalWaypoints: readonly PersonalWaypoint[] = [],
 ): TripLocationSearchResult[] {
   const normalizedQuery = normalize(query)
   if (!normalizedQuery) return []
@@ -107,6 +133,16 @@ export function searchTripLocations(
       },
       fields: [building.name, ...building.aliases, ...building.blocks.flatMap((block) => [`Block ${block}`, `${building.name} Block ${block}`])],
       kindOrder: STOP_AND_BUILDING_ORDER,
+    })
+  }
+
+  for (const waypoint of personalWaypoints) {
+    const result = getPersonalWaypointSearchResult(waypoint)
+    if (!result) continue
+    candidates.push({
+      result,
+      fields: [waypoint.name, waypoint.category],
+      kindOrder: ROOM_ORDER,
     })
   }
 

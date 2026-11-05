@@ -244,6 +244,45 @@ describe('map lifecycle visible-centre zoom', () => {
     lifecycle.dispose()
   })
 
+  it('uses measured presentation padding during sheet motion and publishes only the settled centre', () => {
+    const onMapCenterChange = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+      onMapCenterChange,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    map.setPadding.mockImplementation(() => map.emit('moveend', undefined))
+    const target = { top: 0, right: 0, bottom: 500, left: 0 }
+
+    lifecycle.setViewportInsets(target)
+    lifecycle.setVisibleCenterZoom(true)
+    onMapCenterChange.mockClear()
+    lifecycle.setPresentationBottomInset(320)
+    lifecycle.setPresentationBottomInset(410)
+    lifecycle.setViewportInsets(target)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ ...target, bottom: 410 })
+    expect(onMapCenterChange).not.toHaveBeenCalled()
+
+    lifecycle.setPresentationBottomInset(null)
+
+    expect(map.setPadding).toHaveBeenLastCalledWith(target)
+    expect(onMapCenterChange).toHaveBeenCalledOnce()
+    expect(onMapCenterChange).toHaveBeenLastCalledWith([195, 172])
+    lifecycle.dispose()
+  })
+
+  it('clamps full-sheet padding to a valid map viewport', () => {
+    const { lifecycle, map } = createLifecycle()
+    lifecycle.setVisibleCenterZoom(true)
+    lifecycle.setViewportInsets({ top: 20, right: 500, bottom: 900, left: 500 })
+
+    expect(map.setPadding).toHaveBeenLastCalledWith({ top: 20, right: 0, bottom: 823, left: 389 })
+    lifecycle.dispose()
+  })
+
   describe('double-click and double-tap zoom', () => {
     const touch = (x: number, y: number) => ({ clientX: x, clientY: y })
     const tap = (map: FakeMap, x = 100, y = 200) => {
@@ -332,19 +371,37 @@ describe('map lifecycle visible-centre zoom', () => {
 })
 
 describe('map lifecycle style readiness', () => {
-  it('keeps map attribution visible without the compact disclosure control', () => {
-    const lifecycle = createMapLifecycle({
-      container: {} as HTMLElement,
-      onMapError: vi.fn(),
-      onEmptyMapClick: vi.fn(),
+  it('shows map attribution at startup and dismisses it after five seconds', () => {
+    vi.useFakeTimers()
+    const remove = vi.fn()
+    vi.stubGlobal('document', {
+      createElement: vi.fn(() => ({ className: '', innerHTML: '', remove })),
     })
-    const map = fakeMapState.maps.at(-1) as FakeMap
+    let lifecycle: ReturnType<typeof createMapLifecycle> | null = null
 
-    expect(map.options).toEqual(expect.objectContaining({
-      attributionControl: false,
-    }))
+    try {
+      lifecycle = createMapLifecycle({
+        container: {} as HTMLElement,
+        onMapError: vi.fn(),
+        onEmptyMapClick: vi.fn(),
+      })
+      const map = fakeMapState.maps.at(-1) as FakeMap
+      const attributionControl = map.addedControls[1] as {
+        onAdd(): { readonly innerHTML: string }
+      }
+      const container = attributionControl.onAdd()
 
-    lifecycle.dispose()
+      expect(map.options).toEqual(expect.objectContaining({ attributionControl: false }))
+      expect(container.innerHTML).toContain('OpenStreetMap')
+      vi.advanceTimersByTime(4999)
+      expect(remove).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1)
+      expect(remove).toHaveBeenCalledOnce()
+    } finally {
+      lifecycle?.dispose()
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
   })
 
   it('reports the centre of the visible map after movement, inset, and size changes', () => {
@@ -409,7 +466,7 @@ describe('map lifecycle style readiness', () => {
     controller.abort()
 
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
-    expect(map.off).toHaveBeenCalledWith('load', loadHandler)
+    expect(map.off).toHaveBeenCalledWith('style.load', loadHandler)
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
   })
 
@@ -431,7 +488,7 @@ describe('map lifecycle style readiness', () => {
     loadHandler?.()
 
     await expect(pending).resolves.toBeUndefined()
-    expect(map.off).toHaveBeenCalledWith('load', loadHandler)
+    expect(map.off).toHaveBeenCalledWith('style.load', loadHandler)
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function))
   })
 
@@ -494,6 +551,56 @@ describe('map lifecycle style readiness', () => {
 })
 
 describe('map lifecycle waypoint placement', () => {
+  it('does not treat a marker drag release as a placement tap', () => {
+    vi.stubGlobal('Element', FakeElement)
+    const listeners = new Map<string, (event: Event) => void>()
+    const container = {
+      addEventListener: vi.fn((type: string, handler: (event: Event) => void) => {
+        listeners.set(type, handler)
+      }),
+      removeEventListener: vi.fn((type: string) => {
+        listeners.delete(type)
+      }),
+      getBoundingClientRect: vi.fn(() => ({ left: 10, top: 20 })),
+    } as unknown as HTMLElement
+    const onEmptyMapClick = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container,
+      onMapError: vi.fn(),
+      onEmptyMapClick,
+    })
+    lifecycle.setWaypointPlacementActive(true)
+    const marker = new FakeElement('.maplibregl-marker')
+    const pointerEvent = (pointerId: number, target: FakeElement, x: number, y: number) => ({
+      pointerId,
+      target,
+      clientX: x,
+      clientY: y,
+    } as unknown as PointerEvent)
+    const clickEvent = (target: FakeElement) => ({
+      target,
+      clientX: 30,
+      clientY: 60,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent)
+    const firePointer = (name: string, event: PointerEvent): void => listeners.get(name)?.(event)
+
+    firePointer('pointerdown', pointerEvent(1, marker, 30, 60))
+    firePointer('pointermove', pointerEvent(1, marker, 42, 60))
+    firePointer('pointerup', pointerEvent(1, marker, 42, 60))
+    listeners.get('click')?.(clickEvent(marker))
+    expect(onEmptyMapClick).not.toHaveBeenCalled()
+
+    firePointer('pointerdown', pointerEvent(2, marker, 30, 60))
+    firePointer('pointerup', pointerEvent(2, marker, 30, 60))
+    listeners.get('click')?.(clickEvent(marker))
+    expect(onEmptyMapClick).toHaveBeenCalledOnce()
+
+    lifecycle.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('uses taps over markers and route lines while leaving map controls available', () => {
     vi.stubGlobal('Element', FakeElement)
     const listeners = new Map<string, (event: MouseEvent) => void>()
@@ -546,6 +653,50 @@ describe('map lifecycle waypoint placement', () => {
 
     lifecycle.dispose()
     expect(listeners.has('click')).toBe(false)
+    expect(listeners.has('pointerdown')).toBe(false)
+    expect(listeners.has('pointermove')).toBe(false)
+    expect(listeners.has('pointerup')).toBe(false)
+    expect(listeners.has('pointercancel')).toBe(false)
     vi.unstubAllGlobals()
+  })
+})
+
+
+describe('offline map startup', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('starts with a local style in airplane mode and reports the missing basemap', async () => {
+    vi.stubGlobal('navigator', { onLine: false })
+    const onBasemapUnavailable = vi.fn()
+    const lifecycle = createMapLifecycle({
+      container: {} as HTMLElement, onMapError: vi.fn(), onEmptyMapClick: vi.fn(), onBasemapUnavailable,
+    })
+    const map = fakeMapState.maps.at(-1) as FakeMap
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    expect(map.options.style).toMatchObject({ version: 8, sources: {}, layers: [] })
+    await lifecycle.ready
+    lifecycle.dispose()
+  })
+
+  it('falls back to a local style when the remote style never arrives', async () => {
+    vi.useFakeTimers()
+    let loaded: (() => void) | undefined
+    const map = {
+      isStyleLoaded: () => false,
+      once: vi.fn((_event: string, handler: () => void) => { loaded = handler }),
+      off: vi.fn(),
+      setStyle: vi.fn(() => loaded?.()),
+    }
+    const onBasemapUnavailable = vi.fn()
+    const pending = waitForMapStyleLoaded(map as never, new AbortController().signal, onBasemapUnavailable)
+    expect(onBasemapUnavailable).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(4000)
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    expect(map.setStyle).toHaveBeenCalledWith({ version: 8, sources: {}, layers: [] })
+    await pending
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

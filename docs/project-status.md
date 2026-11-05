@@ -15,18 +15,19 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | --- | --- | --- |
 | Explore | Search 729 venues and 249 buildings, open venue details, browse the 8 shuttle routes | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
-| Plan | Walking and bus journeys with up to three bus options and one walking option | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
+| Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
-| More and Settings | My waypoints and Settings entry points; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes) |
-| Personal Waypoints | Create a private waypoint by placing a map pin and saving a named record in this browser profile | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
+| More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
+| Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
-| Map | OpenFreeMap Liberty basemap, neutral stop markers, route lines | [Data and map](data-and-map.md#basemap-and-markers) |
-| Express API | Journey planning, NUS and LTA arrivals, service windows, one shuttle snapshot poller | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
+| Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
+| PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
+| Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
 | Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
 
 Also in place:
 - A local Express container rehearsal (`backend/Dockerfile`, `docker-compose.rehearsal.yml`) with live NUS and LTA arrivals, checked locally on 22/10/2026. Results are in [local services](local-services.md#local-rehearsal-evidence--22-october-2026).
-- Personal waypoint model, versioned local store, create flow and a searchable, category-filtered saved list with reorder and removal controls are in place. Map markers, waypoint details and Journey endpoints remain follow-up work. See [data and map](data-and-map.md#code-layout).
+- Personal waypoint model, versioned local store, compact category picker, category-scoped searchable lists, persistent map markers with custom color and icon, staged category visibility, direct All places details and editing, category details, reorder and removal flows are in place. Recovery for unreadable and rejected data and concurrent-edit handling are also covered. Plan accepts Personal Waypoints and sends only the selected coordinate after `Get route`. See [UI behaviour](ui/behaviour.md#personal-waypoints) and [data and map](data-and-map.md#code-layout).
 - A dev-only simulated clock for planning. See [Pathfinding](pathfinding.md#development-clock).
 - A dev-only component gallery at `/?gallery`. See [Interface controls](ui/controls.md).
 - Automated checks for resource validation, immutable indexes, loader failures and the transit manifest. The browser checklist is in [the manual smoke checklist](qa/manual-smoke-check.md), with past results in the [evidence log](qa/evidence-log.md).
@@ -40,6 +41,7 @@ Also in place:
 - **One Express instance only.** The shuttle snapshot and rate limiters live in process memory.
 - **Location** depends on browser permission and device accuracy. It doesn't replan journeys or continue after the app closes.
 - **Browser evidence** is partial. Targeted checks exist at 1280 × 720. The exact release and mobile viewports and failure injection still need manual verification.
+- **Website release history** starts empty until the first successful production promotion bundles reviewed notes. After each promotion, a trusted follow-up workflow records the exact deployment time and immutable commit tag. Backend deployment intervals still need to be reviewed and summarized by the release operator. See [release notes](release-notes.md).
 - **Transit data** only behaves correctly while the checked-in network, geometry and verification manifest stay in sync. CI checks this.
 
 ## What's next

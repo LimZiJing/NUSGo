@@ -4,6 +4,8 @@ import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
+import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
+import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 
 type MappedVenue = VenueLocation & {
   readonly location: { readonly x: number; readonly y: number }
@@ -27,10 +29,16 @@ export function canonicalizeTripEndpoint(
   venues: VenueLocationMap | null,
   transitIndex: TransitIndex | null,
   buildings: BuildingIndex | null = null,
+  personalWaypoints: ReadonlyMap<string, PersonalWaypoint> | null = null,
 ): TripEndpoint | null {
   if (!isRecord(endpoint)) return null
   if (endpoint.kind === 'current-location') {
     return createCurrentLocationTripEndpoint(endpoint.coordinate)
+  }
+  if (endpoint.kind === 'personal-waypoint') {
+    if (typeof endpoint.id !== 'string') return null
+    const waypoint = personalWaypoints?.get(endpoint.id)
+    return waypoint ? createPersonalWaypointTripEndpoint(waypoint) : null
   }
   if (typeof endpoint.id !== 'string' || endpoint.id.trim().length === 0) return null
   if (endpoint.kind === 'venue' && hasMappedLocation(venues?.[endpoint.id])) {

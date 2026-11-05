@@ -13,7 +13,9 @@ export interface ShuttleRouteArrivalData {
   readonly nextArrivalSeconds: number
   readonly upcomingArrivalSeconds: readonly number[]
   readonly headwaySeconds: ShuttleHeadwaySeconds | null
-  /** Load level of the next bus. Absent when no load data was joined. */
+  /** Best-effort Load levels aligned by index with upcomingArrivalSeconds. */
+  readonly upcomingLoads?: readonly ShuttleLoadLevel[]
+  /** Load level of the next bus, kept for older clients. */
   readonly load?: ShuttleLoadLevel
 }
 
@@ -29,6 +31,7 @@ export interface ShuttleArrivalSnapshot extends DataFreshness {
 }
 
 export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000
+export const SHUTTLE_VEHICLE_REFRESH_INTERVAL_MS = 30_000
 export const SHUTTLE_ARRIVAL_FRESHNESS_MS = 30_000
 export const SHUTTLE_ARRIVAL_MAX_AGE_MS = 120_000
 

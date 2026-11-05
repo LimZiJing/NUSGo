@@ -6,11 +6,13 @@ const adapters = vi.hoisted(() => ({
   loadVenues: vi.fn(),
   createLocationTracker: vi.fn(),
   createShuttleArrivalClient: vi.fn(),
+  createShuttleVehicleClient: vi.fn(),
   createPublicBusArrivalClient: vi.fn(),
   createShuttleServiceHoursClient: vi.fn(),
   createJourneyPlanningClient: vi.fn(),
   locationTracker: {},
   shuttleArrivalClient: {},
+  shuttleVehicleClient: {},
   publicBusArrivalClient: {},
   shuttleServiceHoursClient: {},
   pathfinder: vi.fn(),
@@ -25,6 +27,9 @@ vi.mock('../../infrastructure/location/browser', () => ({
 }))
 vi.mock('../../infrastructure/shuttle-arrivals/client', () => ({
   createShuttleArrivalClient: adapters.createShuttleArrivalClient,
+}))
+vi.mock('../../infrastructure/shuttle-vehicles/client', () => ({
+  createShuttleVehicleClient: adapters.createShuttleVehicleClient,
 }))
 vi.mock('../../infrastructure/lta-datamall/client', () => ({
   createPublicBusArrivalClient: adapters.createPublicBusArrivalClient,
@@ -41,6 +46,7 @@ describe('createAppServices', () => {
     vi.clearAllMocks()
     adapters.createLocationTracker.mockReturnValue(adapters.locationTracker)
     adapters.createShuttleArrivalClient.mockReturnValue(adapters.shuttleArrivalClient)
+    adapters.createShuttleVehicleClient.mockReturnValue(adapters.shuttleVehicleClient)
     adapters.createPublicBusArrivalClient.mockReturnValue(adapters.publicBusArrivalClient)
     adapters.createShuttleServiceHoursClient.mockReturnValue(adapters.shuttleServiceHoursClient)
     adapters.createJourneyPlanningClient.mockReturnValue(adapters.pathfinder)
@@ -52,6 +58,7 @@ describe('createAppServices', () => {
     const services = createAppServices({ journeyTestClock, isDevelopment: true })
 
     expect(services.shuttleArrivalClient).toBe(adapters.shuttleArrivalClient)
+    expect(services.shuttleVehicleClient).toBe(adapters.shuttleVehicleClient)
     expect(services.shuttleServiceHoursClient).toBe(adapters.shuttleServiceHoursClient)
     expect(adapters.createJourneyPlanningClient).toHaveBeenCalledOnce()
     const options = adapters.createJourneyPlanningClient.mock.calls[0][0]

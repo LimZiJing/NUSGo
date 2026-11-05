@@ -1,11 +1,22 @@
 import type { ReactNode, Ref } from 'react'
 import { ArrowLeftIcon, CloseIcon } from './icons'
 
-export type MorePanelPage = 'closed' | 'menu' | 'waypoints' | 'placing' | 'creating' | 'settings'
+export type MorePanelPage =
+  | 'closed'
+  | 'menu'
+  | 'waypoints'
+  | 'waypoint-details'
+  | 'placing'
+  | 'creating'
+  | 'editing-waypoint'
+  | 'settings'
+  | 'release-notes'
 
 interface MorePanelSurfaceProps {
   readonly page: MorePanelPage
   readonly title: string
+  readonly statusMessage: string | null
+  readonly statusRevision: number
   readonly headerAction?: ReactNode
   readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
@@ -15,6 +26,8 @@ interface MorePanelSurfaceProps {
 export function MorePanelSurface({
   page,
   title,
+  statusMessage,
+  statusRevision,
   headerAction,
   initialFocusRef,
   onClose,
@@ -24,6 +37,12 @@ export function MorePanelSurface({
 
   return (
     <div className={`more-panel-body${isMenu ? ' more-panel-body-menu' : ''}`}>
+      {statusMessage && <p
+        key={statusRevision}
+        className="more-panel-status"
+        role="status"
+        aria-live="polite"
+      >{statusMessage}</p>}
       <header className="more-panel-header">
         {isMenu ? <h2 id="more-panel-heading">{title}</h2> : (
           <>

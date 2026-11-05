@@ -197,6 +197,11 @@
     opacity: 1;
   }
 
+  [data-mobile-sheet][data-content-motion-suppressed] .stop-card-timings,
+  [data-mobile-sheet][data-content-motion-suppressed] .stop-card-chevron {
+    transition: none;
+  }
+
   .stop-card-timings-inner {
     min-height: 0;
     overflow: hidden;
@@ -361,7 +366,7 @@
   .stop-departure-times {
     display: grid;
     grid-column: 3;
-    grid-template-columns: repeat(3, 38px);
+    grid-template-columns: 52px repeat(2, 38px);
     gap: var(--space-1);
   }
 
@@ -490,6 +495,9 @@
   }
 
   .stop-departure-time {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
     color: var(--text-strong);
     font: 600 var(--font-size-sm)/1 var(--sans);
     text-align: right;
@@ -506,6 +514,22 @@
   }
 
   .stop-departure-time[data-timing-state='Left'] {
+    color: var(--text-muted);
+  }
+
+  .stop-departure-time[data-load-level='low'] {
+    color: var(--load-level-low);
+  }
+
+  .stop-departure-time[data-load-level='medium'] {
+    color: var(--load-level-medium);
+  }
+
+  .stop-departure-time[data-load-level='high'] {
+    color: var(--load-level-high);
+  }
+
+  .stop-departure-time[data-load-level='unknown'] {
     color: var(--text-muted);
   }
 

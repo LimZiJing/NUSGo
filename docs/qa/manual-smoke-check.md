@@ -24,11 +24,11 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Repeat the Plan layout check in both light and dark themes.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
-- [ ] Native MapLibre controls and attribution remain visible and usable.
+- [ ] Native MapLibre navigation controls remain usable on desktop.
 
 ## Mobile — 390 × 844
 
-- [ ] Stops opens at the partial detent with a sheet occupying 50% of the visual viewport above the bottom navigation. Explore and Plan also start partial; desktop presentation is unchanged above 768px.
+- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation is unchanged above 768px.
 - [ ] Explore, Stops, and Plan tabs remain visible while the sheet is partial or collapsed. Full reaches the top and bottom of the viewport and covers the tab bar; collapsed leaves the 44px handle above it.
 - [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
@@ -38,6 +38,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
 ## Responsive boundary — 768 / 769px
 
@@ -50,6 +51,25 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] In Stops, Nearby opens timing rows only for stops within 250 m of the map centre, and the centre marker is the glowing dot.
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.
 - [ ] In Plan, a collapsed journey card expands on tap, and tapping an expanded card recentres the map on the route.
+
+## Personal Waypoints (#207)
+
+- [ ] Add a waypoint and confirm the form opens immediately with the visible map centre as its location. Enter name, category and note, then use Adjust on map; tap the map or drag the pointed pin, confirm the selected-coordinate readout updates, and return to the form with entries preserved. Also pan the focused map with the arrow keys, confirm Use map centre is disabled during movement and enabled once the map settles, then Tab to Edit and on to Use map centre and activate it with Enter; confirm the selected coordinate updates and Done preserves the form entries. Then choose Edit and paste `1.2966, 103.7764`: press Enter and confirm the pin moves, the map pans to it without changing zoom, focus returns to Edit and the form shows `1.296600, 103.776400`. Paste `103.7764, 1.2966` and confirm a latitude message appears and the location is unchanged. Paste `51.5072, -0.1276` and confirm it applies with an outside-Singapore note that clears when the pin is moved. Press Escape in the input and confirm entry closes without closing the sheet. With reduced motion enabled, confirm the map jumps without animating. Confirm the collapsed screen shows only the Edit button beyond what it had before. Check Save and Cancel at 390 × 844 and a desktop viewport.
+- [ ] From More → My waypoints, add waypoints in multiple categories and confirm their compact All places rows and persistent map markers appear. Confirm each row opens waypoint details and its separate Edit action opens the edit form directly.
+- [ ] In Add and Edit forms, confirm Marker style starts collapsed with the current preview. Expand it with touch and keyboard, choose a different colour and icon, confirm the preview updates, save, reopen Edit, and confirm the saved choices remain selected.
+- [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.
+- [ ] Open Categories, search the list, and verify Selected and All categories groups. Use the category name/count/chevron to open only that category's places; verify the checkbox changes only pending marker visibility. Open details from a category row and a map marker; verify the same name, category, note, and location are shown.
+- [ ] Confirm the collapsed Categories summary is unchanged. When expanded, confirm there is one Categories heading, with the search field directly below it.
+- [ ] Change visibility, open a category, then return to Categories. Confirm the draft remains checked/unchecked as staged, Cancel discards it, and Done applies it. When any category is hidden, confirm Show all selects every category; Cancel discards the draft and Done shows all category markers. Clear selections and verify no category markers remain after Done.
+- [ ] Back from category details returns to that category; Back to categories returns to the picker. Back from marker-opened details restores the previous More page and sheet position without changing the map camera, selected stop, or selected route.
+- [ ] In unfiltered All places Edit list, drag a waypoint by its handle across multiple rows. Confirm dragging from the row body does not reorder it, the changed order persists after leaving and reopening My waypoints, and Remove and confirmed Clear all still work.
+- [ ] Confirm reordering is disabled with an active search and in a category view, with the filter note shown. Clear the search or return to All places and confirm reorder handles are enabled again.
+- [ ] With keyboard focus on a reorder handle, press Space or Enter to start, use Up/Down to preview and hear position announcements, then press Space or Enter to save. Confirm focus stays on that handle. Repeat with Escape and with a no-op move; confirm the order is unchanged and not saved. Confirm a failed or conflicted write reports that the new position could not be saved.
+- [ ] In a category, search, edit a place from details, and remove it. Change its category and verify the derived category groups and counts update. Delete it and confirm only that Personal Waypoint and its marker are removed. Clear all waypoints and verify confirmation is required and Community Waypoints remain unchanged.
+- [ ] Add enough categories and places to verify the picker list and places list scroll independently. Repeat at 390 × 844 and check keyboard focus, scrolling, and touch-sized controls.
+- [ ] In two tabs, keep a draft open in the first tab, save a change in the second tab, then save the first draft. Confirm the latest saved values are shown, the draft is preserved, and a separate Replace saved version action is required before overwriting. Repeat if the latest value changes again before replacement.
+- [ ] With malformed/unsupported storage and with rejected records, verify there is no write before the user confirms reset or explicitly keeps readable records and discards rejected ones.
+- [ ] Repeat the edit conflict review at 390 × 844. Check keyboard focus, scrolling, and touch-sized controls.
 
 ## Keyboard and accessibility
 

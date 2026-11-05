@@ -1,4 +1,5 @@
 export type {
+  JourneyEndpoint,
   TripCoordinate,
   TripEndpoint,
   PathGeometry,

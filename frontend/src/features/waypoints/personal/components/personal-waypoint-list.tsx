@@ -1,65 +1,77 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
+import { arrayMove, move } from '@dnd-kit/helpers'
+import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
+import type { DragEndEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { Button, IconButton } from '../../../../ui/button'
-import { SavedListRow } from '../../../../ui/saved-list-row'
+import { Button } from '../../../../ui/button'
 import { SavedListHeader } from '../../../../ui/saved-list-header'
-import {
-  ChevronDownIcon,
-  CloseIcon,
-  GripVerticalIcon,
-  MapPinIcon,
-} from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
-import { Select } from '../../../../ui/select'
+import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
 import {
-  filterPersonalWaypoints,
-  getPersonalWaypointCategories,
-} from '../data/filter-personal-waypoints'
+  PersonalWaypointListRow,
+  PersonalWaypointSortableListRow,
+} from './personal-waypoint-list-row'
+
+const reorderInstructionsId = 'personal-waypoint-reorder-instructions'
+
+interface KeyboardReorderState {
+  readonly waypointId: string
+  readonly startIndex: number
+  readonly currentIndex: number
+}
 
 interface PersonalWaypointListProps {
   readonly waypoints: readonly PersonalWaypoint[]
+  readonly category?: string
   readonly canEdit: boolean
   readonly editing: boolean
+  readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
   readonly onRemove: (waypointId: string) => void
-  readonly onMove: (waypointId: string, neighborId: string) => void
+  readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onClearAll: () => void
+  readonly onSelect?: (waypointId: string, trigger: HTMLButtonElement) => void
+  readonly onEdit?: (waypointId: string) => void
   readonly onEditAnnouncement?: (message: string) => void
 }
 
 export function PersonalWaypointList({
   waypoints,
+  category,
   canEdit,
   editing,
+  onFocusWaypoint,
   onRemove,
   onMove,
   onClearAll,
+  onSelect,
+  onEdit,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [keyboardReorder, setKeyboardReorder] = useState<KeyboardReorderState | null>(null)
   const previousEditing = useRef(editing)
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
-  const actionRowsRef = useRef(new Map<string, HTMLDivElement>())
-  const pendingFocusRef = useRef<{
-    readonly waypointId: string
-    readonly action: 'move-up' | 'move-down' | 'remove'
-  } | null>(null)
-  const categories = useMemo(() => getPersonalWaypointCategories(waypoints), [waypoints])
-  const activeCategory = categories.includes(selectedCategory) ? selectedCategory : ''
-  const hasActiveFilter = searchQuery.trim().length > 0 || activeCategory !== ''
+  const handleRefs = useRef(new Map<string, HTMLButtonElement>())
+  const pendingFocusRef = useRef<{ readonly waypointId: string; readonly action: 'reorder' | 'remove' } | null>(null)
+  const categoryView = category !== undefined
+  const activeCategory = categoryView ? category : ''
+  const hasSearchFilter = searchQuery.trim().length > 0
   const visibleWaypoints = useMemo(() => filterPersonalWaypoints(
     waypoints,
     searchQuery,
     activeCategory || null,
   ), [activeCategory, searchQuery, waypoints])
+  const categoryWaypointCount = categoryView
+    ? waypoints.filter((waypoint) => waypoint.category === category).length
+    : waypoints.length
   const editMode = canEdit && editing && waypoints.length > 0
+  const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter && !categoryView
 
   useEffect(() => {
     if (previousEditing.current === editing) return
     previousEditing.current = editing
-    onEditAnnouncement?.(editing
-      ? 'Edit list mode. Use the move controls to reorder waypoints, or remove a waypoint.'
-      : 'Done editing the waypoint list.')
+    onEditAnnouncement?.(editing ? 'Edit mode.' : 'List mode.')
   }, [editing, onEditAnnouncement])
 
   useLayoutEffect(() => {
@@ -69,49 +81,156 @@ export function PersonalWaypointList({
 
     if (pendingFocus.action === 'remove') {
       listHeadingRef.current?.focus()
-      return
+    } else {
+      handleRefs.current.get(pendingFocus.waypointId)?.focus()
     }
-
-    const actionRow = actionRowsRef.current.get(pendingFocus.waypointId)
-    const selector = pendingFocus.action === 'move-up'
-      ? '.personal-waypoint-order-up'
-      : '.personal-waypoint-order-down'
-    const preferredTarget = actionRow?.querySelector<HTMLButtonElement>(selector)
-    const focusTarget = preferredTarget && !preferredTarget.disabled
-      ? preferredTarget
-      : actionRow?.querySelector<HTMLButtonElement>('button:not(:disabled)')
-    const fallbackTarget = focusTarget ?? listHeadingRef.current
-    fallbackTarget?.focus()
   })
 
+  const registerHandleRef = useCallback((waypointId: string, element: HTMLButtonElement | null) => {
+    if (element) handleRefs.current.set(waypointId, element)
+    else handleRefs.current.delete(waypointId)
+  }, [])
+
   const clearAll = (): void => {
-    if (hasActiveFilter) return
+    if (hasSearchFilter) return
     if (!window.confirm('Clear all personal waypoints, including places hidden by filters?')) return
     pendingFocusRef.current = { waypointId: waypoints[0]?.id ?? '', action: 'remove' }
     onClearAll()
   }
 
-  const moveWaypoint = (index: number, direction: -1 | 1): void => {
-    const waypoint = visibleWaypoints[index]
-    const neighbor = visibleWaypoints[index + direction]
-    if (hasActiveFilter || !waypoint || !neighbor) return
-    pendingFocusRef.current = {
-      waypointId: waypoint.id,
-      action: direction === -1 ? 'move-up' : 'move-down',
+  const handleReorderKeyDown = (
+    waypointId: string,
+    index: number,
+    event: KeyboardEvent<HTMLButtonElement>,
+  ): void => {
+    if (!canReorder) return
+    const isSpaceKey = event.key === ' ' || event.key === 'Space' || event.code === 'Space'
+    const waypoint = waypoints.find(({ id }) => id === waypointId)
+    if (!waypoint) return
+
+    if (keyboardReorder) {
+      if (keyboardReorder.waypointId !== waypointId) return
+
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault()
+        const direction = event.key === 'ArrowUp' ? -1 : 1
+        const currentIndex = Math.max(0, Math.min(waypoints.length - 1, keyboardReorder.currentIndex + direction))
+        if (currentIndex === keyboardReorder.currentIndex) {
+          onEditAnnouncement?.(`${waypoint.name} is at position ${currentIndex + 1} of ${waypoints.length}.`)
+          return
+        }
+        setKeyboardReorder({ ...keyboardReorder, currentIndex })
+        onEditAnnouncement?.(`${waypoint.name}, position ${currentIndex + 1} of ${waypoints.length}.`)
+        return
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setKeyboardReorder(null)
+        onEditAnnouncement?.(`Reordering ${waypoint.name} canceled.`)
+        return
+      }
+
+      if (isSpaceKey || event.key === 'Enter') {
+        event.preventDefault()
+        const targetIndex = keyboardReorder.currentIndex
+        setKeyboardReorder(null)
+        if (targetIndex === keyboardReorder.startIndex) {
+          onEditAnnouncement?.(`${waypoint.name} remains at position ${targetIndex + 1} of ${waypoints.length}.`)
+          return
+        }
+
+        if (!onMove(waypointId, targetIndex)) {
+          onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
+          return
+        }
+
+        pendingFocusRef.current = { waypointId, action: 'reorder' }
+        onEditAnnouncement?.(`${waypoint.name} moved to position ${targetIndex + 1} of ${waypoints.length}.`)
+      }
+      return
     }
-    onMove(waypoint.id, neighbor.id)
+
+    if (!isSpaceKey && event.key !== 'Enter') return
+    event.preventDefault()
+    setKeyboardReorder({ waypointId, startIndex: index, currentIndex: index })
+    onEditAnnouncement?.(`Picked up ${waypoint.name}, position ${index + 1} of ${waypoints.length}. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.`)
   }
 
-  const categoryOptions = [
-    { value: '', label: 'All categories' },
-    ...categories.map((category) => ({ value: category, label: category })),
-  ]
+  const keyboardPreviewWaypoints = keyboardReorder
+    ? arrayMove([...visibleWaypoints], keyboardReorder.startIndex, keyboardReorder.currentIndex)
+    : visibleWaypoints
+  const handleDragEnd = (event: DragEndEvent): void => {
+    const source = event.operation.source
+    if (!source) return
+    const waypointId = String(source.id)
+    const waypoint = waypoints.find(({ id }) => id === waypointId)
+    const originalIndex = waypoints.findIndex(({ id }) => id === waypointId)
+    if (!waypoint || originalIndex < 0) return
+
+    if (event.canceled || !event.operation.target || !canReorder) {
+      onEditAnnouncement?.(`Reordering ${waypoint.name} canceled.`)
+      handleRefs.current.get(waypointId)?.focus()
+      return
+    }
+
+    const reordered = move([...waypoints], event)
+    const targetIndex = reordered.findIndex(({ id }) => id === waypointId)
+    if (targetIndex < 0 || targetIndex === originalIndex) {
+      onEditAnnouncement?.(`${waypoint.name} remains at position ${originalIndex + 1} of ${waypoints.length}.`)
+      handleRefs.current.get(waypointId)?.focus()
+      return
+    }
+
+    const saved = onMove(waypointId, targetIndex)
+    if (!saved) {
+      onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
+      handleRefs.current.get(waypointId)?.focus()
+      return
+    }
+
+    pendingFocusRef.current = { waypointId, action: 'reorder' }
+    onEditAnnouncement?.(`${waypoint.name} moved to position ${targetIndex + 1} of ${waypoints.length}.`)
+  }
+
+  const listRows = <ul
+    className="personal-waypoint-list-rows"
+    data-editing={editMode ? 'true' : 'false'}
+    tabIndex={0}
+    aria-label={categoryView ? `Saved Personal Waypoints in ${category}` : 'Saved Personal Waypoints'}
+  >
+    {keyboardPreviewWaypoints.map((waypoint, index) => {
+      const rowProps = {
+        waypoint,
+        editing: editMode,
+        handleDisabled: !canReorder || Boolean(keyboardReorder && keyboardReorder.waypointId !== waypoint.id),
+        keyboardReordering: keyboardReorder?.waypointId === waypoint.id,
+        index,
+        handleDescriptionId: reorderInstructionsId,
+        onHandleKeyDown: handleReorderKeyDown,
+        onRemove: (id: string) => {
+          pendingFocusRef.current = { waypointId: id, action: 'remove' }
+          onRemove(id)
+        },
+        onSelect: onSelect ? (id: string, trigger: HTMLButtonElement) => onSelect(id, trigger) : undefined,
+        onFocusWaypoint,
+        onEdit,
+        onHandleRef: registerHandleRef,
+      }
+
+      return canReorder ? (
+        <PersonalWaypointSortableListRow key={waypoint.id} {...rowProps} index={index} />
+      ) : (
+        <PersonalWaypointListRow key={waypoint.id} {...rowProps} />
+      )
+    })}
+  </ul>
 
   return <section className="personal-waypoint-list" aria-labelledby="personal-waypoint-list-heading">
     <div className="personal-waypoint-list-search">
       <SearchField
-        aria-label="Search saved places"
-        placeholder="Search saved places"
+        aria-label={categoryView ? `Search ${category} places` : 'Search saved places'}
+        placeholder={categoryView ? `Search ${category} places` : 'Search saved places'}
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
       />
@@ -120,98 +239,39 @@ export function PersonalWaypointList({
       <SavedListHeader
         headingId="personal-waypoint-list-heading"
         headingRef={listHeadingRef}
-        title="Saved places"
-        count={waypoints.length}
-        trailing={(
-          <Select
-            className="personal-waypoint-category-filter"
-            label="Category"
-            hideLabel
-            value={activeCategory}
-            options={categoryOptions}
-            onChange={setSelectedCategory}
-          />
-        )}
+        title={categoryView ? category : 'All places'}
+        count={categoryWaypointCount}
       />
 
-      {editMode && hasActiveFilter && (
+      {editMode && (hasSearchFilter || categoryView) && (
         <p className="personal-waypoint-list-filter-note">
-          Clear search and category filters to reorder or clear all saved places.
+          {categoryView
+            ? 'Return to All places to reorder saved places.'
+            : 'Clear search to reorder or clear all saved places.'}
         </p>
       )}
 
       {visibleWaypoints.length > 0 ? (
-        <ul
-          className="personal-waypoint-list-rows"
-          data-editing={editMode ? 'true' : 'false'}
-          tabIndex={0}
-          aria-label="Saved Personal Waypoints"
-        >
-          {visibleWaypoints.map((waypoint, index) => {
-            const label = `${waypoint.name}, ${waypoint.category}`
-            return (
-              <SavedListRow
-                key={waypoint.id}
-                className="personal-waypoint-row"
-                leading={<>
-                  {editMode && <span className="personal-waypoint-grip" aria-hidden="true"><GripVerticalIcon /></span>}
-                  <span className="personal-waypoint-pin"><MapPinIcon /></span>
-                </>}
-                title={waypoint.name}
-                subtitle={waypoint.category}
-                trailing={editMode ? (
-                  <div
-                    className="personal-waypoint-row-actions"
-                    ref={(element) => {
-                      if (element) actionRowsRef.current.set(waypoint.id, element)
-                      else actionRowsRef.current.delete(waypoint.id)
-                    }}
-                  >
-                    <IconButton
-                      className="personal-waypoint-order-up"
-                      label={`Move ${label} up`}
-                      icon={<ChevronDownIcon />}
-                      disabled={hasActiveFilter || index === 0}
-                      onClick={() => moveWaypoint(index, -1)}
-                    />
-                    <IconButton
-                      className="personal-waypoint-order-down"
-                      label={`Move ${label} down`}
-                      icon={<ChevronDownIcon />}
-                      disabled={hasActiveFilter || index === visibleWaypoints.length - 1}
-                      onClick={() => moveWaypoint(index, 1)}
-                    />
-                    <IconButton
-                      className="personal-waypoint-remove"
-                      label={`Remove ${label}`}
-                      icon={<CloseIcon />}
-                      onClick={() => {
-                        pendingFocusRef.current = { waypointId: waypoint.id, action: 'remove' }
-                        onRemove(waypoint.id)
-                      }}
-                    />
-                  </div>
-                ) : undefined}
-              />
-            )
-          })}
-        </ul>
+        <>
+          {editMode && <p id={reorderInstructionsId} className="visually-hidden">
+            Press Space or Enter to start reordering. Use the Up and Down arrow keys to change position. Press Space or Enter to save, or Escape to cancel.
+          </p>}
+          {canReorder ? (
+            <DragDropProvider sensors={[PointerSensor]} onDragEnd={handleDragEnd}>
+              {listRows}
+            </DragDropProvider>
+          ) : listRows}
+        </>
       ) : (
         <div className="personal-waypoint-list-empty">
-          <p>No waypoints match these filters.</p>
-          <Button
-            label="Clear filters"
-            onClick={() => {
-              setSearchQuery('')
-              setSelectedCategory('')
-            }}
-          />
+          <p>No waypoints match this search.</p>
+          <Button label="Clear search" onClick={() => setSearchQuery('')} />
         </div>
       )}
     </div>
-    {editMode && (
+    {editMode && !categoryView && (
       <div className="personal-waypoint-list-edit-actions">
-        <Button label="Clear all" onClick={clearAll} disabled={hasActiveFilter} />
+        <Button label="Clear all" onClick={clearAll} disabled={hasSearchFilter} />
       </div>
     )}
   </section>

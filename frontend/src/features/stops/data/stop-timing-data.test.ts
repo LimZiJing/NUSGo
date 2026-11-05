@@ -4,6 +4,66 @@ import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures
 import { getStopTimingData } from './stop-timing-data'
 
 describe('stop timing data', () => {
+  it('shows an LTA next start as Singapore local time', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const nowMs = Date.parse('2026-01-01T05:00:00+08:00')
+    const timingData = getStopTimingData(stop, index, {
+      nowMs,
+      publicArrivalSnapshot: {
+        source: 'lta-datamall',
+        observedAt: '2026-01-01T05:00:00+08:00',
+        expiresAt: '2026-01-01T05:01:00+08:00',
+        refreshedAt: '2026-01-01T05:00:00+08:00',
+        stops: {
+          'STOP-A': {
+            observedAt: '2026-01-01T05:00:00+08:00',
+            expiresAt: '2026-01-01T05:01:00+08:00',
+            services: {
+              '95': {
+                status: 'not-in-operation',
+                arrivals: [],
+                nextStartAt: '2026-01-01T07:00:00+08:00',
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts 7:00 AM')
+  })
+
+  it('labels an LTA next start on the following day as tomorrow', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const nowMs = Date.parse('2026-01-01T20:00:00+08:00')
+    const timingData = getStopTimingData(stop, index, {
+      nowMs,
+      publicArrivalSnapshot: {
+        source: 'lta-datamall',
+        observedAt: '2026-01-01T20:00:00+08:00',
+        expiresAt: '2026-01-01T20:01:00+08:00',
+        refreshedAt: '2026-01-01T20:00:00+08:00',
+        stops: {
+          'STOP-A': {
+            observedAt: '2026-01-01T20:00:00+08:00',
+            expiresAt: '2026-01-01T20:01:00+08:00',
+            services: {
+              '95': {
+                status: 'not-in-operation',
+                arrivals: [],
+                nextStartAt: '2026-01-02T05:30:00+08:00',
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(timingData.publicServices[0]?.startMessage).toBe('Starts tomorrow 5:30 AM')
+  })
+
   it('labels arrivals under 30 seconds as Arr and rounds 30 seconds up to 1m', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const stop = index.stopById.get('STOP-A')!
@@ -104,6 +164,7 @@ describe('stop timing data', () => {
               nextArrivalSeconds: 120,
               upcomingArrivalSeconds: [120, 300, 480],
               headwaySeconds: null,
+              upcomingLoads: ['low', 'medium', 'high'],
             },
           },
         },
@@ -114,6 +175,7 @@ describe('stop timing data', () => {
     expect(timingData.liveArrivalMessage).toBeNull()
     expect(timingData.live).toBe(true)
     expect(timingData.departures[0]?.timings).toEqual(['2′', '5′', '8′'])
+    expect(timingData.departures[0]?.loads).toEqual(['low', 'medium', 'high'])
   })
 
   it('applies the selected format to shuttle and public arrivals', () => {

@@ -23,7 +23,7 @@ export function MoreEntryButton({
       ref={buttonRef}
       onClick={onClick}
     >
-      <EllipsisVerticalIcon className="more-entry-icon" />
+      <EllipsisVerticalIcon />
     </button>
   )
 }

@@ -25,6 +25,7 @@ function createMapDouble(): MapSession {
     setStopsPinVisible: vi.fn(),
     setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
+    setLiveVehicles: vi.fn(),
     setTripRequest: vi.fn(),
     setJourneyOptions: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -32,8 +33,12 @@ function createMapDouble(): MapSession {
     setCurrentLocation: vi.fn(),
     focusCurrentLocation: vi.fn(),
     setViewportInsets: vi.fn(),
+    setPresentationBottomInset: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
+    setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -53,8 +58,12 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     subscribe: vi.fn(() => () => undefined),
     start: vi.fn(async () => undefined),
     setViewportInsets: vi.fn(),
+    setPresentationBottomInset: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
+    setPersonalWaypoints: vi.fn(),
+    focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -62,6 +71,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     refitExploreTarget: vi.fn(),
     resetView: vi.fn(),
     setTripEndpoint: vi.fn(),
+    setPersonalWaypointCollection: vi.fn(),
     navigateTo: vi.fn(),
     replanPath: vi.fn(),
     searchPaths: vi.fn(),
@@ -84,6 +94,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setStopsPinVisible: vi.fn(),
     setNearbyStopHighlight: vi.fn(),
     setPlanLayersVisible: vi.fn(),
+    setLiveVehicles: vi.fn(),
     enableLocationTracking: vi.fn(),
     disableLocationTracking: vi.fn(),
     locateUser: vi.fn(),
@@ -131,6 +142,18 @@ function createMountDependencies(
 }
 
 describe('navigation session application seam', () => {
+  it('forwards fallback basemap status to the application', () => {
+    const onBasemapUnavailable = vi.fn()
+    const dependencies = createMountDependencies(createMapDouble(), createSessionDouble())
+    const mount = createNavigationSessionMount({} as HTMLElement, {
+      ...dependencies,
+      onBasemapUnavailable,
+    })
+    dependencies.getMapOptions()?.onBasemapUnavailable?.()
+    expect(onBasemapUnavailable).toHaveBeenCalledOnce()
+    mount.dispose()
+  })
+
   it('installs one map/session pair per mount and disposes it on unmount', () => {
     const map = createMapDouble()
     const session = createSessionDouble()
@@ -256,6 +279,20 @@ describe('navigation session application seam', () => {
     expect(session.searchPaths).toHaveBeenCalledOnce()
     firstCommands.selectJourneyOption('option-a')
     expect(session.selectJourneyOption).toHaveBeenCalledWith('option-a')
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue' as const,
+      markerIcon: 'dot' as const,
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    firstCommands.focusPersonalWaypoint(waypoint)
+    expect(session.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    firstCommands.panToCoordinate([103.78, 1.29])
+    expect(session.panToCoordinate).toHaveBeenCalledWith([103.78, 1.29])
     firstCommands.fitJourneyRoutes()
     expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)

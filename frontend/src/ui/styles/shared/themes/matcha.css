@@ -38,6 +38,14 @@
   --text-error-strong: #9b3d48;
   --text-favorite: #b17a00;
   --bus-stop-default-color: #365441;
+  --personal-waypoint-marker-blue: #5b83e6;
+  --personal-waypoint-marker-red: #ed2224;
+  --personal-waypoint-marker-orange: #f8793b;
+  --personal-waypoint-marker-yellow: #f5bd42;
+  --personal-waypoint-marker-green: #5fc785;
+  --personal-waypoint-marker-cyan: #4aa6dc;
+  --personal-waypoint-marker-purple: #9656eb;
+  --personal-waypoint-marker-gray: #b7b7b7;
 
   --border-default: #c9d4c2;
   --border-subtle: #cddcc8;
@@ -73,6 +81,10 @@
   --status-error-strong: #a33e48;
   --status-info: #2d6473;
   --status-info-surface: #dceff0;
+  --load-level-low: var(--status-success);
+  --load-level-medium: var(--status-warning);
+  --load-level-high: var(--status-error);
+  --load-level-unknown: var(--text-muted);
   --status-marker-origin: #286448;
   --status-marker-destination: #b44a51;
 

@@ -108,6 +108,10 @@ describe('mobile location control integration', () => {
     await user.click(screen.getByRole('button', { name: 'Plan' }))
 
     expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()
+    const actions = document.querySelector('.map-control-actions')
+    expect(actions?.querySelector('.map-control-action-slot')).toBeTruthy()
+    expect(actions?.querySelector('.live-bus-toggle')).toBeTruthy()
+    expect(actions?.querySelector('.more-entry-button')).toBeTruthy()
   })
 
   it('routes activation to the location command', async () => {
@@ -317,14 +321,18 @@ describe('mobile location control integration', () => {
     expect(screen.getByRole('button', { name: 'Expand Stop A, bus stop arrival times' })).toBeTruthy()
   })
 
-  it('groups desktop map controls into one layout stack', () => {
+  it('groups desktop map controls into one layout stack in visual order', () => {
     mockDesktopViewport()
 
     render(<App />)
 
     const stack = document.querySelector('.map-control-stack')
-    expect(stack?.querySelector('.more-entry-button')).toBeTruthy()
-    expect(stack?.querySelector('.location-control')).toBeTruthy()
+    const actions = stack?.querySelector('.map-control-actions')
+    expect(actions?.querySelector('.live-bus-toggle')).toBeTruthy()
+    expect(actions?.querySelector('.map-control-action-slot .location-control')).toBeTruthy()
+    expect(actions?.querySelector('.more-entry-button')).toBeTruthy()
+    expect(Array.from(actions?.querySelectorAll('button') ?? []).map((button) => button.getAttribute('aria-label')))
+      .toEqual(['Live buses', 'Show my location', 'More'])
     expect(stack?.querySelector('.map-legend')).toBeTruthy()
   })
 })

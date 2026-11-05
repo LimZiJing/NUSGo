@@ -8,6 +8,8 @@ import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
 export interface MapBuildingSelection {
   readonly name: string
@@ -18,14 +20,35 @@ export interface MapBuildingSelection {
 
 export interface MapSessionOptions {
   readonly container: HTMLElement
+  /** Optional route matching limits for Live-bus positions. */
+  readonly liveBusRouteMatching?: LiveBusRouteMatchingOptions
+  /** Reports use of a local style so the application can offer online recovery. */
+  readonly onBasemapUnavailable?: () => void
   readonly onMapError: (error: unknown) => void
   readonly onEmptyMapClick: (coordinate: MapCoordinate) => void
   /** Returns true when the mobile Stops sheet owns the stop context. */
   readonly onStopSelected?: (stopId: string) => boolean
+  /** Opens Stop details after a person chooses that action in a live bus popup. */
+  readonly onStopDetailsSelected?: (stopId: string) => void
   /** Selects a displayed Journey option from a map route or duration label. */
   readonly onJourneyOptionSelected?: (candidateKey: string) => void
   /** Centre of the map area left visible by the current overlays. */
   readonly onMapCenterChange?: (center: MapCoordinate) => void
+  /** True during camera movement; false after the settled visible centre has been reported. */
+  readonly onMapMovingChange?: (moving: boolean) => void
+}
+
+export interface LiveBusRouteMatchingOptions {
+  /** Maximum route-progress speed; matching never trusts the unconfirmed NUS speed field. */
+  readonly maximumSpeedMetersPerSecond: number
+  /** Extra movement allowance for GPS error and route-projection noise. */
+  readonly gpsMovementToleranceMeters: number
+  /** Keep candidates this far from the nearest GPS projection for branch scoring. */
+  readonly branchDistanceToleranceMeters: number
+  /** Score weight applied to the difference between bus heading and travel direction. */
+  readonly headingPreferenceWeight: number
+  /** Reset continuity after this long without an accepted observation. */
+  readonly continuityHorizonMs: number
 }
 
 export type MapCoordinate = readonly [number, number]
@@ -64,6 +87,8 @@ export interface MapSession {
     selection: MapRouteSelection,
     onSetEndpoint?: (role: TripEndpointRole, endpoint: TripEndpoint) => void,
   ): void
+  /** Updates live bus markers; hidden layers release markers and expiry timers. */
+  setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean): void
   setRouteSelection(selection: MapRouteSelection, fit?: boolean): void
   refitRoute(): void
   focusStop(stopId: string): void
@@ -96,6 +121,8 @@ export interface MapSession {
    * inset reports update padding without refitting the user's camera.
    */
   setViewportInsets(insets: MapViewportInsets): void
+  /** Updates the transient Stops sheet position; null restores canonical viewport insets. */
+  setPresentationBottomInset(bottom: number | null): void
   /** Zoom around the visible-area centre while a centre crosshair is shown. */
   setVisibleCenterZoom(enabled: boolean): void
   /** Shows the temporary Personal Waypoint pin; only placement mode permits dragging it. */
@@ -104,6 +131,16 @@ export interface MapSession {
     editable: boolean,
     onDrag: (coordinate: MapCoordinate) => void,
   ): void
+  /** Shows saved Personal Waypoint markers without changing the map camera. */
+  setPersonalWaypoints(
+    waypoints: readonly PersonalWaypoint[],
+    visible: boolean,
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ): void
+  /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
+  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  /** Moves the camera to a coordinate without changing zoom, keeping existing overlays in view. */
+  panToCoordinate(coordinate: MapCoordinate): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

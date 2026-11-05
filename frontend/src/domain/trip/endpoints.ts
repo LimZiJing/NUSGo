@@ -4,6 +4,7 @@ import type {
   TripEndpointRole,
   TripRequest,
 } from './types'
+import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import { isValidLocationCoordinates } from '../location/coordinates'
 
 export function createCurrentLocationTripEndpoint(
@@ -23,9 +24,9 @@ export function createCurrentLocationTripEndpoint(
   })
 }
 
-export function getTripEndpointKey(endpoint: TripEndpoint): string {
-  if (endpoint.kind === 'current-location') {
-    return `current-location:${endpoint.coordinate.longitude}:${endpoint.coordinate.latitude}`
+export function getTripEndpointKey(endpoint: TripEndpoint | JourneyEndpoint): string {
+  if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
+    return `${endpoint.kind}:${endpoint.coordinate.longitude}:${endpoint.coordinate.latitude}`
   }
   return `${endpoint.kind}:${endpoint.id}`
 }
@@ -65,6 +66,12 @@ function isCompleteEndpoint(endpoint: TripEndpoint | null): endpoint is TripEndp
   if (endpoint.kind === 'current-location') {
     return createCurrentLocationTripEndpoint(endpoint.coordinate) !== null
   }
+  if (endpoint.kind === 'personal-waypoint') {
+    return typeof endpoint.id === 'string' && endpoint.id.trim().length > 0 &&
+      typeof endpoint.label === 'string' && endpoint.label.trim().length > 0 &&
+      typeof endpoint.coordinate.longitude === 'number' && typeof endpoint.coordinate.latitude === 'number' &&
+      isValidLocationCoordinates(endpoint.coordinate.longitude, endpoint.coordinate.latitude)
+  }
   return (endpoint.kind === 'venue' || endpoint.kind === 'building' || endpoint.kind === 'stop') &&
     typeof endpoint.id === 'string' &&
     endpoint.id.trim().length > 0
@@ -79,6 +86,15 @@ function validateEndpoint(
   return null
 }
 
+function areSameLocation(origin: TripEndpoint, destination: TripEndpoint): boolean {
+  if (getTripEndpointKey(origin) === getTripEndpointKey(destination)) return true
+
+  return origin.kind === 'personal-waypoint' &&
+    destination.kind === 'personal-waypoint' &&
+    origin.coordinate.longitude === destination.coordinate.longitude &&
+    origin.coordinate.latitude === destination.coordinate.latitude
+}
+
 export function validateTripRequest(request: TripRequest): string | null {
   const origin = request.origin
   const destination = request.destination
@@ -91,7 +107,7 @@ export function validateTripRequest(request: TripRequest): string | null {
 
   if (origin === null || destination === null) return null
 
-  if (getTripEndpointKey(origin) === getTripEndpointKey(destination)) {
+  if (areSameLocation(origin, destination)) {
     return 'Origin and destination must be different locations.'
   }
 

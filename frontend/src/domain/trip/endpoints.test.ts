@@ -115,6 +115,43 @@ describe('validateTripRequest', () => {
     )
   })
 
+  it('rejects different Personal Waypoints with identical coordinates', () => {
+    const origin: TripEndpoint = {
+      kind: 'personal-waypoint',
+      id: 'first-waypoint',
+      label: 'First waypoint',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    }
+    const destination: TripEndpoint = {
+      kind: 'personal-waypoint',
+      id: 'second-waypoint',
+      label: 'Second waypoint',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+    }
+
+    expect(getTripEndpointKey(origin)).not.toBe(getTripEndpointKey(destination))
+    expect(validateTripRequest({ origin, destination })).toBe(
+      'Origin and destination must be different locations.',
+    )
+  })
+
+  it('accepts different Personal Waypoints at different coordinates', () => {
+    expect(validateTripRequest({
+      origin: {
+        kind: 'personal-waypoint',
+        id: 'first-waypoint',
+        label: 'First waypoint',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+      },
+      destination: {
+        kind: 'personal-waypoint',
+        id: 'second-waypoint',
+        label: 'Second waypoint',
+        coordinate: { longitude: 103.79, latitude: 1.29 },
+      },
+    })).toBeNull()
+  })
+
   it('accepts two complete, different endpoints', () => {
     expect(validateTripRequest({ origin: venue, destination: stop })).toBeNull()
   })

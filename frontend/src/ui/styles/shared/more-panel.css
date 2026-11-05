@@ -42,7 +42,6 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.more-entry-icon,
 .more-back-button svg,
 .more-close-button svg {
   width: 20px;
@@ -59,10 +58,33 @@
 }
 
 .more-panel-body {
+  position: relative;
   display: flex;
   min-height: 0;
   flex: 1 1 auto;
   flex-direction: column;
+}
+
+.more-panel-status {
+  position: absolute;
+  z-index: 20;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  left: 12px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: min(360px, 100%);
+  padding: 8px 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+  font: var(--font-size-sm)/1.35 var(--sans);
+}
+
+.more-panel-body:has(.more-panel-status) .more-panel-content-scroll {
+  margin-bottom: 64px;
 }
 
 .more-panel-header {
@@ -142,11 +164,19 @@
     background: var(--surface-raised);
   }
 
+  .mobile-sheet-popup.more-panel-surface[data-page='release-notes'][data-detent='full'] {
+    padding: 0 0 12px;
+    border-radius: 0;
+    background: var(--surface-raised);
+  }
+
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .mobile-sheet-handle-row,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .mobile-sheet-handle-row,
   .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row {
     display: none;
   }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .mobile-sheet-handle-row { display: none; }
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-header,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-header,
@@ -154,11 +184,15 @@
     padding-inline: 14px;
   }
 
+  .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .more-panel-header { padding-inline: 14px; }
+
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-content-scroll,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-content-scroll,
   .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll {
     padding: 12px 13px 68px;
   }
+
+  .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .more-panel-content-scroll { padding: 12px 13px 68px; }
 }
 
 @media (min-width: 769px) {

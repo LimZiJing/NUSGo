@@ -1,4 +1,5 @@
 import type { LoadedTransitData } from '../../app/contracts/data'
+import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import { Marker } from 'maplibre-gl'
 import type {
   MapCoordinate,
@@ -12,12 +13,14 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
 import { createMapLifecycle } from './lifecycle'
+import { createLiveBusMarkers } from './live-bus-markers'
 import {
   createShuttleStopMarkers,
   type JourneyStopRoute,
@@ -27,6 +30,7 @@ import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
 import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
+import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -78,6 +82,7 @@ type VenueCameraFit = {
 export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
+  const personalWaypointMarkers: PersonalWaypointMarkers = createPersonalWaypointMarkers(map)
   const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
     transitRouteLayers?.refreshTheme()
     shuttleStopMarkers?.refreshTheme()
@@ -91,6 +96,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let transitRouteLayers: TransitRouteLayers | null = null
   let journeyRouteLayers: JourneyRouteLayers | null = null
   const currentLocationMarker: CurrentLocationMarker = createCurrentLocationMarker(map)
+  const liveBusMarkers = createLiveBusMarkers(
+    map,
+    options.onStopDetailsSelected,
+    options.liveBusRouteMatching,
+  )
   let currentPath: Path | null = null
   let currentJourneyOptions: readonly MapJourneyOption[] = []
   let selectedJourneyCandidateKey: string | null = null
@@ -408,6 +418,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       clearTransitData()
       transitData = data
       currentTransitIndex = data.index
+      liveBusMarkers.setTransitData(data)
       if (stopsPinStopId && !data.index.stopById.has(stopsPinStopId)) stopsPinStopId = null
       transitRouteLayers = createTransitRouteLayers(map, data.geometry)
       const routeColors = new Map(data.index.routes.map(({ id, color }) => [id, color] as const))
@@ -432,6 +443,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         pendingCameraFit = { kind: 'route', routeId: nextRouteId }
       }
       installJourneyRouteLayers()
+    },
+
+    setLiveVehicles(vehicles: readonly ShuttleVehiclePosition[], visible: boolean) {
+      if (disposed) return
+      liveBusMarkers.setVehicles(vehicles, visible)
     },
 
     setRouteSelection(selection: MapRouteSelection, fit = true) {
@@ -623,6 +639,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
+    setPresentationBottomInset(bottom: number | null) {
+      if (disposed) return
+      lifecycle.setPresentationBottomInset(bottom)
+    },
+
     setVisibleCenterZoom(enabled: boolean) {
       if (disposed || visibleCenterZoomEnabled === enabled) return
       visibleCenterZoomEnabled = enabled
@@ -647,7 +668,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         const element = document.createElement('div')
         element.className = 'personal-waypoint-placement-marker'
         element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ element, draggable: editable })
+        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
         personalWaypointDragHandler = () => {
@@ -660,6 +681,31 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         personalWaypointMarker.setLngLat([coordinate[0], coordinate[1]])
         personalWaypointMarker.setDraggable(editable)
       }
+    },
+
+    setPersonalWaypoints(waypoints, visible, onSelect) {
+      if (disposed) return
+      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+    },
+
+    focusPersonalWaypoint(waypoint: PersonalWaypoint) {
+      if (disposed) return
+      pendingCameraFit = null
+      personalWaypointMarkers.focusWaypoint(waypoint)
+      map.flyTo({
+        center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
+    },
+
+    panToCoordinate(coordinate: MapCoordinate) {
+      if (disposed) return
+      pendingCameraFit = null
+      // Not `essential`, so MapLibre skips the animation when the person prefers reduced motion.
+      map.easeTo({ center: [coordinate[0], coordinate[1]], duration: 250, offset: getFitOffset() })
     },
 
     dismissStopPopup() {
@@ -772,6 +818,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       disposed = true
       pendingCameraFit = null
       clearVenueMarker()
+      personalWaypointMarkers.dispose()
       if (personalWaypointMarker && personalWaypointDragHandler) {
         personalWaypointMarker.off('dragend', personalWaypointDragHandler)
       }
@@ -782,6 +829,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       currentPath = null
       clearJourneyRouteLayers()
       currentLocationMarker.dispose()
+      liveBusMarkers.dispose()
       buildingLabels?.dispose()
       buildingLabels = null
       groupLabels?.dispose()

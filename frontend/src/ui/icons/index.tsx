@@ -4,16 +4,21 @@ import {
   ArrowRight,
   ArrowUpRight,
   ArrowLeft,
+  Armchair,
   Building2,
   BusFront,
   Check,
   ChevronDown,
   ChevronRight,
+  CloudOff,
   Compass,
+  Coffee,
   CircleDot,
   DoorOpen,
+  Download,
   EllipsisVertical,
   ExternalLink,
+  FileText,
   Footprints,
   GripVertical,
   Info,
@@ -32,6 +37,7 @@ import {
   Settings,
   Star,
   Sun,
+  TreePine,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -58,6 +64,10 @@ export function ArrowLeftIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowLeft, props)
 }
 
+export function ArmchairIcon(props: IconProps) {
+  return renderDecorativeIcon(Armchair, props)
+}
+
 export function BuildingIcon(props: IconProps) {
   return renderDecorativeIcon(Building2, props)
 }
@@ -82,8 +92,16 @@ export function CheckIcon(props: IconProps) {
   return renderDecorativeIcon(Check, props)
 }
 
+export function CloudOffIcon(props: IconProps) {
+  return renderDecorativeIcon(CloudOff, props)
+}
+
 export function CompassIcon(props: IconProps) {
   return renderDecorativeIcon(Compass, props)
+}
+
+export function CoffeeIcon(props: IconProps) {
+  return renderDecorativeIcon(Coffee, props)
 }
 
 export function CircleDotIcon(props: IconProps) {
@@ -158,12 +176,20 @@ export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
 }
 
+export function TreePineIcon(props: IconProps) {
+  return renderDecorativeIcon(TreePine, props)
+}
+
 export function SearchIcon(props: IconProps) {
   return renderDecorativeIcon(Search, props)
 }
 
 export function SettingsIcon(props: IconProps) {
   return renderDecorativeIcon(Settings, props)
+}
+
+export function FileTextIcon(props: IconProps) {
+  return renderDecorativeIcon(FileText, props)
 }
 
 export interface FavoriteIconProps extends IconProps {
@@ -180,4 +206,8 @@ export function FavoriteIcon({ filled, ...props }: FavoriteIconProps) {
 
 export function CloseIcon(props: IconProps) {
   return renderDecorativeIcon(X, props)
+}
+
+export function DownloadIcon(props: IconProps) {
+  return renderDecorativeIcon(Download, props)
 }

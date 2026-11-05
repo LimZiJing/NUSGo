@@ -30,6 +30,8 @@ export interface AppViewsProps {
     readonly open: boolean
     readonly page: MorePanelPage
     readonly detent: MobileSheetDetent
+    readonly statusMessage: string | null
+    readonly statusRevision: number
     readonly headerAction?: ReactNode
     readonly title: string
     readonly initialFocusRef: Ref<HTMLButtonElement>
@@ -152,7 +154,6 @@ export function AppViews({
             label="More panel"
             controlsId="more-panel-content"
             detent={isMobileViewport ? morePanel.detent : 'partial'}
-            partialVisibleHeight={morePanel.page === 'menu' ? 192 : undefined}
             enabled={isMobileViewport}
             active={morePanel.open}
             portalContainer={sheetPortalContainer}
@@ -167,6 +168,8 @@ export function AppViews({
             <MorePanelSurface
               page={morePanel.page}
               title={morePanel.title}
+              statusMessage={morePanel.statusMessage}
+              statusRevision={morePanel.statusRevision}
               headerAction={morePanel.headerAction}
               initialFocusRef={morePanel.initialFocusRef}
               onClose={morePanel.onClose}

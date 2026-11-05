@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import { PublicServiceChip, RouteChip } from '../../../ui/route-chip'
 import type {
   PublicServiceTiming,
@@ -19,6 +20,17 @@ function departureStatusAccessibleLabel(message: string): string {
   return minutes === undefined
     ? message
     : `First bus in ${minutes} ${minutes === '1' ? 'minute' : 'minutes'}`
+}
+
+function arrivalAccessibleLabel(timing: string, load: ShuttleLoadLevel): string {
+  const timingLabel = timingAccessibleLabel(timing)
+  const arrivalLabel = timing === 'Arr' || timing === 'Left' || timing === '-'
+    ? timingLabel
+    : `Arrives in ${timingLabel}`
+
+  return load === 'unknown'
+    ? `${arrivalLabel}. Crowding estimate unavailable.`
+    : `${arrivalLabel}. Estimated crowding: ${load}.`
 }
 
 function AccessibleTiming({ visual, spoken }: { readonly visual: ReactNode; readonly spoken: string }) {
@@ -43,18 +55,38 @@ function formatTimingVisual(timing: string): ReactNode {
   )
 }
 
-function DepartureTimes({ timings }: { readonly timings: readonly [string, string, string] }) {
+function DepartureTimes({
+  timings,
+  load,
+  loads,
+}: {
+  readonly timings: readonly [string, string, string]
+  readonly load?: ShuttleLoadLevel
+  readonly loads?: readonly [ShuttleLoadLevel, ShuttleLoadLevel, ShuttleLoadLevel]
+}) {
   return (
     <span className="stop-departure-times">
-      {timings.map((timing, index) => (
-        <span
-          key={index}
-          className="stop-departure-time"
-          data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
-        >
-          <AccessibleTiming visual={formatTimingVisual(timing)} spoken={timingAccessibleLabel(timing)} />
-        </span>
-      ))}
+      {timings.map((timing, index) => {
+        const arrivalLoad = timing === '-'
+          ? undefined
+          : loads?.[index] ?? (index === 0 ? load : undefined)
+
+        return (
+          <span
+            key={index}
+            className="stop-departure-time"
+            data-timing-state={timing === 'Arr' || timing === 'Left' ? timing : undefined}
+            data-load-level={arrivalLoad}
+          >
+            <AccessibleTiming
+              visual={formatTimingVisual(timing)}
+              spoken={arrivalLoad
+                ? arrivalAccessibleLabel(timing, arrivalLoad)
+                : timingAccessibleLabel(timing)}
+            />
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -88,9 +120,8 @@ export function StopDepartureList({
   readonly onSelectRoute: (routeId: string) => void
 }) {
   const visiblePublicServices = noLiveData
-    ? publicServices.filter(({ timings }) => timings !== null)
+    ? publicServices.filter(({ timings, startMessage }) => timings !== null || startMessage !== undefined)
     : publicServices
-
   if (departures.length === 0 && scheduledDepartures.length === 0 && visiblePublicServices.length === 0) {
     if (noLiveData) return null
     return <p className="stop-departure-list-empty">{liveArrivalMessage ?? 'No bus timings available.'}</p>
@@ -116,7 +147,7 @@ export function StopDepartureList({
               onClick={() => onSelectRoute(departure.routeId)}
             />
             <ReachableFavouriteStops stops={departure.reachableFavouriteStops ?? []} />
-            <DepartureTimes timings={departure.timings} />
+            <DepartureTimes timings={departure.timings} load={departure.load} loads={departure.loads} />
           </li>
         ))}
         {scheduledDepartures.map(({ routeId, routeName, routeColor, message }) => (

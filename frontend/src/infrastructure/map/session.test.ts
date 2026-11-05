@@ -10,6 +10,7 @@ import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
+import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
 const fakeMapState = vi.hoisted(() => ({
   maps: [] as unknown[],
@@ -115,6 +116,7 @@ vi.mock('maplibre-gl', () => {
     readonly project = vi.fn(() => ({ x: 600, y: 400 }))
     readonly panBy = vi.fn()
     readonly getZoom = vi.fn(() => 15)
+    readonly getBearing = vi.fn(() => 0)
     readonly flyTo = vi.fn()
     readonly zoomIn = vi.fn()
     readonly zoomOut = vi.fn()
@@ -147,14 +149,14 @@ vi.mock('maplibre-gl', () => {
 
   class FakeMarker {
     readonly element: HTMLElement
-    readonly options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }
+    readonly options: { anchor?: string; element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }
     popup: FakePopup | null = null
     coordinate: unknown = null
     readonly handlers = new globalThis.Map<string, Set<() => void>>()
     draggable = false
     readonly remove = vi.fn()
 
-    constructor(options: { element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }) {
+    constructor(options: { anchor?: string; element?: HTMLElement; color?: string; offset?: number[]; draggable?: boolean }) {
       this.options = options
       this.element = options.element ?? document.createElement('div')
       this.draggable = options.draggable ?? false
@@ -1650,6 +1652,7 @@ describe('MapSession', () => {
     })
     const map = fakeMapState.maps.at(-1) as {
       addedMarkers: Array<{
+        options: { anchor?: string }
         coordinate: unknown
         draggable: boolean
         setLngLat(coordinate: unknown): void
@@ -1662,6 +1665,7 @@ describe('MapSession', () => {
     const marker = map.addedMarkers.at(-1)!
     expect(marker.coordinate).toEqual([103.78, 1.29])
     expect(marker.draggable).toBe(true)
+    expect(marker.options.anchor).toBe('bottom')
     marker.setLngLat([103.79, 1.3])
     marker.fire('dragend')
     expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])
@@ -1672,6 +1676,120 @@ describe('MapSession', () => {
     expect(marker.draggable).toBe(false)
     session.setPersonalWaypointPlacement(null, false, onDrag)
     expect(marker.remove).toHaveBeenCalledOnce()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('adds saved waypoint markers and removes them when the collection changes', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { addedMarkers: Array<{
+      coordinate: unknown
+      element: FakeElement
+      remove: ReturnType<typeof vi.fn>
+    }> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const onSelect = vi.fn()
+
+    session.setPersonalWaypoints([waypoint], true, onSelect)
+    const marker = map.addedMarkers.at(-1)!
+    expect(marker.coordinate).toEqual([103.78, 1.29])
+    expect(marker.element.attributes.get('aria-label'))
+      .toBe('Open Quiet bench, Rest spot details. General icon, Blue marker.')
+
+    session.setPersonalWaypoints([], true, onSelect)
+    expect(marker.remove).toHaveBeenCalledOnce()
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('centers a visible saved Personal Waypoint without duplicating its marker', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      addedMarkers: unknown[]
+      flyTo: ReturnType<typeof vi.fn>
+    }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const initialMarkerCount = map.addedMarkers.length
+    session.setViewportInsets({ top: 80, right: 12, bottom: 180, left: 12 })
+    session.setPersonalWaypoints([waypoint], true, vi.fn())
+    const visibleMarkerCount = map.addedMarkers.length
+
+    session.focusPersonalWaypoint(waypoint)
+
+    expect(visibleMarkerCount).toBe(initialMarkerCount + 1)
+    expect(map.addedMarkers).toHaveLength(visibleMarkerCount)
+    expect(map.flyTo).toHaveBeenLastCalledWith({
+      center: [103.78, 1.29],
+      zoom: 16,
+      duration: 500,
+      offset: [0, -50],
+      essential: true,
+    })
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('shows a hidden saved Personal Waypoint marker while focusing it', () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { addedMarkers: Array<{
+      coordinate: unknown
+      element: FakeElement
+      remove: ReturnType<typeof vi.fn>
+    }> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+
+    session.setPersonalWaypoints([], true, vi.fn())
+    session.focusPersonalWaypoint(waypoint)
+
+    const focusedMarker = map.addedMarkers.at(-1)!
+    expect(focusedMarker.coordinate).toEqual([103.78, 1.29])
+    expect(focusedMarker.element.attributes.get('aria-label'))
+      .toBe('Open Quiet bench, Rest spot details. General icon, Blue marker.')
+
+    session.setPersonalWaypoints([], true, vi.fn())
+    expect(focusedMarker.remove).toHaveBeenCalledOnce()
     session.dispose()
     vi.unstubAllGlobals()
   })

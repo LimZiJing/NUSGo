@@ -48,7 +48,7 @@ export function createTripEndpointMarkers(
 
     const label = getTripEndpointLabel(endpoint, venues, transitIndex, buildings ?? undefined)
     const roleLabel = role === 'origin' ? 'Origin' : 'Destination'
-    const details = endpoint.kind === 'current-location'
+    const details = endpoint.kind === 'current-location' || endpoint.kind === 'personal-waypoint'
       ? [label]
       : [label, `ID: ${endpoint.id}`]
     const popupContent = createPopupContent(roleLabel, details)

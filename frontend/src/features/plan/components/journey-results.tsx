@@ -5,7 +5,8 @@ import type { Path } from '@nusgo/shared/routing/path'
 import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
-import { BuildingIcon, BusIcon, FootprintsIcon, RoomIcon } from '../../../ui/icons'
+import type { TripRequest } from '../../../domain/trip/types'
+import { BuildingIcon, BusIcon, FootprintsIcon, MapPinIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 import {
   getJourneyCompactSummary,
@@ -33,6 +34,7 @@ interface JourneyResultsProps {
   readonly networkIndex: TransitIndex | null
   readonly venues: VenueLocationMap | null
   readonly buildings?: BuildingIndex | null
+  readonly tripRequest?: TripRequest
   readonly onSelectCandidate?: (candidateKey: string) => void
   readonly onFitSelected?: () => void
 }
@@ -125,14 +127,18 @@ function renderBusLabel(entry: Extract<JourneyTimelineEntry, { kind: 'bus' }>) {
 
 function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
   if (entry.kind === 'location') {
-    const identityKind = entry.locationKind === 'current-location' ? null : entry.locationKind
+    const identityKind = entry.locationKind === 'current-location' || entry.locationKind === 'waypoint-coordinate'
+      ? null
+      : entry.locationKind
     const identityLabel = identityKind === 'venue'
       ? `${entry.label}, venue`
       : identityKind === 'building'
         ? `${entry.label}, building`
         : identityKind === 'stop'
         ? `${entry.label}, bus stop`
-        : entry.label
+        : entry.locationKind === 'waypoint-coordinate'
+          ? `${entry.label}, Personal Waypoint`
+          : entry.label
     return (
       <li className="journey-timeline-item journey-timeline-location" key={entry.id}>
         <span className="journey-timeline-marker" aria-hidden="true" />
@@ -140,6 +146,7 @@ function renderJourneyTimelineEntry(entry: JourneyTimelineEntry) {
           {identityKind === 'venue' && <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
           {identityKind === 'building' && <BuildingIcon className="location-identity-icon location-identity-icon--building" />}
           {identityKind === 'stop' && <BusIcon className="location-identity-icon location-identity-icon--stop" />}
+          {entry.locationKind === 'waypoint-coordinate' && <MapPinIcon className="location-identity-icon" />}
           <strong aria-label={identityLabel}>{entry.label}</strong>
         </span>
       </li>
@@ -179,8 +186,9 @@ function getJourneyLegEntries(
   venues: VenueLocationMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null,
+  tripRequest?: TripRequest,
 ): readonly JourneyTimelineEntry[] {
-  const entries = getJourneyTimelineEntries(path, venues, networkIndex, buildings)
+  const entries = getJourneyTimelineEntries(path, venues, networkIndex, buildings, tripRequest)
   return entries.filter((entry, index) => (
     entry.kind !== 'location' || (index > 0 && index < entries.length - 1)
   ))
@@ -212,6 +220,7 @@ export function JourneyResults({
   networkIndex,
   venues,
   buildings = null,
+  tripRequest,
   onSelectCandidate,
   onFitSelected,
 }: JourneyResultsProps) {
@@ -319,7 +328,7 @@ export function JourneyResults({
                       className="journey-timeline"
                       aria-label={index === 0 ? 'Journey details' : `Journey ${index + 1} details`}
                     >
-                      {getJourneyLegEntries(path, venues, networkIndex, buildings).map(renderJourneyTimelineEntry)}
+                      {getJourneyLegEntries(path, venues, networkIndex, buildings, tripRequest).map(renderJourneyTimelineEntry)}
                     </ol>
                   </>
                 )}

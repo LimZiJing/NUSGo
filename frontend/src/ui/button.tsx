@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react'
+import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -23,6 +23,9 @@ interface ButtonProps {
   readonly controls?: string
   /** Announces that the action is in progress. */
   readonly busy?: boolean
+  readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
+  readonly ariaDescribedBy?: string
+  readonly ariaKeyShortcuts?: string
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -43,6 +46,10 @@ interface IconButtonProps {
   readonly controls?: string
   /** Announces that the action is in progress. */
   readonly busy?: boolean
+  readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
+  readonly ariaDescribedBy?: string
+  readonly ariaKeyShortcuts?: string
+  readonly dataKeyboardReordering?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -62,6 +69,9 @@ export function Button({
   expanded,
   controls,
   busy,
+  onKeyDown,
+  ariaDescribedBy,
+  ariaKeyShortcuts,
   className,
   ref,
 }: ButtonProps) {
@@ -80,7 +90,10 @@ export function Button({
       aria-expanded={expanded}
       aria-controls={controls}
       aria-busy={busy}
+      aria-describedby={ariaDescribedBy}
+      aria-keyshortcuts={ariaKeyShortcuts}
       onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {icon}
       <span>{label}</span>
@@ -101,6 +114,10 @@ export function IconButton({
   expanded,
   controls,
   busy,
+  onKeyDown,
+  ariaDescribedBy,
+  ariaKeyShortcuts,
+  dataKeyboardReordering,
   className,
   ref,
 }: IconButtonProps) {
@@ -119,7 +136,11 @@ export function IconButton({
       aria-expanded={expanded}
       aria-controls={controls}
       aria-busy={busy}
+      aria-describedby={ariaDescribedBy}
+      aria-keyshortcuts={ariaKeyShortcuts}
+      data-keyboard-reordering={dataKeyboardReordering ? 'true' : undefined}
       onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {icon}
     </button>

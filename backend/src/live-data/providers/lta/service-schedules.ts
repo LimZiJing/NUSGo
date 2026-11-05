@@ -1,4 +1,5 @@
 import type { LtaPublicBusStopMapping } from './bus-stop-mapping.ts'
+import { isSingaporePublicHoliday } from './singapore-public-holidays.ts'
 
 export interface LtaServiceOperatingWindow {
   readonly firstBus: string
@@ -66,20 +67,52 @@ export function parseLtaServiceSchedule(input: unknown): LtaServiceSchedule | nu
   }
 }
 
-function localParts(atMs: number): { readonly weekday: number; readonly minute: number } {
+interface SingaporeDateTime {
+  readonly year: number
+  readonly month: number
+  readonly day: number
+  readonly weekday: number
+  readonly minute: number
+}
+
+function localParts(atMs: number): SingaporeDateTime {
   const parts = new Intl.DateTimeFormat('en-SG', {
     timeZone: 'Asia/Singapore',
     weekday: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
   }).formatToParts(new Date(atMs))
   const weekday = parts.find((part) => part.type === 'weekday')?.value
+  const year = Number(parts.find((part) => part.type === 'year')?.value)
+  const month = Number(parts.find((part) => part.type === 'month')?.value)
+  const day = Number(parts.find((part) => part.type === 'day')?.value)
   const hour = Number(parts.find((part) => part.type === 'hour')?.value)
   const minute = Number(parts.find((part) => part.type === 'minute')?.value)
   return {
+    year,
+    month,
+    day,
     weekday: weekday === 'Sat' ? 6 : weekday === 'Sun' ? 0 : 1,
     minute: hour * 60 + minute,
+  }
+}
+
+function dateKey({ year, month, day }: SingaporeDateTime): string {
+  return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+}
+
+function dateOffset(date: SingaporeDateTime, offset: number): SingaporeDateTime {
+  const value = new Date(Date.UTC(date.year, date.month - 1, date.day + offset))
+  return {
+    year: value.getUTCFullYear(),
+    month: value.getUTCMonth() + 1,
+    day: value.getUTCDate(),
+    weekday: value.getUTCDay(),
+    minute: 0,
   }
 }
 
@@ -97,42 +130,54 @@ function windowFor(schedule: LtaServiceSchedule, weekday: number): LtaServiceOpe
   return weekday === 0 ? schedule.sunday : weekday === 6 ? schedule.saturday : schedule.weekday
 }
 
+function windowForDate(schedule: LtaServiceSchedule, date: SingaporeDateTime): LtaServiceOperatingWindow | null {
+  return isSingaporePublicHoliday(dateKey(date)) ? schedule.sunday : windowFor(schedule, date.weekday)
+}
+
+function minutesFromTime(value: string): number | null {
+  const time = parseTime(value)
+  if (!time) return null
+  if (time === '2400') return 1_440
+  return Number(time.slice(0, 2)) * 60 + Number(time.slice(2))
+}
+
+function startAtMs(date: SingaporeDateTime, minutes: number): number {
+  const startDate = minutes === 1_440 ? dateOffset(date, 1) : date
+  const timeOfDay = minutes % 1_440
+  const hour = Math.floor(timeOfDay / 60).toString().padStart(2, '0')
+  const minute = (timeOfDay % 60).toString().padStart(2, '0')
+  return Date.parse(`${dateKey(startDate)}T${hour}:${minute}:00+08:00`)
+}
+
+/** Next first bus strictly after `atMs`, using Singapore holiday windows through a week ahead. */
+export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: number): number | null {
+  const date = localParts(atMs)
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const candidateDate = dateOffset(date, offset)
+    const window = windowForDate(schedule, candidateDate)
+    const firstBus = window ? minutesFromTime(window.firstBus) : null
+    if (firstBus === null) continue
+
+    const candidateStartAtMs = startAtMs(candidateDate, firstBus)
+    if (candidateStartAtMs <= atMs) continue
+    return candidateStartAtMs
+  }
+  return null
+}
+
 export function isLtaServiceOperating(schedule: LtaServiceSchedule, atMs: number): boolean {
-  const { weekday, minute } = localParts(atMs)
-  const current = windowFor(schedule, weekday)
+  const date = localParts(atMs)
+  const current = windowForDate(schedule, date)
+  const { minute } = date
   if (current && windowContainsCurrentDay(current, minute)) return true
 
-  const previousWeekday = weekday === 0 ? 6 : weekday - 1
-  const previous = windowFor(schedule, previousWeekday)
+  const previous = windowForDate(schedule, dateOffset(date, -1))
   if (!previous) return false
   const first = Number(previous.firstBus.slice(0, 2)) * 60 + Number(previous.firstBus.slice(2))
   const last = previous.lastBus === '2400'
     ? 1_440
     : Number(previous.lastBus.slice(0, 2)) * 60 + Number(previous.lastBus.slice(2))
   return last < first && minute <= last
-}
-
-const SINGAPORE_OFFSET_MS = 8 * 3_600_000
-const DAY_MS = 86_400_000
-
-function toMinutes(time: string): number {
-  return Number(time.slice(0, 2)) * 60 + Number(time.slice(2))
-}
-
-/** Next first bus strictly after `atMs`, looking up to a week ahead. Public holidays are not modelled. */
-export function getNextLtaServiceStart(schedule: LtaServiceSchedule, atMs: number): number | null {
-  const localMs = atMs + SINGAPORE_OFFSET_MS
-  const today = new Date(localMs).getUTCDay()
-  const minute = Math.floor((localMs % DAY_MS) / 60_000)
-  const localMidnightMs = Math.floor(localMs / DAY_MS) * DAY_MS - SINGAPORE_OFFSET_MS
-  for (let offset = 0; offset <= 7; offset += 1) {
-    const window = windowFor(schedule, (today + offset) % 7)
-    if (!window) continue
-    const first = toMinutes(window.firstBus)
-    if (offset === 0 && first <= minute) continue
-    return localMidnightMs + offset * DAY_MS + first * 60_000
-  }
-  return null
 }
 
 function scheduleKey(serviceNumber: string, busStopCode: string): string {

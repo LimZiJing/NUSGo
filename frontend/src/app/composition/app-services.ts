@@ -1,6 +1,7 @@
 import type { LoadedTransitData, LoadedVenueData } from '../contracts/data'
 import type { LocationTracker } from '../contracts/location'
 import type { ShuttleArrivalClient } from '../contracts/shuttle-arrivals'
+import type { ShuttleVehicleClient } from '../contracts/shuttle-vehicles'
 import type { PublicBusArrivalClient } from '../contracts/public-bus-arrivals'
 import type { JourneyPlanningClient } from '../../infrastructure/pathfinding/client'
 import { createJourneyPlanningClient } from '../../infrastructure/pathfinding/client'
@@ -8,6 +9,7 @@ import { loadTransitMapData, loadVenueData } from '../../infrastructure/data/loa
 import { createBrowserLocationTracker } from '../../infrastructure/location/browser'
 import { createPublicBusArrivalClient } from '../../infrastructure/lta-datamall/client'
 import { createShuttleArrivalClient } from '../../infrastructure/shuttle-arrivals/client'
+import { createShuttleVehicleClient } from '../../infrastructure/shuttle-vehicles/client'
 import {
   createShuttleServiceHoursClient,
   type ShuttleServiceHoursClient,
@@ -18,6 +20,7 @@ export interface AppServices {
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly createLocationTracker: () => LocationTracker
   readonly shuttleArrivalClient: ShuttleArrivalClient
+  readonly shuttleVehicleClient: ShuttleVehicleClient
   readonly publicBusArrivalClient: PublicBusArrivalClient
   readonly shuttleServiceHoursClient: ShuttleServiceHoursClient
   readonly pathfinder: JourneyPlanningClient
@@ -33,6 +36,7 @@ export interface CreateAppServicesOptions {
 /** Creates the browser collaborators; Journey candidates and routed geometry come from Express. */
 export function createAppServices(options: CreateAppServicesOptions): AppServices {
   const shuttleArrivalClient = createShuttleArrivalClient()
+  const shuttleVehicleClient = createShuttleVehicleClient()
   const publicBusArrivalClient = createPublicBusArrivalClient()
   const shuttleServiceHoursClient = createShuttleServiceHoursClient()
   const isDevelopment = options.isDevelopment ?? import.meta.env.DEV
@@ -45,6 +49,7 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
     loadVenues: loadVenueData,
     createLocationTracker: createBrowserLocationTracker,
     shuttleArrivalClient,
+    shuttleVehicleClient,
     publicBusArrivalClient,
     shuttleServiceHoursClient,
     pathfinder,

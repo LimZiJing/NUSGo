@@ -17,6 +17,7 @@ import {
   swapTripEndpoints,
 } from '../../../domain/trip/endpoints'
 import type { TripRequest } from '../../../domain/trip/types'
+import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { TransitStopInput } from '@nusgo/shared/transit/types'
 import type { Path, ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -38,6 +39,17 @@ const stops: TransitStopInput[] = [
     services: ['A1'],
   },
 ]
+
+const personalWaypoints: PersonalWaypoint[] = [{
+  id: '00000000-0000-4000-8000-000000000041',
+  name: 'Quiet bench',
+  category: 'Rest areas',
+  coordinate: { longitude: 103.78, latitude: 1.29 },
+  markerColor: 'blue',
+  markerIcon: 'dot',
+  createdAt: '2026-10-25T00:00:00.000Z',
+  updatedAt: '2026-10-25T00:00:00.000Z',
+}]
 
 const transitNetwork = createValidTransitNetwork()
 transitNetwork.stops = [stops[0], transitNetwork.stops[1]]
@@ -159,6 +171,20 @@ describe('PlanLocationSearch results', () => {
     })
 
     expect(markup).toContain('aria-label="Set origin to Central Library, bus stop, STOP-A"')
+  })
+
+  it('shows Personal Waypoints by name before typing and searches their category', () => {
+    const suggestions = renderSearch({ venues: null, networkIndex: null, personalWaypoints })
+    expect(suggestions).toContain('aria-label="Set origin to Quiet bench, Personal Waypoint"')
+    expect(suggestions).toContain('>Rest areas<')
+
+    const categoryMatch = renderSearch({
+      venues: null,
+      networkIndex: null,
+      personalWaypoints,
+      searchQuery: 'rest areas',
+    })
+    expect(categoryMatch).toContain('Quiet bench')
   })
 })
 

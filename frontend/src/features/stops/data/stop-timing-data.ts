@@ -3,6 +3,7 @@ import {
   SHUTTLE_ARRIVAL_MAX_AGE_MS,
   type ShuttleArrivalSnapshot,
 } from '../../../domain/transit/arrivals'
+import type { ShuttleLoadLevel } from '@nusgo/shared'
 import {
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
   type PublicBusArrivalSnapshot,
@@ -30,6 +31,8 @@ export interface StopDeparture {
   readonly routeId: string
   readonly routeName: string
   readonly routeColor: string
+  readonly load: ShuttleLoadLevel
+  readonly loads?: readonly [ShuttleLoadLevel, ShuttleLoadLevel, ShuttleLoadLevel]
   readonly timings: readonly [string, string, string]
   readonly reachableFavouriteStops?: readonly StopFavouriteDestination[]
 }
@@ -155,7 +158,7 @@ function formatSingaporeClock(ms: number): string {
 
 function formatPublicServiceStart(nextStartAt: string, nowMs: number): string | undefined {
   const startMs = Date.parse(nextStartAt)
-  if (!Number.isFinite(startMs)) return undefined
+  if (!Number.isFinite(startMs) || startMs <= nowMs) return undefined
   const daysAway = singaporeDayNumber(startMs) - singaporeDayNumber(nowMs)
   const clock = formatSingaporeClock(startMs)
   if (daysAway <= 0) return `Starts ${clock}`
@@ -183,17 +186,28 @@ function getLiveStopDepartures(
     const arrival = stopArrivals[routeId]
     if (!route || !arrival) return []
 
-    const timings = arrival.upcomingArrivalSeconds
-      .map((seconds) => seconds - ageSeconds)
-      .filter((seconds) => seconds >= 0)
+    const upcoming = arrival.upcomingArrivalSeconds
+      .map((seconds, arrivalIndex) => ({
+        seconds: seconds - ageSeconds,
+        load: arrival.upcomingLoads?.[arrivalIndex] ?? (arrivalIndex === 0 ? arrival.load : undefined) ?? 'unknown',
+      }))
+      .filter(({ seconds }) => seconds >= 0)
       .slice(0, 3)
-      .map((seconds) => formatArrivalSeconds(seconds, minuteFormat))
-    if (timings.length === 0) return []
+    if (upcoming.length === 0) return []
+
+    const timings = upcoming.map(({ seconds }) => formatArrivalSeconds(seconds, minuteFormat))
+    const loads = [0, 1, 2].map((index) => upcoming[index]?.load ?? 'unknown') as [
+      ShuttleLoadLevel,
+      ShuttleLoadLevel,
+      ShuttleLoadLevel,
+    ]
 
     return [{
       routeId,
       routeName: route.name,
       routeColor: route.color,
+      load: loads[0],
+      loads,
       timings: [timings[0], timings[1] ?? '-', timings[2] ?? '-'] as const,
       reachableFavouriteStops: [],
     }]

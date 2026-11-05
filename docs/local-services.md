@@ -2,7 +2,36 @@
 
 NUSGo has three local processes: the static frontend, the Express API, and the private Valhalla walking service. Express owns API routes, provider credentials, live-data polling, and Journey calculations. Vite owns the frontend development server and, during development only, forwards `/api` requests to Express.
 
-The root `npm run dev` command is a convenience that starts Vite, Express, and Valhalla together. The steps below exercise the same services as separate processes, including a built frontend.
+The root `npm run dev` command starts or reuses a managed Vite/Express group and ensures shared Valhalla is available. The standalone commands below remain available for manual diagnosis.
+
+## Managed worktree servers
+
+Agents use these commands from the worktree root:
+
+```bash
+npm run servers:start
+npm run servers:status
+npm run servers:stop
+```
+
+`start` returns after both HTTP listeners respond. Calling it again reuses the healthy group. The group runs independently of the launching terminal until explicitly stopped. Each worktree gets stable frontend/backend ports derived from its canonical path. To choose ports explicitly, use `npm run servers:start -- --port 5200 --backend-port 3200`. A conflict fails; ports never silently advance. The Vite development proxy and backend CORS origins match the assigned ports. Shared Valhalla is left running when a group stops; stop it explicitly with `npm run valhalla:down` when no worktree needs it.
+
+Groups are registered outside Git under `%LOCALAPPDATA%/NUSGo/servers/<repository-id>` on Windows, or `~/.local/state/NUSGo/servers/<repository-id>` elsewhere. Worktrees of the same repository share the registry. Each entry records the worktree, manager/child PIDs, ports, start time, and a private control identity. Status and stop authenticate the manager rather than trusting a saved PID. The adjacent `.log` captures startup errors and server output. Treat registry files as private; do not commit or share them.
+
+Concurrent startup is guarded by an exclusive lock. If a manager is forcibly killed or the machine restarts, status can show an unverified entry. Inspect the recorded processes and ports, then remove only that worktree's stale `.json` and `.json.lock` files before restarting. The manager never steals locks or kills unverified PIDs. Existing unmanaged servers are not adopted or stopped automatically.
+
+### Temporary built previews
+
+Build the rehearsal bundle first, then run a check through the preview wrapper:
+
+```bash
+npm run build:local-rehearsal
+npm run servers:preview -- --port 4173 -- node scripts/my-preview-check.mjs
+```
+
+The check receives `NUSGO_PREVIEW_URL`. Its exit code is preserved, and its owned preview tree is stopped in a `finally` block. If the wrapper disappears abruptly, a short lease expires and the preview manager stops itself. A temporary preview cannot replace a running development group in the same worktree: stop that group first or use another worktree. Preview mode serves only the built frontend; its API origin remains the address embedded at build time, so arrange the backend separately. It does not build assets or start Docker.
+
+Shutdown uses a Windows kill-on-close Job Object (through Windows PowerShell) or a POSIX process group. The Windows launcher starts suspended and joins the job before executing, so descendants are contained even if their launcher exits. Automatic abandoned-group cleanup is outside this implementation. A hard-killed persistent manager may leave its independently running wrapper and services; inspect those before removing stale state.
 
 ## Local built-frontend rehearsal
 

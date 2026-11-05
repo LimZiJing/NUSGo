@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
+import { stopTree } from './servers/process.mjs'
 
 const repositoryRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const frontendRoot = resolve(repositoryRoot, 'frontend')
@@ -16,14 +17,16 @@ function requestShutdown(code) {
   shutdownRequested = true
   exitCode = code
   resolveShutdown()
-  for (const child of activeProcesses.keys()) child.kill('SIGTERM')
+  for (const child of activeProcesses.keys()) void stopTree(child, { group: false }).catch(console.error)
 }
 
 process.once('SIGINT', () => requestShutdown(130))
 process.once('SIGTERM', () => requestShutdown(143))
 
 function launch(command, args, cwd) {
-  const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true })
+  const child = spawn(command, args, {
+    cwd, stdio: 'inherit', windowsHide: true,
+  })
   const done = new Promise((resolvePromise, reject) => {
     child.once('error', (error) => {
       activeProcesses.delete(child)
@@ -62,12 +65,7 @@ async function valhallaIsReady() {
 
 async function stopChildren() {
   const processes = [...activeProcesses.entries()]
-  for (const [child] of processes) child.kill('SIGTERM')
-  await Promise.race([
-    Promise.allSettled(processes.map(([, done]) => done)),
-    new Promise((resolvePromise) => setTimeout(resolvePromise, 5000)),
-  ])
-  for (const [child] of activeProcesses) child.kill('SIGKILL')
+  await Promise.all(processes.map(([child]) => stopTree(child, { group: false })))
   await Promise.allSettled([...activeProcesses.values()])
 }
 
@@ -90,7 +88,8 @@ async function main() {
     ], repositoryRoot)
     if (shutdownRequested) return
 
-    shouldStopValhalla = !(await valhallaIsReady())
+    // Managed worktrees share Valhalla; stopping one group must not stop another's routing service.
+    shouldStopValhalla = !process.env.NUSGO_MANAGED_SERVERS && !(await valhallaIsReady())
     await runSetup(process.execPath, ['scripts/start-valhalla.mjs'], repositoryRoot)
     if (shutdownRequested) return
 
@@ -101,7 +100,10 @@ async function main() {
       'src/server.ts',
     ], backendRoot)
     const viteCli = resolve(repositoryRoot, 'node_modules/vite/bin/vite.js')
-    const frontend = launch(process.execPath, [viteCli, '--config', 'vite.config.ts'], frontendRoot)
+    const frontend = launch(process.execPath, [
+      viteCli, '--config', 'vite.config.ts', '--strictPort',
+      '--host', '127.0.0.1', '--port', process.env.NUSGO_FRONTEND_PORT || '5173',
+    ], frontendRoot)
 
     const firstResult = await Promise.race([
       backend.done.then((result) => ({ name: 'backend', result })),

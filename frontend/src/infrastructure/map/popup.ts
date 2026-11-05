@@ -1,10 +1,8 @@
 import type { Popup } from 'maplibre-gl'
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole } from '../../domain/trip/types'
-import { NavigationIcon } from '../../ui/icons'
+import { createMapSvgIcon } from './svg-icons'
 
 const MAX_SERVICES_PER_ROW = 4
 
@@ -39,9 +37,7 @@ function createPopupElements(
 }
 
 function createNavigationIcon(): SVGSVGElement {
-  const wrapper = document.createElement('span')
-  wrapper.innerHTML = renderToStaticMarkup(createElement(NavigationIcon))
-  return wrapper.firstElementChild as SVGSVGElement
+  return createMapSvgIcon('navigation')
 }
 
 function appendNavigationAction(

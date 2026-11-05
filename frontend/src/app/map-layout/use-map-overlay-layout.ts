@@ -38,6 +38,10 @@ export interface MapOverlayLayout {
   readonly navigationColumnWidth: number
 }
 
+function setStylePropertyIfChanged(element: HTMLElement, name: string, value: string): void {
+  if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value)
+}
+
 export function useMapOverlayLayout({
   commands,
   isMobileViewport,
@@ -84,32 +88,42 @@ export function useMapOverlayLayout({
     // Placement removes the measured tab bar, so remeasure only after navigation returns.
     if (!shell || !isMobileViewport || waypointPlacementActive) return
 
+    let frame: number | null = null
     const updateVisualViewport = (): void => {
       const viewport = window.visualViewport
       const metrics = measureMobileSheetMetrics(shell, refs.mainNavigation.current)
-      shell.style.setProperty('--mobile-viewport-height', `${metrics.viewportHeight}px`)
+      setStylePropertyIfChanged(shell, '--mobile-viewport-height', `${metrics.viewportHeight}px`)
       if (metrics.tabBarInset > 0) {
-        shell.style.setProperty('--mobile-tab-bar-height', `${metrics.tabBarInset}px`)
+        setStylePropertyIfChanged(shell, '--mobile-tab-bar-height', `${metrics.tabBarInset}px`)
       }
-      shell.style.setProperty('--mobile-viewport-offset-top', `${viewport?.offsetTop ?? 0}px`)
+      setStylePropertyIfChanged(shell, '--mobile-viewport-offset-top', `${viewport?.offsetTop ?? 0}px`)
       setMobileSheetMetrics((current) => (
         current && areMobileSheetMetricsEqual(current, metrics) ? current : metrics
       ))
     }
 
+    const scheduleVisualViewportUpdate = (): void => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        updateVisualViewport()
+      })
+    }
+
     updateVisualViewport()
-    window.addEventListener('resize', updateVisualViewport)
-    window.visualViewport?.addEventListener('resize', updateVisualViewport)
-    window.visualViewport?.addEventListener('scroll', updateVisualViewport)
+    window.addEventListener('resize', scheduleVisualViewportUpdate)
+    window.visualViewport?.addEventListener('resize', scheduleVisualViewportUpdate)
+    window.visualViewport?.addEventListener('scroll', scheduleVisualViewportUpdate)
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
-      : new ResizeObserver(updateVisualViewport)
+      : new ResizeObserver(scheduleVisualViewportUpdate)
     resizeObserver?.observe(shell)
     if (refs.mainNavigation.current) resizeObserver?.observe(refs.mainNavigation.current)
     return () => {
-      window.removeEventListener('resize', updateVisualViewport)
-      window.visualViewport?.removeEventListener('resize', updateVisualViewport)
-      window.visualViewport?.removeEventListener('scroll', updateVisualViewport)
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', scheduleVisualViewportUpdate)
+      window.visualViewport?.removeEventListener('resize', scheduleVisualViewportUpdate)
+      window.visualViewport?.removeEventListener('scroll', scheduleVisualViewportUpdate)
       resizeObserver?.disconnect()
       shell.style.removeProperty('--mobile-viewport-height')
       shell.style.removeProperty('--mobile-tab-bar-height')
@@ -154,7 +168,8 @@ export function useMapOverlayLayout({
   }, [commands, isMobileViewport, mapPresentationRef, observeStopsPresentation, refs, sheetElementsRevision])
 
   useLayoutEffect(() => {
-    const updateInsets = (): void => {
+    let frame: number | null = null
+    const updateInsets = (publishPresentationInset = true): void => {
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight
       const activeView: NavigationView = navigation.activeView
@@ -168,9 +183,6 @@ export function useMapOverlayLayout({
       const measuredNavigationWidth = isMobileViewport || waypointPlacementActive
         ? 0
         : refs.navigationColumn.current?.getBoundingClientRect().width ?? 0
-      setNavigationColumnWidth((current) => (
-        current === measuredNavigationWidth ? current : measuredNavigationWidth
-      ))
       const metrics = mapShellElement
         ? measureMobileSheetMetrics(mapShellElement, refs.mainNavigation.current)
         : null
@@ -183,13 +195,17 @@ export function useMapOverlayLayout({
           createMobileSheetSnapPoints(metrics.viewportHeight, tabBarInset, metrics.collapsedHeight),
         ) - tabBarInset)
         : activeSheetBounds?.height ?? 0
+      // Read geometry before publishing state or map updates.
+      const presentationBottomInset = publishPresentationInset && isMobileViewport && observeStopsPresentation && activeSheetBounds && mapShellElement
+        ? Math.max(0, mapShellElement.getBoundingClientRect().bottom - activeSheetBounds.top + MAP_OVERLAY_MARGIN)
+        : null
+      setNavigationColumnWidth((current) => (
+        current === measuredNavigationWidth ? current : measuredNavigationWidth
+      ))
       // React applies the target detent before transitionrun. Hold the rendered
       // padding here so keyboard snaps cannot jump to the target for one frame.
-      if (isMobileViewport && observeStopsPresentation && activeSheetBounds && mapShellElement) {
-        commands.setPresentationBottomInset(Math.max(
-          0,
-          mapShellElement.getBoundingClientRect().bottom - activeSheetBounds.top + MAP_OVERLAY_MARGIN,
-        ))
+      if (presentationBottomInset !== null) {
+        commands.setPresentationBottomInset(presentationBottomInset)
       }
       const nextInsets = applyMapOverlayMeasurements(commands, {
         viewportWidth,
@@ -210,14 +226,35 @@ export function useMapOverlayLayout({
       ))
       onMeasurementsApplied?.()
     }
+    const scheduleInsetUpdate = (): void => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        updateInsets()
+      })
+    }
+    const stopsSheet = refs.stopsSheet.current
+    const finishPendingInsetUpdate = (event: TransitionEvent): void => {
+      if (event.target !== stopsSheet || event.propertyName !== 'transform' || frame === null) return
+      // The presentation observer clears its transient inset before this listener runs.
+      // Preserve a queued viewport measurement without restoring the finished presentation.
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        updateInsets(false)
+      })
+    }
 
     updateInsets()
-    window.addEventListener('resize', updateInsets)
-    window.visualViewport?.addEventListener('resize', updateInsets)
-    window.visualViewport?.addEventListener('scroll', updateInsets)
+    window.addEventListener('resize', scheduleInsetUpdate)
+    window.visualViewport?.addEventListener('resize', scheduleInsetUpdate)
+    window.visualViewport?.addEventListener('scroll', scheduleInsetUpdate)
+    if (isMobileViewport && observeStopsPresentation && navigation.activeView === 'stops') {
+      stopsSheet?.addEventListener('transitionend', finishPendingInsetUpdate)
+    }
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
-      : new ResizeObserver(updateInsets)
+      : new ResizeObserver(scheduleInsetUpdate)
     if (refs.tripControls.current) resizeObserver?.observe(refs.tripControls.current, { box: 'border-box' })
     if (refs.explorePanel.current) resizeObserver?.observe(refs.explorePanel.current, { box: 'border-box' })
     if (refs.stopsSheet.current) resizeObserver?.observe(refs.stopsSheet.current, { box: 'border-box' })
@@ -225,9 +262,11 @@ export function useMapOverlayLayout({
     if (refs.navigationColumn.current) resizeObserver?.observe(refs.navigationColumn.current, { box: 'border-box' })
 
     return () => {
-      window.removeEventListener('resize', updateInsets)
-      window.visualViewport?.removeEventListener('resize', updateInsets)
-      window.visualViewport?.removeEventListener('scroll', updateInsets)
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', scheduleInsetUpdate)
+      window.visualViewport?.removeEventListener('resize', scheduleInsetUpdate)
+      window.visualViewport?.removeEventListener('scroll', scheduleInsetUpdate)
+      stopsSheet?.removeEventListener('transitionend', finishPendingInsetUpdate)
       resizeObserver?.disconnect()
     }
   }, [

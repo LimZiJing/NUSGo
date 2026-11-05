@@ -13,6 +13,18 @@ PR #597, application head `ed0e804af8e266863fe8015860467d9ff01b582f`, local Vite
 - No page-level JavaScript errors occurred. The Express backend was not started; live arrivals and route calculation were outside this check. Physical-device gestures and the broader release checklist were not repeated.
 - CONTEXT.md reviewed; no update needed.
 
+## More installation row review verification — 2026-11-05
+
+PR [#596](https://github.com/LimZiJing/NUSGo/pull/596), after merging `origin/main`: Microsoft Edge 156.0.4314.58 headless, Playwright 1.64.1, built local-rehearsal frontend at `http://127.0.0.1:5596/`.
+
+- Separate fresh browser contexts reported actual `innerWidth`/`innerHeight` of 390 × 844 (mobile/touch emulation) and 1280 × 800. The shared preview's freeform and device-preset resize both remained at 1280 × 800, so this pass used local Playwright.
+- At both sizes, More listed My waypoints, Settings, Release notes, then Download NUSGo. Download used the shared row style, measured 54px tall, fit within the viewport, and loaded `/icons/pwa-icon-192.png` with natural dimensions 192 × 192.
+- With no native prompt, pressing the row revealed browser instructions and set `aria-expanded` to true; pressing again hid the instructions and reset the attribute.
+- A simulated `beforeinstallprompt` invoked its prompt exactly once from the row. Accepting the prompt left the installation status silent. With More closed, a simulated `appinstalled` updated the same persistent status node to “NUSGo is installed on this device”; reopening More showed no Download row.
+- Both contexts reported zero uncaught page errors. Screenshots were inspected for the mobile instructions layout. API requests received a controlled 503 response; live provider behavior was outside this menu check.
+- These browser events verify application handling without installing on the host. A real OS install dialog, spoken screen-reader output, and physical-device browser behavior were not verified.
+- `CONTEXT.md` reviewed; no update needed.
+
 ## Personal Waypoint conflict workflow — 2026-10-28
 
 Codex In-app Browser (Chromium-based; exact version unavailable), local Vite development server at `http://127.0.0.1:4175/`, 1280 × 720:

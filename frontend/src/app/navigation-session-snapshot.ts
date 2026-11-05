@@ -5,6 +5,7 @@ import type { NavigationSessionStartupFailure, NavigationSessionState } from './
 import type { ResourceState, ResourceStatusState } from './resource-status'
 import type { JourneyState } from './journey-state'
 import type { LocationTrackingState } from '../domain/location/types'
+import type { JourneyEndpoint, Path, ScoredPathCandidate } from '@nusgo/shared/routing/path'
 
 function freeze<T>(value: T): T {
   return Object.freeze(value) as T
@@ -70,39 +71,133 @@ function snapshotTripRequest(request: TripRequest): TripRequest {
   })
 }
 
-function snapshotJourneyState(state: JourneyState): JourneyState {
-  const snapshotPath = (path: JourneyState['path']): JourneyState['path'] => {
-    if (path === null) return null
-    const legs = path.legs.map((leg) => freeze({
-      ...leg,
-      from: freeze({ ...leg.from }),
-      to: freeze({ ...leg.to }),
-      geometry: freeze({
-        ...leg.geometry,
-        coordinates: freeze(leg.geometry.coordinates.map((coordinate) => (
-          freeze([coordinate[0], coordinate[1]] as const)
-        ))),
-      }),
-    }))
+function snapshotPathEndpoint(endpoint: JourneyEndpoint): JourneyEndpoint {
+  if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
     return freeze({
-      ...path,
-      origin: freeze({ ...path.origin }),
-      destination: freeze({ ...path.destination }),
-      legs: freeze(legs),
+      kind: endpoint.kind,
+      coordinate: freeze({ ...endpoint.coordinate }),
     })
   }
-  return freeze({
-    ...state,
-    path: snapshotPath(state.path),
-    candidates: freeze(state.candidates.map((candidate) => freeze({
-      ...candidate,
-      path: snapshotPath(candidate.path)!,
-    }))),
-    displayedCandidates: freeze(state.displayedCandidates.map((candidate) => freeze({
-      ...candidate,
-      path: snapshotPath(candidate.path)!,
-    }))),
+  return freeze({ kind: endpoint.kind, id: endpoint.id })
+}
+
+function isFrozenPathEndpoint(endpoint: JourneyEndpoint): boolean {
+  return Object.isFrozen(endpoint) && (
+    !('coordinate' in endpoint) || Object.isFrozen(endpoint.coordinate)
+  )
+}
+
+function isFrozenPath(path: Path): boolean {
+  if (
+    !Object.isFrozen(path) ||
+    !isFrozenPathEndpoint(path.origin) ||
+    !isFrozenPathEndpoint(path.destination) ||
+    !Object.isFrozen(path.legs)
+  ) return false
+
+  return path.legs.every((leg) => (
+    Object.isFrozen(leg) &&
+    isFrozenPathEndpoint(leg.from) &&
+    isFrozenPathEndpoint(leg.to) &&
+    Object.isFrozen(leg.geometry) &&
+    Object.isFrozen(leg.geometry.coordinates) &&
+    leg.geometry.coordinates.every(Object.isFrozen)
+  ))
+}
+
+function snapshotPath(path: Path, snapshots: Map<Path, Path>): Path {
+  const cached = snapshots.get(path)
+  if (cached) return cached
+
+  // A shallow Object.freeze does not make nested geometry safe to reuse.
+  if (isFrozenPath(path)) {
+    snapshots.set(path, path)
+    return path
+  }
+
+  const legs = path.legs.map((leg) => freeze({
+    ...leg,
+    from: snapshotPathEndpoint(leg.from),
+    to: snapshotPathEndpoint(leg.to),
+    geometry: freeze({
+      ...leg.geometry,
+      coordinates: freeze(leg.geometry.coordinates.map((coordinate) => (
+        freeze([coordinate[0], coordinate[1]] as const)
+      ))),
+    }),
+  }))
+  const snapshot = freeze({
+    ...path,
+    origin: snapshotPathEndpoint(path.origin),
+    destination: snapshotPathEndpoint(path.destination),
+    legs: freeze(legs),
   })
+  snapshots.set(path, snapshot)
+  return snapshot
+}
+
+function hasFrozenPath(path: Path, snapshots: Map<Path, Path>): boolean {
+  const cached = snapshots.get(path)
+  if (cached) return cached === path
+  if (!isFrozenPath(path)) return false
+  snapshots.set(path, path)
+  return true
+}
+
+function snapshotCandidate(
+  candidate: ScoredPathCandidate,
+  paths: Map<Path, Path>,
+  snapshots: Map<ScoredPathCandidate, ScoredPathCandidate>,
+): ScoredPathCandidate {
+  const cached = snapshots.get(candidate)
+  if (cached) return cached
+
+  if (Object.isFrozen(candidate) && hasFrozenPath(candidate.path, paths)) {
+    snapshots.set(candidate, candidate)
+    return candidate
+  }
+
+  const snapshot = freeze({ ...candidate, path: snapshotPath(candidate.path, paths) })
+  snapshots.set(candidate, snapshot)
+  return snapshot
+}
+
+function isFrozenJourneyState(
+  state: JourneyState,
+  paths: Map<Path, Path>,
+): boolean {
+  if (
+    !Object.isFrozen(state) ||
+    !Object.isFrozen(state.candidates) ||
+    !Object.isFrozen(state.displayedCandidates) ||
+    (state.path !== null && !hasFrozenPath(state.path, paths))
+  ) return false
+
+  for (const candidate of state.candidates) {
+    if (!Object.isFrozen(candidate) || !hasFrozenPath(candidate.path, paths)) return false
+  }
+  for (const candidate of state.displayedCandidates) {
+    if (!Object.isFrozen(candidate) || !hasFrozenPath(candidate.path, paths)) return false
+  }
+  return true
+}
+
+function snapshotJourneyState(state: JourneyState): JourneyState {
+  const paths = new Map<Path, Path>()
+  if (isFrozenJourneyState(state, paths)) return state
+  const candidates = new Map<ScoredPathCandidate, ScoredPathCandidate>()
+
+  const snapshot = freeze({
+    ...state,
+    path: state.path === null ? null : snapshotPath(state.path, paths),
+    candidates: freeze(state.candidates.map((candidate) => (
+      snapshotCandidate(candidate, paths, candidates)
+    ))),
+    displayedCandidates: freeze(state.displayedCandidates.map((candidate) => (
+      snapshotCandidate(candidate, paths, candidates)
+    ))),
+  })
+  return snapshot
 }
 
 function snapshotLocationState(state: LocationTrackingState): LocationTrackingState {

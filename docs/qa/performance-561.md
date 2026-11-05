@@ -72,3 +72,42 @@ The preview's Vite output reported MapLibre missing-image warnings for `office`,
 - `npm run lint`: passed — CSS selector check reported no new bare button selectors.
 - `VITE_API_ORIGIN=https://api.nusgo.invalid npm run build`: passed — Vite reported the existing main-chunk size advisory.
 - `git diff --check`: passed.
+
+## Current-source review verification — 5 November 2026
+
+Verified source commit `9175865a7f7c6c45e162b020f64dd396f21d9465`, including the merge of `origin/main` at `debcc6c2` and the canonical inset fix. The regression first failed with a stale 498px canonical inset after an 844px → 500px resize. It now observes 326px through both `setViewportInsets` and the hook's `mapInsets`, while the transient presentation command stays cleared. The transition-end handler replaces a pending frame with a canonical-only measurement; effect cleanup still cancels that frame.
+
+Browser verification used a fresh headless Edge 156 profile at 390 × 844 CSS pixels on Windows, the current Vite source, the real MapLibre camera, an empty basemap and controlled browser API fixtures. A disposable page outside tracked source intercepted API requests before app startup and observed camera methods without replacing their behavior. The single Journey response was a validated, synthetic 1,000-coordinate walking Path from COM 3 to University Town; no shared or live Journey backend was used. This verifies camera presentation, not provider correctness. Local tooling and results are ignored under `frontend/.cache/pr590`.
+
+| Current-source browser check | Observed result |
+| --- | --- |
+| Stops collapsed / partial / full / partial via actual Arrow keys | Passed; handle retained focus; settled bottom padding 116 / 506 / 843 / 506px |
+| Full A1 route geometry | All projected coordinates x=27.88–366px, y=88.60–273.40px; partial sheet begins at y=350px |
+| Route camera flight with repeated resize and visual-viewport events | Completed in 525ms; no intervening `setPadding` call |
+| Kent Ridge Bus Terminal stop focus | Canonical stop coordinate projected to (195, 169), above the partial Stops sheet at y=350px |
+| Stop Back action | Restored focus to the originating Kent Ridge Bus Terminal route row |
+| Central Library Seminar Room selection | Venue projected to (195, 169); selection returned Explore from full to partial |
+| Search viewport resize 844 → 500 → 844px | CSS viewport height reached 500px while search retained focus; selection worked after restore |
+| Full Journey geometry with partial Plan | All 1,000 points x=187.37–202.63px, y=48–290px, above the sheet at y=350px |
+| Full Journey geometry with collapsed Plan | All points x=175.06–214.94px, y=48–680px, above the sheet at y=740px |
+| Remembered Explore and Plan detents / Journey return | Partial Explore and collapsed Plan restored; Journey refitted with exactly one planning request overall |
+| Stops wheel zoom | Visible geographic centre unchanged at [103.775217, 1.294431] |
+| CDP touch drag partial → full | Six moves changed sheet top from 350 to 150px while padding stayed 434px; full detent settled |
+| Native Stops list scrolling | Browser wheel input scrolled the list while the full detent stayed selected |
+| Viewport shrink during Stops transition and restore | Map padding stayed within the resized viewport; restoring partial at 844px settled at the current 506px inset |
+| Reduced motion | All keyboard detents passed with reduced-motion emulation |
+| Desktop / mobile breakpoint return | Desktop navigation column appeared at 1280 × 800; Stops partial detent restored at 390 × 844 |
+| Runtime diagnostics | No page errors, captured console errors, or map-framing warnings |
+
+Physical-device touch, a native software keyboard, safe-area hardware, GPU/compositor timing, live-provider routing and paint cost remain unavailable locally. Viewport emulation and CDP touch are explicitly proxies for those device checks. Earlier evidence and limitations above describe their original revisions; this section supersedes the missing current-source camera-framing evidence.
+
+Verification on this source:
+
+- `npm test`: passed — 19 release-script, 22 shared, 1,353 frontend, 136 backend Node, and 105 backend Vitest tests (1,635 total).
+- `npm run lint`: passed; no new bare button selectors.
+- `npm run build` with `VITE_API_ORIGIN=https://api.nusgo.invalid`: passed; existing bundle-size advisory only.
+- `git diff --check`: passed.
+
+Initial setup found empty shared dependency links; those were unlinked with the repository helper before a worktree-local `npm ci`. One targeted Vitest worker launch timed out during installation/resource contention; the subsequent complete `npm test` run passed every suite, including the regression. T3 preview navigation and snapshot timed out, so browser verification used local Playwright with isolated headless Edge instead.
+
+`CONTEXT.md` reviewed; no update needed.

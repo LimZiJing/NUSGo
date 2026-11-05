@@ -29,6 +29,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 - Do not add a dependency unless the current requirement needs it and existing capabilities are insufficient.
 - Keep external data validated at its boundary and preserve the project’s canonical sources of truth.
 - Run and report the exact results of `npm test`, `npm run lint`, `npm run build`, and `git diff --check` when available and applicable. UI or map changes SHOULD include targeted local-browser smoke testing for affected behavior. Full responsive and keyboard testing is required only when those behaviors change materially or before a release. If browser testing is unavailable, document what was not verified and why.
+- Before installing dependencies in a worktree, read `docs/agents/workflow.md` section 2.
 - Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
 
 ## GitHub issue workflow

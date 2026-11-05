@@ -25,6 +25,8 @@ export interface NavigationSessionMountDependencies {
   readonly onMapJourneyOptionSelected?: (candidateKey: string) => void
   readonly onBasemapUnavailable?: MapSessionOptions['onBasemapUnavailable']
   readonly onMapCenterChange?: MapSessionOptions['onMapCenterChange']
+  readonly liveBusRouteMatching?: MapSessionOptions['liveBusRouteMatching']
+  readonly onMapMovingChange?: MapSessionOptions['onMapMovingChange']
 }
 
 export interface NavigationSessionMount {
@@ -53,7 +55,9 @@ export function createNavigationSessionMount(
       dependencies.onMapJourneyOptionSelected?.(candidateKey)
     },
     onMapCenterChange: dependencies.onMapCenterChange,
+    onMapMovingChange: dependencies.onMapMovingChange,
     onBasemapUnavailable: dependencies.onBasemapUnavailable,
+    liveBusRouteMatching: dependencies.liveBusRouteMatching,
   })
   session = dependencies.createNavigationSession({
     map,
@@ -147,6 +151,9 @@ export interface NavigationSessionCommands {
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
   ) => void
+  readonly panToCoordinate: (
+    coordinate: Parameters<NavigationSession['panToCoordinate']>[0],
+  ) => void
   readonly dismissStopPopup: () => boolean
   readonly dismissMapPopup: () => boolean
   readonly zoomIn: () => void
@@ -206,6 +213,7 @@ function createNavigationSessionCommands(
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
     focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
+    panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,
     zoomIn: () => session?.zoomIn(),

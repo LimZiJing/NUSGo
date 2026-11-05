@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MoreMenu } from '../features/more/more-menu'
@@ -24,6 +24,14 @@ function dispatchInstallPrompt(outcome: 'accepted' | 'dismissed' = 'accepted') {
     window.dispatchEvent(event)
   })
   return { event, prompt }
+}
+
+function getInstallNotice(): HTMLElement {
+  return screen.getByText('Download NUSGo', { selector: '.pwa-pill-install span' }).closest('section') as HTMLElement
+}
+
+function getReloadNotice(): HTMLElement {
+  return screen.getByText('Map unavailable').closest('section') as HTMLElement
 }
 
 describe('PWA notices', () => {
@@ -67,13 +75,14 @@ describe('PWA notices', () => {
     act(() => {
       window.dispatchEvent(new Event('offline'))
     })
-    expect(screen.getByText(/You're offline\./).getAttribute('role')).toBe('status')
+    expect(screen.getByText('Offline').closest('[role="status"]')?.textContent).toBe('Offline. Bus arrivals have stopped updating.')
+    expect(screen.getByText('Offline').className).not.toContain('visually-hidden')
 
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => {
       window.dispatchEvent(new Event('online'))
     })
-    expect(screen.queryByText(/You're offline\./)).toBeNull()
+    expect(screen.queryByText('Offline')).toBeNull()
   })
 
   it('offers a reload for the fallback basemap after reconnecting', async () => {
@@ -84,14 +93,26 @@ describe('PWA notices', () => {
     expect(screen.queryByRole('button', { name: 'Reload map' })).toBeNull()
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
     act(() => { window.dispatchEvent(new Event('online')) })
-    expect(screen.getByText('The background map is unavailable. Reload to try again.')).toBeTruthy()
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Reload map' }))
+    expect(getReloadNotice().getAttribute('role')).toBe('status')
+    await userEvent.setup().click(within(getReloadNotice()).getByRole('button', { name: 'Reload map' }))
     expect(reload).toHaveBeenCalledOnce()
   })
 
   it('offers a reload when an online map request has fallen back', () => {
     render(<PwaNotices basemapUnavailable />)
-    expect(screen.getByRole('button', { name: 'Reload map' })).toBeTruthy()
+    expect(getReloadNotice().className).toContain('pwa-pill-reload')
+    expect(within(getReloadNotice()).getByRole('button', { name: 'Reload map' })).toBeTruthy()
+  })
+
+  it('shows the install pill with an app icon, a download button and a separate dismiss bubble', async () => {
+    render(<PwaNotices />)
+    dispatchInstallPrompt()
+    const notice = getInstallNotice()
+    expect(notice.className).toContain('pwa-pill-install')
+    expect(notice.querySelector('img')?.getAttribute('src')).toMatch(/icons\/pwa-icon-192\.png$/)
+    expect(within(notice).getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
+    await userEvent.setup().click(within(notice).getByRole('button', { name: 'Dismiss install prompt' }))
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
   })
 
   it('keeps native installation available while a background check is pending', async () => {
@@ -103,8 +124,8 @@ describe('PWA notices', () => {
     let resolveApps!: (apps: unknown[]) => void
     apps.mockImplementation(() => new Promise((resolve) => { resolveApps = resolve }))
     act(() => { window.dispatchEvent(new Event('focus')) })
-    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
+    expect(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
+    await userEvent.setup().click(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' }))
     expect(prompt).toHaveBeenCalledOnce()
     await act(async () => { resolveApps([]) })
   })
@@ -114,17 +135,17 @@ describe('PWA notices', () => {
     const { event, prompt } = dispatchInstallPrompt()
     expect(event.defaultPrevented).toBe(true)
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Install NUSGo' }))
+    await userEvent.setup().click(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' }))
     await waitFor(() => expect(prompt).toHaveBeenCalledOnce())
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
   })
 
   it('keeps installation available in More after dismissing the banner', async () => {
-    render(<><PwaNotices /><MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}}
+    render(<><PwaNotices /><MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}} onOpenReleaseNotes={() => {}}
       installSection={<PwaInstallSection />} /></>)
     const { event, prompt } = dispatchInstallPrompt()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss install prompt' }))
-    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(getInstallPromptSnapshot()).toBe(event)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
     expect(prompt).toHaveBeenCalledOnce()
@@ -132,12 +153,14 @@ describe('PWA notices', () => {
 
   it('shows Download NUSGo as the last quiet More row and hides it after installation', () => {
     render(<MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}}
+      onOpenReleaseNotes={() => {}}
       installSection={<PwaInstallSection />} />)
 
     const rows = screen.getAllByRole('button')
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
       'My waypoints',
       'Settings',
+      'Release notes',
       'Download NUSGo',
     ])
     const downloadRow = screen.getByRole('button', { name: 'Download NUSGo' })
@@ -157,10 +180,10 @@ describe('PWA notices', () => {
     render(<PwaNotices />)
     dispatchInstallPrompt()
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     apps.mockResolvedValue([])
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+    expect(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
   })
 
   it('does not show an install banner in Chrome when the related PWA is installed', async () => {
@@ -171,12 +194,13 @@ describe('PWA notices', () => {
     })
     render(<><PwaNotices /><PwaInstallSection /></>)
     dispatchInstallPrompt()
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     await act(async () => {
       resolveApps([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
     })
-    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
+    expect(screen.getByRole('status', { name: 'Installation status' }).textContent).toBe('')
   })
 
   it('recognizes an installed web app reported by id without a manifest URL', async () => {
@@ -188,7 +212,7 @@ describe('PWA notices', () => {
     render(<PwaNotices />)
     dispatchInstallPrompt()
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
   })
 
   it('ignores unrelated installed apps and preserves a positive result if checking later fails', async () => {
@@ -197,14 +221,14 @@ describe('PWA notices', () => {
     render(<PwaNotices />)
     dispatchInstallPrompt()
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+    expect(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
     apps.mockResolvedValue([{ platform: 'webapp', url: new URL('manifest.webmanifest', new URL(import.meta.env.BASE_URL, window.location.origin)).href }])
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     apps.mockRejectedValue(new Error('unavailable'))
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(warn).toHaveBeenCalledOnce()
   })
 
@@ -219,8 +243,9 @@ describe('PWA notices', () => {
     await act(async () => { window.dispatchEvent(new Event('focus')) })
     dispatchInstallPrompt()
     await act(async () => { await refreshPwaInstallationStatus() })
-    expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
-    expect(screen.getByText('NUSGo, one tap away')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Installation status' }).textContent).toBe('')
+    expect(screen.getAllByRole('button', { name: 'Download NUSGo' })).toHaveLength(2)
+    expect(screen.getByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeTruthy()
   })
 
   it('does not claim installation is complete just because the dialog was accepted', async () => {
@@ -228,7 +253,7 @@ describe('PWA notices', () => {
     const installationStatus = screen.getByRole('status', { name: 'Installation status' })
     expect(installationStatus.textContent).toBe('')
     dispatchInstallPrompt('accepted')
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
+    await userEvent.setup().click(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' }))
     expect(installationStatus.textContent).toBe('')
     act(() => { window.dispatchEvent(new Event('appinstalled')) })
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
@@ -293,16 +318,16 @@ describe('PWA notices', () => {
     dispatchInstallPrompt()
     act(() => { window.dispatchEvent(new Event('appinstalled')) })
     dispatchInstallPrompt()
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
   })
 
   it('allows a fresh eligible prompt after declining the browser dialog', async () => {
     render(<PwaNotices />)
     dispatchInstallPrompt('dismissed')
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Install NUSGo' }))
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    await userEvent.setup().click(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' }))
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     dispatchInstallPrompt()
-    expect(screen.getByRole('button', { name: 'Install NUSGo' })).toBeTruthy()
+    expect(within(getInstallNotice()).getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
   })
 
   it('reveals browser installation instructions only after the download action', async () => {
@@ -331,7 +356,7 @@ describe('PWA notices', () => {
     dispatchInstallPrompt()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss install prompt' }))
     dispatchInstallPrompt()
-    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Download NUSGo' })).toBeTruthy()
   })
 
@@ -339,7 +364,7 @@ describe('PWA notices', () => {
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/155.0.0.0 Mobile Safari/537.36 EdgA/155.0.4283.61' })
     render(<><PwaNotices /><PwaInstallSection /></>)
     const { prompt } = dispatchInstallPrompt()
-    expect(screen.queryByText('NUSGo, one tap away')).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Download NUSGo' }))
     expect(prompt).toHaveBeenCalledOnce()
   })
@@ -348,7 +373,7 @@ describe('PWA notices', () => {
     Object.defineProperty(navigator, 'standalone', { configurable: true, value: true })
     render(<><PwaNotices /><PwaInstallSection /></>)
     const { prompt } = dispatchInstallPrompt()
-    expect(screen.queryByRole('button', { name: 'Install NUSGo' })).toBeNull()
+    expect(screen.queryByText('Download NUSGo', { selector: '.pwa-pill-install span' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Download NUSGo' })).toBeNull()
     expect(screen.queryByRole('status', { name: 'NUSGo is installed on this device' })).toBeNull()
     expect(prompt).not.toHaveBeenCalled()

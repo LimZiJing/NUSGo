@@ -25,7 +25,7 @@ What data the app ships with and how the map is built. For a one-page summary se
 
 ## Basemap and markers
 
-- The basemap is the OpenFreeMap Liberty style on OpenStreetMap data. Bus POI labels are hidden and low-priority local POIs are reduced, while rail, airport and major campus context stay visible. Attribution stays visible as a small footer on mobile and desktop.
+- The basemap is the OpenFreeMap Liberty style on OpenStreetMap data. Bus POI labels are hidden and low-priority local POIs are reduced, while rail, airport and major campus context stay visible. Map source attribution appears for five seconds at startup, then disappears; Settings → About → Data sources → Basemap keeps the source links.
 - The map reports tile errors and has the standard MapLibre navigation controls.
 - Bus stops are neutral transit-ring markers with collision-aware short-name labels from zoom 14. Stops and labels outside the selected route fade to 20% from zoom 14, and open stops stay visible below that zoom.
 - Route lines are neutral and subdued when all routes show. Official route colours are used for the selected route only.

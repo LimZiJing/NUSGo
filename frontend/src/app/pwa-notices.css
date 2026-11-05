@@ -10,71 +10,80 @@
   pointer-events: none;
 }
 
-.pwa-notice {
-  display: flex;
+.pwa-pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-self: center;
+  gap: 6px;
+  min-height: 40px;
   margin: 0;
-  padding: 10px 12px;
+  padding: 0 5px 0 8px;
   border: 1px solid var(--border-card);
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--surface-overlay-strong);
   box-shadow: var(--shadow-sm);
   color: var(--text-primary);
+  font-size: 0.85rem;
   backdrop-filter: blur(12px);
   pointer-events: auto;
 }
 
-.pwa-notice-offline {
-  justify-content: flex-start;
+.pwa-pill-install {
+  position: relative;
+}
+
+.pwa-pill-app-icon {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+/* Compound selector beats `.button.icon-button`, which would otherwise stretch the bubble into an oval. */
+.button.icon-button.pwa-pill-dismiss {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  aspect-ratio: 1;
+  flex: 0 0 24px;
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: 50%;
+  background: var(--surface-overlay-strong);
+  color: var(--text-primary);
+}
+
+.pwa-pill-offline,
+.pwa-pill-update,
+.pwa-pill-reload {
+  padding-left: 12px;
+}
+
+.pwa-pill-offline {
+  padding-right: 12px;
   border-color: var(--border-warning);
   background: var(--surface-warning);
   color: var(--text-warning);
-  font-size: 0.9rem;
-  line-height: 1.4;
 }
 
-.pwa-notice-content {
-  min-width: 0;
-  flex: 1;
-}
-
-.pwa-notice-title {
-  display: block;
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  line-height: 1.3;
-}
-
-.pwa-notice p:not(.pwa-notice-offline) {
-  margin: 2px 0 0;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.35;
-}
-
-.pwa-notice-install {
-  align-items: flex-start;
-  padding: 16px;
-  background: var(--surface-raised);
-}
-
-.pwa-install-action {
-  margin-top: 12px;
-}
-
-.pwa-install-icon {
+/* Compound selector beats `.button` and `.button.icon-button`, which set a 36px height and would make this oval. */
+.button.icon-button.pwa-pill-action {
   display: inline-flex;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  aspect-ratio: 1;
+  flex: 0 0 32px;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  padding: 0;
+  border-radius: 50%;
 }
 
 .pwa-install-section {
@@ -104,16 +113,5 @@
     left: auto;
     width: min(34rem, calc(100% - var(--desktop-navigation-width, 0px) - 24px));
     transform: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .pwa-notice-install {
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .pwa-notice-install > .pwa-install-icon {
-    display: none;
   }
 }

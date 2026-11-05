@@ -38,6 +38,7 @@ function createMapDouble(): MapSession {
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -62,6 +63,7 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitJourneyRoutes: vi.fn(),
@@ -289,6 +291,8 @@ describe('navigation session application seam', () => {
     }
     firstCommands.focusPersonalWaypoint(waypoint)
     expect(session.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    firstCommands.panToCoordinate([103.78, 1.29])
+    expect(session.panToCoordinate).toHaveBeenCalledWith([103.78, 1.29])
     firstCommands.fitJourneyRoutes()
     expect(session.fitJourneyRoutes).toHaveBeenCalledOnce()
     expect(firstCommands.dismissMapPopup()).toBe(false)

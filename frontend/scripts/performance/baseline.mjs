@@ -5,6 +5,7 @@ import { resolve, join } from 'node:path'
 import { cpus, platform, release, totalmem } from 'node:os'
 import { gzipSync, brotliCompressSync } from 'node:zlib'
 import { setTimeout as delay } from 'node:timers/promises'
+import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
 
 async function fingerprintTree(root, include) {
   const files = []
@@ -99,6 +100,7 @@ try {
     sourceFingerprint: {
       frontend: await fingerprintTree(resolve('frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
       staticData: await fingerprintTree(resolve('frontend/public'), (path) => /\.(json|geojson|svg|webmanifest)$/.test(path)),
+      pageGeneration: await fingerprintPageInputs(),
     },
     recordedAt: new Date().toISOString(),
     environment: { platform: platform(), release: release(), cpu: cpus()[0]?.model, logicalCpus: cpus().length, memoryBytes: totalmem(), node: process.version },
@@ -125,6 +127,7 @@ try {
       await delay(100)
     }
     if (!ready) throw new Error('Fixture map/markers not ready within 15 seconds')
+    assertPageInputs(await evaluate('window.nusgoPerformanceInputs'), report.sourceFingerprint.pageGeneration.sha256)
     const startupExpression = [
       '({',
       '  observedReadyMs: performance.now(),',

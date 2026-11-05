@@ -81,7 +81,7 @@ Five independent fresh-profile pairs each recorded one cold first navigation and
 | First Contentful Paint | 560 ms (436–592) | 208 ms (184–252) |
 | DOMContentLoaded | 202 ms (148–222) | 109 ms (100–151) |
 
-Raw reports remain under ignored `.cache/performance-orchestration/real-performance/pr-head-startups/verified-2` through `verified-6`. They record PR head `9df8727`, frontend source fingerprint `0947c9e…` (393 files), and static-data fingerprint `ac7c05c4d070181eff83210f36302a9fc8412eebd862dcd096a82386796b98b4`. The measurements used the local startup sampler added for this review; only frontend source and static data are fingerprinted in the raw report.
+Raw reports remain under ignored `.cache/performance-orchestration/real-performance/pr-head-startups/verified-2` through `verified-6`. They record PR-head `9df8727`, frontend source fingerprint `0947c9e…` (393 files), and static-data fingerprint `ac7c05c4d070181eff83210f36302a9fc8412eebd862dcd096a82386796b98b4`. The measurements used the local startup sampler added for this review; only frontend source and static data are fingerprinted in these historical raw reports.
 
 ### Compressed assets from the historical builds
 
@@ -104,6 +104,8 @@ Raw reports remain under ignored `.cache/performance-orchestration/real-performa
 ## Reproduction
 
 Run from the repository root with the existing dependencies and an installed Chromium or Edge browser. The tracked helpers live in `frontend/scripts/performance/`; their generated snapshots, reports, profiles and build outputs remain under ignored `.cache/performance-orchestration/real-performance/`. `prepare-builds.ps1` refuses to overwrite existing snapshots; a fresh ignored measurement directory is required to rebuild them. Set `PERF_BROWSER` explicitly for the installed executable. The collector and summarizer reject source/data fingerprints that differ from `frontend/scripts/performance/recorded-comparison.json`. Current `main` is not the historical combined source: recreate the measured source snapshots first; running against a newer checkout is deliberately rejected rather than presented as reproduction of these results.
+
+The guard now also pins `pageGeneration`: the page preparer, fixture installer, browser probe, scenario runner and fingerprint helper, as defined in the [baseline procedure](performance-baseline.md). The collector checks it before generating pages or starting previews/browsers, and includes it in new reports. The summarizer requires the same pinned fingerprint. Historical reports above predate this provenance field and are rejected by the updated summarizer; no fingerprint has been retroactively assigned to their workloads. The pin identifies the current guarded harness, not a verified historical harness. Recollect a separately identified dataset with the guarded harness before using the updated summarizer; the published historical numbers remain unchanged.
 
 ```powershell
 $env:PERF_BROWSER = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'

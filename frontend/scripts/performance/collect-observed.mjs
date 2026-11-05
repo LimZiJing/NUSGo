@@ -4,6 +4,7 @@ import { resolve, join, dirname, sep, basename } from 'node:path'
 import { cpus, platform, release, totalmem } from 'node:os'
 import { gzipSync, brotliCompressSync } from 'node:zlib'
 import { setTimeout as delay } from 'node:timers/promises'
+import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
 
 const repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
 const helperRoot = resolve(repoRoot, '.cache/performance-orchestration/real-performance')
@@ -608,12 +609,15 @@ function summarizeColdStarts(samples) {
 }
 
 async function main() {
+  const expected = JSON.parse(await readFile(new URL('./recorded-comparison.json', import.meta.url), 'utf8'))
+  const pageGeneration = await fingerprintPageInputs()
+  assertPageInputs(pageGeneration, expected.pageGeneration)
   output.sourceFingerprint = {
     baseFrontend: await fingerprintTree(join(baseRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
     combinedFrontend: await fingerprintTree(join(combinedRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
     staticData: await fingerprintTree(join(baseRoot, 'frontend/public'), (path) => /\.(json|geojson|svg|webmanifest)$/.test(path)),
+    pageGeneration,
   }
-  const expected = JSON.parse(await readFile(new URL('./recorded-comparison.json', import.meta.url), 'utf8'))
   for (const [name, sha256] of Object.entries(expected)) {
     if (output.sourceFingerprint[name]?.sha256 !== sha256) {
       throw new Error(`Recorded comparison ${name} fingerprint mismatch; recreate the measured source/data snapshots before collecting historical evidence`)

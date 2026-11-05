@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
+import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
@@ -23,6 +24,9 @@ it('prepares fixtures from the selected measured build', async () => {
 
     const page = await readFile(join(dist, 'performance.html'), 'utf8')
     expect(page).toContain('MEASURED_BUILD_STOP')
+    const recordedInputs = JSON.parse(page.match(/window\.nusgoPerformanceInputs=(.*?);/)[1])
+    expect(recordedInputs).toEqual(await fingerprintPageInputs())
+    expect(() => assertPageInputs(recordedInputs, recordedInputs.sha256)).not.toThrow()
   } finally {
     await rm(dist, { recursive: true, force: true })
   }

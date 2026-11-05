@@ -63,6 +63,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
     zoomIn: vi.fn(),
@@ -359,6 +360,16 @@ describe('navigation session', () => {
     expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+  })
+
+  it('pans the map to a coordinate without resetting the view', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+
+    session.panToCoordinate([103.78, 1.29])
+
+    expect(dependencies.map.panToCoordinate).toHaveBeenCalledWith([103.78, 1.29])
+    expect(dependencies.map.resetView).not.toHaveBeenCalled()
   })
 
   it('loads immutable data, reconciles route selection once, and synchronizes the map', async () => {

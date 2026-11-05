@@ -15,7 +15,7 @@ export function LiveBusToggle({ enabled, onToggle }: LiveBusToggleProps) {
       title={enabled ? 'Hide live buses' : 'Show live buses'}
       onClick={() => onToggle(!enabled)}
     >
-      <BusIcon size={20} />
+      <BusIcon />
     </button>
   )
 }

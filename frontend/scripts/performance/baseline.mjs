@@ -85,6 +85,14 @@ try {
       await delay(100)
     }
     if (!ready) throw new Error('Fixture map/markers not ready within 15 seconds')
+    const reactCommitHook = await evaluate('Array.isArray(window.__nusgoReactCommits)')
+    report.conditions.reactCommitHook = profiling ? (reactCommitHook ? 'available' : 'absent') : 'not-requested'
+    if (profiling && !reactCommitHook) {
+      report.conditions.build = 'production local rehearsal (React commit hook absent)'
+      console.warn('PERF_REACT_PROFILE=1 requested, but window.__nusgoReactCommits is not installed; React commit data will be unavailable.')
+    } else if (profiling) {
+      report.conditions.build = 'React profiling diagnostic build'
+    }
     const startup = await evaluate(`({ observedReadyMs: performance.now(), navigation: performance.getEntriesByType('navigation')[0]?.toJSON(), userAgent: navigator.userAgent, dpr: devicePixelRatio })`)
     await delay(2000)
     await evaluate(`runNusgoPerformance('setup')`)

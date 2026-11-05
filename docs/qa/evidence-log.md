@@ -2,6 +2,12 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Animation performance baseline — 2026-11-02 (#558)
+
+Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).
+
+The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
+
 ## My waypoints review verification — 2026-11-05
 
 PR #597, application head `ed0e804af8e266863fe8015860467d9ff01b582f`, local Vite development server, headless Chromium 131.0.6778.33 with Playwright. Each viewport used a fresh isolated browser context with three temporary waypoints in two categories; `innerWidth` and `innerHeight` confirmed the actual page sizes.

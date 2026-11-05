@@ -46,6 +46,7 @@ Push-Location frontend
 $env:PERF_VARIANT = 'base'
 $env:PERF_BASE_REV = 'f21964595968dde261973f7e2cb965ce0ba600b7'
 npx vite build --mode local-rehearsal --config scripts/performance/snapshot-build-config.mjs
+Remove-Item -Recurse -Force -LiteralPath dist-local-rehearsal-base -ErrorAction SilentlyContinue
 Copy-Item -Recurse -LiteralPath dist-local-rehearsal -Destination dist-local-rehearsal-base
 $env:PERF_VARIANT = 'head'
 Remove-Item Env:PERF_BASE_REV -ErrorAction SilentlyContinue

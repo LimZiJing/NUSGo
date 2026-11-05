@@ -35,12 +35,14 @@ const DOUBLE_ZOOM_DEBOUNCE_MS = 500
 const DOUBLE_ZOOM_DURATION_MS = 300
 
 const STYLE_LOAD_TIMEOUT_MS = 4000
+const ATTRIBUTION_DISPLAY_DURATION_MS = 5000
 const OFFLINE_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] }
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
 class NusgoAttributionControl {
   private container: HTMLElement | null = null
+  private dismissTimeout: ReturnType<typeof setTimeout> | null = null
 
   onAdd(): HTMLElement {
     const container = document.createElement('div')
@@ -48,10 +50,17 @@ class NusgoAttributionControl {
     container.innerHTML = '<a href="https://openmaptiles.org/">© OpenMapTiles</a> · '
       + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     this.container = container
+    this.dismissTimeout = setTimeout(() => {
+      this.container?.remove()
+      this.container = null
+      this.dismissTimeout = null
+    }, ATTRIBUTION_DISPLAY_DURATION_MS)
     return container
   }
 
   onRemove(): void {
+    if (this.dismissTimeout !== null) clearTimeout(this.dismissTimeout)
+    this.dismissTimeout = null
     this.container?.remove()
     this.container = null
   }

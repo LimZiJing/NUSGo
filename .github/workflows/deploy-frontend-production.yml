@@ -1,16 +1,20 @@
 name: deploy-frontend-production
 
-# Manual only. Promote a commit that has already run on the development frontend.
+run-name: Production frontend release ${{ inputs.release_id }}
+
+# Manual only. Select the commit to promote in the workflow-dispatch ref selector.
 # Deploy the backend first when the commit also changes the API.
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Commit SHA, tag or branch to deploy
+      release_id:
+        description: ID of the reviewed notes in frontend/releases (YYYY-MM-DD.N)
         required: true
-        default: main
+        type: string
 
+# Read deployment history so a completed promotion reserves its ID while publication retries.
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -25,10 +29,10 @@ jobs:
     environment:
       name: frontend-production
     steps:
-      - name: Checkout ${{ inputs.ref }}
+      - name: Checkout selected workflow ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          # The dispatch ref is the selected deployment commit and the run's head SHA.
           # The data version is the last commit that changed the data contract, so it needs history.
           fetch-depth: 0
 
@@ -46,10 +50,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare validated release history
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_NOTES_PATH: frontend/releases/${{ inputs.release_id }}.json
+          RELEASE_ID: ${{ inputs.release_id }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_HISTORY_OUTPUT: frontend/public/releases/index.json
+        run: |
+          if ! [[ "$RELEASE_ID" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[1-9][0-9]*$ ]]; then
+            echo "Invalid release ID: $RELEASE_ID" >&2
+            exit 1
+          fi
+          node scripts/release-history.mjs
+
       - name: Build
         env:
           VITE_API_ORIGIN: ${{ vars.NUSGO_API_ORIGIN || 'https://api.example.invalid' }}
           VITE_DATA_VERSION: ${{ steps.data-version.outputs.version }}
+          VITE_RELEASE_SHA: ${{ github.sha }}
           # Cloudflare Pages serves from the domain root, not /NUSGo/.
           VITE_BASE_PATH: /
         run: npm run build
@@ -59,4 +79,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy frontend/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main
+          command: pages deploy frontend/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main --commit-hash=${{ github.sha }} --commit-message="NUSGo production run ${{ github.run_id }} attempt ${{ github.run_attempt }}"

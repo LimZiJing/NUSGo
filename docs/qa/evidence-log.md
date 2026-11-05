@@ -2,6 +2,19 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Waypoint details Directions (#581, PR #598) — 2026-11-05
+
+Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch:
+
+- Seeded two temporary Personal Waypoints in isolated browser storage, used Show on map, closed My waypoints and clicked the actual persistent map marker. Details opened with the correct name, category, note and coordinates at both sizes.
+- Confirmed Directions was the only filled details action. Edit and Delete used quiet text buttons; Delete was danger-coloured. Coordinates rendered at 12px in secondary text. Neither viewport had horizontal overflow.
+- Checked keyboard order from Directions through Edit waypoint and Delete waypoint. Pressing Enter on Directions closed details, selected Plan, set the correct destination and moved focus into Plan.
+- Reopened details from the same marker with Plan still active and repeated keyboard Directions. Focus returned into Plan again. A different waypoint marker then opened its own details. On mobile, Escape collapsed the Plan sheet to expose the markers while retaining Plan as the active tab.
+- Edited the second waypoint and saved its new name. Cancelling Delete preserved both saved records; confirming Delete removed only that waypoint and kept the first one.
+- Both viewport runs completed without page errors. The basemap and persistent markers rendered. This targeted check covers waypoint navigation and local storage; it does not verify live arrivals, device geolocation or backend Journey calculation.
+
+`CONTEXT.md` reviewed; no update needed.
+
 ## Personal Waypoint conflict workflow — 2026-10-28
 
 Codex In-app Browser (Chromium-based; exact version unavailable), local Vite development server at `http://127.0.0.1:4175/`, 1280 × 720:

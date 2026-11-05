@@ -20,6 +20,8 @@ export interface MapBuildingSelection {
 
 export interface MapSessionOptions {
   readonly container: HTMLElement
+  /** Optional route matching limits for Live-bus positions. */
+  readonly liveBusRouteMatching?: LiveBusRouteMatchingOptions
   /** Reports use of a local style so the application can offer online recovery. */
   readonly onBasemapUnavailable?: () => void
   readonly onMapError: (error: unknown) => void
@@ -34,6 +36,19 @@ export interface MapSessionOptions {
   readonly onMapCenterChange?: (center: MapCoordinate) => void
   /** True during camera movement; false after the settled visible centre has been reported. */
   readonly onMapMovingChange?: (moving: boolean) => void
+}
+
+export interface LiveBusRouteMatchingOptions {
+  /** Maximum route-progress speed; matching never trusts the unconfirmed NUS speed field. */
+  readonly maximumSpeedMetersPerSecond: number
+  /** Extra movement allowance for GPS error and route-projection noise. */
+  readonly gpsMovementToleranceMeters: number
+  /** Keep candidates this far from the nearest GPS projection for branch scoring. */
+  readonly branchDistanceToleranceMeters: number
+  /** Score weight applied to the difference between bus heading and travel direction. */
+  readonly headingPreferenceWeight: number
+  /** Reset continuity after this long without an accepted observation. */
+  readonly continuityHorizonMs: number
 }
 
 export type MapCoordinate = readonly [number, number]
@@ -124,6 +139,8 @@ export interface MapSession {
   ): void
   /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  /** Moves the camera to a coordinate without changing zoom, keeping existing overlays in view. */
+  panToCoordinate(coordinate: MapCoordinate): void
   /** Closes the active bus-stop popup, returning whether one was open. */
   dismissStopPopup(): boolean
   /** Closes the active MapLibre popup, returning whether one was open. */

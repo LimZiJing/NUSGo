@@ -374,7 +374,7 @@ describe('mobile Stops tab state', () => {
     mapMarker.remove()
   })
 
-  it('keeps the collapsed Stops sheet positioned after returning from waypoint placement', async () => {
+  it('keeps the collapsed Stops sheet positioned after returning from the waypoint form', async () => {
     mockMobileLayoutGeometry()
     const user = userEvent.setup()
     render(<App />)
@@ -387,7 +387,7 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
-    expect(screen.getByRole('region', { name: 'Place personal waypoint' })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Name' })).toBeTruthy()
 
     window.dispatchEvent(new Event('resize'))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -398,7 +398,7 @@ describe('mobile Stops tab state', () => {
     expect(stopsSheet.style.getPropertyValue('--drawer-snap-point-offset')).toBe(initialSnapOffset)
   })
 
-  it('keeps the mobile keyboard closed while placing and naming a waypoint', async () => {
+  it('keeps the mobile keyboard closed when Add waypoint opens the form', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -406,13 +406,10 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
 
-    const placementHeading = screen.getByRole('heading', { name: 'Place waypoint' })
-    expect(document.activeElement).toBe(placementHeading)
-    expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
-
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-
+    expect(screen.getByRole('heading', { name: 'Add waypoint' })).toBeTruthy()
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(screen.getByRole('textbox', { name: 'Name' })).toBeTruthy()
+    expect(screen.queryByRole('spinbutton', { name: 'Latitude' })).toBeNull()
     expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Name' }))
   })
 

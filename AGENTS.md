@@ -21,6 +21,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 
 ## Mandatory repository rules
 
+- Use `npm run servers:start` to start or reuse this worktree's managed development group; inspect `npm run servers:status` before starting additional services. Use `npm run servers:stop` when the group is no longer needed. Run temporary previews with `npm run servers:preview -- --port <port> -- node <check-script>` so owned processes are stopped when the check ends. Do not launch Vite or backend servers directly for agent work. See [managed local servers](docs/local-services.md#managed-worktree-servers).
 - Inspect repository status before editing and preserve unrelated user changes.
 - Keep the shared checkout on local `main`. Unless the user explicitly requests otherwise, create a fresh managed worktree from local `main` for each ticket and implement it on one direct, descriptive branch there; do not use a `codex/` prefix or reuse a worktree from another ticket.
 - After a ticket's pull request is accepted and merged, archive or remove its worktree, then run `git worktree prune` to clear stale metadata. Do not clean up worktrees for active tasks or open pull requests.
@@ -29,6 +30,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 - Do not add a dependency unless the current requirement needs it and existing capabilities are insufficient.
 - Keep external data validated at its boundary and preserve the project’s canonical sources of truth.
 - Run and report the exact results of `npm test`, `npm run lint`, `npm run build`, and `git diff --check` when available and applicable. UI or map changes SHOULD include targeted local-browser smoke testing for affected behavior. Full responsive and keyboard testing is required only when those behaviors change materially or before a release. If browser testing is unavailable, document what was not verified and why.
+- Before installing dependencies in a worktree, read `docs/agents/workflow.md` section 2.
 - Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
 
 ## GitHub issue workflow

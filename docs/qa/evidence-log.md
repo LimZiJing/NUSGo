@@ -2,6 +2,12 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Animation performance baseline — 2026-11-02 (#558)
+
+Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).
+
+The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
+
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
 Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:

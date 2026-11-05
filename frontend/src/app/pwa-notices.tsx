@@ -1,10 +1,12 @@
-import { useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { IconButton } from '../ui/button'
 import { CloseIcon, CloudOffIcon, DownloadIcon, RefreshIcon } from '../ui/icons'
 import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
   getInstallBannerSnapshot,
+  getInstallationCompletionSnapshot,
+  getInstalledSnapshot,
   getOnlineStatusSnapshot,
   getServiceWorkerUpdateSnapshot,
   requestInstall,
@@ -17,6 +19,38 @@ import './pwa-notices.css'
 interface PwaNoticesProps {
   readonly basemapUnavailable?: boolean
   readonly onReload?: () => void
+}
+
+function PwaInstallationStatus() {
+  const installed = useSyncExternalStore(subscribeToInstallPrompt, getInstalledSnapshot, () => false)
+  const installationCompletion = useSyncExternalStore(
+    subscribeToInstallPrompt,
+    getInstallationCompletionSnapshot,
+    () => 0,
+  )
+  const [installationStatus, setInstallationStatus] = useState({
+    installed,
+    completion: installationCompletion,
+    notice: '',
+  })
+
+  if (installationCompletion !== installationStatus.completion) {
+    setInstallationStatus({
+      installed,
+      completion: installationCompletion,
+      notice: 'NUSGo is installed on this device',
+    })
+  } else if (installed !== installationStatus.installed) {
+    setInstallationStatus({
+      ...installationStatus,
+      installed,
+      notice: installed ? installationStatus.notice : '',
+    })
+  }
+
+  return <span className="visually-hidden" role="status" aria-label="Installation status">
+    {installationStatus.notice}
+  </span>
 }
 
 export function PwaNotices({
@@ -39,10 +73,11 @@ export function PwaNotices({
     () => false,
   )
 
-  if (isOnline && !basemapUnavailable && !installPrompt && !updateAvailable) return null
+  const showNotices = !isOnline || basemapUnavailable || installPrompt || updateAvailable
 
-  return (
-    <div className="pwa-notices">
+  return <>
+    <PwaInstallationStatus />
+    {showNotices && <div className="pwa-notices">
       {!isOnline && (
         <p className="pwa-pill pwa-pill-offline" role="status" aria-live="polite">
           <CloudOffIcon size={18} />
@@ -75,6 +110,6 @@ export function PwaNotices({
             size="sm" className="pwa-pill-action" onClick={activateServiceWorkerUpdate} />
         </section>
       )}
-    </div>
-  )
+    </div>}
+  </>
 }

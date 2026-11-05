@@ -7,7 +7,7 @@ import { gzipSync, brotliCompressSync } from 'node:zlib'
 import { setTimeout as delay } from 'node:timers/promises'
 import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
 
-async function fingerprintTree(root, include) {
+async function fingerprintTree(root, include, extraFiles = []) {
   const files = []
   async function visit(directory) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -19,8 +19,10 @@ async function fingerprintTree(root, include) {
   await visit(root)
   files.sort((left, right) => left.localeCompare(right))
   const hash = createHash('sha256')
-  for (const file of files) {
-    const relativePath = file.slice(root.length + 1).replaceAll('\\', '/')
+  for (const file of [...files, ...extraFiles].sort((left, right) => left.localeCompare(right))) {
+    const relativePath = file === resolve('frontend/index.html')
+      ? '../index.html'
+      : file.slice(root.length + 1).replaceAll('\\', '/')
     let contents
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -33,7 +35,7 @@ async function fingerprintTree(root, include) {
     }
     hash.update(relativePath).update('\0').update(contents).update('\0')
   }
-  return { sha256: hash.digest('hex'), fileCount: files.length }
+  return { sha256: hash.digest('hex'), fileCount: files.length + extraFiles.length }
 }
 
 const url = process.env.PERF_URL ?? 'http://127.0.0.1:5173/performance.html'
@@ -98,7 +100,7 @@ try {
   const report = {
     revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
     sourceFingerprint: {
-      frontend: await fingerprintTree(resolve('frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
+      frontend: await fingerprintTree(resolve('frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path), [resolve('frontend/index.html')]),
       staticData: await fingerprintTree(resolve('frontend/public'), (path) => /\.(json|geojson|svg|webmanifest)$/.test(path)),
       pageGeneration: await fingerprintPageInputs(),
     },

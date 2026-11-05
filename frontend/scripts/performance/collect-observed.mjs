@@ -1,10 +1,11 @@
 import { spawn, execFileSync, spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, rm, writeFile, lstat } from 'node:fs/promises'
-import { resolve, join, dirname, sep, basename } from 'node:path'
+import { resolve, join, dirname } from 'node:path'
 import { cpus, platform, release, totalmem } from 'node:os'
 import { gzipSync, brotliCompressSync } from 'node:zlib'
 import { setTimeout as delay } from 'node:timers/promises'
 import { assertPageInputs, fingerprintPageInputs } from './page-inputs.mjs'
+import { removeIsolatedBrowserProfile as removeBrowserProfile, withServerCleanup } from './collection-cleanup.mjs'
 
 const repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
 const helperRoot = resolve(repoRoot, '.cache/performance-orchestration/real-performance')
@@ -69,7 +70,7 @@ let output = {
   diagnostics: browserDiagnostics,
 }
 
-async function fingerprintTree(root, include) {
+async function fingerprintTree(root, include, extraFiles = []) {
   const files = []
   async function visit(directory) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -81,11 +82,13 @@ async function fingerprintTree(root, include) {
   await visit(root)
   files.sort((a, b) => a.localeCompare(b))
   const hash = await import('node:crypto').then(({ createHash }) => createHash('sha256'))
-  for (const file of files) {
-    const relativePath = file.slice(root.length + 1).replaceAll('\\', '/')
+  for (const file of [...files, ...extraFiles].sort((left, right) => left.localeCompare(right))) {
+    const relativePath = file === resolve(root, '../index.html')
+      ? '../index.html'
+      : file.slice(root.length + 1).replaceAll('\\', '/')
     hash.update(relativePath).update('\0').update(await readFile(file)).update('\0')
   }
-  return { sha256: hash.digest('hex'), fileCount: files.length }
+  return { sha256: hash.digest('hex'), fileCount: files.length + extraFiles.length }
 }
 
 async function assetSizes(directory) {
@@ -221,17 +224,11 @@ async function launchBrowser() {
 
 async function removeIsolatedBrowserProfile() {
   if (!browserProfile) return
-  const resolvedHelper = resolve(helperRoot)
-  const resolvedProfile = resolve(browserProfile)
-  if (!resolvedProfile.startsWith(`${resolvedHelper}${sep}`) || !basename(resolvedProfile).startsWith('browser-profile-')) {
-    throw new Error(`Refusing to remove browser profile outside the measurement directory: ${resolvedProfile}`)
-  }
   try {
-    if (!(await lstat(resolvedProfile)).isSymbolicLink()) await rm(resolvedProfile, { recursive: true })
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error
+    await removeBrowserProfile(browserProfile, helperRoot, { lstat, rm })
+  } finally {
+    browserProfile = null
   }
-  browserProfile = null
 }
 
 async function stopBrowserOnly() {
@@ -564,15 +561,16 @@ async function writeOutput() {
 }
 
 async function stopChildren() {
-  await stopBrowserOnly()
-  for (const child of servers) {
-    if (child.exitCode === null) child.kill()
-  }
-  await Promise.all(servers.map((child) => new Promise((resolvePromise) => {
-    if (child.exitCode !== null) return resolvePromise()
-    child.once('close', resolvePromise)
-    setTimeout(resolvePromise, 3_000).unref()
-  })))
+  await withServerCleanup(stopBrowserOnly, async () => {
+    for (const child of servers) {
+      if (child.exitCode === null) child.kill()
+    }
+    await Promise.all(servers.map((child) => new Promise((resolvePromise) => {
+      if (child.exitCode !== null) return resolvePromise()
+      child.once('close', resolvePromise)
+      setTimeout(resolvePromise, 3_000).unref()
+    })))
+  })
 }
 
 async function measureColdStart(build) {
@@ -613,8 +611,8 @@ async function main() {
   const pageGeneration = await fingerprintPageInputs()
   assertPageInputs(pageGeneration, expected.pageGeneration)
   output.sourceFingerprint = {
-    baseFrontend: await fingerprintTree(join(baseRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
-    combinedFrontend: await fingerprintTree(join(combinedRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path)),
+    baseFrontend: await fingerprintTree(join(baseRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path), [join(baseRoot, 'frontend/index.html')]),
+    combinedFrontend: await fingerprintTree(join(combinedRoot, 'frontend/src'), (path) => /\.(ts|tsx|css|js)$/.test(path), [join(combinedRoot, 'frontend/index.html')]),
     staticData: await fingerprintTree(join(baseRoot, 'frontend/public'), (path) => /\.(json|geojson|svg|webmanifest)$/.test(path)),
     pageGeneration,
   }

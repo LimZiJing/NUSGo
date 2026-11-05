@@ -41,6 +41,8 @@ All recorded animation-frame samples were valid. Search p95 intervals were 4.3 m
 
 To reproduce the production runs, build each variant from the frontend directory. Preserve the base output before the head build, because both commands use dist-local-rehearsal:
 
+The snapshot build config requires `PERF_VARIANT` to be exactly `base` or `head`. It also fails the base build if Vite does not load the snapshot module, so a successful base build confirms the replacement hook ran. To check invalid-value handling, run the base build command below with `$env:PERF_VARIANT = 'baes'`; it must fail with a `PERF_VARIANT must be "base" or "head"` error. Restore `base` before the normal run.
+
 ```powershell
 Push-Location frontend
 $env:PERF_VARIANT = 'base'

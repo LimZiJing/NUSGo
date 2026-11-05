@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { isValidLocationCoordinates } from '../../../domain/location/coordinates'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
-import { ChevronDownIcon, MapPinIcon } from '../../../ui/icons'
+import { LocateIcon, MapPinIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -10,136 +10,151 @@ function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   return `${latitude} · ${longitude}`
 }
 
-function formatCoordinateInput(value: number): string {
-  return value.toFixed(6)
+function formatCoordinateInput(coordinate: WaypointCoordinate): string {
+  return `${coordinate.latitude.toFixed(6)}, ${coordinate.longitude.toFixed(6)}`
 }
 
-export function PersonalWaypointPlacement({ coordinate, mapCenter, onChange, onContinue, onCancel }: {
+const OUTSIDE_SINGAPORE_NOTE = 'This point is outside Singapore. Check latitude comes first.'
+
+export function PersonalWaypointPlacement({
+  coordinate,
+  onUseMapCentre,
+  onApplyCoordinate,
+  onContinue,
+  onCancel,
+}: {
   readonly coordinate: WaypointCoordinate
-  readonly mapCenter: WaypointCoordinate | null
-  readonly onChange: (coordinate: WaypointCoordinate) => void
+  readonly onUseMapCentre?: () => void
+  /** Called with a coordinate the person typed or pasted; it has passed validation. */
+  readonly onApplyCoordinate: (coordinate: WaypointCoordinate) => void
   readonly onContinue: () => void
   readonly onCancel: () => void
 }) {
-  type CoordinateField = 'latitude' | 'longitude'
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const latitudeInput = useRef<HTMLInputElement>(null)
-  const longitudeInput = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const editButtonRef = useRef<HTMLButtonElement>(null)
+  const returnFocusToEdit = useRef(false)
+  const [editing, setEditing] = useState(false)
+  // The input follows the pin until the person types, so a pin drag never leaves stale text to apply.
+  const [typed, setTyped] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [invalidField, setInvalidField] = useState<CoordinateField | null>(null)
-  const [coordinateEntryOpen, setCoordinateEntryOpen] = useState(false)
+  const [warning, setWarning] = useState<string | null>(null)
+  // Remember which point the warning belongs to, so moving the pin elsewhere clears it.
+  const [warnedFor, setWarnedFor] = useState<string | null>(null)
+  const currentText = formatCoordinateInput(coordinate)
+  const inputValue = typed ?? currentText
+  const visibleWarning = warning && warnedFor === currentText ? warning : ''
+
   useEffect(() => {
     headingRef.current?.focus()
   }, [])
   useEffect(() => {
-    if (latitudeInput.current) latitudeInput.current.value = formatCoordinateInput(coordinate.latitude)
-    if (longitudeInput.current) longitudeInput.current.value = formatCoordinateInput(coordinate.longitude)
-  }, [coordinate.latitude, coordinate.longitude])
-  useEffect(() => {
-    if (!coordinateEntryOpen || !invalidField) return
-    const invalidInput = invalidField === 'latitude' ? latitudeInput.current : longitudeInput.current
-    invalidInput?.focus()
-  }, [coordinateEntryOpen, invalidField])
-  const readCoordinates = (): WaypointCoordinate | null => {
-    const latitude = latitudeInput.current?.value.trim() ?? ''
-    const longitude = longitudeInput.current?.value.trim() ?? ''
-    const nextLatitude = Number(latitude)
-    const nextLongitude = Number(longitude)
-    const latitudeIsInvalid = !latitude || !Number.isFinite(nextLatitude)
-      || nextLatitude < -90 || nextLatitude > 90
-    const longitudeIsInvalid = !longitude || !Number.isFinite(nextLongitude)
-      || nextLongitude < -180 || nextLongitude > 180
-    if (latitudeIsInvalid || longitudeIsInvalid
-      || !isValidLocationCoordinates(nextLongitude, nextLatitude)) {
-      const field = latitudeIsInvalid ? 'latitude' : 'longitude'
-      setInvalidField(field)
-      setError(field === 'latitude'
-        ? 'Latitude must be between −90 and 90.'
-        : 'Longitude must be between −180 and 180.')
-      setCoordinateEntryOpen(true)
-      return null
+    if (editing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    } else if (returnFocusToEdit.current) {
+      returnFocusToEdit.current = false
+      editButtonRef.current?.focus()
     }
+  }, [editing])
+
+  const openEdit = (): void => {
+    setTyped(null)
     setError(null)
-    setInvalidField(null)
-    return { latitude: nextLatitude, longitude: nextLongitude }
+    setEditing(true)
   }
-  const applyCoordinates = (): void => {
-    const next = readCoordinates()
-    if (next) onChange(next)
-  }
-  const useMapCenter = (): void => {
-    if (!mapCenter) return
-    if (latitudeInput.current) latitudeInput.current.value = formatCoordinateInput(mapCenter.latitude)
-    if (longitudeInput.current) longitudeInput.current.value = formatCoordinateInput(mapCenter.longitude)
+  const closeEdit = (): void => {
+    returnFocusToEdit.current = true
+    setTyped(null)
     setError(null)
-    setInvalidField(null)
-    onChange(mapCenter)
+    setEditing(false)
   }
-  const clearError = (): void => {
-    setError(null)
-    setInvalidField(null)
+  /** Applies the typed text when it is valid; otherwise shows why and keeps the edit open. */
+  const applyTyped = (): boolean => {
+    const result = parseCoordinateInput(inputValue)
+    if (!result.ok) {
+      setError(result.message)
+      inputRef.current?.focus()
+      return false
+    }
+    onApplyCoordinate(result.coordinate)
+    setWarning(result.outsideSingapore ? OUTSIDE_SINGAPORE_NOTE : null)
+    setWarnedFor(formatCoordinateInput(result.coordinate))
+    closeEdit()
+    return true
   }
-  const continueToForm = (): void => {
-    const next = readCoordinates()
-    if (!next) return
-    onChange(next)
+  const submit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault()
+    applyTyped()
+  }
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key !== 'Escape') return
+    // Keep Escape from also closing the surrounding sheet or menu.
+    event.preventDefault()
+    event.stopPropagation()
+    closeEdit()
+  }
+  const done = (): void => {
+    if (editing && typed !== null && !applyTyped()) return
     onContinue()
   }
-  return <section className="personal-waypoint-placement" aria-label="Place personal waypoint">
+
+  return <section className="personal-waypoint-placement" aria-label="Adjust waypoint location">
     <header className="personal-waypoint-placement-header">
-      <h2 ref={headingRef} tabIndex={-1}>Place waypoint</h2>
-      <p>Tap the map or move the pin.</p>
+      <h2 ref={headingRef} tabIndex={-1}>Adjust waypoint location</h2>
+      <p>Tap the map or use its centre to move the pin, then return to your form.</p>
     </header>
-    <div className="personal-waypoint-selected-location">
-      <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
-      <div className="personal-waypoint-selected-location-copy">
-        <strong className="personal-waypoint-selected-location-label">Selected location</strong>
-        <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
-          {formatSelectedCoordinate(coordinate)}
-        </span>
+    <div className="personal-waypoint-location-group">
+      <div className="personal-waypoint-selected-location" data-editing={editing || undefined}>
+        <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
+        <div className="personal-waypoint-selected-location-copy">
+          <strong className="personal-waypoint-selected-location-label" id="personal-waypoint-selected-location-label">
+            Selected location
+          </strong>
+          {editing
+            ? <form className="personal-waypoint-coordinate-entry" data-owns-escape="true" onSubmit={submit} noValidate>
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                placeholder="1.2966, 103.7764"
+                aria-labelledby="personal-waypoint-selected-location-label"
+                aria-description="Latitude, then longitude, in decimal degrees"
+                aria-invalid={Boolean(error)}
+                aria-errormessage={error ? 'personal-waypoint-coordinate-error' : undefined}
+                autoCapitalize="off"
+                autoComplete="off"
+                spellCheck={false}
+                enterKeyHint="done"
+                onChange={(event) => { setTyped(event.target.value); setError(null) }}
+                onKeyDown={handleKeyDown}
+              />
+            </form>
+            : <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
+              {formatSelectedCoordinate(coordinate)}
+            </span>}
+        </div>
+        <Button
+          ref={editButtonRef}
+          label={editing ? 'Close' : 'Edit'}
+          ariaLabel={editing ? 'Close coordinate entry' : 'Edit coordinates'}
+          variant="ghost"
+          onClick={editing ? closeEdit : openEdit}
+        />
       </div>
-      <Button label="Map centre" ariaLabel="Use map centre" variant="ghost" className="personal-waypoint-map-centre"
-        onClick={useMapCenter} disabled={!mapCenter} />
-    </div>
-    <div className="personal-waypoint-coordinate-disclosure">
+      {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
+      <p className="personal-waypoint-coordinate-note" role="status">{visibleWarning}</p>
       <Button
-        label="Enter coordinates"
-        trailingIcon={<ChevronDownIcon size={16} />}
-        variant="ghost"
-        expanded={coordinateEntryOpen}
-        controls="personal-waypoint-coordinate-fields"
-        onClick={() => setCoordinateEntryOpen((open) => !open)}
+        className="personal-waypoint-use-centre"
+        label="Use map centre"
+        icon={<LocateIcon size={16} />}
+        disabled={!onUseMapCentre}
+        onClick={() => onUseMapCentre?.()}
       />
-      <div
-        id="personal-waypoint-coordinate-fields"
-        className="personal-waypoint-coordinate-content"
-        role="group"
-        aria-label="Waypoint coordinates"
-        hidden={!coordinateEntryOpen}
-      >
-        <div className="personal-waypoint-coordinate-fields">
-          <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-latitude">
-            <span>Latitude</span>
-            <input id="personal-waypoint-latitude" type="number" step="any" defaultValue={formatCoordinateInput(coordinate.latitude)}
-              ref={latitudeInput} aria-invalid={invalidField === 'latitude'}
-              aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
-          </label>
-          <label className="personal-waypoint-coordinate-field" htmlFor="personal-waypoint-longitude">
-            <span>Longitude</span>
-            <input id="personal-waypoint-longitude" type="number" step="any" defaultValue={formatCoordinateInput(coordinate.longitude)}
-              ref={longitudeInput} aria-invalid={invalidField === 'longitude'}
-              aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined} onChange={clearError} />
-          </label>
-        </div>
-        {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
-        <div className="personal-waypoint-coordinate-actions">
-          <Button label="Apply" className="personal-waypoint-apply" onClick={applyCoordinates} />
-        </div>
-      </div>
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />
-      <Button label="Continue" variant="primary" onClick={continueToForm} />
+      <Button label="Done adjusting location" variant="primary" onClick={done} />
     </div>
   </section>
 }

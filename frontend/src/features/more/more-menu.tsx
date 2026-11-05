@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
-import { ChevronRightIcon, MapPinIcon, SettingsIcon } from '../../ui/icons'
+import { ChevronRightIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
 import './more-menu.css'
 
 /** Lists destinations while each destination screen stays with its owning feature. */
-export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, installSection }: {
+export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpenReleaseNotes, installSection }: {
   readonly installSection?: ReactNode
   readonly waypointCount: number | null
   readonly onOpenWaypoints: () => void
   readonly onOpenSettings: () => void
+  readonly onOpenReleaseNotes: () => void
 }) {
   const waypointSummary = waypointCount === null
     ? 'Saved in this browser profile'
@@ -40,6 +41,11 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, insta
         <span>Settings</span>
         <span className="more-menu-row-description" id="more-settings-summary">Appearance and favourites</span>
       </span>
+      <ChevronRightIcon />
+    </button>
+    <button type="button" className="more-menu-row" aria-label="Release notes" onClick={onOpenReleaseNotes}>
+      <span className="more-menu-row-icon"><FileTextIcon /></span>
+      <span className="more-menu-row-copy"><span>Release notes</span></span>
       <ChevronRightIcon />
     </button>
     {installSection}

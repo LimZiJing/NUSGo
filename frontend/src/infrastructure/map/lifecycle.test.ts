@@ -371,19 +371,37 @@ describe('map lifecycle visible-centre zoom', () => {
 })
 
 describe('map lifecycle style readiness', () => {
-  it('keeps map attribution visible without the compact disclosure control', () => {
-    const lifecycle = createMapLifecycle({
-      container: {} as HTMLElement,
-      onMapError: vi.fn(),
-      onEmptyMapClick: vi.fn(),
+  it('shows map attribution at startup and dismisses it after five seconds', () => {
+    vi.useFakeTimers()
+    const remove = vi.fn()
+    vi.stubGlobal('document', {
+      createElement: vi.fn(() => ({ className: '', innerHTML: '', remove })),
     })
-    const map = fakeMapState.maps.at(-1) as FakeMap
+    let lifecycle: ReturnType<typeof createMapLifecycle> | null = null
 
-    expect(map.options).toEqual(expect.objectContaining({
-      attributionControl: false,
-    }))
+    try {
+      lifecycle = createMapLifecycle({
+        container: {} as HTMLElement,
+        onMapError: vi.fn(),
+        onEmptyMapClick: vi.fn(),
+      })
+      const map = fakeMapState.maps.at(-1) as FakeMap
+      const attributionControl = map.addedControls[1] as {
+        onAdd(): { readonly innerHTML: string }
+      }
+      const container = attributionControl.onAdd()
 
-    lifecycle.dispose()
+      expect(map.options).toEqual(expect.objectContaining({ attributionControl: false }))
+      expect(container.innerHTML).toContain('OpenStreetMap')
+      vi.advanceTimersByTime(4999)
+      expect(remove).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1)
+      expect(remove).toHaveBeenCalledOnce()
+    } finally {
+      lifecycle?.dispose()
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
   })
 
   it('reports the centre of the visible map after movement, inset, and size changes', () => {

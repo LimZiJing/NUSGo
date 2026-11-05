@@ -59,6 +59,7 @@ import {
   saveMinuteFormatPreference,
 } from '../ui/minute-format-preference'
 import { MoreMenu } from '../features/more/more-menu'
+import { ReleaseNotes } from '../features/releases/release-notes'
 import {
   PersonalWaypointForm,
   PersonalWaypointDetails,
@@ -82,6 +83,7 @@ import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
+import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -265,6 +267,11 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  // A typed or pasted coordinate can be anywhere, so bring the pin into view as well as moving it.
+  const applyTypedWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
+    updatePersonalWaypointDraft({ coordinate })
+    commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
+  }, [commands, updatePersonalWaypointDraft])
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
@@ -727,6 +734,11 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
+  const openReleaseNotes = (): void => {
+    setIsEditingPersonalWaypoints(false)
+    setMoreSheetDetent('full')
+    setMorePage('release-notes')
+  }
   const beginWaypointCreation = (): void => {
     setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
@@ -792,6 +804,11 @@ function App() {
     }
     if (morePage === 'menu') {
       setMorePage('closed')
+      setMoreSheetDetent('partial')
+      return
+    }
+    if (morePage === 'release-notes' || morePage === 'settings') {
+      setMorePage('menu')
       setMoreSheetDetent('partial')
       return
     }
@@ -899,7 +916,7 @@ function App() {
     if (morePage === 'closed') return
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
-      if (event.target instanceof Element && event.target.closest('[data-keyboard-reordering="true"], [role="listbox"], [data-menu-open="true"]')) return
+      if (event.target instanceof Element && event.target.closest('[data-keyboard-reordering="true"], [role="listbox"], [data-menu-open="true"], [data-owns-escape="true"]')) return
       event.preventDefault()
       event.stopPropagation()
       goBackInMore()
@@ -926,6 +943,7 @@ function App() {
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
           onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
+          onApplyCoordinate={applyTypedWaypointCoordinate}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
@@ -950,32 +968,35 @@ function App() {
               />
             </Suspense>
           )}
-          <LocationControl
-            visible={!isMobileViewport || !(
-              navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
-            )}
-            onRootChange={(root) => {
-              locationControlRef.current = root
-            }}
-            topOffset={mapInsets.top || 76}
-            searching={state.location.status === 'requesting'}
-            onLocate={stopsWorkflow.locateFromControl}
-          />
-          <MoreEntryButton
-            expanded={isMoreOpen}
-            buttonRef={(button) => {
-              moreEntryButtonRef.current = button
-            }}
-            onClick={toggleMore}
-          />
-          <LiveBusToggle
-            enabled={liveBusLayerEnabled}
-            onToggle={setLiveBusLayerEnabled}
-          />
-          {liveBusLayerEnabled && (
-            liveVehicles.status === 'error' ||
-            (liveVehicles.snapshot?.unavailableRouteIds?.length ?? 0) > 0
-          ) && <p className="live-bus-status" role="status">Live buses unavailable</p>}
+          <div className="map-control-actions">
+            <LiveBusToggle
+              enabled={liveBusLayerEnabled}
+              onToggle={setLiveBusLayerEnabled}
+            />
+            <div className="map-control-action-slot">
+              <LocationControl
+                visible={!isMobileViewport || !(
+                  navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
+                )}
+                onRootChange={(root) => {
+                  locationControlRef.current = root
+                }}
+                searching={state.location.status === 'requesting'}
+                onLocate={stopsWorkflow.locateFromControl}
+              />
+            </div>
+            <MoreEntryButton
+              expanded={isMoreOpen}
+              buttonRef={(button) => {
+                moreEntryButtonRef.current = button
+              }}
+              onClick={toggleMore}
+            />
+            {liveBusLayerEnabled && (
+              liveVehicles.status === 'error' ||
+              (liveVehicles.snapshot?.unavailableRouteIds?.length ?? 0) > 0
+            ) && <p className="live-bus-status" role="status">Live buses unavailable</p>}
+          </div>
           <aside
             className="map-legend"
             aria-label="Map legend"
@@ -1015,7 +1036,8 @@ function App() {
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
-                    : morePage === 'settings' ? 'Settings' : 'More',
+                    : morePage === 'settings' ? 'Settings'
+                      : morePage === 'release-notes' ? 'Release notes' : 'More',
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
@@ -1025,6 +1047,7 @@ function App() {
                 : null}
               onOpenWaypoints={openWaypoints}
               onOpenSettings={openSettings}
+              onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
@@ -1089,7 +1112,7 @@ function App() {
                   }
                 }
               }}
-            /> : morePage === 'settings' ? (
+            /> : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
               <SettingsContent
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}

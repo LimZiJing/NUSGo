@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { Button, IconButton } from '../ui/button'
-import { DownloadIcon, CloseIcon } from '../ui/icons'
+import { IconButton } from '../ui/button'
+import { CloseIcon, CloudOffIcon, DownloadIcon, RefreshIcon } from '../ui/icons'
 import {
   activateServiceWorkerUpdate,
   dismissInstallPrompt,
@@ -44,35 +44,35 @@ export function PwaNotices({
   return (
     <div className="pwa-notices">
       {!isOnline && (
-        <p className="pwa-notice pwa-notice-offline" role="status" aria-live="polite">
-          You're offline. Bus arrivals will stop updating until you're back online.
+        <p className="pwa-pill pwa-pill-offline" role="status" aria-live="polite">
+          <CloudOffIcon size={18} />
+          <span>Offline</span>
+          <span className="visually-hidden">. Bus arrivals have stopped updating.</span>
         </p>
       )}
       {isOnline && basemapUnavailable && (
-        <section className="pwa-notice" role="status" aria-live="polite">
-          <p>The background map is unavailable. Reload to try again.</p>
-          <Button label="Reload map" onClick={onReload} />
+        <section className="pwa-pill pwa-pill-reload" role="status" aria-live="polite">
+          <span>Map unavailable</span>
+          <IconButton label="Reload map" icon={<RefreshIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={onReload} />
         </section>
       )}
       {installPrompt && (
-        <section className="pwa-notice pwa-notice-install" role="status" aria-live="polite">
-          <span className="pwa-install-icon"><DownloadIcon size={22} /></span>
-          <div className="pwa-notice-content">
-            <strong className="pwa-notice-title">NUSGo, one tap away</strong>
-            <p>Add it to your home screen for quick access, even offline.</p>
-            <Button className="pwa-install-action" size="lg" label="Install NUSGo" onClick={() => void requestInstall()} />
-          </div>
-          <IconButton label="Dismiss install prompt" icon={<CloseIcon />} variant="ghost"
-            size="lg" onClick={dismissInstallPrompt} />
+        <section className="pwa-pill pwa-pill-install" role="status" aria-live="polite">
+          <img className="pwa-pill-app-icon" src={`${import.meta.env.BASE_URL}icons/pwa-icon-192.png`}
+            width="24" height="24" alt="" />
+          <span>Download NUSGo</span>
+          <IconButton label="Download NUSGo" icon={<DownloadIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={() => void requestInstall()} />
+          <IconButton label="Dismiss install prompt" icon={<CloseIcon size={12} />} variant="secondary"
+            size="sm" className="pwa-pill-dismiss" onClick={dismissInstallPrompt} />
         </section>
       )}
       {updateAvailable && (
-        <section className="pwa-notice pwa-notice-update" role="status" aria-live="polite">
-          <div className="pwa-notice-content">
-            <strong className="pwa-notice-title">Update ready</strong>
-            <p>Reload NUSGo to use the latest version.</p>
-          </div>
-          <Button label="Update now" onClick={activateServiceWorkerUpdate} />
+        <section className="pwa-pill pwa-pill-update" role="status" aria-live="polite">
+          <span>Update NUSGo</span>
+          <IconButton label="Update NUSGo" icon={<RefreshIcon size={16} />} variant="primary"
+            size="sm" className="pwa-pill-action" onClick={activateServiceWorkerUpdate} />
         </section>
       )}
     </div>

@@ -20,6 +20,7 @@ const appHarness = vi.hoisted(() => {
     setPersonalWaypointPlacement: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    panToCoordinate: vi.fn(),
   }
   return {
     state: null as unknown,
@@ -672,6 +673,76 @@ describe('More surface', () => {
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
   })
 
+  it('opens Release notes as a full mobile destination and returns to the More menu', async () => {
+    mockMobileViewport()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ releases: [] }) }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Release notes' }))
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('release-notes')
+    expect(panel?.getAttribute('data-detent')).toBe('full')
+    expect(screen.getByRole('heading', { name: 'Release notes' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(panel?.getAttribute('data-page')).toBe('menu')
+  })
+
+  it('opens Release notes as a dedicated desktop destination and returns through More on Escape', async () => {
+    mockDesktopViewport()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ releases: [] }) }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Release notes' }))
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('release-notes')
+    expect(screen.getByRole('heading', { name: 'Release notes' })).toBeTruthy()
+    expect(screen.getByText('No release history is available yet.')).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    await user.keyboard('{Escape}')
+    expect(panel?.getAttribute('data-page')).toBe('menu')
+    await user.keyboard('{Escape}')
+    expect(panel?.getAttribute('data-page')).toBe('closed')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More' }))
+  })
+
+  it('keeps details and direct Edit actions separate for an All places entry', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      note: 'Near the garden',
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    expect(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Edit Quiet bench, Rest spot' }))
+
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'Shaded bench')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.getByRole('heading', { name: 'All places 1' })).toBeTruthy()
+    expect(screen.getByText('Shaded bench')).toBeTruthy()
+  })
+
   it('shows a waypoint on the map and starts Plan from its Directions action', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
@@ -1010,12 +1081,58 @@ describe('More surface', () => {
       appHarness.onMapMovingChange?.(false)
     })
     await user.keyboard('{Tab}')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.keyboard('{Tab}')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use map centre' }))
     await user.keyboard('{Enter}')
     expect(screen.getByText('2.000000° N · 105.000000° E')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
     expect(screen.getByText('2.000000, 105.000000')).toBeTruthy()
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
+  })
+
+  it('applies a pasted coordinate, pans the map to it and returns it to the form', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.type(screen.getByLabelText('Name'), 'Quiet bench')
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    appHarness.commands.panToCoordinate.mockClear()
+
+    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    const input = screen.getByRole('textbox', { name: 'Selected location' })
+    await user.clear(input)
+    await user.type(input, '1.2966, 103.7764{Enter}')
+
+    expect(appHarness.commands.panToCoordinate).toHaveBeenCalledWith([103.7764, 1.2966])
+    expect(screen.getByText('1.296600° N · 103.776400° E')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    expect(screen.getByText('1.296600, 103.776400')).toBeTruthy()
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
+  })
+
+  it('closes coordinate entry on Escape without leaving the Adjust location screen', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('textbox', { name: 'Selected location' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Adjust waypoint location' })).toBeNull()
   })
 
   it('creates a Personal Waypoint only after Save waypoint', async () => {

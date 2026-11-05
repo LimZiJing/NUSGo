@@ -24,7 +24,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Repeat the Plan layout check in both light and dark themes.
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
-- [ ] Native MapLibre controls and attribution remain visible and usable.
+- [ ] Native MapLibre navigation controls remain usable on desktop.
 
 ## Mobile — 390 × 844
 
@@ -38,6 +38,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
 ## Responsive boundary — 768 / 769px
 
@@ -53,7 +54,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Personal Waypoints (#207)
 
-- [ ] Add a waypoint and confirm the form opens immediately with the visible map centre as its location. Enter name, category and note, then use Adjust on map; tap the map or drag the pointed pin, confirm the selected-coordinate readout updates, and return to the form with entries preserved. Also pan the focused map with the arrow keys, confirm Use map centre is disabled during movement and enabled once the map settles, then activate it with Enter and confirm the selected coordinate updates. Coordinate entry is unavailable. Check Save and Cancel at 390 × 844 and a desktop viewport.
+- [ ] Add a waypoint and confirm the form opens immediately with the visible map centre as its location. Enter name, category and note, then use Adjust on map; tap the map or drag the pointed pin, confirm the selected-coordinate readout updates, and return to the form with entries preserved. Also pan the focused map with the arrow keys, confirm Use map centre is disabled during movement and enabled once the map settles, then Tab to Edit and on to Use map centre and activate it with Enter; confirm the selected coordinate updates and Done preserves the form entries. Then choose Edit and paste `1.2966, 103.7764`: press Enter and confirm the pin moves, the map pans to it without changing zoom, focus returns to Edit and the form shows `1.296600, 103.776400`. Paste `103.7764, 1.2966` and confirm a latitude message appears and the location is unchanged. Paste `51.5072, -0.1276` and confirm it applies with an outside-Singapore note that clears when the pin is moved. Press Escape in the input and confirm entry closes without closing the sheet. With reduced motion enabled, confirm the map jumps without animating. Confirm the collapsed screen shows only the Edit button beyond what it had before. Check Save and Cancel at 390 × 844 and a desktop viewport.
 - [ ] From More → My waypoints, add waypoints in multiple categories and confirm their flat All places rows and persistent map markers appear. Open details from a row and confirm the separate Edit action opens the edit form; use the row's quiet Directions action and confirm Plan opens with that waypoint as destination. Open details from a persistent map marker and confirm Edit and Delete remain available there.
 - [ ] In Add and Edit forms, confirm Marker style starts collapsed with the current preview. Expand it with touch and keyboard, choose a different colour and icon, confirm the preview updates, save, reopen Edit, and confirm the saved choices remain selected.
 - [ ] After saving or changing a place, confirm the success message is small, appears at the bottom of the More panel, and clears after about seven seconds. Confirm waypoint-limit and write-problem messages remain visible near the related controls.

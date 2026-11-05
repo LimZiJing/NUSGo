@@ -67,7 +67,7 @@ Finish with a concise record of:
 
 - what changed and what stayed out of scope;
 - exact checks and their results;
-- browser or manual verification performed, with the head commit, viewports and interactions used, and any evidence that is now stale;
+- browser or manual verification performed, recording the exact commit SHA covered by the evidence, viewports and interactions used, and any evidence that is now stale;
 - issue, branch, commit, and pull-request references;
 - follow-up work that should become a separate task.
 

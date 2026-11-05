@@ -47,9 +47,9 @@ const JourneyTestTimeControl = import.meta.env.DEV
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
+import { StopsWorkspace, type StopsWorkspaceController, type StopsWorkspaceState } from './composition/stops-workspace'
 import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-panel-focus'
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
-import { useStopsWorkflow } from '../features/stops/hooks/use-stops-workflow'
 import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
 import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
@@ -176,6 +176,33 @@ function App() {
   const [mapJourneySelectionRevision, setMapJourneySelectionRevision] = useState(0)
   const pendingMapJourneySelectionRef = useRef<string | null>(null)
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number } | null>(null)
+  const stopsWorkspaceRef = useRef<StopsWorkspaceController>(null)
+  const [stopsPanelState, setStopsPanelState] = useState<StopsWorkspaceState>(() => ({
+    focusedStopId: null,
+    favoriteStops: [],
+    selectedStopList: 'nearby',
+  }))
+  const publishStopsPanelState = useCallback((next: StopsWorkspaceState): void => {
+    setStopsPanelState((current) => (
+      current.focusedStopId === next.focusedStopId &&
+      current.favoriteStops === next.favoriteStops &&
+      current.selectedStopList === next.selectedStopList
+        ? current
+        : next
+    ))
+  }, [])
+  const focusStop = useCallback((stopId: string): void => {
+    stopsWorkspaceRef.current?.focusStop(stopId)
+  }, [])
+  const reorderFavorite = useCallback((stopId: string, neighborId: string): void => {
+    stopsWorkspaceRef.current?.reorderFavorite(stopId, neighborId)
+  }, [])
+  const removeFavorite = useCallback((stopId: string): void => {
+    stopsWorkspaceRef.current?.removeFavorite(stopId)
+  }, [])
+  const clearFavoriteStops = useCallback((): void => {
+    stopsWorkspaceRef.current?.clearFavoriteStops()
+  }, [])
   const [isMapMoving, setIsMapMoving] = useState(false)
   const focusTripControlAfterOverlayRef = useRef(false)
   const assignMapShellRef = useCallback((shell: HTMLElement | null): void => {
@@ -192,6 +219,9 @@ function App() {
   }, [])
   const commandAdapter = useMemo(() => createNavigationSessionCommandAdapter(), [])
   const commands = commandAdapter(session)
+  const publishNearbyHighlight = useCallback((stopIds: readonly string[]): void => {
+    commands.setNearbyStopHighlight(stopIds)
+  }, [commands])
   const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
     (stops, signal) => services.shuttleArrivalClient.getArrivals(stops, signal),
     [services],
@@ -213,22 +243,9 @@ function App() {
   const requestNearbyLocation = useCallback((): void => {
     session?.locateUser()
   }, [session])
-  const stopsWorkflow = useStopsWorkflow({
-    minuteFormat,
-    transitIndex: state.transitIndex,
-    mapCenter,
-    location: state.location,
-    active: navigationState.state.activeView === 'stops',
-    loadArrivals: loadStopsArrivals,
-    loadPublicArrivals: loadPublicBusArrivals,
-    loadServiceWindows: loadStopsServiceWindows,
-    requestLocation: session ? requestNearbyLocation : null,
-    locateFromControl: commands.locateUser,
-    enableLocationTracking: commands.enableLocationTracking,
-  })
   const liveBusRouteIds = useMemo(() => {
     if (navigationState.state.activeView === 'stops') {
-      return [...state.transitIndex?.routeIdsByStopId.get(stopsWorkflow.state.focusedStopId ?? '') ?? []].sort()
+      return [...state.transitIndex?.routeIdsByStopId.get(stopsPanelState.focusedStopId ?? '') ?? []].sort()
     }
     const routeIds = new Set<string>()
     if (navigationState.state.activeView === 'explore') {
@@ -244,7 +261,7 @@ function App() {
     state.path.path,
     state.selectedRouteId,
     state.transitIndex,
-    stopsWorkflow.state.focusedStopId,
+    stopsPanelState.focusedStopId,
   ])
   const showLiveBusVehicles = liveBusLayerEnabled && liveBusRouteIds.length > 0
   const liveVehicles = useShuttleVehicles(
@@ -255,10 +272,8 @@ function App() {
   useEffect(() => {
     commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], showLiveBusVehicles)
   }, [commands, liveVehicles.snapshot, showLiveBusVehicles])
-  useLayoutEffect(() => {
-    commands.setNearbyStopHighlight(stopsWorkflow.nearbyHighlightStopIds)
-  }, [commands, stopsWorkflow.nearbyHighlightStopIds])
-  const isCrosshairVisible = !isMoreOpen && morePage !== 'placing' && stopsWorkflow.showNearbyCrosshair
+  const isCrosshairVisible = !isMoreOpen && morePage !== 'placing' &&
+    navigationState.state.activeView === 'stops' && stopsPanelState.selectedStopList === 'nearby'
   useLayoutEffect(() => {
     commands.setVisibleCenterZoom(isCrosshairVisible)
   }, [commands, isCrosshairVisible])
@@ -378,7 +393,7 @@ function App() {
     commands,
     isMobileViewport,
     exploreState: state.exploreState,
-    focusStop: stopsWorkflow.focusStop,
+    focusStop,
     locationStatus: state.location.status,
     pendingViewFocusRef,
     pendingExploreReturnFocusRef,
@@ -471,7 +486,7 @@ function App() {
     isMobileViewport,
     activeView: navigation.activeView,
     stopsDetent: navigation.sheets.stops.detent,
-    rememberedStopId: stopsWorkflow.state.focusedStopId,
+    rememberedStopId: stopsPanelState.focusedStopId,
   })
   useExploreEntryRefit({
     commands,
@@ -632,12 +647,12 @@ function App() {
     services,
   ])
 
+  const transitIndex = state.transitIndex
   const selectedRouteColor = state.selectedRouteColor ?? 'var(--bus-stop-default-color)'
   // Favourite stops are shown in the trip search before anything is typed.
   const planSearchSuggestions = useMemo(() => {
-    const { transitIndex } = state
     if (!transitIndex) return []
-    return stopsWorkflow.state.favoriteStopIds.flatMap((stopId) => {
+    return stopsPanelState.favoriteStops.flatMap(({ id: stopId }) => {
       const stop = transitIndex.stopById.get(stopId)
       return stop
         ? [{
@@ -649,7 +664,7 @@ function App() {
         }]
         : []
     })
-  }, [state, stopsWorkflow.state.favoriteStopIds])
+  }, [transitIndex, stopsPanelState.favoriteStops])
   const planContentProps: AppViewsProps['views']['plan'] = {
     searchSuggestions: planSearchSuggestions,
     personalWaypoints: personalWaypointCollection ?? EMPTY_PERSONAL_WAYPOINTS,
@@ -695,32 +710,54 @@ function App() {
     : appNavigation.stopReturnMode === 'bus-routes'
       ? 'Back to bus routes'
       : 'Back to Find venue'
-  const stopsContentProps: AppViewsProps['views']['stops'] = {
-    selectedStop: stopsWorkflow.selectedStop,
-    backLabel: stopBackLabel,
-    stopListEntries: stopsWorkflow.stopListEntries,
-    stopListLoading: stopsWorkflow.stopListLoading,
-    noLiveData: stopsWorkflow.noLiveData,
-    liveArrivalMessage: stopsWorkflow.liveArrivalMessage,
-    selectedStopList: stopsWorkflow.state.list,
-    selectedStopFavorite: stopsWorkflow.selectedStopFavorite,
-    locationNotice: stopsWorkflow.locationNotice,
-    onBackToStops: () => appNavigation.backFromStopDetails(stopsWorkflow.backToStops),
-    onSelectOppositeStop: appNavigation.handleStopSelected,
-    onSelectRoute: appNavigation.selectRouteFromStops,
-    onNavigateToStop: appNavigation.navigateToStop,
-    onSelectStopList: stopsWorkflow.selectStopList,
-    onToggleFavorite: stopsWorkflow.toggleFavorite,
-    onToggleExpanded: stopsWorkflow.toggleExpanded,
-    onDismissLocationNotice: stopsWorkflow.dismissLocationNotice,
-  }
+  const dispatchAppNavigation = appNavigation.dispatch
+  const handleStopsDetentChange = useCallback((detent: MobileSheetDetent): void => {
+    if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
+      focusTripControlAfterOverlayRef.current = true
+    }
+    dispatchAppNavigation({
+      type: 'set-sheet-detent',
+      view: 'stops',
+      detent,
+      source: 'manual',
+    })
+  }, [dispatchAppNavigation])
+  const stopsWorkspaceContent = (
+    <StopsWorkspace
+      ref={stopsWorkspaceRef}
+      minuteFormat={minuteFormat}
+      transitIndex={state.transitIndex}
+      mapCenter={mapCenter}
+      location={state.location}
+      active={navigationState.state.activeView === 'stops'}
+      panelActive={!isMoreOpen && morePage !== 'placing' && navigation.activeView === 'stops'}
+      isMobileViewport={isMobileViewport}
+      detent={navigation.sheets.stops.detent}
+      portalContainer={sheetPortalContainer}
+      shellRef={stopsSheetRef}
+      onDetentChange={handleStopsDetentChange}
+      loadArrivals={loadStopsArrivals}
+      loadPublicArrivals={loadPublicBusArrivals}
+      loadServiceWindows={loadStopsServiceWindows}
+      requestLocation={session ? requestNearbyLocation : null}
+      locateFromControl={commands.locateUser}
+      enableLocationTracking={commands.enableLocationTracking}
+      onStateChange={publishStopsPanelState}
+      onNearbyHighlightChange={publishNearbyHighlight}
+      backLabel={stopBackLabel}
+      onBackToStops={appNavigation.backFromStopDetails}
+      onSelectOppositeStop={appNavigation.handleStopSelected}
+      onSelectRoute={appNavigation.selectRouteFromStops}
+      onNavigateToStop={appNavigation.navigateToStop}
+    />
+  )
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
     if (isMoreOpen) {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
     }
     setIsEditingPersonalWaypoints(false)
-    appNavigation.selectView(view, stopsWorkflow.state.list)
+    appNavigation.selectView(view, stopsPanelState.selectedStopList)
   }
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
@@ -988,7 +1025,7 @@ function App() {
                   locationControlRef.current = root
                 }}
                 searching={state.location.status === 'requesting'}
-                onLocate={stopsWorkflow.locateFromControl}
+                onLocate={commands.locateUser}
               />
             </div>
             <MoreEntryButton
@@ -1127,10 +1164,10 @@ function App() {
                 onThemePreferenceChange={changeThemePreference}
                 minuteFormat={minuteFormat}
                 onMinuteFormatChange={changeMinuteFormat}
-                favoriteStops={stopsWorkflow.favoriteStops}
-                onMoveFavorite={stopsWorkflow.reorderFavorite}
-                onRemoveFavorite={stopsWorkflow.removeFavorite}
-                onClearFavorites={stopsWorkflow.clearFavoriteStops}
+                favoriteStops={stopsPanelState.favoriteStops}
+                onMoveFavorite={reorderFavorite}
+                onRemoveFavorite={removeFavorite}
+                onClearFavorites={clearFavoriteStops}
                 transitMetadata={state.transitIndex?.network.metadata ?? null}
                 buildingSource={state.buildings?.source ?? null}
                 dataVersion={__NUSGO_DATA_VERSION__}
@@ -1163,20 +1200,11 @@ function App() {
                 source: 'manual',
               }),
             },
-            stops: {
-              ref: stopsSheetRef,
-              onDetentChange: (detent) => appNavigation.dispatch({
-                type: 'set-sheet-detent',
-                view: 'stops',
-                detent,
-                source: 'manual',
-              }),
-            },
           }}
           views={{
             plan: planContentProps,
             explore: exploreContentProps,
-            stops: stopsContentProps,
+            stops: stopsWorkspaceContent,
           }}
         />
       </MobileSheetMetricsContext.Provider>

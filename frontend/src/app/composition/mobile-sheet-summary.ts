@@ -10,6 +10,7 @@ import type { JourneyState } from '../journey-state'
 interface StopsSummaryInput {
   readonly selectedStop?: { readonly longName: string } | null
   readonly stopListEntries?: readonly unknown[]
+  readonly stopListCount?: number
   readonly stopListLoading?: boolean
   readonly selectedStopList?: 'nearby' | 'favourites'
 }
@@ -17,18 +18,19 @@ interface StopsSummaryInput {
 export function getStopsSheetSummary({
   selectedStop = null,
   stopListEntries = [],
+  stopListCount = stopListEntries.length,
   stopListLoading = false,
   selectedStopList = 'nearby',
 }: StopsSummaryInput): string {
   if (selectedStop) return `Stops · ${selectedStop.longName}`
-  if (stopListEntries.length === 0) {
+  if (stopListCount === 0) {
     if (stopListLoading) return 'Stops · Finding nearby stops'
     return selectedStopList === 'favourites' ? 'Stops · No favourites yet' : 'Stops · No stops nearby'
   }
   if (selectedStopList === 'favourites') {
-    return `Stops · ${stopListEntries.length} ${stopListEntries.length === 1 ? 'favourite' : 'favourites'}`
+    return `Stops · ${stopListCount} ${stopListCount === 1 ? 'favourite' : 'favourites'}`
   }
-  return `Stops · ${stopListEntries.length} nearby`
+  return `Stops · ${stopListCount} nearby`
 }
 
 function describePath(path: Path): string {

@@ -328,6 +328,56 @@ describe('useStopsArrivals', () => {
     await act(async () => undefined)
     expect(client).toHaveBeenCalledTimes(2)
     expect(screen.getByTestId('status').textContent).toBe('ready')
+
+    rerender(<Probe client={client} active stops={otherStops} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150)
+    })
+    expect(client).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(client).mock.calls[2]?.[0]).toEqual(otherStops)
+  })
+
+  it('aborts an in-flight request and removes its visibility listener on unmount', async () => {
+    vi.useFakeTimers()
+    const requestSignals: AbortSignal[] = []
+    const client: StopsArrivalLoader = vi.fn((_requestedStops, signal) => {
+      requestSignals.push(signal)
+      return new Promise<ShuttleArrivalSnapshot>(() => undefined)
+    })
+    const removeListener = vi.spyOn(document, 'removeEventListener')
+    const { unmount } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+
+    expect(client).toHaveBeenCalledOnce()
+    expect(requestSignals[0]?.aborted).toBe(false)
+
+    unmount()
+
+    expect(requestSignals[0]?.aborted).toBe(true)
+    expect(removeListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function))
+    expect(vi.getTimerCount()).toBe(0)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    expect(client).toHaveBeenCalledOnce()
+  })
+
+  it('clears the scheduled refresh after an arrival snapshot unmounts', async () => {
+    vi.useFakeTimers()
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
+    const { unmount } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+
+    expect(client).toHaveBeenCalledOnce()
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+    unmount()
+
+    expect(vi.getTimerCount()).toBe(0)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    expect(client).toHaveBeenCalledOnce()
   })
 
   it('publishes an error state when the arrivals interface fails', async () => {

@@ -27,8 +27,6 @@
   flex: 0 0 34px;
   place-items: center;
   border-radius: 10px;
-  color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .more-menu-row-icon svg {

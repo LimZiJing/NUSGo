@@ -22,7 +22,7 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       aria-describedby="more-waypoints-summary"
       onClick={onOpenWaypoints}
     >
-      <span className="more-menu-row-icon"><MapPinIcon /></span>
+      <span className="more-menu-row-icon menu-icon-tile"><MapPinIcon /></span>
       <span className="more-menu-row-copy">
         <span>My waypoints</span>
         <span className="more-menu-row-description" id="more-waypoints-summary">{waypointSummary}</span>
@@ -36,7 +36,7 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       aria-describedby="more-settings-summary"
       onClick={onOpenSettings}
     >
-      <span className="more-menu-row-icon"><SettingsIcon /></span>
+      <span className="more-menu-row-icon menu-icon-tile"><SettingsIcon /></span>
       <span className="more-menu-row-copy">
         <span>Settings</span>
         <span className="more-menu-row-description" id="more-settings-summary">Appearance and favourites</span>
@@ -44,7 +44,7 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       <ChevronRightIcon />
     </button>
     <button type="button" className="more-menu-row" aria-label="Release notes" onClick={onOpenReleaseNotes}>
-      <span className="more-menu-row-icon"><FileTextIcon /></span>
+      <span className="more-menu-row-icon menu-icon-tile"><FileTextIcon /></span>
       <span className="more-menu-row-copy"><span>Release notes</span></span>
       <ChevronRightIcon />
     </button>

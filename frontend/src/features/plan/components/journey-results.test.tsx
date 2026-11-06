@@ -250,7 +250,7 @@ describe('JourneyResults', () => {
     expect(markup).toContain('aria-label="Journey options"')
     expect(markup).toContain('Recommended')
     expect(markup).not.toContain('Alternative 2')
-    expect(markup.match(/class="journey-option-summary"/g)).toHaveLength(2)
+    expect(markup.match(/class="button journey-option-summary"/g)).toHaveLength(2)
     expect(markup.match(/class="journey-result(?: journey-result-selected)?"/g)).toHaveLength(2)
   })
 
@@ -492,9 +492,10 @@ describe('JourneyResults', () => {
     const firstOption = markup.indexOf('<li class="journey-results-item"')
     const secondOption = markup.indexOf('<li class="journey-results-item"', firstOption + 1)
     const firstRankedMarkup = markup.slice(firstOption, secondOption)
-
-    expect(firstRankedMarkup).toContain('id="journey-option-summary-1" type="button"')
-    expect(firstRankedMarkup).toContain('aria-expanded="true" aria-current="true"')
+    expect(firstRankedMarkup).toContain('id="journey-option-summary-1"')
+    expect(firstRankedMarkup).toContain('data-candidate-key="a-candidate"')
+    expect(firstRankedMarkup).toContain('aria-current="true"')
+    expect(firstRankedMarkup).toContain('aria-expanded="true"')
     expect(firstRankedMarkup).toContain('<span>ZZZ</span>')
     expect(markup.slice(secondOption)).toContain('<span>AAA</span>')
   })

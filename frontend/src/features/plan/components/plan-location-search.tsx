@@ -10,7 +10,7 @@ import type {
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
-import { IconButton } from '../../../ui/button'
+import { Button, IconButton } from '../../../ui/button'
 import { ArrowLeftIcon, CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
@@ -240,15 +240,15 @@ export function PlanLocationSearch({
 
       <div className="plan-search-filters" role="group" aria-label="Filter results">
         {FILTERS.map(({ id, label }) => (
-          <button
+          <Button
             key={id}
             type="button"
             className="plan-search-chip"
-            aria-pressed={filter === id}
+            pressed={filter === id}
             onClick={() => setFilter(id)}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
       </div>
@@ -263,12 +263,12 @@ export function PlanLocationSearch({
                   const visibleLabel = getVisibleResultLabel(result)
                   const visibleDetail = getVisibleResultDetail(result)
                   return (
-                    <button
+                    <Button
                       className="plan-search-result"
                       type="button"
                       key={getTripEndpointKey(result.endpoint)}
                       onClick={() => onSelect(result.endpoint)}
-                      aria-label={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultIdentityLabel(result)}`}
+                      ariaLabel={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultIdentityLabel(result)}`}
                     >
                       <span className="plan-search-result-icon" aria-hidden="true">
                         <EndpointKindIcon kind={result.endpoint.kind} />
@@ -278,7 +278,7 @@ export function PlanLocationSearch({
                         {visibleLabel && <span><Highlighted text={visibleLabel} query={searchQuery} /></span>}
                         {visibleDetail && <span>{visibleDetail}</span>}
                       </span>
-                    </button>
+                    </Button>
                   )
                 })}
               </Fragment>

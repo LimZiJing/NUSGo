@@ -39,11 +39,11 @@ Props are platform-neutral. `className` is for layout only (alignment, flex sizi
 
 Every primitive supports: default, hover, active, focus-visible, disabled, and selected.
 
-- **Hover** darkens the control by 15% (`filter: brightness(0.85)`, the repo's existing treatment) only inside `@media (hover: hover)`, so touch devices never show a stuck hover. Ghost buttons and menu items tint their background with `--accent-soft` instead (menu items also on focus-visible).
+- **Hover** appears only inside `@media (hover: hover)`. Secondary buttons, chips and controls that use the native fallback use `--surface-control-hover`; primary buttons use `--accent-hover`; ghost buttons and menu items use `--accent-soft`; plain icon buttons dim their icon.
 - **Active** scales down slightly (not with reduced motion).
 - **Focus-visible** draws the shared 2px accent outline offset by 2px (`--focus-outline`, `--focus-ring-offset`). Menu items draw it inset.
 - **Disabled** uses `--text-muted` on `--surface-control` at reduced opacity and does not react to hover or press. Disabled controls are exempt from WCAG contrast requirements, so they have no 3:1 rule.
-- **Selected** is expressed as `aria-pressed="true"`: accent border with `--accent-soft` fill for primary and secondary `Button`; a pressed ghost button (an icon toggle such as the favourite star) draws no box, so the caller must change the icon to show the state; for `Chip`, a solid accent fill with inverse text, or the chip tone (such as a route colour) when one is supplied.
+- **Selected** is expressed as `aria-pressed="true"`: `Button` uses `--accent-selected`, a neutral border, primary text and an accent icon. Plain icon buttons keep their transparent surface and use the icon to reinforce state. `Chip` keeps its solid accent fill with inverse text, or its supplied route tone.
 
 Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 
@@ -55,7 +55,9 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours c
 | --- | --- | --- |
 | `--control-height-sm` / `--control-height-lg` | 36px / 44px | Control heights |
 | `--radius-control` / `--radius-control-lg` | 10px / 12px (`--radius-lg`) | Button and menu item corners; the large size uses the second |
-| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, Matcha 57%, Sakura 55%) | Border of secondary buttons and unselected chips |
+| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, Matcha 57%, Sakura 55%) | Neutral border of secondary controls and selected buttons |
+| `--accent-selected` | 26% theme accent mixed into `--surface-control` | Fill for selected buttons and open Selects |
+| `--surface-control-hover` | 11% theme primary text mixed into `--surface-control` | Neutral hover surface for secondary controls and chips |
 | `--radius-pill` | 999px | Chips and pills |
 | `--font-size-control` / `--font-size-control-lg` | 14px / 16px | Control text by size |
 | `--font-size-label` | 12px | Pill text |
@@ -64,7 +66,7 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours c
 
 ### Why `--control-border` exists
 
-A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages are chosen so it reaches at least 3:1 against `--surface` in all five themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages are chosen so it reaches at least 3:1 against `--surface` in all five themes. `theme-tokens.test.ts` also checks primary text on `--accent-selected` and `--surface-control-hover` (4.5:1), and accent icons on the selected fill (3:1). If a theme edit breaks a ratio, adjust the token rather than the threshold.
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
@@ -72,9 +74,9 @@ A neutral control sits on a similar neutral surface, so its border is what marks
 
 `Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible above the trigger and used as the listbox name), `value`, `options` (`{ value, label, leading? }[]`), `onChange(value)`, and optional `placeholder`, `size` (`sm` or `lg`), `checkPosition` (`start` or `end`, default `start`), `hideLabel`, `id`, and `className` (layout only). `leading` is decorative content shown before an option label and is hidden from assistive technology.
 
-- The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses the secondary look: `--control-border`, `--surface-control`, a 36px `sm` or 44px `lg` minimum height, and one line with ellipsis. A chevron shows the open state. If the current value has no matching option, `placeholder` supplies the displayed trigger text without adding a selectable option.
+- The trigger is a `button` with `aria-haspopup="listbox"` and `aria-expanded`. It uses a field look: `--border-control` and `--surface-raised` at rest, with a 36px `sm` or 44px `lg` minimum height and one line with ellipsis. Open state adds an accent border and `--accent-selected` fill, and flips the chevron. If the current value has no matching option, `placeholder` supplies the displayed trigger text without adding a selectable option.
 - The list floats over the page in a **portal** on `document.body`, fixed to the trigger and as wide as it. It never pushes content down, and scroll containers and the mobile bottom sheet cannot clip it. It opens below the trigger, or above when there is more room there, is capped at 14rem (less when the viewport is short) and scrolls inside itself, and follows the trigger through scrolls and resizes.
-- The selected option has a check icon at `checkPosition`. The active option has an `--accent-soft` tint, and hover moves the active option.
+- The selected option has primary text on `--accent-selected` and an accent check icon at `checkPosition`. An unselected active option has an `--accent-soft` tint, so selection remains visible as keyboard or pointer highlight moves.
 - `onChange` fires only when the value changes. Selecting closes the list and returns focus to the trigger.
 
 Keyboard: Enter, Space or ArrowDown on the trigger opens the list with the selected option active. ArrowUp and ArrowDown move the active option, Home and End jump to the first and last. Enter or Space selects it. Escape closes without selecting and returns focus. Tab, or a click outside, closes the list.
@@ -87,7 +89,7 @@ Every interactive control is at least 36px tall and wide (`--control-height-sm`)
 
 ## Gallery
 
-Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light, Dark, Matcha, and Sakura side by side. Each theme is its own embedded page (`/?gallery&frame=light`, `dark`, `matcha`, `sakura`) so it uses the real `data-theme` mechanism; the gallery sets `data-theme` directly because `ui/theme.ts` only models Light and Dark. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.
+Run the dev server and open `/?gallery` for a one-page review of every variant, size, and state, in Light, Dark, NUS, Matcha, and Sakura side by side. Each theme is its own embedded page (`/?gallery&frame=light`, `dark`, `nus`, `matcha`, `sakura`) so it uses the real `data-theme` mechanism; the gallery sets `data-theme` directly because `ui/theme.ts` only models Light and Dark. Hover, active, and focus-visible are forced with a `data-state` attribute in `frontend/src/ui/gallery/gallery.css`; disabled and selected are real attributes. The gallery is loaded lazily behind `import.meta.env.DEV`, so production builds contain neither it nor its CSS. Update the gallery whenever a primitive gains a variant, size, or state.
 
 ## Lint rule: no bare `button` selectors
 

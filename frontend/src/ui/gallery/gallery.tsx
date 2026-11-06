@@ -121,6 +121,12 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
           </div>
         </div>
       </section>
+      <section className="gallery-section" aria-label="Open Button">
+        <h2>Open Button</h2>
+        <div className="gallery-open-control">
+          <Button label="Show options" icon={<SearchIcon />} expanded onClick={noop} />
+        </div>
+      </section>
       <StateGrid
         title="IconButton"
         rows={variantSizeRows((variant, size, state) => (

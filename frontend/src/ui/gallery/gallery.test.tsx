@@ -27,6 +27,12 @@ describe('controls gallery', () => {
   it('shows BackButton, IconButton, MenuItem, Chip and Pill samples', () => {
     render(<GalleryPanel theme="dark" />)
 
+    expect(
+      within(screen.getByRole('region', { name: 'Open Button' }))
+        .getByRole('button', { name: 'Show options' })
+        .getAttribute('aria-expanded'),
+    ).toBe('true')
+
     const backButtons = within(screen.getByRole('region', { name: 'BackButton' }))
     expect(backButtons.getByRole('button', { name: 'Back to previous view' }).querySelector('svg')).not.toBeNull()
     expect(backButtons.getByRole('button', { name: 'Back to stops' }).querySelector('svg')).not.toBeNull()

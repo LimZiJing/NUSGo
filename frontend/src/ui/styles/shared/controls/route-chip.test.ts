@@ -20,6 +20,11 @@ describe('bus route scrolling styles', () => {
     expect(styles).toMatch(/\.route-scroll-arrow\[hidden\]\s*{[^}]*display:\s*none;/s)
   })
 
+  it('keeps route arrows centered when pressed and with reduced motion', () => {
+    expect(styles).toMatch(/\.route-scroll-arrow:active:not\(:disabled\)\s*{[^}]*transform:\s*translateY\(-50%\) scale\(0\.98\);/s)
+    expect(styles).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*{[^}]*\.route-scroll-arrow:active:not\(:disabled\)\s*{[^}]*transform:\s*translateY\(-50%\);/s)
+  })
+
   it('keeps shared route chips filled and vertically centered', () => {
     expect(styles).toMatch(/\.route-chip\s*{[^}]*display:\s*inline-flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/s)
     expect(styles).toMatch(/\.route-chip\[data-active='true'\]\s*{[^}]*color:\s*var\(--route-text-color\);[^}]*background:\s*var\(--route-color\);/s)

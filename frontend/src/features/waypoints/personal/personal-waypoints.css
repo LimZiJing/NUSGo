@@ -534,6 +534,10 @@
 
 .personal-waypoint-marker-preview-icon { color: var(--map-waypoint-marker-ink); transform: rotate(45deg); }
 
+.button.personal-waypoint-appearance-trigger[aria-expanded='true'] .personal-waypoint-marker-preview-icon {
+  color: var(--map-waypoint-marker-ink);
+}
+
 .personal-waypoint-choice-group {
   display: grid;
   gap: var(--space-2);

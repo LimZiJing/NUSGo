@@ -213,6 +213,22 @@ describe('control token contrast', () => {
     expect(styles).toContain(".button.icon-button.map-overlay-button[aria-pressed='true']")
     expect(styles).toContain(".button.icon-button.map-overlay-button[aria-expanded='true']")
     expect(styles).toContain('background: var(--accent-selected)')
+    expect(styles).not.toMatch(/\.button\.icon-button\.map-overlay-button:active:not\(:disabled\)\s*{[^}]*transform:\s*none;/s)
+  })
+
+  it('keeps plain and nested SVGs on their feature-owned colors', () => {
+    const styles = readStyleFile('controls/button.css')
+
+    expect(styles).toMatch(/\.button\[aria-pressed='true'\]:not\(\[data-variant='plain'\]\)\s+svg,\s*\.button\[aria-expanded='true'\]:not\(\[data-variant='plain'\]\)\s+svg\s*{[^}]*color:\s*var\(--accent-hover\);/s)
+    expect(readStyleFile('../../../features/waypoints/personal/personal-waypoints.css'))
+      .toMatch(/\.button\.personal-waypoint-appearance-trigger\[aria-expanded='true'\]\s+\.personal-waypoint-marker-preview-icon\s*{[^}]*color:\s*var\(--map-waypoint-marker-ink\);/s)
+  })
+
+  it('resolves each journey stop ring from its route at the marker', () => {
+    const styles = readStyleFile('../../../features/plan/styles/plan-content.css')
+
+    expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*box-shadow:\s*0 0 0 1px var\(--journey-route-color,\s*var\(--status-info\)\);/s)
+    expect(readStyleFile('tokens.css')).not.toContain('--ring-journey-stop')
   })
 
   it.each(themes)('defines --control-border in the %s theme', (themeName) => {

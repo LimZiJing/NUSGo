@@ -192,21 +192,6 @@
   outline-offset: 2px;
 }
 
-.button.icon-button.map-overlay-button:active:not(:disabled) {
-  transform: none;
-}
-
-.map-overlay-button:focus-visible {
-  outline: 3px solid var(--focus-ring-strong);
-  outline-offset: 2px;
-}
-
-.map-overlay-button > svg {
-  width: 20px;
-  height: 20px;
-  stroke-width: 2;
-}
-
 .location-control-icon {
   fill: none;
   stroke: currentColor;

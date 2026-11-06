@@ -575,7 +575,7 @@
   border-radius: 50%;
   box-sizing: border-box;
   background: var(--journey-route-color, var(--status-info));
-  box-shadow: var(--ring-journey-stop);
+  box-shadow: 0 0 0 1px var(--journey-route-color, var(--status-info));
 }
 
 @media (max-width: 480px) {

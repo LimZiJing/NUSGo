@@ -12,6 +12,7 @@ import {
 import type { TransitNetworkIndex } from '../../../domain/transit'
 import type { TransitNetwork, BusRoute } from '@nusgo/shared/transit/types'
 import { BusIcon } from '../../../ui/icons'
+import { Button } from '../../../ui/button'
 import { RouteChip } from '../../../ui/route-chip'
 import { ScrollArea } from '../../../ui/scroll-area'
 import '../styles/bus-route-list.css'
@@ -270,10 +271,10 @@ export function BusRouteList({
               />
             ))}
           </ScrollArea>
-          <button
+          <Button
             className="route-scroll-arrow route-scroll-arrow-left"
             type="button"
-            aria-label="Scroll bus routes left"
+            ariaLabel="Scroll bus routes left"
             hidden={!routeScrollState.canScrollLeft}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -283,11 +284,11 @@ export function BusRouteList({
             onClick={() => scrollRoutes(-1)}
           >
             <span aria-hidden="true">‹</span>
-          </button>
-          <button
+          </Button>
+          <Button
             className="route-scroll-arrow route-scroll-arrow-right"
             type="button"
-            aria-label="Scroll bus routes right"
+            ariaLabel="Scroll bus routes right"
             hidden={!routeScrollState.canScrollRight}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -297,7 +298,7 @@ export function BusRouteList({
             onClick={() => scrollRoutes(1)}
           >
             <span aria-hidden="true">›</span>
-          </button>
+          </Button>
         </div>
       )}
       {selectedRoute ? (
@@ -309,12 +310,12 @@ export function BusRouteList({
                 const stop = stopsById.get(stopId)
                 return (
                   <li key={`${stopId}-${index}`}>
-                    <button
+                    <Button
                       type="button"
                       className="explore-bus-route-list-stop"
                       data-hover-filter="none"
                       data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, bus stop, code ${stopId}. Focus on map`}
+                      ariaLabel={`${stop?.longName ?? stopId}, bus stop, code ${stopId}. Focus on map`}
                       onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}
                     >
                       <span className="explore-bus-route-list-node" aria-hidden="true" />
@@ -326,7 +327,7 @@ export function BusRouteList({
                         <small>{stopId}</small>
                       </span>
                       <span className="explore-bus-route-list-chevron" aria-hidden="true">›</span>
-                    </button>
+                    </Button>
                   </li>
                 )
               })}

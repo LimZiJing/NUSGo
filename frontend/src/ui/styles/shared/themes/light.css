@@ -36,7 +36,8 @@
   --text-warning: #b45309;
   --text-success-strong: #15803d;
   --text-error-strong: #b91c1c;
-  --text-favorite: #d97706;
+  /* Icon-only; keep 3:1 contrast on the surfaces where favorites appear. */
+  --text-favorite: #b45309;
   --bus-stop-default-color: #334155;
   --personal-waypoint-marker-blue: #5b83e6;
   --personal-waypoint-marker-red: #ed2224;

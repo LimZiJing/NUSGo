@@ -201,4 +201,24 @@ describe('control token contrast', () => {
       }
     }
   })
+
+  it.each(themes)('keeps favourite icons distinguishable in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+
+    for (const background of ['--surface', '--surface-raised', '--accent-soft'] as const) {
+      const ratio = contrastRatio(resolveColour(styles, '--text-favorite'), resolveColour(styles, background))
+
+      expect(ratio, `${themeName}: --text-favorite on ${background}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it.each(themes)('keeps strong success text readable on the %s theme surface', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    const ratio = contrastRatio(
+      resolveColour(styles, '--text-success-strong'),
+      resolveColour(styles, '--surface'),
+    )
+
+    expect(ratio, `${themeName}: --text-success-strong on --surface`).toBeGreaterThanOrEqual(4.5)
+  })
 })

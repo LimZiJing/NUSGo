@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Button } from '../../ui/button'
 import { ChevronRightIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
 import './more-menu.css'
 
@@ -15,11 +16,10 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
     : `${waypointCount} saved ${waypointCount === 1 ? 'place' : 'places'}`
 
   return <div className="more-menu-content">
-    <button
-      type="button"
+    <Button
       className="more-menu-row"
-      aria-label="My waypoints"
-      aria-describedby="more-waypoints-summary"
+      ariaLabel="My waypoints"
+      ariaDescribedBy="more-waypoints-summary"
       onClick={onOpenWaypoints}
     >
       <span className="more-menu-row-icon menu-icon-tile"><MapPinIcon /></span>
@@ -28,12 +28,11 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
         <span className="more-menu-row-description" id="more-waypoints-summary">{waypointSummary}</span>
       </span>
       <ChevronRightIcon />
-    </button>
-    <button
-      type="button"
+    </Button>
+    <Button
       className="more-menu-row"
-      aria-label="Settings"
-      aria-describedby="more-settings-summary"
+      ariaLabel="Settings"
+      ariaDescribedBy="more-settings-summary"
       onClick={onOpenSettings}
     >
       <span className="more-menu-row-icon menu-icon-tile"><SettingsIcon /></span>
@@ -42,12 +41,12 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
         <span className="more-menu-row-description" id="more-settings-summary">Appearance and favourites</span>
       </span>
       <ChevronRightIcon />
-    </button>
-    <button type="button" className="more-menu-row" aria-label="Release notes" onClick={onOpenReleaseNotes}>
+    </Button>
+    <Button className="more-menu-row" ariaLabel="Release notes" onClick={onOpenReleaseNotes}>
       <span className="more-menu-row-icon menu-icon-tile"><FileTextIcon /></span>
       <span className="more-menu-row-copy"><span>Release notes</span></span>
       <ChevronRightIcon />
-    </button>
+    </Button>
     {installSection}
   </div>
 }

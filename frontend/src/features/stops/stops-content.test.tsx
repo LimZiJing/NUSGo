@@ -140,4 +140,59 @@ describe('StopsContent', () => {
     expect(screen.getByText('No stops available.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Browse stops' })).toBeNull()
   })
+
+  // jsdom does not lay anything out and does not apply the imported stylesheet, so the scroll
+  // owner is described explicitly: a column that overflows above the content element, and a
+  // static wrapper that must be ignored.
+  function renderInsideScrolledColumn(isMobileViewport: boolean) {
+    const column = document.createElement('div')
+    const wrapper = document.createElement('div')
+    column.append(wrapper)
+    document.body.append(column)
+    Object.defineProperty(column, 'scrollHeight', { configurable: true, value: 2000 })
+    Object.defineProperty(column, 'clientHeight', { configurable: true, value: 500 })
+    column.scrollTop = 900
+    wrapper.scrollTop = 640
+    const realGetComputedStyle = window.getComputedStyle.bind(window)
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((element: Element) => new Proxy(
+      realGetComputedStyle(element),
+      { get: (target, key) => (key === 'overflowY' && element === column ? 'auto' : Reflect.get(target, key, target)) },
+    ))
+    const props = {
+      onBackToStops: vi.fn(),
+      onSelectOppositeStop: vi.fn(),
+      onSelectRoute: vi.fn(),
+      onNavigateToStop: vi.fn(),
+      onSelectStopList: vi.fn(),
+      onToggleFavorite: vi.fn(),
+      onToggleExpanded: vi.fn(),
+      onDismissLocationNotice: vi.fn(),
+    }
+    const view = render(<StopsContent {...props} selectedStop={null} stopListEntries={[]} isMobileViewport={isMobileViewport} />, { container: wrapper })
+    return { column, wrapper, props, view }
+  }
+
+  it('resets the desktop column when stop details open, so their heading starts at the top', () => {
+    const { column, wrapper, props, view } = renderInsideScrolledColumn(false)
+    expect(column.scrollTop).toBe(900)
+
+    view.rerender(<StopsContent {...props} selectedStop={selectedStop} isMobileViewport={false} />)
+
+    expect(column.scrollTop).toBe(0)
+    expect(wrapper.scrollTop).toBe(640)
+    expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
+    vi.restoreAllMocks()
+    column.remove()
+  })
+
+  it('leaves the mobile sheet scroll position to the sheet itself', () => {
+    const { column, wrapper, props, view } = renderInsideScrolledColumn(true)
+
+    view.rerender(<StopsContent {...props} selectedStop={selectedStop} isMobileViewport />)
+
+    expect(column.scrollTop).toBe(900)
+    expect(wrapper.scrollTop).toBe(640)
+    vi.restoreAllMocks()
+    column.remove()
+  })
 })

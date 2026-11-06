@@ -1,9 +1,23 @@
+import { useLayoutEffect, useRef } from 'react'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
 import type { StopDetailsModel } from './data/stop-details-model.ts'
 import type { StopListEntry } from './data/stop-list-data.ts'
 import { StopDetails } from './components/stop-details.tsx'
 import { StopList } from './components/stop-list.tsx'
 import './styles/stops-content.css'
+
+// The list and the details share one content element, and on desktop the scroll owner is the
+// panel above it. A list scrolled far down would otherwise carry that offset into the details,
+// leaving their heading and Back control above the visible area of a short column.
+function resetScrollOwner(element: Element | null): void {
+  for (let node = element?.parentElement ?? null; node; node = node.parentElement) {
+    const { overflowY } = window.getComputedStyle(node)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      node.scrollTop = 0
+      return
+    }
+  }
+}
 
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null
@@ -19,6 +33,7 @@ interface StopsContentProps {
   readonly locationNotice?: string | null
   readonly noLiveData?: boolean
   readonly liveArrivalMessage?: string | null
+  readonly isMobileViewport?: boolean
   readonly onSelectStopList: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
@@ -39,15 +54,27 @@ export function StopsContent({
   locationNotice = null,
   noLiveData = false,
   liveArrivalMessage = null,
+  isMobileViewport = false,
   onSelectStopList,
   onToggleFavorite,
   onToggleExpanded,
   onDismissLocationNotice,
 }: StopsContentProps) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const showingDetails = selectedStop !== null
+
+  // Mobile keeps its own arrangement, where the details pane scrolls itself, so the reset is
+  // confined to the desktop column that this feature's stylesheet makes the single scroller.
+  useLayoutEffect(() => {
+    if (!showingDetails || isMobileViewport) return
+    resetScrollOwner(contentRef.current)
+  }, [showingDetails, isMobileViewport, selectedStop?.id])
+
   return (
     <div className="stops-content">
       <div
         id="stops-content"
+        ref={contentRef}
         className={`navigation-panel-content stops-content-panel${selectedStop ? ' navigation-panel-scroll-content' : ''}`}
         data-content-state={selectedStop ? 'stop-details' : 'stop-list'}
       >

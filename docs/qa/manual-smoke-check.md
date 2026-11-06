@@ -25,6 +25,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] In Plan, set origin to PGP and destination to UTown Auditorium 2. The Journey calculation returns a valid Recommended journey, and the map, page, and endpoint controls remain responsive while it is calculated. If the result is budgeted, the panel explains that a faster route may exist instead of calling it fastest.
 - [ ] Venue and transit loading failures remain independently understandable and usable where supported.
 - [ ] Native MapLibre navigation controls remain usable on desktop.
+- [ ] In Stops, the Stops column is the only thing that scrolls: the wheel or trackpad over a stop card, the gap between cards, the Nearby/Favourites switch, the location notice, the panel gutter and the stop details all move the same column by the same amount, and the switch stays pinned to the top of the column while it scrolls. Check at 1440 × 900 and again at 781 × 538, where the Nearby list overflows well past the column. With two favourited stops, the short Favourites list leaves the wheel free instead of swallowing it. With focus on a stop card, Page Down scrolls the column too.
 
 ## Mobile — 390 × 844
 

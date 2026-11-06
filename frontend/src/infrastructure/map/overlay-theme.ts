@@ -1,4 +1,4 @@
-export type OverlayTheme = 'light' | 'dark'
+export type OverlayTheme = 'light' | 'dark' | 'rainroom'
 
 export interface OverlayPalette {
   /** Route lines when no route is focused. */
@@ -28,14 +28,22 @@ const DARK_PALETTE: OverlayPalette = {
   stopHaloFaded: 'rgba(11, 18, 32, 0.2)',
 }
 
-/** Only the Dark theme changes the map; every other theme keeps the light map. */
+const RAINROOM_PALETTE: OverlayPalette = {
+  routeBase: '#c0bfad',
+  routeCasing: '#273431',
+  stopText: '#f2efe5',
+  stopTextMuted: '#c4c4b7',
+  stopHalo: '#293431',
+  stopHaloFaded: 'rgba(41, 52, 49, 0.3)',
+}
+
+/** Dark and Rainroom use the dark map treatment; other themes use the light map. */
 export function getDocumentTheme(): OverlayTheme {
   // Node tests run without a DOM, or with a partial one.
-  return typeof document !== 'undefined' && document.documentElement?.dataset.theme === 'dark'
-    ? 'dark'
-    : 'light'
+  const theme = typeof document !== 'undefined' ? document.documentElement?.dataset.theme : undefined
+  return theme === 'rainroom' ? 'rainroom' : theme === 'dark' ? 'dark' : 'light'
 }
 
 export function getOverlayPalette(theme: OverlayTheme = getDocumentTheme()): OverlayPalette {
-  return theme === 'dark' ? DARK_PALETTE : LIGHT_PALETTE
+  return theme === 'rainroom' ? RAINROOM_PALETTE : theme === 'dark' ? DARK_PALETTE : LIGHT_PALETTE
 }

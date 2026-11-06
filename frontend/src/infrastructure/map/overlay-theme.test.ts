@@ -8,11 +8,13 @@ afterEach(() => {
 })
 
 describe('overlay theme', () => {
-  it('treats only the dark theme as dark', () => {
+  it('uses dark map treatments for Dark and Rainroom', () => {
     document.documentElement.dataset.theme = 'dark'
     expect(getDocumentTheme()).toBe('dark')
     document.documentElement.dataset.theme = 'sakura'
     expect(getDocumentTheme()).toBe('light')
+    document.documentElement.dataset.theme = 'rainroom'
+    expect(getDocumentTheme()).toBe('rainroom')
   })
 
   it('gives dark stop labels light text on a dark halo', () => {
@@ -22,6 +24,13 @@ describe('overlay theme', () => {
     expect(dark.stopText).not.toBe(light.stopText)
     expect(dark.stopHalo).not.toBe(light.stopHalo)
     expect(dark.routeBase).not.toBe(light.routeBase)
+  })
+
+  it('uses warm mist and moss-neutral overlays for Rainroom', () => {
+    const palette = getOverlayPalette('rainroom')
+    expect(palette.routeBase).toBe('#c0bfad')
+    expect(palette.stopHalo).toBe('#293431')
+    expect(palette.stopText).toBe('#f2efe5')
   })
 
   it('mutes yellow roads much harder than blue lines', () => {

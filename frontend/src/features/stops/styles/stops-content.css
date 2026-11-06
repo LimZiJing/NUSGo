@@ -171,6 +171,13 @@
     outline-offset: calc(-1 * var(--focus-ring-width));
   }
 
+  @media (hover: hover) {
+    /* Preserve the native toggle's transparent hover while Button supplies shared states. */
+    .button.stop-card-toggle[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+      background: transparent;
+    }
+  }
+
   .stop-card-favorite svg {
     width: 18px;
     height: 18px;

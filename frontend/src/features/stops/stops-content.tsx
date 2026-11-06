@@ -6,9 +6,14 @@ import { StopDetails } from './components/stop-details.tsx'
 import { StopList } from './components/stop-list.tsx'
 import './styles/stops-content.css'
 
-// The list and the details share one content element, and on desktop the scroll owner is the
-// panel above it. A list scrolled far down would otherwise carry that offset into the details,
-// leaving their heading and Back control above the visible area of a short column.
+/**
+ * Scrolls the nearest element above `element` that is actually scrolling back to its top.
+ *
+ * The list and the details share one content element, and on desktop the scroll owner is the panel
+ * further up, not this element itself. A list scrolled far down would otherwise carry that offset
+ * into the details, leaving their heading and Back control above the visible area of a short
+ * column. Walking up beats naming the panel class, so this keeps working if that ownership moves.
+ */
 function resetScrollOwner(element: Element | null): void {
   for (let node = element?.parentElement ?? null; node; node = node.parentElement) {
     const { overflowY } = window.getComputedStyle(node)
@@ -40,6 +45,11 @@ interface StopsContentProps {
   readonly onDismissLocationNotice: () => void
 }
 
+/**
+ * The Stops pane's body: the Nearby/Favourites list, or one stop's details, sharing one content
+ * element. Opening details on desktop resets the column to the top; mobile keeps the sheet's own
+ * position, because there the sheet scrolls the card list rather than the column.
+ */
 export function StopsContent({
   selectedStop,
   backLabel,

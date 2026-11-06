@@ -6,7 +6,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopsContent } from './stops-content.tsx'
 import type { StopDetailsModel } from './data/stop-details-model.ts'
 
-afterEach(cleanup)
+// The scroll-owner tests append their own column outside the rendered container, so it has to be
+// released here rather than at the end of each test, where a failing assertion would skip it.
+const appendedColumns: HTMLElement[] = []
+
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  for (const column of appendedColumns.splice(0)) column.remove()
+})
 
 const selectedStop: StopDetailsModel = {
   id: 'SR7',
@@ -141,14 +149,19 @@ describe('StopsContent', () => {
     expect(screen.queryByRole('button', { name: 'Browse stops' })).toBeNull()
   })
 
-  // jsdom does not lay anything out and does not apply the imported stylesheet, so the scroll
-  // owner is described explicitly: a column that overflows above the content element, and a
-  // static wrapper that must be ignored.
+  /**
+   * Renders the pane inside a column that overflows, with a static wrapper in between.
+   *
+   * jsdom does not lay anything out and does not apply the imported stylesheet, so the scroll
+   * owner is described explicitly: the column reports itself as scrolling, and the wrapper must
+   * be ignored. The returned column is released by the `afterEach` above.
+   */
   function renderInsideScrolledColumn(isMobileViewport: boolean) {
     const column = document.createElement('div')
     const wrapper = document.createElement('div')
     column.append(wrapper)
     document.body.append(column)
+    appendedColumns.push(column)
     Object.defineProperty(column, 'scrollHeight', { configurable: true, value: 2000 })
     Object.defineProperty(column, 'clientHeight', { configurable: true, value: 500 })
     column.scrollTop = 900
@@ -181,8 +194,6 @@ describe('StopsContent', () => {
     expect(column.scrollTop).toBe(0)
     expect(wrapper.scrollTop).toBe(640)
     expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
-    vi.restoreAllMocks()
-    column.remove()
   })
 
   it('leaves the mobile sheet scroll position to the sheet itself', () => {
@@ -192,7 +203,5 @@ describe('StopsContent', () => {
 
     expect(column.scrollTop).toBe(900)
     expect(wrapper.scrollTop).toBe(640)
-    vi.restoreAllMocks()
-    column.remove()
   })
 })

@@ -1,4 +1,4 @@
-import { GhostBackButton } from '../../../ui/ghost-back-button'
+import { BackButton } from '../../../ui/back-button'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Button, IconButton } from '../../../ui/button'
 import { InfoPill } from '../../../ui/info-pill'
@@ -31,7 +31,7 @@ export function StopDetails({
 
   return (
     <div className="stop-selection" data-testid="stop-detail">
-      <GhostBackButton label={backLabel} onClick={onBackToStops} />
+      <BackButton mode="inline" label={backLabel} onClick={onBackToStops} />
       <div className="stop-identity">
         <div className="stop-identity-copy">
           <h2
@@ -70,7 +70,6 @@ export function StopDetails({
         />
         {oppositeStop ? (
           <Button
-            className="stop-opposite"
             variant="secondary"
             label="Opposite stop"
             trailingIcon={<ChevronRightIcon />}

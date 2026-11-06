@@ -3,7 +3,7 @@ import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'
-import { GhostBackButton } from '../../ui/ghost-back-button.tsx'
+import { BackButton } from '../../ui/back-button.tsx'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
 import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent.ts'
 import type { ExplorePanelFocusBindings } from './hooks/use-explore-panel-focus.ts'
@@ -133,7 +133,7 @@ export function ExploreContent({
             />
           )}
           {state.mode === 'venue-detail' && !minimized && (
-            <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
+            <BackButton mode="inline" label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
             id="explore-content-heading"

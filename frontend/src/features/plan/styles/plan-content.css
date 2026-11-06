@@ -933,6 +933,7 @@
 
 /* Keep the existing compact filter look while using Chip for its selectable-choice behavior. */
 .chip.plan-search-chip {
+  flex: 0 1 auto;
   min-height: 28px;
   padding: 0 var(--space-3);
   border: 0;

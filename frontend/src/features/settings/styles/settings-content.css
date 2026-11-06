@@ -91,6 +91,16 @@
   background: var(--theme-swatch-sakura);
 }
 
+.settings-theme-swatch[data-theme-choice='rainroom'] {
+  background: linear-gradient(
+    135deg,
+    var(--rainroom-swatch-slate) 0 58%,
+    var(--rainroom-swatch-walnut) 59% 77%,
+    var(--rainroom-swatch-moss) 78% 92%,
+    var(--rainroom-swatch-amber) 93%
+  );
+}
+
 .settings-choice[data-selected='true'] {
   color: var(--text-primary);
   background: var(--surface-raised);

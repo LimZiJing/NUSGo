@@ -4,7 +4,7 @@ Evidence record for [issue #629](https://github.com/LimZiJing/NUSGo/issues/629) 
 
 ## Run
 
-- Application revision `8d0e242d` (local `main`) for the before capture; `25f549b3` for the after capture (see "After captures"). Worktree `t3-06c72209`.
+- Application revision `8d0e242d` (local `main`) for the before capture; `d1629e66` for the after capture (see "After captures"). Worktree `t3-06c72209`.
 - Local Vite development server from `npm run servers:start` at `http://127.0.0.1:22188/`.
 - Headless Chromium 1254 (`playwright` 1.65.0) at 1440 × 900, device pixel ratio 1, `prefers-reduced-motion: reduce`.
 - Each of the 25 captures used a fresh browser context with `navus:theme-preference:v1` seeded before navigation, so every theme used the real `data-theme` mechanism rather than a page-level override. The applied `data-theme` was asserted before each screenshot; all 25 matched the requested theme.
@@ -79,6 +79,7 @@ The page surface has to be painted by something for any of this to be visible. T
 | light | `--surface-segmented-control` | `#e8eef5` | `#dfe5ee` | 1.16 on the column |
 | light | `--control-border` | 50% mix | 55% mix | 3.41 |
 | dark | `--surface-card` | `#272934` | `#2a2c37` | 1.29 |
+| dark | `--control-border` | 35% mix | 45% mix | 3.24 on the card |
 | nus | `--surface-card` | `#fbefe1` | `#fffaf4` | 1.05 |
 | matcha | `--surface-card` | `#e0e6d6` | `#f0f2e7` | 1.12 |
 | sakura | `--surface-card` | `#ead8df` | `#f4e7eb` | 1.17 |
@@ -98,6 +99,7 @@ Values left alone:
 Consequences recorded for review:
 
 - Light `--control-border` at 50% would have resolved to `#888f98` on `#f1f5f9` — **2.98:1**, failing the 3:1 check in `theme-tokens.test.ts`. That is why the mix fraction moved to 55%; see [controls.md](../ui/controls.md).
+- The dark card change also pushed dark `--control-border` further below the 3:1 that WCAG 1.4.11 asks of a control boundary. At the 35% mix it sat **2.45:1** against the old card and **2.35:1** against the new one; the existing test only compared the border to `--surface`, where it measured 3.03, so nothing caught it. The mix is now 45%, reaching 3.24:1 on the card, 3.78 on `--surface-raised`, 4.18 on `--surface` and 3.06 on `--surface-control`. `theme-tokens.test.ts` now checks `--control-border` against `--surface-card` as well as `--surface`, and that new assertion fails on the old 35% value.
 - Light `--surface-subtle` had to move because its old value was `#f1f5f9` — the new page surface. Leaving it would have made the hover/focus fill identical to the page.
 - Light `--surface-segmented-control` had to move for the same reason: at `#e8eef5` the Find venue / Bus routes container sat 1.07 from the new column and disappeared into it. `#dfe5ee` restores 1.16 against the column and 1.27 for the selected pill.
 - Dark `--surface-control` now sits 1.06 against the card (was 1.10), the same distance `--border-subtle` has. Not changed here.
@@ -106,7 +108,7 @@ Consequences recorded for review:
 
 `docs/qa/screenshots/issue-629-after/<theme>-<view>.jpg`, same 25 views, viewport, themes and JPEG quality as the baseline set.
 
-- **Gathered on commit `25f549b3`** (the last commit that changes any CSS), 2026-11-06T10:55:22Z, from a clean working tree. Later commits in this branch touch only this document and these images, so the captures represent the reviewed code.
+- **Gathered on commit `d1629e66`** — the working tree that became that commit, with the dark `--control-border` fix applied and nothing else changed — on 2026-11-06T11:22:15Z. Commits after it in this branch touch only this document and these images, so the captures represent the reviewed code.
 - `measurements.json` in that directory records the computed value of the surface tokens each capture sampled, read from `getComputedStyle` at capture time. Plain hex tokens come back as written; `--control-border` comes back as its `color-mix()` expression, since a custom property computes to its specified value.
 
 **What the captures show.** All five themes changed. Measured from the rendered pixels in the left panel:
@@ -128,12 +130,17 @@ Desktop and mobile were both re-checked after the change: mobile light sheet `rg
 
 All seven declarations now use `--surface-card`, which is what a form control on a page should sit on and what `.personal-waypoint-form input` alongside them already used. Field-fill-to-panel after the fix: light 1.096, dark 1.289, nus 1.052, matcha 1.118, sakura 1.173 — matching or beating the pre-change values in every theme.
 
-This slipped through the 25-image set because it captures Explore, Stops, Plan and More only. Settings, Appearance, the waypoint add/saved flows and search results have no captures; Settings and Appearance were spot-checked after the fact and are correct.
+This slipped through the 25-image set because it captures Explore, Stops, Plan and More only. Settings, Appearance, the waypoint add/saved flows and search results have no captures.
 
-**Why this set was re-captured, and what that showed.** The first after-capture set was taken before the waypoints fix landed, so it no longer represented the reviewed code. Re-running the same harness at `25f549b3` and diffing the two sets separates code differences from run-to-run noise:
+**Why this set was re-captured, and what that showed.** The set in this directory has been re-run twice, both times because the images no longer matched the code:
 
-- The navigation column — the region these changes actually repaint — is **pixel-identical** in Explore, Plan and More across all five themes (0.000% of pixels changed, max channel delta 2, i.e. JPEG rounding only). The waypoints control fills are not visible in these views, which is exactly why the regression escaped the capture set.
-- Stops differs inside the column, by 2.9–4.4%, because the arrival rows are live and tick between runs.
+1. The first after-capture set was taken before the waypoints control fix landed.
+2. The second was taken before the dark `--control-border` mix moved from 35% to 45%.
+
+Re-running the same harness at `d1629e66` and diffing consecutive sets separates code differences from run-to-run noise:
+
+- The navigation column — the region these changes actually repaint — is **pixel-identical** in Explore, Plan and More across all five themes (0.000% of pixels changed, max channel delta 2, i.e. JPEG rounding only). Neither the waypoint control fills nor the dark control border appear in these views, which is exactly why those fixes were missed by the capture set.
+- Stops differs inside the column, by 2.9–4.4% between the first and second set and 0.5–0.8% between the second and third, because the arrival rows are live and tick between runs.
 - The map area differs by up to 2.6% in light and about 0.25% in the other four themes. MapLibre drops and re-places labels depending on which ones fit, so label positions are not stable between runs; the contrast between light and dark here is how differently the basemap palettes trigger that collision handling, not a surface change.
 
 Treat the surfaces as the thing these images record. Basemap label placement and live arrival times are not evidence.
@@ -141,7 +148,7 @@ Treat the surfaces as the thing these images record. Basemap label placement and
 ## Not verified
 
 - Mobile and tablet viewports for the **screenshot set** — the 25 captures are desktop only, as in the baseline. The mobile sheet and tab-bar surfaces were checked by reading computed styles from the running app at 390 × 844, not by capture.
-- **Settings, Appearance, the waypoint add/saved flows and search results are not in the capture set.** Settings and Appearance were spot-checked by hand after the change; the waypoint list is covered by the regression note above. Other panels were not systematically re-checked.
+- **Settings, Appearance, the waypoint add/saved flows and search results are not in the capture set.** This mattered: the waypoint list and the Appearance theme select both had defects that the 25 images could not show, and both were found by reading computed styles from the running app instead. Settings and Appearance were spot-checked by eye after the change and looked acceptable; the border measurement that caught the dark control border was a separate, numeric check. Other panels were not systematically re-checked, and a by-eye spot check should not be read as covering them.
 - Physical display gamma, hardware colour profile, and OS-level night-light shifts. Contrast was computed from token values, not sampled from rendered pixels.
 - Hover, pressed, focus, and selected control surfaces. Those belong to #617, which also changes surface tokens.
 - The map basemap itself. Basemap colours come from `basemap-theme.ts` palettes, not these tokens, so the map images show only how map-adjacent chrome reads against them.

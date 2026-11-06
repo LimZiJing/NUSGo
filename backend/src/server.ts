@@ -9,6 +9,8 @@ import { createPathfindingService } from './pathfinding/service.ts'
 import { createPushSubscriptionStore } from './push/subscription-store.ts'
 import { createNotificationCap } from './push/notification-cap.ts'
 import { createServiceUpdatePublisher } from './push/service-update-publisher.ts'
+import { createAlightReminderPublisher } from './push/alight-reminders.ts'
+import { createAlightReminderRegistry } from './push/reminder-registry.ts'
 import { createWebPushSender } from './push/web-push-sender.ts'
 import type { BackendConfig } from './config.ts'
 
@@ -47,25 +49,52 @@ async function startBackend(): Promise<void> {
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const pushStore = createPushSubscriptionStore()
   const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
+  const reminderRegistry = createAlightReminderRegistry()
+  const stopNameFor = (stopId: string): string | null =>
+    data.network.stops.find(({ id }) => id === stopId)?.longName ?? null
   const pushPublisher = config.push
     ? createServiceUpdatePublisher({
       store: pushStore,
       push: config.push,
       sendNotification: createWebPushSender(config.push).sendNotification,
-      stopName: (stopId) => data.network.stops.find(({ id }) => id === stopId)?.longName ?? null,
+      stopName: stopNameFor,
+    })
+    : null
+  // Reminders share the VAPID sender but keep their own delivery history and topic.
+  const reminderPublisher = config.push
+    ? createAlightReminderPublisher({
+      registry: reminderRegistry,
+      push: config.push,
+      sendNotification: createWebPushSender(config.push).sendNotification,
+      stopName: stopNameFor,
     })
     : null
   const liveData = await createBackendLiveData(config, data, {
     onArrivalSnapshotPublished: (snapshot) => {
-      // Delivery is intentionally fire-and-forget: a slow push service must not delay the next refresh.
+      // Both publishers read the snapshot this refresh already produced, so neither adds an
+      // upstream request. Delivery is fire-and-forget: a slow push service must not delay the
+      // next refresh.
       void pushPublisher?.publish(snapshot).catch((error: unknown) => {
         console.error('NUSGo push notification failed.', error instanceof Error ? error.name : typeof error)
       })
+      void reminderPublisher?.publish(snapshot).catch((error: unknown) => {
+        console.error('NUSGo alight reminder failed.', error instanceof Error ? error.name : typeof error)
+      })
     },
   })
+  if (reminderPublisher) {
+    // Service hours are only cached for routes someone asked about, and a reminder check must not
+    // fetch them. Reading that existing cache is what makes "is the service running" free.
+    reminderPublisher.setServiceStatus((routeId, atMs) => liveData.getShuttleServiceStatus(routeId, atMs))
+  }
   const pathfinding = createPathfindingService(data, liveData, config)
   const server = await listenHttpServer(
-    createApp(config, data, liveData, pathfinding, { store: pushStore, cap: pushCap }),
+    createApp(config, data, liveData, pathfinding, {
+      store: pushStore,
+      cap: pushCap,
+      reminderRegistry,
+      reminderPublisher,
+    }),
     config.host,
     config.port,
   )

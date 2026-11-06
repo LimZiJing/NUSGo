@@ -312,6 +312,45 @@
     box-shadow: var(--shadow-sm);
   }
 
+  /* The reminder sits above the departures card as its own quiet block: it explains what the
+     notification does before anything asks the browser for permission. */
+  .stop-reminder {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .stop-reminder-description,
+  .stop-reminder-error {
+    margin: 0;
+    font-size: var(--font-size-xs);
+  }
+
+  .stop-reminder-description {
+    color: var(--text-muted);
+  }
+
+  .stop-reminder-error {
+    color: var(--text-error-strong);
+    font-weight: 600;
+  }
+
+  .stop-reminder-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stop-reminder-actions .stop-reminder-route {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+
+  .stop-reminder-actions .button {
+    justify-content: center;
+  }
+
   .stop-departures .stop-departure-list {
     margin: 0 var(--space-2);
     padding: var(--space-1) 0;

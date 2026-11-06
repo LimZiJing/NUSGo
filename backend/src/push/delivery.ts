@@ -1,11 +1,20 @@
 import type { PushNotificationPayload } from '@nusgo/shared'
-import type { PushSubscriptionRecord, PushSubscriptionStore } from './subscription-store.ts'
+import type { PushSubscriptionRecord } from './subscription-store.ts'
 
 /** The subset of the web-push API this module needs, so tests can supply a fake. */
 export type PushSendNotification = (
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   payload: string,
 ) => Promise<{ statusCode: number }>
+
+/**
+ * The only thing delivery needs from whichever registry holds the records: the ability to forget
+ * an endpoint the push service reports as gone. A subscription store and the reminder registry
+ * both satisfy this, so delivery stays one implementation for every topic.
+ */
+export interface PushSubscriptionPruner {
+  remove(endpoint: string): boolean
+}
 
 export interface DeliveryResult {
   readonly endpoint: string
@@ -21,9 +30,9 @@ export interface DeliverySummary {
   readonly failedCount: number
 }
 
-export interface DeliverOptions {
+export interface DeliverOptions<TRecord extends PushSubscriptionRecord = PushSubscriptionRecord> {
   /** Returns the payload for a subscription, or null to skip it (for example, over the hourly cap). */
-  readonly payloadFor: (record: PushSubscriptionRecord) => PushNotificationPayload | null
+  readonly payloadFor: (record: TRecord) => PushNotificationPayload | null
 }
 
 const MAX_CONCURRENT_DELIVERIES = 8
@@ -44,18 +53,18 @@ function statusCodeOf(error: unknown): number {
  * Failures that are not expiry keep the subscription, because a temporary outage must not
  * silently unsubscribe someone.
  */
-export async function deliverPushNotifications(
-  store: PushSubscriptionStore,
+export async function deliverPushNotifications<TRecord extends PushSubscriptionRecord>(
+  store: PushSubscriptionPruner,
   sendNotification: PushSendNotification,
-  records: readonly PushSubscriptionRecord[],
-  options: DeliverOptions,
+  records: readonly TRecord[],
+  options: DeliverOptions<TRecord>,
 ): Promise<DeliverySummary> {
   const prunedEndpoints: string[] = []
   let deliveredCount = 0
   let failedCount = 0
   let nextIndex = 0
 
-  const deliverOne = async (record: PushSubscriptionRecord): Promise<void> => {
+  const deliverOne = async (record: TRecord): Promise<void> => {
     const payload = options.payloadFor(record)
     if (!payload) return
 
@@ -85,6 +94,7 @@ export async function deliverPushNotifications(
       if (record) await deliverOne(record)
     }
   }
+
   await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_DELIVERIES, records.length) }, worker))
 
   return { prunedEndpoints, deliveredCount, failedCount }

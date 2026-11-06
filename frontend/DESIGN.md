@@ -9,13 +9,17 @@ colors:
   nus-brand-orange: "#ef7c00"
   matcha-accent: "#3b6347"
   sakura-accent: "#963b56"
-  rainroom-accent: "#e8b466"
+  rainroom-accent: "#f28a24"
   rainroom-lamplight: "#f28a24"
+  rainroom-amber: "#e8b466"
   rainroom-slate: "#152a40"
   rainroom-wood: "#845638"
+  rainroom-dark-oak: "#4a3427"
   rainroom-moss: "#586b50"
+  rainroom-pine: "#5f7b59"
   rainroom-surface: "#0c1924"
   rainroom-surface-raised: "#122330"
+  rainroom-surface-step: "#263a46"
 typography:
   display:
     fontFamily: "system-ui, 'Segoe UI', Roboto, sans-serif"
@@ -179,13 +183,13 @@ The same control and status language carries across Light, Dark, NUS, Matcha, Sa
 
 ## Colors
 
-The interface offers six named themes that share semantic accent, surface, text, border, and status roles. System preference resolves to Light or Dark. The frontmatter records the theme accent values; shared components use semantic CSS variables so the selected theme remains in control. Rainroom uses deep slate-blue surfaces for a gloomy blue-hour mood. A restrained orange lamp glow and moss-tinted edge washes sit on the navigation surfaces; rain, droplets, and ripples keep the rainy-window atmosphere on the map. Avoid tiled botanical or woodgrain illustrations. Glass-like blur stays on floating navigation and controls, and decorative motion respects reduced-motion preferences.
+The interface offers six named themes that share semantic accent, surface, text, border, and status roles. System preference resolves to Light or Dark. The frontmatter records the theme accent values; shared components use semantic CSS variables so the selected theme remains in control. Rainroom uses deep slate-blue surfaces for a gloomy blue-hour mood. Lamplight orange is the primary color for actions, focus, and selected controls. Amber and walnut form the two-layer wood-toned navigation selection, framed by a 2px dark-oak rim; lamplight supplies the orange edge glow. Workflow sheets stay cool slate-blue, moss remains in small status accents, and pine adds one short accent at the panel seam. Rain streaks keep their slow falling motion while droplet highlights fade in place; reduced-motion settings keep the atmosphere still. Avoid tiled botanical or woodgrain illustrations. Glass-like blur stays on floating navigation and controls, and decorative motion respects reduced-motion preferences.
 
 ### Primary
-The Light and Dark themes use blue accents. NUS uses an orange accent with a blue-and-orange palette; Matcha uses green; Sakura uses rose. Accent color marks primary actions, focus, and selected generic chips.
+The Light and Dark themes use blue accents. NUS uses an orange accent with a blue-and-orange palette; Matcha uses green; Sakura uses rose. Rainroom uses lamplight orange for primary actions, focus, and selected generic chips.
 
 ### Secondary
-The NUS theme’s blue and orange pair belongs to that theme. Official bus-route colors remain separate from the theme palette and appear on the selected route.
+Rainroom pairs amber and walnut on the selected navigation pill and panel seams. Official bus-route colors remain separate from the theme palette and appear on the selected route.
 
 ### Neutral
 Surfaces, text, control borders, and dividers shift with the selected theme. Keep these roles semantic with the existing surface, text, and border variables rather than hard-coding a single palette into shared components.

@@ -51,11 +51,28 @@ describe('Appearance settings', () => {
 
     await user.click(trigger)
     const choices = screen.getByRole('listbox', { name: 'Other themes' })
-    expect(choices.querySelectorAll('[role="option"]')).toHaveLength(3)
+    expect(choices.querySelectorAll('[role="option"]')).toHaveLength(4)
     expect(screen.getByRole('option', { name: 'Matcha' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('option', { name: 'Matcha' }).querySelector('.select-option-check')).toBeTruthy()
 
     await user.click(screen.getByRole('option', { name: 'NUS' }))
     expect(onChange).toHaveBeenCalledExactlyOnceWith('nus')
+  })
+
+  it('selects Rainroom from the theme dropdown', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <AppearanceSection
+        preference="system"
+        onChange={onChange}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    await user.click(screen.getByRole('option', { name: 'Rainroom' }))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('rainroom')
   })
 })

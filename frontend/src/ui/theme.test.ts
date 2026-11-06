@@ -23,7 +23,7 @@ describe('theme', () => {
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 
-  it.each(['system', 'light', 'dark', 'nus', 'matcha', 'sakura'] as const)(
+  it.each(['system', 'light', 'dark', 'nus', 'matcha', 'sakura', 'rainroom'] as const)(
     'reads and saves the %s preference',
     (preference) => {
       saveThemePreference(preference)

@@ -20,6 +20,7 @@ const OTHER_THEME_CHOICES = [
   { value: 'nus', label: 'NUS' },
   { value: 'matcha', label: 'Matcha' },
   { value: 'sakura', label: 'Sakura' },
+  { value: 'rainroom', label: 'Rainroom' },
 ] as const
 
 const OTHER_THEME_OPTIONS = OTHER_THEME_CHOICES.map(({ value, label }) => ({

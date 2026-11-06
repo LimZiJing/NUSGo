@@ -30,6 +30,7 @@ const APPEARANCE_SUMMARIES: Record<ThemePreference, string> = {
   nus: 'NUS palette',
   matcha: 'Matcha palette',
   sakura: 'Sakura palette',
+  rainroom: 'Rainroom palette',
 }
 
 export function SettingsContent({

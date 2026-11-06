@@ -999,15 +999,9 @@ function App() {
           <NearbyCrosshair insets={mapInsets} />
         )}
         <div className="rainroom-atmosphere" aria-hidden="true">
-          {Array.from({ length: 14 }, (_, index) => (
-            <span
-              key={index + 1}
-              className={`rainroom-droplet rainroom-droplet--${index + 1}`}
-            />
-          ))}
-          <span className="rainroom-ripple rainroom-ripple--one" />
-          <span className="rainroom-ripple rainroom-ripple--two" />
-          <span className="rainroom-ripple rainroom-ripple--three" />
+          <span className="rainroom-droplet-layer rainroom-droplet-layer--one" />
+          <span className="rainroom-droplet-layer rainroom-droplet-layer--two" />
+          <span className="rainroom-droplet-layer rainroom-droplet-layer--three" />
         </div>
         <div className="map-control-stack">
           {JourneyTestTimeControl && (

@@ -12,6 +12,7 @@ import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import { BackButton } from '../../../ui/back-button'
 import { Button, IconButton } from '../../../ui/button'
+import { Chip } from '../../../ui/chip'
 import { CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
@@ -240,15 +241,13 @@ export function PlanLocationSearch({
 
       <div className="plan-search-filters" role="group" aria-label="Filter results">
         {FILTERS.map(({ id, label }) => (
-          <Button
+          <Chip
             key={id}
-            type="button"
+            label={label}
             className="plan-search-chip"
             pressed={filter === id}
             onClick={() => setFilter(id)}
-          >
-            {label}
-          </Button>
+          />
         ))}
       </div>
       </div>

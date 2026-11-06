@@ -931,7 +931,8 @@
   gap: var(--space-1);
 }
 
-.plan-search-chip {
+/* Keep the existing compact filter look while using Chip for its selectable-choice behavior. */
+.chip.plan-search-chip {
   min-height: 28px;
   padding: 0 var(--space-3);
   border: 0;
@@ -941,17 +942,24 @@
   font: inherit;
   font-size: var(--font-size-sm);
   cursor: pointer;
+  transition: none;
 }
 
-.plan-search-chip[aria-pressed='true'] {
+.chip.plan-search-chip[aria-pressed='true'] {
+  border-color: transparent;
   color: var(--accent-contrast);
   background: var(--accent);
+  box-shadow: none;
 }
 
-.plan-search-chip:focus-visible,
+.chip.plan-search-chip:focus-visible,
 .plan-search-result:focus-visible {
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
+}
+
+.chip.plan-search-chip:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 /* The bar and chips stay put while the sheet's single scroll area moves the results. */

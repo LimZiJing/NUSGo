@@ -13,6 +13,8 @@ body {
   margin: 0;
 }
 
+/* Global native-button defaults remain for .journey-test-time-toggle, the navigation tabs,
+   More entry, and PWA install row. Remove them only when those controls own the same states. */
 /* Touch browsers keep :hover after a tap, which left tapped buttons dimmed until the next tap elsewhere. */
 @media (hover: hover) {
   button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not([data-hover-filter='none']):hover {

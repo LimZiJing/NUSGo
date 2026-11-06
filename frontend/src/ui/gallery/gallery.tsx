@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
+import { BackButton } from '../back-button'
 import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
 import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
@@ -103,6 +104,23 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
           />
         ))}
       />
+      <section className="gallery-section" aria-label="BackButton">
+        <h2>BackButton</h2>
+        <div className="gallery-back-buttons">
+          <div>
+            <span className="gallery-heading">header</span>
+            <BackButton mode="header" label="Back to previous view" title="Back" onClick={noop} />
+          </div>
+          <div>
+            <span className="gallery-heading">inline</span>
+            <BackButton mode="inline" label="Back to stops" onClick={noop} />
+          </div>
+          <div>
+            <span className="gallery-heading">label-only</span>
+            <BackButton mode="label-only" label="Back to categories" onClick={noop} />
+          </div>
+        </div>
+      </section>
       <StateGrid
         title="IconButton"
         rows={variantSizeRows((variant, size, state) => (

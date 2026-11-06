@@ -24,9 +24,13 @@ describe('controls gallery', () => {
     )
   })
 
-  it('shows IconButton, MenuItem, Chip and Pill samples', () => {
+  it('shows BackButton, IconButton, MenuItem, Chip and Pill samples', () => {
     render(<GalleryPanel theme="dark" />)
 
+    const backButtons = within(screen.getByRole('region', { name: 'BackButton' }))
+    expect(backButtons.getByRole('button', { name: 'Back to previous view' }).querySelector('svg')).not.toBeNull()
+    expect(backButtons.getByRole('button', { name: 'Back to stops' }).querySelector('svg')).not.toBeNull()
+    expect(backButtons.getByRole('button', { name: 'Back to categories' }).querySelector('svg')).toBeNull()
     expect(within(screen.getByRole('region', { name: 'IconButton' })).getAllByRole('button', { name: 'Search' }))
       .toHaveLength(4 * 2 * 6)
     expect(within(screen.getByRole('region', { name: 'MenuItem' })).getAllByRole('button')).toHaveLength(6)

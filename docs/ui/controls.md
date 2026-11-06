@@ -8,12 +8,13 @@ This is the specification for NUSGo buttons, chips, and pills. Vocabulary is def
 | --- | --- | --- |
 | `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Use `label` with optional leading `icon` and `trailingIcon` for a standard control, or `children` for a rich row that needs its own content layout. `type` defaults to `button` and supports `submit` and `reset`; a native form submit button can rely on the form `onSubmit` handler without a click callback. Native button attributes and pointer handlers are forwarded to the underlying button. Also accepts `title`, `expanded` and `controls` (`aria-expanded`, `aria-controls`) for disclosure triggers, and `busy` (`aria-busy`). |
 | `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. Also accepts variant `plain`: no box at rest, on hover or when pressed (hover only dims the icon; focus keeps the ring), for icon toggles such as a favourite star and for dismiss icons. The caller changes the icon to show a pressed state. |
+| `BackButton` | Back navigation | `mode="header"` composes a plain `IconButton`; `mode="inline"` shows a compact arrow and label; `mode="label-only"` keeps a label-only ghost action. |
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
 | `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
 | `Pill` | A non-interactive status label | Tones `neutral` and `success`, optional leading dot. `InfoPill` is built on it. |
 | `Select` | Choosing one value from a short list, such as a building | Labelled dropdown with a `listbox`. See [Select](#select). |
 
-`NavigateButton` is a primary `Button` with the navigation icon. `GhostBackButton` is a ghost `Button` with the left arrow; it keeps its compact back-link geometry in `ghost-back-button.css` until Stops and Explore migrate.
+`NavigateButton` is a primary `Button` with the navigation icon. `BackButton` uses the shared `IconButton` or `Button` for header, inline and label-only back actions. Inline mode keeps the existing compact arrow-and-label geometry.
 
 Props are platform-neutral. `className` is for layout only (alignment, flex sizing); it must never change the look. The look comes from `variant`, `size`, state, and tokens.
 
@@ -48,7 +49,7 @@ Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 
 ### Tokens
 
-Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per-theme tokens in the four theme files (Light, Dark, Matcha, Sakura). The one new colour token, `--control-border`, is defined in each theme file.
+Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours come from five theme files (Light, Dark, NUS, Matcha, Sakura). Shared map roles and reusable shadow/ring values are also named in `tokens.css`.
 
 | Token | Value | Purpose |
 | --- | --- | --- |
@@ -63,7 +64,7 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per
 
 ### Why `--control-border` exists
 
-A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages above were chosen so it reaches at least 3:1 against `--surface` in all four themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages are chosen so it reaches at least 3:1 against `--surface` in all five themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
@@ -96,18 +97,18 @@ Run the dev server and open `/?gallery` for a one-page review of every variant, 
 
 Allowed: `.button`, `button.primary`, `.panel button.primary`, `button[type='submit']`, `.navigate-button:hover`. Flagged: `button`, `.panel button`, `button:hover`, `.panel :is(button, a)`.
 
-**Allowlist.** Existing offenders are listed in `frontend/scripts/bare-button-allowlist.mjs` as a count of bare selectors per stylesheet. It is a ratchet: a file may not exceed its count, and when a migration removes selectors the count must be lowered (or the entry deleted) in the same change, so the list only shrinks. The goal is an empty allowlist once every screen has migrated. Detection logic is unit-tested in `frontend/scripts/css-bare-button.test.mjs`.
+**Allowlist.** The only allowlisted selectors are the three global defaults in `base.css`. The focus rule still protects `.journey-test-time-toggle`, hover retains the existing treatment on `.navigation-tab`, `.more-entry-button` and the PWA install row, and tap-highlight keeps native buttons from flashing on touch. No feature stylesheet is allowlisted. Keep these defaults until each named consumer has an explicit equivalent. Detection logic is unit-tested in `frontend/scripts/css-bare-button.test.mjs`.
 
 ## Migration checklist
 
-Each item is one small pull request, and each lowers the matching counts in the lint allowlist. Screens keep their feature stylesheets until they migrate; those stylesheets still style bare `button` elements and are the reason the primitives raise specificity only where a compatibility file says so.
+The feature control migration is complete: Explore, Plan, Stops, More, Waypoints and Live buses use the shared Button family for their action controls. The global native-button defaults remain documented above; compact map, route and status controls keep their existing semantic wrappers.
 
-- [ ] Stops (also remove `ghost-back-button.css` and the `.stop-opposite` rule in `navigate-button.css`)
-- [x] Explore
+- [x] Stops (shared back navigation and feature action rows use the Button family)
+- [x] Explore (uses the shared `BackButton`, `NavigateButton`, `RouteChip` and `InfoPill` wrappers)
 - [x] Plan
 - [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling; only a dead `.location-control-popover button` rule was removed)
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
 - [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
 
-Known leftovers until then: `RouteChip` in its compact size keeps its current 24px height (the Chip `sm` size is 36px) and `InfoPill` keeps its 10px compact metrics, both to avoid visual change on screens that are not yet migrated. Map popup route chips are plain elements that still use the `route-chip` class.
+Documented compact wrappers: `RouteChip` keeps its existing 24px size and `InfoPill` keeps its 10px metrics. Map popup route labels are non-interactive elements with the `route-chip` class.

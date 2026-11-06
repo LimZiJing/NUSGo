@@ -201,4 +201,47 @@ describe('control token contrast', () => {
       }
     }
   })
+
+  describe('departure row divider', () => {
+    const dividerOnCard = (themeName: string) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+
+      return contrastRatio(resolveColour(styles, '--border-divider'), resolveColour(styles, '--surface-card'))
+    }
+
+    it.each(themes)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+      const previous = contrastRatio(resolveColour(styles, '--border-subtle'), resolveColour(styles, '--surface-card'))
+
+      // The divider may only ever be as visible as, or more visible than, the token it replaced.
+      expect(dividerOnCard(themeName), `${themeName}: --border-divider on --surface-card`)
+        .toBeGreaterThanOrEqual(previous)
+    })
+
+    it.each(['light', 'nus', 'matcha', 'sakura'] as const)(
+      'keeps the %s theme divider on its palette --border-default step',
+      (themeName) => {
+        const styles = readStyleFile(`themes/${themeName}.css`)
+
+        // Only dark needs a heavier divider than the details panel already used.
+        expect(resolveColour(styles, '--border-divider'), `${themeName}: --border-divider`)
+          .toBe(resolveColour(styles, '--border-default'))
+      },
+    )
+
+    it('lifts the dark divider clear of the almost-invisible value it replaced', () => {
+      // The reported bug was a divider close to 1.05:1 against the card, which reads as no divider.
+      expect(dividerOnCard('dark'), 'dark: --border-divider on --surface-card').toBeGreaterThan(1.6)
+    })
+
+    it('keeps the dark divider quieter than the row text it separates', () => {
+      const styles = readStyleFile('themes/dark.css')
+      const card = resolveColour(styles, '--surface-card')
+      const divider = contrastRatio(resolveColour(styles, '--border-divider'), card)
+      const rowText = contrastRatio(resolveColour(styles, '--text-strong'), card)
+
+      // A separator must not compete with the departure times it sits between.
+      expect(divider, 'dark: divider vs --text-strong').toBeLessThan(rowText)
+    })
+  })
 })

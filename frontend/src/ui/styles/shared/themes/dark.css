@@ -60,6 +60,9 @@
     --border-info: #2563eb;
     --border-focus: #94a3b8;
     --border-card: #363944;
+    /* Dark border tones compress against the card surface (--border-subtle is about 1.1:1),
+       so the row divider takes the stronger step to stay visible. */
+    --border-divider: var(--border-strong);
 
     --accent: #60a5fa;
     --accent-hover: #93c5fd;

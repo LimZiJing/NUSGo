@@ -399,7 +399,9 @@ describe('JourneyResults', () => {
     expect(firstOptionButton.getAttribute('aria-expanded')).toBe('true')
     // The collapse control, then the timeline's stop disclosure, come before the next option.
     await user.tab()
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Collapse journey 1 details' }))
+    const collapseButton = screen.getByRole('button', { name: 'Collapse journey 1 details' })
+    expect(document.activeElement).toBe(collapseButton)
+    expect(collapseButton.getAttribute('aria-label')).toBeNull()
     await user.tab()
     await user.tab()
     expect(document.activeElement).toBe(secondOptionButton)

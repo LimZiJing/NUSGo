@@ -312,7 +312,6 @@ export function JourneyResults({
                   <Button
                     type="button"
                     className="journey-option-collapse"
-                    ariaLabel={`Collapse journey ${index + 1} details`}
                     onClick={() => setExpandedKey(null)}
                   >
                     <span className="visually-hidden">Collapse journey {index + 1} details</span>

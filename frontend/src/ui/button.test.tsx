@@ -82,7 +82,7 @@ describe('Button composed content', () => {
   })
   it('keeps rich content and supports a native submit action', () => {
     render(
-      <Button type="submit" ariaLabel="Open Computer Centre" onClick={vi.fn()}>
+      <Button type="submit" ariaLabel="Open Computer Centre">
         <strong>COM1</strong>
         <span>Computer Centre</span>
       </Button>,

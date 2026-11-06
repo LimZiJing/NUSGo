@@ -24,8 +24,6 @@ type NativeButtonProps = Omit<
   | 'aria-keyshortcuts'
 >
 interface ButtonOptions extends NativeButtonProps {
-  readonly onClick: MouseEventHandler<HTMLButtonElement>
-  readonly type?: 'button' | 'submit' | 'reset'
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
@@ -48,10 +46,15 @@ interface ButtonOptions extends NativeButtonProps {
   readonly ref?: Ref<HTMLButtonElement>
 }
 
-type ButtonProps = ButtonOptions & (
-  | { readonly label: string; readonly children?: never }
-  | { readonly label?: never; readonly children: ReactNode }
-)
+type ButtonProps = ButtonOptions
+  & (
+    | { readonly label: string; readonly children?: never }
+    | { readonly label?: never; readonly children: ReactNode }
+  )
+  & (
+    | { readonly type?: 'button' | 'reset'; readonly onClick: MouseEventHandler<HTMLButtonElement> }
+    | { readonly type: 'submit'; readonly onClick?: MouseEventHandler<HTMLButtonElement> }
+  )
 
 interface IconButtonProps {
   readonly label: string

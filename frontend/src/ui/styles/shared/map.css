@@ -3,6 +3,261 @@
   height: 100%;
 }
 
+:root[data-theme='rainroom'] .map-stage {
+  isolation: isolate;
+}
+
+:root[data-theme='rainroom'] .navigation-column,
+:root[data-theme='rainroom'] .navigation-column .navigation-panel,
+:root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+  background-color: var(--surface-raised);
+  background-image:
+    radial-gradient(
+      ellipse at 100% 46%,
+      color-mix(in srgb, var(--rainroom-lamplight) 14%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 8% 100%,
+      color-mix(in srgb, var(--rainroom-moss) 22%, transparent),
+      transparent 40%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 96%,
+      color-mix(in srgb, var(--rainroom-swatch-walnut) 22%, transparent) 98%,
+      color-mix(in srgb, var(--rainroom-swatch-walnut) 28%, transparent) 99%,
+      color-mix(in srgb, var(--rainroom-lamplight) 30%, transparent) 100%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
+      color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
+      color-mix(in srgb, var(--rainroom-moss) 22%, transparent) 100%
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position: center;
+  background-blend-mode: screen, normal, normal, normal;
+  box-shadow: var(--shadow-panel);
+}
+
+:root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+  box-shadow:
+    var(--shadow-sheet),
+    inset 0 1px 0 color-mix(in srgb, var(--rainroom-lamplight) 15%, transparent);
+}
+
+@media (max-width: 768px) {
+  :root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+    background-image:
+      radial-gradient(
+        ellipse at 50% 0%,
+        color-mix(in srgb, var(--rainroom-lamplight) 12%, transparent),
+        transparent 34%
+      ),
+      radial-gradient(
+        ellipse at 8% 100%,
+        color-mix(in srgb, var(--rainroom-moss) 20%, transparent),
+        transparent 38%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--rainroom-swatch-walnut) 24%, transparent) 0,
+        color-mix(in srgb, var(--rainroom-swatch-walnut) 18%, transparent) 3px,
+        transparent 15px
+      ),
+      linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
+        color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
+        color-mix(in srgb, var(--rainroom-moss) 26%, transparent) 100%
+      );
+  }
+}
+
+@media (min-width: 769px) {
+  :root[data-theme='rainroom'] .navigation-column {
+    border-right-color: color-mix(
+      in srgb,
+      var(--rainroom-lamplight) 34%,
+      var(--border-subtle)
+    );
+  }
+}
+
+:root[data-theme='rainroom'] .main-navigation {
+  background: color-mix(in srgb, var(--rainroom-slate) 92%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, white 8%, transparent),
+    transparent 62%,
+    color-mix(in srgb, var(--rainroom-lamplight) 7%, transparent)
+  );
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow: var(--glass-edge), var(--shadow-lg);
+}
+
+.rainroom-atmosphere {
+  display: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere::before,
+:root[data-theme='rainroom'] .rainroom-atmosphere::after {
+  position: absolute;
+  inset: 0;
+  display: block;
+  content: '';
+  pointer-events: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere::before {
+  z-index: 0;
+  background-image:
+    url('./themes/rainroom-drops.svg'),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--rainroom-slate) 28%, transparent),
+      transparent 48%,
+      color-mix(in srgb, var(--rainroom-slate) 12%, transparent)
+    );
+  background-size: 720px 540px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: screen, soft-light;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere::after {
+  z-index: 1;
+  inset: -360px 0 0;
+  background-image: url('./themes/rainroom-rain.svg');
+  background-size: 480px 360px;
+  background-repeat: repeat;
+  animation: rainroom-fall 4.4s linear infinite;
+  opacity: 0.72;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-top-left,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-top-right,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-bottom-left,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-bottom-right {
+  z-index: 7;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet,
+:root[data-theme='rainroom'] .rainroom-ripple {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet {
+  width: 4px;
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--text-strong) 68%, transparent);
+  border-radius: 75% 35% 65% 45%;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, white 72%, transparent),
+    color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 76%
+  );
+  box-shadow:
+    inset 1px 1px 1px color-mix(in srgb, white 48%, transparent),
+    0 0 7px color-mix(in srgb, white 22%, transparent);
+  animation: rainroom-droplet-glint 11s ease-in-out infinite;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet--1 { top: 14%; left: 18%; animation-delay: -3.2s; animation-duration: 7s; }
+:root[data-theme='rainroom'] .rainroom-droplet--2 { top: 29%; left: 52%; animation-delay: -6.5s; animation-duration: 11s; }
+:root[data-theme='rainroom'] .rainroom-droplet--3 { top: 66%; left: 21%; animation-delay: -4.4s; animation-duration: 13s; }
+:root[data-theme='rainroom'] .rainroom-droplet--4 { top: 43%; left: 88%; animation-delay: -8.3s; animation-duration: 9s; }
+:root[data-theme='rainroom'] .rainroom-droplet--5 { top: 78%; left: 34%; animation-delay: -1.1s; animation-duration: 16s; width: 3px; height: 8px; }
+:root[data-theme='rainroom'] .rainroom-droplet--6 { top: 22%; left: 81%; animation-delay: -10s; animation-duration: 12s; width: 5px; height: 13px; }
+:root[data-theme='rainroom'] .rainroom-droplet--7 { top: 51%; left: 43%; animation-delay: -2.7s; animation-duration: 8s; width: 3px; height: 8px; }
+:root[data-theme='rainroom'] .rainroom-droplet--8 { top: 9%; left: 67%; animation-delay: -7.2s; animation-duration: 14s; }
+:root[data-theme='rainroom'] .rainroom-droplet--9 { top: 88%; left: 11%; animation-delay: -5.6s; animation-duration: 10s; width: 5px; height: 12px; }
+:root[data-theme='rainroom'] .rainroom-droplet--10 { top: 38%; left: 71%; animation-delay: -9.1s; animation-duration: 15s; }
+:root[data-theme='rainroom'] .rainroom-droplet--11 { top: 71%; left: 84%; animation-delay: -0.7s; animation-duration: 9s; width: 3px; height: 9px; }
+:root[data-theme='rainroom'] .rainroom-droplet--12 { top: 16%; left: 46%; animation-delay: -12.2s; animation-duration: 17s; }
+:root[data-theme='rainroom'] .rainroom-droplet--13 { top: 56%; left: 24%; animation-delay: -3.8s; animation-duration: 11s; width: 3px; height: 8px; }
+:root[data-theme='rainroom'] .rainroom-droplet--14 { top: 34%; left: 95%; animation-delay: -5.3s; animation-duration: 13s; }
+
+:root[data-theme='rainroom'] .rainroom-ripple {
+  width: 32px;
+  height: 12px;
+  border: 1px solid color-mix(in srgb, var(--rainroom-moss) 52%, transparent);
+  border-radius: 50%;
+  animation: rainroom-ripple-fade 9s ease-out infinite;
+}
+
+:root[data-theme='rainroom'] .rainroom-ripple--one {
+  top: 63%;
+  left: 44%;
+  animation-delay: -5s;
+  animation-duration: 12s;
+}
+
+:root[data-theme='rainroom'] .rainroom-ripple--two {
+  top: 31%;
+  left: 82%;
+  animation-delay: -1.7s;
+  animation-duration: 10s;
+}
+
+:root[data-theme='rainroom'] .rainroom-ripple--three {
+  top: 76%;
+  left: 76%;
+  animation-delay: -8s;
+  animation-duration: 13s;
+}
+
+:root[data-theme='rainroom'] .map .maplibregl-popup,
+:root[data-theme='rainroom'] .map .nusgo-map-attribution {
+  z-index: 8;
+}
+
+@keyframes rainroom-fall {
+  to { transform: translate3d(0, 360px, 0); }
+}
+
+@keyframes rainroom-droplet-glint {
+  0%, 48%, 100% { opacity: 0; transform: translateY(-3px) scale(0.72); }
+  56% { opacity: 0.84; transform: translateY(0) scale(1); }
+  67% { opacity: 0.34; transform: translateY(2px) scale(0.94); }
+}
+
+@keyframes rainroom-ripple-fade {
+  0%, 68%, 100% { opacity: 0; transform: scale(0.55); }
+  78% { opacity: 0.32; }
+  92% { opacity: 0; transform: scale(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='rainroom'] .rainroom-atmosphere::after {
+    animation: none;
+    will-change: auto;
+  }
+
+  :root[data-theme='rainroom'] .rainroom-droplet,
+  :root[data-theme='rainroom'] .rainroom-ripple {
+    animation: none;
+    opacity: 0.2;
+    will-change: auto;
+  }
+}
+
 /* Popups cover bus markers (2/3) and journey markers (4), below map controls (13). */
 .map .maplibregl-popup {
   z-index: 5;

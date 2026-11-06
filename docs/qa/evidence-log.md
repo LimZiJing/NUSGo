@@ -8,6 +8,15 @@ Application revision `29d9a884`; local production rehearsal and a separate diagn
 
 The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
 
+## Surface layering baseline (#629) — 2026-11-06
+
+Application revision `8d0e242d`, local Vite development server at `http://127.0.0.1:22188/`, headless Chromium 1254 driven by Playwright at 1440 × 900, DPR 1, `prefers-reduced-motion: reduce`. Baseline capture only; no application behaviour changed.
+
+- Captured Explore, Stops, Plan, More and the `.map-shell` element in light, dark, nus, matcha and sakura — 25 JPEGs, 5.7 MB, under `docs/qa/screenshots/issue-629-baseline/`.
+- Each theme used a fresh context with `navus:theme-preference:v1` seeded before navigation, so the real `data-theme` mechanism applied; the applied attribute was asserted before every screenshot and matched all 25 times. Zero page errors. The backend was running, so Stops showed live arrival rows.
+- Measured from the theme files: light `raised/surface` is 1.00 (both `#fff`); dark is 1.10. Matcha and sakura have `card/surface` below `raised/surface`, so those two layers sit on opposite sides of the page surface. Dark `--border-subtle` is the weakest at 1.06 against the card, the same token #623 reports.
+- Token values, proposal arithmetic and scope limits are in [the surface layering baseline](surface-layering-baseline-629.md). Mobile viewports, rendered-pixel sampling and control state surfaces were not verified.
+
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
 Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:

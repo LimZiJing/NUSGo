@@ -71,3 +71,10 @@
   outline: var(--focus-outline);
   outline-offset: var(--focus-ring-offset);
 }
+
+@media (hover: hover) {
+  /* Keep the established More row fill above Button's shared hover rule. */
+  .button.more-menu-row[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background: var(--surface-raised);
+  }
+}

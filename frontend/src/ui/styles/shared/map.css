@@ -504,6 +504,8 @@
   opacity: 0.65;
 }
 
+.button.icon-button.map-overlay-button[aria-pressed='true'],
+.button.icon-button.map-overlay-button[aria-expanded='true'],
 .map-overlay-button[aria-pressed='true'],
 .map-overlay-button[aria-expanded='true'] {
   border-color: var(--control-border);

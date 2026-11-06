@@ -206,6 +206,15 @@ describe('control token contrast', () => {
       expect(readStyleFile(file), file).not.toMatch(/brightness\s*\(/)
     }
   })
+
+  it('keeps selected map overlay controls above their base icon-button styles', () => {
+    const styles = readStyleFile('map.css')
+
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-pressed='true']")
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-expanded='true']")
+    expect(styles).toContain('background: var(--accent-selected)')
+  })
+
   it.each(themes)('defines --control-border in the %s theme', (themeName) => {
     expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
   })

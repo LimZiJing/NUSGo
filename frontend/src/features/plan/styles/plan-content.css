@@ -962,6 +962,12 @@
   transform: scale(0.98);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .chip.plan-search-chip:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* The bar and chips stay put while the sheet's single scroll area moves the results. */
 .plan-search-header {
   position: sticky;
@@ -1000,10 +1006,6 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-}
-
-.plan-search-result:hover {
-  background: var(--surface-muted);
 }
 
 .plan-search-result-icon {

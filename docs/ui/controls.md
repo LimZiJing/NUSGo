@@ -67,6 +67,10 @@ A neutral control sits on a similar neutral surface, so its border is what marks
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
 
+### Favourite and success-strong tokens
+
+`--text-favorite` paints star icons only, never text, so WCAG 1.4.11's 3:1 for non-text graphics applies rather than the 4.5:1 text threshold. The test holds it at 3:1 on `--surface`, `--surface-raised`, `--surface-card` (stop cards) and `--accent-soft` (the settings favourite tile) in every theme, and each theme keeps the star a recognisable gold or amber. `--text-success-strong` and `--status-success-strong` do carry text, so both are held at 4.5:1 on `--surface`, `--surface-raised` and `--surface-card`.
+
 ## Select
 
 `Select` (`frontend/src/ui/select.tsx`, styles in `controls/select.css`) is a themed replacement for the native `<select>`. Props: `label` (visible above the trigger and used as the listbox name), `value`, `options` (`{ value, label, leading? }[]`), `onChange(value)`, and optional `placeholder`, `size` (`sm` or `lg`), `checkPosition` (`start` or `end`, default `start`), `hideLabel`, `id`, and `className` (layout only). `leading` is decorative content shown before an option label and is hidden from assistive technology.

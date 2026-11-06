@@ -201,4 +201,33 @@ describe('control token contrast', () => {
       }
     }
   })
+
+  it.each(themes)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --text-favorite paints star icons only, so WCAG 1.4.11's 3:1 for non-text graphics
+    // applies. --surface-card is the stops list card and --accent-soft the settings tile.
+    const favouriteSurfaces = ['--surface', '--surface-raised', '--surface-card', '--accent-soft'] as const
+
+    for (const background of favouriteSurfaces) {
+      const ratio = contrastRatio(resolveColour(styles, '--text-favorite'), resolveColour(styles, background))
+
+      expect(ratio, `${themeName}: --text-favorite on ${background}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it.each(themes)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --status-success-strong paints the recommended journey heading on a card;
+    // --text-success-strong is its text-named twin.
+    const successTokens = ['--text-success-strong', '--status-success-strong'] as const
+    const successSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
+
+    for (const foreground of successTokens) {
+      for (const background of successSurfaces) {
+        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
+
+        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
 })

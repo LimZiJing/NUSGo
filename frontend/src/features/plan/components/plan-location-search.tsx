@@ -10,8 +10,9 @@ import type {
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
+import { BackButton } from '../../../ui/back-button'
 import { Button, IconButton } from '../../../ui/button'
-import { ArrowLeftIcon, CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
+import { CircleDotIcon, CloseIcon, LocateIcon, MapPinIcon, RefreshIcon, SearchIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
 import type { OriginLocationRequestState } from './plan-trip-card'
@@ -179,10 +180,9 @@ export function PlanLocationSearch({
     <section className="plan-location-search" aria-label={`${roleLabel} search`}>
       <div className="plan-search-header">
       <div className="plan-search-bar">
-        <IconButton
-          variant="plain"
+        <BackButton
+          mode="header"
           label={`Back from ${roleLabel.toLocaleLowerCase()} search`}
-          icon={<ArrowLeftIcon />}
           onClick={onBack}
         />
         <label className="visually-hidden" htmlFor={inputId}>{roleLabel}</label>

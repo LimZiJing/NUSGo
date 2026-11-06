@@ -1,6 +1,5 @@
 import type { ReactNode, Ref } from 'react'
-import { IconButton } from './button'
-import { ArrowLeftIcon } from './icons'
+import { BackButton } from './back-button'
 
 export type MorePanelPage =
   | 'closed'
@@ -45,11 +44,10 @@ export function MorePanelSurface({
         aria-live="polite"
       >{statusMessage}</p>}
       <header className="more-panel-header">
-        <IconButton
+        <BackButton
+          mode="header"
           label="Back to previous view"
           title="Back"
-          icon={<ArrowLeftIcon />}
-          variant="plain"
           ref={initialFocusRef}
           onClick={onClose}
         />

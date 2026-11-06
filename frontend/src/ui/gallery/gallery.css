@@ -79,13 +79,21 @@
   gap: var(--space-2);
 }
 
+.gallery-open-control {
+  display: flex;
+}
+
 .gallery-select {
   max-width: 18rem;
 }
 
 /* Forced states mirror the real rules in controls/button.css and controls/chip.css. */
-.gallery-sample[data-state='hover'] :is(.button, .chip):not([data-variant='ghost'], [aria-pressed='true']) {
-  filter: brightness(0.85);
+.gallery-sample[data-state='hover'] :is(.button[data-variant='secondary'], .chip):not([aria-pressed='true']) {
+  background-color: var(--surface-control-hover);
+}
+
+.gallery-sample[data-state='hover'] .button[data-variant='primary']:not([aria-pressed='true']) {
+  background-color: var(--accent-hover);
 }
 
 .gallery-sample[data-state='hover'] :is(.button[data-variant='ghost'], .menu-item) {

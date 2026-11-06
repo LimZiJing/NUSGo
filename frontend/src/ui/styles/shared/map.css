@@ -187,24 +187,13 @@
   height: 20px;
 }
 
-.button.icon-button.map-overlay-button[aria-pressed='true'],
-.button.icon-button.map-overlay-button[aria-expanded='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--surface-overlay);
-}
-
 .button.icon-button.map-overlay-button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;
 }
 
 .button.icon-button.map-overlay-button:active:not(:disabled) {
-  filter: brightness(0.85);
   transform: none;
-}
-.map-overlay-button:active:not(:disabled) {
-  filter: brightness(0.85);
 }
 
 .map-overlay-button:focus-visible {
@@ -517,8 +506,9 @@
 
 .map-overlay-button[aria-pressed='true'],
 .map-overlay-button[aria-expanded='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--control-border);
+  color: var(--accent-hover);
+  background: var(--accent-selected);
 }
 
 .live-bus-status {

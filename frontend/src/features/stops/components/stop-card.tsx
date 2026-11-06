@@ -71,7 +71,6 @@ export function StopCard({
         <Button
           className="stop-card-toggle"
           type="button"
-          data-hover-filter="none"
           ariaLabel={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, bus stop arrival times`}
           expanded={expanded}
           controls={timingsId}

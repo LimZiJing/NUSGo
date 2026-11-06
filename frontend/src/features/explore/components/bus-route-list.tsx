@@ -313,7 +313,6 @@ export function BusRouteList({
                     <Button
                       type="button"
                       className="explore-bus-route-list-stop"
-                      data-hover-filter="none"
                       data-route-stop-id={stopId}
                       ariaLabel={`${stop?.longName ?? stopId}, bus stop, code ${stopId}. Focus on map`}
                       onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}

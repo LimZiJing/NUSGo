@@ -111,7 +111,7 @@ export function Button({
       type={type}
       data-variant={variant}
       data-size={size}
-      data-hover-filter="none"
+      data-hover-treatment="custom"
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={ariaLabel}
@@ -159,7 +159,7 @@ export function IconButton({
       type="button"
       data-variant={variant}
       data-size={size}
-      data-hover-filter="none"
+      data-hover-treatment="custom"
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={label}

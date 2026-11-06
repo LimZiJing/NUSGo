@@ -265,7 +265,7 @@
 }
 
 .explore-content-detail .venue-detail-action:not([aria-disabled='true']):hover {
-  filter: brightness(0.85);
+  background-color: var(--surface-control-hover);
 }
 
 .explore-content-detail .venue-detail-nusmods img {

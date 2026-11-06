@@ -16,7 +16,7 @@ This is the specification for NUSGo buttons, chips, and pills. Vocabulary is def
 
 `NavigateButton` is a primary `Button` with the navigation icon. `BackButton` uses the shared `IconButton` or `Button` for header, inline and label-only back actions. Inline mode keeps the existing compact arrow-and-label geometry.
 
-Props are platform-neutral. `className` is for layout only (alignment, flex sizing); it must never change the look. The look comes from `variant`, `size`, state, and tokens.
+Props are platform-neutral. `className` is for layout. Shared variants and tokens own a control's appearance; the two rich feature-surface exceptions are listed below.
 
 ### Variants
 
@@ -55,7 +55,7 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours c
 | --- | --- | --- |
 | `--control-height-sm` / `--control-height-lg` | 36px / 44px | Control heights |
 | `--radius-control` / `--radius-control-lg` | 10px / 12px (`--radius-lg`) | Button and menu item corners; the large size uses the second |
-| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, Matcha 57%, Sakura 55%) | Neutral border of secondary controls and selected buttons |
+| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, NUS 58%, Matcha 65%, Sakura 65%) | Neutral border of secondary controls and selected buttons |
 | `--accent-selected` | 26% theme accent mixed into `--surface-control` | Fill for selected buttons and open Selects |
 | `--surface-control-hover` | 11% theme primary text mixed into `--surface-control` | Neutral hover surface for secondary controls and chips |
 | `--radius-pill` | 999px | Chips and pills |
@@ -83,9 +83,11 @@ Keyboard: Enter, Space or ArrowDown on the trigger opens the list with the selec
 
 ## Documented exceptions
 
-Every interactive control is at least 36px tall and wide (`--control-height-sm`). The only exception is the mobile sheet grab bar:
+Every new interactive control is at least 36px tall and wide (`--control-height-sm`). The mobile sheet grab bar is the only approved compact target:
 
 - **Mobile sheet handle**: the handle row is 24px tall at the partial and full detents, which meets the WCAG 2.2 AA target-size minimum (2.5.8) but not the 36px standard. This keeps the space between the grab bar and the sheet content tight (10px above and below the bar). The handle is full width, and a swipe anywhere on the sheet also moves it. Its keyboard focus uses a background tint instead of a ring (see above). Do not extend this exception to other controls.
+- **Existing compact back and route controls**: inline `BackButton` has a 23px target and compact `RouteChip` has a 24px target. These are known shortfalls tracked by #304; this migration preserves their current appearance, and they are not models for new controls.
+- **Feature-owned content surfaces**: Explore result cards and Plan journey summary rows use named feature classes for their rich, multi-line surfaces while composing the shared `Button`. Their colors use theme tokens and their local state rules preserve the existing card behavior. Keep these classes in their owning feature stylesheets; do not add shared variants for a one-off surface.
 
 ## Gallery
 
@@ -113,4 +115,4 @@ The feature control migration is complete: Explore, Plan, Stops, More, Waypoints
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
 - [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
 
-Documented compact wrappers: `RouteChip` keeps its existing 24px size and `InfoPill` keeps its 10px metrics. Map popup route labels are non-interactive elements with the `route-chip` class.
+`InfoPill` keeps its 10px metrics because it is non-interactive. Map popup route labels are non-interactive elements with the `route-chip` class.

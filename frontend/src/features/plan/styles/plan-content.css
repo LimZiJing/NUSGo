@@ -116,6 +116,7 @@
   outline-offset: -2px;
 }
 
+/* The multi-line journey summary keeps its feature-owned surface and local focus treatment. */
 .journey-option-summary {
   display: grid;
   width: 100%;

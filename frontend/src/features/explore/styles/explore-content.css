@@ -116,6 +116,7 @@
   max-height: none;
 }
 
+/* Rich search results keep their feature-owned card surface while sharing Button states. */
 .explore-content .explore-content-result {
   display: grid;
   gap: 2px;

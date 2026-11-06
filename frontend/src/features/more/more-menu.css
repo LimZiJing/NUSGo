@@ -71,7 +71,3 @@
   outline: var(--focus-outline);
   outline-offset: var(--focus-ring-offset);
 }
-
-@media (hover: hover) {
-  .more-menu-row:hover { background: var(--surface-raised); }
-}

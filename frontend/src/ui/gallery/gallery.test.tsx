@@ -63,10 +63,11 @@ describe('controls gallery', () => {
       expect.stringContaining('frame=matcha'),
       expect.stringContaining('frame=sakura'),
       expect.stringContaining('frame=nus'),
+      expect.stringContaining('frame=rainroom'),
     ])
   })
 
-  it.each(['matcha', 'sakura', 'nus'] as const)('applies the %s theme through data-theme', (theme) => {
+  it.each(['matcha', 'sakura', 'nus', 'rainroom'] as const)('applies the %s theme through data-theme', (theme) => {
     render(<GalleryPanel theme={theme} />)
 
     expect(document.documentElement.dataset.theme).toBe(theme)

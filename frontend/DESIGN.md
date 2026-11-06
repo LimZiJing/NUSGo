@@ -9,6 +9,13 @@ colors:
   nus-brand-orange: "#ef7c00"
   matcha-accent: "#3b6347"
   sakura-accent: "#963b56"
+  rainroom-accent: "#e8b466"
+  rainroom-lamplight: "#f28a24"
+  rainroom-slate: "#152a40"
+  rainroom-wood: "#845638"
+  rainroom-moss: "#586b50"
+  rainroom-surface: "#0c1924"
+  rainroom-surface-raised: "#122330"
 typography:
   display:
     fontFamily: "system-ui, 'Segoe UI', Roboto, sans-serif"
@@ -162,17 +169,17 @@ components:
 
 NUSGo is warm, approachable, and grounded in the campus it helps people navigate. The shared map remains the main spatial reference; Explore, Stops, and Plan place focused workflows over it so people can keep their bearings while searching, checking arrivals, or planning a trip. Familiar system typography, soft tonal surfaces, and rounded controls make the interface welcoming without taking attention away from places and routes.
 
-The same control and status language carries across Light, Dark, NUS, Matcha, and Sakura. Soft shadows give panels and floating controls structural separation from the map. Official route colors appear in route-specific contexts; the wider network stays neutral.
+The same control and status language carries across Light, Dark, NUS, Matcha, Sakura, and Rainroom. Soft shadows give panels and floating controls structural separation from the map. Official route colors appear in route-specific contexts; the wider network stays neutral.
 
 **Key Characteristics:**
 - The map carries campus geography while panels carry the current workflow.
-- Theme-aware surfaces and accents preserve the same control language across all five palettes.
+- Theme-aware surfaces and accents preserve the same control language across all six palettes.
 - Rounded controls and softly separated cards keep dense transit information approachable.
 - Route color stays contextual to the selected route.
 
 ## Colors
 
-The interface offers five named themes that share semantic accent, surface, text, border, and status roles. System preference resolves to Light or Dark. The frontmatter records the theme accent values; shared components use semantic CSS variables so the selected theme remains in control.
+The interface offers six named themes that share semantic accent, surface, text, border, and status roles. System preference resolves to Light or Dark. The frontmatter records the theme accent values; shared components use semantic CSS variables so the selected theme remains in control. Rainroom uses deep slate-blue surfaces for a gloomy blue-hour mood. A restrained orange lamp glow and moss-tinted edge washes sit on the navigation surfaces; rain, droplets, and ripples keep the rainy-window atmosphere on the map. Avoid tiled botanical or woodgrain illustrations. Glass-like blur stays on floating navigation and controls, and decorative motion respects reduced-motion preferences.
 
 ### Primary
 The Light and Dark themes use blue accents. NUS uses an orange accent with a blue-and-orange palette; Matcha uses green; Sakura uses rose. Accent color marks primary actions, focus, and selected generic chips.

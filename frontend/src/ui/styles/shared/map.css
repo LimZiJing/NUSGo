@@ -19,33 +19,35 @@
     ),
     radial-gradient(
       ellipse at 8% 100%,
-      color-mix(in srgb, var(--rainroom-moss) 22%, transparent),
+      color-mix(in srgb, var(--rainroom-slate) 22%, transparent),
       transparent 40%
     ),
     linear-gradient(
       90deg,
       transparent 96%,
       color-mix(in srgb, var(--rainroom-swatch-walnut) 22%, transparent) 98%,
-      color-mix(in srgb, var(--rainroom-swatch-walnut) 28%, transparent) 99%,
+      color-mix(in srgb, var(--rainroom-swatch-amber) 24%, transparent) 99%,
       color-mix(in srgb, var(--rainroom-lamplight) 30%, transparent) 100%
     ),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
       color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
-      color-mix(in srgb, var(--rainroom-moss) 22%, transparent) 100%
-    );
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-position: center;
-  background-blend-mode: screen, normal, normal, normal;
+      color-mix(in srgb, var(--rainroom-slate) 22%, transparent) 100%
+    ),
+    linear-gradient(var(--rainroom-pine), var(--rainroom-pine));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 2px 36px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position: center, center, center, center, right bottom;
+  background-blend-mode: screen, normal, normal, normal, normal;
   box-shadow: var(--shadow-panel);
 }
 
 :root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
   box-shadow:
     var(--shadow-sheet),
-    inset 0 1px 0 color-mix(in srgb, var(--rainroom-lamplight) 15%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--rainroom-lamplight) 32%, transparent),
+    0 -6px 22px -12px color-mix(in srgb, var(--rainroom-lamplight) 36%, transparent);
 }
 
 @media (max-width: 768px) {
@@ -58,21 +60,26 @@
       ),
       radial-gradient(
         ellipse at 8% 100%,
-        color-mix(in srgb, var(--rainroom-moss) 20%, transparent),
+        color-mix(in srgb, var(--rainroom-slate) 22%, transparent),
         transparent 38%
       ),
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--rainroom-swatch-walnut) 24%, transparent) 0,
-        color-mix(in srgb, var(--rainroom-swatch-walnut) 18%, transparent) 3px,
+        color-mix(in srgb, var(--rainroom-swatch-amber) 22%, transparent) 0,
+        color-mix(in srgb, var(--rainroom-swatch-walnut) 22%, transparent) 3px,
         transparent 15px
       ),
       linear-gradient(
         145deg,
         color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
         color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
-        color-mix(in srgb, var(--rainroom-moss) 26%, transparent) 100%
-      );
+        color-mix(in srgb, var(--rainroom-slate) 22%, transparent) 100%
+      ),
+      linear-gradient(var(--rainroom-pine), var(--rainroom-pine));
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 36px 2px;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position: center, center, center, center, right top;
+    background-blend-mode: screen, normal, normal, normal, normal;
   }
 }
 
@@ -80,9 +87,13 @@
   :root[data-theme='rainroom'] .navigation-column {
     border-right-color: color-mix(
       in srgb,
-      var(--rainroom-lamplight) 34%,
+      var(--rainroom-lamplight) 58%,
       var(--border-subtle)
     );
+    box-shadow:
+      var(--shadow-panel),
+      inset -1px 0 0 color-mix(in srgb, var(--rainroom-lamplight) 42%, transparent),
+      5px 0 20px -10px color-mix(in srgb, var(--rainroom-lamplight) 48%, transparent);
   }
 }
 

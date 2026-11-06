@@ -17,6 +17,15 @@ Application revision `8d0e242d`, local Vite development server at `http://127.0.
 - Measured from the theme files: light `raised/surface` is 1.00 (both `#fff`); dark is 1.10. Matcha and sakura have `card/surface` below `raised/surface`, so those two layers sit on opposite sides of the page surface. Dark `--border-subtle` is the weakest at 1.06 against the card, the same token #623 reports.
 - Token values, proposal arithmetic and scope limits are in [the surface layering baseline](surface-layering-baseline-629.md). Mobile viewports, rendered-pixel sampling and control state surfaces were not verified.
 
+### After pass — 2026-11-06
+
+Same harness, viewport and themes, re-run after the surface token changes, into `docs/qa/screenshots/issue-629-after/` (25 JPEGs plus `measurements.json`). The applied `data-theme` matched the requested theme on every capture and there were zero page errors. The harness itself is not committed; see "Reproducing" in the baseline doc for what it did.
+
+- Light now paints a recessed page: `--surface` `#fff` → `#f1f5f9`, with `--surface-card` moving to `#fff`. The page and card colours swapped, so cards sit above the page at 1.10 instead of flush at 1.00.
+- Before the change, overriding `--surface` to `#ff0000` changed 0.00% of pixels across all four views at 1440 × 900 and 390 × 844; the same override on `--surface-card` changed 14.22%. The column, mobile sheet and tab-bar backdrop were repointed from `--surface-raised` to `--surface`, which is what makes the token visible at all.
+- Regressions found and fixed during the pass: light `--surface-subtle` and `--surface-segmented-control` both matched or nearly matched the new page, and nus/matcha/sakura cards sat 1.03/1.01/1.03 against the new column. See the baseline doc for the new values.
+- Mobile surfaces were read from computed styles at 390 × 844, not captured. Hover, pressed, focus and selected surfaces remain unverified here; they belong to #617.
+
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
 Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:

@@ -1,0 +1,381 @@
+{
+  "url": "http://127.0.0.1:22188/",
+  "capturedAt": "2026-11-06T07:27:33.177Z",
+  "captures": [
+    {
+      "theme": "light",
+      "view": "explore",
+      "file": "light-explore.jpg",
+      "tokens": {
+        "--surface": "#f1f5f9",
+        "--surface-raised": "#fff",
+        "--surface-card": "#fff",
+        "--surface-subtle": "#e4eaf1",
+        "--surface-muted": "#f8fafc",
+        "--border-subtle": "#e2e8f0",
+        "--border-card": "#e4e8ef",
+        "--control-border": "color-mix(in srgb, #1f2937 55%, #f1f5f9)"
+      }
+    },
+    {
+      "theme": "light",
+      "view": "stops",
+      "file": "light-stops.jpg",
+      "tokens": {
+        "--surface": "#f1f5f9",
+        "--surface-raised": "#fff",
+        "--surface-card": "#fff",
+        "--surface-subtle": "#e4eaf1",
+        "--surface-muted": "#f8fafc",
+        "--border-subtle": "#e2e8f0",
+        "--border-card": "#e4e8ef",
+        "--control-border": "color-mix(in srgb, #1f2937 55%, #f1f5f9)"
+      }
+    },
+    {
+      "theme": "light",
+      "view": "plan",
+      "file": "light-plan.jpg",
+      "tokens": {
+        "--surface": "#f1f5f9",
+        "--surface-raised": "#fff",
+        "--surface-card": "#fff",
+        "--surface-subtle": "#e4eaf1",
+        "--surface-muted": "#f8fafc",
+        "--border-subtle": "#e2e8f0",
+        "--border-card": "#e4e8ef",
+        "--control-border": "color-mix(in srgb, #1f2937 55%, #f1f5f9)"
+      }
+    },
+    {
+      "theme": "light",
+      "view": "more",
+      "file": "light-more.jpg",
+      "tokens": {
+        "--surface": "#f1f5f9",
+        "--surface-raised": "#fff",
+        "--surface-card": "#fff",
+        "--surface-subtle": "#e4eaf1",
+        "--surface-muted": "#f8fafc",
+        "--border-subtle": "#e2e8f0",
+        "--border-card": "#e4e8ef",
+        "--control-border": "color-mix(in srgb, #1f2937 55%, #f1f5f9)"
+      }
+    },
+    {
+      "theme": "light",
+      "view": "map",
+      "file": "light-map.jpg",
+      "tokens": {
+        "--surface": "#f1f5f9",
+        "--surface-raised": "#fff",
+        "--surface-card": "#fff",
+        "--surface-subtle": "#e4eaf1",
+        "--surface-muted": "#f8fafc",
+        "--border-subtle": "#e2e8f0",
+        "--border-card": "#e4e8ef",
+        "--control-border": "color-mix(in srgb, #1f2937 55%, #f1f5f9)"
+      }
+    },
+    {
+      "theme": "dark",
+      "view": "explore",
+      "file": "dark-explore.jpg",
+      "tokens": {
+        "--surface": "#16171d",
+        "--surface-raised": "#1f2028",
+        "--surface-card": "#2a2c37",
+        "--surface-subtle": "#2e303a",
+        "--surface-muted": "#24252b",
+        "--border-subtle": "#24252b",
+        "--border-card": "#363944",
+        "--control-border": "color-mix(in srgb, #f3f4f6 35%, #16171d)"
+      }
+    },
+    {
+      "theme": "dark",
+      "view": "stops",
+      "file": "dark-stops.jpg",
+      "tokens": {
+        "--surface": "#16171d",
+        "--surface-raised": "#1f2028",
+        "--surface-card": "#2a2c37",
+        "--surface-subtle": "#2e303a",
+        "--surface-muted": "#24252b",
+        "--border-subtle": "#24252b",
+        "--border-card": "#363944",
+        "--control-border": "color-mix(in srgb, #f3f4f6 35%, #16171d)"
+      }
+    },
+    {
+      "theme": "dark",
+      "view": "plan",
+      "file": "dark-plan.jpg",
+      "tokens": {
+        "--surface": "#16171d",
+        "--surface-raised": "#1f2028",
+        "--surface-card": "#2a2c37",
+        "--surface-subtle": "#2e303a",
+        "--surface-muted": "#24252b",
+        "--border-subtle": "#24252b",
+        "--border-card": "#363944",
+        "--control-border": "color-mix(in srgb, #f3f4f6 35%, #16171d)"
+      }
+    },
+    {
+      "theme": "dark",
+      "view": "more",
+      "file": "dark-more.jpg",
+      "tokens": {
+        "--surface": "#16171d",
+        "--surface-raised": "#1f2028",
+        "--surface-card": "#2a2c37",
+        "--surface-subtle": "#2e303a",
+        "--surface-muted": "#24252b",
+        "--border-subtle": "#24252b",
+        "--border-card": "#363944",
+        "--control-border": "color-mix(in srgb, #f3f4f6 35%, #16171d)"
+      }
+    },
+    {
+      "theme": "dark",
+      "view": "map",
+      "file": "dark-map.jpg",
+      "tokens": {
+        "--surface": "#16171d",
+        "--surface-raised": "#1f2028",
+        "--surface-card": "#2a2c37",
+        "--surface-subtle": "#2e303a",
+        "--surface-muted": "#24252b",
+        "--border-subtle": "#24252b",
+        "--border-card": "#363944",
+        "--control-border": "color-mix(in srgb, #f3f4f6 35%, #16171d)"
+      }
+    },
+    {
+      "theme": "nus",
+      "view": "explore",
+      "file": "nus-explore.jpg",
+      "tokens": {
+        "--surface": "#fff3e7",
+        "--surface-raised": "#fffaf4",
+        "--surface-card": "#fffaf4",
+        "--surface-subtle": "#f5d1aa",
+        "--surface-muted": "#f9dfc2",
+        "--border-subtle": "#f0dfcc",
+        "--border-card": "#efdfce",
+        "--control-border": "color-mix(in srgb, #3c2f25 58%, #fff3e7)"
+      }
+    },
+    {
+      "theme": "nus",
+      "view": "stops",
+      "file": "nus-stops.jpg",
+      "tokens": {
+        "--surface": "#fff3e7",
+        "--surface-raised": "#fffaf4",
+        "--surface-card": "#fffaf4",
+        "--surface-subtle": "#f5d1aa",
+        "--surface-muted": "#f9dfc2",
+        "--border-subtle": "#f0dfcc",
+        "--border-card": "#efdfce",
+        "--control-border": "color-mix(in srgb, #3c2f25 58%, #fff3e7)"
+      }
+    },
+    {
+      "theme": "nus",
+      "view": "plan",
+      "file": "nus-plan.jpg",
+      "tokens": {
+        "--surface": "#fff3e7",
+        "--surface-raised": "#fffaf4",
+        "--surface-card": "#fffaf4",
+        "--surface-subtle": "#f5d1aa",
+        "--surface-muted": "#f9dfc2",
+        "--border-subtle": "#f0dfcc",
+        "--border-card": "#efdfce",
+        "--control-border": "color-mix(in srgb, #3c2f25 58%, #fff3e7)"
+      }
+    },
+    {
+      "theme": "nus",
+      "view": "more",
+      "file": "nus-more.jpg",
+      "tokens": {
+        "--surface": "#fff3e7",
+        "--surface-raised": "#fffaf4",
+        "--surface-card": "#fffaf4",
+        "--surface-subtle": "#f5d1aa",
+        "--surface-muted": "#f9dfc2",
+        "--border-subtle": "#f0dfcc",
+        "--border-card": "#efdfce",
+        "--control-border": "color-mix(in srgb, #3c2f25 58%, #fff3e7)"
+      }
+    },
+    {
+      "theme": "nus",
+      "view": "map",
+      "file": "nus-map.jpg",
+      "tokens": {
+        "--surface": "#fff3e7",
+        "--surface-raised": "#fffaf4",
+        "--surface-card": "#fffaf4",
+        "--surface-subtle": "#f5d1aa",
+        "--surface-muted": "#f9dfc2",
+        "--border-subtle": "#f0dfcc",
+        "--border-card": "#efdfce",
+        "--control-border": "color-mix(in srgb, #3c2f25 58%, #fff3e7)"
+      }
+    },
+    {
+      "theme": "matcha",
+      "view": "explore",
+      "file": "matcha-explore.jpg",
+      "tokens": {
+        "--surface": "#e1e7d6",
+        "--surface-raised": "#f0f2e7",
+        "--surface-card": "#f0f2e7",
+        "--surface-subtle": "#bfccb2",
+        "--surface-muted": "#cdd8c2",
+        "--border-subtle": "#cddcc8",
+        "--border-card": "#d0dac9",
+        "--control-border": "color-mix(in srgb, #294536 65%, #e1e7d6)"
+      }
+    },
+    {
+      "theme": "matcha",
+      "view": "stops",
+      "file": "matcha-stops.jpg",
+      "tokens": {
+        "--surface": "#e1e7d6",
+        "--surface-raised": "#f0f2e7",
+        "--surface-card": "#f0f2e7",
+        "--surface-subtle": "#bfccb2",
+        "--surface-muted": "#cdd8c2",
+        "--border-subtle": "#cddcc8",
+        "--border-card": "#d0dac9",
+        "--control-border": "color-mix(in srgb, #294536 65%, #e1e7d6)"
+      }
+    },
+    {
+      "theme": "matcha",
+      "view": "plan",
+      "file": "matcha-plan.jpg",
+      "tokens": {
+        "--surface": "#e1e7d6",
+        "--surface-raised": "#f0f2e7",
+        "--surface-card": "#f0f2e7",
+        "--surface-subtle": "#bfccb2",
+        "--surface-muted": "#cdd8c2",
+        "--border-subtle": "#cddcc8",
+        "--border-card": "#d0dac9",
+        "--control-border": "color-mix(in srgb, #294536 65%, #e1e7d6)"
+      }
+    },
+    {
+      "theme": "matcha",
+      "view": "more",
+      "file": "matcha-more.jpg",
+      "tokens": {
+        "--surface": "#e1e7d6",
+        "--surface-raised": "#f0f2e7",
+        "--surface-card": "#f0f2e7",
+        "--surface-subtle": "#bfccb2",
+        "--surface-muted": "#cdd8c2",
+        "--border-subtle": "#cddcc8",
+        "--border-card": "#d0dac9",
+        "--control-border": "color-mix(in srgb, #294536 65%, #e1e7d6)"
+      }
+    },
+    {
+      "theme": "matcha",
+      "view": "map",
+      "file": "matcha-map.jpg",
+      "tokens": {
+        "--surface": "#e1e7d6",
+        "--surface-raised": "#f0f2e7",
+        "--surface-card": "#f0f2e7",
+        "--surface-subtle": "#bfccb2",
+        "--surface-muted": "#cdd8c2",
+        "--border-subtle": "#cddcc8",
+        "--border-card": "#d0dac9",
+        "--control-border": "color-mix(in srgb, #294536 65%, #e1e7d6)"
+      }
+    },
+    {
+      "theme": "sakura",
+      "view": "explore",
+      "file": "sakura-explore.jpg",
+      "tokens": {
+        "--surface": "#e9d4db",
+        "--surface-raised": "#f4e7eb",
+        "--surface-card": "#f4e7eb",
+        "--surface-subtle": "#d8b7c2",
+        "--surface-muted": "#dfc3cc",
+        "--border-subtle": "#e1c9d2",
+        "--border-card": "#e0cdd3",
+        "--control-border": "color-mix(in srgb, #55303d 65%, #e9d4db)"
+      }
+    },
+    {
+      "theme": "sakura",
+      "view": "stops",
+      "file": "sakura-stops.jpg",
+      "tokens": {
+        "--surface": "#e9d4db",
+        "--surface-raised": "#f4e7eb",
+        "--surface-card": "#f4e7eb",
+        "--surface-subtle": "#d8b7c2",
+        "--surface-muted": "#dfc3cc",
+        "--border-subtle": "#e1c9d2",
+        "--border-card": "#e0cdd3",
+        "--control-border": "color-mix(in srgb, #55303d 65%, #e9d4db)"
+      }
+    },
+    {
+      "theme": "sakura",
+      "view": "plan",
+      "file": "sakura-plan.jpg",
+      "tokens": {
+        "--surface": "#e9d4db",
+        "--surface-raised": "#f4e7eb",
+        "--surface-card": "#f4e7eb",
+        "--surface-subtle": "#d8b7c2",
+        "--surface-muted": "#dfc3cc",
+        "--border-subtle": "#e1c9d2",
+        "--border-card": "#e0cdd3",
+        "--control-border": "color-mix(in srgb, #55303d 65%, #e9d4db)"
+      }
+    },
+    {
+      "theme": "sakura",
+      "view": "more",
+      "file": "sakura-more.jpg",
+      "tokens": {
+        "--surface": "#e9d4db",
+        "--surface-raised": "#f4e7eb",
+        "--surface-card": "#f4e7eb",
+        "--surface-subtle": "#d8b7c2",
+        "--surface-muted": "#dfc3cc",
+        "--border-subtle": "#e1c9d2",
+        "--border-card": "#e0cdd3",
+        "--control-border": "color-mix(in srgb, #55303d 65%, #e9d4db)"
+      }
+    },
+    {
+      "theme": "sakura",
+      "view": "map",
+      "file": "sakura-map.jpg",
+      "tokens": {
+        "--surface": "#e9d4db",
+        "--surface-raised": "#f4e7eb",
+        "--surface-card": "#f4e7eb",
+        "--surface-subtle": "#d8b7c2",
+        "--surface-muted": "#dfc3cc",
+        "--border-subtle": "#e1c9d2",
+        "--border-card": "#e0cdd3",
+        "--control-border": "color-mix(in srgb, #55303d 65%, #e9d4db)"
+      }
+    }
+  ]
+}

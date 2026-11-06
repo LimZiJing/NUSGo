@@ -1,8 +1,8 @@
 :root[data-theme='light'] {
-  --surface: #fff;
+  --surface: #f1f5f9;
   --surface-raised: #fff;
   --surface-muted: #f8fafc;
-  --surface-subtle: #f1f5f9;
+  --surface-subtle: #e4eaf1;
   --surface-inverse: #0f172a;
   --surface-overlay: rgb(255 255 255 / 62%);
   --surface-overlay-strong: rgb(255 255 255 / 88%);
@@ -14,12 +14,12 @@
     inset 0 0 16px rgb(255 255 255 / 35%),
     inset 0 -1px 0 rgb(15 23 42 / 8%);
   --surface-neutral: #eef0f4;
-  --surface-faint: #f7f8fb;
+  --surface-faint: #fafbfd;
   --surface-info-soft: #e8eef5;
   --surface-control: #e2e8f0;
   --surface-warning: #fff7ed;
-  --surface-segmented-control: #e8eef5;
-  --surface-card: #f7f8fb;
+  --surface-segmented-control: #dfe5ee;
+  --surface-card: #fff;
   --surface-handle: #94a3b8;
   --surface-journey-step: #475569;
 
@@ -52,7 +52,7 @@
   --border-strong: #cbd5e1;
   --border-inverse: #475569;
   --border-control: #cbd5e1;
-  --control-border: color-mix(in srgb, var(--text-primary) 50%, var(--surface));
+  --control-border: color-mix(in srgb, var(--text-primary) 55%, var(--surface));
   --border-muted: #d8e1ec;
   --border-faint: #e4e8ef;
   --border-success: #9ee8d0;

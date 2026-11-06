@@ -222,6 +222,24 @@ describe('disablePush', () => {
     expect(readPushPreference()).not.toBeNull()
     expect(subscription.unsubscribe).not.toHaveBeenCalled()
   })
+
+  it('leaves the shared browser subscription in place while a reminder still uses it', async () => {
+    // Both topics share one endpoint, so turning service updates off must not cancel the
+    // subscription an alight reminder was registered against.
+    const subscription = fakeSubscription()
+    stubServiceWorker(subscription)
+    savePushPreference({ topic: 'service-updates', endpoint: subscription.endpoint })
+    saveReminderPreference({ stopId: 'COM3', routeId: 'D1', endpoint: subscription.endpoint })
+    const pushClient = client()
+
+    await expect(disablePush(pushClient)).resolves.toBeNull()
+
+    expect(pushClient.unregister).toHaveBeenCalledWith(subscription.endpoint)
+    expect(subscription.unsubscribe).not.toHaveBeenCalled()
+    expect(readPushPreference()).toBeNull()
+    // The reminder survives, so the rider keeps the watch they asked for.
+    expect(readReminderPreference()).not.toBeNull()
+  })
 })
 
 describe('alight reminder preference storage', () => {

@@ -207,11 +207,12 @@ export async function enablePush(
 }
 
 /**
- * Unsubscribes this browser and forgets it on the server.
+ * Forgets this browser's service-update subscription on the server.
  *
  * The server call is attempted first so a failure there leaves the local preference intact and
- * the toggle honest; the browser subscription is always cancelled, so no push is delivered after
- * the user turns this off.
+ * the toggle honest. The browser subscription is cancelled only when no alight reminder still
+ * depends on it: both topics share one endpoint, so cancelling it here would silently stop
+ * reminders the rider never asked to turn off.
  */
 export async function disablePush(client: PushSubscriptionClient): Promise<PushPreference | null> {
   const preference = readPushPreference()
@@ -220,7 +221,8 @@ export async function disablePush(client: PushSubscriptionClient): Promise<PushP
   const endpoint = subscription?.endpoint ?? preference?.endpoint ?? null
 
   if (endpoint) await client.unregister(endpoint)
-  await subscription?.unsubscribe()
+  const reminder = readReminderPreference()
+  if (!reminder || reminder.endpoint !== endpoint) await subscription?.unsubscribe()
   savePushPreference(null)
   return null
 }

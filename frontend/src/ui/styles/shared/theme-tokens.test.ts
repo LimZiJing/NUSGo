@@ -163,6 +163,9 @@ describe('control token contrast', () => {
     const checks = [
       // Non-text boundary of secondary controls and chips (WCAG 1.4.11).
       ['--control-border', '--surface', 3],
+      // The same boundary where controls sit on a card rather than the page,
+      // e.g. the theme select in Settings → Appearance.
+      ['--control-border', '--surface-card', 3],
       // Secondary label and unselected chip label on the neutral control fill.
       ['--text-primary', '--surface-control', 4.5],
       // Primary button and selected chip label on the accent fill.

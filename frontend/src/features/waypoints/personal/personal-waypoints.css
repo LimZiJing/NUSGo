@@ -532,7 +532,7 @@
 .personal-waypoint-marker-preview[data-color='gray'],
 .personal-waypoint-color-swatch[data-color='gray'] { background: var(--personal-waypoint-marker-gray); }
 
-.personal-waypoint-marker-preview-icon { color: #172033; transform: rotate(45deg); }
+.personal-waypoint-marker-preview-icon { color: var(--map-waypoint-marker-ink); transform: rotate(45deg); }
 
 .personal-waypoint-choice-group {
   display: grid;
@@ -628,7 +628,7 @@
 
 .personal-waypoint-color-option:has(input:checked) .personal-waypoint-color-swatch {
   outline: 2px solid var(--surface-card);
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: var(--ring-waypoint-color-selected);
 }
 
 .personal-waypoint-color-option:has(input:focus-visible) .personal-waypoint-color-swatch {
@@ -637,7 +637,7 @@
 }
 
 .personal-waypoint-color-check {
-  color: #172033;
+  color: var(--map-waypoint-marker-ink);
   opacity: 0;
 }
 

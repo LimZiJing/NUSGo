@@ -84,7 +84,7 @@
 
 .journey-result-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: var(--ring-journey-selected);
 }
 
 .journey-result-heading {
@@ -338,7 +338,7 @@
   /* Match the marker's outer diameter to the rail's grid geometry. */
   box-sizing: border-box;
   background: var(--surface-journey-step);
-  box-shadow: 0 0 0 1px var(--border-control);
+  box-shadow: var(--ring-journey-timeline);
 }
 
 .journey-timeline-content {
@@ -582,7 +582,7 @@
   border-radius: 50%;
   box-sizing: border-box;
   background: var(--journey-route-color, var(--status-info));
-  box-shadow: 0 0 0 1px var(--journey-route-color, var(--status-info));
+  box-shadow: var(--ring-journey-stop);
 }
 
 @media (max-width: 480px) {

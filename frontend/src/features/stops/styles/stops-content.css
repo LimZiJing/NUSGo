@@ -423,7 +423,7 @@
   .stop-reachable-more[aria-expanded='true'] .stop-reachable-more-label {
     color: var(--accent);
     background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent);
+    box-shadow: var(--ring-stop-reachable-expanded);
   }
 
   .stop-reachable-more:focus-visible {

@@ -167,6 +167,7 @@ describe('PersonalWaypointList', () => {
     const onMove = vi.fn()
     const onRemove = vi.fn()
     const onEditAnnouncement = vi.fn()
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
     const view = render(
       <PersonalWaypointList
         waypoints={waypoints}
@@ -328,6 +329,7 @@ describe('PersonalWaypointList', () => {
 
   it('restores focus to search after removal', async () => {
     const user = userEvent.setup()
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
     render(<StatefulPersonalWaypointList />)
 
     await user.click(screen.getByRole('button', { name: 'Remove Design studio, Study place' }))
@@ -335,5 +337,65 @@ describe('PersonalWaypointList', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search saved places' }))
+  })
+
+  it('names the place in the removal prompt and keeps everything when cancelled', async () => {
+    const user = userEvent.setup()
+    const onRemove = vi.fn()
+    const confirm = vi.fn().mockReturnValue(false)
+    vi.stubGlobal('confirm', confirm)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={onRemove}
+        onMove={() => true}
+      />,
+    )
+
+    const removeControl = screen.getByRole('button', { name: 'Remove Design studio, Study place' })
+    removeControl.focus()
+    await user.click(removeControl)
+
+    expect(confirm).toHaveBeenCalledWith('Delete "Design studio"? This cannot be undone.')
+    expect(onRemove).not.toHaveBeenCalled()
+    expect(screen.getAllByRole('listitem').map((row) => row.querySelector('strong')?.textContent))
+      .toEqual(['Quiet bench', 'Design studio', 'Tea room'])
+    expect(document.activeElement).toBe(removeControl)
+  })
+
+  it('removes only the confirmed place and keeps unrelated records', async () => {
+    const user = userEvent.setup()
+    const onRemove = vi.fn()
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
+    const view = render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={onRemove}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Remove Design studio, Study place' }))
+
+    expect(onRemove).toHaveBeenCalledOnce()
+    expect(onRemove).toHaveBeenCalledWith(waypoints[1].id)
+
+    view.rerender(
+      <PersonalWaypointList
+        waypoints={waypoints.filter(({ id }) => id !== waypoints[1].id)}
+        canEdit
+        editing
+        onRemove={onRemove}
+        onMove={() => true}
+      />,
+    )
+
+    expect(screen.queryByText('Design studio')).toBeNull()
+    expect(screen.getByText('Quiet bench')).toBeTruthy()
+    expect(screen.getByText('Tea room')).toBeTruthy()
   })
 })

@@ -8,6 +8,7 @@ import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/per
 import { Button } from '../../../../ui/button'
 import { SearchField } from '../../../../ui/search-field'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
+import { confirmPersonalWaypointDeletion } from '../personal-waypoint-delete-confirmation'
 import {
   PersonalWaypointListRow,
   PersonalWaypointSortableListRow,
@@ -206,6 +207,8 @@ export function PersonalWaypointList({
         handleDescriptionId: reorderInstructionsId,
         onHandleKeyDown: handleReorderKeyDown,
         onRemove: (id: string) => {
+          // Cancelling the prompt leaves the row, its position and the saved list untouched.
+          if (!confirmPersonalWaypointDeletion(waypoint)) return
           pendingFocusRef.current = { waypointId: id, action: 'remove' }
           onRemove(id)
         },

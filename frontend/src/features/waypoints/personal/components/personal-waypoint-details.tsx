@@ -2,6 +2,7 @@ import { FileText } from 'lucide-react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { CompassIcon, MapPinIcon } from '../../../../ui/icons'
 import { Button } from '../../../../ui/button'
+import { confirmPersonalWaypointDeletion } from '../personal-waypoint-delete-confirmation'
 
 export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
   readonly waypoint: PersonalWaypoint | null
@@ -14,6 +15,11 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
     return <p className="personal-waypoint-details-unavailable" role="status">
       This waypoint is no longer available in the saved list.
     </p>
+  }
+
+  const requestDelete = (): void => {
+    if (!canManage || !confirmPersonalWaypointDeletion(waypoint)) return
+    onDelete()
   }
 
   return <section className="personal-waypoint-details" aria-labelledby="personal-waypoint-details-heading">
@@ -68,7 +74,7 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
           variant="ghost"
           size="sm"
           disabled={!canManage}
-          onClick={onDelete}
+          onClick={requestDelete}
         />
       </div>
     </div>

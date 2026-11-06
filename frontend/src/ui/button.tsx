@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react'
+import type { ButtonHTMLAttributes, KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -6,7 +6,24 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 /** `plain` is icon-only: no box at rest, hover or when pressed, for toggles such as a favourite star. */
 export type IconButtonVariant = ButtonVariant | 'plain'
 
-interface ButtonOptions {
+type NativeButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  | 'children'
+  | 'type'
+  | 'onClick'
+  | 'onKeyDown'
+  | 'className'
+  | 'disabled'
+  | 'title'
+  | 'aria-label'
+  | 'aria-pressed'
+  | 'aria-expanded'
+  | 'aria-controls'
+  | 'aria-busy'
+  | 'aria-describedby'
+  | 'aria-keyshortcuts'
+>
+interface ButtonOptions extends NativeButtonProps {
   readonly onClick: MouseEventHandler<HTMLButtonElement>
   readonly type?: 'button' | 'submit' | 'reset'
   readonly variant?: ButtonVariant
@@ -81,9 +98,11 @@ export function Button({
   ariaKeyShortcuts,
   className,
   ref,
+  ...nativeProps
 }: ButtonProps) {
   return (
     <button
+      {...nativeProps}
       ref={ref}
       className={joinClassNames('button', className)}
       type={type}

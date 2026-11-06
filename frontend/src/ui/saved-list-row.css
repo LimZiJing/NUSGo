@@ -50,7 +50,12 @@
   line-height: 1.2;
 }
 
-.saved-list-row-select {
+/* This copy action is a shared Button with row-owned geometry and hover treatment. */
+.button.saved-list-row-select {
+  display: grid;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 3px;
   min-height: 36px;
   padding: 3px 4px;
   border: 0;
@@ -62,9 +67,13 @@
   cursor: pointer;
 }
 
-.saved-list-row-select:hover strong { color: var(--accent); }
+.button.saved-list-row-select:hover strong { color: var(--accent); }
 
-.saved-list-row-select:focus-visible {
+.button.saved-list-row-select:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 1px;
+}
+
+.button.saved-list-row-select:active:not(:disabled) {
+  transform: none;
 }

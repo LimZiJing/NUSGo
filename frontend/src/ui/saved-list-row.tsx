@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode, Ref } from 'react'
+import { Button } from './button'
 import './saved-list-row.css'
 
 interface SavedListRowProps {
@@ -37,15 +38,13 @@ export function SavedListRow({
     >
       <div className="saved-list-row-leading">{leading}</div>
       {onSelect ? (
-        <button
+        <Button
           className="saved-list-row-copy saved-list-row-select"
-          type="button"
-          data-hover-treatment="custom"
-          aria-label={selectLabel ?? [title, subtitle].filter(Boolean).join(', ')}
+          ariaLabel={selectLabel ?? [title, subtitle].filter(Boolean).join(', ')}
           onClick={onSelect}
         >
           {copy}
-        </button>
+        </Button>
       ) : <div className="saved-list-row-copy">{copy}</div>}
       {trailing}
     </li>

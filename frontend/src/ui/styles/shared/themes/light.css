@@ -36,7 +36,8 @@
   --text-warning: #b45309;
   --text-success-strong: #15803d;
   --text-error-strong: #b91c1c;
-  --text-favorite: #d97706;
+  /* Star icons only, never text: WCAG 1.4.11's 3:1 for graphics applies, not 4.5:1. */
+  --text-favorite: #c26a05;
   --bus-stop-default-color: #334155;
   --personal-waypoint-marker-blue: #5b83e6;
   --personal-waypoint-marker-red: #ed2224;

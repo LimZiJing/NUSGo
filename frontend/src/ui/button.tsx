@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
+import type { KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -6,9 +6,9 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 /** `plain` is icon-only: no box at rest, hover or when pressed, for toggles such as a favourite star. */
 export type IconButtonVariant = ButtonVariant | 'plain'
 
-interface ButtonProps {
-  readonly label: string
-  readonly onClick: () => void
+interface ButtonOptions {
+  readonly onClick: MouseEventHandler<HTMLButtonElement>
+  readonly type?: 'button' | 'submit' | 'reset'
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
@@ -30,6 +30,11 @@ interface ButtonProps {
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
 }
+
+type ButtonProps = ButtonOptions & (
+  | { readonly label: string; readonly children?: never }
+  | { readonly label?: never; readonly children: ReactNode }
+)
 
 interface IconButtonProps {
   readonly label: string
@@ -57,7 +62,9 @@ interface IconButtonProps {
 
 export function Button({
   label,
+  children,
   onClick,
+  type = 'button',
   variant = 'secondary',
   size = 'sm',
   icon,
@@ -79,7 +86,7 @@ export function Button({
     <button
       ref={ref}
       className={joinClassNames('button', className)}
-      type="button"
+      type={type}
       data-variant={variant}
       data-size={size}
       data-hover-filter="none"
@@ -95,9 +102,11 @@ export function Button({
       onClick={onClick}
       onKeyDown={onKeyDown}
     >
-      {icon}
-      <span>{label}</span>
-      {trailingIcon}
+      {children ?? <>
+        {icon}
+        <span>{label}</span>
+        {trailingIcon}
+      </>}
     </button>
   )
 }

@@ -69,6 +69,22 @@ describe('Button', () => {
   })
 })
 
+describe('Button composed content', () => {
+  it('keeps rich content and supports a native submit action', () => {
+    render(
+      <Button type="submit" ariaLabel="Open Computer Centre" onClick={vi.fn()}>
+        <strong>COM1</strong>
+        <span>Computer Centre</span>
+      </Button>,
+    )
+
+    const button = screen.getByRole('button', { name: 'Open Computer Centre' })
+    expect(button.getAttribute('type')).toBe('submit')
+    expect(button.children).toHaveLength(2)
+    expect(button.querySelector('strong')?.textContent).toBe('COM1')
+    expect(button.lastElementChild?.textContent).toBe('Computer Centre')
+  })
+})
 describe('Button trailing icon', () => {
   it('renders the trailing icon after the label', () => {
     render(<Button label="Opposite stop" trailingIcon={<svg data-testid="trail" />} onClick={vi.fn()} />)

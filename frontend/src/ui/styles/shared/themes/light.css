@@ -60,6 +60,8 @@
   --border-info: #93c5fd;
   --border-focus: #64748b;
   --border-card: #e4e8ef;
+  /* Light palettes already read clearly, so the row divider keeps the details-panel step. */
+  --border-divider: var(--border-default);
 
   --accent: #1d4ed8;
   --accent-hover: #1e40af;

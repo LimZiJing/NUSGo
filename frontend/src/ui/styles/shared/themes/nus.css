@@ -63,6 +63,7 @@
   --border-info: #9dbbde;
   --border-focus: #bb4a00;
   --border-card: #efdfce;
+  --border-divider: var(--border-default);
 
   /* NUS Orange is the bright brand highlight; the deeper accent keeps control text readable. */
   --accent: #bb4a00;

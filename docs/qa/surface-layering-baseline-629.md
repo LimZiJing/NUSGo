@@ -1,10 +1,10 @@
 # Surface layering baseline (#629)
 
-Evidence record for [issue #629](https://github.com/LimZiJing/NUSGo/issues/629) "Evaluate visible layering between light and dark theme surfaces". It starts from the **before** capture and measurement, then records the settled token values and the matching **after** capture. Only theme tokens and the backgrounds of the navigation column, mobile sheets and mobile tab bar changed; no application behaviour changed.
+Evidence record for [issue #629](https://github.com/LimZiJing/NUSGo/issues/629) "Evaluate visible layering between light and dark theme surfaces". It starts from the **before** capture and measurement, then records the settled token values and the matching **after** capture. Only theme tokens, the backgrounds of the navigation column, mobile sheets and mobile tab bar, and the fills of five waypoint-list controls changed; no application behaviour changed.
 
 ## Run
 
-- Application revision `8d0e242d` (local `main`), worktree `t3-06c72209`.
+- Application revision `8d0e242d` (local `main`) for the before capture; `25f549b3` for the after capture (see "After captures"). Worktree `t3-06c72209`.
 - Local Vite development server from `npm run servers:start` at `http://127.0.0.1:22188/`.
 - Headless Chromium 1254 (`playwright` 1.65.0) at 1440 × 900, device pixel ratio 1, `prefers-reduced-motion: reduce`.
 - Each of the 25 captures used a fresh browser context with `navus:theme-preference:v1` seeded before navigation, so every theme used the real `data-theme` mechanism rather than a page-level override. The applied `data-theme` was asserted before each screenshot; all 25 matched the requested theme.
@@ -83,7 +83,7 @@ The page surface has to be painted by something for any of this to be visible. T
 | matcha | `--surface-card` | `#e0e6d6` | `#f0f2e7` | 1.12 |
 | sakura | `--surface-card` | `#ead8df` | `#f4e7eb` | 1.17 |
 
-Five waypoint-list controls also moved from `--surface` to `--surface-card` so their fills stay distinct from the panel; see the regression note under "After captures".
+Five waypoint-list controls (seven declarations) also moved from `--surface` to `--surface-card` so their fills stay distinct from the panel; see the regression note under "After captures".
 
 Cards had to move with the column. Against the new column, the old card values land at 1.03 (nus), 1.01 (matcha) and 1.03 (sakura) — effectively invisible. In the three palettes `--surface-raised` was already the lightest layer, so aligning `--surface-card` to it keeps the on-screen card colour close to what it was and fixes the recessed-card anomaly recorded under "Measured token contrast" above.
 
@@ -104,7 +104,10 @@ Consequences recorded for review:
 
 ## After captures
 
-`docs/qa/screenshots/issue-629-after/<theme>-<view>.jpg`, same 25 views, viewport, themes and JPEG quality as the baseline set. `measurements.json` in that directory records the resolved value of each surface token per capture, read from `getComputedStyle` at capture time.
+`docs/qa/screenshots/issue-629-after/<theme>-<view>.jpg`, same 25 views, viewport, themes and JPEG quality as the baseline set.
+
+- **Gathered on commit `25f549b3`** (the last commit that changes any CSS), 2026-11-06T10:55:22Z, from a clean working tree. Later commits in this branch touch only this document and these images, so the captures represent the reviewed code.
+- `measurements.json` in that directory records the computed value of the surface tokens each capture sampled, read from `getComputedStyle` at capture time. Plain hex tokens come back as written; `--control-border` comes back as its `color-mix()` expression, since a custom property computes to its specified value.
 
 **What the captures show.** All five themes changed. Measured from the rendered pixels in the left panel:
 
@@ -121,11 +124,19 @@ In light, the page and card colours have **swapped**: what used to be the backdr
 
 Desktop and mobile were both re-checked after the change: mobile light sheet `rgb(241,245,249)` under `rgb(255,255,255)` cards (1.10), mobile dark sheet `rgb(22,23,29)` under `rgb(42,44,55)` cards (1.29).
 
-**Regression found on the waypoints list.** `--surface` is also the fill on five controls in `personal-waypoints.css` (the saved-list search field, its actions trigger, the category visibility trigger, and the category search field). They sit inside the navigation panel, so repointing the panel from `--surface-raised` to `--surface` made each control's fill identical to the panel behind it. Measured live with a seeded waypoint in all five themes: every one of them reported the same computed background as `.more-panel-surface`. Only the 1px `--border-card` edge remained, and that got weaker too — sakura fell to **1.077** border-to-panel.
+**Regression found on the waypoints list.** `--surface` is also the fill on five controls in `personal-waypoints.css`, across seven declarations: the saved-list search field (`.personal-waypoint-list-search .search-field` and its `input`), the saved-list actions trigger (`.personal-waypoint-list-actions-trigger`), the category visibility trigger (`.personal-waypoint-visibility-trigger`), the category search field (`.personal-waypoint-category-search .search-field` and its `input`), and the selected-location row (`.personal-waypoint-selected-location`). They sit inside the navigation panel, so repointing the panel from `--surface-raised` to `--surface` made each control's fill identical to the panel behind it. Measured live with a seeded waypoint in all five themes: every one of them reported the same computed background as `.more-panel-surface`. Only the 1px `--border-card` edge remained, and that got weaker too — sakura fell to **1.077** border-to-panel.
 
-Those five declarations now use `--surface-card`, which is what a form control on a page should sit on and what `.personal-waypoint-form input` alongside them already used. Field-fill-to-panel after the fix: light 1.096, dark 1.289, nus 1.052, matcha 1.118, sakura 1.173 — matching or beating the pre-change values in every theme.
+All seven declarations now use `--surface-card`, which is what a form control on a page should sit on and what `.personal-waypoint-form input` alongside them already used. Field-fill-to-panel after the fix: light 1.096, dark 1.289, nus 1.052, matcha 1.118, sakura 1.173 — matching or beating the pre-change values in every theme.
 
 This slipped through the 25-image set because it captures Explore, Stops, Plan and More only. Settings, Appearance, the waypoint add/saved flows and search results have no captures; Settings and Appearance were spot-checked after the fact and are correct.
+
+**Why this set was re-captured, and what that showed.** The first after-capture set was taken before the waypoints fix landed, so it no longer represented the reviewed code. Re-running the same harness at `25f549b3` and diffing the two sets separates code differences from run-to-run noise:
+
+- The navigation column — the region these changes actually repaint — is **pixel-identical** in Explore, Plan and More across all five themes (0.000% of pixels changed, max channel delta 2, i.e. JPEG rounding only). The waypoints control fills are not visible in these views, which is exactly why the regression escaped the capture set.
+- Stops differs inside the column, by 2.9–4.4%, because the arrival rows are live and tick between runs.
+- The map area differs by up to 2.6% in light and about 0.25% in the other four themes. MapLibre drops and re-places labels depending on which ones fit, so label positions are not stable between runs; the contrast between light and dark here is how differently the basemap palettes trigger that collision handling, not a surface change.
+
+Treat the surfaces as the thing these images record. Basemap label placement and live arrival times are not evidence.
 
 ## Not verified
 
@@ -142,9 +153,13 @@ The capture script is **not committed**. It drove headless Chromium against the 
 - sealed `navus:theme-preference:v1` in `localStorage` with an init script, so the real `data-theme` mechanism applied;
 - waited for `.maplibregl-canvas` and 3 s of tile paint before the first capture;
 - asserted the applied `data-theme` matched the requested theme before every screenshot;
-- clicked the `Explore`, `Stops`, `Plan` and `More` buttons by accessible name, waiting 700 ms for panel transitions;
-- wrote JPEGs at quality 80 and recorded the resolved surface tokens per capture in `measurements.json`.
+- clicked the `Explore`, `Stops`, `Plan` and `More` buttons by accessible name, parked the pointer at the bottom-left corner of the viewport so no control sat in its hover state, and waited 700 ms for panel transitions;
+- wrote JPEGs at quality 80 and recorded the computed surface tokens per capture in `measurements.json`.
 
 `playwright` (1.65.0, browser build `chromium-1254`) is not declared in any `package.json`, so the script ran against a checkout that already had it installed ad hoc. It is not committed for that reason: adding a browser-capture tool means adding `playwright` and its browser download to a clean checkout, which is a dependency decision rather than something to slip in with a theme fix.
 
 The committed JPEGs and `measurements.json` are the record of what the script produced. Token contrast figures in this document come from token values; the before/after backdrop and card colours in "After captures" were sampled from the rendered pixels.
+
+Both capture sets were produced by the same script. The after set was re-run and replaced once, after the waypoints fix described above landed; the version in the repository is the later run.
+
+Because the script is not committed, the images cannot be regenerated from this branch alone. If a later change touches any surface token or the background of the navigation column, the mobile sheets or the tab bar, these captures become stale and should be marked as such in the PR rather than assumed to still apply.

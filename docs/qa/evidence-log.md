@@ -19,11 +19,11 @@ Application revision `8d0e242d`, local Vite development server at `http://127.0.
 
 ### After pass — 2026-11-06
 
-Same harness, viewport and themes, re-run after the surface token changes, into `docs/qa/screenshots/issue-629-after/` (25 JPEGs plus `measurements.json`). The applied `data-theme` matched the requested theme on every capture and there were zero page errors. The harness itself is not committed; see "Reproducing" in the baseline doc for what it did.
+Same harness, viewport and themes, captured on commit `25f549b3` (the last commit touching CSS) with a clean working tree, into `docs/qa/screenshots/issue-629-after/` (25 JPEGs plus `measurements.json`). The applied `data-theme` matched the requested theme on every capture and there were zero page errors. The harness itself is not committed; see "Reproducing" in the baseline doc for what it did.
 
 - Light now paints a recessed page: `--surface` `#fff` → `#f1f5f9`, with `--surface-card` moving to `#fff`. The page and card colours swapped, so cards sit above the page at 1.10 instead of flush at 1.00.
 - Before the change, overriding `--surface` to `#ff0000` changed 0.00% of pixels across all four views at 1440 × 900 and 390 × 844; the same override on `--surface-card` changed 14.22%. The column, mobile sheet and tab-bar backdrop were repointed from `--surface-raised` to `--surface`, which is what makes the token visible at all.
-- Regressions found and fixed during the pass: light `--surface-subtle` and `--surface-segmented-control` both matched or nearly matched the new page, and nus/matcha/sakura cards sat 1.03/1.01/1.03 against the new column. See the baseline doc for the new values.
+- Regressions found and fixed during the pass: light `--surface-subtle` and `--surface-segmented-control` both matched or nearly matched the new page, and nus/matcha/sakura cards sat 1.03/1.01/1.03 against the new column. Five waypoint-list controls (seven declarations) also lost their fill against the repointed panel and moved to `--surface-card`. See the baseline doc for the new values.
 - Mobile surfaces were read from computed styles at 390 × 844, not captured. Hover, pressed, focus and selected surfaces remain unverified here; they belong to #617.
 
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05

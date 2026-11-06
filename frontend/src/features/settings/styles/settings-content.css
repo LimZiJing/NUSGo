@@ -326,3 +326,21 @@
     padding-bottom: calc(var(--mobile-tab-bar-height) + var(--space-3));
   }
 }
+
+.settings-push {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.settings-push-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font: 400 var(--font-size-sm)/1.5 var(--sans);
+}
+
+.settings-push-error {
+  margin: 0;
+  color: var(--text-error-strong);
+  font: 600 var(--font-size-sm)/1.4 var(--sans);
+}

@@ -6,6 +6,10 @@ import { loadBackendConfig } from './config.ts'
 import { loadCanonicalData } from './canonical-data.ts'
 import { createBackendLiveData } from './live-data/runtime.ts'
 import { createPathfindingService } from './pathfinding/service.ts'
+import { createPushSubscriptionStore } from './push/subscription-store.ts'
+import { createNotificationCap } from './push/notification-cap.ts'
+import { createServiceUpdatePublisher } from './push/service-update-publisher.ts'
+import { createWebPushSender } from './push/web-push-sender.ts'
 import type { BackendConfig } from './config.ts'
 
 export function listenHttpServer(
@@ -41,9 +45,30 @@ export function closeHttpServer(server: Server, timeoutMs = 10_000): Promise<voi
 async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
-  const liveData = await createBackendLiveData(config, data)
+  const pushStore = createPushSubscriptionStore()
+  const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
+  const pushPublisher = config.push
+    ? createServiceUpdatePublisher({
+      store: pushStore,
+      push: config.push,
+      sendNotification: createWebPushSender(config.push).sendNotification,
+      stopName: (stopId) => data.network.stops.find(({ id }) => id === stopId)?.longName ?? null,
+    })
+    : null
+  const liveData = await createBackendLiveData(config, data, {
+    onArrivalSnapshotPublished: (snapshot) => {
+      // Delivery is intentionally fire-and-forget: a slow push service must not delay the next refresh.
+      void pushPublisher?.publish(snapshot).catch((error: unknown) => {
+        console.error('NUSGo push notification failed.', error instanceof Error ? error.name : typeof error)
+      })
+    },
+  })
   const pathfinding = createPathfindingService(data, liveData, config)
-  const server = await listenHttpServer(createApp(config, data, liveData, pathfinding), config.host, config.port)
+  const server = await listenHttpServer(
+    createApp(config, data, liveData, pathfinding, { store: pushStore, cap: pushCap }),
+    config.host,
+    config.port,
+  )
   liveData.start()
   console.info('NUSGo Express API is listening.', {
     host: config.host,

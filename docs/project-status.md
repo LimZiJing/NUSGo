@@ -17,11 +17,11 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
-| More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
+| More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites, push notification opt-in and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
-| PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
+| PWA | Installable app shell with offline static data, install/update prompts and web push service-update notifications | [PWA guide](pwa.md) |
 | Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
 | Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
 
@@ -38,7 +38,7 @@ Also in place:
 - **Building entrances** are unverified. 29 buildings use a provisional OpenStreetMap entrance, and the review in #260 is open.
 - **Journey planning** needs a configured Valhalla endpoint. Search is bounded, so a recommended Path is complete and valid but not claimed to be the global best. See [Pathfinding](pathfinding.md#speed-and-limits).
 - **Live data** needs server-side NUS credentials, and live-arrival reliability still needs separate verification. NUSMods' NextBus client provides no route geometry.
-- **One Express instance only.** The shuttle snapshot and rate limiters live in process memory.
+- **One Express instance only.** The shuttle snapshot, rate limiters and push subscriptions live in process memory.
 - **Location** depends on browser permission and device accuracy. It doesn't replan journeys or continue after the app closes.
 - **Browser evidence** is partial. Targeted checks exist at 1280 × 720. The exact release and mobile viewports and failure injection still need manual verification.
 - **Website release history** starts empty until the first successful production promotion bundles reviewed notes. After each promotion, a trusted follow-up workflow records the exact deployment time and immutable commit tag. Backend deployment intervals still need to be reviewed and summarized by the release operator. See [release notes](release-notes.md).

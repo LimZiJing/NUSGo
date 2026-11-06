@@ -69,6 +69,12 @@
 
 .button.saved-list-row-select:hover strong { color: var(--accent); }
 
+@media (hover: hover) {
+  .button.saved-list-row-select[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background: transparent;
+  }
+}
+
 .button.saved-list-row-select:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 1px;

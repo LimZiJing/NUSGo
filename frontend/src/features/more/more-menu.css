@@ -4,6 +4,7 @@
   text-align: left;
 }
 
+/* Destination rows keep their card layout here; Button owns shared control behavior. */
 .more-menu-row {
   display: flex;
   min-height: 54px;

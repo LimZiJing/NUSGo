@@ -16,7 +16,7 @@ This is the specification for NUSGo buttons, chips, and pills. Vocabulary is def
 
 `NavigateButton` is a primary `Button` with the navigation icon. `BackButton` uses the shared `IconButton` or `Button` for header, inline and label-only back actions. Inline mode keeps the existing compact arrow-and-label geometry.
 
-Props are platform-neutral. `className` is for layout. Shared variants and tokens own a control's appearance; the two rich feature-surface exceptions are listed below.
+Props are platform-neutral. `className` is for layout. Shared variants and tokens own a control's appearance; documented feature surfaces below keep local styling to preserve established layouts.
 
 ### Variants
 
@@ -86,8 +86,8 @@ Keyboard: Enter, Space or ArrowDown on the trigger opens the list with the selec
 Every new interactive control is at least 36px tall and wide (`--control-height-sm`). The mobile sheet grab bar is the only approved compact target:
 
 - **Mobile sheet handle**: the handle row is 24px tall at the partial and full detents, which meets the WCAG 2.2 AA target-size minimum (2.5.8) but not the 36px standard. This keeps the space between the grab bar and the sheet content tight (10px above and below the bar). The handle is full width, and a swipe anywhere on the sheet also moves it. Its keyboard focus uses a background tint instead of a ring (see above). Do not extend this exception to other controls.
-- **Existing compact back and route controls**: inline `BackButton` has a 23px target and compact `RouteChip` has a 24px target. These are known shortfalls tracked by #304; this migration preserves their current appearance, and they are not models for new controls.
-- **Feature-owned content surfaces**: Explore result cards and Plan journey summary rows use named feature classes for their rich, multi-line surfaces while composing the shared `Button`. Their colors use theme tokens and their local state rules preserve the existing card behavior. Keep these classes in their owning feature stylesheets; do not add shared variants for a one-off surface.
+- **Existing undersized controls**: inline `BackButton` has a 23px target, compact `RouteChip` has a 24px target, and Plan search filter chips have a 28px target. These are known shortfalls tracked by #304; this migration preserves their current appearance, and they are not models for new controls.
+- **Feature-owned surfaces**: Explore result cards, Plan journey summary rows, Plan search filter chips, More destination rows, Stops disclosure rows, and the selectable copy in `SavedListRow` use named local classes for their established layout and appearance while composing `Button` or `Chip` for shared interaction and state behavior. Their colors use theme tokens. Keep these styles in the owning feature or row stylesheet; do not add shared variants for a one-off surface.
 
 ## Gallery
 
@@ -114,5 +114,6 @@ The feature control migration is complete: Explore, Plan, Stops, More, Waypoints
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
 - [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
+- [x] Saved lists (selectable row copy uses `Button`; row layout remains in `SavedListRow`)
 
 `InfoPill` keeps its 10px metrics because it is non-interactive. Map popup route labels are non-interactive elements with the `route-chip` class.

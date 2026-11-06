@@ -179,6 +179,33 @@ describe('control token contrast', () => {
     }
   })
 
+  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    const tokens = readCustomPropertyNames(styles)
+
+    expect(tokens).toEqual(expect.arrayContaining(['--accent-selected', '--surface-control-hover']))
+    expect(readCustomPropertyValue(styles, '--accent-selected'))
+      .toBe('color-mix(in srgb, var(--accent) 26%, var(--surface-control))')
+    expect(readCustomPropertyValue(styles, '--surface-control-hover'))
+      .toBe('color-mix(in srgb, var(--text-primary) 11%, var(--surface-control))')
+
+    const ratioOf = (foreground: string, background: string) => contrastRatio(
+      resolveColour(styles, foreground),
+      resolveColour(styles, background),
+    )
+
+    expect(ratioOf('--text-primary', '--accent-selected')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-hover', '--accent-selected')).toBeGreaterThanOrEqual(3)
+    expect(ratioOf('--text-primary', '--surface-control-hover')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-selected', '--surface-control')).toBeGreaterThanOrEqual(1.25)
+    expect(ratioOf('--surface-control-hover', '--surface-control')).toBeGreaterThanOrEqual(1.1)
+  })
+
+  it('uses semantic control colors instead of brightness filters', () => {
+    for (const file of ['base.css', 'controls/button.css', 'controls/chip.css', 'map.css']) {
+      expect(readStyleFile(file), file).not.toMatch(/brightness\s*\(/)
+    }
+  })
   it.each(themes)('defines --control-border in the %s theme', (themeName) => {
     expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
   })

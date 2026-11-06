@@ -37,6 +37,20 @@
   background: transparent;
 }
 
+/* Inline back links keep their compact arrow-and-label geometry. */
+.button[data-back-button-mode='inline'] {
+  min-height: 0;
+  gap: var(--space-1);
+  padding: 3px;
+  border: 0;
+}
+
+.button[data-back-button-mode='inline'] svg {
+  flex-basis: 17px;
+  width: 17px;
+  height: 17px;
+}
+
 .button[aria-pressed='true'] {
   border-color: var(--accent);
   color: var(--text-primary);

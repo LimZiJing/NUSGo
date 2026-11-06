@@ -1,7 +1,9 @@
 :root {
   --rainroom-swatch-slate: #152a40;
   --rainroom-swatch-walnut: #845638;
+  --rainroom-swatch-dark-oak: #4a3427;
   --rainroom-swatch-moss: #586b50;
+  --rainroom-swatch-pine: #5f7b59;
   --rainroom-swatch-amber: #e8b466;
   --rainroom-lamplight: #f28a24;
 }
@@ -9,6 +11,7 @@
 :root[data-theme='rainroom'] {
     --rainroom-slate: var(--rainroom-swatch-slate);
     --rainroom-moss: var(--rainroom-swatch-moss);
+    --rainroom-pine: var(--rainroom-swatch-pine);
 
     --surface: #0c1924;
     --surface-raised: #122330;
@@ -32,7 +35,7 @@
     --surface-segmented-control: #182d39;
     --surface-card: #162a36;
     --surface-handle: #a6ad98;
-    --surface-journey-step: #33483e;
+    --surface-journey-step: #263a46;
 
     --text-primary: #f0eee6;
     --text-secondary: #d6d5ca;
@@ -69,16 +72,16 @@
     --border-success: #667b5a;
     --border-warning: #927044;
     --border-info: #617b80;
-    --border-focus: #f0bd70;
+    --border-focus: var(--rainroom-lamplight);
     --border-card: #3b505a;
 
-    --accent: #e8b466;
-    --accent-hover: #f4c77e;
+    --accent: var(--rainroom-lamplight);
+    --accent-hover: #f7a24d;
     --accent-contrast: #25231d;
-    --accent-soft: #4a4030;
-    --focus-ring: #e8b466;
-    --focus-ring-soft: rgb(232 180 102 / 44%);
-    --focus-ring-strong: rgb(232 180 102 / 58%);
+    --accent-soft: color-mix(in srgb, var(--rainroom-lamplight) 18%, var(--surface-raised));
+    --focus-ring: var(--rainroom-lamplight);
+    --focus-ring-soft: rgb(242 138 36 / 44%);
+    --focus-ring-strong: rgb(242 138 36 / 58%);
     --focus-ring-neutral: rgb(174 190 169 / 38%);
 
     --status-success: #b5c49a;
@@ -102,7 +105,7 @@
     --shadow-sm: 0 1px 3px rgb(0 0 0 / 25%);
     --shadow-md: 0 1px 4px rgb(0 0 0 / 35%);
     --shadow-lg: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px -12px rgb(8 17 24 / 48%);
-    --shadow-panel: 0 1px 4px rgb(8 17 24 / 40%), 0 0 20px -15px rgb(242 138 36 / 14%);
+    --shadow-panel: 0 1px 4px rgb(8 17 24 / 40%), 0 0 24px -12px rgb(242 138 36 / 26%);
     --shadow-card-strong: 0 1px 3px rgb(8 17 24 / 44%), 0 0 16px -12px rgb(242 138 36 / 13%);
     --shadow-chip: 0 2px 7px rgb(0 0 0 / 30%);
     --shadow-sheet:

@@ -75,6 +75,8 @@ import {
   filterPersonalWaypointsByCategoryVisibility,
   getPersonalWaypointCategoryOptions,
 } from '../domain/waypoints/personal/personal-waypoint-category-visibility'
+import { createPushNotificationService } from '../infrastructure/push/push-runtime'
+import { parsePushClickTarget, subscribeToPushClicks } from '../pwa/push-click'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -139,6 +141,7 @@ function App() {
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const [pushNotifications] = useState(createPushNotificationService)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
   const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
     personalWaypointCategoryVisibilityStore,
@@ -400,6 +403,27 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const openStopInStopsFromNotification = appNavigation.openStopDetailsFromMap
+  const openStopFromNotification = useCallback((stopId: string): void => {
+    // A tap from a notification is an explicit navigation request, so close More (Settings and
+    // waypoints screens) before revealing Stops.
+    setMorePage('closed')
+    openStopInStopsFromNotification(stopId)
+  }, [openStopInStopsFromNotification])
+  // A notification tap arrives as a service-worker message when a window is open, and as the
+  // launch URL when it is not. Both routes open the affected stop in Stops.
+  useEffect(
+    () => subscribeToPushClicks((target) => openStopFromNotification(target.stopId)),
+    [openStopFromNotification],
+  )
+  useEffect(() => {
+    const target = parsePushClickTarget(window.location.search)
+    if (!target) return
+    // Drop the link so a reload or a later visit does not reopen the same stop.
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+    const timeout = window.setTimeout(() => openStopFromNotification(target.stopId), 0)
+    return () => window.clearTimeout(timeout)
+  }, [openStopFromNotification])
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return
@@ -1171,6 +1195,7 @@ function App() {
                 transitMetadata={state.transitIndex?.network.metadata ?? null}
                 buildingSource={state.buildings?.source ?? null}
                 dataVersion={__NUSGO_DATA_VERSION__}
+                pushNotifications={pushNotifications}
               />
             ) : null,
           }}

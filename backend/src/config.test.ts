@@ -206,4 +206,53 @@ describe('backend live-data settings', () => {
     assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '34' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
     assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '2.5' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
   })
+
+  it('leaves web push disabled when no VAPID keys are set', () => {
+    assert.equal(loadBackendConfig({}).push, null)
+  })
+
+  it('loads VAPID keys and bounded push limits', () => {
+    const config = loadBackendConfig({
+      VAPID_PUBLIC_KEY: 'BPublicKeyValue',
+      VAPID_PRIVATE_KEY: 'PrivateKeyValue',
+      VAPID_SUBJECT: 'mailto:ops@example.com',
+      PUSH_SUBSCRIPTION_RATE_LIMIT_MAX_REQUESTS: '5',
+      PUSH_NOTIFICATIONS_PER_HOUR_CAP: '3',
+    })
+
+    assert.deepEqual(config.push, {
+      publicKey: 'BPublicKeyValue',
+      privateKey: 'PrivateKeyValue',
+      subject: 'mailto:ops@example.com',
+      subscriptionRateLimitMaxRequests: 5,
+      notificationsPerHourCap: 3,
+    })
+  })
+
+  it('defaults the subject and push limits', () => {
+    const config = loadBackendConfig({ VAPID_PUBLIC_KEY: 'BPublicKeyValue', VAPID_PRIVATE_KEY: 'PrivateKeyValue' })
+
+    assert.equal(config.push?.subject, 'mailto:nusgo@u.nus.edu')
+    assert.equal(config.push?.subscriptionRateLimitMaxRequests, 10)
+    assert.equal(config.push?.notificationsPerHourCap, 4)
+  })
+
+  it('rejects half-configured push keys and invalid push settings', () => {
+    assert.throws(() => loadBackendConfig({ VAPID_PUBLIC_KEY: 'BPublicKeyValue' }), /VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY/)
+    assert.throws(() => loadBackendConfig({ VAPID_PRIVATE_KEY: 'PrivateKeyValue' }), /VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY/)
+    assert.throws(() => loadBackendConfig({
+      VAPID_PUBLIC_KEY: 'not a key!',
+      VAPID_PRIVATE_KEY: 'PrivateKeyValue',
+    }), /VAPID_PUBLIC_KEY must be/)
+    assert.throws(() => loadBackendConfig({
+      VAPID_PUBLIC_KEY: 'BPublicKeyValue',
+      VAPID_PRIVATE_KEY: 'PrivateKeyValue',
+      VAPID_SUBJECT: 'nusgo@example.com',
+    }), /VAPID_SUBJECT must be/)
+    assert.throws(() => loadBackendConfig({
+      VAPID_PUBLIC_KEY: 'BPublicKeyValue',
+      VAPID_PRIVATE_KEY: 'PrivateKeyValue',
+      PUSH_NOTIFICATIONS_PER_HOUR_CAP: '0',
+    }), /PUSH_NOTIFICATIONS_PER_HOUR_CAP/)
+  })
 })

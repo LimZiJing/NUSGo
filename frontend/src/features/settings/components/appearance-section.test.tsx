@@ -3,6 +3,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { OTHER_THEMES } from '../../../ui/themes/catalog'
 import { AppearanceSection } from './appearance-section'
 
 afterEach(cleanup)
@@ -59,7 +60,7 @@ describe('Appearance settings', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('nus')
   })
 
-  it('selects Rainroom from the theme dropdown', async () => {
+  it.each(OTHER_THEMES)('selects $label from the theme dropdown', async ({ id, label }) => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -72,7 +73,7 @@ describe('Appearance settings', () => {
     )
 
     await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
-    await user.click(screen.getByRole('option', { name: 'Rainroom' }))
-    expect(onChange).toHaveBeenCalledExactlyOnceWith('rainroom')
+    await user.click(screen.getByRole('option', { name: label }))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(id)
   })
 })

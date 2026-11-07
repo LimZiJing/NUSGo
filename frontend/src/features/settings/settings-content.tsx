@@ -1,4 +1,5 @@
 import type { ThemePreference } from '../../ui/theme'
+import { THEME_CATALOG } from '../../ui/themes/catalog'
 import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
@@ -23,16 +24,6 @@ interface SettingsContentProps {
   readonly dataVersion: string
 }
 
-const APPEARANCE_SUMMARIES: Record<ThemePreference, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-  nus: 'NUS palette',
-  matcha: 'Matcha palette',
-  sakura: 'Sakura palette',
-  rainroom: 'Rainroom palette',
-}
-
 export function SettingsContent({
   themePreference,
   onThemePreferenceChange,
@@ -46,12 +37,16 @@ export function SettingsContent({
   buildingSource,
   dataVersion,
 }: SettingsContentProps) {
+  const appearanceSummary = themePreference === 'system'
+    ? 'System'
+    : THEME_CATALOG.find(({ id }) => id === themePreference)?.summary ?? themePreference
+
   return (
     <div className="settings-content">
       <SettingsDisclosure
         title="Appearance"
         icon={<PaletteIcon />}
-        subtitle={APPEARANCE_SUMMARIES[themePreference]}
+        subtitle={appearanceSummary}
       >
         <AppearanceSection
           preference={themePreference}

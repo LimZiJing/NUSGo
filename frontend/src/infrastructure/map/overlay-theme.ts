@@ -1,4 +1,4 @@
-export type OverlayTheme = 'light' | 'dark' | 'rainroom'
+export type OverlayTheme = 'light' | 'dark'
 
 export interface OverlayPalette {
   /** Route lines when no route is focused. */
@@ -28,22 +28,47 @@ const DARK_PALETTE: OverlayPalette = {
   stopHaloFaded: 'rgba(11, 18, 32, 0.2)',
 }
 
-const RAINROOM_PALETTE: OverlayPalette = {
-  routeBase: '#c0bfad',
-  routeCasing: '#273431',
-  stopText: '#f2efe5',
-  stopTextMuted: '#c4c4b7',
-  stopHalo: '#293431',
-  stopHaloFaded: 'rgba(41, 52, 49, 0.3)',
+const MAP_PALETTE_PROPERTIES: Readonly<Record<keyof OverlayPalette, string>> = {
+  routeBase: '--map-route-base',
+  routeCasing: '--map-route-casing',
+  stopText: '--map-stop-text',
+  stopTextMuted: '--map-stop-text-muted',
+  stopHalo: '--map-stop-halo',
+  stopHaloFaded: '--map-stop-halo-faded',
 }
 
-/** Dark and Rainroom use the dark map treatment; other themes use the light map. */
+function getDocumentStyles(): CSSStyleDeclaration | undefined {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return undefined
+  return window.getComputedStyle(document.documentElement)
+}
+
+/** Theme styles select the basemap tone without making map code depend on theme names. */
 export function getDocumentTheme(): OverlayTheme {
-  // Node tests run without a DOM, or with a partial one.
-  const theme = typeof document !== 'undefined' ? document.documentElement?.dataset.theme : undefined
-  return theme === 'rainroom' ? 'rainroom' : theme === 'dark' ? 'dark' : 'light'
+  const tone = getDocumentStyles()?.getPropertyValue('--map-basemap-tone').trim()
+  if (tone === 'dark') return 'dark'
+  if (tone === 'light') return 'light'
+
+  // Retain the dark-mode fallback for tests or incomplete documents without theme styles.
+  return typeof document !== 'undefined' && document.documentElement?.dataset.theme === 'dark'
+    ? 'dark'
+    : 'light'
 }
 
-export function getOverlayPalette(theme: OverlayTheme = getDocumentTheme()): OverlayPalette {
-  return theme === 'rainroom' ? RAINROOM_PALETTE : theme === 'dark' ? DARK_PALETTE : LIGHT_PALETTE
+export function getOverlayPalette(): OverlayPalette {
+  const fallback = getDocumentTheme() === 'dark' ? DARK_PALETTE : LIGHT_PALETTE
+  const styles = getDocumentStyles()
+
+  if (!styles) return fallback
+
+  const readColour = (property: keyof OverlayPalette): string =>
+    styles.getPropertyValue(MAP_PALETTE_PROPERTIES[property]).trim() || fallback[property]
+
+  return {
+    routeBase: readColour('routeBase'),
+    routeCasing: readColour('routeCasing'),
+    stopText: readColour('stopText'),
+    stopTextMuted: readColour('stopTextMuted'),
+    stopHalo: readColour('stopHalo'),
+    stopHaloFaded: readColour('stopHaloFaded'),
+  }
 }

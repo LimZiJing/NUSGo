@@ -1,7 +1,7 @@
 import type { Map } from 'maplibre-gl'
 import { getDocumentTheme } from './overlay-theme'
 
-export type BasemapTheme = 'light' | 'dark' | 'rainroom'
+export type BasemapTheme = 'light' | 'dark'
 
 type ColorRole = 'surface' | 'line' | 'text' | 'halo'
 
@@ -246,8 +246,8 @@ function captureOriginalPaint(map: Map): readonly OriginalPaint[] {
 
 /**
  * Recolours the basemap in place so the route, stop and label layers added on
- * top of it survive a theme change. Dark and Rainroom darken the map; other
- * themes get the quiet version of the style's own colours.
+ * top of it survive a theme change. Dark tones dim the map; light tones quiet
+ * the style's own colours.
  */
 export function applyBasemapTheme(map: Map, theme: BasemapTheme): void {
   let originals = originalPaintByMap.get(map)

@@ -1,4 +1,5 @@
 import type { ThemePreference } from '../../../ui/theme'
+import { OTHER_THEMES } from '../../../ui/themes/catalog'
 import type { MinuteFormat } from '../../../domain/trip/minute-format'
 import { MonitorIcon, MoonIcon, SunIcon } from '../../../ui/icons'
 import { Select } from '../../../ui/select'
@@ -16,17 +17,12 @@ const THEME_CHOICES = [
   { value: 'dark', label: 'Dark', Icon: MoonIcon },
 ] as const
 
-const OTHER_THEME_CHOICES = [
-  { value: 'nus', label: 'NUS' },
-  { value: 'matcha', label: 'Matcha' },
-  { value: 'sakura', label: 'Sakura' },
-  { value: 'rainroom', label: 'Rainroom' },
-] as const
+const OTHER_THEME_CHOICES = OTHER_THEMES
 
-const OTHER_THEME_OPTIONS = OTHER_THEME_CHOICES.map(({ value, label }) => ({
-  value,
+const OTHER_THEME_OPTIONS = OTHER_THEME_CHOICES.map(({ id, label }) => ({
+  value: id,
   label,
-  leading: <span className="settings-theme-swatch" data-theme-choice={value} />,
+  leading: <span className="settings-theme-swatch" data-theme-choice={id} />,
 }))
 
 const MINUTE_FORMAT_CHOICES = [
@@ -41,11 +37,11 @@ export function AppearanceSection({
   minuteFormat,
   onMinuteFormatChange,
 }: AppearanceSectionProps) {
-  const selectedOtherTheme = OTHER_THEME_CHOICES.find(({ value }) => preference === value)
+  const selectedOtherTheme = OTHER_THEME_CHOICES.find(({ id }) => preference === id)
 
   function handleOtherThemeChange(value: string) {
-    const choice = OTHER_THEME_CHOICES.find((theme) => theme.value === value)
-    if (choice) onChange(choice.value)
+    const choice = OTHER_THEME_CHOICES.find((theme) => theme.id === value)
+    if (choice) onChange(choice.id)
   }
 
   return (
@@ -82,7 +78,7 @@ export function AppearanceSection({
         <div className="settings-choice-heading">Other themes</div>
         <Select
           label="Other themes"
-          value={selectedOtherTheme?.value ?? ''}
+          value={selectedOtherTheme?.id ?? ''}
           placeholder="Choose"
           options={OTHER_THEME_OPTIONS}
           onChange={handleOtherThemeChange}

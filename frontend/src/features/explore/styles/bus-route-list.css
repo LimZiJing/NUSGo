@@ -78,7 +78,8 @@
 }
 
 @media (hover: hover) {
-  .explore-bus-route-list-stop:hover {
+  /* Keep the timeline's established hover fill above Button's shared hover rule. */
+  .button.explore-bus-route-list-stop[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
     background-color: var(--surface-subtle);
   }
 }

@@ -20,6 +20,8 @@
   --surface-faint: #fff8ef;
   --surface-info-soft: #e4edf7;
   --surface-control: #f5d1aa;
+  --accent-selected: color-mix(in srgb, var(--accent) 26%, var(--surface-control));
+  --surface-control-hover: color-mix(in srgb, var(--text-primary) 11%, var(--surface-control));
   --surface-warning: #fff1cc;
   --surface-segmented-control: #f7e1c8;
   --surface-card: #fbefe1;
@@ -39,6 +41,7 @@
   --text-warning: #7a5410;
   --text-success-strong: #286448;
   --text-error-strong: #9b3d48;
+  /* Icon-only; keep 3:1 contrast on the surfaces where favorites appear. */
   --text-favorite: #9c6500;
   --bus-stop-default-color: var(--brand-blue);
   --personal-waypoint-marker-blue: #5b83e6;

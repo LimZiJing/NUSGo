@@ -7,7 +7,7 @@ import type {
 } from '../data/stop-timing-data'
 import { InfoPill } from '../../../ui/info-pill'
 import { StatusDot, type StatusDotTone } from '../../../ui/status-dot'
-import { IconButton } from '../../../ui/button'
+import { Button, IconButton } from '../../../ui/button'
 import { BusIcon, FavoriteIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
 
@@ -68,13 +68,12 @@ export function StopCard({
   return (
     <article className="stop-card">
       <div className="stop-card-header">
-        <button
+        <Button
           className="stop-card-toggle"
           type="button"
-          data-hover-filter="none"
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, bus stop arrival times`}
-          aria-expanded={expanded}
-          aria-controls={timingsId}
+          ariaLabel={`${expanded ? 'Collapse' : 'Expand'} ${stopName}, bus stop arrival times`}
+          expanded={expanded}
+          controls={timingsId}
           onClick={() => onToggleExpanded(stopId)}
         >
           <span className="stop-card-identity">
@@ -92,7 +91,7 @@ export function StopCard({
           )}
           <span className="stop-card-favorite-space" aria-hidden="true" />
           <DisclosureChevron expanded={expanded} className="stop-card-chevron" />
-        </button>
+        </Button>
         <IconButton
           className="stop-card-favorite"
           variant="plain"

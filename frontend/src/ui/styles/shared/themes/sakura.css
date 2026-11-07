@@ -17,6 +17,8 @@
   --surface-faint: #f5e9ec;
   --surface-info-soft: #eee8fa;
   --surface-control: #d9b8c3;
+  --accent-selected: color-mix(in srgb, var(--accent) 26%, var(--surface-control));
+  --surface-control-hover: color-mix(in srgb, var(--text-primary) 11%, var(--surface-control));
   --surface-warning: #fff1cf;
   --surface-segmented-control: #e5d1d8;
   --surface-card: #ead8df;
@@ -34,9 +36,10 @@
   --text-secondary-strong: #7a5061;
   --text-disabled: #c7adb7;
   --text-warning: #7b5315;
-  --text-success-strong: #2f6c5a;
+  --text-success-strong: #2c6353;
   --text-error-strong: #963948;
-  --text-favorite: #b47d00;
+  /* Icon-only; keep 3:1 contrast on the surfaces where favorites appear. */
+  --text-favorite: #8c5d00;
   --bus-stop-default-color: #6b4050;
   --personal-waypoint-marker-blue: #5b83e6;
   --personal-waypoint-marker-red: #ed2224;

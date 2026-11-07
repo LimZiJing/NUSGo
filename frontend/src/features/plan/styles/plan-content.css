@@ -10,7 +10,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .journey-option-summary:active {
+  .button.journey-option-summary:active:not(:disabled) {
     transform: none;
   }
 }
@@ -84,7 +84,7 @@
 
 .journey-result-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: var(--ring-journey-selected);
 }
 
 .journey-result-heading {
@@ -107,15 +107,12 @@
   cursor: pointer;
 }
 
-.journey-option-collapse:hover {
-  background: var(--surface-muted);
-}
-
 .journey-option-collapse:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
+/* The multi-line journey summary keeps its feature-owned surface and local focus treatment. */
 .journey-option-summary {
   display: grid;
   width: 100%;
@@ -129,10 +126,6 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-}
-
-.journey-option-summary:hover {
-  background: var(--surface-muted);
 }
 
 .journey-option-summary:focus-visible {
@@ -338,7 +331,7 @@
   /* Match the marker's outer diameter to the rail's grid geometry. */
   box-sizing: border-box;
   background: var(--surface-journey-step);
-  box-shadow: 0 0 0 1px var(--border-control);
+  box-shadow: var(--ring-journey-timeline);
 }
 
 .journey-timeline-content {
@@ -930,7 +923,9 @@
   gap: var(--space-1);
 }
 
-.plan-search-chip {
+/* Keep the existing compact filter look while using Chip for its selectable-choice behavior. */
+.chip.plan-search-chip {
+  flex: 0 1 auto;
   min-height: 28px;
   padding: 0 var(--space-3);
   border: 0;
@@ -940,17 +935,30 @@
   font: inherit;
   font-size: var(--font-size-sm);
   cursor: pointer;
+  transition: none;
 }
 
-.plan-search-chip[aria-pressed='true'] {
+.chip.plan-search-chip[aria-pressed='true'] {
+  border-color: transparent;
   color: var(--accent-contrast);
   background: var(--accent);
+  box-shadow: none;
 }
 
-.plan-search-chip:focus-visible,
+.chip.plan-search-chip:focus-visible,
 .plan-search-result:focus-visible {
   outline: 2px solid var(--focus-ring-neutral);
   outline-offset: 1px;
+}
+
+.chip.plan-search-chip:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip.plan-search-chip:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* The bar and chips stay put while the sheet's single scroll area moves the results. */
@@ -993,8 +1001,13 @@
   cursor: pointer;
 }
 
-.plan-search-result:hover {
-  background: var(--surface-muted);
+@media (hover: hover) {
+  /* Keep result and journey surfaces' established hover fills above Button's shared rule. */
+  .button.plan-search-result[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover,
+  .button.journey-option-summary[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover,
+  .button.journey-option-collapse[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background: var(--surface-muted);
+  }
 }
 
 .plan-search-result-icon {

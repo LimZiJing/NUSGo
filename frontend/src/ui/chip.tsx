@@ -51,7 +51,7 @@ export function Chip({
       type="button"
       data-size={size}
       data-selected={selected ? 'true' : undefined}
-      data-hover-filter="none"
+      data-hover-treatment="custom"
       style={tone ? { '--chip-tone': tone.fill, '--chip-tone-text': tone.text } as CSSProperties : undefined}
       disabled={disabled}
       aria-pressed={pressed}

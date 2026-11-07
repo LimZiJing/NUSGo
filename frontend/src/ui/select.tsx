@@ -198,7 +198,7 @@ export function Select({
         aria-labelledby={`${labelId} ${valueId}`}
         data-size={size}
         data-placeholder={selectedIndex < 0 ? 'true' : undefined}
-        data-hover-filter="none"
+        data-hover-treatment="custom"
         title={selectedLabel}
         onClick={handleTriggerClick}
         onMouseDown={handleTriggerMouseDown}

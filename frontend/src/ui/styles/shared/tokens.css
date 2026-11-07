@@ -3,6 +3,28 @@
   --theme-swatch-nus: linear-gradient(90deg, #003d7c 50%, #ef7c00 50%);
   --theme-swatch-matcha: #69846a;
   --theme-swatch-sakura: #b8798f;
+  /* Map meaning stays stable across appearance palettes; themes may override these roles deliberately. */
+  --map-marker-neutral: #64748b;
+  --map-marker-surface: #fff;
+  --map-location-dot: #4285f4;
+  --map-stop-selected: #334155;
+  --map-stop-selected-surface: #f1f5f9;
+  --map-trip-origin: #15803d;
+  --map-trip-destination: #dc2626;
+  --map-waypoint-marker-ink: #172033;
+
+  /* Named map and control rings preserve their existing geometry while keeping effects reusable. */
+  --ring-map-nearby-location: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  --shadow-map-location-dot: 0 0 0 1px var(--map-location-dot), 0 1px 4px rgb(15 23 42 / 55%);
+  --shadow-map-stop-marker: 0 1px 3px rgb(15 23 42 / 45%);
+  --shadow-map-selected-stop: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
+  --shadow-map-selected-stop-legend: 0 0 0 1px var(--surface-overlay), var(--shadow-md);
+  --shadow-map-trip-endpoint: 0 1px 4px rgb(15 23 42 / 55%);
+  --shadow-live-bus-highlight: inset 0 10px 0 -9px currentColor, inset 0 -11px 0 -10px currentColor;
+  --ring-journey-selected: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  --ring-journey-timeline: 0 0 0 1px var(--border-control);
+  --ring-waypoint-color-selected: 0 0 0 2px var(--accent);
+  --ring-stop-reachable-expanded: inset 0 0 0 1px var(--accent);
 
   --blur-overlay: blur(16px) saturate(1.6);
   --space-1: 4px;

@@ -147,6 +147,7 @@
     z-index: 1;
   }
 
+  /* Keep collapsed-row hover local; Button gives an expanded row the shared selected surface. */
   .stop-card-toggle {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto 30px 30px;
@@ -168,6 +169,13 @@
   .stop-card-toggle:focus-visible {
     outline: var(--focus-outline);
     outline-offset: calc(-1 * var(--focus-ring-width));
+  }
+
+  @media (hover: hover) {
+    /* Preserve the native toggle's transparent hover while Button supplies shared states. */
+    .button.stop-card-toggle[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+      background: transparent;
+    }
   }
 
   .stop-card-favorite svg {
@@ -255,7 +263,7 @@
     text-align: left;
   }
 
-  .stops-content .ghost-back-button {
+  .stops-content .button[data-back-button-mode='inline'] {
     justify-self: start;
   }
 
@@ -296,8 +304,7 @@
     gap: 8px;
   }
 
-  .stop-actions .navigate-button,
-  .stop-actions .stop-opposite {
+  .stop-actions > .button {
     flex: 1 1 0;
     min-width: 0;
     justify-content: center;
@@ -423,7 +430,7 @@
   .stop-reachable-more[aria-expanded='true'] .stop-reachable-more-label {
     color: var(--accent);
     background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent);
+    box-shadow: var(--ring-stop-reachable-expanded);
   }
 
   .stop-reachable-more:focus-visible {

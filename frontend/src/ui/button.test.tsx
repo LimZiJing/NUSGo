@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Button, IconButton } from './button'
@@ -69,6 +69,32 @@ describe('Button', () => {
   })
 })
 
+describe('Button composed content', () => {
+  it('forwards native data and pointer-event attributes', () => {
+    const onPointerDown = vi.fn()
+    render(<Button label="Result" data-focus-id="result-a" aria-current="step" onPointerDown={onPointerDown} onClick={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: 'Result' })
+    expect(button.getAttribute('data-focus-id')).toBe('result-a')
+    expect(button.getAttribute('aria-current')).toBe('step')
+    fireEvent.pointerDown(button)
+    expect(onPointerDown).toHaveBeenCalledOnce()
+  })
+  it('keeps rich content and supports a native submit action', () => {
+    render(
+      <Button type="submit" ariaLabel="Open Computer Centre">
+        <strong>COM1</strong>
+        <span>Computer Centre</span>
+      </Button>,
+    )
+
+    const button = screen.getByRole('button', { name: 'Open Computer Centre' })
+    expect(button.getAttribute('type')).toBe('submit')
+    expect(button.children).toHaveLength(2)
+    expect(button.querySelector('strong')?.textContent).toBe('COM1')
+    expect(button.lastElementChild?.textContent).toBe('Computer Centre')
+  })
+})
 describe('Button trailing icon', () => {
   it('renders the trailing icon after the label', () => {
     render(<Button label="Opposite stop" trailingIcon={<svg data-testid="trail" />} onClick={vi.fn()} />)

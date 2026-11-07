@@ -103,6 +103,8 @@
 @media (prefers-reduced-motion: reduce) {
   .route-scroll-arrow:active:not(:disabled) {
     transform: translateY(-50%);
+    color: var(--text-primary);
+    opacity: 1;
   }
 }
 

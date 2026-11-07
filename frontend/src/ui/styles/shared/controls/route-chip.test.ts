@@ -22,7 +22,7 @@ describe('bus route scrolling styles', () => {
 
   it('keeps route arrows centered when pressed and with reduced motion', () => {
     expect(styles).toMatch(/\.route-scroll-arrow:active:not\(:disabled\)\s*{[^}]*transform:\s*translateY\(-50%\) scale\(0\.98\);/s)
-    expect(styles).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*{[^}]*\.route-scroll-arrow:active:not\(:disabled\)\s*{[^}]*transform:\s*translateY\(-50%\);/s)
+    expect(styles).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*{[^}]*\.route-scroll-arrow:active:not\(:disabled\)\s*{[^}]*transform:\s*translateY\(-50%\);[^}]*color:\s*var\(--text-primary\);[^}]*opacity:\s*1;/s)
   })
 
   it('keeps shared route chips filled and vertically centered', () => {

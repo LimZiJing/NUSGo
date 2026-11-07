@@ -1,5 +1,6 @@
 import { buildApiUrl } from '../api/api-url'
 import type { PushNotificationTopic } from '@nusgo/shared/push/notifications'
+import type { PushReminderRegistration } from '@nusgo/shared/push/reminders'
 import type {
   PushSubscriptionRegistration,
   PushSubscriptionUnsubscribeRequest,
@@ -10,6 +11,9 @@ export interface PushSubscriptionClient {
   getPublicKey(signal?: AbortSignal): Promise<string | null>
   register(registration: PushSubscriptionRegistration, signal?: AbortSignal): Promise<void>
   unregister(endpoint: string, signal?: AbortSignal): Promise<void>
+  /** Registers, or replaces, this endpoint's alight reminder for one stop and route. */
+  registerReminder(registration: PushReminderRegistration, signal?: AbortSignal): Promise<void>
+  unregisterReminder(endpoint: string, signal?: AbortSignal): Promise<void>
 }
 
 interface PushSubscriptionClientOptions {
@@ -28,6 +32,8 @@ export function createPushSubscriptionClient(
   const publicKeyUrl = buildApiUrl('/api/push/public-key', options.apiOrigin)
   const subscriptionsUrl = buildApiUrl('/api/push/subscriptions', options.apiOrigin)
   const removeUrl = buildApiUrl('/api/push/subscriptions/remove', options.apiOrigin)
+  const remindersUrl = buildApiUrl('/api/push/reminders', options.apiOrigin)
+  const removeReminderUrl = buildApiUrl('/api/push/reminders/remove', options.apiOrigin)
 
   const post = async (url: string, body: unknown, signal?: AbortSignal): Promise<Response> => {
     return fetcher(url, {
@@ -61,6 +67,17 @@ export function createPushSubscriptionClient(
         throw new Error(`push unsubscribe request failed: ${response.status}`)
       }
     },
+    async registerReminder(registration, signal) {
+      const response = await post(remindersUrl, registration, signal)
+      if (!response.ok) throw new Error(`push reminder request failed: ${response.status}`)
+    },
+    async unregisterReminder(endpoint, signal) {
+      const body: PushSubscriptionUnsubscribeRequest = { endpoint }
+      const response = await post(removeReminderUrl, body, signal)
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`push reminder removal failed: ${response.status}`)
+      }
+    },
   }
 }
 
@@ -74,4 +91,16 @@ export function toPushSubscriptionRegistration(
   const auth = subscription.keys?.auth
   if (!endpoint || !p256dh || !auth) return null
   return { endpoint, keys: { p256dh, auth }, topic }
+}
+
+/** Same conversion for a reminder, whose topic is fixed by the shared contract. */
+export function toPushReminderRegistration(
+  subscription: { readonly endpoint?: string; readonly keys?: { readonly p256dh?: string; readonly auth?: string } },
+  watch: { readonly stopId: string; readonly routeId: string },
+): PushReminderRegistration | null {
+  const endpoint = subscription.endpoint
+  const p256dh = subscription.keys?.p256dh
+  const auth = subscription.keys?.auth
+  if (!endpoint || !p256dh || !auth) return null
+  return { endpoint, keys: { p256dh, auth }, topic: 'alight-reminders', watch }
 }

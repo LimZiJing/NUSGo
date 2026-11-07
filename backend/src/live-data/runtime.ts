@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { evaluateShuttleService } from '@nusgo/shared'
 import type {
   ApiErrorCode,
   ApiPublicBusArrivalsResponse,
@@ -8,6 +9,7 @@ import type {
   PublicBusArrivalSnapshot,
   ShuttleArrivalSnapshot,
   ShuttleLoadLevel,
+  ShuttleServiceStatus,
 } from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
 import type { BackendData } from '../canonical-data.ts'
@@ -39,6 +41,14 @@ export interface BackendLiveData {
   getVehicles(routeIds: readonly string[]): ApiShuttleVehiclesResponse
   getServiceWindows(routeIds: readonly string[], signal?: AbortSignal): Promise<ApiShuttleServiceWindowsResponse>
   getPublicBusArrivals(stopIds: readonly string[]): Promise<ApiPublicBusArrivalsResponse>
+  /**
+   * Whether a route is running right now, read only from service hours that are already cached.
+   *
+   * Alight reminders must not cause an upstream call, so this never loads anything: a route with
+   * no cached service hours reports `unknown`, which callers are expected to treat as "no reason
+   * to suppress" rather than as "running".
+   */
+  getShuttleServiceStatus(routeId: string, atMs?: number): ShuttleServiceStatus | 'unknown'
   start(): void
   stop(): Promise<void>
 }
@@ -361,6 +371,12 @@ export async function createBackendLiveData(
         }
       })()
       return waitForRequest(track(operation), requestSignal)
+    },
+    getShuttleServiceStatus(routeId, atMs = now()) {
+      // Peek at cached hours only: a reminder check must never add an upstream request.
+      const cached = nusServiceWindows?.peek(routeId) ?? null
+      if (!cached || cached.windows.length === 0) return 'unknown'
+      return evaluateShuttleService(cached.windows, new Date(atMs)).status
     },
     getPublicBusArrivals(stopIds) {
       if (!config.liveData.ltaAccountKey) {

@@ -763,6 +763,7 @@ function App() {
       loadArrivals={loadStopsArrivals}
       loadPublicArrivals={loadPublicBusArrivals}
       loadServiceWindows={loadStopsServiceWindows}
+      pushNotifications={pushNotifications}
       requestLocation={session ? requestNearbyLocation : null}
       locateFromControl={commands.locateUser}
       enableLocationTracking={commands.enableLocationTracking}

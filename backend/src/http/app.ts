@@ -5,6 +5,9 @@ import type { BackendLiveData } from '../live-data/runtime.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'
 import { registerJourneyRoutes } from './routes/journeys.ts'
+import { registerPushRoutes } from './routes/push.ts'
+import type { PushSubscriptionStore } from '../push/subscription-store.ts'
+import type { NotificationCap } from '../push/notification-cap.ts'
 import type { PathfindingService } from '../pathfinding/service.ts'
 import { createApiErrorHandler, sendApiError } from './error-response.ts'
 import { createCorsMiddleware } from './cors.ts'
@@ -24,6 +27,14 @@ type AppConfig = Pick<
   | 'journeyRequestTimeoutMs'
 > & {
   readonly environment?: BackendConfig['environment']
+  /** Absent when a caller does not register push routes. */
+  readonly push?: BackendConfig['push']
+}
+
+/** Push collaborators wired by the process; omitted in tests that do not exercise push routes. */
+export interface AppPushDependencies {
+  readonly store: PushSubscriptionStore
+  readonly cap: NotificationCap
 }
 
 export function createApp(
@@ -31,6 +42,7 @@ export function createApp(
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
   planner: PathfindingService | null = null,
+  pushDependencies: AppPushDependencies | null = null,
 ): Express {
   const app = express()
   app.disable('x-powered-by')
@@ -65,6 +77,14 @@ export function createApp(
     planner,
     config,
   )
+  if (pushDependencies) {
+    registerPushRoutes(app, {
+      push: config.push ?? null,
+      store: pushDependencies.store,
+      cap: pushDependencies.cap,
+      apiRateLimitWindowMs: config.apiRateLimitWindowMs,
+    })
+  }
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

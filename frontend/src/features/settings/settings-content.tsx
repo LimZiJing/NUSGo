@@ -3,8 +3,11 @@ import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
+import { PushNotificationsSection } from './components/push-notifications-section'
 import { SettingsDisclosure } from './components/settings-disclosure'
-import { FavoriteIcon, InfoIcon, PaletteIcon } from '../../ui/icons'
+import { usePushNotifications } from './use-push-notifications'
+import { BellIcon, FavoriteIcon, InfoIcon, PaletteIcon } from '../../ui/icons'
+import type { PushNotificationService } from '../../domain/push/push-notifications'
 import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
 import './styles/settings-content.css'
@@ -21,6 +24,8 @@ interface SettingsContentProps {
   readonly transitMetadata: TransitNetworkMetadata | null
   readonly buildingSource: BuildingCatalogueSource | null
   readonly dataVersion: string
+  /** Supplied by app composition so this feature never imports an infrastructure adapter. */
+  readonly pushNotifications: PushNotificationService
 }
 
 const APPEARANCE_SUMMARIES: Record<ThemePreference, string> = {
@@ -44,7 +49,10 @@ export function SettingsContent({
   transitMetadata,
   buildingSource,
   dataVersion,
+  pushNotifications,
 }: SettingsContentProps) {
+  const push = usePushNotifications(pushNotifications)
+
   return (
     <div className="settings-content">
       <SettingsDisclosure
@@ -57,6 +65,21 @@ export function SettingsContent({
           onChange={onThemePreferenceChange}
           minuteFormat={minuteFormat}
           onMinuteFormatChange={onMinuteFormatChange}
+        />
+      </SettingsDisclosure>
+      <SettingsDisclosure
+        title="Notifications"
+        icon={<BellIcon />}
+        subtitle={push.enabled ? 'On' : 'Off'}
+      >
+        <PushNotificationsSection
+          availability={push.availability}
+          permission={push.permission}
+          enabled={push.enabled}
+          busy={push.busy}
+          errorMessage={push.errorMessage}
+          onEnable={push.enable}
+          onDisable={push.disable}
         />
       </SettingsDisclosure>
       <SettingsDisclosure

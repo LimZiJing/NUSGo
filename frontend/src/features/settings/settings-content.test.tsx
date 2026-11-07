@@ -3,9 +3,17 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PushNotificationService } from '../../domain/push/push-notifications'
 import { SettingsContent } from './settings-content'
 
 afterEach(cleanup)
+
+const pushNotifications: PushNotificationService = {
+  getEnvironment: () => ({ availability: 'unsupported', permission: 'denied' }),
+  readPreference: () => null,
+  enable: async () => ({ preference: null, permission: 'denied' }),
+  disable: async () => null,
+}
 
 describe('Settings sections', () => {
   it('starts all sections collapsed and opens them independently when saved stops exist', async () => {
@@ -23,6 +31,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
 
@@ -69,6 +78,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
 
@@ -90,6 +100,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
@@ -113,6 +124,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
 

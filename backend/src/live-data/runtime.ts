@@ -6,6 +6,7 @@ import type {
   ApiShuttleServiceWindowsResponse,
   ApiShuttleVehiclesResponse,
   PublicBusArrivalSnapshot,
+  ShuttleArrivalSnapshot,
   ShuttleLoadLevel,
 } from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
@@ -58,6 +59,11 @@ interface BackendLiveDataOptions {
   readonly fetcher?: typeof fetch
   readonly now?: () => number
   readonly ltaMappings?: readonly LtaPublicBusStopMapping[]
+  /**
+   * Called with each newly published arrival snapshot. Web push reads this snapshot rather than
+   * polling upstream again, so notification delivery costs no extra provider request.
+   */
+  readonly onArrivalSnapshotPublished?: (snapshot: ShuttleArrivalSnapshot) => void
 }
 
 function toIso(timestampMs: number): string {
@@ -178,6 +184,15 @@ export async function createBackendLiveData(
           stopIds: failures.map(({ stopId }) => stopId),
           failureCount: failures.length,
         })
+      }
+      // Reuses the snapshot this refresh already produced; notification code never fetches upstream.
+      const published = log.published ? snapshotStore.getSnapshot() : null
+      if (published) {
+        try {
+          options.onArrivalSnapshotPublished?.(published)
+        } catch (error: unknown) {
+          console.error('NUSGo snapshot notification hook failed.', error instanceof Error ? error.name : typeof error)
+        }
       }
     },
   })

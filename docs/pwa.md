@@ -25,6 +25,22 @@ Notices are compact pills at the top centre of the map. Each pill has a `role="s
 
 The notices are compact pills that stay centred at the top of the map. At 320px wide they fit between the map controls without covering them.
 
+## Push notifications
+
+Settings offers an opt-in **Notifications** section for service updates: a delayed bus or live arrivals pausing at a stop. The browser prompt is requested only after **Enable notifications** is tapped, and the explanation stays visible above the button. The stored choice survives a reload; a stored preference only counts as on while the browser still permits notifications. On iOS a browser tab has no Push API, so the section explains that NUSGo must be added to the Home Screen and opened from there. A denied permission points at browser settings and offers no in-app toggle.
+
+The notification has a short title, a one-line body and a deep link to the affected stop. Tapping it focuses an open app window and hands it the link, or opens the installed app at that stop when none is open.
+
+Server side:
+
+- VAPID keys come from environment variables. Set both `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`, or neither; setting one alone fails startup. `VAPID_SUBJECT` is the push-service contact. Placeholder values only in `backend/.env.example`; real keys stay in the deployment environment. Generate a pair with `npx web-push generate-vapid-keys`.
+- `GET /api/push/public-key` returns `{ publicKey }`, or `null` when push is not configured. `POST /api/push/subscriptions` stores a subscription, and `POST /api/push/subscriptions/remove` forgets one.
+- Stored fields are the push endpoint, its two keys and the topic. Nothing identifies the person. Input is validated at the boundary, the endpoints are rate limited per client, and each subscription is capped at `PUSH_NOTIFICATIONS_PER_HOUR_CAP` notifications per hour.
+- Updates are derived from the existing published shuttle snapshots, so push adds no poller and no upstream request. At most one notification is sent per snapshot, with a repeat window per stop and route.
+- Subscriptions that a push service reports as gone (404 or 410) are pruned.
+
+Subscriptions live in process memory, so they do not survive a backend restart, and a restart means devices must opt in again. This matches the single-instance limitation of the shuttle snapshot. Notification delivery in a background or screen-off device, on a Wear OS companion, and on a physical phone are not verified here.
+
 ## Install and verify
 
 ### Chrome on Android

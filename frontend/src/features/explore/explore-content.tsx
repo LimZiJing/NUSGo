@@ -9,7 +9,7 @@ import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-shee
 import type { ExplorePanelFocusBindings } from './hooks/use-explore-panel-focus.ts'
 import type { ExploreMode, ExploreState } from './state/explore-state.ts'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
-import { BusRouteList } from './components/bus-route-list.tsx'
+import { BusRouteList, type ActiveRouteProgress } from './components/bus-route-list.tsx'
 import { BuildingDetails, VenueDetails } from './components/venue-details.tsx'
 import { VenueSearch } from './components/venue-search.tsx'
 import './styles/explore-content.css'
@@ -35,6 +35,7 @@ interface ExploreContentProps {
   onRestore?: () => void
   status?: ExplorePanelStatus | null
   selectedRouteId?: string | null
+  routeProgress?: ActiveRouteProgress | null
   onRouteSelect: (routeId: string) => void
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
@@ -71,6 +72,7 @@ export function ExploreContent({
   onRestore,
   status,
   selectedRouteId = null,
+  routeProgress = null,
   onRouteSelect,
   onQueryChange,
   onNavigateToVenue,
@@ -197,6 +199,7 @@ export function ExploreContent({
               networkIndex={transitIndex}
               selectedRouteId={selectedRouteId}
               onRouteSelect={onRouteSelect}
+              routeProgress={routeProgress}
               firstRouteCardRef={firstRouteCardRef}
               onFocusStop={onFocusStop}
             />

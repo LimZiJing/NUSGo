@@ -238,11 +238,14 @@ describe('useAppNavigation', () => {
     const options = createOptions(true, 'stops')
     const { result } = renderHook(() => useAppNavigation(options))
 
-    act(() => result.current.selectRouteFromStops('ROUTE-A'))
+    act(() => result.current.selectRouteFromStops('ROUTE-A', 'STOP-A'))
 
     expect(options.commands.enterMobileRoutes).toHaveBeenCalledOnce()
     expect(options.commands.selectMobileRoute).toHaveBeenCalledWith('ROUTE-A')
-    expect(options.pendingViewFocusRef.current).toBe('explore')
+    expect(result.current.routeStopFocusRequest).toEqual({ routeId: 'ROUTE-A', stopId: 'STOP-A', sequence: 1 })
+    expect(options.pendingViewFocusRef.current).toBeNull()
+    act(() => result.current.clearRouteStopFocusRequest(1))
+    expect(result.current.routeStopFocusRequest).toBeNull()
     expect(options.dispatch).toHaveBeenNthCalledWith(1, {
       type: 'set-sheet-detent',
       view: 'explore',

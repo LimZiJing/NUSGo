@@ -17,7 +17,7 @@
   place-items: center;
   border: 2px solid var(--surface-card);
   border-radius: 50% 50% 50% 4px;
-  color: #172033;
+  color: var(--map-waypoint-marker-ink);
   box-shadow: var(--shadow-md);
   transform: rotate(-45deg);
 }

@@ -51,7 +51,7 @@
   height: 6px;
   border-radius: 50%;
   background-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: var(--ring-map-nearby-location);
 }
 
 .map-control-stack {
@@ -134,7 +134,7 @@
 }
 
 .venue-marker {
-  background: #64748b;
+  background: var(--map-marker-neutral);
 }
 
 .community-waypoint-legend-marker {
@@ -144,7 +144,7 @@
 }
 
 .bus-marker {
-  background: #64748b;
+  background: var(--map-marker-neutral);
 }
 
 .location-control {
@@ -173,19 +173,29 @@
   cursor: pointer;
 }
 
-.map-overlay-button:active:not(:disabled) {
-  filter: brightness(0.85);
+/* Keep the shared IconButton inside the map's established glass overlay treatment. */
+.button.icon-button.map-overlay-button {
+  display: grid;
+  font: var(--font-size-md)/1.2 var(--sans);
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
+  flex: 0 0 var(--control-height-lg);
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  background: var(--surface-overlay);
 }
 
-.map-overlay-button:focus-visible {
-  outline: 3px solid var(--focus-ring-strong);
-  outline-offset: 2px;
-}
-
-.map-overlay-button > svg {
+.button.icon-button.map-overlay-button > svg {
   width: 20px;
   height: 20px;
-  stroke-width: 2;
+}
+
+.button.icon-button.map-overlay-button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
 }
 
 .location-control-icon {
@@ -225,10 +235,10 @@
   isolation: isolate;
   width: 18px;
   height: 18px;
-  border: 3px solid #fff;
+  border: 3px solid var(--map-marker-surface);
   border-radius: 50%;
-  background: #4285f4;
-  box-shadow: 0 0 0 1px #4285f4, 0 1px 4px rgb(15 23 42 / 55%);
+  background: var(--map-location-dot);
+  box-shadow: var(--shadow-map-location-dot);
   box-sizing: border-box;
 }
 
@@ -245,7 +255,7 @@
   position: absolute;
   inset: -4px;
   z-index: -1;
-  border: 1px solid #4285f4;
+  border: 1px solid var(--map-location-dot);
   border-radius: 50%;
   content: '';
   opacity: 0;
@@ -281,10 +291,10 @@
   width: 14px;
   height: 14px;
   padding: 0;
-  border: 2px solid #64748b;
+  border: 2px solid var(--map-marker-neutral);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(15 23 42 / 45%);
+  background: var(--map-marker-surface);
+  box-shadow: var(--shadow-map-stop-marker);
   box-sizing: border-box;
   cursor: pointer;
   appearance: none;
@@ -452,7 +462,7 @@
   left: 5px;
   width: 4px;
   background: var(--bus-glass);
-  box-shadow: inset 0 10px 0 -9px currentColor, inset 0 -11px 0 -10px currentColor;
+  box-shadow: var(--shadow-live-bus-highlight);
   content: '';
 }
 
@@ -485,10 +495,13 @@
   opacity: 0.65;
 }
 
+.button.icon-button.map-overlay-button[aria-pressed='true'],
+.button.icon-button.map-overlay-button[aria-expanded='true'],
 .map-overlay-button[aria-pressed='true'],
 .map-overlay-button[aria-expanded='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--control-border);
+  color: var(--accent-hover);
+  background: var(--accent-selected);
 }
 
 .live-bus-status {
@@ -616,13 +629,13 @@
 .bus-stop-marker-nearby {
   border-width: 2px;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: var(--ring-map-nearby-location);
 }
 
 .bus-stop-marker-selected {
-  border-color: var(--bus-stop-selected-color, #334155);
-  background: #f1f5f9;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 90%), 0 1px 4px rgb(15 23 42 / 55%);
+  border-color: var(--bus-stop-selected-color, var(--map-stop-selected));
+  background: var(--map-stop-selected-surface);
+  box-shadow: var(--shadow-map-selected-stop);
 }
 
 .journey-duration-marker {
@@ -658,8 +671,8 @@
 .bus-stop-marker-journey {
   border-color: transparent;
   background:
-    linear-gradient(#f1f5f9, #f1f5f9) padding-box,
-    var(--bus-stop-journey-color, #334155) border-box;
+    linear-gradient(var(--map-stop-selected-surface), var(--map-stop-selected-surface)) padding-box,
+    var(--bus-stop-journey-color, var(--map-stop-selected)) border-box;
 }
 
 .bus-stop-marker-dimmed {
@@ -707,9 +720,9 @@
 }
 
 .bus-stop-legend-marker-selected {
-  border-color: var(--bus-stop-selected-color, #334155);
+  border-color: var(--bus-stop-selected-color, var(--map-stop-selected));
   background: var(--surface-subtle);
-  box-shadow: 0 0 0 1px var(--surface-overlay), var(--shadow-md);
+  box-shadow: var(--shadow-map-selected-stop-legend);
 }
 
 .bus-stop-legend-marker-other {
@@ -720,21 +733,21 @@
 .trip-endpoint-marker {
   width: 18px;
   height: 18px;
-  border: 3px solid #fff;
+  border: 3px solid var(--map-marker-surface);
   border-radius: 50% 50% 50% 0;
-  box-shadow: 0 1px 4px rgb(15 23 42 / 55%);
+  box-shadow: var(--shadow-map-trip-endpoint);
   box-sizing: border-box;
   transform: rotate(-45deg);
 }
 
 .trip-endpoint-marker-origin,
 .origin-marker {
-  background: #15803d;
+  background: var(--map-trip-origin);
 }
 
 .trip-endpoint-marker-destination,
 .destination-marker {
-  background: #dc2626;
+  background: var(--map-trip-destination);
 }
 
 .map .maplibregl-popup-content {

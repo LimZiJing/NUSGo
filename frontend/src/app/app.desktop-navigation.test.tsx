@@ -1303,9 +1303,28 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
 
     expect(screen.getByLabelText('Name')).toBeTruthy()
-    expect(screen.getByText('1.000000, 103.000000')).toBeTruthy()
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.000000°')
+    expect(location.textContent).toContain('Longitude103.000000°')
     expect(screen.queryByRole('region', { name: 'Place personal waypoint' })).toBeNull()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
+  })
+
+  it('announces waypoint validation through the persistent app status region', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    const statusRegion = screen.getByRole('alert', { name: 'Personal waypoint status' })
+    expect(statusRegion.textContent).toBe('')
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+
+    expect(screen.getByRole('alert', { name: 'Personal waypoint status' })).toBe(statusRegion)
+    expect(statusRegion.textContent).toBe('Check the highlighted fields before saving.')
   })
 
   it('repositions on the map and returns to the waypoint form with entries preserved', async () => {
@@ -1333,7 +1352,9 @@ describe('More surface', () => {
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
     expect((screen.getByLabelText('Category') as HTMLInputElement).value).toBe('Rest spot')
     expect((screen.getByLabelText('Note (optional)') as HTMLTextAreaElement).value).toBe('Near the garden')
-    expect(screen.getByText('1.500000, 104.250000')).toBeTruthy()
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.500000°')
+    expect(location.textContent).toContain('Longitude104.250000°')
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
 
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
@@ -1350,7 +1371,9 @@ describe('More surface', () => {
     await user.keyboard('{Enter}')
     expect(screen.getByText('2.000000° N · 105.000000° E')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
-    expect(screen.getByText('2.000000, 105.000000')).toBeTruthy()
+    const updatedLocation = screen.getByRole('group', { name: 'Location' })
+    expect(updatedLocation.textContent).toContain('Latitude2.000000°')
+    expect(updatedLocation.textContent).toContain('Longitude105.000000°')
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 
@@ -1374,7 +1397,9 @@ describe('More surface', () => {
     expect(appHarness.commands.panToCoordinate).toHaveBeenCalledWith([103.7764, 1.2966])
     expect(screen.getByText('1.296600° N · 103.776400° E')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
-    expect(screen.getByText('1.296600, 103.776400')).toBeTruthy()
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.296600°')
+    expect(location.textContent).toContain('Longitude103.776400°')
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
   })
 
@@ -1501,7 +1526,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     expect(screen.getByRole('button', { name: 'Add waypoint' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: 'Back to previous view' })).toBe(document.activeElement)
-    expect(screen.getByRole('alert').textContent).toContain('needs recovery')
+    expect(screen.getByText('Saved waypoint data needs recovery. It has been left untouched.').textContent).toContain('needs recovery')
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBe('{broken')
   })
 
@@ -1516,7 +1541,7 @@ describe('More surface', () => {
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
@@ -1557,7 +1582,7 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.getByRole('button', { name: 'Reduce More panel' })).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await user.click(moreButton)
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-detent')).toBe('partial')
@@ -1616,7 +1641,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
@@ -1634,7 +1659,7 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
@@ -1701,7 +1726,7 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')

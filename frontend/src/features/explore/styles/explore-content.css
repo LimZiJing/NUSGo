@@ -134,6 +134,7 @@
   max-height: none;
 }
 
+/* Rich search results keep their feature-owned card surface while sharing Button states. */
 .explore-content .explore-content-result {
   display: grid;
   gap: 2px;
@@ -283,7 +284,7 @@
 }
 
 .explore-content-detail .venue-detail-action:not([aria-disabled='true']):hover {
-  filter: brightness(0.85);
+  background-color: var(--surface-control-hover);
 }
 
 .explore-content-detail .venue-detail-nusmods img {

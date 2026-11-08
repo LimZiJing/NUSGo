@@ -26,6 +26,7 @@ describe('MoreMenu', () => {
 
     expect(screen.getByText('12 saved places')).toBeTruthy()
     expect(screen.getByText('Appearance, favourites and waypoints')).toBeTruthy()
+    expect(document.querySelectorAll('.more-menu-row-icon.menu-icon-tile')).toHaveLength(4)
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Suggest a place' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))

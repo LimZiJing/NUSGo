@@ -8,6 +8,24 @@ Application revision `29d9a884`; local production rehearsal and a separate diagn
 
 The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
 
+## Surface layering baseline (#629) — 2026-11-06
+
+Application revision `8d0e242d`, local Vite development server at `http://127.0.0.1:22188/`, headless Chromium 1254 driven by Playwright at 1440 × 900, DPR 1, `prefers-reduced-motion: reduce`. Baseline capture only; no application behaviour changed.
+
+- Captured Explore, Stops, Plan, More and the `.map-shell` element in light, dark, nus, matcha and sakura — 25 JPEGs, 5.7 MB, under `docs/qa/screenshots/issue-629-baseline/`.
+- Each theme used a fresh context with `navus:theme-preference:v1` seeded before navigation, so the real `data-theme` mechanism applied; the applied attribute was asserted before every screenshot and matched all 25 times. Zero page errors. The backend was running, so Stops showed live arrival rows.
+- Measured from the theme files: light `raised/surface` is 1.00 (both `#fff`); dark is 1.10. Matcha and sakura have `card/surface` below `raised/surface`, so those two layers sit on opposite sides of the page surface. Dark `--border-subtle` is the weakest at 1.06 against the card, the same token #623 reports.
+- Token values, proposal arithmetic and scope limits are in [the surface layering baseline](surface-layering-baseline-629.md). Mobile viewports, rendered-pixel sampling and control state surfaces were not verified.
+
+### After pass — 2026-11-06
+
+Same harness, viewport and themes, captured on commit `d1629e66` (the last commit touching CSS) into `docs/qa/screenshots/issue-629-after/` (25 JPEGs plus `measurements.json`). The set was re-captured twice, each time because a fix landed after the previous capture. The applied `data-theme` matched the requested theme on every capture and there were zero page errors. The harness itself is not committed; see "Reproducing" in the baseline doc for what it did.
+
+- Light now paints a recessed page: `--surface` `#fff` → `#f1f5f9`, with `--surface-card` moving to `#fff`. The page and card colours swapped, so cards sit above the page at 1.10 instead of flush at 1.00.
+- Before the change, overriding `--surface` to `#ff0000` changed 0.00% of pixels across all four views at 1440 × 900 and 390 × 844; the same override on `--surface-card` changed 14.22%. The column, mobile sheet and tab-bar backdrop were repointed from `--surface-raised` to `--surface`, which is what makes the token visible at all.
+- Regressions found and fixed during the pass: light `--surface-subtle` and `--surface-segmented-control` both matched or nearly matched the new page, and nus/matcha/sakura cards sat 1.03/1.01/1.03 against the new column. Five waypoint-list controls (seven declarations) also lost their fill against the repointed panel and moved to `--surface-card`. Dark `--control-border` fell to 2.35:1 against the lightened card, so its mix moved from 35% to 45%. See the baseline doc for the new values.
+- Mobile surfaces were read from computed styles at 390 × 844, not captured. Hover, pressed, focus and selected surfaces remain unverified here; they belong to #617.
+
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
 Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:

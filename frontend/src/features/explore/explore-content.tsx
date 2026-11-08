@@ -3,13 +3,14 @@ import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'
-import { GhostBackButton } from '../../ui/ghost-back-button.tsx'
+import { BackButton } from '../../ui/back-button.tsx'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
 import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent.ts'
 import type { ExplorePanelFocusBindings } from './hooks/use-explore-panel-focus.ts'
 import type { ExploreMode, ExploreState } from './state/explore-state.ts'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 import { BusRouteList } from './components/bus-route-list.tsx'
+import type { RouteStopFocusRequest } from './route-stop-focus.ts'
 import { BuildingDetails, VenueDetails } from './components/venue-details.tsx'
 import { VenueSearch } from './components/venue-search.tsx'
 import './styles/explore-content.css'
@@ -35,6 +36,8 @@ interface ExploreContentProps {
   onRestore?: () => void
   status?: ExplorePanelStatus | null
   selectedRouteId?: string | null
+  routeStopFocusRequest?: RouteStopFocusRequest | null
+  onRouteStopFocusHandled?: (sequence: number) => void
   onRouteSelect: (routeId: string) => void
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
@@ -84,6 +87,8 @@ export function ExploreContent({
   onRestore,
   status,
   selectedRouteId = null,
+  routeStopFocusRequest = null,
+  onRouteStopFocusHandled,
   onRouteSelect,
   onQueryChange,
   onNavigateToVenue,
@@ -155,8 +160,8 @@ export function ExploreContent({
               }}
             />
           )}
-        {!communityMode && state.mode === 'venue-detail' && !minimized && (
-            <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
+          {!communityMode && state.mode === 'venue-detail' && !minimized && (
+            <BackButton mode="inline" label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
             id="explore-content-heading"
@@ -220,6 +225,8 @@ export function ExploreContent({
               networkIndex={transitIndex}
               selectedRouteId={selectedRouteId}
               onRouteSelect={onRouteSelect}
+              routeStopFocusRequest={routeStopFocusRequest}
+              onRouteStopFocusHandled={onRouteStopFocusHandled}
               firstRouteCardRef={firstRouteCardRef}
               onFocusStop={onFocusStop}
             />

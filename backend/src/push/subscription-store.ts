@@ -10,8 +10,8 @@ export interface PushSubscriptionRecord {
 }
 
 export interface PushSubscriptionStore {
-  /** Adds or replaces a subscription. Re-subscribing the same endpoint updates its keys and topic. */
-  add(record: PushSubscriptionRecord): void
+  /** Replaces an existing endpoint or admits a new one; false means capacity is exhausted. */
+  add(record: PushSubscriptionRecord): boolean
   remove(endpoint: string): boolean
   get(endpoint: string): PushSubscriptionRecord | null
   list(topic?: PushNotificationTopic): readonly PushSubscriptionRecord[]
@@ -20,8 +20,8 @@ export interface PushSubscriptionStore {
 
 export interface PushSubscriptionStoreOptions {
   /**
-   * Bounds memory for a single Express process. Oldest registrations are evicted first so a
-   * flood of endpoints cannot grow this store without limit.
+   * Bounds memory for a single Express process. New endpoints are rejected at capacity so
+   * anonymous enrollment cannot evict existing riders.
    */
   readonly maxSubscriptions?: number
   readonly now?: () => number
@@ -43,22 +43,17 @@ export function createPushSubscriptionStore(
   options: PushSubscriptionStoreOptions = {},
 ): PushSubscriptionStore {
   const maxSubscriptions = options.maxSubscriptions ?? DEFAULT_MAX_PUSH_SUBSCRIPTIONS
-  // Map iteration preserves insertion order, which makes the oldest registration the first key.
   const records = new Map<string, PushSubscriptionRecord>()
 
   return {
     add(record) {
-      // Delete first so a refreshed subscription moves to the newest position.
-      records.delete(record.endpoint)
-      if (records.size >= maxSubscriptions) {
-        const oldestEndpoint = records.keys().next().value
-        if (oldestEndpoint !== undefined) records.delete(oldestEndpoint)
-      }
+      if (!records.has(record.endpoint) && records.size >= maxSubscriptions) return false
       records.set(record.endpoint, {
         endpoint: record.endpoint,
         keys: { p256dh: record.keys.p256dh, auth: record.keys.auth },
         topic: record.topic,
       })
+      return true
     },
     remove(endpoint) {
       return records.delete(endpoint)

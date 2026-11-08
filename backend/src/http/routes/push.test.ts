@@ -10,7 +10,7 @@ const PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckj
 const subscription = {
   endpoint: 'https://fcm.googleapis.com/fcm/send/abc123:def-456',
   keys: { p256dh: 'BCV2Y0YnotzQ', auth: 'k8Z0dP2vG2s' },
-  topic: 'service-updates',
+  topic: 'service-updates' as const,
 }
 
 const servers: Awaited<ReturnType<typeof listenHttpServer>>[] = []
@@ -21,6 +21,7 @@ after(async () => {
 
 interface ServerOptions {
   readonly push?: boolean
+  readonly maxSubscriptions?: number
   readonly subscriptionRateLimitMaxRequests?: number
 }
 
@@ -44,7 +45,7 @@ async function withServer(
         : {}),
     }),
   })
-  const store = createPushSubscriptionStore()
+  const store = createPushSubscriptionStore({ maxSubscriptions: options.maxSubscriptions })
   const cap = createNotificationCap({ maxPerHour: 4 })
   const server = await listenHttpServer(
     createApp(config, null, null, null, { store, cap }),
@@ -248,5 +249,27 @@ describe('push subscription routes', () => {
       assert.equal(response.status, 204)
       assert.equal(cap.hasCapacity(subscription.endpoint), true)
     })
+  })
+})
+
+
+describe('push enrollment capacity', () => {
+  it('returns a retryable failure without evicting riders or resetting their cap', async () => {
+    await withServer(async (baseUrl, store, cap) => {
+      store.add(subscription)
+      for (let index = 0; index < 4; index += 1) cap.reserve(subscription.endpoint)?.commit()
+      const incumbent = store.get(subscription.endpoint)
+      const newcomer = { ...subscription, endpoint: 'https://fcm.googleapis.com/fcm/send/newcomer' }
+
+      const denied = await post(baseUrl, '/api/push/subscriptions', newcomer)
+      assert.equal(denied.status, 503)
+      assert.equal(store.get(subscription.endpoint), incumbent)
+      assert.equal(store.get(newcomer.endpoint), null)
+      assert.equal(cap.hasCapacity(subscription.endpoint), false)
+
+      assert.equal((await post(baseUrl, '/api/push/subscriptions/remove', { endpoint: subscription.endpoint })).status, 204)
+      assert.equal((await post(baseUrl, '/api/push/subscriptions', newcomer)).status, 201)
+      assert.notEqual(store.get(newcomer.endpoint), null)
+    }, { maxSubscriptions: 1 })
   })
 })

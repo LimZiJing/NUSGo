@@ -50,15 +50,19 @@ describe('push subscription store', () => {
     assert.equal(store.list().length, 1)
   })
 
-  it('evicts the oldest registration when the store reaches its bound', () => {
+  it('rejects new endpoints at capacity without displacing current riders', () => {
     const store = createPushSubscriptionStore({ maxSubscriptions: 2 })
     store.add(registration('a'))
     store.add(registration('b'))
-    store.add(registration('c'))
+    const incumbent = store.get(endpoint('a'))
 
+    assert.equal(store.add(registration('c')), false)
     assert.equal(store.size, 2)
-    assert.equal(store.get(endpoint('a')), null)
-    assert.notEqual(store.get(endpoint('c')), null)
+    assert.equal(store.get(endpoint('a')), incumbent)
+    assert.notEqual(store.get(endpoint('b')), null)
+    assert.equal(store.get(endpoint('c')), null)
+    assert.equal(store.add({ ...registration('a'), keys: { p256dh: 'RotatedKey', auth: 'RotatedAuth' } }), true)
+    assert.equal(store.get(endpoint('a'))?.keys.p256dh, 'RotatedKey')
   })
 })
 
@@ -133,5 +137,30 @@ describe('notification reservations', () => {
     assert.equal(cap.hasCapacity(endpoint('a')), true)
     cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.hasCapacity(endpoint('a')), false)
+  })
+})
+
+
+describe('notification tracking capacity', () => {
+  it('preserves active delivery budgets at capacity and recovers expired space', () => {
+    let nowMs = 1_000
+    const cap = createNotificationCap({ maxPerHour: 1, now: () => nowMs })
+    for (let index = 0; index < 10_000; index += 1) {
+      const reservation = cap.reserve(endpoint(String(index)))
+      assert.ok(reservation)
+      reservation.commit()
+    }
+
+    assert.equal(cap.reserve(endpoint('new')), null)
+    assert.equal(cap.hasCapacity(endpoint('new')), false)
+    assert.equal(cap.hasCapacity(endpoint('0')), false)
+    assert.equal(cap.trackedCount, 10_000)
+
+    nowMs += 60 * 60_000
+    const nextHour = cap.reserve(endpoint('new'))
+    assert.ok(nextHour)
+    nextHour.commit()
+    assert.equal(cap.trackedCount, 10_000)
+    assert.equal(cap.hasCapacity(endpoint('new')), false)
   })
 })

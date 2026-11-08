@@ -50,19 +50,27 @@ export function createNotificationCap(options: NotificationCapOptions): Notifica
     return { startedAtMs: nowMs, count: 0, pending: 0 }
   }
 
+  const makeTrackingSpace = (endpoint: string): boolean => {
+    if (windows.has(endpoint) || windows.size < MAX_TRACKED_ENDPOINTS) return true
+    const nowMs = now()
+    for (const [trackedEndpoint, window] of windows) {
+      // Active or in-flight history must never be displaced to admit another endpoint.
+      if (window.pending === 0 && nowMs - window.startedAtMs >= HOUR_MS) {
+        windows.delete(trackedEndpoint)
+        return true
+      }
+    }
+    return false
+  }
+
   return {
     hasCapacity(endpoint) {
       const activeWindow = windowFor(endpoint)
-      return activeWindow.count + activeWindow.pending < maxPerHour
+      return activeWindow.count + activeWindow.pending < maxPerHour && makeTrackingSpace(endpoint)
     },
     reserve(endpoint) {
       const activeWindow = windowFor(endpoint)
-      if (activeWindow.count + activeWindow.pending >= maxPerHour) return null
-      if (!windows.has(endpoint) && windows.size >= MAX_TRACKED_ENDPOINTS) {
-        // Bound memory: drop the oldest window before tracking another endpoint.
-        const oldestEndpoint = windows.keys().next().value
-        if (oldestEndpoint !== undefined) windows.delete(oldestEndpoint)
-      }
+      if (activeWindow.count + activeWindow.pending >= maxPerHour || !makeTrackingSpace(endpoint)) return null
       activeWindow.pending += 1
       windows.set(endpoint, activeWindow)
       let settled = false

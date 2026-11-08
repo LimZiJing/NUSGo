@@ -1,5 +1,5 @@
 .personal-waypoints-home,
-.personal-waypoint-form { display: grid; gap: 10px; text-align: left; }
+.personal-waypoint-form { display: grid; gap: 8px; text-align: left; }
 
 .personal-waypoints-home > p,
 .personal-waypoint-form > p,

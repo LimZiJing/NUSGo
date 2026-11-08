@@ -26,6 +26,13 @@ export interface DeliveryResult {
 export interface DeliverySummary {
   /** Endpoints the push service rejected as gone and that were removed from the store. */
   readonly prunedEndpoints: readonly string[]
+  /**
+   * Endpoints the push service accepted one payload for, in completion order.
+   *
+   * A caller that must act only after a real send — such as a one-shot reminder that is removed
+   * once delivered — reads this instead of assuming that asking for a payload delivered it.
+   */
+  readonly deliveredEndpoints: readonly string[]
   readonly deliveredCount: number
   readonly failedCount: number
 }
@@ -60,6 +67,7 @@ export async function deliverPushNotifications<TRecord extends PushSubscriptionR
   options: DeliverOptions<TRecord>,
 ): Promise<DeliverySummary> {
   const prunedEndpoints: string[] = []
+  const deliveredEndpoints: string[] = []
   let deliveredCount = 0
   let failedCount = 0
   let nextIndex = 0
@@ -74,6 +82,7 @@ export async function deliverPushNotifications<TRecord extends PushSubscriptionR
         JSON.stringify(payload),
       )
       deliveredCount += 1
+      deliveredEndpoints.push(record.endpoint)
     } catch (error: unknown) {
       if (isExpiredStatusCode(statusCodeOf(error))) {
         store.remove(record.endpoint)
@@ -97,5 +106,5 @@ export async function deliverPushNotifications<TRecord extends PushSubscriptionR
 
   await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_DELIVERIES, records.length) }, worker))
 
-  return { prunedEndpoints, deliveredCount, failedCount }
+  return { prunedEndpoints, deliveredEndpoints, deliveredCount, failedCount }
 }

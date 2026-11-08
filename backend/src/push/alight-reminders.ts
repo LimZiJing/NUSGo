@@ -6,19 +6,17 @@ import {
   type ShuttleServiceStatus,
 } from '@nusgo/shared'
 import type { PushConfig } from '../config.ts'
-import type { PushSendNotification } from './delivery.ts'
-import { deliverPushNotifications } from './delivery.ts'
+import { deliverPushNotifications, type PushSendNotification } from './delivery.ts'
 import { createNotificationCap, type NotificationCap } from './notification-cap.ts'
 import type { AlightReminderRecord, AlightReminderRegistry } from './reminder-registry.ts'
-
-/** How close the next bus must be, in seconds, before a reminder is worth showing. */
-export const DEFAULT_ALIGHT_REMINDER_THRESHOLD_SECONDS = 120
 
 /**
  * Why a watch did not produce a reminder. Each reason is explicit so the "no false arriving-now
  * push" rule is tested one case at a time rather than inferred from a count of sends.
  */
 export type ReminderSkipReason =
+  /** The watch passed its server-assigned expiry and has been, or will be, removed. */
+  | 'expired'
   /** The published snapshot is past its own expiry, or older than the freshness constant. */
   | 'stale-snapshot'
   /** The stop was not observed in the published snapshot. */
@@ -29,10 +27,10 @@ export type ReminderSkipReason =
   | 'no-arrival'
   /** The service is not running for this route right now. */
   | 'not-running'
-  /** The next bus is further away than the threshold. */
+  /** A delivery for this watch is already in progress, so it must not be sent twice. */
+  | 'delivery-in-flight'
+  /** The next bus is further away than the lead time the rider chose. */
   | 'not-yet-close'
-  /** The reminder for this arrival was already sent. */
-  | 'already-sent'
 
 export interface DueReminder {
   readonly record: AlightReminderRecord
@@ -47,7 +45,6 @@ export interface SkippedReminder {
 }
 
 export interface EvaluateAlightRemindersOptions {
-  readonly thresholdSeconds?: number
   readonly now: () => number
   /**
    * Reads the shuttle service status for a route without fetching anything.
@@ -56,8 +53,8 @@ export interface EvaluateAlightRemindersOptions {
    * snapshot itself; only an explicit non-active status blocks a reminder.
    */
   readonly serviceStatus?: (routeId: string, atMs: number) => ShuttleServiceStatus | 'unknown'
-  /** Returns true when this exact watch has already been announced for the current arrival. */
-  readonly alreadySent?: (record: AlightReminderRecord) => boolean
+  /** Returns true while a delivery for this watch is in flight; such a watch is skipped. */
+  readonly inFlight?: (record: AlightReminderRecord) => boolean
 }
 
 export interface AlightReminderEvaluationResult {
@@ -81,32 +78,40 @@ function isFresh(observedAtMs: number, expiresAtMs: number, nowMs: number): bool
  *
  * This is a pure read of `snapshot`: it never calls a provider, so adding reminders cannot change
  * upstream call volume. Every reason not to fire is checked before the arrival threshold, and a
- * reminder needs a fresh, observed, available stop with a real arrival for that route while the
- * service is running. Anything less is skipped, which is what keeps NUSGo from announcing
- * "arriving now" for a bus that is stale, dropped, or not in service.
+ * reminder needs an unexpired watch with a fresh, observed, available stop, a real arrival for
+ * that route while the service is running, and the bus inside the rider's own lead time. Anything
+ * less is skipped, which is what keeps NUSGo from announcing "arriving now" for a bus that is
+ * stale, dropped, or not in service.
  */
 export function evaluateAlightReminders(
   records: readonly AlightReminderRecord[],
   snapshot: ShuttleArrivalSnapshot,
   options: EvaluateAlightRemindersOptions,
 ): AlightReminderEvaluationResult {
-  const thresholdSeconds = options.thresholdSeconds ?? DEFAULT_ALIGHT_REMINDER_THRESHOLD_SECONDS
   const nowMs = options.now()
-
-  // A snapshot past its expiry, or older than the freshness constant, describes a service state
-  // the rider would be misled by. One bad snapshot blocks every watch in it.
-  if (!isFresh(parseTime(snapshot.observedAt), parseTime(snapshot.expiresAt), nowMs)) {
-    return {
-      due: [],
-      skipped: records.map((record) => ({ record, reason: 'stale-snapshot' as const })),
-    }
-  }
-
+  const snapshotFresh = isFresh(
+    parseTime(snapshot.observedAt),
+    parseTime(snapshot.expiresAt),
+    nowMs,
+  )
   const unavailableStopIds = new Set(snapshot.unavailableStopIds ?? [])
   const due: DueReminder[] = []
   const skipped: SkippedReminder[] = []
 
   for (const record of records) {
+    // Expiry is absolute and comes from this server's own clock, so it is checked before any
+    // property of the snapshot: an expired watch can never push, fresh data or not.
+    if (record.expiresAtMs <= nowMs) {
+      skipped.push({ record, reason: 'expired' })
+      continue
+    }
+    // A snapshot past its expiry, or older than the freshness constant, describes a service state
+    // the rider would be misled by. One bad snapshot blocks every watch in it.
+    if (!snapshotFresh) {
+      skipped.push({ record, reason: 'stale-snapshot' })
+      continue
+    }
+
     const { stopId, routeId } = record.watch
     const observation = snapshot.stopObservations?.[stopId]
     if (!observation) {
@@ -136,13 +141,13 @@ export function evaluateAlightReminders(
       continue
     }
 
-    if (arrival.nextArrivalSeconds > thresholdSeconds) {
+    if (arrival.nextArrivalSeconds > record.leadTimeSeconds) {
       skipped.push({ record, reason: 'not-yet-close' })
       continue
     }
 
-    if (options.alreadySent?.(record)) {
-      skipped.push({ record, reason: 'already-sent' })
+    if (options.inFlight?.(record)) {
+      skipped.push({ record, reason: 'delivery-in-flight' })
       continue
     }
 
@@ -160,20 +165,21 @@ export interface AlightReminderPublisherOptions {
   readonly stopName: (stopId: string) => string | null
   /** The same zero-fetch service-status reader the evaluator relies on. */
   readonly serviceStatus?: (routeId: string, atMs: number) => ShuttleServiceStatus | 'unknown'
-  readonly thresholdSeconds?: number
   readonly now?: () => number
 }
 
 export interface AlightReminderPublishResult {
   readonly notificationsSent: number
   readonly prunedEndpoints: readonly string[]
+  /** Watches that reached their expiry during this pass and were removed. */
+  readonly expiredEndpoints: readonly string[]
   readonly skipped: readonly SkippedReminder[]
 }
 
 export interface AlightReminderPublisher {
   /** Feeds one already-published snapshot and pushes any reminder it warrants. */
   publish(snapshot: ShuttleArrivalSnapshot): Promise<AlightReminderPublishResult>
-  /** Forgets delivery history for an endpoint, called when its reminder is removed. */
+  /** Forgets delivery history for an endpoint, called when its reminder is registered or removed. */
   forgetSubscription(endpoint: string): void
   /**
    * Supplies the service-running check after composition.
@@ -189,74 +195,100 @@ export interface AlightReminderPublisher {
  * Turns published arrival snapshots into alight reminders for the `alight-reminders` topic.
  *
  * Like the service-update publisher this reads the snapshot the store already published, so it
- * adds no upstream request, no poller and no timer: callers hook it to the same
- * refresh-complete callback. A watch fires once per arrival and re-arms only once the next bus is
- * again further away than the threshold, so one approaching bus does not push on every refresh.
+ * adds no upstream request, no poller and no timer: callers hook it to the same refresh-complete
+ * callback.
+ *
+ * A reminder is one-shot. A watch is removed only after the push service confirmed that exact
+ * send, so a transient failure leaves the watch eligible for the next snapshot instead of
+ * silently dropping it, and one delivery in flight is never started twice. Every removal — a
+ * successful send, a 404/410, or an expiry — is scoped to the registration that was evaluated, so
+ * a rider who removes and re-registers during a send keeps the newer watch.
  */
 export function createAlightReminderPublisher(
   options: AlightReminderPublisherOptions,
 ): AlightReminderPublisher {
   const now = options.now ?? Date.now
   const cap = createNotificationCap({ maxPerHour: options.push.notificationsPerHourCap, now })
-  // Endpoints already reminded about their current arrival; cleared when the watch re-arms.
-  const announced = new Set<string>()
+  // Endpoints with a delivery started but not yet settled. A second snapshot that arrives while
+  // the first send is still awaiting the push service must not send the same reminder again.
+  const inFlight = new Set<string>()
   let serviceStatus = options.serviceStatus
 
   const publish = async (
     snapshot: ShuttleArrivalSnapshot,
   ): Promise<AlightReminderPublishResult> => {
+    // Expiry is enforced before evaluation so a stale snapshot can never revive a dead watch.
+    const expiredEndpoints = options.registry.pruneExpired()
     const records = options.registry.list()
-    if (records.length === 0) return { notificationsSent: 0, prunedEndpoints: [], skipped: [] }
+    if (records.length === 0) {
+      return { notificationsSent: 0, prunedEndpoints: [], expiredEndpoints, skipped: [] }
+    }
 
     const readServiceStatus = serviceStatus
     const evaluation = evaluateAlightReminders(records, snapshot, {
-      ...(options.thresholdSeconds === undefined ? {} : { thresholdSeconds: options.thresholdSeconds }),
       now,
       ...(readServiceStatus ? { serviceStatus: readServiceStatus } : {}),
-      alreadySent: (record) => announced.has(record.endpoint),
+      inFlight: (record) => inFlight.has(record.endpoint),
     })
 
-    // A watch whose bus is still far away, or is gone from the data, has re-armed: the arrival it
-    // was waiting for has passed or changed, so the next one may be announced.
-    for (const { record, reason } of evaluation.skipped) {
-      if (reason === 'not-yet-close' || reason === 'no-arrival') announced.delete(record.endpoint)
-    }
-
     if (evaluation.due.length === 0) {
-      return { notificationsSent: 0, prunedEndpoints: [], skipped: evaluation.skipped }
+      return { notificationsSent: 0, prunedEndpoints: [], expiredEndpoints, skipped: evaluation.skipped }
     }
 
     const dueByEndpoint = new Map(evaluation.due.map((candidate) => [candidate.record.endpoint, candidate]))
+    // Reading, not spending, the hourly cap: the watch must survive a refused send so the rider
+    // still gets the reminder once the window reopens.
     const payloadFor = (record: AlightReminderRecord): PushNotificationPayload | null => {
       const match = dueByEndpoint.get(record.endpoint)
       if (!match) return null
       const stopName = options.stopName(match.stopId)
       if (!stopName) return null
-      // The hourly cap is a product rule, not a delivery failure: the reminder stays registered.
-      if (!cap.tryConsume(record.endpoint)) return null
-      announced.add(record.endpoint)
+      if (!cap.canSend(record.endpoint)) return null
       return createAlightReminderPayload(stopName, match.stopId, match.routeId, match.minutesUntilArrival)
     }
 
-    const summary = await deliverPushNotifications(
-      options.registry,
-      options.sendNotification,
-      evaluation.due.map(({ record }) => record),
-      { payloadFor },
-    )
+    // The pruner is scoped to the generation that was sent. Delivery calls it when the push
+    // service reports 404/410; a re-registration during the send must not be deleted with it.
+    const generations = new Map(evaluation.due.map(({ record }) => [record.endpoint, record.generation]))
+    const pruner = {
+      remove(endpoint: string): boolean {
+        const generation = generations.get(endpoint)
+        return generation === undefined ? false : options.registry.removeIfCurrent(endpoint, generation)
+      },
+    }
 
-    return {
-      notificationsSent: summary.deliveredCount,
-      prunedEndpoints: summary.prunedEndpoints,
-      skipped: evaluation.skipped,
+    for (const { record } of evaluation.due) inFlight.add(record.endpoint)
+    try {
+      const summary = await deliverPushNotifications(
+        pruner,
+        options.sendNotification,
+        evaluation.due.map(({ record }) => record),
+        { payloadFor },
+      )
+
+      for (const endpoint of summary.deliveredEndpoints) {
+        // Record the send only now that it actually happened, then retire this exact watch.
+        cap.tryConsume(endpoint)
+        const generation = generations.get(endpoint)
+        if (generation !== undefined) options.registry.removeIfCurrent(endpoint, generation)
+      }
+
+      return {
+        notificationsSent: summary.deliveredCount,
+        prunedEndpoints: summary.prunedEndpoints,
+        expiredEndpoints,
+        skipped: evaluation.skipped,
+      }
+    } finally {
+      for (const { record } of evaluation.due) inFlight.delete(record.endpoint)
     }
   }
 
   return {
     publish,
     forgetSubscription(endpoint) {
+      // A new or removed watch starts with a fresh hourly window rather than inheriting an old one.
       cap.reset(endpoint)
-      announced.delete(endpoint)
     },
     setServiceStatus(reader) {
       serviceStatus = reader

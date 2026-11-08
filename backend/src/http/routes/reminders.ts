@@ -3,7 +3,7 @@ import {
   PUSH_SUBSCRIPTION_BODY_MAX_BYTES,
   parsePushReminderRegistration,
   parsePushReminderRequest,
-  type PushSubscriptionResponse,
+  type PushReminderResponse,
 } from '@nusgo/shared'
 import type { PushConfig } from '../../config.ts'
 import type { AlightReminderPublisher } from '../../push/alight-reminders.ts'
@@ -43,9 +43,14 @@ function exceedsBodyLimit(body: unknown): boolean {
  * Registration for the alight-reminders topic.
  *
  * A registration is the same endpoint and keys as any push subscription plus one stop and route
- * id. Only those ids are stored: no identity, no device fingerprint, no GPS position and no saved
- * journey. Both routes reuse the push routes' per-client rate limiter and the shared validators,
+ * id and the lead time the rider chose. Only those values are stored: no identity, no device
+ * fingerprint, no GPS position and no saved journey. The creation time and expiry are assigned
+ * here by the registry from the server clock, never by the client, so a device cannot extend its
+ * own watch. Both routes reuse the push routes' per-client rate limiter and the shared validators,
  * so a reminder cannot arrive in a shape the evaluator would not understand.
+ *
+ * The `201` body echoes the stored lead time and expiry so the app can say when the reminder
+ * lapses, using the same trusted timestamps the evaluator enforces.
  */
 export function registerReminderRoutes(app: Express, dependencies: ReminderRouteDependencies): void {
   const { push, registry, reminders, canonicalStopIds, canonicalRouteIds } = dependencies
@@ -82,9 +87,14 @@ export function registerReminderRoutes(app: Express, dependencies: ReminderRoute
           sendApiError(response, 400, 'Push reminder names an unknown stop or route', 'invalid_request')
           return
         }
-        registry.upsert(registration)
+        const record = registry.upsert(registration)
+        // A new watch starts with a fresh hourly window rather than inheriting an old one.
         reminders?.forgetSubscription(registration.endpoint)
-        response.status(201).json({ topic: registration.topic } satisfies PushSubscriptionResponse)
+        response.status(201).json({
+          topic: record.topic,
+          leadTimeSeconds: record.leadTimeSeconds,
+          expiresAt: new Date(record.expiresAtMs).toISOString(),
+        } satisfies PushReminderResponse)
       },
     )
     .all(methodNotAllowed('POST, OPTIONS'))

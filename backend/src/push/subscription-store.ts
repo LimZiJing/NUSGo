@@ -7,11 +7,6 @@ export interface PushSubscriptionRecord {
   readonly endpoint: string
   readonly keys: PushSubscriptionKeys
   readonly topic: PushNotificationTopic
-  /**
-   * Present only for reminder subscriptions: the stop and route this endpoint asked about.
-   * It is still canonical stop and route ids only, never a location, a journey or an identity.
-   */
-  readonly watch?: { readonly stopId: string; readonly routeId: string }
 }
 
 export interface PushSubscriptionStore {
@@ -37,12 +32,13 @@ export const DEFAULT_MAX_PUSH_SUBSCRIPTIONS = 5_000
 /**
  * In-memory subscription store behind a small interface.
  *
- * The read model is deliberately narrow — endpoint, keys, topic and optionally a reminder's
- * watch target — so a feature such as alight reminders (#503) adds its own topic and delivery
- * rules without changing this contract or learning anything personal about a subscriber.
+ * The read model is deliberately narrow — endpoint, keys and topic only — so a feature such as
+ * alight reminders (#503) adds its own topic, its own registry and its own delivery rules without
+ * changing this contract or learning anything personal about a subscriber.
  *
- * The interface is what #503 builds on. A second implementation can persist the same records
- * elsewhere; nothing above this seam depends on where the records live.
+ * The interface is what #503 builds alongside: a reminder keeps its watch and lead time in the
+ * separate reminder registry, because a browser holds one endpoint and this store keeps one
+ * record per endpoint. No second implementation is needed for reminders.
  */
 export function createPushSubscriptionStore(
   options: PushSubscriptionStoreOptions = {},
@@ -63,8 +59,6 @@ export function createPushSubscriptionStore(
         endpoint: record.endpoint,
         keys: { p256dh: record.keys.p256dh, auth: record.keys.auth },
         topic: record.topic,
-        // Copying the watch explicitly keeps a caller's object from mutating a stored record.
-        ...(record.watch ? { watch: { stopId: record.watch.stopId, routeId: record.watch.routeId } } : {}),
       })
     },
     remove(endpoint) {

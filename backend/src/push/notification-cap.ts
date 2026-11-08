@@ -4,6 +4,8 @@ export interface NotificationCapOptions {
 }
 
 export interface NotificationCap {
+  /** Reports whether one more notification would be allowed, without recording it. */
+  canSend(endpoint: string): boolean
   /** Records one delivery and returns true when it is allowed under the hourly cap. */
   tryConsume(endpoint: string): boolean
   reset(endpoint: string): void
@@ -38,6 +40,9 @@ export function createNotificationCap(options: NotificationCapOptions): Notifica
   }
 
   return {
+    canSend(endpoint) {
+      return windowFor(endpoint).count < maxPerHour
+    },
     tryConsume(endpoint) {
       const activeWindow = windowFor(endpoint)
       if (activeWindow.count >= maxPerHour) return false

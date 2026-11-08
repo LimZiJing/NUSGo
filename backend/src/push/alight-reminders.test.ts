@@ -8,7 +8,12 @@ import {
   type ReminderSkipReason,
 } from './alight-reminders.ts'
 import type { PushSendNotification } from './delivery.ts'
-import { createAlightReminderRegistry, type AlightReminderRecord } from './reminder-registry.ts'
+import {
+  DEFAULT_ALIGHT_REMINDER_TTL_MS,
+  createAlightReminderRegistry,
+  type AlightReminderRecord,
+  type AlightReminderRegistration,
+} from './reminder-registry.ts'
 
 const push: PushConfig = {
   publicKey: 'BPublicKeyValue',
@@ -25,12 +30,23 @@ function endpoint(suffix: string): string {
   return 'https://push.example.com/send/' + suffix
 }
 
-function reminder(suffix: string, stopId = 'COM3', routeId = 'D1'): AlightReminderRecord {
+function registration(suffix: string, stopId = 'COM3', routeId = 'D1', leadTimeSeconds: 120 | 60 | 180 = 120): AlightReminderRegistration {
   return {
     endpoint: endpoint(suffix),
     keys: { p256dh: 'BPublicKeyValue', auth: 'AuthSecretValue' },
     topic: 'alight-reminders',
     watch: { stopId, routeId },
+    leadTimeSeconds,
+  }
+}
+
+/** A record as the registry would report it: fresh, with a server expiry two hours out. */
+function reminder(suffix: string, stopId = 'COM3', routeId = 'D1', leadTimeSeconds: 120 | 60 | 180 = 120): AlightReminderRecord {
+  return {
+    ...registration(suffix, stopId, routeId, leadTimeSeconds),
+    createdAtMs: nowMs,
+    expiresAtMs: nowMs + DEFAULT_ALIGHT_REMINDER_TTL_MS,
+    generation: 1,
   }
 }
 
@@ -84,22 +100,50 @@ function skipReason(
 }
 
 describe('alight reminder evaluation', () => {
-  it('fires when the next bus for the watched stop and route is at the threshold', () => {
-    const result = evaluate([reminder('a')], snapshot({ seconds: 120 }))
+  it('fires when the next bus is inside the lead time the rider chose', () => {
+    const result = evaluate([reminder('a', 'COM3', 'D1', 180)], snapshot({ seconds: 175 }))
 
     assert.equal(result.skipped.length, 0)
     assert.deepEqual(result.due.map(({ stopId, routeId, minutesUntilArrival }) => ({
       stopId,
       routeId,
       minutes: minutesUntilArrival,
-    })), [{ stopId: 'COM3', routeId: 'D1', minutes: 2 }])
+    })), [{ stopId: 'COM3', routeId: 'D1', minutes: 175 / 60 }])
   })
 
-  it('does not fire while the next bus is still further away than the threshold', () => {
+  it('uses the rider lead time rather than one fixed threshold', () => {
+    // The same arrival is due for a three-minute lead time but not for a one-minute one.
+    const longLead = evaluate([reminder('long', 'COM3', 'D1', 180)], snapshot({ seconds: 150 }))
+    const shortLead = evaluate([reminder('short', 'COM3', 'D1', 60)], snapshot({ seconds: 150 }))
+
+    assert.equal(longLead.due.length, 1)
+    assert.deepEqual(shortLead.due, [])
+    assert.equal(skipReason(shortLead, 'short'), 'not-yet-close')
+  })
+
+  it('does not fire while the next bus is still further away than the lead time', () => {
     const result = evaluate([reminder('a')], snapshot({ seconds: 600 }))
 
     assert.deepEqual(result.due, [])
     assert.equal(skipReason(result, 'a'), 'not-yet-close')
+  })
+
+  it('fires at the exact lead-time boundary', () => {
+    assert.equal(evaluate([reminder('a')], snapshot({ seconds: 120 })).due.length, 1)
+    assert.equal(evaluate([reminder('a')], snapshot({ seconds: 121 })).due.length, 0)
+  })
+
+  it('does not fire from an expired watch, even from a fresh snapshot', () => {
+    const expired = { ...reminder('a'), expiresAtMs: nowMs }
+    const result = evaluate([expired], snapshot({ seconds: 30 }))
+
+    assert.deepEqual(result.due, [])
+    assert.equal(skipReason(result, 'a'), 'expired')
+  })
+
+  it('keeps a watch live one millisecond before its expiry', () => {
+    const record = { ...reminder('a'), expiresAtMs: nowMs + 1 }
+    assert.equal(evaluate([record], snapshot({ seconds: 30 })).due.length, 1)
   })
 
   // Each "must not fire" case from the issue is asserted on its own reason, so a future change
@@ -158,13 +202,13 @@ describe('alight reminder evaluation', () => {
     assert.equal(result.due.length, 1)
   })
 
-  it('does not fire again for an arrival it already announced', () => {
+  it('skips a watch whose delivery is still in flight', () => {
     const result = evaluateAlightReminders([reminder('a')], snapshot({ seconds: 30 }), {
       now: () => nowMs,
-      alreadySent: () => true,
+      inFlight: () => true,
     })
     assert.deepEqual(result.due, [])
-    assert.equal(skipReason(result, 'a'), 'already-sent')
+    assert.equal(skipReason(result, 'a'), 'delivery-in-flight')
   })
 
   it('evaluates each watch independently', () => {
@@ -177,20 +221,28 @@ describe('alight reminder evaluation', () => {
 })
 
 describe('alight reminder publisher', () => {
-  function setup() {
-    const registry = createAlightReminderRegistry()
-    registry.upsert(reminder('a'))
+  interface SetupOptions {
+    readonly sendNotification?: PushSendNotification
+    readonly notificationsPerHourCap?: number
+    readonly now?: () => number
+  }
+
+  function setup(options: SetupOptions = {}) {
+    const registry = createAlightReminderRegistry({
+      now: options.now ?? (() => nowMs),
+    })
+    registry.upsert(registration('a'))
     const payloads: string[] = []
-    const sendNotification: PushSendNotification = async (_subscription, payload) => {
+    const sendNotification: PushSendNotification = options.sendNotification ?? (async (_subscription, payload) => {
       payloads.push(payload)
       return { statusCode: 201 }
-    }
+    })
     const publisher = createAlightReminderPublisher({
       registry,
-      push,
+      push: { ...push, notificationsPerHourCap: options.notificationsPerHourCap ?? push.notificationsPerHourCap },
       stopName: (stopId) => (stopId === 'COM3' ? 'COM3 Opp' : null),
       sendNotification,
-      now: () => nowMs,
+      now: options.now ?? (() => nowMs),
     })
     return { registry, payloads, publisher }
   }
@@ -216,7 +268,139 @@ describe('alight reminder publisher', () => {
     assert.equal(payload.tag, 'reminder:COM3:D1')
   })
 
-  it('sends nothing for a stale snapshot and re-arms once the next bus is far away', async () => {
+  it('removes the watch after the confirmed send, so a later bus cannot push again', async () => {
+    const { registry, payloads, publisher } = setup()
+
+    assert.equal((await publisher.publish(snapshot({ seconds: 90 }))).notificationsSent, 1)
+    assert.equal(registry.get(endpoint('a')), null)
+
+    // A later bus at the same stop, and the rider's re-armed state, must not produce a second push.
+    assert.equal((await publisher.publish(snapshot({ seconds: 600 }))).notificationsSent, 0)
+    assert.equal((await publisher.publish(snapshot({ seconds: 90 }))).notificationsSent, 0)
+    assert.equal(payloads.length, 1)
+  })
+
+  it('keeps the watch eligible when a send fails for a transient reason', async () => {
+    let failNext = true
+    const streamed: string[] = []
+    const { registry, publisher } = setup({
+      sendNotification: async (_subscription, payload) => {
+        if (failNext) {
+          failNext = false
+          throw Object.assign(new Error('server error'), { statusCode: 503 })
+        }
+        streamed.push(payload)
+        return { statusCode: 201 }
+      },
+    })
+
+    const failed = await publisher.publish(snapshot({ seconds: 90 }))
+    assert.equal(failed.notificationsSent, 0)
+    // Neither the watch nor the announced state was consumed by the failure.
+    assert.notEqual(registry.get(endpoint('a')), null)
+    assert.equal(publisher.cap.trackedCount, 0)
+
+    const retried = await publisher.publish(snapshot({ seconds: 80 }))
+    assert.equal(retried.notificationsSent, 1)
+    assert.equal(streamed.length, 1)
+    assert.equal(registry.get(endpoint('a')), null)
+  })
+
+  it('does not spend the hourly cap or remove the watch when the cap refuses the send', async () => {
+    const { registry, payloads, publisher } = setup({ notificationsPerHourCap: 0 })
+
+    const result = await publisher.publish(snapshot({ seconds: 60 }))
+
+    assert.equal(result.notificationsSent, 0)
+    assert.equal(payloads.length, 0)
+    assert.notEqual(registry.get(endpoint('a')), null)
+  })
+
+  it('prevents a duplicate send while the first delivery is still in flight', async () => {
+    let release: (() => void) | undefined
+    const payloads: string[] = []
+    const { registry, publisher } = setup({
+      sendNotification: async (_subscription, payload) => {
+        payloads.push(payload)
+        await new Promise<void>((resolve) => { release = resolve })
+        return { statusCode: 201 }
+      },
+    })
+
+    const first = publisher.publish(snapshot({ seconds: 90 }))
+    // A second snapshot arrives before the push service answered the first send.
+    const second = await publisher.publish(snapshot({ seconds: 80 }))
+    assert.equal(second.notificationsSent, 0)
+    assert.equal(second.skipped[0]?.reason, 'delivery-in-flight')
+    assert.equal(payloads.length, 1)
+
+    release?.()
+    assert.equal((await first).notificationsSent, 1)
+    assert.equal(registry.get(endpoint('a')), null)
+  })
+
+  it('removes an endpoint the push service reports as gone', async () => {
+    const { registry, publisher } = setup({
+      sendNotification: async () => { throw Object.assign(new Error('expired'), { statusCode: 410 }) },
+    })
+
+    const result = await publisher.publish(snapshot({ seconds: 60 }))
+
+    assert.deepEqual(result.prunedEndpoints, [endpoint('a')])
+    assert.equal(registry.size, 0)
+  })
+
+  it('prunes a 404 as well as a 410', async () => {
+    const { registry, publisher } = setup({
+      sendNotification: async () => { throw Object.assign(new Error('not found'), { statusCode: 404 }) },
+    })
+
+    const result = await publisher.publish(snapshot({ seconds: 60 }))
+
+    assert.deepEqual(result.prunedEndpoints, [endpoint('a')])
+    assert.equal(registry.size, 0)
+  })
+
+  it('keeps a watch re-registered during an in-flight send', async () => {
+    let release: (() => void) | undefined
+    const { registry, publisher } = setup({
+      sendNotification: async () => {
+        await new Promise<void>((resolve) => { release = resolve })
+        return { statusCode: 201 }
+      },
+    })
+
+    const inFlight = publisher.publish(snapshot({ seconds: 90 }))
+    // The rider removes this stop's reminder and asks for another one while the send is in flight.
+    registry.upsert(registration('a', 'CLB', 'A1', 60))
+
+    release?.()
+    await inFlight
+
+    const stored = registry.get(endpoint('a'))
+    assert.notEqual(stored, null)
+    assert.deepEqual(stored?.watch, { stopId: 'CLB', routeId: 'A1' })
+  })
+
+  it('keeps a re-registered watch when the in-flight send is pruned as gone', async () => {
+    let release: (() => void) | undefined
+    const { registry, publisher } = setup({
+      sendNotification: async () => {
+        await new Promise<void>((resolve) => { release = resolve })
+        throw Object.assign(new Error('expired'), { statusCode: 410 })
+      },
+    })
+
+    const inFlight = publisher.publish(snapshot({ seconds: 90 }))
+    registry.upsert(registration('a', 'CLB', 'A1', 60))
+
+    release?.()
+    await inFlight
+
+    assert.deepEqual(registry.get(endpoint('a'))?.watch, { stopId: 'CLB', routeId: 'A1' })
+  })
+
+  it('sends nothing from a stale snapshot and still fires once the data is fresh', async () => {
     const { payloads, publisher } = setup()
 
     assert.equal((await publisher.publish(snapshot({ expiresAt: '2026-11-06T09:59:00Z' }))).notificationsSent, 0)
@@ -225,50 +409,42 @@ describe('alight reminder publisher', () => {
     assert.equal(payloads.length, 1)
   })
 
-  it('pushes once per arrival, not on every refresh', async () => {
-    const { payloads, publisher } = setup()
+  it('never pushes an expired watch, and removes it', async () => {
+    let nowValue = nowMs
+    const { registry, payloads, publisher } = setup({ now: () => nowValue })
+    const created = registry.get(endpoint('a'))
+    assert.ok(created)
 
-    assert.equal((await publisher.publish(snapshot({ seconds: 110 }))).notificationsSent, 1)
-    assert.equal((await publisher.publish(snapshot({ seconds: 80 }))).notificationsSent, 0)
-    assert.equal(payloads.length, 1)
-  })
+    nowValue = created.expiresAtMs
+    // Fresh data exists, but the watch expired exactly at this instant.
+    const result = await publisher.publish(snapshot({ observedAt: new Date(nowValue).toISOString(), seconds: 30 }))
 
-  it('removes an endpoint the push service reports as gone', async () => {
-    const registry = createAlightReminderRegistry()
-    registry.upsert(reminder('gone'))
-    const publisher = createAlightReminderPublisher({
-      registry,
-      push,
-      stopName: () => 'COM3 Opp',
-      sendNotification: async () => { throw Object.assign(new Error('expired'), { statusCode: 410 }) },
-      now: () => nowMs,
-    })
-
-    const result = await publisher.publish(snapshot({ seconds: 60 }))
-
-    assert.deepEqual(result.prunedEndpoints, [endpoint('gone')])
+    assert.equal(result.notificationsSent, 0)
+    assert.deepEqual(result.expiredEndpoints, [endpoint('a')])
+    assert.equal(payloads.length, 0)
     assert.equal(registry.size, 0)
   })
 
-  it('respects the hourly cap and re-arms the watch when the reminder is forgotten', async () => {
-    const registry = createAlightReminderRegistry()
-    registry.upsert(reminder('a'))
-    let sends = 0
-    const publisher = createAlightReminderPublisher({
-      registry,
-      push: { ...push, notificationsPerHourCap: 1 },
-      stopName: () => 'COM3 Opp',
-      sendNotification: async () => { sends += 1; return { statusCode: 201 } },
-      now: () => nowMs,
-    })
+  it('does not push an expired watch even when no snapshot mentions it', async () => {
+    let nowValue = nowMs
+    const { registry, publisher } = setup({ now: () => nowValue })
+    const created = registry.get(endpoint('a'))
+    assert.ok(created)
 
-    assert.equal((await publisher.publish(snapshot({ seconds: 60 }))).notificationsSent, 1)
-    // Re-armed, but the hourly cap refuses the second notification in the same hour.
-    assert.equal((await publisher.publish(snapshot({ seconds: 900 }))).notificationsSent, 0)
-    assert.equal((await publisher.publish(snapshot({ seconds: 60 }))).notificationsSent, 0)
-    publisher.forgetSubscription(endpoint('a'))
-    assert.equal((await publisher.publish(snapshot({ seconds: 60 }))).notificationsSent, 1)
-    assert.equal(sends, 2)
+    nowValue = created.expiresAtMs + 1
+    const result = await publisher.publish(snapshot({ observedAt: new Date(nowValue).toISOString(), seconds: 30 }))
+
+    assert.equal(result.notificationsSent, 0)
+    assert.deepEqual(result.expiredEndpoints, [endpoint('a')])
+    assert.equal(registry.size, 0)
+  })
+
+  it('retries a watch that is still inside its lead time on the next snapshot', async () => {
+    const { payloads, publisher } = setup()
+
+    assert.equal((await publisher.publish(snapshot({ seconds: 200 }))).notificationsSent, 0)
+    assert.equal((await publisher.publish(snapshot({ seconds: 110 }))).notificationsSent, 1)
+    assert.equal(payloads.length, 1)
   })
 
   it('shares the service-status reader supplied after composition', async () => {

@@ -142,13 +142,19 @@ export type { PushNotificationPayload, PushNotificationTopic } from './push/noti
 export {
   PUSH_REMINDER_TOPIC,
   PUSH_REMINDER_ID_MAX_LENGTH,
+  PUSH_REMINDER_LEAD_TIME_OPTIONS_SECONDS,
+  DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS,
+  isPushReminderLeadTimeSeconds,
   parsePushReminderRegistration,
   parsePushReminderRequest,
+  parsePushReminderResponse,
   parsePushReminderTarget,
 } from './push/reminders.ts'
 export type {
+  PushReminderLeadTimeSeconds,
   PushReminderRegistration,
   PushReminderRequest,
+  PushReminderResponse,
   PushReminderTarget,
   PushReminderTopic,
 } from './push/reminders.ts'

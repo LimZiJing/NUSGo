@@ -97,7 +97,8 @@ describe('alight reminders and upstream call volume', () => {
     const stop = backendData.network.stops[0]
     assert.ok(stop)
     const counts = { shuttleService: 0 }
-    const registry = createAlightReminderRegistry()
+    // The registry shares the publisher's clock so the watch's expiry is deterministic too.
+    const registry = createAlightReminderRegistry({ now: () => fixedNow })
     const sent: string[] = []
     const publisher = createAlightReminderPublisher({
       registry,
@@ -122,6 +123,7 @@ describe('alight reminders and upstream call volume', () => {
       keys: { p256dh: 'BPublicKeyValue', auth: 'AuthSecretValue' },
       topic: 'alight-reminders',
       watch: { stopId: stop.id, routeId: 'D1' },
+      leadTimeSeconds: 120,
     })
 
     const liveData = await createBackendLiveData(config, backendData, {

@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, before, describe, it } from 'node:test'
-import { generateShuttleTimingData, validateTransitMapData } from '@nusgo/shared'
+import { generateShuttleTimingData, validateTransitMapData, type PushReminderResponse } from '@nusgo/shared'
 import { loadBackendConfig } from '../../config.ts'
 import { validateCanonicalData, type BackendData } from '../../canonical-data.ts'
-import { createAlightReminderRegistry, type AlightReminderRegistry } from '../../push/reminder-registry.ts'
+import { DEFAULT_ALIGHT_REMINDER_TTL_MS, createAlightReminderRegistry, type AlightReminderRegistry } from '../../push/reminder-registry.ts'
 import { createNotificationCap } from '../../push/notification-cap.ts'
 import { createPushSubscriptionStore } from '../../push/subscription-store.ts'
 import { createApp } from '../app.ts'
@@ -15,6 +15,7 @@ import { closeHttpServer, listenHttpServer } from '../../server.ts'
 const PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 const sourceDataDirectory = resolve(repositoryRoot, 'frontend/public/data')
+const registeredAtMs = Date.parse('2026-11-06T10:00:00Z')
 let backendData: BackendData
 
 const registration = {
@@ -22,6 +23,7 @@ const registration = {
   keys: { p256dh: 'BCV2Y0YnotzQ', auth: 'k8Z0dP2vG2s' },
   topic: 'alight-reminders',
   watch: { stopId: 'COM3', routeId: 'D1' },
+  leadTimeSeconds: 120,
 }
 
 const servers: Awaited<ReturnType<typeof listenHttpServer>>[] = []
@@ -59,6 +61,8 @@ after(async () => {
 interface ServerOptions {
   readonly push?: boolean
   readonly subscriptionRateLimitMaxRequests?: number
+  /** Server clock for the registry, so expiry assertions are exact rather than timing-dependent. */
+  readonly now?: () => number
 }
 
 async function withServer(
@@ -79,7 +83,7 @@ async function withServer(
   })
   const store = createPushSubscriptionStore()
   const cap = createNotificationCap({ maxPerHour: 4 })
-  const registry = createAlightReminderRegistry()
+  const registry = createAlightReminderRegistry({ now: options.now ?? (() => registeredAtMs) })
   const server = await listenHttpServer(
     createApp(config, backendData, null, null, { store, cap, reminderRegistry: registry }),
     '127.0.0.1',
@@ -104,13 +108,67 @@ function post(baseUrl: string, path: string, body: unknown): Promise<Response> {
 }
 
 describe('alight reminder routes', () => {
-  it('stores a reminder registration and echoes the reminder topic', async () => {
+  it('stores a reminder and echoes the topic, lead time and server expiry', async () => {
     await withServer(async (baseUrl, registry) => {
       const response = await post(baseUrl, '/api/push/reminders', registration)
 
       assert.equal(response.status, 201)
-      assert.deepEqual(await response.json(), { topic: 'alight-reminders' })
-      assert.deepEqual(registry.get(registration.endpoint), registration)
+      const body = await response.json() as PushReminderResponse
+      assert.equal(body.topic, 'alight-reminders')
+      assert.equal(body.leadTimeSeconds, 120)
+      // The client cannot choose its own expiry; the server assigns it from its own clock.
+      assert.equal(body.expiresAt, new Date(registeredAtMs + DEFAULT_ALIGHT_REMINDER_TTL_MS).toISOString())
+      assert.deepEqual(registry.get(registration.endpoint)?.watch, registration.watch)
+      assert.equal(registry.get(registration.endpoint)?.leadTimeSeconds, 120)
+    })
+  })
+
+  it('stores the lead time the rider chose and defaults when it is omitted', async () => {
+    await withServer(async (baseUrl, registry) => {
+      const chosen = await post(baseUrl, '/api/push/reminders', {
+        ...registration,
+        leadTimeSeconds: 180,
+      })
+      assert.equal(chosen.status, 201)
+      assert.equal(((await chosen.json()) as PushReminderResponse).leadTimeSeconds, 180)
+      assert.equal(registry.get(registration.endpoint)?.leadTimeSeconds, 180)
+
+      // Omitting the field is the documented default rather than a rejection.
+      const withoutLeadTime = {
+        endpoint: registration.endpoint + '-default',
+        keys: registration.keys,
+        topic: registration.topic,
+        watch: registration.watch,
+      }
+      const defaulted = await post(baseUrl, '/api/push/reminders', withoutLeadTime)
+      assert.equal(defaulted.status, 201)
+      assert.equal(((await defaulted.json()) as PushReminderResponse).leadTimeSeconds, 120)
+    })
+  })
+
+  it('rejects a lead time outside the offered set instead of rounding it', async () => {
+    await withServer(async (baseUrl, registry) => {
+      for (const leadTimeSeconds of [0, -120, 90, 3600, '120', null]) {
+        const response = await post(baseUrl, '/api/push/reminders', { ...registration, leadTimeSeconds })
+        assert.equal(response.status, 400, JSON.stringify(leadTimeSeconds))
+        assert.equal(((await response.json()) as { code?: string }).code, 'invalid_request')
+      }
+      assert.equal(registry.size, 0)
+    })
+  })
+
+  it('ignores a client-supplied expiry and keeps the server-assigned one', async () => {
+    await withServer(async (baseUrl, registry) => {
+      const response = await post(baseUrl, '/api/push/reminders', {
+        ...registration,
+        expiresAt: '2099-01-01T00:00:00Z',
+        createdAtMs: 0,
+      })
+
+      assert.equal(response.status, 201)
+      const stored = registry.get(registration.endpoint)
+      assert.equal(stored?.expiresAtMs, registeredAtMs + DEFAULT_ALIGHT_REMINDER_TTL_MS)
+      assert.equal(stored?.createdAtMs, registeredAtMs)
     })
   })
 
@@ -163,6 +221,21 @@ describe('alight reminder routes', () => {
       const response = await post(baseUrl, '/api/push/reminders/remove', { endpoint: 'javascript:alert(1)' })
       assert.equal(response.status, 400)
     })
+  })
+
+  it('reports an expired registration as gone, so it can never be read back', async () => {
+    let nowMs = registeredAtMs
+    await withServer(async (baseUrl, registry) => {
+      await post(baseUrl, '/api/push/reminders', registration)
+      assert.notEqual(registry.get(registration.endpoint), null)
+
+      // One millisecond before expiry the watch is still live; at the boundary it is removed.
+      nowMs = registeredAtMs + DEFAULT_ALIGHT_REMINDER_TTL_MS - 1
+      assert.notEqual(registry.get(registration.endpoint), null)
+      nowMs = registeredAtMs + DEFAULT_ALIGHT_REMINDER_TTL_MS
+      assert.equal(registry.get(registration.endpoint), null)
+      assert.equal(registry.size, 0)
+    }, { now: () => nowMs })
   })
 
   it('rate limits reminder writes with the push routes per-client budget', async () => {

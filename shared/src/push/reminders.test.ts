@@ -6,8 +6,12 @@ import {
   parsePushNotificationPayload,
 } from './notifications.ts'
 import {
+  DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS,
+  PUSH_REMINDER_LEAD_TIME_OPTIONS_SECONDS,
+  isPushReminderLeadTimeSeconds,
   parsePushReminderRegistration,
   parsePushReminderRequest,
+  parsePushReminderResponse,
   parsePushReminderTarget,
 } from './reminders.ts'
 
@@ -42,19 +46,30 @@ describe('alight reminder payload', () => {
 })
 
 describe('alight reminder registration', () => {
-  it('pins the topic and reads the watch target', () => {
+  it('pins the topic, reads the watch target and keeps the chosen lead time', () => {
     expect(parsePushReminderRegistration({
       endpoint: 'https://fcm.googleapis.com/fcm/send/a',
       keys,
       // A caller cannot file a stop watch under another topic.
       topic: 'service-updates',
       watch: { stopId: 'COM3', routeId: 'D1' },
+      leadTimeSeconds: 60,
     })).toEqual({
       endpoint: 'https://fcm.googleapis.com/fcm/send/a',
       keys,
       topic: 'alight-reminders',
       watch: { stopId: 'COM3', routeId: 'D1' },
+      leadTimeSeconds: 60,
     })
+  })
+
+  it('defaults an omitted lead time to two minutes', () => {
+    expect(parsePushReminderRegistration({
+      endpoint: 'https://fcm.googleapis.com/fcm/send/a',
+      keys,
+      watch: { stopId: 'COM3', routeId: 'D1' },
+    })?.leadTimeSeconds).toBe(DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS)
+    expect(DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS).toBe(120)
   })
 
   it.each([
@@ -69,6 +84,30 @@ describe('alight reminder registration', () => {
       keys,
       ...patch,
     })).toBeNull()
+  })
+
+  // An off-list lead time is rejected rather than rounded: the rider must see the value that
+  // will actually be evaluated, so the server must not quietly substitute another one.
+  it.each([0, 90, 121, 3600, '120', null, { seconds: 120 }])(
+    'rejects the lead time %s because it is not one of the offered choices',
+    (leadTimeSeconds) => {
+      expect(parsePushReminderRegistration({
+        endpoint: 'https://fcm.googleapis.com/fcm/send/a',
+        keys,
+        watch: { stopId: 'COM3', routeId: 'D1' },
+        leadTimeSeconds,
+      })).toBeNull()
+    },
+  )
+
+  it('offers a short ascending list of whole-minute lead times', () => {
+    expect([...PUSH_REMINDER_LEAD_TIME_OPTIONS_SECONDS]).toEqual([60, 120, 180])
+    expect(PUSH_REMINDER_LEAD_TIME_OPTIONS_SECONDS.every((seconds) => seconds % 60 === 0)).toBe(true)
+  })
+
+  it('recognises only offered lead times', () => {
+    expect(isPushReminderLeadTimeSeconds(60)).toBe(true)
+    expect(isPushReminderLeadTimeSeconds(90)).toBe(false)
   })
 
   it('rejects an endpoint that is not HTTPS, because the sender would post to it', () => {
@@ -86,5 +125,29 @@ describe('alight reminder registration', () => {
     expect(parsePushReminderRequest({ endpoint: 'https://fcm.googleapis.com/fcm/send/a' }))
       .toBe('https://fcm.googleapis.com/fcm/send/a')
     expect(parsePushReminderRequest({ endpoint: 'javascript:alert(1)' })).toBeNull()
+  })
+})
+
+describe('alight reminder acknowledgement', () => {
+  it('accepts the stored lead time and expiry', () => {
+    expect(parsePushReminderResponse({
+      topic: 'alight-reminders',
+      leadTimeSeconds: 120,
+      expiresAt: '2026-11-06T12:00:00.000Z',
+    })).toEqual({
+      topic: 'alight-reminders',
+      leadTimeSeconds: 120,
+      expiresAt: '2026-11-06T12:00:00.000Z',
+    })
+  })
+
+  it.each([
+    ['a wrong topic', { topic: 'service-updates', leadTimeSeconds: 120, expiresAt: '2026-11-06T12:00:00.000Z' }],
+    ['an off-list lead time', { topic: 'alight-reminders', leadTimeSeconds: 90, expiresAt: '2026-11-06T12:00:00.000Z' }],
+    ['an unreadable expiry', { topic: 'alight-reminders', leadTimeSeconds: 120, expiresAt: 'soon' }],
+    ['a missing expiry', { topic: 'alight-reminders', leadTimeSeconds: 120 }],
+    ['a non-object body', null],
+  ])('rejects %s so the caller falls back to what it asked for', (_label, body) => {
+    expect(parsePushReminderResponse(body)).toBeNull()
   })
 })

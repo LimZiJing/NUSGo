@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T17:13:45Z",
+  "generatedAt": "2026-11-08T09:49:43Z",
   "title": "Design System: NUSGo",
   "extensions": {
     "colorMeta": {
@@ -187,6 +187,14 @@
       "description": "Compact bus-stop row with an expandable detail affordance.",
       "html": "<article class='ds-stop-card'><button type='button' class='ds-stop-row' aria-expanded='false' aria-controls='arrival-details'><strong>Kent Ridge MRT</strong><span class='ds-card-live'>Live</span><span aria-hidden='true'>⌄</span></button><div id='arrival-details' hidden>Arrival details</div></article>",
       "css": ".ds-stop-card{min-width:0;overflow:hidden;border:1px solid var(--border-card);border-radius:var(--radius-card);background:var(--surface-card);box-shadow:var(--shadow-sm)}.ds-stop-row{display:flex;align-items:center;gap:var(--space-2);width:100%;min-height:var(--control-height-lg);padding:0 var(--space-3);border:0;border-radius:var(--radius-panel);color:var(--text-strong);background:transparent;font:inherit;text-align:left;cursor:pointer}.ds-stop-row strong{flex:1;overflow:hidden;font-size:var(--font-size-sm);font-weight:600;text-overflow:ellipsis;white-space:nowrap}.ds-card-live{color:var(--status-success);font-size:var(--font-size-xs);font-weight:600}.ds-stop-row:focus-visible{outline:var(--focus-outline);outline-offset:calc(-1 * var(--focus-ring-width))}"
+    },
+    {
+      "name": "Community Waypoints Download",
+      "kind": "download",
+      "refersTo": "button-secondary",
+      "description": "Compact square secondary icon button beside its action label in Settings → Waypoints.",
+      "html": "<div class='settings-about-card'><div class='settings-about-row settings-waypoints-download-row'><a class='button icon-button settings-waypoints-download-link' data-variant='secondary' data-size='sm' aria-label='Download approved community waypoints' href='#' download='community-waypoints.geojson'><svg aria-hidden='true' viewBox='0 0 24 24'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='m7 10 5 5 5-5'/><path d='M12 15V3'/></svg></a><span>Download approved community waypoints</span></div></div>",
+      "css": ".settings-about-card{overflow:hidden;border:1px solid var(--border-card);border-radius:var(--radius-lg);background:var(--surface-card)}.settings-waypoints-download-row{display:flex;align-items:center;gap:var(--space-3)}.settings-waypoints-download-link{text-decoration:none}"
     }
   ],
   "narrative": {

@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7734, 1.2945]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440001",
+        "name": "Water cooler",
+        "category": "water_cooler",
+        "source": "Checked at the site",
+        "updatedAt": "2026-11-08",
+        "building": "Central Library",
+        "floor": 1,
+        "accessibilityNote": "Beside the lift lobby",
+        "details": "Near the main entrance"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7801, 1.2978]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440002",
+        "name": "ATM",
+        "category": "atm",
+        "source": "Confirmed in the campus facilities listing",
+        "updatedAt": "2026-11-08",
+        "building": null,
+        "floor": null,
+        "accessibilityNote": null,
+        "details": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7844, 1.2933]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440003",
+        "name": "Toilet",
+        "category": "toilet",
+        "source": "Verified during a campus visit",
+        "updatedAt": "2026-11-08",
+        "building": null,
+        "floor": -1,
+        "accessibilityNote": "Accessible from the corridor",
+        "details": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.776, 1.2865]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440004",
+        "name": "Vending machine",
+        "category": "vending_machine",
+        "source": "Observed at the location",
+        "updatedAt": "2026-11-08",
+        "building": "Faculty Building",
+        "floor": 0,
+        "accessibilityNote": null,
+        "details": "Next to the service counter"
+      }
+    }
+  ]
+}

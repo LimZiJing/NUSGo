@@ -37,9 +37,11 @@ Server side:
 - `GET /api/push/public-key` returns `{ publicKey }`, or `null` when push is not configured. `POST /api/push/subscriptions` stores a subscription, and `POST /api/push/subscriptions/remove` forgets one.
 - Stored fields are the push endpoint, its two keys and the topic. Nothing identifies the person. Input is validated at the boundary, the endpoints are rate limited per client, and each subscription is capped at `PUSH_NOTIFICATIONS_PER_HOUR_CAP` notifications per hour. Re-registering or unsubscribing resets that endpoint's hourly window.
 - A new registration is accepted only for a supported push service host (FCM, Mozilla autopush, Apple Web Push) on the default HTTPS port. Local, loopback, private-network and credential-bearing endpoints and host lookalikes are rejected, so a client cannot point the sender at an arbitrary host. Removal accepts any public HTTPS endpoint, which keeps older records unsubscribable without widening what may be registered or contacted.
-- Each send carries a one-hour TTL and a ten-second request timeout, so a device that was offline does not receive a stale service update much later and a slow push service cannot hold the sender open.
+- Each send carries a two-minute TTL and a ten-second request timeout, so a device that was offline does not receive a stale service update much later and a slow push service cannot hold the sender open.
 - Updates are derived from the existing published shuttle snapshots, so push adds no poller and no upstream request. At most one notification is sent per snapshot, choosing the largest valid update, with a repeat window per stop and route.
-- Subscriptions that a push service reports as gone (404 or 410) are pruned. A temporary delivery failure keeps the subscription and does not use up the hourly cap.
+- Subscriptions that a push service reports as gone (404 or 410) are pruned. A temporary delivery failure keeps the subscription and releases its reserved hourly allowance. In-flight sends reserve capacity across publishers, so overlapping snapshots cannot bypass the cap.
+
+Service-announcement notifications from issue #502 remain unimplemented: the current providers and canonical data expose no announcement feed. A real source must be agreed and connected through the existing refresh lifecycle before that requirement can be completed.
 
 Subscriptions live in process memory, so they do not survive a backend restart, and a restart means devices must opt in again. This matches the single-instance limitation of the shuttle snapshot. Actual delivery to an Android device with the screen off, to a Wear OS companion, or to a physical phone has not been tested; the code paths here are covered only by unit and HTTP boundary tests.
 

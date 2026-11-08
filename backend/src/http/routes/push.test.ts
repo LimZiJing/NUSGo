@@ -227,7 +227,7 @@ describe('push subscription routes', () => {
       const maxPerHour = 4
       for (let index = 0; index < maxPerHour; index += 1) {
         assert.equal(cap.hasCapacity(subscription.endpoint), true)
-        cap.record(subscription.endpoint)
+        cap.reserve(subscription.endpoint)?.commit()
       }
       assert.equal(cap.hasCapacity(subscription.endpoint), false)
 
@@ -240,7 +240,7 @@ describe('push subscription routes', () => {
 
   it('resets the delivered-notification cap when the endpoint unsubscribes', async () => {
     await withServer(async (baseUrl, _store, cap) => {
-      for (let index = 0; index < 4; index += 1) cap.record(subscription.endpoint)
+      for (let index = 0; index < 4; index += 1) cap.reserve(subscription.endpoint)?.commit()
       assert.equal(cap.hasCapacity(subscription.endpoint), false)
 
       const response = await post(baseUrl, '/api/push/subscriptions/remove', { endpoint: subscription.endpoint })

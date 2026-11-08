@@ -232,7 +232,7 @@ describe('service update publisher', () => {
       TTL: PUSH_NOTIFICATION_TTL_SECONDS,
       timeout: PUSH_NOTIFICATION_TIMEOUT_MS,
     }])
-    assert.ok(PUSH_NOTIFICATION_TTL_SECONDS > 0 && PUSH_NOTIFICATION_TTL_SECONDS <= 3_600)
+    assert.ok(PUSH_NOTIFICATION_TTL_SECONDS > 0 && PUSH_NOTIFICATION_TTL_SECONDS <= 120)
   })
 
   it('stops sending once a subscription reaches the hourly cap', async () => {
@@ -277,7 +277,7 @@ describe('service update publisher', () => {
 
     assert.equal(publisher.cap, sharedCap)
     // The route-side reset must free the window the publisher is enforcing.
-    sharedCap.record(endpoint('a'))
+    sharedCap.reserve(endpoint('a'))?.commit()
     assert.equal(sharedCap.hasCapacity(endpoint('a')), false)
     sharedCap.reset(endpoint('a'))
     assert.equal(sharedCap.hasCapacity(endpoint('a')), true)
@@ -312,8 +312,8 @@ describe('service update publisher', () => {
     subscribe(store, 'a')
     subscribe(store, 'b')
     const cap = createNotificationCap({ maxPerHour: 2 })
-    cap.record(endpoint('a'))
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
+    cap.reserve(endpoint('a'))?.commit()
     const sent: string[] = []
     const publisher = createServiceUpdatePublisher({
       store,
@@ -379,5 +379,35 @@ describe('service update publisher', () => {
 
     assert.deepEqual(result.prunedEndpoints, [endpoint('gone')])
     assert.equal(store.size, 0)
+  })
+})
+
+
+describe('overlapping push delivery', () => {
+  it('holds the shared cap until an accepted or rejected send settles', async () => {
+    const store = createPushSubscriptionStore()
+    subscribe(store, 'a')
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    let rejectSend: (error: Error) => void = () => undefined
+    let sends = 0
+    const send: PushSendNotification = async () => {
+      sends += 1
+      return new Promise<{ statusCode: number }>((_resolve, reject) => { rejectSend = reject })
+    }
+    const options = {
+      cap,
+      payloadFor: () => ({ title: 'T', body: 'B', url: '?stop=COM3', topic: 'service-updates' as const, tag: 'tag' }),
+    }
+    const first = deliverPushNotifications(store, send, store.list(), options)
+    const overlapping = await deliverPushNotifications(store, send, store.list(), options)
+    assert.equal(sends, 1)
+    assert.equal(overlapping.deliveredCount, 0)
+    rejectSend(new Error('temporary outage'))
+    assert.equal((await first).failedCount, 1)
+    const retry = await deliverPushNotifications(store, async () => ({ statusCode: 201 }), store.list(), options)
+    assert.equal(retry.deliveredCount, 1)
+    const capped = await deliverPushNotifications(store, send, store.list(), options)
+    assert.equal(capped.deliveredCount, 0)
+    assert.equal(sends, 1)
   })
 })

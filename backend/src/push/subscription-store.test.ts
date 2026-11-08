@@ -67,8 +67,8 @@ describe('notification hourly cap', () => {
     let nowMs = 1_000
     const cap = createNotificationCap({ maxPerHour: 2, now: () => nowMs })
 
-    cap.record(endpoint('a'))
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
+    cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.hasCapacity(endpoint('a')), false)
 
     // Just under an hour later the same window still applies.
@@ -81,7 +81,7 @@ describe('notification hourly cap', () => {
 
   it('keeps the cap independent per subscription', () => {
     const cap = createNotificationCap({ maxPerHour: 1 })
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.hasCapacity(endpoint('a')), false)
     assert.equal(cap.hasCapacity(endpoint('b')), true)
   })
@@ -93,17 +93,45 @@ describe('notification hourly cap', () => {
     // service failed, leaves the allowance untouched.
     assert.equal(cap.hasCapacity(endpoint('a')), true)
     assert.equal(cap.hasCapacity(endpoint('a')), true)
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.hasCapacity(endpoint('a')), false)
   })
 
   it('forgets a subscription window on reset', () => {
     const cap = createNotificationCap({ maxPerHour: 1 })
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.hasCapacity(endpoint('a')), false)
     cap.reset(endpoint('a'))
     assert.equal(cap.hasCapacity(endpoint('a')), true)
-    cap.record(endpoint('a'))
+    cap.reserve(endpoint('a'))?.commit()
     assert.equal(cap.trackedCount, 1)
+  })
+})
+
+
+describe('notification reservations', () => {
+  it('holds capacity during delivery and returns it after a transient failure', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    const first = cap.reserve(endpoint('a'))
+    assert.ok(first)
+    assert.equal(cap.reserve(endpoint('a')), null)
+    first.release()
+    first.release()
+    const retry = cap.reserve(endpoint('a'))
+    assert.ok(retry)
+    retry.commit()
+    retry.release()
+    assert.equal(cap.reserve(endpoint('a')), null)
+  })
+
+  it('does not charge a re-registered endpoint for an old in-flight send', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    const old = cap.reserve(endpoint('a'))
+    assert.ok(old)
+    cap.reset(endpoint('a'))
+    old.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
   })
 })

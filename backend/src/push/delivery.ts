@@ -1,4 +1,5 @@
 import type { PushNotificationPayload } from '@nusgo/shared'
+import type { NotificationCap } from './notification-cap.ts'
 import type { PushSubscriptionRecord, PushSubscriptionStore } from './subscription-store.ts'
 
 /** Options every actual send must carry, so no call site can omit the bounds. */
@@ -16,14 +17,8 @@ export type PushSendNotification = (
   options: PushSendOptions,
 ) => Promise<{ statusCode: number }>
 
-/**
- * Short bound on how long a push service may hold a message for a device that is offline.
- *
- * Service updates describe a bus that is late or a stop that is briefly not updating, so a
- * notification delivered hours later is misleading. An hour still covers a phone that was in a
- * tunnel for the duration of a journey.
- */
-export const PUSH_NOTIFICATION_TTL_SECONDS = 60 * 60
+// Arrival predictions change quickly; an offline device must not receive an old bus alert.
+export const PUSH_NOTIFICATION_TTL_SECONDS = 2 * 60
 
 /** A push-service request that has not answered by then is treated as a failed delivery. */
 export const PUSH_NOTIFICATION_TIMEOUT_MS = 10_000
@@ -36,12 +31,13 @@ export interface DeliverySummary {
 }
 
 export interface DeliverOptions {
+  /** Shared across publishers so concurrent topics reserve the same endpoint allowance. */
+  readonly cap?: NotificationCap
   /** Returns the payload for a subscription, or null to skip it (for example, over the hourly cap). */
   readonly payloadFor: (record: PushSubscriptionRecord) => PushNotificationPayload | null
   /**
-   * Called after the push service accepted a delivery. A product rule such as the hourly cap is
-   * recorded here rather than when the payload was chosen, so a transient failure does not spend
-   * the recipient's allowance.
+   * Called only after acceptance, for effects such as removing a delivered one-shot reminder.
+   * The shared cap has already committed its reservation at this point.
    */
   readonly onDelivered?: (record: PushSubscriptionRecord) => void
 }
@@ -78,6 +74,8 @@ export async function deliverPushNotifications(
   const deliverOne = async (record: PushSubscriptionRecord): Promise<void> => {
     const payload = options.payloadFor(record)
     if (!payload) return
+    const reservation = options.cap?.reserve(record.endpoint)
+    if (options.cap && !reservation) return
 
     try {
       await sendNotification(
@@ -85,6 +83,7 @@ export async function deliverPushNotifications(
         JSON.stringify(payload),
         { TTL: PUSH_NOTIFICATION_TTL_SECONDS, timeout: PUSH_NOTIFICATION_TIMEOUT_MS },
       )
+      reservation?.commit()
       deliveredCount += 1
       options.onDelivered?.(record)
     } catch (error: unknown) {
@@ -97,6 +96,8 @@ export async function deliverPushNotifications(
       console.warn('NUSGo push delivery failed.', {
         errorType: error instanceof Error ? error.name : typeof error,
       })
+    } finally {
+      reservation?.release()
     }
   }
 

@@ -93,10 +93,8 @@ export function createServiceUpdatePublisher(
     }
 
     const summary = await deliverPushNotifications(options.store, options.sendNotification, subscriptions, {
-      // The hourly cap is a product rule, not a delivery failure: the subscription stays registered.
-      payloadFor: (record) => (cap.hasCapacity(record.endpoint) ? payload : null),
-      // Only a delivery the push service accepted counts against the recipient's allowance.
-      onDelivered: (record) => cap.record(record.endpoint),
+      cap,
+      payloadFor: () => payload,
     })
 
     return {

@@ -77,6 +77,16 @@
   cursor: pointer;
 }
 
+.explore-content .explore-bus-route-list-stop.is-current {
+  color: var(--text-primary);
+  background: var(--surface-info-soft);
+  font-weight: 700;
+}
+
+.explore-content .explore-bus-route-list-stop.is-passed {
+  color: var(--text-secondary);
+}
+
 @media (hover: hover) {
   .explore-bus-route-list-stop:hover {
     background-color: var(--surface-subtle);
@@ -94,6 +104,36 @@
   border-radius: 50%;
   background: var(--surface-card);
   box-shadow: var(--shadow-card-strong);
+}
+
+.explore-bus-route-list-stop.is-current .explore-bus-route-list-node,
+.explore-bus-route-list-stop.is-passed .explore-bus-route-list-node {
+  border-color: var(--text-success-strong);
+  background: var(--text-success-strong);
+}
+
+.route-following-here {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  color: var(--text-success-strong);
+  background: var(--surface-info-soft);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.route-following-here svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: route-list-progress-step 1s ease-in-out infinite;
 }
 
 .explore-bus-route-list-stop-text {
@@ -130,6 +170,11 @@
 .explore-bus-route-list-chevron {
   color: var(--text-muted);
   font-size: var(--font-size-3xl);
+}
+
+@keyframes route-list-progress-step {
+  0%, 100% { transform: translateY(-1px); }
+  50% { transform: translateY(3px); }
 }
 
 .explore-bus-route-list-selection-status {
@@ -194,5 +239,11 @@
   .navigation-column .explore-content-bus-routes .explore-bus-route-list-scroll {
     flex: 1 1 0;
     min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-following-here svg {
+    animation: none;
   }
 }

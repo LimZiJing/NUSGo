@@ -134,6 +134,48 @@ describe('BusRouteList', () => {
     expect(onFocusStop).toHaveBeenCalledWith('STOP-A', stopRow)
   })
 
+  it('shows the Here marker only on the actively followed route', () => {
+    const network = createValidTransitNetwork()
+    render(
+      <BusRouteList
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId="A1"
+        onRouteSelect={() => undefined}
+        routeProgress={{ routeId: 'A1', startIndex: 1, stopIndex: 1 }}
+      />,
+    )
+
+    const timeline = screen.getByRole('list', { name: 'Route A1 ordered stops' })
+    const currentStop = screen.getByRole('button', {
+      name: 'Stop B, bus stop, code STOP-B, current stop. Focus on map',
+    })
+    expect(currentStop.getAttribute('aria-current')).toBe('step')
+    expect(screen.getByRole('button', { name: 'Stop A, bus stop, code STOP-A. Focus on map' }).className)
+      .not.toContain('is-passed')
+    expect(screen.getByText('Here')).toBeTruthy()
+    expect(timeline.contains(currentStop)).toBe(true)
+  })
+
+  it('keeps the bus-route timeline in browse mode when following is inactive', () => {
+    const network = createValidTransitNetwork()
+    render(
+      <BusRouteList
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId="A1"
+        onRouteSelect={() => undefined}
+      />,
+    )
+
+    const timeline = screen.getByRole('list', { name: 'Route A1 ordered stops' })
+    expect(timeline.closest('.explore-bus-route-list-timeline')
+      ?.querySelector('.explore-bus-route-list-timeline-count')?.textContent).toBe('2 stops')
+    expect(screen.queryByText('Here')).toBeNull()
+    expect(screen.queryByText('Follow A1')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Change current stop|Stop following/ })).toBeNull()
+  })
+
   it('renders every D2 stop in canonical order, including the terminal return', () => {
     const network = createD2Network()
     render(

@@ -21,8 +21,15 @@ interface BusRouteListProps {
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onRouteSelect: (routeId: string) => void
+  routeProgress?: ActiveRouteProgress | null
   firstRouteCardRef?: RefObject<HTMLButtonElement | null>
   onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
+}
+
+export interface ActiveRouteProgress {
+  readonly routeId: string
+  readonly startIndex: number
+  readonly stopIndex: number
 }
 
 const ROUTE_DISPLAY_ORDER = ['A1', 'A2', 'D1', 'D2', 'R1', 'R2', 'K', 'P']
@@ -56,6 +63,7 @@ export function BusRouteList({
   networkIndex,
   selectedRouteId,
   onRouteSelect,
+  routeProgress = null,
   firstRouteCardRef,
   onFocusStop,
 }: BusRouteListProps) {
@@ -135,6 +143,10 @@ export function BusRouteList({
   const stopsById = selectedRoute && networkIndex
     ? getRouteStops(networkIndex, selectedRoute)
     : new Map<string, TransitNetwork['stops'][number]>()
+  const followingSelectedRoute = Boolean(
+    selectedRoute
+    && selectedRoute.id === routeProgress?.routeId
+  )
 
   function scrollRoutes(direction: -1 | 1) {
     const routeList = routeListRef.current
@@ -307,14 +319,25 @@ export function BusRouteList({
             <ol className="explore-bus-route-list-stop-list" aria-label={`Route ${selectedRoute.id} ordered stops`}>
               {selectedRoute.stopIds.map((stopId, index) => {
                 const stop = stopsById.get(stopId)
+                const isCurrentStop = followingSelectedRoute && index === routeProgress?.stopIndex
+                const isPassedStop = followingSelectedRoute
+                  && routeProgress !== null
+                  && index >= routeProgress.startIndex
+                  && index < routeProgress.stopIndex
+                const rowClassName = [
+                  'explore-bus-route-list-stop',
+                  isCurrentStop ? 'is-current' : '',
+                  isPassedStop ? 'is-passed' : '',
+                ].filter(Boolean).join(' ')
                 return (
                   <li key={`${stopId}-${index}`}>
                     <button
                       type="button"
-                      className="explore-bus-route-list-stop"
+                      className={rowClassName}
                       data-hover-filter="none"
                       data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, bus stop, code ${stopId}. Focus on map`}
+                      aria-current={isCurrentStop ? 'step' : undefined}
+                      aria-label={`${stop?.longName ?? stopId}, bus stop, code ${stopId}${isCurrentStop ? ', current stop' : isPassedStop ? ', passed stop' : ''}. Focus on map`}
                       onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}
                     >
                       <span className="explore-bus-route-list-node" aria-hidden="true" />
@@ -325,6 +348,14 @@ export function BusRouteList({
                         </span>
                         <small>{stopId}</small>
                       </span>
+                      {isCurrentStop && (
+                        <span className="route-following-here">
+                          Here
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3v17m-6-6 6 6 6-6" />
+                          </svg>
+                        </span>
+                      )}
                       <span className="explore-bus-route-list-chevron" aria-hidden="true">›</span>
                     </button>
                   </li>

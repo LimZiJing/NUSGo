@@ -1141,6 +1141,41 @@ describe('More surface', () => {
     mapTrigger.remove()
   })
 
+  it('returns to the empty list heading when the only waypoint is deleted from details', async () => {
+    const onlyWaypoint = {
+      id: '00000000-0000-4000-8000-000000000013',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [onlyWaypoint],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const mapTrigger = selectPersonalWaypointFromMap(onlyWaypoint.id)
+
+    const panel = document.querySelector('.more-panel-surface')
+    expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+
+    expect(confirm).toHaveBeenCalledWith('Delete "Quiet bench"? This cannot be undone.')
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
+    expect(panel?.querySelector('.more-panel-status')?.textContent).toBe('Place removed.')
+    const emptyHeading = panel?.querySelector('.personal-waypoint-empty')
+    expect(emptyHeading?.textContent).toBe('No saved waypoints yet. Add a waypoint to start your list.')
+    expect(document.activeElement).toBe(emptyHeading)
+    expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
+    confirm.mockRestore()
+    mapTrigger.remove()
+  })
+
   it('opens Add waypoint directly as a form at the map centre', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
@@ -1269,7 +1304,7 @@ describe('More surface', () => {
       name: 'Quiet bench', category: 'Study spot', note: 'Near the trees',
       coordinate: { longitude: 103, latitude: 1 },
     })])
-    expect(screen.getByText('Waypoint saved.').getAttribute('role')).toBe('status')
+    expect(screen.getByText('Waypoint saved.').closest('[role="status"]')?.textContent).toBe('Waypoint saved.')
     vi.unstubAllGlobals()
   })
 

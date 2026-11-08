@@ -574,8 +574,9 @@
   border: 2px solid var(--surface-card);
   border-radius: 50%;
   box-sizing: border-box;
+  color: var(--journey-route-color, var(--status-info));
   background: var(--journey-route-color, var(--status-info));
-  box-shadow: 0 0 0 1px var(--journey-route-color, var(--status-info));
+  box-shadow: var(--ring-journey-stop);
 }
 
 @media (max-width: 480px) {

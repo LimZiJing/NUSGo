@@ -23,6 +23,7 @@
   --shadow-live-bus-highlight: inset 0 10px 0 -9px currentColor, inset 0 -11px 0 -10px currentColor;
   --ring-journey-selected: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
   --ring-journey-timeline: 0 0 0 1px var(--border-control);
+  --ring-journey-stop: 0 0 0 1px currentColor;
   --ring-waypoint-color-selected: 0 0 0 2px var(--accent);
   --ring-stop-reachable-expanded: inset 0 0 0 1px var(--accent);
 

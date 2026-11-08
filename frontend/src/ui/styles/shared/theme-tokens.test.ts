@@ -327,10 +327,11 @@ describe('control token contrast', () => {
       .toMatch(/\.button\.personal-waypoint-appearance-trigger\[aria-expanded='true'\]\s+\.personal-waypoint-marker-preview-icon\s*{[^}]*color:\s*var\(--map-waypoint-marker-ink\);/s)
   })
 
-  it('resolves each journey stop ring from its route at the marker', () => {
+  it('uses a named journey stop ring token with route color at the marker', () => {
     const styles = readStyleFile('../../../features/plan/styles/plan-content.css')
+    const tokens = readStyleFile('tokens.css')
 
-    expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*box-shadow:\s*0 0 0 1px var\(--journey-route-color,\s*var\(--status-info\)\);/s)
-    expect(readStyleFile('tokens.css')).not.toContain('--ring-journey-stop')
+    expect(tokens).toMatch(/--ring-journey-stop:\s*0 0 0 1px currentColor;/)
+    expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*color:\s*var\(--journey-route-color,\s*var\(--status-info\)\);[^}]*box-shadow:\s*var\(--ring-journey-stop\);/s)
   })
 })

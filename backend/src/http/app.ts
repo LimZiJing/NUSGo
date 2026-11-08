@@ -6,6 +6,7 @@ import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'
 import { registerJourneyRoutes } from './routes/journeys.ts'
 import {
+  createPrivateSubmissionIssueWriter,
   registerCommunityWaypointSubmissionRoute,
   type PrivateSubmissionIssueWriter,
 } from './routes/community-waypoint-submissions.ts'
@@ -28,6 +29,7 @@ type AppConfig = Pick<
   | 'journeyRequestTimeoutMs'
 > & {
   readonly environment?: BackendConfig['environment']
+  readonly communityWaypointGithubToken?: string | null
 }
 
 export function createApp(
@@ -35,7 +37,9 @@ export function createApp(
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
   planner: PathfindingService | null = null,
-  submissionIssueWriter: PrivateSubmissionIssueWriter | null = null,
+  submissionIssueWriter: PrivateSubmissionIssueWriter | null = createPrivateSubmissionIssueWriter(
+    config.communityWaypointGithubToken ?? null,
+  ),
 ): Express {
   const app = express()
   app.disable('x-powered-by')

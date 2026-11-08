@@ -23,7 +23,7 @@ describe('MoreMenu', () => {
     )
 
     expect(screen.getByText('12 saved places')).toBeTruthy()
-    expect(screen.getByText('Appearance and favourites')).toBeTruthy()
+    expect(screen.getByText('Appearance, favourites and waypoints')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     await user.click(screen.getByRole('button', { name: 'Release notes' }))

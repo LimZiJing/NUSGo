@@ -39,7 +39,7 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       <span className="more-menu-row-icon"><SettingsIcon /></span>
       <span className="more-menu-row-copy">
         <span>Settings</span>
-        <span className="more-menu-row-description" id="more-settings-summary">Appearance and favourites</span>
+        <span className="more-menu-row-description" id="more-settings-summary">Appearance, favourites and waypoints</span>
       </span>
       <ChevronRightIcon />
     </button>

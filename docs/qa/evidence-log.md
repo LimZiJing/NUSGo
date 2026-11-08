@@ -2,6 +2,15 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Alight reminder controls (#503, PR #644) — 2026-11-09
+
+Application head `6df3dcedeadcf2b022cc00c46dadffd8f6821e55`, managed development group at `http://localhost:35758/`, headless Microsoft Edge 157.0.4341.42 driven by Playwright. Fresh contexts used actual viewports 1280 × 800 and 390 × 844, DPR 1. Browser Notification, PushManager and service-worker registration APIs were mocked; API requests returned controlled responses. This is UI verification, not real push-service or screen-off delivery evidence.
+
+- Opened COM3 through its launch link with live API responses returning unavailable. Canonical route D1 and Remind me remained available.
+- Changed Lead time from 2 minutes to 1 minute, clicked Remind me and verified the registration sent COM3/D1 and `leadTimeSeconds: 60`.
+- Verified the watched explanation said once, about 1 minute, with the persistent error region empty. Clicked Stop reminding me, verified the remove request and cleared local reminder preference, and observed Remind me return.
+- Both runs completed with zero page errors. Existing unit tests cover cross-topic key rotation and failures; that lifecycle was not exercised with a real browser push subscription. Physical phones, screen-off delivery, Wear OS and notification-tap delivery remain unverified. Earlier control evidence at `5d4e5d32` predates the canonical-route and runtime corrections and is stale for those changes.
+
 ## Animation performance baseline — 2026-11-02 (#558)
 
 Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).

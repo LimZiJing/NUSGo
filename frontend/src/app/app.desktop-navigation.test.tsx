@@ -1346,7 +1346,7 @@ describe('More surface', () => {
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
@@ -1387,7 +1387,7 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.getByRole('button', { name: 'Reduce More panel' })).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await user.click(moreButton)
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-detent')).toBe('partial')
@@ -1446,7 +1446,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(document.querySelector('.nearby-crosshair-area')).toBeTruthy()
   })
 
@@ -1464,7 +1464,7 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getAllByRole('button', { name: /^(Explore|Stops|Plan)$/ })).toHaveLength(3)
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
@@ -1531,7 +1531,7 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')
     expect(document.querySelector('.plan-sheet')?.getAttribute('data-detent')).toBe('full')
 
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(screen.getByRole('button', { name: 'Plan' }).getAttribute('aria-current')).toBe('page')

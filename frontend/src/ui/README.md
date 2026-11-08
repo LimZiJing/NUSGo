@@ -10,4 +10,4 @@ Use this folder for static product and external brand SVGs, such as the NUSGo fa
 
 ## Buttons, chips, and pills
 
-`Button`, `IconButton`, `MenuItem`, `Chip`, and `Pill` are the shared interactive and status primitives. Build screen-specific controls on them (as `NavigateButton`, `GhostBackButton`, `RouteChip`, and `InfoPill` do) rather than styling bare `button` elements. Pass `className` for layout only. See [docs/ui/controls.md](../../../docs/ui/controls.md) for variants, sizes, states, tokens, and the migration checklist.
+`Button`, `IconButton`, `MenuItem`, `Chip`, and `Pill` are the shared interactive and status primitives. Build screen-specific controls on them (as `BackButton`, `NavigateButton`, `RouteChip`, and `InfoPill` do) rather than styling bare `button` elements. Pass `className` for layout only. See [docs/ui/controls.md](../../../docs/ui/controls.md) for variants, sizes, states, tokens, and the migration checklist.

@@ -278,4 +278,60 @@ describe('control token contrast', () => {
       expect(divider, 'dark: divider vs --text-strong').toBeLessThan(rowText)
     })
   })
+
+
+  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+    const styles = readStyleFile('themes/' + themeName + '.css')
+    const tokens = readCustomPropertyNames(styles)
+
+    expect(tokens).toEqual(expect.arrayContaining(['--accent-selected', '--surface-control-hover']))
+    expect(readCustomPropertyValue(styles, '--accent-selected'))
+      .toBe('color-mix(in srgb, var(--accent) 26%, var(--surface-control))')
+    expect(readCustomPropertyValue(styles, '--surface-control-hover'))
+      .toBe('color-mix(in srgb, var(--text-primary) 11%, var(--surface-control))')
+
+    const ratioOf = (foreground: string, background: string) => contrastRatio(
+      resolveColour(styles, foreground),
+      resolveColour(styles, background),
+    )
+
+    expect(ratioOf('--text-primary', '--accent-selected')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-hover', '--accent-selected')).toBeGreaterThanOrEqual(3)
+    expect(ratioOf('--text-primary', '--surface-control-hover')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-selected', '--surface-control')).toBeGreaterThanOrEqual(1.25)
+    expect(ratioOf('--surface-control-hover', '--surface-control')).toBeGreaterThanOrEqual(1.1)
+  })
+
+  it('uses semantic control colors instead of brightness filters', () => {
+    for (const file of ['base.css', 'controls/button.css', 'controls/chip.css', 'map.css']) {
+      expect(readStyleFile(file), file).not.toMatch(/brightness\s*\(/)
+    }
+  })
+
+  it('keeps selected map overlay controls above their base icon-button styles', () => {
+    const styles = readStyleFile('map.css')
+
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-pressed='true']")
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-expanded='true']")
+    expect(styles).toContain('background: var(--accent-selected)')
+    expect(styles).not.toMatch(/\.button\.icon-button\.map-overlay-button:active:not\(:disabled\)\s*{[^}]*transform:\s*none;/s)
+  })
+
+  it('keeps plain and nested SVGs on their feature-owned colors', () => {
+    const styles = readStyleFile('controls/button.css')
+
+    expect(styles).toMatch(/\.button\[aria-pressed='true'\]:not\(\[data-variant='plain'\]\)\s+svg\s*{[^}]*color:\s*var\(--accent-hover\);/s)
+    expect(styles).not.toContain(".button[aria-expanded='true'] {")
+    expect(styles).not.toContain(".button[aria-expanded='true']:not([data-variant='plain']) svg {")
+    expect(readStyleFile('../../../features/waypoints/personal/personal-waypoints.css'))
+      .toMatch(/\.button\.personal-waypoint-appearance-trigger\[aria-expanded='true'\]\s+\.personal-waypoint-marker-preview-icon\s*{[^}]*color:\s*var\(--map-waypoint-marker-ink\);/s)
+  })
+
+  it('uses a named journey stop ring token with route color at the marker', () => {
+    const styles = readStyleFile('../../../features/plan/styles/plan-content.css')
+    const tokens = readStyleFile('tokens.css')
+
+    expect(tokens).toMatch(/--ring-journey-stop:\s*0 0 0 1px currentColor;/)
+    expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*color:\s*var\(--journey-route-color,\s*var\(--status-info\)\);[^}]*box-shadow:\s*var\(--ring-journey-stop\);/s)
+  })
 })

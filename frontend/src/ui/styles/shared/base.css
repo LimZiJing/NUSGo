@@ -13,10 +13,12 @@ body {
   margin: 0;
 }
 
-/* Touch browsers keep :hover after a tap, which left tapped buttons dimmed until the next tap elsewhere. */
+/* Global native-button defaults remain for .journey-test-time-toggle, the navigation tabs,
+   More entry, and PWA install row. Remove them only when those controls own the same states. */
+/* Native controls without their own hover treatment use the neutral theme surface. Add data-hover-treatment='custom' only when a control owns its hover style. */
 @media (hover: hover) {
-  button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not([data-hover-filter='none']):hover {
-    filter: brightness(0.85);
+  button:not(:disabled):not([aria-pressed='true']):not([aria-current='page']):not([aria-expanded='true']):not([data-hover-treatment='custom']):hover {
+    background-color: var(--surface-control-hover);
   }
 }
 

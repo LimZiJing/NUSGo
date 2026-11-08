@@ -91,9 +91,9 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Components
 
-- Shared `Button`, `IconButton`, `MenuItem`, `Chip` and `Pill` define variants, 36px and 44px sizes and states, in a soft tonal style. `NavigateButton`, `GhostBackButton`, `RouteChip` and `InfoPill` build on them. Feature screens have not migrated to them yet (see [Interface controls](controls.md)).
-- A dev-only gallery at `/?gallery` shows every variant, size and state in each theme. `npm run lint` rejects new bare `button` CSS selectors, with an allowlist that shrinks as screens migrate.
-- Enabled non-selected buttons and the NUSMods action darken by 15% on hover. Selected route chips and the current mobile tab keep their active look.
+- Shared `Button`, `IconButton`, `MenuItem`, `Chip` and `Pill` define variants, 36px and 44px sizes and states, in a soft tonal style. `BackButton`, `NavigateButton`, `RouteChip` and `InfoPill` build on them. Feature action controls use these shared primitives (see [Interface controls](controls.md)).
+- A dev-only gallery at `/?gallery` shows every variant, size and state in each theme. `npm run lint` rejects new bare `button` CSS selectors; its only remaining allowlist is the documented global fallback in `base.css`.
+- Enabled secondary controls and chips use a theme-specific hover surface; primary actions use the theme accent-hover color. Pressed controls use the selected surface; open disclosures keep their feature-specific treatment. Focus rings, disabled controls and reduced-motion behavior keep their existing treatment.
 - Icons live in `frontend/src/ui/icons/` (backed by `lucide-react`) and brand SVGs in `frontend/src/ui/brand-assets/`. Buildings, rooms and stops use distinct decorative icons and type-qualified accessible labels everywhere they appear, based on the resolved entity type.
 - Search fields share `frontend/src/ui/search-field.tsx`. Scroll areas share a `ScrollArea` primitive with a thin, arrowless scrollbar that adapts to the theme.
 - Styles load from `frontend/src/ui/styles/shared/`, `frontend/src/ui/mobile/styles/` and `frontend/src/ui/desktop/styles/`. Feature styles live in `frontend/src/features/*/styles/`.

@@ -222,15 +222,12 @@ export function PersonalWaypointForm({
     {status && status !== validationSummary && <p className="personal-waypoint-error">{status}</p>}
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />
-      <button
+      <Button
         type="submit"
-        className="button"
-        data-variant="primary"
-        data-size="sm"
+        variant="primary"
         disabled={submitDisabled}
-      >
-        <span>{effectiveSubmitLabel}</span>
-      </button>
+        label={effectiveSubmitLabel}
+      />
     </div>
   </Form>
 }

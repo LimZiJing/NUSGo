@@ -60,6 +60,7 @@
   --border-info: #8cbebe;
   --border-focus: #3b6347;
   --border-card: #d0dac9;
+  --border-divider: var(--border-default);
 
   --accent: #3b6347;
   --accent-hover: #2f5138;

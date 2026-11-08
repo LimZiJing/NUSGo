@@ -1,3 +1,4 @@
+import { IconButton } from '../../../ui/button'
 import { BusIcon } from '../../../ui/icons'
 
 export interface LiveBusToggleProps {
@@ -7,15 +8,13 @@ export interface LiveBusToggleProps {
 
 export function LiveBusToggle({ enabled, onToggle }: LiveBusToggleProps) {
   return (
-    <button
-      type="button"
+    <IconButton
       className="map-overlay-button live-bus-toggle"
-      aria-label="Live buses"
-      aria-pressed={enabled}
+      label="Live buses"
       title={enabled ? 'Hide live buses' : 'Show live buses'}
+      icon={<BusIcon />}
+      pressed={enabled}
       onClick={() => onToggle(!enabled)}
-    >
-      <BusIcon />
-    </button>
+    />
   )
 }

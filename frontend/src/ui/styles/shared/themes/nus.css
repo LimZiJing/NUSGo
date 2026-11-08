@@ -20,6 +20,8 @@
   --surface-faint: #fff8ef;
   --surface-info-soft: #e4edf7;
   --surface-control: #f5d1aa;
+  --accent-selected: color-mix(in srgb, var(--accent) 26%, var(--surface-control));
+  --surface-control-hover: color-mix(in srgb, var(--text-primary) 11%, var(--surface-control));
   --surface-warning: #fff1cc;
   --surface-segmented-control: #f7e1c8;
   --surface-card: #fffaf4;

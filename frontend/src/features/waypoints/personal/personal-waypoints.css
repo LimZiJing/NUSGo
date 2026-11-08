@@ -1,5 +1,5 @@
 .personal-waypoints-home,
-.personal-waypoint-form { display: grid; gap: 10px; text-align: left; }
+.personal-waypoint-form { display: grid; gap: 8px; text-align: left; }
 
 .personal-waypoints-home > p,
 .personal-waypoint-form > p,
@@ -324,26 +324,91 @@
 
 .personal-waypoint-list-empty p { margin: 0; }
 
-.personal-waypoint-form label { font-weight: 600; }
-.personal-waypoint-form label span { color: var(--text-secondary); font-weight: 400; }
-.personal-waypoint-form input,
-.personal-waypoint-form textarea {
+.personal-waypoint-field {
+  --personal-waypoint-control-height: 48px;
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.personal-waypoint-field-label {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--personal-waypoint-control-height) / 2);
+  left: var(--space-4);
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  line-height: 1.2;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  transition: color 120ms ease, font-size 120ms ease, top 120ms ease, transform 120ms ease;
+}
+
+.personal-waypoint-field:focus-within > .personal-waypoint-field-label,
+.personal-waypoint-field:has(.personal-waypoint-field-control:not(:placeholder-shown)) > .personal-waypoint-field-label {
+  top: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1;
+  transform: none;
+}
+
+.personal-waypoint-field-label span { color: var(--text-muted); font-weight: 400; }
+
+.personal-waypoint-field-control {
   width: 100%;
-  min-height: 40px;
-  padding: var(--space-2);
+  min-height: var(--personal-waypoint-control-height);
+  padding: var(--space-6) var(--space-4) var(--space-1);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   color: var(--text-primary);
   background: var(--surface-card);
   box-sizing: border-box;
-  font: var(--font-size-md)/1.3 var(--sans);
+  font: var(--font-size-control)/1.3 var(--sans);
 }
-.personal-waypoint-form textarea { resize: vertical; }
-.personal-waypoint-form [aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-field-control:focus { border-color: var(--accent); }
+.personal-waypoint-field-control[aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-field-control--multiline {
+  /* Reserve room for the floating label while keeping the note to two compact rows. */
+  min-height: calc(var(--space-8) + var(--control-height-lg));
+  padding-top: var(--space-8);
+  resize: vertical;
+}
+
+.personal-waypoint-field:has(.personal-waypoint-field-control--multiline) > .personal-waypoint-field-label {
+  top: var(--space-4);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+  transform: none;
+}
+
+.personal-waypoint-field-error {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--status-error-strong);
+  background: var(--status-error-surface);
+  font-size: var(--font-size-xs);
+  line-height: 1.25;
+}
+
+.personal-waypoint-field-error-icon { flex: 0 0 auto; }
+
+.personal-waypoint-field-error span { min-width: 0; }
+
 .personal-waypoint-category-input-group {
   display: flex;
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--personal-waypoint-control-height);
   align-items: center;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
@@ -351,12 +416,17 @@
 }
 
 .personal-waypoint-category-input-group:focus-within { border-color: var(--accent); }
+.personal-waypoint-category-input-group:has(.personal-waypoint-category-input:focus-visible) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
 .personal-waypoint-category-input-group:has(input[aria-invalid='true']) { border-color: var(--text-error-strong); }
 
 .personal-waypoint-form .personal-waypoint-category-input {
   min-width: 0;
-  min-height: 38px;
+  min-height: 46px;
   flex: 1 1 auto;
+  padding: var(--space-6) var(--space-4) var(--space-1);
   border: 0;
   background: transparent;
 }
@@ -443,17 +513,69 @@
 .personal-waypoint-edit-conflict dt { font-size: var(--font-size-xs); font-weight: 600; }
 .personal-waypoint-edit-conflict dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
 .personal-waypoint-error { color: var(--text-error-strong); font-size: var(--font-size-sm); }
-.personal-waypoint-location { display: grid; gap: var(--space-2); }
-.personal-waypoint-location > span { color: var(--text-secondary); }
-.personal-waypoint-location .button { justify-self: start; }
-.personal-waypoint-save-note { color: var(--text-secondary); font-size: var(--font-size-sm); }
+.personal-waypoint-location {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+.personal-waypoint-location > strong {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.personal-waypoint-location-content {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.personal-waypoint-location-coordinate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: 1 1 180px;
+  min-width: 0;
+  gap: var(--space-3);
+  margin: 0;
+}
+.personal-waypoint-location-coordinate > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+.personal-waypoint-location-coordinate dt {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.personal-waypoint-location-coordinate dd {
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.personal-waypoint-location .button { flex: 0 0 auto; margin-left: auto; }
+.personal-waypoint-save-note { color: var(--text-muted); font-size: var(--font-size-xs); }
 
 .personal-waypoint-appearance {
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-2);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
   text-align: left;
 }
 
@@ -497,16 +619,17 @@
 .personal-waypoint-appearance-options {
   display: grid;
   gap: var(--space-3);
-  padding-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .personal-waypoint-appearance-options[hidden] { display: none; }
 
 .personal-waypoint-marker-preview {
   display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   place-items: center;
   border: 2px solid var(--surface-card);
   border-radius: 50% 50% 50% 4px;
@@ -532,7 +655,11 @@
 .personal-waypoint-marker-preview[data-color='gray'],
 .personal-waypoint-color-swatch[data-color='gray'] { background: var(--personal-waypoint-marker-gray); }
 
-.personal-waypoint-marker-preview-icon { color: #172033; transform: rotate(45deg); }
+.personal-waypoint-marker-preview-icon { color: var(--map-waypoint-marker-ink); transform: rotate(45deg); }
+
+.button.personal-waypoint-appearance-trigger[aria-expanded='true'] .personal-waypoint-marker-preview-icon {
+  color: var(--map-waypoint-marker-ink);
+}
 
 .personal-waypoint-choice-group {
   display: grid;
@@ -628,7 +755,7 @@
 
 .personal-waypoint-color-option:has(input:checked) .personal-waypoint-color-swatch {
   outline: 2px solid var(--surface-card);
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: var(--ring-waypoint-color-selected);
 }
 
 .personal-waypoint-color-option:has(input:focus-visible) .personal-waypoint-color-swatch {
@@ -637,7 +764,7 @@
 }
 
 .personal-waypoint-color-check {
-  color: #172033;
+  color: var(--map-waypoint-marker-ink);
   opacity: 0;
 }
 

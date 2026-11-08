@@ -56,3 +56,10 @@ describe('desktop Stops scroll ownership', () => {
     expect(mobileBlock).not.toMatch(/\.stops-list-selector-region/)
   })
 })
+
+describe('stop row styles', () => {
+  it('keeps stop rows on their main-branch surface', () => {
+    expect(styles).toMatch(/\.button\.stop-card-toggle\s*{[^}]*border:\s*0;[^}]*color:\s*var\(--text-strong\);[^}]*background:\s*transparent;/s)
+    expect(styles).not.toContain(".button.stop-card-toggle[aria-expanded='true'] {")
+  })
+})

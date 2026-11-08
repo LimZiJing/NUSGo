@@ -9,6 +9,7 @@ import { Select } from '../../../ui/select'
 import type { BuildingEntry } from '../../../domain/venue/building-index'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
+import { Button } from '../../../ui/button'
 
 interface VenueDetailsProps {
   readonly venue: VenueSearchResult
@@ -41,12 +42,12 @@ function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) 
       ) : (
         <div className="venue-nearby-stop-list">
           {nearbyStops.map(({ stop, services }) => (
-            <button
+            <Button
               key={stop.id}
               className="nearby-stop-row"
               type="button"
               data-stop-id={stop.id}
-              aria-label={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
+              ariaLabel={`Nearby bus stop ${stop.longName}, code ${stop.id}, services ${services.map(({ id }) => id).join(', ')}. View stop details`}
               onClick={(event) => onFocusStop(stop.id, event.currentTarget)}
             >
               <span className="nearby-stop-identity">
@@ -72,7 +73,7 @@ function NearbyStops({ location, transitIndex, onFocusStop }: NearbyStopsProps) 
                 ))}
               </span>
               <ChevronRightIcon className="nearby-stop-arrow" />
-            </button>
+            </Button>
           ))}
         </div>
       )}

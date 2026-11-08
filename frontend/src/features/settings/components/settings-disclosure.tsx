@@ -20,7 +20,7 @@ export function SettingsDisclosure({
   return (
     <details className="settings-disclosure">
       <summary className="settings-disclosure-summary">
-        <span className="settings-disclosure-icon">{icon}</span>
+        <span className="settings-disclosure-icon menu-icon-tile">{icon}</span>
         <span className="settings-disclosure-label">
           <span className="settings-disclosure-title">{title}</span>
           <span className="settings-disclosure-subtitle">{subtitle}</span>

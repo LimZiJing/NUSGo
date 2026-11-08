@@ -83,6 +83,10 @@
   opacity: 1;
 }
 
+.route-scroll-arrow:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.98);
+}
+
 .route-scroll-arrow:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: -2px;
@@ -94,6 +98,14 @@
 
 .route-scroll-arrow-right {
   right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-scroll-arrow:active:not(:disabled) {
+    transform: translateY(-50%);
+    color: var(--text-primary);
+    opacity: 1;
+  }
 }
 
 .route-chip {

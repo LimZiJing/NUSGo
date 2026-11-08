@@ -17,6 +17,8 @@
     --surface-faint: #1f2028;
     --surface-info-soft: #25324a;
     --surface-control: #2e303a;
+    --accent-selected: color-mix(in srgb, var(--accent) 26%, var(--surface-control));
+    --surface-control-hover: color-mix(in srgb, var(--text-primary) 11%, var(--surface-control));
     --surface-warning: #3d3020;
     --surface-segmented-control: #25324a;
     --surface-card: #2a2c37;
@@ -60,9 +62,8 @@
     --border-info: #2563eb;
     --border-focus: #94a3b8;
     --border-card: #363944;
-    /* Dark border tones compress against the card surface (--border-subtle is about 1.1:1),
-       so the row divider takes the stronger step to stay visible. */
-    --border-divider: var(--border-strong);
+    /* Departure separators intentionally use the quieter subtle step in dark mode. */
+    --border-divider: var(--border-subtle);
 
     --accent: #60a5fa;
     --accent-hover: #93c5fd;

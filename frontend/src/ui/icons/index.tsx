@@ -7,6 +7,7 @@ import {
   Armchair,
   Building2,
   BusFront,
+  CircleAlert,
   Check,
   ChevronDown,
   ChevronRight,
@@ -90,6 +91,10 @@ export function ChevronRightIcon(props: IconProps) {
 
 export function CheckIcon(props: IconProps) {
   return renderDecorativeIcon(Check, props)
+}
+
+export function AlertCircleIcon(props: IconProps) {
+  return renderDecorativeIcon(CircleAlert, props)
 }
 
 export function CloudOffIcon(props: IconProps) {

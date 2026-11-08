@@ -172,6 +172,19 @@ describe('Select', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  it('keeps the selected option distinct as the active option moves', async () => {
+    const user = userEvent.setup()
+    const { trigger } = renderSelect('a')
+
+    await user.click(trigger)
+    await user.keyboard('{ArrowDown}')
+
+    expect(screen.getByRole('option', { name: 'Block A' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('option', { name: 'Block A' }).getAttribute('data-active')).toBeNull()
+    expect(screen.getByRole('option', { name: 'Block B' }).getAttribute('aria-selected')).toBe('false')
+    expect(screen.getByRole('option', { name: 'Block B' }).getAttribute('data-active')).toBe('true')
+  })
+
   it('exposes aria-expanded, aria-haspopup, and aria-selected', async () => {
     const user = userEvent.setup()
     const { trigger } = renderSelect('a')

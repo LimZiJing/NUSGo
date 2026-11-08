@@ -109,7 +109,7 @@ describe('ExploreContent', () => {
     const markup = renderPanel(state)
 
     expect(markup).toContain('Bus routes</span></button>')
-    expect(markup).toContain('class="button ghost-back-button"')
+    expect(markup).toContain('data-back-button-mode="inline"')
     expect(markup).toContain('aria-hidden="true"')
     expect(markup).not.toContain('M19 12H5m7-7-7 7 7 7')
     expect(markup).not.toContain('←')
@@ -126,7 +126,7 @@ describe('ExploreContent', () => {
     }
     const markup = renderPanel(state, venues, false)
 
-    expect(markup).toContain('class="button ghost-back-button"')
+    expect(markup).toContain('data-back-button-mode="inline"')
     expect(markup).not.toContain('Close map context')
     expect(markup).toContain('Navigate')
     expect(markup).toContain('<span>View in</span>')

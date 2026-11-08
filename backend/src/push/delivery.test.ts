@@ -112,7 +112,7 @@ describe('push delivery', () => {
     assert.equal(store.size, 1)
   })
 
-  it('sends the bounded TTL and timeout on every send, including several subscriptions', async () => {
+  it('sends the high urgency with bounded TTL and timeout on every send, including several subscriptions', async () => {
     const store = createPushSubscriptionStore()
     subscribe(store, 'a')
     subscribe(store, 'b')
@@ -131,6 +131,7 @@ describe('push delivery', () => {
     for (const options of optionsSeen) {
       assert.equal(options.TTL, PUSH_NOTIFICATION_TTL_SECONDS)
       assert.equal(options.timeout, PUSH_NOTIFICATION_TIMEOUT_MS)
+      assert.equal(options.urgency, 'high')
     }
   })
 
@@ -210,7 +211,7 @@ describe('service update publisher', () => {
     assert.equal(payload.url, '?stop=COM3')
   })
 
-  it('sends the bounded TTL and timeout with every push', async () => {
+  it('sends the high urgency with bounded TTL and timeout with every push', async () => {
     const store = createPushSubscriptionStore()
     subscribe(store, 'a')
     const sentOptions: PushSendOptions[] = []
@@ -231,6 +232,7 @@ describe('service update publisher', () => {
     assert.deepEqual(sentOptions, [{
       TTL: PUSH_NOTIFICATION_TTL_SECONDS,
       timeout: PUSH_NOTIFICATION_TIMEOUT_MS,
+      urgency: 'high',
     }])
     assert.ok(PUSH_NOTIFICATION_TTL_SECONDS > 0 && PUSH_NOTIFICATION_TTL_SECONDS <= 120)
   })

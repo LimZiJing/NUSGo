@@ -8,6 +8,8 @@ export interface PushSendOptions {
   readonly TTL: number
   /** Milliseconds before the sender abandons the request to the push service. */
   readonly timeout: number
+  /** Requests prompt delivery rather than deferring time-sensitive alerts for power saving. */
+  readonly urgency: 'high'
 }
 
 /** The subset of the web-push API this module needs, so tests can supply a fake. */
@@ -81,7 +83,7 @@ export async function deliverPushNotifications(
       await sendNotification(
         { endpoint: record.endpoint, keys: record.keys },
         JSON.stringify(payload),
-        { TTL: PUSH_NOTIFICATION_TTL_SECONDS, timeout: PUSH_NOTIFICATION_TIMEOUT_MS },
+        { TTL: PUSH_NOTIFICATION_TTL_SECONDS, timeout: PUSH_NOTIFICATION_TIMEOUT_MS, urgency: 'high' },
       )
       reservation?.commit()
       deliveredCount += 1

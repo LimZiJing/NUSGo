@@ -130,7 +130,7 @@
 :root[data-theme='rainroom'] .navigation-column,
 :root[data-theme='rainroom'] .navigation-column .navigation-panel,
 :root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
-  background-color: var(--surface-raised);
+  background-color: var(--surface);
   background-image:
     radial-gradient(
       ellipse at 100% 46%,
@@ -367,6 +367,7 @@
   }
 }
 
+:root[data-theme='rainroom'] .explore-mode-selector .segmented-control-option[aria-pressed='true']::before,
 :root[data-theme='rainroom'] .stops-list-selector .segmented-control-option[aria-pressed='true']::before {
     background: linear-gradient(
       180deg,

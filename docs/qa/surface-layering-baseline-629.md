@@ -81,6 +81,7 @@ All mobile sheet shells use the same `--surface` role: Explore, Stops and Plan i
 | nus | `#fffaf4` | `#fff3e7` | `#fffaf4` |
 | matcha | `#f0f2e7` | `#e1e7d6` | `#f0f2e7` |
 | sakura | `#f4e7eb` | `#e9d4db` | `#f4e7eb` |
+| rainroom | `#0c1924` | `#122330` | `#162a36` |
 
 Captures and contrast measurements below are historical for the #641 mapping; the swapped dark and brand-theme roles in #655 make those theme captures stale.
 

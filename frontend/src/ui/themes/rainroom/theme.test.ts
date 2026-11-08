@@ -43,6 +43,23 @@ describe('Rainroom theme', () => {
     expect(entry).toContain("import './index.css'")
   })
 
+  it('uses the shared page surface for navigation panels', () => {
+    const panelRule = themeStyles.match(
+      /:root\[data-theme='rainroom'\] \.navigation-column,[^{}]*\{([^}]*)\}/,
+    )
+
+    expect(panelRule?.[1]).toMatch(/background-color:\s*var\(--surface\);/)
+  })
+
+  it('shares the selected segmented-control highlight between Explore and Stops', () => {
+    const selectedRule = themeStyles.match(
+      /:root\[data-theme='rainroom'\] \.explore-mode-selector \.segmented-control-option\[aria-pressed='true'\]::before,\s*:root\[data-theme='rainroom'\] \.stops-list-selector \.segmented-control-option\[aria-pressed='true'\]::before\s*\{([^}]*)\}/,
+    )
+
+    expect(selectedRule?.[1]).toMatch(/background:\s*linear-gradient/)
+    expect(selectedRule?.[1]).toContain('var(--shadow-soft)')
+  })
+
   it('keeps theme text and status pairs readable', () => {
     const pairs = [
       ['--text-primary', '--surface'],

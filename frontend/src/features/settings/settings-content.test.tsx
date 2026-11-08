@@ -45,18 +45,28 @@ describe('Settings sections', () => {
     const appearance = getSection('Appearance')
     const favourites = getSection('Favourites')
     const about = getSection('About')
+    const notifications = getSection('Notifications')
 
-    expect(appearance.open).toBe(false)
-    expect(favourites.open).toBe(false)
-    expect(about.open).toBe(false)
+    for (const section of [appearance, favourites, about, notifications]) {
+      expect(section.querySelector('summary > .settings-disclosure-icon.menu-icon-tile')).not.toBeNull()
+      expect(section.open).toBe(false)
+    }
 
     await user.click(screen.getByText('Appearance'))
     await user.click(screen.getByText('About'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
+    expect(notifications.open).toBe(false)
 
     await user.click(screen.getByText('Favourites'))
+    expect(appearance.open).toBe(true)
+    expect(favourites.open).toBe(true)
+    expect(about.open).toBe(true)
+    expect(notifications.open).toBe(false)
+
+    await user.click(screen.getByText('Notifications'))
+    expect(notifications.open).toBe(true)
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(true)
     expect(about.open).toBe(true)

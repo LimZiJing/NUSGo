@@ -712,6 +712,8 @@ function App() {
     buildings: state.buildings,
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
+    routeStopFocusRequest: appNavigation.routeStopFocusRequest,
+    onRouteStopFocusHandled: appNavigation.clearRouteStopFocusRequest,
     onRouteSelect: commands.selectMobileRoute,
     focus: explorePanelFocus,
     status: explorePanelStatus,
@@ -998,6 +1000,9 @@ function App() {
       data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
+      <p className="visually-hidden" role="alert" aria-label="Personal waypoint status" aria-atomic="true">
+        {personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : ''}
+      </p>
       <div className="map-stage" ref={mapPresentationRef}>
         <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
@@ -1041,7 +1046,7 @@ function App() {
             <div className="map-control-action-slot">
               <LocationControl
                 visible={!isMobileViewport || !(
-                  navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
+                  navigation.activeView === 'plan' && navigation.sheets.plan.detent === 'full'
                 )}
                 onRootChange={(root) => {
                   locationControlRef.current = root

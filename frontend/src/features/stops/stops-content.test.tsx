@@ -6,7 +6,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopsContent } from './stops-content.tsx'
 import type { StopDetailsModel } from './data/stop-details-model.ts'
 
-afterEach(cleanup)
+// The scroll-owner tests append their own column outside the rendered container, so it has to be
+// released here rather than at the end of each test, where a failing assertion would skip it.
+const appendedColumns: HTMLElement[] = []
+
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  for (const column of appendedColumns.splice(0)) column.remove()
+})
 
 const selectedStop: StopDetailsModel = {
   id: 'SR7',
@@ -85,7 +93,7 @@ describe('StopsContent', () => {
     await user.click(screen.getByRole('button', { name: /Opposite bus stop: University Hall \(Opposite\), SR8/ }))
 
     expect(onBackToStops).toHaveBeenCalledOnce()
-    expect(onSelectRoute).toHaveBeenCalledWith('D2')
+    expect(onSelectRoute).toHaveBeenCalledWith('D2', 'SR7')
     expect(onNavigateToStop).toHaveBeenCalledWith('SR7')
     expect(onSelectOppositeStop).toHaveBeenCalledWith('SR8')
   })
@@ -139,5 +147,61 @@ describe('StopsContent', () => {
 
     expect(screen.getByText('No stops available.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Browse stops' })).toBeNull()
+  })
+
+  /**
+   * Renders the pane inside a column that overflows, with a static wrapper in between.
+   *
+   * jsdom does not lay anything out and does not apply the imported stylesheet, so the scroll
+   * owner is described explicitly: the column reports itself as scrolling, and the wrapper must
+   * be ignored. The returned column is released by the `afterEach` above.
+   */
+  function renderInsideScrolledColumn(isMobileViewport: boolean) {
+    const column = document.createElement('div')
+    const wrapper = document.createElement('div')
+    column.append(wrapper)
+    document.body.append(column)
+    appendedColumns.push(column)
+    Object.defineProperty(column, 'scrollHeight', { configurable: true, value: 2000 })
+    Object.defineProperty(column, 'clientHeight', { configurable: true, value: 500 })
+    column.scrollTop = 900
+    wrapper.scrollTop = 640
+    const realGetComputedStyle = window.getComputedStyle.bind(window)
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((element: Element) => new Proxy(
+      realGetComputedStyle(element),
+      { get: (target, key) => (key === 'overflowY' && element === column ? 'auto' : Reflect.get(target, key, target)) },
+    ))
+    const props = {
+      onBackToStops: vi.fn(),
+      onSelectOppositeStop: vi.fn(),
+      onSelectRoute: vi.fn(),
+      onNavigateToStop: vi.fn(),
+      onSelectStopList: vi.fn(),
+      onToggleFavorite: vi.fn(),
+      onToggleExpanded: vi.fn(),
+      onDismissLocationNotice: vi.fn(),
+    }
+    const view = render(<StopsContent {...props} selectedStop={null} stopListEntries={[]} isMobileViewport={isMobileViewport} />, { container: wrapper })
+    return { column, wrapper, props, view }
+  }
+
+  it('resets the desktop column when stop details open, so their heading starts at the top', () => {
+    const { column, wrapper, props, view } = renderInsideScrolledColumn(false)
+    expect(column.scrollTop).toBe(900)
+
+    view.rerender(<StopsContent {...props} selectedStop={selectedStop} isMobileViewport={false} />)
+
+    expect(column.scrollTop).toBe(0)
+    expect(wrapper.scrollTop).toBe(640)
+    expect(screen.getByRole('button', { name: 'Back to stops' })).toBeTruthy()
+  })
+
+  it('leaves the mobile sheet scroll position to the sheet itself', () => {
+    const { column, wrapper, props, view } = renderInsideScrolledColumn(true)
+
+    view.rerender(<StopsContent {...props} selectedStop={selectedStop} isMobileViewport />)
+
+    expect(column.scrollTop).toBe(900)
+    expect(wrapper.scrollTop).toBe(640)
   })
 })

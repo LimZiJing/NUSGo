@@ -78,9 +78,17 @@
 }
 
 @media (hover: hover) {
-  .explore-bus-route-list-stop:hover {
+  /* Keep the timeline's established hover fill above Button's shared hover rule. */
+  .button.explore-bus-route-list-stop[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
     background-color: var(--surface-subtle);
   }
+}
+
+.explore-content .explore-bus-route-list-stop[data-route-stop-targeted='true'] {
+  outline: var(--focus-outline);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
 }
 
 .explore-bus-route-list-node {

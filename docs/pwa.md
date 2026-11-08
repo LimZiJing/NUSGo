@@ -27,19 +27,28 @@ The notices are compact pills that stay centred at the top of the map. At 320px 
 
 ## Push notifications
 
-Settings offers an opt-in **Notifications** section for service updates: a delayed bus or live arrivals pausing at a stop. The browser prompt is requested only after **Enable notifications** is tapped, and the explanation stays visible above the button. The stored choice survives a reload; a stored preference only counts as on while the browser still permits notifications. On iOS a browser tab has no Push API, so the section explains that NUSGo must be added to the Home Screen and opened from there. A denied permission points at browser settings and offers no in-app toggle.
+Settings offers an opt-in **Notifications** section for service updates: a delayed bus or live arrivals pausing at a stop. The browser prompt is requested only after **Enable notifications** is tapped, and the explanation stays visible above the button. The stored choice survives a reload; a stored preference only counts as on while the browser still permits notifications. On iOS a browser tab has no Push API, so the section explains that NUSGo must be added to the Home Screen and opened from there. A denied permission points at browser settings and offers no in-app toggle. Alight reminders are a separate opt-in on stop details, described below; both topics share one browser subscription.
 
 The notification has a short title, a one-line body and a deep link to the affected stop. Tapping it focuses an open app window and hands it the link, or opens the installed app at that stop when none is open.
+
+### Alight reminders
+
+Stop details adds an opt-in **Remind me** control for one route at that stop. The rider chooses a lead time of one, two or three minutes, defaulting to two, and the same value travels to the server with the registration. NUSGo sends one notification when the live ETA for that route enters the chosen window, then stops: the watch is removed only after a push service accepts the notification. A transient delivery failure leaves the watch in place so the next snapshot can retry, and a delivery already in flight for an endpoint blocks a duplicate send. The notification fires on the server's copy of the arrival estimate, which is approximate and may differ by a minute or more from what a frozen screen shows.
+
+A watch expires two hours after it is registered. The registry assigns both the creation time and the expiry from the server clock, so a client cannot extend its own watch; the `201` response echoes the stored lead time and expiry for the app to display. An expired watch is removed on read and never fires, including when no fresh snapshot exists or service hours are unavailable. The rider can cancel at any time, which removes the watch without cancelling the browser subscription that service updates also use. Turning service updates off keeps that shared subscription while a reminder still needs it.
+
+Reminders are evaluated only from snapshots the backend already publishes. They add no poller, no upstream request, no background location and no stored journey or Personal Waypoint.
 
 Server side:
 
 - VAPID keys come from environment variables. Set both `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`, or neither; setting one alone fails startup. `VAPID_SUBJECT` is the push-service contact. Placeholder values only in `backend/.env.example`; real keys stay in the deployment environment. Generate a pair with `npx web-push generate-vapid-keys`.
 - `GET /api/push/public-key` returns `{ publicKey }`, or `null` when push is not configured. `POST /api/push/subscriptions` stores a subscription, and `POST /api/push/subscriptions/remove` forgets one.
-- Stored fields are the push endpoint, its two keys and the topic. Nothing identifies the person. Input is validated at the boundary, the endpoints are rate limited per client, and each subscription is capped at `PUSH_NOTIFICATIONS_PER_HOUR_CAP` notifications per hour.
-- Updates are derived from the existing published shuttle snapshots, so push adds no poller and no upstream request. At most one notification is sent per snapshot, with a repeat window per stop and route.
-- Subscriptions that a push service reports as gone (404 or 410) are pruned.
+- `POST /api/push/reminders` registers an alight reminder: the endpoint, its two keys, the pinned `alight-reminders` topic, a `watch` of `{ stopId, routeId }` and an optional `leadTimeSeconds` (60, 120 or 180; omitted means 120, any other value is rejected). A stop or route outside the canonical network is rejected. The `201` body is `{ topic, leadTimeSeconds, expiresAt }`. `POST /api/push/reminders/remove` forgets the watch for an endpoint and answers `204`, including for an endpoint it does not hold.
+- Stored fields are the push endpoint, its two keys and the topic. Reminders keep their own registry holding the endpoint, keys, watch, lead time and server timestamps. Nothing identifies the person. Input is validated at the boundary, the endpoints are rate limited per client, and each subscription is capped at `PUSH_NOTIFICATIONS_PER_HOUR_CAP` notifications per hour.
+- Service updates are derived from the existing published shuttle snapshots, so push adds no poller and no upstream request. At most one notification is sent per snapshot, with a repeat window per stop and route. An alight reminder is one-shot, and the hour cap is consumed only once a delivery is actually accepted.
+- Subscriptions that a push service reports as gone (404 or 410) are pruned, and a reminder whose delivery reports them is removed too.
 
-Subscriptions live in process memory, so they do not survive a backend restart, and a restart means devices must opt in again. This matches the single-instance limitation of the shuttle snapshot. Notification delivery in a background or screen-off device, on a Wear OS companion, and on a physical phone are not verified here.
+Subscriptions and alight reminders live in process memory, so they do not survive a backend restart, and a restart means devices must opt in again. This matches the single-instance limitation of the shuttle snapshot. Notification delivery in a background or screen-off device, on a Wear OS companion, and on a physical phone are not verified here, and neither is whether an alight reminder reaches a rider whose device is asleep when the bus arrives.
 
 ## Install and verify
 

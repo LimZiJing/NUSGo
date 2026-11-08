@@ -9,7 +9,7 @@
     flex-direction: column;
     overflow: hidden;
     border-right: 1px solid var(--border-subtle);
-    background: var(--surface-raised);
+    background: var(--surface);
     box-shadow: var(--shadow-panel);
     pointer-events: auto;
   }
@@ -53,7 +53,7 @@
     padding: 16px;
     border: 0;
     border-radius: 0;
-    background: var(--surface-raised);
+    background: var(--surface);
     box-shadow: none;
   }
 

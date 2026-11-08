@@ -22,7 +22,7 @@
   --surface-control: #f5d1aa;
   --surface-warning: #fff1cc;
   --surface-segmented-control: #f7e1c8;
-  --surface-card: #fbefe1;
+  --surface-card: #fffaf4;
   --surface-handle: #c59769;
   --surface-journey-step: #7a4e2b;
 
@@ -63,6 +63,7 @@
   --border-info: #9dbbde;
   --border-focus: #bb4a00;
   --border-card: #efdfce;
+  --border-divider: var(--border-default);
 
   /* NUS Orange is the bright brand highlight; the deeper accent keeps control text readable. */
   --accent: #bb4a00;

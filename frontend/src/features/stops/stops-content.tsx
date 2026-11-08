@@ -10,7 +10,7 @@ interface StopsContentProps {
   readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
   readonly stopListEntries?: readonly StopListEntry[]
   readonly stopListLoading?: boolean

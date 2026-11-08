@@ -324,26 +324,91 @@
 
 .personal-waypoint-list-empty p { margin: 0; }
 
-.personal-waypoint-form label { font-weight: 600; }
-.personal-waypoint-form label span { color: var(--text-secondary); font-weight: 400; }
-.personal-waypoint-form input,
-.personal-waypoint-form textarea {
+.personal-waypoint-field {
+  --personal-waypoint-control-height: 48px;
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.personal-waypoint-field-label {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--personal-waypoint-control-height) / 2);
+  left: var(--space-4);
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  line-height: 1.2;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  transition: color 120ms ease, font-size 120ms ease, top 120ms ease, transform 120ms ease;
+}
+
+.personal-waypoint-field:focus-within > .personal-waypoint-field-label,
+.personal-waypoint-field:has(.personal-waypoint-field-control:not(:placeholder-shown)) > .personal-waypoint-field-label {
+  top: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1;
+  transform: none;
+}
+
+.personal-waypoint-field-label span { color: var(--text-muted); font-weight: 400; }
+
+.personal-waypoint-field-control {
   width: 100%;
-  min-height: 40px;
-  padding: var(--space-2);
+  min-height: var(--personal-waypoint-control-height);
+  padding: var(--space-6) var(--space-4) var(--space-1);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   color: var(--text-primary);
   background: var(--surface-card);
   box-sizing: border-box;
-  font: var(--font-size-md)/1.3 var(--sans);
+  font: var(--font-size-control)/1.3 var(--sans);
 }
-.personal-waypoint-form textarea { resize: vertical; }
-.personal-waypoint-form [aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-field-control:focus { border-color: var(--accent); }
+.personal-waypoint-field-control[aria-invalid='true'] { border-color: var(--text-error-strong); }
+.personal-waypoint-field-control--multiline {
+  /* Reserve room for the floating label while keeping the note to two compact rows. */
+  min-height: calc(var(--space-8) + var(--control-height-lg));
+  padding-top: var(--space-8);
+  resize: vertical;
+}
+
+.personal-waypoint-field:has(.personal-waypoint-field-control--multiline) > .personal-waypoint-field-label {
+  top: var(--space-4);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+  transform: none;
+}
+
+.personal-waypoint-field-error {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--status-error-strong);
+  background: var(--status-error-surface);
+  font-size: var(--font-size-xs);
+  line-height: 1.25;
+}
+
+.personal-waypoint-field-error-icon { flex: 0 0 auto; }
+
+.personal-waypoint-field-error span { min-width: 0; }
+
 .personal-waypoint-category-input-group {
   display: flex;
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--personal-waypoint-control-height);
   align-items: center;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);

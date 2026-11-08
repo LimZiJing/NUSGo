@@ -67,30 +67,43 @@ describe('notification hourly cap', () => {
     let nowMs = 1_000
     const cap = createNotificationCap({ maxPerHour: 2, now: () => nowMs })
 
-    assert.equal(cap.tryConsume(endpoint('a')), true)
-    assert.equal(cap.tryConsume(endpoint('a')), true)
-    assert.equal(cap.tryConsume(endpoint('a')), false)
+    cap.record(endpoint('a'))
+    cap.record(endpoint('a'))
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
 
     // Just under an hour later the same window still applies.
     nowMs += 60 * 60_000 - 1
-    assert.equal(cap.tryConsume(endpoint('a')), false)
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
 
     nowMs += 1
-    assert.equal(cap.tryConsume(endpoint('a')), true)
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
   })
 
   it('keeps the cap independent per subscription', () => {
     const cap = createNotificationCap({ maxPerHour: 1 })
-    assert.equal(cap.tryConsume(endpoint('a')), true)
-    assert.equal(cap.tryConsume(endpoint('a')), false)
-    assert.equal(cap.tryConsume(endpoint('b')), true)
+    cap.record(endpoint('a'))
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+    assert.equal(cap.hasCapacity(endpoint('b')), true)
+  })
+
+  it('does not count a delivery that was never recorded', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+
+    // A caller that checks capacity but never records a delivery, for example because the push
+    // service failed, leaves the allowance untouched.
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.record(endpoint('a'))
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
   })
 
   it('forgets a subscription window on reset', () => {
     const cap = createNotificationCap({ maxPerHour: 1 })
-    assert.equal(cap.tryConsume(endpoint('a')), true)
+    cap.record(endpoint('a'))
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
     cap.reset(endpoint('a'))
-    assert.equal(cap.tryConsume(endpoint('a')), true)
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.record(endpoint('a'))
     assert.equal(cap.trackedCount, 1)
   })
 })

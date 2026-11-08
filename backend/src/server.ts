@@ -46,11 +46,13 @@ async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const pushStore = createPushSubscriptionStore()
+  // One cap instance is shared by the HTTP routes and the publisher, so unsubscribing or
+  // re-registering resets the same window that limits delivery.
   const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
   const pushPublisher = config.push
     ? createServiceUpdatePublisher({
       store: pushStore,
-      push: config.push,
+      cap: pushCap,
       sendNotification: createWebPushSender(config.push).sendNotification,
       stopName: (stopId) => data.network.stops.find(({ id }) => id === stopId)?.longName ?? null,
     })

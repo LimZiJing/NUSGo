@@ -93,6 +93,8 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
 
    Edit these files only on the server. Never commit them or paste their contents into chat, issues, or logs.
 
+   `backend.env` also owns the optional web push settings. Leave `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` blank to run without push, or set both from `npx web-push generate-vapid-keys` on a trusted machine. `VAPID_SUBJECT` must be a `mailto:` address or an `https://` URL. The public key is a 65-byte uncompressed P-256 point, and a truncated or placeholder value fails startup rather than reporting push as available. Real keys belong only in the server's `backend.env`.
+
 7. Create a separate deploy key, install its public half on the server, and record the server's host key:
 
    ```bash

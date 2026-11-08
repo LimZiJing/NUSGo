@@ -1,8 +1,7 @@
 import type { PushNotificationPayload, ShuttleArrivalSnapshot } from '@nusgo/shared'
-import type { PushConfig } from '../config.ts'
 import type { PushSendNotification } from './delivery.ts'
 import { deliverPushNotifications } from './delivery.ts'
-import { createNotificationCap, type NotificationCap } from './notification-cap.ts'
+import type { NotificationCap } from './notification-cap.ts'
 import { createServiceUpdateNotifications } from './notifications.ts'
 import type { ServiceUpdate } from './service-updates.ts'
 import { createServiceUpdateDetector } from './service-updates.ts'
@@ -16,8 +15,13 @@ export interface PublishResult {
 
 export interface ServiceUpdatePublisherOptions {
   readonly store: PushSubscriptionStore
-  readonly push: PushConfig
   readonly sendNotification: PushSendNotification
+  /**
+   * The process-wide hourly cap, shared with the HTTP routes so an unsubscribe or re-register
+   * resets the same window that limits delivery. A private cap here would leave the route's
+   * reset writing to a different instance and the enforced limit would drift.
+   */
+  readonly cap: NotificationCap
   /** Resolves a canonical stop name for a notification body. */
   readonly stopName: (stopId: string) => string | null
   readonly now?: () => number
@@ -26,31 +30,35 @@ export interface ServiceUpdatePublisherOptions {
 export interface ServiceUpdatePublisher {
   /** Feeds one newly published snapshot and pushes any notification it warrants. */
   publish(snapshot: ShuttleArrivalSnapshot): Promise<PublishResult>
-  /** Forgets a subscription's hourly-cap history; called when someone unsubscribes. */
-  forgetSubscription(endpoint: string): void
+  /** The shared cap, exposed so composition can confirm the routes and publisher agree. */
   readonly cap: NotificationCap
 }
 
 /**
  * Chooses the one notification worth sending for a batch of detected updates.
- * Sending a single update per snapshot keeps a burst of delayed buses from producing a burst
- * of notifications; the largest delay is the most useful single signal.
+ *
+ * `payloads` is shorter than `updates` when an update was skipped for a stop the canonical data
+ * no longer names, so the two lists cannot be indexed together. The caller marks which payload
+ * is the largest valid one instead.
  */
 function mostSignificantPayload(
   payloads: readonly PushNotificationPayload[],
+  updateIndexByPayloadIndex: readonly number[],
   updates: readonly ServiceUpdate[],
 ): PushNotificationPayload | null {
-  if (payloads.length === 0) return null
-  let bestIndex = 0
+  if (payloads.length === 0 || updateIndexByPayloadIndex.length !== payloads.length) return null
+  let bestPayloadIndex = -1
   let bestDelay = -1
-  updates.forEach((update, index) => {
+  payloads.forEach((_payload, payloadIndex) => {
+    const update = updates[updateIndexByPayloadIndex[payloadIndex] ?? -1]
+    if (!update) return
     const delay = update.kind === 'delay' ? update.delaySeconds : 0
     if (delay > bestDelay) {
       bestDelay = delay
-      bestIndex = index
+      bestPayloadIndex = payloadIndex
     }
   })
-  return payloads[bestIndex] ?? payloads[0] ?? null
+  return bestPayloadIndex === -1 ? null : payloads[bestPayloadIndex] ?? null
 }
 
 /**
@@ -64,7 +72,7 @@ export function createServiceUpdatePublisher(
 ): ServiceUpdatePublisher {
   const now = options.now ?? Date.now
   const detectUpdates = createServiceUpdateDetector({ now })
-  const cap = createNotificationCap({ maxPerHour: options.push.notificationsPerHourCap, now })
+  const cap = options.cap
   let previousSnapshot: ShuttleArrivalSnapshot | null = null
 
   const publish = async (snapshot: ShuttleArrivalSnapshot): Promise<PublishResult> => {
@@ -73,8 +81,10 @@ export function createServiceUpdatePublisher(
     if (!previous) return { updates: [], notificationsSent: 0, prunedEndpoints: [] }
 
     const updates = detectUpdates(previous, snapshot)
+    const notifications = createServiceUpdateNotifications(updates, { stopName: options.stopName })
     const payload = mostSignificantPayload(
-      createServiceUpdateNotifications(updates, { stopName: options.stopName }),
+      notifications.payloads,
+      notifications.updateIndexByPayloadIndex,
       updates,
     )
     const subscriptions = options.store.list('service-updates')
@@ -84,7 +94,9 @@ export function createServiceUpdatePublisher(
 
     const summary = await deliverPushNotifications(options.store, options.sendNotification, subscriptions, {
       // The hourly cap is a product rule, not a delivery failure: the subscription stays registered.
-      payloadFor: (record) => (cap.tryConsume(record.endpoint) ? payload : null),
+      payloadFor: (record) => (cap.hasCapacity(record.endpoint) ? payload : null),
+      // Only a delivery the push service accepted counts against the recipient's allowance.
+      onDelivered: (record) => cap.record(record.endpoint),
     })
 
     return {
@@ -94,11 +106,5 @@ export function createServiceUpdatePublisher(
     }
   }
 
-  return {
-    publish,
-    forgetSubscription(endpoint) {
-      cap.reset(endpoint)
-    },
-    cap,
-  }
+  return { publish, cap }
 }

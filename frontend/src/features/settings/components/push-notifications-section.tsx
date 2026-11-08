@@ -63,7 +63,11 @@ export function PushNotificationsSection({
           onClick={enabled ? onDisable : onEnable}
         />
       )}
-      {errorMessage && <p className="settings-push-error" role="alert">{errorMessage}</p>}
+      {/*
+        The live region stays mounted and starts empty. A region that only appears together with
+        its text is often not announced, because screen readers miss the element being inserted.
+      */}
+      <p className="settings-push-error" role="alert">{errorMessage}</p>
     </div>
   )
 }

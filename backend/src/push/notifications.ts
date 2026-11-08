@@ -12,8 +12,8 @@ export function describeDelayMinutes(delaySeconds: number): number {
 
 /**
  * Builds the single-line notification a rider sees for a delayed bus at a stop.
- * Title and body stay short so they render on one line in Android and Wear OS notification
- * surfaces; the deep link carries the stop so a tap opens that stop's details.
+ * Title and body stay short so a notification shows on one line in compact system
+ * notification surfaces; the deep link carries the stop so a tap opens that stop's details.
  */
 export function createDelayNotification(
   stopName: string,
@@ -49,6 +49,16 @@ export interface ServiceUpdateNotificationContext {
   readonly stopName: (stopId: string) => string | null
 }
 
+export interface ServiceUpdateNotifications {
+  readonly payloads: readonly PushNotificationPayload[]
+  /**
+   * For each payload, the index of the update it was built from. Updates for a stop the
+   * canonical data no longer names produce no payload, so this mapping is what lets a caller
+   * score payloads by their own update instead of assuming the arrays line up.
+   */
+  readonly updateIndexByPayloadIndex: readonly number[]
+}
+
 /**
  * Turns detected service updates into notification payloads. Updates for a stop the canonical
  * data no longer contains are skipped rather than shown with a raw ID.
@@ -56,12 +66,16 @@ export interface ServiceUpdateNotificationContext {
 export function createServiceUpdateNotifications(
   updates: readonly ServiceUpdate[],
   context: ServiceUpdateNotificationContext,
-): readonly PushNotificationPayload[] {
-  return updates.flatMap((update) => {
+): ServiceUpdateNotifications {
+  const payloads: PushNotificationPayload[] = []
+  const updateIndexByPayloadIndex: number[] = []
+  updates.forEach((update, updateIndex) => {
     const stopName = context.stopName(update.stopId)
-    if (!stopName) return []
-    return [update.kind === 'delay'
+    if (!stopName) return
+    payloads.push(update.kind === 'delay'
       ? createDelayNotification(stopName, update.routeId, update.stopId, update.delaySeconds)
-      : createUnavailableNotification(stopName, update.stopId)]
+      : createUnavailableNotification(stopName, update.stopId))
+    updateIndexByPayloadIndex.push(updateIndex)
   })
+  return { payloads, updateIndexByPayloadIndex }
 }

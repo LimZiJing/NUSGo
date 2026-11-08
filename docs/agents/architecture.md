@@ -8,15 +8,17 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - shared/src owns transport contracts, Path and Journey HTTP types, and reusable Node-free transit, venue, walking-graph, service-hours, and transit-index modules used by both applications.
 - `backend/src/server.ts` owns process startup and shutdown, while `backend/src/config.ts` and `backend/src/canonical-data.ts` own backend settings and canonical data loading.
 - backend/src/http owns Express middleware, route registration, and external request validation. `http/app.ts` composes the middleware and routes; `http/cors.ts`, `http/rate-limiter.ts`, and `http/concurrency-limiter.ts` own their respective policies. Health, live-data, and Journey handlers live in http/routes/. POST /api/journeys validates endpoint references, applies a bounded deadline and per-client rate limit, and maps planner outcomes to the HTTP contract. See [the HTTP guide](../../backend/src/http/README.md) for middleware order and client-IP trust rules.
+- `backend/src/push` owns web-push notification delivery. `subscription-store.ts` owns subscription records behind a narrow interface; `notification-cap.ts` owns the per-endpoint hourly cap; `notifications.ts` builds payloads; `delivery.ts` owns sending, expiry pruning, and the TTL/timeout bounds; `service-updates.ts` and `service-update-publisher.ts` derive updates from published arrival snapshots; `web-push-sender.ts` is the only module that imports the `web-push` package. The publisher reads snapshots the live-data runtime already published, so push adds no poller and no upstream request, and does not import provider modules.
 - backend/src/pathfinding owns canonical endpoint resolution, the Pathfinding pipeline, and the server-side Valhalla adapter. Its service receives validated canonical data and live-data operations; HTTP routes do not construct planner inputs themselves.
 - backend/src/live-data/runtime.ts composes live-data adapters, owns snapshot lifecycle, and exposes backend live-data operations without Express response construction.
 - `backend/src/live-data/bus-arrivals/snapshot.ts` owns provider-independent arrival snapshot generations and freshness.
 - `backend/src/live-data/providers/nus` and `backend/src/live-data/providers/lta` own provider authentication, mappings, requests, payload parsing, and provider caches. Provider credentials stay in backend configuration.
 - `backend/src/live-data/upstream` owns reusable concurrency, retry, and timeout controls used by provider modules.
-- `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, domain transformations, and the Personal Waypoint storage contract.
+- `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, domain transformations, and the Personal Waypoint storage contract. `domain/push` owns the push notification port the Settings feature consumes, so the feature never imports the browser adapter.
 - `frontend/src/features` owns product workflows and their feature-specific styles: Explore, Stops, Plan, Settings, the global More menu, and Personal Waypoints under `waypoints/personal`.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
-- `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
+- `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend. `infrastructure/push` owns the browser push runtime and its subscription HTTP client.
+- `frontend/src/pwa` owns the service worker and the code that interprets messages and launch links from it, including push payload validation and push-click deep links.
 - frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
 - Vite builds and serves frontend assets. Its development `/api` proxy only forwards requests to Express; API handlers, provider calls, and polling belong to the backend.
 
@@ -56,7 +58,11 @@ backend/src/http/routes/journeys
 
 The diagram describes allowed ownership and dependency direction; it does not require every module to import every lower layer.
 
-Backend dependencies flow from HTTP routes and validation to the pathfinding composition seam and live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules.
+Backend dependencies flow from HTTP routes and validation to the pathfinding composition seam and live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules. Push follows the same shape: `http/routes/push.ts` validates registrations and delegates to `backend/src/push`, whose modules depend on shared contracts and the live-data snapshot rather than on route or provider code.
+
+The push subscription store and hourly cap are process-wide and created once in `backend/src/server.ts`. The HTTP routes and the service-update publisher receive the same instances, so the cap limits what one endpoint receives and a re-registration or unsubscribe resets that same window. A module must not construct a private cap or store it needs to keep in step with the routes.
+
+The web-push sender is the only module allowed to import the `web-push` package. Delivery code depends on the small `PushSendNotification` signature instead, which is what keeps delivery testable with a fake and prevents a second place from choosing different TTL or timeout bounds.
 
 ## More navigation and Personal Waypoints
 

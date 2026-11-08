@@ -4,8 +4,13 @@ export interface NotificationCapOptions {
 }
 
 export interface NotificationCap {
-  /** Records one delivery and returns true when it is allowed under the hourly cap. */
-  tryConsume(endpoint: string): boolean
+  /** True while this endpoint may still receive a notification in its current hour. */
+  hasCapacity(endpoint: string): boolean
+  /**
+   * Records one accepted delivery. Called only after the push service accepted the payload, so a
+   * transient failure does not silently use up someone's hourly allowance.
+   */
+  record(endpoint: string): void
   reset(endpoint: string): void
   readonly trackedCount: number
 }
@@ -24,6 +29,9 @@ interface CapWindow {
  * The cap is per subscription rather than per subscriber, matching the store's identity model:
  * an endpoint is the only handle the server holds, and it holds nothing personal. History lives
  * here rather than in the subscription record, so it is forgotten when a subscription is removed.
+ *
+ * Checking and recording are separate calls so a caller can attempt a delivery first and only
+ * count it once the push service accepted it.
  */
 export function createNotificationCap(options: NotificationCapOptions): NotificationCap {
   const maxPerHour = options.maxPerHour
@@ -38,9 +46,12 @@ export function createNotificationCap(options: NotificationCapOptions): Notifica
   }
 
   return {
-    tryConsume(endpoint) {
+    hasCapacity(endpoint) {
+      return windowFor(endpoint).count < maxPerHour
+    },
+    record(endpoint) {
       const activeWindow = windowFor(endpoint)
-      if (activeWindow.count >= maxPerHour) return false
+      if (activeWindow.count >= maxPerHour) return
       if (!windows.has(endpoint) && windows.size >= MAX_TRACKED_ENDPOINTS) {
         // Bound memory: drop the oldest window before tracking another endpoint.
         const oldestEndpoint = windows.keys().next().value
@@ -48,7 +59,6 @@ export function createNotificationCap(options: NotificationCapOptions): Notifica
       }
       activeWindow.count += 1
       windows.set(endpoint, activeWindow)
-      return true
     },
     reset(endpoint) {
       windows.delete(endpoint)

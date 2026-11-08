@@ -19,6 +19,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
 | More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
+| Community Waypoint contract | Shared model, controlled categories, and whole-file GeoJSON validation; the public collection is not loaded yet | [Data contract](community-waypoints/data-contract.md) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
@@ -40,6 +41,7 @@ Also in place:
 - **Live data** needs server-side NUS credentials, and live-arrival reliability still needs separate verification. NUSMods' NextBus client provides no route geometry.
 - **One Express instance only.** The shuttle snapshot and rate limiters live in process memory.
 - **Location** depends on browser permission and device accuracy. It doesn't replan journeys or continue after the app closes.
+- **Community Waypoints** have a shared model and validated GeoJSON contract, but no published dataset or app loader yet. #212 tracks those additions.
 - **Browser evidence** is partial. Targeted checks exist at 1280 × 720. The exact release and mobile viewports and failure injection still need manual verification.
 - **Website release history** starts empty until the first successful production promotion bundles reviewed notes. After each promotion, a trusted follow-up workflow records the exact deployment time and immutable commit tag. Backend deployment intervals still need to be reviewed and summarized by the release operator. See [release notes](release-notes.md).
 - **Transit data** only behaves correctly while the checked-in network, geometry and verification manifest stay in sync. CI checks this.

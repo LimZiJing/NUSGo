@@ -157,6 +157,7 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
         locationNotice={workflow.locationNotice}
         noLiveData={workflow.noLiveData}
         liveArrivalMessage={workflow.liveArrivalMessage}
+        isMobileViewport={isMobileViewport}
         onSelectStopList={workflow.selectStopList}
         onToggleFavorite={workflow.toggleFavorite}
         onToggleExpanded={workflow.toggleExpanded}

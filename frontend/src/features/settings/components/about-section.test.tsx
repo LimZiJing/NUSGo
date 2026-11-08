@@ -28,7 +28,6 @@ describe('About settings', () => {
           fetchedOn: '2026-10-13',
           licenceNote: 'Sourced from OpenStreetMap and Google Maps by City Syntax Lab researchers. Some locations use unverified entrances.',
         }}
-        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
       />,
     )
 
@@ -73,25 +72,10 @@ describe('About settings', () => {
       dataVersion={'b'.repeat(40)}
       transitMetadata={null}
       buildingSource={null}
-      communityWaypointDownloadUrl="/data/community-waypoints.geojson"
     />)
 
     expect(screen.queryByText('Bus network')).toBeNull()
     expect(screen.queryByText('Building locations')).toBeNull()
     expect(screen.getByText('Production · bbbbbbb')).toBeTruthy()
-  })
-
-  it('offers the approved Community Waypoint GeoJSON at the app base path', () => {
-    render(<AboutSection
-      dataVersion="development"
-      transitMetadata={null}
-      buildingSource={null}
-      communityWaypointDownloadUrl="/NUSGo/data/community-waypoints.geojson"
-    />)
-
-    const link = screen.getByRole('link', { name: 'Download approved data (GeoJSON)' })
-    expect(screen.getByRole('heading', { name: 'Community waypoints' })).toBeTruthy()
-    expect(link.getAttribute('href')).toBe('/NUSGo/data/community-waypoints.geojson')
-    expect(link.getAttribute('download')).toBe('community-waypoints.geojson')
   })
 })

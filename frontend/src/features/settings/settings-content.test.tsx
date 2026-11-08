@@ -37,21 +37,28 @@ describe('Settings sections', () => {
     const appearance = getSection('Appearance')
     const favourites = getSection('Favourites')
     const about = getSection('About')
+    const waypoints = getSection('Waypoints')
 
     expect(appearance.open).toBe(false)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(false)
+    expect(waypoints.open).toBe(false)
 
     await user.click(screen.getByText('Appearance'))
     await user.click(screen.getByText('About'))
+    await user.click(screen.getByText('Waypoints'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
+    expect(waypoints.open).toBe(true)
+    expect(screen.getByRole('link', { name: 'Download approved data (GeoJSON)' }).getAttribute('href'))
+      .toBe('/data/community-waypoints.geojson')
 
     await user.click(screen.getByText('Favourites'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(true)
     expect(about.open).toBe(true)
+    expect(waypoints.open).toBe(true)
   })
 
   it('manages favourites in Settings and keeps the saved order in the summary', async () => {

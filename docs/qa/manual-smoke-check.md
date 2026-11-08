@@ -38,7 +38,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
-- [ ] The single mobile location button sits inside the top-left safe area when the map is exposed and is hidden while Plan is full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
+- [ ] The single mobile location button stays inside the top-left safe area, clear of other map controls and the sheet while the map is exposed; in Plan it remains available when collapsed or partial and hides when full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
 - [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
 ## Responsive boundary — 768 / 769px

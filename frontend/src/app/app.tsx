@@ -1021,7 +1021,7 @@ function App() {
             <div className="map-control-action-slot">
               <LocationControl
                 visible={!isMobileViewport || !(
-                  navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
+                  navigation.activeView === 'plan' && navigation.sheets.plan.detent === 'full'
                 )}
                 onRootChange={(root) => {
                   locationControlRef.current = root

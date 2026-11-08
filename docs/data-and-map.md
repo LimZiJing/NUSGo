@@ -23,6 +23,13 @@ What data the app ships with and how the map is built. For a one-page summary se
 - A checked-in verification manifest ties the network and geometry together. CI checks that they stay in sync.
 - Timing estimates are generated at build time. See [shuttle timing](shuttle-timing.md).
 
+## Community Waypoints
+
+- `frontend/public/data/community-waypoints.geojson` is the public source for reviewed Community Waypoints. It is an empty FeatureCollection until locations have been reviewed and approved; submissions, Personal Waypoints, the private review queue, and test fixtures are not published from this file.
+- The browser loader is `loadCommunityWaypoints` under `frontend/src/infrastructure/data/`. It fetches the public file through the base-path-aware JSON client and validates the whole response with the shared parser. Fetch and validation failures reject instead of appearing as an empty dataset.
+- `npm run community-waypoints:validate` checks the checked-in file with that same parser. Normal and local-rehearsal frontend builds run the check.
+- Download the public GeoJSON from Settings → About → Data sources → Community waypoints. #213 owns map display; submissions are not implemented yet. The [data contract](community-waypoints/data-contract.md) defines review and publication rules.
+
 ## Basemap and markers
 
 - The basemap is the OpenFreeMap Liberty style on OpenStreetMap data. Bus POI labels are hidden and low-priority local POIs are reduced, while rail, airport and major campus context stay visible. Map source attribution appears for five seconds at startup, then disappears; Settings → About → Data sources → Basemap keeps the source links.
@@ -37,5 +44,6 @@ Module ownership is in [Application Architecture](agents/architecture.md). In sh
 - MapLibre lifecycle, the basemap, transit layers and markers sit in focused adapters under `frontend/src/infrastructure/map/`. The app uses the framework-free MapSession contract in `frontend/src/app/contracts/`.
 - `frontend/src/app/navigation-session.ts` owns application state and commands: loaded data, Explore history, route selection, trip endpoints, resource status, errors and map coordination. `app.tsx` only composes and adapts to React.
 - JSON fetching and validated loaders are in `frontend/src/infrastructure/data/`.
+- Community Waypoint publication data is kept in `frontend/public/data/community-waypoints.geojson`; Settings links to that same file for download.
 - Shared transit, venue and walking-graph types and validation live in `shared/src/`. Frontend-only location, trip and Explore state is in `frontend/src/domain/`.
 - Personal waypoints: the model and versioned browser store live in `frontend/src/domain/waypoints/personal/` and `frontend/src/infrastructure/data/`, with collections capped at 500 records. The waypoint key remains `navus:personal-waypoints:v1`; records missing marker appearance fields load with the blue/general defaults without a schema migration. Category visibility is stored separately at `navus:personal-waypoint-category-visibility:v1`; only the map projection is filtered. Reads keep valid records and report rejected ones, and malformed or unsupported waypoint data stays available for recovery. localStorage cannot make cross-tab writes atomic. The More menu lives in `frontend/src/features/more/`; Settings and Personal Waypoint screens live in their own feature folders. The app composes these screens and the map/store adapters.

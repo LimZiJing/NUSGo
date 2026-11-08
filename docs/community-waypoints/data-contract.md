@@ -1,6 +1,6 @@
 # Community Waypoint data contract
 
-This document defines the public, reviewed Community Waypoint dataset for NUSGo. It is separate from Personal Waypoints and from canonical venues and bus stops. The public GeoJSON file and browser loader are tracked by #212; this contract does not publish a dataset.
+This document defines the public, reviewed Community Waypoint dataset for NUSGo. It is separate from Personal Waypoints and from canonical venues and bus stops. The public GeoJSON file lives at `frontend/public/data/community-waypoints.geojson`; it remains empty until a maintainer reviews and approves locations. The browser loader validates this file through the shared parser. Map display belongs to #213.
 
 ## GeoJSON shape
 

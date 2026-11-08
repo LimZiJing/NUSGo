@@ -54,6 +54,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 ## Settings, Stops and Plan additions
 
 - [ ] Settings opens from the map gear. Appearance, Favourites and About expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.
+- [ ] In Settings → About → Data sources, download Community waypoints and confirm it is the checked-in GeoJSON with no private fields. Check the link at desktop and mobile sizes and under a prefixed preview base path such as `/NUSGo/`.
 - [ ] In Stops, Nearby opens timing rows only for stops within 250 m of the map centre, and the centre marker is the glowing dot.
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.
 - [ ] In Plan, a collapsed journey card expands on tap, and tapping an expanded card recentres the map on the route.

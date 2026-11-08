@@ -55,6 +55,7 @@ describe('PWA notices', () => {
 
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
     for (const [name, listener, options] of vi.mocked(window.addEventListener).mock.calls) {
       if (['online', 'offline', 'beforeinstallprompt', 'appinstalled', 'focus'].includes(name)) {
         window.removeEventListener(name, listener, options)

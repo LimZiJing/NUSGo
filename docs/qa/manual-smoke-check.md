@@ -56,6 +56,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Settings opens from the map gear. Appearance, Favourites and About expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.
 - [ ] In Stops, Nearby opens timing rows only for stops within 250 m of the map centre, and the centre marker is the glowing dot.
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.
+- [ ] On desktop and mobile, selecting an internal route pill from a stop card or detail view opens its route in Explore, scrolls to the originating stop, and focuses/highlights the row without activating it.
 - [ ] In Plan, a collapsed journey card expands on tap, and tapping an expanded card recentres the map on the route.
 
 ## Personal Waypoints (#207)

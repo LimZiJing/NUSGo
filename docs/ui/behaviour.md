@@ -30,7 +30,8 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - **Find venue:** search by venue code or room name. Results are ranked, and buildings are listed ahead of rooms. Choosing a venue flies to it and shows a selected marker, with no duplicate popup.
 - **Venue details:** the venue code is the heading, followed by the room name, floor and building. Floors are integers: negative for basements, zero for ground, positive above. One formatter produces the label. The panel also has a Navigate action, a NUSMods link and up to three NUS bus stops within 250 m. Coordinates stay internal and are never shown.
 - **Navigate:** sets the destination. If there is an active location fix, it also replaces the origin with a frozen Current location. Without one, the origin is kept and no permission is requested. On mobile it opens the partial Plan sheet.
-- **Bus routes:** chips appear in the order A1, A2, D1, D2, R1, R2, K, P. Their scrollbar is hidden, with edge fades and chevrons showing overflow, and selecting a route keeps its chip visible. A single ordered stop timeline follows. The return control clears the map route but remembers the chosen one.
+- **Bus routes:** chips appear in the order A1, A2, D1, D2, R1, R2, K, P. Their scrollbar is hidden, with edge fades and chevrons showing overflow, and selecting a route keeps its chip visible. A single ordered stop timeline follows. A compact follow control sits at the top of the app when a route is selected or active. The return control clears the map route but remembers the chosen one.
+- **Follow route:** If the confirmed Current stop is on the selected route, one tap starts following there; otherwise the top control asks for a starting stop, using an unambiguous nearby suggestion when available or a manual route stop. Following does not request location by itself. The bus-route timeline marks the Current stop with Here only while following, and route actions stay in the top control. Progress is foreground-only and approximate: location fixes must be fresh and report accuracy of 25 m or better, a stop must be within 75 m on two distinct fixes to advance, and the user can update the Current stop manually. Progress updates appear briefly at the top. A 250 m nearby suggestion is separately confirmed or dismissed for the session. No bus is tracked and boarding is not inferred. Stopping following keeps the Current stop; clearing it removes both.
 - **Stops from Explore:** choosing a stop from a route row, marker or venue's nearby list opens its Stops details with no popup. Back returns to Explore and restores keyboard focus to the control you used.
 
 ## Stops
@@ -65,9 +66,10 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Location
 
-- A one-tap target button focuses the first available fix and shows a blue target marker. Any valid browser fix is accepted, whatever its reported accuracy. Fixes stay in browser memory and are never sent to NUSGo, except as the frozen coordinates of a Current location endpoint.
+- A one-tap target button focuses the first available fix and shows a blue target marker. Any valid browser fix is accepted for the map marker, whatever its reported accuracy. Route following separately requires a fresh fix with reported accuracy of 25 m or better. Fixes stay in browser memory and are never sent to NUSGo, except as the frozen coordinates of a Current location endpoint.
 - Later device updates move only the blue marker. The journey, the green origin marker, endpoint labels and map reset use the captured coordinates.
 - On mobile the button sits top-left in the safe area, above the sheets, and is hidden while Plan is expanded. While the first request is pending, the spinner shows and a further tap recentres without starting a second watch.
+- An enabled location watch pauses while the page is hidden and resumes in the foreground. Route-following suggestions and progress are not updated while hidden.
 - With no active fix, the button centres on Kent Ridge MRT at zoom 15 before requesting or retrying location. A valid recentre pulses the marker once (a static ring under reduced motion). Location updates never move the camera by themselves.
 
 ## Personal Waypoints

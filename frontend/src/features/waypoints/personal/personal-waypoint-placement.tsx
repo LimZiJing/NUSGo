@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
-import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { Button } from '../../../ui/button'
 import { LocateIcon, MapPinIcon } from '../../../ui/icons'
 

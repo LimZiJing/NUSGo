@@ -416,12 +416,17 @@
 }
 
 .personal-waypoint-category-input-group:focus-within { border-color: var(--accent); }
+.personal-waypoint-category-input-group:has(.personal-waypoint-category-input:focus-visible) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
 .personal-waypoint-category-input-group:has(input[aria-invalid='true']) { border-color: var(--text-error-strong); }
 
 .personal-waypoint-form .personal-waypoint-category-input {
   min-width: 0;
-  min-height: 38px;
+  min-height: 46px;
   flex: 1 1 auto;
+  padding: var(--space-6) var(--space-4) var(--space-1);
   border: 0;
   background: transparent;
 }

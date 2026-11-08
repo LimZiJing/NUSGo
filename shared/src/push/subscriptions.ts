@@ -48,9 +48,8 @@ export const PUSH_SERVICE_HOSTS = Object.freeze([
   'web.push.apple.com',
 ])
 
-// Push services use HTTPS only, and the pattern keeps the value ASCII with no whitespace or
-// control characters before it reaches URL parsing. Rejecting anything else keeps the server
-// from posting notifications to arbitrary hosts supplied by a client.
+// Require HTTPS and ASCII URL syntax without whitespace or control characters before parsing.
+// The exact-host allowlist in normalizePushEndpoint restricts which hosts may be contacted.
 const PUSH_ENDPOINT_PATTERN = /^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?\/[A-Za-z0-9._~:/?#[\]@!$&'()*+,;=%-]*$/
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+={0,2}$/
 const IPV4_LITERAL_PATTERN = /^\d{1,3}(?:\.\d{1,3}){3}$/

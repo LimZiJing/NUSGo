@@ -17,6 +17,15 @@ Pre-integration application base `ed812995f966d3fbd83f37ba9d82a685e66b515b` with
 
 `CONTEXT.md` reviewed; no update needed.
 
+### Integrated focus check — 2026-11-09
+
+Application head `0a9ac90a71d0715c0aad092d41a01ee520f87cba`, managed development group at `http://localhost:32212/`, headless Microsoft Edge 157.0.4341.42 driven by Playwright. Fresh contexts used actual viewports 1280 × 800 and 390 × 844, DPR 1, with two temporary waypoints in isolated storage. This supersedes the pre-integration deletion-focus evidence above.
+
+- Opened My waypoints, used Show on map, and activated the actual waypoint marker with Enter while retaining the list as the return page. Clicked Delete and dismissed the native confirmation: both records remained and focus stayed on Delete at both sizes.
+- Clicked Delete again and accepted: only the selected record was removed, the panel returned to My waypoints, and focus landed on the surviving Tea room row at both sizes.
+- Activated the remaining marker with Enter, clicked Delete and accepted: storage contained zero waypoints and focus landed on the empty-state paragraph at both sizes.
+- Both runs completed with zero page errors. These checks cover keyboard marker activation and pointer deletion controls; they do not verify pointer marker hit areas, screen-reader speech, live arrivals or physical devices.
+
 ## Animation performance baseline — 2026-11-02 (#558)
 
 Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).

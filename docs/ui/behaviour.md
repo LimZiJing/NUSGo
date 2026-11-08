@@ -10,6 +10,7 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 - One persistent left column holds the tabs. The map reserves the column's measured width as its left inset.
 - Inactive tabs stay mounted but inert, so their state survives tab switches and breakpoint changes.
 - Stops starts loading live arrivals and service windows once it becomes active. After you leave the tab, arrivals keep refreshing every 30 seconds for the last polled stop set, and that set only follows new requests while Stops is active. Service windows load only while Stops is active.
+- The Stops column is the single vertical scroll owner for that pane: the wheel over a stop card, the stop details, the empty state, the gutter or the padding all move the column. Nothing inside it keeps a scroll range of its own, and the Nearby/Favourites switch sticks to the top of the column while it scrolls. Because the list and the stop details share that one scroller, opening details resets the column to its top so their Back control and stop name are always in view. Mobile keeps its own arrangement, where the sheet scrolls the card list and details keep whatever position the sheet had.
 
 **Mobile (768px and narrower)**
 - A bottom tab bar sits under feature sheets, which have three detents: collapsed (a 44px handle), partial (50% of the visual viewport above the tab bar) and full (covers the whole viewport).

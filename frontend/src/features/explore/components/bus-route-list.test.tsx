@@ -134,6 +134,39 @@ describe('BusRouteList', () => {
     expect(onFocusStop).toHaveBeenCalledWith('STOP-A', stopRow)
   })
 
+  it('scrolls to and focuses the stop requested from Stops without activating it', () => {
+    const network = createEightRouteNetwork()
+    const onFocusStop = vi.fn()
+    const onRouteStopFocusHandled = vi.fn()
+    const routeStopFocusRequest = { routeId: 'A1', stopId: 'STOP-B', sequence: 1 }
+    const props = {
+      network,
+      networkIndex: createTransitIndex(network),
+      selectedRouteId: 'A1',
+      onRouteSelect: vi.fn(),
+      onFocusStop,
+      onRouteStopFocusHandled,
+    }
+    const { container, rerender } = render(
+      <BusRouteList {...props} routeStopFocusRequest={null} />,
+    )
+    const scrollArea = container.querySelector('.explore-bus-route-list-scroll') as HTMLDivElement
+    const stopRow = screen.getByRole('button', {
+      name: 'Stop B, bus stop, code STOP-B. Focus on map',
+    })
+    vi.spyOn(scrollArea, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 400, 100))
+    vi.spyOn(stopRow, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 140, 400, 58))
+
+    rerender(<BusRouteList {...props} routeStopFocusRequest={routeStopFocusRequest} />)
+
+    expect(scrollArea.scrollTop).toBe(98)
+    expect(document.activeElement).toBe(stopRow)
+    expect(stopRow.getAttribute('data-route-stop-targeted')).toBe('true')
+    expect(stopRow.getAttribute('aria-label')).toBe('Stop B, bus stop, code STOP-B. Selected from Stops. Focus on map')
+    expect(onRouteStopFocusHandled).toHaveBeenCalledExactlyOnceWith(1)
+    expect(onFocusStop).not.toHaveBeenCalled()
+  })
+
   it('renders every D2 stop in canonical order, including the terminal return', () => {
     const network = createD2Network()
     render(

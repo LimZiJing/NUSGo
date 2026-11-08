@@ -117,6 +117,9 @@ export function AppViews({
           >
             <ExploreContent
               {...views.explore}
+              routeStopFocusRequest={navigation.activeView === 'explore'
+                ? views.explore.routeStopFocusRequest
+                : null}
               sheetDetent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             />
           </NavigationPanelShell>

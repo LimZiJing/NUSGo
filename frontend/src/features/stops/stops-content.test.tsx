@@ -93,7 +93,7 @@ describe('StopsContent', () => {
     await user.click(screen.getByRole('button', { name: /Opposite bus stop: University Hall \(Opposite\), SR8/ }))
 
     expect(onBackToStops).toHaveBeenCalledOnce()
-    expect(onSelectRoute).toHaveBeenCalledWith('D2')
+    expect(onSelectRoute).toHaveBeenCalledWith('D2', 'SR7')
     expect(onNavigateToStop).toHaveBeenCalledWith('SR7')
     expect(onSelectOppositeStop).toHaveBeenCalledWith('SR8')
   })

@@ -690,6 +690,8 @@ function App() {
     buildings: state.buildings,
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
+    routeStopFocusRequest: appNavigation.routeStopFocusRequest,
+    onRouteStopFocusHandled: appNavigation.clearRouteStopFocusRequest,
     onRouteSelect: commands.selectMobileRoute,
     focus: explorePanelFocus,
     status: explorePanelStatus,

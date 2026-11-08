@@ -572,9 +572,10 @@
 .personal-waypoint-appearance {
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-2);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
   text-align: left;
 }
 
@@ -618,16 +619,17 @@
 .personal-waypoint-appearance-options {
   display: grid;
   gap: var(--space-3);
-  padding-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .personal-waypoint-appearance-options[hidden] { display: none; }
 
 .personal-waypoint-marker-preview {
   display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   place-items: center;
   border: 2px solid var(--surface-card);
   border-radius: 50% 50% 50% 4px;

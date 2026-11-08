@@ -52,6 +52,8 @@ import { useExplorePanelFocus } from '../features/explore/hooks/use-explore-pane
 import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
 import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
+import { RouteFollowingBar } from '../features/route-following/route-following-bar'
+import { useRouteFollowing } from '../features/route-following/use-route-following'
 import { SettingsContent } from '../features/settings/settings-content'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
@@ -86,6 +88,7 @@ import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-way
 import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
+import { getRouteFollowingStops } from '../domain/transit'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
 import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
 
@@ -166,6 +169,12 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
+  const routeFollowing = useRouteFollowing(state.location, state.transitIndex)
+  const selectedExploreRoute = state.transitIndex?.routeById.get(state.selectedRouteId ?? '') ?? null
+  const routeFollowingStops = useMemo(
+    () => state.transitIndex ? getRouteFollowingStops(state.transitIndex) : [],
+    [state.transitIndex],
+  )
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
     state.mapError,
@@ -690,7 +699,21 @@ function App() {
     buildings: state.buildings,
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
-    onRouteSelect: commands.selectMobileRoute,
+    routeProgress: routeFollowing.activeRoute
+      && routeFollowing.activeStartIndex !== null
+      && routeFollowing.activeStopIndex !== null
+      ? {
+        routeId: routeFollowing.activeRoute.id,
+        startIndex: routeFollowing.activeStartIndex,
+        stopIndex: routeFollowing.activeStopIndex,
+      }
+      : null,
+    onRouteSelect: (routeId) => {
+      if (routeFollowing.pendingRoute && routeFollowing.pendingRoute.id !== routeId) {
+        routeFollowing.cancelRouteStart()
+      }
+      commands.selectMobileRoute(routeId)
+    },
     focus: explorePanelFocus,
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
@@ -977,7 +1000,20 @@ function App() {
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage" ref={mapPresentationRef}>
-        <PwaNotices basemapUnavailable={basemapUnavailable} />
+        <div className="map-top-overlay-stack">
+          <RouteFollowingBar
+            workflow={routeFollowing}
+            selectedRoute={selectedExploreRoute}
+            selectedRouteVisible={activeView === 'explore' && state.exploreState.mode === 'bus-routes'}
+            stops={routeFollowingStops}
+            hidden={isMoreOpen || morePage === 'placing'}
+            showDemo={import.meta.env.DEV}
+          />
+          <PwaNotices basemapUnavailable={basemapUnavailable} />
+        </div>
+        <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+          {routeFollowing.announcement}
+        </p>
         <div
           ref={mapContainer}
           className="map"

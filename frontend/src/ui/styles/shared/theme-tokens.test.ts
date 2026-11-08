@@ -288,7 +288,7 @@ describe('control token contrast', () => {
   })
 
 
-  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+  it.each(themeNames)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
     const styles = readStyleFile('themes/' + themeName + '.css')
     const tokens = readCustomPropertyNames(styles)
 

@@ -7,6 +7,7 @@ import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 
@@ -18,12 +19,15 @@ const appHarness = vi.hoisted(() => {
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
+    setCommunityWaypoints: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    focusCommunityWaypoint: vi.fn(),
     panToCoordinate: vi.fn(),
   }
   return {
     state: null as unknown,
+    communityWaypoints: [] as unknown[],
     onStopSelected: null as ((stopId: string) => boolean) | null,
     onMapStopInteraction: null as ((stopId: string) => void) | null,
     onMapStopDestinationSet: null as ((stopId: string) => void) | null,
@@ -79,6 +83,10 @@ vi.mock('./use-navigation-session', () => ({
 
 vi.mock('../infrastructure/map/session', () => ({
   createMapSession: vi.fn(),
+}))
+
+vi.mock('../infrastructure/data/community-waypoints', () => ({
+  loadCommunityWaypoints: vi.fn(async () => appHarness.communityWaypoints as readonly CommunityWaypoint[]),
 }))
 
 vi.mock('../infrastructure/shuttle-arrivals/client', () => ({
@@ -164,6 +172,7 @@ function selectPersonalWaypointFromMap(waypointId: string): HTMLButtonElement {
 }
 
 beforeEach(() => {
+  appHarness.communityWaypoints = []
   mockDesktopViewport()
   vi.stubGlobal('IntersectionObserver', class {
     observe() {}
@@ -208,9 +217,47 @@ afterEach(() => {
   appHarness.commands.suspendMobileRoutes.mockReset()
   appHarness.commands.setPersonalWaypoints.mockReset()
   appHarness.commands.setPersonalWaypointPlacement.mockReset()
+  appHarness.commands.setCommunityWaypoints.mockReset()
+  appHarness.commands.focusCommunityWaypoint.mockReset()
 })
 
 describe('desktop shared navigation shell', () => {
+  it('loads approved Community Waypoints into the map and opens marker details in Explore', async () => {
+    const user = userEvent.setup()
+    const waypoint: CommunityWaypoint = {
+      id: 'cw-water-001',
+      name: 'Water cooler at UTown',
+      category: 'water_cooler',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      source: 'NUS Campus Facilities',
+      updatedAt: '2026-10-26',
+    }
+    appHarness.communityWaypoints = [waypoint]
+    render(<App />)
+
+    await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
+      .toHaveBeenLastCalledWith([waypoint], expect.any(Function)))
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const onSelect = appHarness.commands.setCommunityWaypoints.mock.calls.at(-1)?.[1]
+    expect(onSelect).toBeTypeOf('function')
+
+    act(() => onSelect?.(waypoint.id, trigger))
+
+    expect(await screen.findByRole('heading', { name: waypoint.name })).toBeTruthy()
+    expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
+    expect(appHarness.commands.focusCommunityWaypoint).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Community places' }))
+    await waitFor(() => expect(document.activeElement).toBe(trigger))
+
+    await user.click(screen.getByRole('button', { name: /Water cooler at UTown/ }))
+    expect(appHarness.commands.focusCommunityWaypoint).toHaveBeenCalledWith(waypoint)
+    await user.click(screen.getByRole('button', { name: 'Community places' }))
+    await user.click(screen.getByRole('button', { name: 'Water cooler, 1 place' }))
+    await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
+      .toHaveBeenLastCalledWith([], expect.any(Function)))
+  })
+
   it('has no Fit routes button for a retained Journey in Plan', async () => {
     const user = userEvent.setup()
     const baseState = createInitialNavigationSessionState()

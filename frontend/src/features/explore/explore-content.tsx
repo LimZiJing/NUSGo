@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
@@ -41,16 +41,29 @@ interface ExploreContentProps {
   onNavigateToBuilding?: (buildingId: string, partId?: string) => void
   onSelectBuildingPart?: (buildingId: string, partId: string | null) => void
   onSearchFocus?: () => void
+  community?: {
+    readonly active: boolean
+    readonly selectedWaypointName: string | null
+    readonly content: ReactNode
+    readonly onModeChange: (active: boolean) => void
+    readonly onOpen: () => void
+  }
   focus: ExplorePanelFocusBindings
 }
 
-function getExplorePanelHeading(state: ExploreState): string {
+function getExplorePanelHeading(state: ExploreState, communityMode: boolean): string {
+  if (communityMode) return 'Community places'
   if (state.mode === 'bus-routes') return EXPLORE_LABELS.busRoutes
   if (state.mode === 'venue-detail') return 'Venue details'
   return 'Find a venue'
 }
 
-function getExplorePanelAnnouncement(state: ExploreState, buildingName?: string): string | null {
+function getExplorePanelAnnouncement(
+  state: ExploreState,
+  buildingName?: string,
+  communityMode = false,
+): string | null {
+  if (communityMode) return 'Community places opened.'
   if (state.mode === 'bus-routes') return null
   if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {
@@ -77,6 +90,7 @@ export function ExploreContent({
   onNavigateToBuilding,
   onSelectBuildingPart,
   onSearchFocus,
+  community,
   focus: {
     panelHeadingRef,
     searchInputRef,
@@ -101,12 +115,14 @@ export function ExploreContent({
     ? buildingIndex.byId.get(state.selectedBuildingId) ?? null
     : null
   const minimized = sheetDetent === 'collapsed'
-  const explorePanelHeading = getExplorePanelHeading(state)
-  const explorePanelAnnouncement = getExplorePanelAnnouncement(state, selectedBuilding?.name)
+  const communityMode = community?.active ?? false
+  const explorePanelHeading = getExplorePanelHeading(state, communityMode)
+  const explorePanelAnnouncement = getExplorePanelAnnouncement(state, selectedBuilding?.name, communityMode)
   const explorePanelStatus = status?.kind === 'success' ? null : status ?? null
-  const showVenueSearch = state.mode === 'neutral' || state.mode === 'venue-search'
-  const showExploreSegments = showVenueSearch || state.mode === 'bus-routes'
-  const contentClassName = `explore-content explore-content-${state.mode}${
+  const showVenueSearch = !communityMode && (state.mode === 'neutral' || state.mode === 'venue-search')
+  const showExploreSegments = showVenueSearch || state.mode === 'bus-routes' || communityMode
+  const contentMode = communityMode ? 'community' : state.mode
+  const contentClassName = `explore-content explore-content-${contentMode}${
     showVenueSearch ? ' explore-content-venue-search' : ''
   }`
 
@@ -124,15 +140,22 @@ export function ExploreContent({
               options={[
                 { value: 'venue', label: EXPLORE_LABELS.venue, focusId: 'explore-venue-segment' },
                 { value: 'bus-routes', label: EXPLORE_LABELS.busRoutes, focusId: 'explore-bus-routes-segment' },
+                ...(community ? [{ value: 'community', label: 'Community', focusId: 'explore-community-segment' }] : []),
               ]}
-              value={showVenueSearch ? 'venue' : 'bus-routes'}
+              value={communityMode ? 'community' : showVenueSearch ? 'venue' : 'bus-routes'}
               onValueChange={(mode, event) => {
-                if (mode === 'venue') onSelectVenueSearch()
-                else onSelectBusRoutes(event)
+                if (mode === 'community') {
+                  community?.onModeChange(true)
+                  community?.onOpen()
+                } else {
+                  community?.onModeChange(false)
+                  if (mode === 'venue') onSelectVenueSearch()
+                  else onSelectBusRoutes(event)
+                }
               }}
             />
           )}
-          {state.mode === 'venue-detail' && !minimized && (
+        {!communityMode && state.mode === 'venue-detail' && !minimized && (
             <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
@@ -145,7 +168,7 @@ export function ExploreContent({
           </h2>
         </div>
 
-        {(state.mode === 'venue-search' || state.mode === 'neutral') && (
+        {!communityMode && (state.mode === 'venue-search' || state.mode === 'neutral') && (
           <VenueSearch
             query={state.query}
             venues={venues}
@@ -163,7 +186,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'venue-detail' && state.selectedVenue && (
+        {!communityMode && state.mode === 'venue-detail' && state.selectedVenue && (
           <VenueDetails
             venue={state.selectedVenue}
             transitIndex={transitIndex}
@@ -173,7 +196,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
+        {!communityMode && state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
           <BuildingDetails
             key={selectedBuilding.id}
             building={selectedBuilding}
@@ -187,7 +210,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'bus-routes' && (
+        {!communityMode && state.mode === 'bus-routes' && (
           <div
             id="explore-content-panel"
             className="navigation-panel-content explore-content-panel"
@@ -200,6 +223,11 @@ export function ExploreContent({
               firstRouteCardRef={firstRouteCardRef}
               onFocusStop={onFocusStop}
             />
+          </div>
+        )}
+        {communityMode && community && (
+          <div id="explore-content-panel" className="navigation-panel-content explore-content-panel explore-content-community-panel">
+            {community.content}
           </div>
         )}
         {explorePanelStatus && (

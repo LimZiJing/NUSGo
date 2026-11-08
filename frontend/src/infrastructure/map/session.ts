@@ -14,6 +14,7 @@ import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/t
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
@@ -31,6 +32,7 @@ import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } fr
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
+import { createCommunityWaypointMarkers, type CommunityWaypointMarkers } from './community-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -83,6 +85,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
   const personalWaypointMarkers: PersonalWaypointMarkers = createPersonalWaypointMarkers(map)
+  const communityWaypointMarkers: CommunityWaypointMarkers = createCommunityWaypointMarkers(map)
   const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
     transitRouteLayers?.refreshTheme()
     shuttleStopMarkers?.refreshTheme()
@@ -688,10 +691,27 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
     },
 
+    setCommunityWaypoints(waypoints, onSelect) {
+      if (disposed) return
+      communityWaypointMarkers.setWaypoints(waypoints, onSelect)
+    },
+
     focusPersonalWaypoint(waypoint: PersonalWaypoint) {
       if (disposed) return
       pendingCameraFit = null
       personalWaypointMarkers.focusWaypoint(waypoint)
+      map.flyTo({
+        center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
+    },
+
+    focusCommunityWaypoint(waypoint: CommunityWaypoint) {
+      if (disposed) return
+      pendingCameraFit = null
       map.flyTo({
         center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
         zoom: Math.max(map.getZoom(), 16),
@@ -819,6 +839,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       pendingCameraFit = null
       clearVenueMarker()
       personalWaypointMarkers.dispose()
+      communityWaypointMarkers.dispose()
       if (personalWaypointMarker && personalWaypointDragHandler) {
         personalWaypointMarker.off('dragend', personalWaypointDragHandler)
       }

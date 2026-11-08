@@ -137,6 +137,12 @@
   background: #64748b;
 }
 
+.community-waypoint-legend-marker {
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
 .bus-marker {
   background: #64748b;
 }

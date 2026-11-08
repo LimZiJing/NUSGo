@@ -84,6 +84,9 @@ import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
+import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
+import { useCommunityWaypointDiscovery } from '../features/waypoints/community/use-community-waypoint-discovery'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
@@ -155,6 +158,8 @@ function App() {
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
+  const communityDiscovery = useCommunityWaypointDiscovery(services.loadCommunityWaypoints)
+  const [communityExploreActive, setCommunityExploreActive] = useState(false)
 
   useEffect(() => {
     const applyPreference = (): void => {
@@ -401,6 +406,43 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const dispatchNavigation = appNavigation.dispatch
+  const selectNavigationView = appNavigation.selectView
+  const focusCommunityWaypoint = useCallback((waypoint: CommunityWaypoint): void => {
+    commands.focusCommunityWaypoint(waypoint)
+  }, [commands])
+  const communityWaypoints = communityDiscovery.waypoints
+  const selectCommunityWaypoint = communityDiscovery.selectWaypoint
+  const handleCommunityWaypointMapSelection = useCallback((
+    waypointId: string,
+    trigger: HTMLButtonElement,
+  ): void => {
+    const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
+    if (!waypoint) return
+    selectCommunityWaypoint(waypointId, trigger)
+    setCommunityExploreActive(true)
+    if (isMobileViewport) {
+      dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'full' })
+    }
+    selectNavigationView('explore')
+  }, [communityWaypoints, dispatchNavigation, isMobileViewport, selectCommunityWaypoint, selectNavigationView])
+  useEffect(() => {
+    commands.setCommunityWaypoints(communityDiscovery.visibleWaypoints, handleCommunityWaypointMapSelection)
+  }, [commands, communityDiscovery.visibleWaypoints, handleCommunityWaypointMapSelection])
+  useEffect(() => () => {
+    commands.setCommunityWaypoints([], handleCommunityWaypointMapSelection)
+  }, [commands, handleCommunityWaypointMapSelection])
+  const handleCommunityWaypointListSelection = useCallback((waypointId: string): void => {
+    const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
+    if (waypoint) focusCommunityWaypoint(waypoint)
+  }, [communityWaypoints, focusCommunityWaypoint])
+  const communityContent = (
+    <CommunityWaypointPanel
+      discovery={communityDiscovery}
+      onSelectWaypoint={handleCommunityWaypointListSelection}
+      onSuggestCorrection={() => undefined}
+    />
+  )
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return
@@ -704,6 +746,13 @@ function App() {
       detent: 'partial',
     }),
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
+    community: {
+      active: communityExploreActive,
+      selectedWaypointName: communityDiscovery.selectedWaypoint?.name ?? null,
+      content: communityContent,
+      onModeChange: setCommunityExploreActive,
+      onOpen: communityDiscovery.showWaypointList,
+    },
   }
   // Mode is captured when the stop opens from Explore, so the label matches where Back returns.
   const stopBackLabel = appNavigation.stopReturnTarget !== 'explore'
@@ -1047,6 +1096,7 @@ function App() {
             style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
           >
             <div><span className="legend-marker venue-marker" /> Venues</div>
+            <div><span className="legend-marker community-waypoint-legend-marker" /> Community places</div>
             <div className="bus-stop-legend-item">
               <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
               On selected route

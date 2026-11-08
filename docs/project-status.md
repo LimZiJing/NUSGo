@@ -13,13 +13,13 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 
 | Area | Today | Detail |
 | --- | --- | --- |
-| Explore | Search 729 venues and 249 buildings, open venue details, browse the 8 shuttle routes | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
+| Explore | Search 729 venues and 249 buildings, open venue details, browse 8 shuttle routes and approved Community Waypoints | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
 | More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites, About and Waypoints | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
-| Community Waypoints | Empty public GeoJSON file, validated browser loader, Settings download, and a no-photo private submission endpoint; map display and submission UI do not exist yet | [Data contract](community-waypoints/data-contract.md), [data and map](data-and-map.md#community-waypoints) |
+| Community Waypoints | Empty public GeoJSON file, validated browser loader, Settings download, Explore list and map markers with category filters and source/update details, plus a no-photo private submission endpoint | [Data contract](community-waypoints/data-contract.md), [data and map](data-and-map.md#community-waypoints) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
@@ -41,7 +41,7 @@ Also in place:
 - **Live data** needs server-side NUS credentials, and live-arrival reliability still needs separate verification. NUSMods' NextBus client provides no route geometry.
 - **One Express instance only.** The shuttle snapshot and rate limiters live in process memory.
 - **Location** depends on browser permission and device accuracy. It doesn't replan journeys or continue after the app closes.
-- **Community Waypoints** have an empty public dataset, validated loader, and a no-photo endpoint for private review submissions. The endpoint needs a backend-only GitHub token and has no public submission UI yet. Map display belongs to #213. A plausible point still needs maintainer review before publication; code validation cannot confirm approval.
+- **Community Waypoints** have an empty public dataset, validated loader, Explore discovery view, and a no-photo endpoint for private review submissions. The endpoint needs a backend-only GitHub token; public suggestion and correction forms remain in #216. Every public point still needs maintainer review before publication; code validation cannot confirm approval.
 - **Browser evidence** is partial. Targeted checks exist at 1280 × 720. The exact release and mobile viewports and failure injection still need manual verification.
 - **Website release history** starts empty until the first successful production promotion bundles reviewed notes. After each promotion, a trusted follow-up workflow records the exact deployment time and immutable commit tag. Backend deployment intervals still need to be reviewed and summarized by the release operator. See [release notes](release-notes.md).
 - **Transit data** only behaves correctly while the checked-in network, geometry and verification manifest stay in sync. CI checks this.

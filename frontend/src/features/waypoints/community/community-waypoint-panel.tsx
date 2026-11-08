@@ -1,0 +1,202 @@
+import { useLayoutEffect, useRef, useState } from 'react'
+import {
+  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
+  type CommunityWaypoint,
+  type CommunityWaypointCategory,
+} from '@nusgo/shared/waypoints/community'
+import { GhostBackButton } from '../../../ui/ghost-back-button.tsx'
+import { Button } from '../../../ui/button.tsx'
+import type { CommunityWaypointDiscovery } from './use-community-waypoint-discovery'
+import './community-waypoint-panel.css'
+
+interface CommunityWaypointPanelProps {
+  readonly discovery: CommunityWaypointDiscovery
+  readonly onSelectWaypoint: (waypointId: string) => void
+  readonly onSuggestCorrection: (waypointId: string) => void
+}
+
+function getCategoryLabel(category: CommunityWaypointCategory): string {
+  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community place'
+}
+
+function getFloorLabel(floor: number): string {
+  if (floor === 0) return 'Ground floor'
+  if (floor < 0) return `Basement ${Math.abs(floor)}`
+  return `Floor ${floor}`
+}
+
+function WaypointDetails({
+  waypoint,
+  onBack,
+  onSuggestCorrection,
+}: {
+  readonly waypoint: CommunityWaypoint
+  readonly onBack: () => void
+  readonly onSuggestCorrection: (waypointId: string) => void
+}) {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const [suggestionNotice, setSuggestionNotice] = useState<string | null>(null)
+
+  useLayoutEffect(() => {
+    headingRef.current?.focus()
+  }, [waypoint.id])
+
+  return (
+    <section className="community-waypoint-details" aria-labelledby="community-waypoint-detail-heading">
+      <GhostBackButton label="Community places" onClick={onBack} />
+      <div className="community-waypoint-details-scroll">
+        <h3 id="community-waypoint-detail-heading" ref={headingRef} tabIndex={-1}>
+          {waypoint.name}
+        </h3>
+        <dl className="community-waypoint-facts">
+          <div>
+            <dt>Category</dt>
+            <dd>{getCategoryLabel(waypoint.category)}</dd>
+          </div>
+          {waypoint.building && (
+            <div>
+              <dt>Building</dt>
+              <dd>{waypoint.building}{waypoint.floor === undefined ? '' : ` · ${getFloorLabel(waypoint.floor)}`}</dd>
+            </div>
+          )}
+          {waypoint.building === undefined && waypoint.floor !== undefined && (
+            <div>
+              <dt>Floor</dt>
+              <dd>{getFloorLabel(waypoint.floor)}</dd>
+            </div>
+          )}
+          {waypoint.details && (
+            <div>
+              <dt>Details</dt>
+              <dd>{waypoint.details}</dd>
+            </div>
+          )}
+          {waypoint.accessibilityNote && (
+            <div>
+              <dt>Accessibility</dt>
+              <dd>{waypoint.accessibilityNote}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Source</dt>
+            <dd>{waypoint.source}</dd>
+          </div>
+          <div>
+            <dt>Last updated</dt>
+            <dd><time dateTime={waypoint.updatedAt}>{waypoint.updatedAt}</time></dd>
+          </div>
+        </dl>
+        <div className="community-waypoint-correction-action">
+          <Button
+            label="Suggest a correction"
+            onClick={() => {
+              onSuggestCorrection(waypoint.id)
+              setSuggestionNotice('Correction submissions are not open yet.')
+            }}
+          />
+          {suggestionNotice && <p role="status">{suggestionNotice}</p>}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function CommunityWaypointPanel({
+  discovery,
+  onSelectWaypoint,
+  onSuggestCorrection,
+}: CommunityWaypointPanelProps) {
+  const {
+    status,
+    waypoints,
+    visibleWaypoints,
+    categoryOptions,
+    visibleCategories,
+    selectedWaypoint,
+    toggleCategory,
+    showAllCategories,
+    selectWaypoint,
+    clearSelectedWaypoint,
+    retry,
+  } = discovery
+
+  const allCategoriesVisible = visibleCategories.length === categoryOptions.length
+  const noPlaces = waypoints.length === 0
+
+  return (
+    <div className="community-waypoint-panel">
+      <div className="community-waypoint-browser" hidden={selectedWaypoint !== null}>
+        <h3>Community places</h3>
+        <p className="community-waypoint-intro">Browse places reviewed by NUSGo maintainers. Filters also update the map markers.</p>
+        {status === 'loading' && <p className="community-waypoint-status" role="status">Loading approved places…</p>}
+        {status === 'failed' && (
+          <div className="community-waypoint-load-error">
+            <p role="alert">Approved places could not be loaded.</p>
+            <Button label="Try again" onClick={retry} />
+          </div>
+        )}
+        {status === 'ready' && (
+          <>
+            <fieldset className="community-waypoint-filters">
+              <legend>Filter by category</legend>
+              <div className="community-waypoint-filter-list">
+                {categoryOptions.map(({ value, label, count }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="community-waypoint-filter"
+                    aria-pressed={visibleCategories.includes(value)}
+                    aria-label={`${label}, ${count} ${count === 1 ? 'place' : 'places'}`}
+                    onClick={() => toggleCategory(value)}
+                  >
+                    <span>{label}</span>
+                    <span className="community-waypoint-filter-count" aria-hidden="true">{count}</span>
+                  </button>
+                ))}
+                {!allCategoriesVisible && (
+                  <button type="button" className="community-waypoint-show-all" onClick={showAllCategories}>
+                    Show all
+                  </button>
+                )}
+              </div>
+            </fieldset>
+            {noPlaces ? (
+              <p className="community-waypoint-empty">No approved Community Waypoints yet. Places appear here after review and publication.</p>
+            ) : visibleWaypoints.length === 0 ? (
+              <p className="community-waypoint-empty">No places match these categories. Show all categories to see every approved place.</p>
+            ) : (
+              <ul className="community-waypoint-list" aria-label="Approved Community Waypoints">
+                {visibleWaypoints.map((waypoint) => (
+                  <li key={waypoint.id}>
+                    <button
+                      type="button"
+                      className="community-waypoint-row"
+                      aria-label={`${waypoint.name}, ${getCategoryLabel(waypoint.category)}. Open details.`}
+                      onClick={(event) => {
+                        selectWaypoint(waypoint.id, event.currentTarget)
+                        onSelectWaypoint(waypoint.id)
+                      }}
+                    >
+                      <span className="community-waypoint-row-copy">
+                        <strong>{waypoint.name}</strong>
+                        <span>{getCategoryLabel(waypoint.category)}{waypoint.building ? ` · ${waypoint.building}` : ''}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+      {selectedWaypoint && (
+        <WaypointDetails
+          key={selectedWaypoint.id}
+          waypoint={selectedWaypoint}
+          onBack={clearSelectedWaypoint}
+          onSuggestCorrection={onSuggestCorrection}
+        />
+      )}
+    </div>
+  )
+}

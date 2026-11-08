@@ -3,6 +3,7 @@ import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import type {
   NavigationSession,
@@ -148,9 +149,14 @@ export interface NavigationSessionCommands {
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
   ) => void
+  readonly setCommunityWaypoints: (
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ) => void
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
   ) => void
+  readonly focusCommunityWaypoint: (waypoint: CommunityWaypoint) => void
   readonly panToCoordinate: (
     coordinate: Parameters<NavigationSession['panToCoordinate']>[0],
   ) => void
@@ -212,7 +218,11 @@ function createNavigationSessionCommands(
     setPersonalWaypoints: (waypoints, visible, onSelect) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
+    setCommunityWaypoints: (waypoints, onSelect) => (
+      session?.setCommunityWaypoints(waypoints, onSelect)
+    ),
     focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
+    focusCommunityWaypoint: (waypoint) => session?.focusCommunityWaypoint(waypoint),
     panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,

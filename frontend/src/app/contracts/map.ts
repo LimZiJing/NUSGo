@@ -10,6 +10,7 @@ import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 
 export interface MapBuildingSelection {
   readonly name: string
@@ -137,8 +138,15 @@ export interface MapSession {
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
   ): void
+  /** Shows the approved Community Waypoint markers without changing the map camera. */
+  setCommunityWaypoints(
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ): void
   /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  /** Centers on a Community Waypoint while keeping existing overlays in view. */
+  focusCommunityWaypoint(waypoint: CommunityWaypoint): void
   /** Moves the camera to a coordinate without changing zoom, keeping existing overlays in view. */
   panToCoordinate(coordinate: MapCoordinate): void
   /** Closes the active bus-stop popup, returning whether one was open. */

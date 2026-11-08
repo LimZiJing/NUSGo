@@ -37,7 +37,9 @@ function createMapDouble(): MapSession {
     setVisibleCenterZoom: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    setCommunityWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    focusCommunityWaypoint: vi.fn(),
     panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
@@ -112,6 +114,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     reportStartupFailure: vi.fn(),
     dispose: vi.fn(),
     ...overrides,
+    setCommunityWaypoints: overrides.setCommunityWaypoints ?? vi.fn(),
+    focusCommunityWaypoint: overrides.focusCommunityWaypoint ?? vi.fn(),
   }
 }
 

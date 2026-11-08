@@ -181,3 +181,12 @@ Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0
 ## Earlier browser evidence
 
 The [responsive layout browser evidence](responsive-layout-browser-evidence.md) preserves earlier headless and device-emulation results. It is historical evidence, not a standing checklist. Record only the targeted checks or release result that applies to each change.
+
+## Community waypoint discovery verification — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local Vite app at `http://localhost:32916`, HEAD `5d0ec90f8b0ebebd9291ef55bfd9b08ec0786c44`:
+
+- At 1280 × 800, Explore → Community showed the category filters, map legend, and empty state without overlap. At 1280 × 720, with a temporary approved fixture, the distinct map marker appeared; selecting either the row or marker opened details with category, building/floor, optional notes, source, and last-updated date.
+- Toggling a category removed its marker and list row; Show all restored them. The fixture was removed and the checked-in collection returned to empty after the smoke check.
+- At 390 × 844, the list and details fit the mobile sheet without overlap. Keyboard activation opened details; Back returned focus to the same list row. The browser console had no errors.
+- Targeted interactions were checked at desktop 1280 × 720 and mobile 390 × 844; this was not the full release checklist.

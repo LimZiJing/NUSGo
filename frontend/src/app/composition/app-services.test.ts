@@ -4,6 +4,7 @@ import { createAppServices } from './app-services'
 const adapters = vi.hoisted(() => ({
   loadTransit: vi.fn(),
   loadVenues: vi.fn(),
+  loadCommunityWaypoints: vi.fn(),
   createLocationTracker: vi.fn(),
   createShuttleArrivalClient: vi.fn(),
   createShuttleVehicleClient: vi.fn(),
@@ -21,6 +22,9 @@ const adapters = vi.hoisted(() => ({
 vi.mock('../../infrastructure/data/loaders', () => ({
   loadTransitMapData: adapters.loadTransit,
   loadVenueData: adapters.loadVenues,
+}))
+vi.mock('../../infrastructure/data/community-waypoints', () => ({
+  loadCommunityWaypoints: adapters.loadCommunityWaypoints,
 }))
 vi.mock('../../infrastructure/location/browser', () => ({
   createBrowserLocationTracker: adapters.createLocationTracker,
@@ -82,6 +86,7 @@ describe('createAppServices', () => {
 
     expect(services.loadTransit).toBe(adapters.loadTransit)
     expect(services.loadVenues).toBe(adapters.loadVenues)
+    expect(services.loadCommunityWaypoints).toBe(adapters.loadCommunityWaypoints)
     expect(services.publicBusArrivalClient).toBe(adapters.publicBusArrivalClient)
     expect(services.createLocationTracker).toBe(adapters.createLocationTracker)
   })

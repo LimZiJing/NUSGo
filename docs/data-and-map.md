@@ -28,7 +28,7 @@ What data the app ships with and how the map is built. For a one-page summary se
 - `frontend/public/data/community-waypoints.geojson` is the public source for reviewed Community Waypoints. It is an empty FeatureCollection until locations have been reviewed and approved; submissions, Personal Waypoints, the private review queue, and test fixtures are not published from this file.
 - The browser loader is `loadCommunityWaypoints` under `frontend/src/infrastructure/data/`. It fetches the public file through the base-path-aware JSON client and validates the whole response with the shared parser. Fetch and validation failures reject instead of appearing as an empty dataset.
 - `npm run community-waypoints:validate` checks the checked-in file with that same parser. Normal and local-rehearsal frontend builds run the check.
-- Download the public GeoJSON from Settings → Waypoints → Community waypoints. The backend also provides a validated no-photo submission endpoint to the private review queue; the public submission UI and map display (#213) are not implemented yet. The [data contract](community-waypoints/data-contract.md) defines the public schema and publication rules.
+- Download the public GeoJSON from Settings → Waypoints → Community waypoints. Explore loads the same validated collection for its Community list and distinct map markers; category filters control both. Selecting a map marker opens its published details. The backend also provides a validated no-photo submission endpoint to the private review queue; the public suggestion and correction forms are tracked separately in #216. The [data contract](community-waypoints/data-contract.md) defines the public schema and publication rules.
 
 ## Basemap and markers
 
@@ -37,6 +37,7 @@ What data the app ships with and how the map is built. For a one-page summary se
 - Bus stops are neutral transit-ring markers with collision-aware short-name labels from zoom 14. Stops and labels outside the selected route fade to 20% from zoom 14, and open stops stay visible below that zoom.
 - Route lines are neutral and subdued when all routes show. Official route colours are used for the selected route only.
 - Venue markers are neutral pins.
+- Community Waypoint markers use a diamond badge with a category token, separate from Personal Waypoint pins. Their accessible labels identify the place and category; category filters update the marker set.
 
 ## Code layout
 

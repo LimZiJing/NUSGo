@@ -16,6 +16,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
+- [ ] In Explore → Community, category filters update the list and distinct map markers. Selecting a list row or marker opens the matching details with source and last-updated date; Back restores focus to the opening control. Community Waypoints remain unavailable as Journey endpoints.
 - [ ] For a selected basement, ground-floor, and first-floor venue, venue details show “Basement 1”, “Ground floor”, and “Floor 1” respectively.
 - [ ] bus route browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and bus stops.
@@ -34,6 +35,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
 - [ ] Scrollable sheet content scrolls natively, text and controls remain usable, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and bus route browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
+- [ ] In Explore → Community, filters remain usable with the mobile sheet, selecting a list row or marker opens its details, and Back restores focus to the opening control. Confirm the marker action does not alter Plan endpoints.
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.

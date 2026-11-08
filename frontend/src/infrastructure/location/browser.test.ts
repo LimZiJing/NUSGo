@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createBrowserLocationTracker, type BrowserGeolocation } from './browser'
+import { createBrowserLocationTracker, type BrowserGeolocation, type BrowserVisibility } from './browser'
 
 interface GeolocationCallbacks {
   readonly success: (position: GeolocationPosition) => void
@@ -45,6 +45,27 @@ function createPosition(overrides: Partial<GeolocationCoordinates & { timestamp:
 
 function createError(code: 1 | 2 | 3): GeolocationPositionError {
   return { code, message: 'test error' } as GeolocationPositionError
+}
+
+function createVisibility(initiallyVisible = true): {
+  readonly visibility: BrowserVisibility
+  setVisible(visible: boolean): void
+} {
+  let visible = initiallyVisible
+  const listeners = new Set<() => void>()
+  return {
+    visibility: {
+      isVisible: () => visible,
+      subscribe(listener) {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+    },
+    setVisible(nextVisible) {
+      visible = nextVisible
+      for (const listener of [...listeners]) listener()
+    },
+  }
 }
 
 afterEach(() => {
@@ -181,6 +202,45 @@ describe('Browser location tracker', () => {
 
     expect(clearWatch).toHaveBeenCalledWith(1)
     expect(tracker.getState()).toEqual({ status: 'disabled', latestFix: null })
+  })
+
+  it('pauses the watch while hidden and resumes only an enabled foreground session', () => {
+    const { provider, callbacks, clearWatch } = createProvider()
+    const visibility = createVisibility()
+    const tracker = createBrowserLocationTracker(provider, { visibility: visibility.visibility })
+
+    tracker.enable()
+    callbacks[0].success(createPosition())
+    visibility.setVisible(false)
+
+    expect(clearWatch).toHaveBeenCalledWith(1)
+    expect(tracker.getState().status).toBe('stale')
+    callbacks[0].success(createPosition({ timestamp: Date.now() + 1 }))
+    expect(tracker.getState().status).toBe('stale')
+
+    visibility.setVisible(true)
+    expect(provider.watchPosition).toHaveBeenCalledTimes(2)
+    expect(tracker.getState().status).toBe('requesting')
+
+    tracker.disable()
+    visibility.setVisible(false)
+    visibility.setVisible(true)
+    expect(provider.watchPosition).toHaveBeenCalledTimes(2)
+    tracker.dispose()
+  })
+
+  it('does not start a location watch while the document is hidden', () => {
+    const { provider } = createProvider()
+    const visibility = createVisibility(false)
+    const tracker = createBrowserLocationTracker(provider, { visibility: visibility.visibility })
+
+    tracker.enable()
+    expect(provider.watchPosition).not.toHaveBeenCalled()
+    expect(tracker.getState().status).toBe('disabled')
+
+    visibility.setVisible(true)
+    expect(provider.watchPosition).toHaveBeenCalledOnce()
+    tracker.dispose()
   })
 
   it('reports an unavailable state and logs when watchPosition throws', () => {

@@ -22,6 +22,12 @@ export interface BrowserLocationTrackerOptions {
   readonly now?: () => number
   readonly staleAfterMs?: number
   readonly watchOptions?: PositionOptions
+  readonly visibility?: BrowserVisibility
+}
+
+export interface BrowserVisibility {
+  isVisible(): boolean
+  subscribe(listener: () => void): () => void
 }
 
 function freezeState(state: LocationTrackingState): LocationTrackingState {
@@ -30,6 +36,20 @@ function freezeState(state: LocationTrackingState): LocationTrackingState {
 
 function getBrowserGeolocation(): BrowserGeolocation | undefined {
   return typeof navigator === 'undefined' ? undefined : navigator.geolocation
+}
+
+function getBrowserVisibility(): BrowserVisibility {
+  if (typeof document === 'undefined') {
+    return { isVisible: () => true, subscribe: () => () => undefined }
+  }
+
+  return {
+    isVisible: () => document.visibilityState === 'visible',
+    subscribe(listener) {
+      document.addEventListener('visibilitychange', listener)
+      return () => document.removeEventListener('visibilitychange', listener)
+    },
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -72,6 +92,7 @@ export function createBrowserLocationTracker(
 ): LocationTracker {
   const now = options.now ?? (() => Date.now())
   const staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS
+  const visibility = options.visibility ?? getBrowserVisibility()
   const watchOptions: PositionOptions = {
     enableHighAccuracy: true,
     maximumAge: 30_000,
@@ -82,6 +103,7 @@ export function createBrowserLocationTracker(
   let watchId: number | null = null
   let watchGeneration = 0
   let staleTimer: ReturnType<typeof setTimeout> | null = null
+  let trackingRequested = false
   let disposed = false
   const listeners = new Set<() => void>()
 
@@ -152,10 +174,52 @@ export function createBrowserLocationTracker(
         : 'unavailable'
     clearStaleTimer()
     if (status === 'denied') {
+      trackingRequested = false
       stopWatching()
     }
     publish({ ...state, status })
   }
+
+  const startWatching = (): void => {
+    if (disposed || !trackingRequested || !visibility.isVisible() || watchId !== null) return
+    clearStaleTimer()
+    publish({ ...state, status: 'requesting' })
+    if (!provider) {
+      publish({ ...state, status: 'unavailable' })
+      return
+    }
+
+    const generation = ++watchGeneration
+    try {
+      const nextWatchId = provider.watchPosition(
+        (position) => handlePosition(generation, position),
+        (error) => handleError(generation, error),
+        watchOptions,
+      )
+      if (generation !== watchGeneration) {
+        provider.clearWatch(nextWatchId)
+        return
+      }
+      watchId = nextWatchId
+    } catch (error) {
+      console.error('Location tracking failed:', error)
+      if (generation === watchGeneration) publish({ ...state, status: 'unavailable' })
+    }
+  }
+
+  const handleVisibilityChange = (): void => {
+    if (disposed || !trackingRequested) return
+    if (visibility.isVisible()) {
+      startWatching()
+      return
+    }
+    if (watchId === null) return
+    stopWatching()
+    clearStaleTimer()
+    publish({ ...state, status: 'stale' })
+  }
+
+  const unsubscribeVisibility = visibility.subscribe(handleVisibilityChange)
 
   return {
     getState() {
@@ -169,34 +233,14 @@ export function createBrowserLocationTracker(
     },
 
     enable() {
-      if (disposed || watchId !== null) return
-      clearStaleTimer()
-      publish({ ...state, status: 'requesting' })
-      if (!provider) {
-        publish({ ...state, status: 'unavailable' })
-        return
-      }
-
-      const generation = ++watchGeneration
-      try {
-        const nextWatchId = provider.watchPosition(
-          (position) => handlePosition(generation, position),
-          (error) => handleError(generation, error),
-          watchOptions,
-        )
-        if (generation !== watchGeneration) {
-          provider.clearWatch(nextWatchId)
-          return
-        }
-        watchId = nextWatchId
-      } catch (error) {
-        console.error('Location tracking failed:', error)
-        if (generation === watchGeneration) publish({ ...state, status: 'unavailable' })
-      }
+      if (disposed) return
+      trackingRequested = true
+      startWatching()
     },
 
     disable() {
       if (disposed) return
+      trackingRequested = false
       stopWatching()
       clearStaleTimer()
       publish(INITIAL_LOCATION_TRACKING_STATE)
@@ -204,10 +248,12 @@ export function createBrowserLocationTracker(
 
     dispose() {
       if (disposed) return
+      trackingRequested = false
       stopWatching()
       clearStaleTimer()
       state = INITIAL_LOCATION_TRACKING_STATE
       disposed = true
+      unsubscribeVisibility()
       listeners.clear()
     },
   }

@@ -148,7 +148,7 @@ export interface NavigationSession {
   setViewportInsets(insets: MapViewportInsets): void
   setPresentationBottomInset(bottom: number | null): void
   setVisibleCenterZoom(enabled: boolean): void
-  setPersonalWaypointPlacement(
+  setWaypointPlacement(
     coordinate: MapCoordinate | null,
     editable: boolean,
     onChange: (coordinate: MapCoordinate) => void,
@@ -1049,10 +1049,10 @@ export function createNavigationSession(
       dependencies.map.setVisibleCenterZoom(enabled)
     },
 
-    setPersonalWaypointPlacement(coordinate, editable, onChange) {
+    setWaypointPlacement(coordinate, editable, onChange) {
       if (disposed) return
       personalWaypointPlacementChange = coordinate && editable ? onChange : null
-      dependencies.map.setPersonalWaypointPlacement(coordinate, editable, onChange)
+      dependencies.map.setWaypointPlacement(coordinate, editable, onChange)
     },
 
     setPersonalWaypoints(waypoints, visible, onSelect) {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
@@ -39,10 +39,12 @@ function DiscoveryHarness({
   load,
   onSelectWaypoint = () => undefined,
   onSuggestCorrection = () => undefined,
+  onSuggestPlace = () => undefined,
 }: {
   readonly load: CommunityWaypointLoader
   readonly onSelectWaypoint?: (id: string) => void
-  readonly onSuggestCorrection?: (id: string) => void
+  readonly onSuggestCorrection?: (id: string, trigger: HTMLButtonElement) => void
+  readonly onSuggestPlace?: (trigger: HTMLButtonElement) => void
 }) {
   const discovery = useCommunityWaypointDiscovery(load)
   return (
@@ -50,6 +52,7 @@ function DiscoveryHarness({
       discovery={discovery}
       onSelectWaypoint={onSelectWaypoint}
       onSuggestCorrection={onSuggestCorrection}
+      onSuggestPlace={onSuggestPlace}
     />
   )
 }
@@ -71,8 +74,8 @@ describe('CommunityWaypointPanel', () => {
     expect(screen.queryByRole('button', { name: /Water cooler at UTown/ })).toBeNull()
     expect(screen.getByRole('button', { name: /ATM at Central Library/ })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'ATM, 1 place' }))
-    expect(screen.getByText(/No places match these categories/)).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Show all' }))
+    expect(screen.getByText('No matches.')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Show all places' }))
 
     const row = screen.getByRole('button', { name: /Water cooler at UTown/ })
     await user.click(row)
@@ -85,19 +88,25 @@ describe('CommunityWaypointPanel', () => {
     expect(screen.getByText('2026-10-26').tagName).toBe('TIME')
 
     await user.click(screen.getByRole('button', { name: 'Suggest a correction' }))
-    expect(onSuggestCorrection).toHaveBeenCalledWith('cw-water-001')
-    expect(screen.getByRole('status').textContent).toBe('Correction submissions are not open yet.')
+    expect(onSuggestCorrection).toHaveBeenCalledWith('cw-water-001', expect.any(HTMLButtonElement))
+    expect(onSuggestCorrection.mock.calls[0][1]).toBeInstanceOf(HTMLButtonElement)
+    expect(screen.queryByText('Correction submissions are not open yet.')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Community places' }))
     await waitFor(() => expect(document.activeElement).toBe(row))
   })
 
-  it('shows a useful empty state after the approved collection loads with no places', async () => {
-    render(<DiscoveryHarness load={async () => []} />)
+  it('offers one direct action instead of empty filters when no places are approved', async () => {
+    const user = userEvent.setup()
+    const onSuggestPlace = vi.fn()
+    render(<DiscoveryHarness load={async () => []} onSuggestPlace={onSuggestPlace} />)
 
-    expect(await screen.findByText(/No approved Community Waypoints yet/)).toBeTruthy()
-    const filters = screen.getByRole('group', { name: 'Filter by category' })
-    expect(within(filters).getAllByRole('button')).toHaveLength(4)
+    expect(await screen.findByRole('heading', { name: 'No places yet' })).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Filter by category' })).toBeNull()
+    expect(screen.queryByText(/Browse places reviewed/)).toBeNull()
+    const suggestButton = screen.getByRole('button', { name: 'Suggest a place' })
+    await user.click(suggestButton)
+    expect(onSuggestPlace).toHaveBeenCalledWith(suggestButton)
   })
 
   it('offers retry when approved data fails to load', async () => {

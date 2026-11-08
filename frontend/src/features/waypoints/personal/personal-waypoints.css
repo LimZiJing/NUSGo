@@ -988,7 +988,7 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
-.personal-waypoint-placement-marker {
+.waypoint-placement-marker {
   position: relative;
   width: 40px;
   height: 40px;
@@ -997,13 +997,13 @@
   cursor: grab;
 }
 
-.personal-waypoint-placement-marker::before,
-.personal-waypoint-placement-marker::after {
+.waypoint-placement-marker::before,
+.waypoint-placement-marker::after {
   position: absolute;
   content: '';
 }
 
-.personal-waypoint-placement-marker::before {
+.waypoint-placement-marker::before {
   inset: 6px;
   border: 2px solid var(--surface-card);
   border-radius: 50% 50% 50% 4px;
@@ -1012,7 +1012,7 @@
   transform: rotate(-45deg);
 }
 
-.personal-waypoint-placement-marker::after {
+.waypoint-placement-marker::after {
   top: 50%;
   left: 50%;
   width: 9px;
@@ -1023,7 +1023,7 @@
   transform: translate(-50%, -50%);
 }
 
-.personal-waypoint-placement-marker:active { cursor: grabbing; }
+.waypoint-placement-marker:active { cursor: grabbing; }
 
 .map-shell[data-waypoint-placing='true'] .map-control-stack { visibility: hidden; }
 .map-shell[data-waypoint-placing='true']::after { display: none; }

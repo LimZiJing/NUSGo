@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
-import { ChevronRightIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
+import { ChevronRightIcon, MapIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
 import './more-menu.css'
 
 /** Lists destinations while each destination screen stays with its owning feature. */
-export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpenReleaseNotes, installSection }: {
+export function MoreMenu({ waypointCount, onOpenWaypoints, onSuggestPlace, onOpenSettings, onOpenReleaseNotes, installSection }: {
   readonly installSection?: ReactNode
   readonly waypointCount: number | null
   readonly onOpenWaypoints: () => void
+  readonly onSuggestPlace: () => void
   readonly onOpenSettings: () => void
   readonly onOpenReleaseNotes: () => void
 }) {
@@ -26,6 +27,19 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       <span className="more-menu-row-copy">
         <span>My waypoints</span>
         <span className="more-menu-row-description" id="more-waypoints-summary">{waypointSummary}</span>
+      </span>
+      <ChevronRightIcon />
+    </button>
+    <button
+      type="button"
+      className="more-menu-row"
+      aria-label="Suggest a place"
+      onClick={onSuggestPlace}
+    >
+      <span className="more-menu-row-icon"><MapIcon /></span>
+      <span className="more-menu-row-copy">
+        <span>Suggest a place</span>
+        <span className="more-menu-row-description">Suggest a place for maintainer review</span>
       </span>
       <ChevronRightIcon />
     </button>

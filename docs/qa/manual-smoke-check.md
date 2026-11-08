@@ -16,7 +16,11 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
-- [ ] In Explore → Community, category filters update the list and distinct map markers. Selecting a list row or marker opens the matching details with source and last-updated date; Back restores focus to the opening control. Community Waypoints remain unavailable as Journey endpoints.
+- [ ] In Explore → Community, an empty approved dataset shows one short next step, Suggest a place, with no inactive category filters; cancelling returns focus to that button. With approved data, category filters update the list and distinct map markers. Selecting a list row or marker opens matching details with source and last-updated date; Back restores focus to the opening control. Community Waypoints remain unavailable as Journey endpoints.
+- [ ] From approved-place details, open Suggest a correction. Confirm the place is identified and prefilled, the reason is required, and Back/Done returns to details with focus on Suggest a correction.
+- [ ] From More → Suggest a place, submit a valid text-only suggestion and confirm the receipt says it will be reviewed before publication and contains no private issue link. Confirm blank/overlong fields and out-of-bounds coordinates are rejected before a request.
+- [ ] Stub the submission endpoint with validation, rate-limit, unavailable, and network failures. Confirm each gives a safe retry message and never displays server or private-repository details. Confirm the request contains no reporter identity, email, photo, or private issue metadata.
+- [ ] In either form, adjust location on the map, drag or move the map-centre pin, and return with the coordinate and other form entries preserved. Repeat More entry and form navigation using keyboard only and at mobile width.
 - [ ] For a selected basement, ground-floor, and first-floor venue, venue details show “Basement 1”, “Ground floor”, and “Floor 1” respectively.
 - [ ] bus route browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and bus stops.
@@ -49,7 +53,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## More menu and PWA installation
 
-- [ ] More lists My waypoints, Settings, Release notes, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
+- [ ] More lists My waypoints, Suggest a place, Settings, Release notes, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
 - [ ] Confirm Download NUSGo reveals the existing browser instructions when no native install prompt is available, uses the browser prompt when one is available, and is hidden in an installed app.
 - [ ] Installation announces completion with More closed. Opening an already installed app stays silent; after an observed uninstall, reinstalling announces completion again.
 

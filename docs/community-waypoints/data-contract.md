@@ -1,6 +1,6 @@
 # Community Waypoint data contract
 
-This document defines the public, reviewed Community Waypoint dataset for NUSGo. It is separate from Personal Waypoints and from canonical venues and bus stops. The public GeoJSON file lives at `frontend/public/data/community-waypoints.geojson`; it remains empty until a maintainer reviews and approves locations. The browser loader validates this file through the shared parser. Map display belongs to #213.
+This document defines the public, reviewed Community Waypoint dataset for NUSGo. It is separate from Personal Waypoints and from canonical venues and bus stops. The public GeoJSON file lives at `frontend/public/data/community-waypoints.geojson`; it remains empty until a maintainer reviews and approves locations. The browser loader validates this file through the shared parser. Map display belongs to #213. See the [publication runbook](publication.md) for private review-to-public steps and maintenance.
 
 ## GeoJSON shape
 
@@ -38,7 +38,7 @@ Text is trimmed at the parser boundary and length limits count Unicode code poin
 
 The initial category labels are **Water cooler**, **ATM**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
 
-Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photos are private review evidence and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
+Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
 
 ## Provenance and review metadata
 

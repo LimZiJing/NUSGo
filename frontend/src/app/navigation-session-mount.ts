@@ -139,10 +139,10 @@ export interface NavigationSessionCommands {
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly setPresentationBottomInset: (bottom: number | null) => void
   readonly setVisibleCenterZoom: (enabled: boolean) => void
-  readonly setPersonalWaypointPlacement: (
-    coordinate: Parameters<NavigationSession['setPersonalWaypointPlacement']>[0],
+  readonly setWaypointPlacement: (
+    coordinate: Parameters<NavigationSession['setWaypointPlacement']>[0],
     editable: boolean,
-    onChange: Parameters<NavigationSession['setPersonalWaypointPlacement']>[2],
+    onChange: Parameters<NavigationSession['setWaypointPlacement']>[2],
   ) => void
   readonly setPersonalWaypoints: (
     waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
@@ -212,8 +212,8 @@ function createNavigationSessionCommands(
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     setPresentationBottomInset: (bottom) => session?.setPresentationBottomInset(bottom),
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
-    setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
-      session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    setWaypointPlacement: (coordinate, editable, onChange) => (
+      session?.setWaypointPlacement(coordinate, editable, onChange)
     ),
     setPersonalWaypoints: (waypoints, visible, onSelect) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect)

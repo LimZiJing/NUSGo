@@ -60,7 +60,7 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setViewportInsets: vi.fn(),
     setPresentationBottomInset: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
-    setPersonalWaypointPlacement: vi.fn(),
+    setWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setCommunityWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),

@@ -126,8 +126,8 @@ export interface MapSession {
   setPresentationBottomInset(bottom: number | null): void
   /** Zoom around the visible-area centre while a centre crosshair is shown. */
   setVisibleCenterZoom(enabled: boolean): void
-  /** Shows the temporary Personal Waypoint pin; only placement mode permits dragging it. */
-  setPersonalWaypointPlacement(
+  /** Shows a temporary waypoint pin; only placement mode permits dragging it. */
+  setWaypointPlacement(
     coordinate: MapCoordinate | null,
     editable: boolean,
     onDrag: (coordinate: MapCoordinate) => void,

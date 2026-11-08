@@ -7,6 +7,10 @@ import type { JourneyPlanningClient } from '../../infrastructure/pathfinding/cli
 import { createJourneyPlanningClient } from '../../infrastructure/pathfinding/client'
 import { loadTransitMapData, loadVenueData } from '../../infrastructure/data/loaders'
 import { loadCommunityWaypoints } from '../../infrastructure/data/community-waypoints'
+import {
+  createCommunityWaypointSubmissionClient,
+  type CommunityWaypointSubmitter,
+} from '../../infrastructure/community-waypoint-submission-client'
 import { createBrowserLocationTracker } from '../../infrastructure/location/browser'
 import { createPublicBusArrivalClient } from '../../infrastructure/lta-datamall/client'
 import { createShuttleArrivalClient } from '../../infrastructure/shuttle-arrivals/client'
@@ -20,6 +24,7 @@ export interface AppServices {
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadCommunityWaypoints: typeof loadCommunityWaypoints
+  readonly submitCommunityWaypoint: CommunityWaypointSubmitter
   readonly createLocationTracker: () => LocationTracker
   readonly shuttleArrivalClient: ShuttleArrivalClient
   readonly shuttleVehicleClient: ShuttleVehicleClient
@@ -50,6 +55,7 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
     loadTransit: loadTransitMapData,
     loadVenues: loadVenueData,
     loadCommunityWaypoints,
+    submitCommunityWaypoint: createCommunityWaypointSubmissionClient(),
     createLocationTracker: createBrowserLocationTracker,
     shuttleArrivalClient,
     shuttleVehicleClient,

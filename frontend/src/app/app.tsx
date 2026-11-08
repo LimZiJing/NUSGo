@@ -85,6 +85,7 @@ import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/person
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
+import { CommunityWaypointSubmissionForm } from '../features/waypoints/community/community-waypoint-submission-form'
 import { useCommunityWaypointDiscovery } from '../features/waypoints/community/use-community-waypoint-discovery'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
@@ -141,6 +142,14 @@ function App() {
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
+  const [communitySubmissionWaypoint, setCommunitySubmissionWaypoint] = useState<CommunityWaypoint | null>(null)
+  const [communitySubmissionCoordinate, setCommunitySubmissionCoordinate] = useState<WaypointCoordinate>(
+    DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
+  )
+  const [communitySubmissionReturnPage, setCommunitySubmissionReturnPage] = useState<'menu' | 'explore'>('menu')
+  const [isCommunitySubmissionPending, setIsCommunitySubmissionPending] = useState(false)
+  const communitySubmissionReturnFocusRef = useRef<HTMLElement | null>(null)
+  const communitySubmissionPlacementFocusRef = useRef<HTMLButtonElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
@@ -151,7 +160,8 @@ function App() {
   const updatePersonalWaypointDraft = personalWaypoints.updateDraft
   const cancelPersonalWaypointEdit = personalWaypoints.cancelEdit
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
-  const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
+  const waypointPlacementActive = morePage === 'placing' || morePage === 'community-placing'
+  const isMoreOpen = morePage !== 'closed' && !waypointPlacementActive
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
   const [liveBusLayerEnabled, setLiveBusLayerEnabled] = useState(false)
@@ -278,7 +288,7 @@ function App() {
   useEffect(() => {
     commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], showLiveBusVehicles)
   }, [commands, liveVehicles.snapshot, showLiveBusVehicles])
-  const isCrosshairVisible = !isMoreOpen && morePage !== 'placing' &&
+  const isCrosshairVisible = !isMoreOpen && !waypointPlacementActive &&
     navigationState.state.activeView === 'stops' && stopsPanelState.selectedStopList === 'nearby'
   useLayoutEffect(() => {
     commands.setVisibleCenterZoom(isCrosshairVisible)
@@ -288,11 +298,18 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  const handleCommunityWaypointMapChange = useCallback((coordinate: readonly [number, number]): void => {
+    setCommunitySubmissionCoordinate({ longitude: coordinate[0], latitude: coordinate[1] })
+  }, [])
   // A typed or pasted coordinate can be anywhere, so bring the pin into view as well as moving it.
   const applyTypedWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
     updatePersonalWaypointDraft({ coordinate })
     commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
   }, [commands, updatePersonalWaypointDraft])
+  const applyTypedCommunityWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
+    setCommunitySubmissionCoordinate(coordinate)
+    commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
+  }, [commands])
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
@@ -334,13 +351,13 @@ function App() {
     openCategoryPicker()
   }, [openCategoryPicker])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
-    if (morePage === 'editing-waypoint' || morePage === 'placing') return
+    if (morePage === 'editing-waypoint' || waypointPlacementActive) return
     if (personalWaypointDetails) {
       setPersonalWaypointDetails({ ...personalWaypointDetails, waypointId })
       return
     }
     openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
-  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails])
+  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails, waypointPlacementActive])
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
@@ -363,34 +380,40 @@ function App() {
     ),
     [personalWaypointCategoryVisibility.hiddenCategories, personalWaypointsForMap],
   )
-  // App composition passes map placement events into the waypoint feature's draft workflow.
+  // App composition routes the temporary map pin to the active waypoint workflow.
   useEffect(() => {
-    const visible = morePage === 'placing' || morePage === 'creating'
+    const isCommunityPlacement = morePage === 'community-placing'
+    const isPersonalPlacement = morePage === 'placing'
+    const visible = isCommunityPlacement || isPersonalPlacement || morePage === 'creating'
+    const selectedCoordinate = isCommunityPlacement
+      ? communitySubmissionCoordinate
+      : personalWaypoints.draft.coordinate
     const coordinate = visible
-      ? [personalWaypoints.draft.coordinate.longitude, personalWaypoints.draft.coordinate.latitude] as const
+      ? [selectedCoordinate.longitude, selectedCoordinate.latitude] as const
       : null
-    commands.setPersonalWaypointPlacement(
+    commands.setWaypointPlacement(
       coordinate,
-      morePage === 'placing',
-      handlePersonalWaypointMapChange,
+      isCommunityPlacement || isPersonalPlacement,
+      isCommunityPlacement ? handleCommunityWaypointMapChange : handlePersonalWaypointMapChange,
     )
   }, [
     commands,
+    communitySubmissionCoordinate,
+    handleCommunityWaypointMapChange,
     handlePersonalWaypointMapChange,
     morePage,
-    personalWaypoints.draft.coordinate.latitude,
-    personalWaypoints.draft.coordinate.longitude,
+    personalWaypoints.draft.coordinate,
   ])
   useEffect(() => () => {
-    commands.setPersonalWaypointPlacement(null, false, handlePersonalWaypointMapChange)
+    commands.setWaypointPlacement(null, false, handlePersonalWaypointMapChange)
   }, [commands, handlePersonalWaypointMapChange])
   useEffect(() => {
     commands.setPersonalWaypoints(
       visiblePersonalWaypointsForMap,
-      morePage !== 'placing' && morePage !== 'editing-waypoint',
+      !waypointPlacementActive && morePage !== 'editing-waypoint',
       handlePersonalWaypointMapSelection,
     )
-  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
+  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap, waypointPlacementActive])
   useEffect(() => {
     commands.setPersonalWaypointCollection(personalWaypointCollection)
   }, [commands, personalWaypointCollection])
@@ -436,11 +459,35 @@ function App() {
     const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
     if (waypoint) focusCommunityWaypoint(waypoint)
   }, [communityWaypoints, focusCommunityWaypoint])
+  const beginCommunityPlaceSuggestion = useCallback((
+    returnPage: 'menu' | 'explore' = 'menu',
+    trigger: HTMLButtonElement | null = null,
+  ): void => {
+    setCommunitySubmissionWaypoint(null)
+    setCommunitySubmissionCoordinate(DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
+    setCommunitySubmissionReturnPage(returnPage)
+    setIsCommunitySubmissionPending(false)
+    communitySubmissionReturnFocusRef.current = returnPage === 'explore' ? trigger : null
+    setMoreSheetDetent('full')
+    setMorePage('community-submission')
+  }, [])
+  const beginCommunityCorrection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
+    const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
+    if (!waypoint) return
+    setCommunitySubmissionWaypoint(waypoint)
+    setCommunitySubmissionCoordinate(waypoint.coordinate)
+    setCommunitySubmissionReturnPage('explore')
+    setIsCommunitySubmissionPending(false)
+    communitySubmissionReturnFocusRef.current = trigger
+    setMoreSheetDetent('full')
+    setMorePage('community-submission')
+  }, [communityWaypoints])
   const communityContent = (
     <CommunityWaypointPanel
       discovery={communityDiscovery}
       onSelectWaypoint={handleCommunityWaypointListSelection}
-      onSuggestCorrection={() => undefined}
+      onSuggestCorrection={beginCommunityCorrection}
+      onSuggestPlace={(trigger) => beginCommunityPlaceSuggestion('explore', trigger)}
     />
   )
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
@@ -504,7 +551,7 @@ function App() {
   const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
-    waypointPlacementActive: morePage === 'placing',
+    waypointPlacementActive,
     navigation,
     mapShellRef,
     mapPresentationRef,
@@ -780,7 +827,7 @@ function App() {
       mapCenter={mapCenter}
       location={state.location}
       active={navigationState.state.activeView === 'stops'}
-      panelActive={!isMoreOpen && morePage !== 'placing' && navigation.activeView === 'stops'}
+      panelActive={!isMoreOpen && !waypointPlacementActive && navigation.activeView === 'stops'}
       isMobileViewport={isMobileViewport}
       detent={navigation.sheets.stops.detent}
       portalContainer={sheetPortalContainer}
@@ -802,6 +849,7 @@ function App() {
     />
   )
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
+    if (isCommunitySubmissionPending) return
     if (isMoreOpen) {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
@@ -873,6 +921,25 @@ function App() {
     returnFromWaypointDetails(focusTarget)
   }
   const goBackInMore = useCallback((): void => {
+    if (morePage === 'community-placing') {
+      pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+      setMorePage('community-submission')
+      setMoreSheetDetent('full')
+      return
+    }
+    if (morePage === 'community-submission') {
+      if (isCommunitySubmissionPending) return
+      if (communitySubmissionReturnPage === 'explore') {
+        pendingWaypointReturnFocusRef.current = communitySubmissionReturnFocusRef.current
+        communitySubmissionReturnFocusRef.current = null
+        setMorePage('closed')
+        setMoreSheetDetent('partial')
+      } else {
+        setMorePage('menu')
+        setMoreSheetDetent('partial')
+      }
+      return
+    }
     if (morePage === 'placing') {
       const returnPage = placementReturnPage
       if (!returnPage) setIsEditingPersonalWaypoints(false)
@@ -922,9 +989,21 @@ function App() {
     placementReturnPage,
     returnFromWaypointDetails,
     activePersonalWaypointCategory,
+    communitySubmissionReturnPage,
+    isCommunitySubmissionPending,
   ])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
+    if (morePage === 'community-submission') {
+      if (isCommunitySubmissionPending) return
+      if (communitySubmissionReturnPage === 'explore') {
+        pendingWaypointReturnFocusRef.current = communitySubmissionReturnFocusRef.current
+        communitySubmissionReturnFocusRef.current = null
+      }
+      setMorePage('closed')
+      setMoreSheetDetent('partial')
+      return
+    }
     if (morePage === 'waypoint-details') {
       returnFromWaypointDetails()
       return
@@ -1023,7 +1102,7 @@ function App() {
       className="map-shell"
       ref={assignMapShellRef}
       data-more-open={isMoreOpen ? 'true' : 'false'}
-      data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
+      data-waypoint-placing={waypointPlacementActive ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <div className="map-stage" ref={mapPresentationRef}>
@@ -1039,6 +1118,21 @@ function App() {
           onApplyCoordinate={applyTypedWaypointCoordinate}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
+        />}
+        {morePage === 'community-placing' && <PersonalWaypointPlacement
+          coordinate={communitySubmissionCoordinate}
+          onUseMapCentre={mapCenter && !isMapMoving
+            ? () => setCommunitySubmissionCoordinate(mapCenter)
+            : undefined}
+          onApplyCoordinate={applyTypedCommunityWaypointCoordinate}
+          onContinue={() => {
+            pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+            setMorePage('community-submission')
+          }}
+          onCancel={() => {
+            pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+            setMorePage('community-submission')
+          }}
         />}
         {isCrosshairVisible && (
           <NearbyCrosshair insets={mapInsets} />
@@ -1113,7 +1207,7 @@ function App() {
       <MobileSheetMetricsContext.Provider value={mobileSheetMetrics}>
         <AppViews
           isMobileViewport={isMobileViewport}
-          waypointPlacementActive={morePage === 'placing'}
+          waypointPlacementActive={waypointPlacementActive}
           sheetPortalContainer={sheetPortalContainer}
           navigation={navigation}
           onSelectView={selectView}
@@ -1129,6 +1223,9 @@ function App() {
               : morePage === 'waypoint-details' ? 'Waypoint details'
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'placing' ? 'Adjust location'
+                  : morePage === 'community-submission'
+                    ? communitySubmissionWaypoint ? 'Suggest a correction' : 'Suggest a place'
+                    : morePage === 'community-placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
                     : morePage === 'settings' ? 'Settings'
                       : morePage === 'release-notes' ? 'Release notes' : 'More',
@@ -1140,6 +1237,7 @@ function App() {
                 ? personalWaypoints.readResult.waypoints.length
                 : null}
               onOpenWaypoints={openWaypoints}
+              onSuggestPlace={() => beginCommunityPlaceSuggestion()}
               onOpenSettings={openSettings}
               onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
@@ -1209,7 +1307,19 @@ function App() {
                   }
                 }
               }}
-            /> : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
+            /> : morePage === 'community-submission' || morePage === 'community-placing' ? (
+              <CommunityWaypointSubmissionForm
+                waypoint={communitySubmissionWaypoint}
+                coordinate={communitySubmissionCoordinate}
+                onAdjustLocation={(trigger) => {
+                  communitySubmissionPlacementFocusRef.current = trigger
+                  setMorePage('community-placing')
+                }}
+                onSubmit={services.submitCommunityWaypoint}
+                onBack={goBackInMore}
+                onPendingChange={setIsCommunitySubmissionPending}
+              />
+            ) : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
               <SettingsContent
                 communityWaypointDownloadUrl={buildBasePathUrl('data/community-waypoints.geojson')}
                 themePreference={themePreference}

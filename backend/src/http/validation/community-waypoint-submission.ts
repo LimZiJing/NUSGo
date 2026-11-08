@@ -3,8 +3,12 @@ import {
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   SINGAPORE_COORDINATE_BOUNDS,
   type ActiveCommunityWaypointCategory,
+  type CommunityWaypointSubmission,
   type CommunityWaypointId,
+  type ProposedCommunityWaypointFields,
 } from '@nusgo/shared'
+
+export type { CommunityWaypointSubmission, ProposedCommunityWaypointFields } from '@nusgo/shared'
 
 const CATEGORY_VALUES = new Set<string>(COMMUNITY_WAYPOINT_CATEGORIES.map(({ value }) => value))
 const WAYPOINT_ID_PATTERN = /^cw-[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -17,37 +21,6 @@ const SUBMISSION_URL_PATTERNS = [
   /\b(?:[\w-]+\.)+[a-z]{2,}(?:\/\S*)?/i,
 ]
 const PHOTO_ID_REFERENCE_PATTERN = /\b(?:photo|image)[\s_-]*(?:evidence[\s_-]*)?ids?\b/i
-
-export interface ProposedCommunityWaypointFields {
-  readonly name?: string
-  readonly category?: ActiveCommunityWaypointCategory
-  readonly longitude?: number
-  readonly latitude?: number
-  readonly building?: string
-  readonly floor?: number
-  readonly accessibilityNote?: string
-  readonly details?: string
-}
-
-export type CommunityWaypointSubmission =
-  | ({
-      readonly kind: 'new-place'
-      readonly name: string
-      readonly category: ActiveCommunityWaypointCategory
-      readonly longitude: number
-      readonly latitude: number
-      readonly explanation?: string
-    } & Omit<ProposedCommunityWaypointFields, 'name' | 'category' | 'longitude' | 'latitude'>)
-  | ({
-      readonly kind: 'correction'
-      readonly waypointId: CommunityWaypointId
-      readonly requestedChange: string
-    } & ProposedCommunityWaypointFields)
-  | {
-      readonly kind: 'removal'
-      readonly waypointId: CommunityWaypointId
-      readonly reason: string
-    }
 
 export class InvalidCommunityWaypointSubmissionError extends Error {
   constructor(message: string) {

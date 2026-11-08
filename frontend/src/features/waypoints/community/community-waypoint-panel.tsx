@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import {
   COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
   type CommunityWaypoint,
@@ -12,7 +12,8 @@ import './community-waypoint-panel.css'
 interface CommunityWaypointPanelProps {
   readonly discovery: CommunityWaypointDiscovery
   readonly onSelectWaypoint: (waypointId: string) => void
-  readonly onSuggestCorrection: (waypointId: string) => void
+  readonly onSuggestCorrection: (waypointId: string, trigger: HTMLButtonElement) => void
+  readonly onSuggestPlace: (trigger: HTMLButtonElement) => void
 }
 
 function getCategoryLabel(category: CommunityWaypointCategory): string {
@@ -32,10 +33,9 @@ function WaypointDetails({
 }: {
   readonly waypoint: CommunityWaypoint
   readonly onBack: () => void
-  readonly onSuggestCorrection: (waypointId: string) => void
+  readonly onSuggestCorrection: (waypointId: string, trigger: HTMLButtonElement) => void
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const [suggestionNotice, setSuggestionNotice] = useState<string | null>(null)
 
   useLayoutEffect(() => {
     headingRef.current?.focus()
@@ -89,12 +89,8 @@ function WaypointDetails({
         <div className="community-waypoint-correction-action">
           <Button
             label="Suggest a correction"
-            onClick={() => {
-              onSuggestCorrection(waypoint.id)
-              setSuggestionNotice('Correction submissions are not open yet.')
-            }}
+            onClick={(event) => onSuggestCorrection(waypoint.id, event.currentTarget)}
           />
-          {suggestionNotice && <p role="status">{suggestionNotice}</p>}
         </div>
       </div>
     </section>
@@ -105,6 +101,7 @@ export function CommunityWaypointPanel({
   discovery,
   onSelectWaypoint,
   onSuggestCorrection,
+  onSuggestPlace,
 }: CommunityWaypointPanelProps) {
   const {
     status,
@@ -127,7 +124,6 @@ export function CommunityWaypointPanel({
     <div className="community-waypoint-panel">
       <div className="community-waypoint-browser" hidden={selectedWaypoint !== null}>
         <h3>Community places</h3>
-        <p className="community-waypoint-intro">Browse places reviewed by NUSGo maintainers. Filters also update the map markers.</p>
         {status === 'loading' && <p className="community-waypoint-status" role="status">Loading approved places…</p>}
         {status === 'failed' && (
           <div className="community-waypoint-load-error">
@@ -137,54 +133,65 @@ export function CommunityWaypointPanel({
         )}
         {status === 'ready' && (
           <>
-            <fieldset className="community-waypoint-filters">
-              <legend>Filter by category</legend>
-              <div className="community-waypoint-filter-list">
-                {categoryOptions.map(({ value, label, count }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className="community-waypoint-filter"
-                    aria-pressed={visibleCategories.includes(value)}
-                    aria-label={`${label}, ${count} ${count === 1 ? 'place' : 'places'}`}
-                    onClick={() => toggleCategory(value)}
-                  >
-                    <span>{label}</span>
-                    <span className="community-waypoint-filter-count" aria-hidden="true">{count}</span>
-                  </button>
-                ))}
-                {!allCategoriesVisible && (
-                  <button type="button" className="community-waypoint-show-all" onClick={showAllCategories}>
-                    Show all
-                  </button>
-                )}
-              </div>
-            </fieldset>
             {noPlaces ? (
-              <p className="community-waypoint-empty">No approved Community Waypoints yet. Places appear here after review and publication.</p>
-            ) : visibleWaypoints.length === 0 ? (
-              <p className="community-waypoint-empty">No places match these categories. Show all categories to see every approved place.</p>
+              <section className="community-waypoint-empty-state" aria-labelledby="community-waypoint-empty-heading">
+                <h4 id="community-waypoint-empty-heading">No places yet</h4>
+                <Button
+                  label="Suggest a place"
+                  variant="primary"
+                  onClick={(event) => onSuggestPlace(event.currentTarget)}
+                />
+              </section>
             ) : (
-              <ul className="community-waypoint-list" aria-label="Approved Community Waypoints">
-                {visibleWaypoints.map((waypoint) => (
-                  <li key={waypoint.id}>
-                    <button
-                      type="button"
-                      className="community-waypoint-row"
-                      aria-label={`${waypoint.name}, ${getCategoryLabel(waypoint.category)}. Open details.`}
-                      onClick={(event) => {
-                        selectWaypoint(waypoint.id, event.currentTarget)
-                        onSelectWaypoint(waypoint.id)
-                      }}
-                    >
-                      <span className="community-waypoint-row-copy">
-                        <strong>{waypoint.name}</strong>
-                        <span>{getCategoryLabel(waypoint.category)}{waypoint.building ? ` · ${waypoint.building}` : ''}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <fieldset className="community-waypoint-filters">
+                  <legend>Filter by category</legend>
+                  <div className="community-waypoint-filter-list">
+                    {categoryOptions.map(({ value, label, count }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className="community-waypoint-filter"
+                        aria-pressed={visibleCategories.includes(value)}
+                        aria-label={`${label}, ${count} ${count === 1 ? 'place' : 'places'}`}
+                        onClick={() => toggleCategory(value)}
+                      >
+                        <span>{label}</span>
+                        <span className="community-waypoint-filter-count" aria-hidden="true">{count}</span>
+                      </button>
+                    ))}
+                    {!allCategoriesVisible && (
+                      <button type="button" className="community-waypoint-show-all" onClick={showAllCategories}>
+                        Show all places
+                      </button>
+                    )}
+                  </div>
+                </fieldset>
+                {visibleWaypoints.length === 0 ? (
+                  <p className="community-waypoint-empty">No matches.</p>
+                ) : (
+                  <ul className="community-waypoint-list" aria-label="Approved Community Waypoints">
+                    {visibleWaypoints.map((waypoint) => (
+                      <li key={waypoint.id}>
+                        <button
+                          type="button"
+                          className="community-waypoint-row"
+                          aria-label={`${waypoint.name}, ${getCategoryLabel(waypoint.category)}. Open details.`}
+                          onClick={(event) => {
+                            selectWaypoint(waypoint.id, event.currentTarget)
+                            onSelectWaypoint(waypoint.id)
+                          }}
+                        >
+                          <span className="community-waypoint-row-copy">
+                            <strong>{waypoint.name}</strong>
+                            <span>{getCategoryLabel(waypoint.category)}{waypoint.building ? ` · ${waypoint.building}` : ''}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </>
         )}

@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
+import type { KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -8,7 +8,8 @@ export type IconButtonVariant = ButtonVariant | 'plain'
 
 interface ButtonProps {
   readonly label: string
-  readonly onClick: () => void
+  readonly onClick?: MouseEventHandler<HTMLButtonElement>
+  readonly type?: 'button' | 'submit'
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
@@ -58,6 +59,7 @@ interface IconButtonProps {
 export function Button({
   label,
   onClick,
+  type = 'button',
   variant = 'secondary',
   size = 'sm',
   icon,
@@ -79,7 +81,7 @@ export function Button({
     <button
       ref={ref}
       className={joinClassNames('button', className)}
-      type="button"
+      type={type}
       data-variant={variant}
       data-size={size}
       data-hover-filter="none"

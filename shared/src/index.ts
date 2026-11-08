@@ -111,6 +111,11 @@ export type {
   CommunityWaypointCategory,
   CommunityWaypointId,
 } from './waypoints/community.ts'
+export type {
+  CommunityWaypointSubmission,
+  CommunityWaypointSubmissionReceipt,
+  ProposedCommunityWaypointFields,
+} from './waypoints/community-submission.ts'
 export {
   CommunityWaypointGeoJsonValidationError,
   parseCommunityWaypointsGeoJson,

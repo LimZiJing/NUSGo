@@ -18,7 +18,7 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     suspendMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
-    setPersonalWaypointPlacement: vi.fn(),
+    setWaypointPlacement: vi.fn(),
     setCommunityWaypoints: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
@@ -216,12 +216,160 @@ afterEach(() => {
   appHarness.commands.locateUser.mockReset()
   appHarness.commands.suspendMobileRoutes.mockReset()
   appHarness.commands.setPersonalWaypoints.mockReset()
-  appHarness.commands.setPersonalWaypointPlacement.mockReset()
+  appHarness.commands.setWaypointPlacement.mockReset()
   appHarness.commands.setCommunityWaypoints.mockReset()
   appHarness.commands.focusCommunityWaypoint.mockReset()
 })
 
 describe('desktop shared navigation shell', () => {
+  it.each(['desktop', 'mobile'] as const)(
+    'lets people navigate by keyboard to an anonymous text-only place suggestion on %s',
+    async (viewport) => {
+      if (viewport === 'mobile') mockMobileViewport()
+      const user = userEvent.setup()
+      let submittedBody: unknown = null
+      const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        submittedBody = JSON.parse(String(init?.body)) as unknown
+        return new Response(JSON.stringify({ status: 'received' }), {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      })
+      vi.stubGlobal('fetch', fetcher)
+      render(<App />)
+
+      await user.click(screen.getByRole('button', { name: 'More' }))
+      await user.tab()
+      await user.tab()
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Suggest a place' }))
+      await user.keyboard('{Enter}')
+
+      expect(await screen.findByText(/Reviewed before publishing\. No photos, photo links, or personal details\./)).toBeTruthy()
+      await user.type(screen.getByLabelText('Place name'), 'Quiet study nook')
+      await user.selectOptions(screen.getByLabelText('Location type'), 'water_cooler')
+      await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+      expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
+      expect(submittedBody).toEqual({
+        kind: 'new-place',
+        name: 'Quiet study nook',
+        category: 'water_cooler',
+        longitude: 103.7844,
+        latitude: 1.2933,
+      })
+      expect(document.body.textContent).not.toMatch(/private repository|issue #\d+|photoEvidence|email/i)
+      expect(document.body.textContent).toContain('review it before publication')
+    },
+  )
+
+  it.each(['desktop', 'mobile'] as const)(
+    'opens the empty Explore suggestion action and restores focus on %s',
+    async (viewport) => {
+      if (viewport === 'mobile') mockMobileViewport()
+      const user = userEvent.setup()
+      render(<App />)
+
+      await user.click(screen.getByRole('button', { name: 'Explore' }))
+      await user.click(screen.getByRole('button', { name: 'Community' }))
+      const trigger = await screen.findByRole('button', { name: 'Suggest a place' })
+      await user.click(trigger)
+
+      expect(screen.getByLabelText('Place name')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await waitFor(() => expect(document.activeElement).toBe(trigger))
+    },
+  )
+
+  it.each(['desktop', 'mobile'] as const)(
+    'opens a correction from approved place details and restores focus on %s',
+    async (viewport) => {
+    if (viewport === 'mobile') mockMobileViewport()
+    const user = userEvent.setup()
+    let submittedBody: unknown = null
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      submittedBody = JSON.parse(String(init?.body)) as unknown
+      return new Response(JSON.stringify({ status: 'received' }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }))
+    const waypoint: CommunityWaypoint = {
+      id: 'cw-water-001',
+      name: 'Water cooler at UTown',
+      category: 'water_cooler',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      source: 'NUS Campus Facilities',
+      updatedAt: '2026-10-26',
+    }
+    appHarness.communityWaypoints = [waypoint]
+    render(<App />)
+    await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
+      .toHaveBeenLastCalledWith([waypoint], expect.any(Function)))
+    const mapTrigger = document.createElement('button')
+    document.body.append(mapTrigger)
+    const onSelect = appHarness.commands.setCommunityWaypoints.mock.calls.at(-1)?.[1]
+    act(() => onSelect?.(waypoint.id, mapTrigger))
+
+    const correctionTrigger = await screen.findByRole('button', { name: 'Suggest a correction' })
+    await user.click(correctionTrigger)
+
+    expect(await screen.findByText(/^Correction for/)).toBeTruthy()
+    expect((screen.getByLabelText(/Place name/) as HTMLInputElement).value).toBe(waypoint.name)
+    await user.type(screen.getByLabelText('Correction reason'), 'It has moved to the next floor.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
+    expect(submittedBody).toMatchObject({
+      kind: 'correction',
+      waypointId: waypoint.id,
+      requestedChange: 'It has moved to the next floor.',
+      name: waypoint.name,
+      longitude: waypoint.coordinate.longitude,
+      latitude: waypoint.coordinate.latitude,
+    })
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+    await waitFor(() => expect(document.activeElement).toBe(correctionTrigger))
+    expect(screen.getByRole('heading', { name: waypoint.name })).toBeTruthy()
+    },
+  )
+
+  it.each(['desktop', 'mobile'] as const)(
+    'reuses map placement for suggestions and preserves form entries on %s',
+    async (viewport) => {
+    if (viewport === 'mobile') mockMobileViewport()
+    const user = userEvent.setup()
+    let submittedBody: unknown = null
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      submittedBody = JSON.parse(String(init?.body)) as unknown
+      return new Response(JSON.stringify({ status: 'received' }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }))
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Suggest a place' }))
+    await user.type(screen.getByLabelText('Place name'), 'Quiet study nook')
+    await user.selectOptions(screen.getByLabelText('Location type'), 'water_cooler')
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+
+    expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
+    expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(true)
+    const placementCall = appHarness.commands.setWaypointPlacement.mock.calls.at(-1)
+    expect(placementCall?.[1]).toBe(true)
+    const onMapChange = placementCall?.[2] as ((coordinate: readonly [number, number]) => void) | undefined
+    act(() => onMapChange?.([103.8, 1.3]))
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+
+    expect(screen.getByText('1.300000° N · 103.800000° E')).toBeTruthy()
+    expect((screen.getByLabelText('Place name') as HTMLInputElement).value).toBe('Quiet study nook')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Adjust on map' }))
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+    expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
+    expect(submittedBody).toMatchObject({ longitude: 103.8, latitude: 1.3 })
+    },
+  )
+
   it('loads approved Community Waypoints into the map and opens marker details in Explore', async () => {
     const user = userEvent.setup()
     const waypoint: CommunityWaypoint = {
@@ -1175,7 +1323,7 @@ describe('More surface', () => {
 
     expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(true)
-    const placementCall = appHarness.commands.setPersonalWaypointPlacement.mock.calls.at(-1)
+    const placementCall = appHarness.commands.setWaypointPlacement.mock.calls.at(-1)
     expect(placementCall?.[1]).toBe(true)
     const onMapChange = placementCall?.[2] as ((coordinate: readonly [number, number]) => void) | undefined
     expect(onMapChange).toBeTypeOf('function')

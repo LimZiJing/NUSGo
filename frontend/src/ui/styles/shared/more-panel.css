@@ -158,7 +158,8 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'][data-detent='full'],
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'][data-detent='full'],
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'] {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'],
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'][data-detent='full'] {
     padding: 0 0 12px;
     border-radius: 0;
     background: var(--surface-raised);
@@ -172,7 +173,8 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .mobile-sheet-handle-row,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .mobile-sheet-handle-row,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .mobile-sheet-handle-row {
     display: none;
   }
 
@@ -180,7 +182,8 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-header,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-header,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .more-panel-header {
     padding-inline: 14px;
   }
 
@@ -188,7 +191,8 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-content-scroll,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-content-scroll,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .more-panel-content-scroll {
     padding: 12px 13px 68px;
   }
 

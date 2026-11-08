@@ -26,6 +26,8 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Internal route**: A route operated within the NUSGo campus transit model. The current network contains eight internal routes.
 - **Bus stop**: A physical bus boarding or alighting location with a stable stop ID, a display name, coordinates, and service associations.
   _Avoid_: Shuttle stop
+- **Current stop**: The stop a person confirms or chooses as their starting point for a temporary route-following session. It is independent of the stop focused in Stops and does not imply that the person is aboard a bus.
+- **Route following**: A temporary, foreground-only view of progress along one Internal route, in its ordered stop direction. Location can update approximate stop progress; it does not identify a bus or detect boarding.
 - **Ordered stop list**: The sequence of stops that defines a route’s travel direction, from its first stop to its last stop.
 - **Service**: A transit service associated with a stop. A service may be an internal route or an external public service token.
 - **Public service token**: An opaque identifier for a public or external service. It is not an internal NUSGo route and must not be treated as one.

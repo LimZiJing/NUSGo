@@ -15,6 +15,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | --- | --- | --- |
 | Explore | Search 729 venues and 249 buildings, open venue details, browse the 8 shuttle routes | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
+| Follow route | Temporary foreground-only stop progress in the selected internal route's Bus routes timeline, with optional approximate location updates and manual stop selection | [UI behaviour](ui/behaviour.md#explore) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
 | More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
@@ -39,7 +40,7 @@ Also in place:
 - **Journey planning** needs a configured Valhalla endpoint. Search is bounded, so a recommended Path is complete and valid but not claimed to be the global best. See [Pathfinding](pathfinding.md#speed-and-limits).
 - **Live data** needs server-side NUS credentials, and live-arrival reliability still needs separate verification. NUSMods' NextBus client provides no route geometry.
 - **One Express instance only.** The shuttle snapshot and rate limiters live in process memory.
-- **Location** depends on browser permission and device accuracy. It doesn't replan journeys or continue after the app closes.
+- **Location** depends on browser permission and device accuracy. Route-following progress needs a fresh fix with reported accuracy of 25 m or better; it pauses while the page is hidden and does not continue after the app closes.
 - **Browser evidence** is partial. Targeted checks exist at 1280 × 720. The exact release and mobile viewports and failure injection still need manual verification.
 - **Website release history** starts empty until the first successful production promotion bundles reviewed notes. After each promotion, a trusted follow-up workflow records the exact deployment time and immutable commit tag. Backend deployment intervals still need to be reviewed and summarized by the release operator. See [release notes](release-notes.md).
 - **Transit data** only behaves correctly while the checked-in network, geometry and verification manifest stay in sync. CI checks this.

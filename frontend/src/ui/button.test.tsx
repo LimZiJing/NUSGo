@@ -20,6 +20,7 @@ describe('Button', () => {
     const button = screen.getByRole('button', { name: 'Save' })
     expect(button.getAttribute('data-variant')).toBe('secondary')
     expect(button.getAttribute('data-size')).toBe('sm')
+    expect(button.getAttribute('data-content-layout')).toBe('label')
 
     rerender(<Button label="Save" variant="primary" size="lg" onClick={vi.fn()} />)
     expect(button.getAttribute('data-variant')).toBe('primary')
@@ -90,6 +91,7 @@ describe('Button composed content', () => {
 
     const button = screen.getByRole('button', { name: 'Open Computer Centre' })
     expect(button.getAttribute('type')).toBe('submit')
+    expect(button.getAttribute('data-content-layout')).toBe('custom')
     expect(button.children).toHaveLength(2)
     expect(button.querySelector('strong')?.textContent).toBe('COM1')
     expect(button.lastElementChild?.textContent).toBe('Computer Centre')

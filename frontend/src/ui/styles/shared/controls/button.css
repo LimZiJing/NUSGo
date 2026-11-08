@@ -3,7 +3,6 @@
 .button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-2);
   min-height: var(--control-height-sm);
   box-sizing: border-box;
@@ -14,6 +13,11 @@
   background: var(--surface-control);
   font: 500 var(--font-size-control)/1.2 var(--sans);
   cursor: pointer;
+}
+
+.button[data-content-layout='label'],
+.button.icon-button {
+  justify-content: center;
 }
 
 .button[data-size='lg'] {

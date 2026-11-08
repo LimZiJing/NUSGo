@@ -111,6 +111,7 @@ export function Button({
       type={type}
       data-variant={variant}
       data-size={size}
+      data-content-layout={children == null ? 'label' : 'custom'}
       data-hover-treatment="custom"
       disabled={disabled}
       aria-pressed={pressed}

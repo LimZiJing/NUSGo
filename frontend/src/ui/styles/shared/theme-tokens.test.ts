@@ -219,7 +219,9 @@ describe('control token contrast', () => {
   it('keeps plain and nested SVGs on their feature-owned colors', () => {
     const styles = readStyleFile('controls/button.css')
 
-    expect(styles).toMatch(/\.button\[aria-pressed='true'\]:not\(\[data-variant='plain'\]\)\s+svg,\s*\.button\[aria-expanded='true'\]:not\(\[data-variant='plain'\]\)\s+svg\s*{[^}]*color:\s*var\(--accent-hover\);/s)
+    expect(styles).toMatch(/\.button\[aria-pressed='true'\]:not\(\[data-variant='plain'\]\)\s+svg\s*{[^}]*color:\s*var\(--accent-hover\);/s)
+    expect(styles).not.toContain(".button[aria-expanded='true'] {")
+    expect(styles).not.toContain(".button[aria-expanded='true']:not([data-variant='plain']) svg {")
     expect(readStyleFile('../../../features/waypoints/personal/personal-waypoints.css'))
       .toMatch(/\.button\.personal-waypoint-appearance-trigger\[aria-expanded='true'\]\s+\.personal-waypoint-marker-preview-icon\s*{[^}]*color:\s*var\(--map-waypoint-marker-ink\);/s)
   })

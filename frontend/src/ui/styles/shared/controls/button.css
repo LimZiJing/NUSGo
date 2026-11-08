@@ -50,15 +50,13 @@
   height: 17px;
 }
 
-.button[aria-pressed='true'],
-.button[aria-expanded='true'] {
+.button[aria-pressed='true'] {
   border-color: var(--control-border);
   color: var(--text-primary);
   background: var(--accent-selected);
 }
 
-.button[aria-pressed='true']:not([data-variant='plain']) svg,
-.button[aria-expanded='true']:not([data-variant='plain']) svg {
+.button[aria-pressed='true']:not([data-variant='plain']) svg {
   color: var(--accent-hover);
 }
 

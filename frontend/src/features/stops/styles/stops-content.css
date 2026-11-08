@@ -172,16 +172,6 @@
     background: transparent;
   }
 
-  .button.stop-card-toggle[aria-expanded='true'] {
-    border: 0;
-    color: var(--text-strong);
-    background: transparent;
-  }
-
-  .button.stop-card-toggle[aria-expanded='true']:not([data-variant='plain']) svg {
-    color: var(--text-strong);
-  }
-
   .stop-card-toggle:focus-visible {
     outline: var(--focus-outline);
     outline-offset: calc(-1 * var(--focus-ring-width));

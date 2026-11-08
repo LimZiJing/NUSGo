@@ -57,7 +57,7 @@ describe('LocationControl', () => {
     expect(button.querySelectorAll('.location-control-spinner')).toHaveLength(1)
   })
 
-  it('is absent while the mobile Plan sheet is expanded', () => {
+  it('is absent when its parent marks it not visible', () => {
     render(<LocationControl visible={false} searching={false} onLocate={vi.fn()} />)
 
     expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()

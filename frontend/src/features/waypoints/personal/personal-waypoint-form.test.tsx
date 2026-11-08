@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypointDraft } from '../../../domain/waypoints/personal/create-personal-waypoint'
+import type { PersonalWaypointValidationIssue } from '../../../domain/waypoints/personal/personal-waypoint'
 import { PersonalWaypointForm } from './personal-waypoint-form'
 
 const draft: PersonalWaypointDraft = {
@@ -57,5 +58,45 @@ describe('PersonalWaypointForm', () => {
     await user.clear(categoryInput)
     await user.type(categoryInput, 'New category')
     expect(onChange).toHaveBeenLastCalledWith({ category: 'New category' })
+  })
+
+  it('keeps field errors associated while hiding the repeated validation message visually', () => {
+    const issues: PersonalWaypointValidationIssue[] = [
+      { field: 'name', message: 'Must not be empty.' },
+      { field: 'category', message: 'Must not be empty.' },
+    ]
+
+    render(<PersonalWaypointForm
+      draft={{ ...draft, name: '', category: '' }}
+      issues={issues}
+      status="Check the highlighted fields before saving."
+      onChange={vi.fn()}
+      onAdjustLocation={vi.fn()}
+      onCancel={vi.fn()}
+      onSave={vi.fn()}
+    />)
+
+    const nameInput = screen.getByRole('textbox', { name: 'Name' })
+    expect(nameInput.getAttribute('aria-invalid')).toBe('true')
+    expect(nameInput.getAttribute('aria-describedby')).toBe('personal-waypoint-name-error')
+    expect(screen.getByRole('combobox', { name: 'Category' }).getAttribute('aria-describedby'))
+      .toBe('personal-waypoint-category-error')
+    expect(screen.queryByText('Check the highlighted fields before saving.')).toBeNull()
+  })
+
+  it('shows location coordinates as labeled decimal-degree values', () => {
+    render(<PersonalWaypointForm
+      draft={draft}
+      issues={[]}
+      status={null}
+      onChange={vi.fn()}
+      onAdjustLocation={vi.fn()}
+      onCancel={vi.fn()}
+      onSave={vi.fn()}
+    />)
+
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.290000°')
+    expect(location.textContent).toContain('Longitude103.780000°')
   })
 })

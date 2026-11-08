@@ -49,7 +49,7 @@ interface StopsWorkspaceProps {
   readonly backLabel: string
   readonly onBackToStops: (backToStops: () => void) => void
   readonly onSelectOppositeStop: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
 }
 

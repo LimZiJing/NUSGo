@@ -10,6 +10,7 @@ import {
 } from 'react'
 import type { LocationTrackingStatus } from '../../domain/location/types'
 import type { ExploreMode, ExploreState } from '../../features/explore/state/explore-state'
+import type { RouteStopFocusRequest } from '../../features/explore/route-stop-focus.ts'
 import type { NavigationSessionCommands } from '../navigation-session-mount'
 import {
   createInitialNavigationState,
@@ -70,7 +71,9 @@ export interface AppNavigation {
     endpoint: Parameters<NavigationSessionCommands['navigateToEndpoint']>[0],
   ) => void
   readonly openPlan: () => void
-  readonly selectRouteFromStops: (routeId: string) => void
+  readonly routeStopFocusRequest: RouteStopFocusRequest | null
+  readonly clearRouteStopFocusRequest: (sequence: number) => void
+  readonly selectRouteFromStops: (routeId: string, stopId: string) => void
   readonly beginMobileSearch: (view: 'explore' | 'plan') => void
   readonly dismissMobileSearch: (view: 'explore' | 'plan') => void
   readonly selectMobileSearchResult: (view: 'explore' | 'plan') => void
@@ -109,6 +112,8 @@ export function useAppNavigation({
     readonly sequence: number
   }>({ stopId: null, sequence: 0 })
   const handledStopFocusRequestRef = useRef(0)
+  const [routeStopFocusRequest, setRouteStopFocusRequest] = useState<RouteStopFocusRequest | null>(null)
+  const routeStopFocusSequenceRef = useRef(0)
   const previousExploreStateRef = useRef<Pick<ExploreState, 'mode' | 'selectedVenue' | 'selectedBuildingId'> | null>(null)
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
   // Render-visible mirror of returnToExploreRef; set and cleared at the same points.
@@ -249,15 +254,23 @@ export function useAppNavigation({
     navigateToEndpoint({ kind: 'stop', id: stopId })
   }, [navigateToEndpoint])
 
-  const selectRouteFromStops = useCallback((routeId: string): void => {
+  const clearRouteStopFocusRequest = useCallback((sequence: number): void => {
+    setRouteStopFocusRequest((current) => (
+      current?.sequence === sequence ? null : current
+    ))
+  }, [])
+
+  const selectRouteFromStops = useCallback((routeId: string, stopId: string): void => {
     if (isMobileViewport) {
       dispatch({ type: 'set-sheet-detent', view: 'explore', detent: 'partial' })
     }
     commands.enterMobileRoutes()
     commands.selectMobileRoute(routeId)
-    pendingViewFocusRef.current = 'explore'
+    const sequence = routeStopFocusSequenceRef.current + 1
+    routeStopFocusSequenceRef.current = sequence
+    setRouteStopFocusRequest({ routeId, stopId, sequence })
     dispatch({ type: 'select-view', view: 'explore' })
-  }, [commands, dispatch, isMobileViewport, pendingViewFocusRef])
+  }, [commands, dispatch, isMobileViewport])
 
   const beginMobileSearch = useCallback((view: 'explore' | 'plan'): void => {
     if (!isMobileViewport) return
@@ -342,6 +355,7 @@ export function useAppNavigation({
     activeView,
     activeSheetExpanded,
     stopFocusRequest,
+    routeStopFocusRequest,
     focusStopAfterMapLayout,
     openStopInStops,
     openStopDetailsFromMap,
@@ -358,6 +372,7 @@ export function useAppNavigation({
     navigateToEndpoint,
     openPlan,
     selectRouteFromStops,
+    clearRouteStopFocusRequest,
     beginMobileSearch,
     dismissMobileSearch,
     selectMobileSearchResult,

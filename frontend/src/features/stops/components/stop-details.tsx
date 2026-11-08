@@ -23,7 +23,7 @@ export function StopDetails({
   readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
   readonly onToggleFavorite: (stopId: string) => void
 }) {
@@ -89,7 +89,7 @@ export function StopDetails({
           scheduledDepartures={stop.scheduledDepartures}
           liveArrivalMessage={stop.liveArrivalMessage}
           publicServices={stop.publicServices}
-          onSelectRoute={onSelectRoute}
+          onSelectRoute={(routeId) => onSelectRoute(routeId, stop.id)}
         />
       </div>
     </div>

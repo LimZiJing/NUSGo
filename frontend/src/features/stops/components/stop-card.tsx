@@ -26,7 +26,7 @@ export interface StopCardProps {
   readonly publicServices: readonly PublicServiceTiming[]
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
 }
 
 function formatDistance(distanceMeters: number): string {
@@ -115,7 +115,7 @@ export function StopCard({
             noLiveData={noLiveData}
             liveArrivalMessage={liveArrivalMessage}
             publicServices={publicServices}
-            onSelectRoute={onSelectRoute}
+            onSelectRoute={(routeId) => onSelectRoute(routeId, stopId)}
           />
         </div>
       </div>

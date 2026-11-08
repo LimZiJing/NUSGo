@@ -261,9 +261,11 @@ describe('control token contrast', () => {
       },
     )
 
-    it('lifts the dark divider clear of the almost-invisible value it replaced', () => {
-      // The reported bug was a divider close to 1.05:1 against the card, which reads as no divider.
-      expect(dividerOnCard('dark'), 'dark: --border-divider on --surface-card').toBeGreaterThan(1.6)
+    it('uses the --border-subtle step in dark mode', () => {
+      const styles = readStyleFile('themes/dark.css')
+
+      expect(resolveColour(styles, '--border-divider'))
+        .toBe(resolveColour(styles, '--border-subtle'))
     })
 
     it('keeps the dark divider quieter than the row text it separates', () => {

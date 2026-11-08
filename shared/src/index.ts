@@ -97,6 +97,25 @@ export {
 } from './transit/public-bus-arrivals.ts'
 export type { ShuttleServiceWindow } from './transit/service-hours.ts'
 
+export type { Waypoint, WaypointCoordinate } from './waypoints/waypoint.ts'
+export { SINGAPORE_COORDINATE_BOUNDS } from './waypoints/coordinate-bounds.ts'
+export {
+  COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
+  COMMUNITY_WAYPOINT_TEXT_LIMITS,
+  RETIRED_COMMUNITY_WAYPOINT_CATEGORIES,
+} from './waypoints/community.ts'
+export type {
+  ActiveCommunityWaypointCategory,
+  CommunityWaypoint,
+  CommunityWaypointCategory,
+  CommunityWaypointId,
+} from './waypoints/community.ts'
+export {
+  CommunityWaypointGeoJsonValidationError,
+  parseCommunityWaypointsGeoJson,
+} from './waypoints/community-geojson.ts'
+
 export type {
   TripCoordinate,
   TripEndpoint,

@@ -51,7 +51,7 @@ describe('Settings sections', () => {
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
     expect(waypoints.open).toBe(true)
-    expect(screen.getByRole('link', { name: 'Download approved data (GeoJSON)' }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: 'Download approved community waypoints' }).getAttribute('href'))
       .toBe('/data/community-waypoints.geojson')
 
     await user.click(screen.getByText('Favourites'))

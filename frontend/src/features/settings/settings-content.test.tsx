@@ -27,7 +27,7 @@ describe('Settings sections', () => {
       />,
     )
 
-    expect(document.querySelectorAll('.settings-disclosure-icon.menu-icon-tile')).toHaveLength(3)
+    expect(document.querySelectorAll('.settings-disclosure-icon.menu-icon-tile')).toHaveLength(4)
 
     const getSection = (title: string): HTMLDetailsElement => {
       const summary = screen.getByText(title)

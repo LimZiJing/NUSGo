@@ -42,12 +42,15 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm()
 
     expect(screen.getByRole('status').textContent).toBe('')
-    expect(screen.getByText('Reviewed before publishing. No photos, photo links, or personal details.')).toBeTruthy()
+    expect(screen.getByText('Reviewed before publishing. No photos, photo links or personal details.')).toBeTruthy()
     expect(screen.queryByLabelText(/name or email/i)).toBeNull()
     expect(screen.queryByLabelText(/photo/i)).toBeNull()
 
-    await user.selectOptions(screen.getByLabelText('Location type'), 'atm')
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
     await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
+    const additionalDetails = screen.getByText('Additional details').closest('details')
+    expect(additionalDetails?.open).toBe(false)
+    await user.click(screen.getByText('Additional details'))
     await user.type(screen.getByLabelText(/Building or landmark/), 'Central Library')
     await user.type(screen.getByLabelText('Details (optional)', { exact: true }), 'Near the east entrance.')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
@@ -77,7 +80,28 @@ describe('CommunityWaypointSubmissionForm', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/place name/i)
-      expect(screen.getByRole('alert').textContent).toMatch(/location type/i)
+      expect(screen.getByRole('alert').textContent).toMatch(/category/i)
+    })
+    expect(props.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('opens optional details and focuses the visible field when its value is invalid', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm()
+
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
+    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
+    await user.click(screen.getByText('Additional details'))
+    await user.type(screen.getByLabelText('Floor (optional)'), '1.5')
+    await user.click(screen.getByText('Additional details'))
+    expect(screen.getByText('Additional details').closest('details')?.open).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Additional details').closest('details')?.open).toBe(true)
+      expect(document.activeElement).toBe(screen.getByLabelText('Floor (optional)'))
+      expect(screen.getByText('Enter a whole-number floor.', { selector: 'span' })).toBeTruthy()
     })
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
@@ -86,9 +110,10 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props } = renderForm({ waypoint })
 
-    expect(screen.getByText(/Correction for/)).toBeTruthy()
+    expect(screen.getByText('Correction for')).toBeTruthy()
+    expect(screen.getByText('Additional details').closest('details')?.open).toBe(true)
     expect((screen.getByLabelText('Place name (optional)') as HTMLInputElement).value).toBe(waypoint.name)
-    await user.type(screen.getByLabelText('Correction reason'), 'The cooler has moved upstairs.')
+    await user.type(screen.getByLabelText('What needs correcting?'), 'The cooler has moved upstairs.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith({
@@ -111,7 +136,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       onSubmit: vi.fn(async () => { throw new CommunityWaypointSubmissionError('network') }),
     })
 
-    await user.selectOptions(screen.getByLabelText('Location type'), 'atm')
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
     await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -126,7 +151,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const name = '🧊'.repeat(80)
 
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: name } })
-    await user.selectOptions(screen.getByLabelText('Location type'), 'atm')
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name }), expect.any(AbortSignal))
@@ -137,7 +162,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     let resolveSubmission = (): void => undefined
     const onSubmit = vi.fn(async () => new Promise<void>((resolve) => { resolveSubmission = resolve }))
     renderForm({ onSubmit })
-    await user.selectOptions(screen.getByLabelText('Location type'), 'atm')
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
     await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -162,7 +187,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       },
     )
     const view = renderForm({ onSubmit })
-    await user.selectOptions(screen.getByLabelText('Location type'), 'atm')
+    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
     await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
     await waitFor(() => expect(submittedSignals).toHaveLength(1))

@@ -4,7 +4,7 @@ import {
   type CommunityWaypoint,
   type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
-import { GhostBackButton } from '../../../ui/ghost-back-button.tsx'
+import { BackButton } from '../../../ui/back-button.tsx'
 import { Button } from '../../../ui/button.tsx'
 import type { CommunityWaypointDiscovery } from './use-community-waypoint-discovery'
 import './community-waypoint-panel.css'
@@ -43,7 +43,7 @@ function WaypointDetails({
 
   return (
     <section className="community-waypoint-details" aria-labelledby="community-waypoint-detail-heading">
-      <GhostBackButton label="Community places" onClick={onBack} />
+      <BackButton mode="inline" label="Community places" onClick={onBack} />
       <div className="community-waypoint-details-scroll">
         <h3 id="community-waypoint-detail-heading" ref={headingRef} tabIndex={-1}>
           {waypoint.name}

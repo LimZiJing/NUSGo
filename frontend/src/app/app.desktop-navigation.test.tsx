@@ -244,9 +244,9 @@ describe('desktop shared navigation shell', () => {
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Suggest a place' }))
       await user.keyboard('{Enter}')
 
-      expect(await screen.findByText(/Reviewed before publishing\. No photos, photo links, or personal details\./)).toBeTruthy()
+      expect(await screen.findByText(/Reviewed before publishing\. No photos, photo links or personal details\./)).toBeTruthy()
       await user.type(screen.getByLabelText('Place name'), 'Quiet study nook')
-      await user.selectOptions(screen.getByLabelText('Location type'), 'water_cooler')
+      await user.selectOptions(screen.getByLabelText('Category'), 'water_cooler')
       await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
       expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
@@ -315,10 +315,10 @@ describe('desktop shared navigation shell', () => {
 
     expect(await screen.findByText(/^Correction for/)).toBeTruthy()
     expect((screen.getByLabelText(/Place name/) as HTMLInputElement).value).toBe(waypoint.name)
-    await user.type(screen.getByLabelText('Correction reason'), 'It has moved to the next floor.')
+    await user.type(screen.getByLabelText('What needs correcting?'), 'It has moved to the next floor.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
-    expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Correction received' })).toBeTruthy()
     expect(submittedBody).toMatchObject({
       kind: 'correction',
       waypointId: waypoint.id,
@@ -350,7 +350,7 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Suggest a place' }))
     await user.type(screen.getByLabelText('Place name'), 'Quiet study nook')
-    await user.selectOptions(screen.getByLabelText('Location type'), 'water_cooler')
+    await user.selectOptions(screen.getByLabelText('Category'), 'water_cooler')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
 
     expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
@@ -361,7 +361,8 @@ describe('desktop shared navigation shell', () => {
     act(() => onMapChange?.([103.8, 1.3]))
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
 
-    expect(screen.getByText('1.300000° N · 103.800000° E')).toBeTruthy()
+    expect(screen.getByText('1.300000° N')).toBeTruthy()
+    expect(screen.getByText('103.800000° E')).toBeTruthy()
     expect((screen.getByLabelText('Place name') as HTMLInputElement).value).toBe('Quiet study nook')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Adjust on map' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))

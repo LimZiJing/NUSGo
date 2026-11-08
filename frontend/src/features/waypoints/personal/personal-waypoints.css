@@ -182,7 +182,7 @@
 .personal-waypoint-list-search .search-field {
   min-height: 39px;
   border-radius: 11px;
-  background: var(--surface);
+  background: var(--surface-card);
 }
 
 .personal-waypoint-list-search input {
@@ -190,7 +190,7 @@
   border: 1px solid var(--border-card);
   border-radius: 11px;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--surface-card);
 }
 
 .personal-waypoint-list-filter-note {
@@ -276,7 +276,7 @@
   border: 1px solid var(--border-card);
   border-radius: var(--radius-control);
   color: var(--text-secondary);
-  background: var(--surface);
+  background: var(--surface-card);
 }
 
 .personal-waypoint-list-actions-trigger svg { width: 18px; height: 18px; }
@@ -671,7 +671,7 @@
   border: 1px solid var(--border-card);
   border-radius: 11px;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--surface-card);
   text-align: left;
   cursor: pointer;
 }
@@ -734,7 +734,7 @@
 .personal-waypoint-category-search .search-field {
   min-height: 38px;
   border-radius: 10px;
-  background: var(--surface);
+  background: var(--surface-card);
 }
 
 .personal-waypoint-category-search input {
@@ -742,7 +742,7 @@
   border: 1px solid var(--border-card);
   border-radius: 10px;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--surface-card);
 }
 
 .personal-waypoint-category-options {
@@ -923,7 +923,7 @@
   padding: var(--space-3);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: var(--surface-card);
 }
 .personal-waypoint-selected-location-icon {
   display: grid;

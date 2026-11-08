@@ -111,13 +111,13 @@
   .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'] {
     padding: 0 0 12px;
     border-radius: 0;
-    background: var(--surface-raised);
+    background: var(--surface);
   }
 
   .mobile-sheet-popup.more-panel-surface[data-page='release-notes'][data-detent='full'] {
     padding: 0 0 12px;
     border-radius: 0;
-    background: var(--surface-raised);
+    background: var(--surface);
   }
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .mobile-sheet-handle-row,

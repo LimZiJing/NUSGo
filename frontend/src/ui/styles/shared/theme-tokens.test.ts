@@ -163,6 +163,9 @@ describe('control token contrast', () => {
     const checks = [
       // Non-text boundary of secondary controls and chips (WCAG 1.4.11).
       ['--control-border', '--surface', 3],
+      // The same boundary where controls sit on a card rather than the page,
+      // e.g. the theme select in Settings → Appearance.
+      ['--control-border', '--surface-card', 3],
       // Secondary label and unselected chip label on the neutral control fill.
       ['--text-primary', '--surface-control', 4.5],
       // Primary button and selected chip label on the accent fill.
@@ -179,8 +182,104 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+  it.each(themes)('defines --control-border in the %s theme', (themeName) => {
+    expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
+  })
+
+  it.each(themes)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)
+    const loadLevelTokens = [
+      '--load-level-low',
+      '--load-level-medium',
+      '--load-level-high',
+      '--load-level-unknown',
+    ] as const
+    const arrivalSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
+
+    for (const foreground of loadLevelTokens) {
+      for (const background of arrivalSurfaces) {
+        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
+
+        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  it.each(themes)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --text-favorite paints star icons only, so WCAG 1.4.11's 3:1 for non-text graphics
+    // applies. --surface-card is the stops list card and --accent-soft the settings tile.
+    const favouriteSurfaces = ['--surface', '--surface-raised', '--surface-card', '--accent-soft'] as const
+
+    for (const background of favouriteSurfaces) {
+      const ratio = contrastRatio(resolveColour(styles, '--text-favorite'), resolveColour(styles, background))
+
+      expect(ratio, `${themeName}: --text-favorite on ${background}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it.each(themes)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --status-success-strong paints the recommended journey heading on a card;
+    // --text-success-strong is its text-named twin.
+    const successTokens = ['--text-success-strong', '--status-success-strong'] as const
+    const successSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
+
+    for (const foreground of successTokens) {
+      for (const background of successSurfaces) {
+        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
+
+        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  describe('departure row divider', () => {
+    const dividerOnCard = (themeName: string) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+
+      return contrastRatio(resolveColour(styles, '--border-divider'), resolveColour(styles, '--surface-card'))
+    }
+
+    it.each(themes)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+      const previous = contrastRatio(resolveColour(styles, '--border-subtle'), resolveColour(styles, '--surface-card'))
+
+      // The divider may only ever be as visible as, or more visible than, the token it replaced.
+      expect(dividerOnCard(themeName), `${themeName}: --border-divider on --surface-card`)
+        .toBeGreaterThanOrEqual(previous)
+    })
+
+    it.each(['light', 'nus', 'matcha', 'sakura'] as const)(
+      'keeps the %s theme divider on its palette --border-default step',
+      (themeName) => {
+        const styles = readStyleFile(`themes/${themeName}.css`)
+
+        // Only dark needs a heavier divider than the details panel already used.
+        expect(resolveColour(styles, '--border-divider'), `${themeName}: --border-divider`)
+          .toBe(resolveColour(styles, '--border-default'))
+      },
+    )
+
+    it('lifts the dark divider clear of the almost-invisible value it replaced', () => {
+      // The reported bug was a divider close to 1.05:1 against the card, which reads as no divider.
+      expect(dividerOnCard('dark'), 'dark: --border-divider on --surface-card').toBeGreaterThan(1.6)
+    })
+
+    it('keeps the dark divider quieter than the row text it separates', () => {
+      const styles = readStyleFile('themes/dark.css')
+      const card = resolveColour(styles, '--surface-card')
+      const divider = contrastRatio(resolveColour(styles, '--border-divider'), card)
+      const rowText = contrastRatio(resolveColour(styles, '--text-strong'), card)
+
+      // A separator must not compete with the departure times it sits between.
+      expect(divider, 'dark: divider vs --text-strong').toBeLessThan(rowText)
+    })
+  })
+
+
+  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+    const styles = readStyleFile('themes/' + themeName + '.css')
     const tokens = readCustomPropertyNames(styles)
 
     expect(tokens).toEqual(expect.arrayContaining(['--accent-selected', '--surface-control-hover']))
@@ -231,48 +330,5 @@ describe('control token contrast', () => {
 
     expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*box-shadow:\s*0 0 0 1px var\(--journey-route-color,\s*var\(--status-info\)\);/s)
     expect(readStyleFile('tokens.css')).not.toContain('--ring-journey-stop')
-  })
-
-  it.each(themes)('defines --control-border in the %s theme', (themeName) => {
-    expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
-  })
-
-  it.each(themes)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
-    const loadLevelTokens = [
-      '--load-level-low',
-      '--load-level-medium',
-      '--load-level-high',
-      '--load-level-unknown',
-    ] as const
-    const arrivalSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
-
-    for (const foreground of loadLevelTokens) {
-      for (const background of arrivalSurfaces) {
-        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
-
-        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
-      }
-    }
-  })
-
-  it.each(themes)('keeps favourite icons distinguishable in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
-
-    for (const background of ['--surface', '--surface-raised', '--accent-soft'] as const) {
-      const ratio = contrastRatio(resolveColour(styles, '--text-favorite'), resolveColour(styles, background))
-
-      expect(ratio, `${themeName}: --text-favorite on ${background}`).toBeGreaterThanOrEqual(3)
-    }
-  })
-
-  it.each(themes)('keeps strong success text readable on the %s theme surface', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
-    const ratio = contrastRatio(
-      resolveColour(styles, '--text-success-strong'),
-      resolveColour(styles, '--surface'),
-    )
-
-    expect(ratio, `${themeName}: --text-success-strong on --surface`).toBeGreaterThanOrEqual(4.5)
   })
 })

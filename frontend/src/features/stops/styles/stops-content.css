@@ -318,10 +318,6 @@
     border-top: 0;
   }
 
-  .stop-departures .stop-departure-row {
-    border-bottom-color: var(--border-default);
-  }
-
   .stop-departures .stop-departure-list-empty {
     padding: var(--space-2);
     color: var(--text-muted);
@@ -344,7 +340,7 @@
     gap: 0;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-divider);
     list-style: none;
   }
 
@@ -356,7 +352,7 @@
     min-height: var(--control-height-sm);
     box-sizing: border-box;
     padding: 2px 4px;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-divider);
   }
 
   .stop-departure-row .route-chip {
@@ -573,10 +569,10 @@
   .navigation-column .stops-content {
     display: flex;
     width: 100%;
-    height: 100%;
+    height: auto;
     max-height: none;
-    min-height: 0;
-    overflow: hidden;
+    min-height: 100%;
+    overflow: visible;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -585,7 +581,40 @@
   }
 
   .navigation-column .stops-content > .stops-content-panel {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-width: 0;
+  }
+
+  /*
+   * The desktop panel is the single vertical scroll owner for the Stops pane, so no
+   * descendant may claim a scroll range of its own. The shared scroll-container class
+   * covers the card list, the Favourites empty state and the details pane once a stop
+   * is selected; inside the panel they have no range left, and its
+   * overscroll-behavior: contain swallowed wheel input over a card or stop details
+   * while the panel gutter and selector stayed inert (#252).
+   */
+  .navigation-column .stops-content .navigation-panel-scroll-content {
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+  }
+
+  /* Lets the card list take its natural height so the panel scrolls it. */
+  .navigation-column .stops-content .stops-card-list {
+    flex: 0 0 auto;
+  }
+
+  /*
+   * Keeps the Nearby/Favourites switch reachable while the panel scrolls, matching
+   * the mobile sheet, where the selector sits outside the list's scroll container.
+   * The upward shadow paints the panel's own top padding in the surface colour, so
+   * scrolled cards do not peek through the gutter above the stuck row.
+   */
+  .navigation-column .stops-list-selector-region {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface-raised);
+    box-shadow: 0 calc(-1 * var(--space-4)) 0 var(--surface-raised);
   }
 }

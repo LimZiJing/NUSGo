@@ -19,7 +19,7 @@
   --surface-control: #d9b8c3;
   --surface-warning: #fff1cf;
   --surface-segmented-control: #e5d1d8;
-  --surface-card: #ead8df;
+  --surface-card: #f4e7eb;
   --surface-handle: #bd8e9f;
   --surface-journey-step: #704050;
 
@@ -34,9 +34,9 @@
   --text-secondary-strong: #7a5061;
   --text-disabled: #c7adb7;
   --text-warning: #7b5315;
-  --text-success-strong: #2f6c5a;
+  --text-success-strong: #2d6756;
   --text-error-strong: #963948;
-  --text-favorite: #b47d00;
+  --text-favorite: #8a6000;
   --bus-stop-default-color: #6b4050;
   --personal-waypoint-marker-blue: #5b83e6;
   --personal-waypoint-marker-red: #ed2224;
@@ -60,6 +60,7 @@
   --border-info: #bcb0df;
   --border-focus: #963b56;
   --border-card: #e0cdd3;
+  --border-divider: var(--border-default);
 
   --accent: #963b56;
   --accent-hover: #7d3048;
@@ -72,7 +73,7 @@
 
   --status-success: #2f6c5a;
   --status-success-surface: #dff1eb;
-  --status-success-strong: #2f6c5a;
+  --status-success-strong: #2d6756;
   --status-warning: #79520f;
   --status-warning-surface: #fff1cf;
   --status-warning-strong: #a66b11;

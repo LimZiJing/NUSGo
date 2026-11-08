@@ -19,7 +19,7 @@
     --surface-control: #2e303a;
     --surface-warning: #3d3020;
     --surface-segmented-control: #25324a;
-    --surface-card: #272934;
+    --surface-card: #2a2c37;
     --surface-handle: #94a3b8;
     --surface-journey-step: #64748b;
 
@@ -52,7 +52,7 @@
     --border-strong: #4b5563;
     --border-inverse: #cbd5e1;
     --border-control: #4b5563;
-    --control-border: color-mix(in srgb, var(--text-primary) 35%, var(--surface));
+    --control-border: color-mix(in srgb, var(--text-primary) 45%, var(--surface));
     --border-muted: #3a3d48;
     --border-faint: #363944;
     --border-success: #166534;
@@ -60,6 +60,9 @@
     --border-info: #2563eb;
     --border-focus: #94a3b8;
     --border-card: #363944;
+    /* Dark border tones compress against the card surface (--border-subtle is about 1.1:1),
+       so the row divider takes the stronger step to stay visible. */
+    --border-divider: var(--border-strong);
 
     --accent: #60a5fa;
     --accent-hover: #93c5fd;

@@ -48,13 +48,13 @@ Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 
 ### Tokens
 
-Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per-theme tokens in the four theme files (Light, Dark, Matcha, Sakura). The one new colour token, `--control-border`, is defined in each theme file.
+Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per-theme tokens in the five theme files (Light, Dark, NUS, Matcha, Sakura). The one new colour token, `--control-border`, is defined in each theme file.
 
 | Token | Value | Purpose |
 | --- | --- | --- |
 | `--control-height-sm` / `--control-height-lg` | 36px / 44px | Control heights |
 | `--radius-control` / `--radius-control-lg` | 10px / 12px (`--radius-lg`) | Button and menu item corners; the large size uses the second |
-| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 50%, Dark 35%, Matcha 57%, Sakura 55%) | Border of secondary buttons and unselected chips |
+| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 55%, Dark 45%, NUS 58%, Matcha 65%, Sakura 65%) | Border of secondary buttons and unselected chips |
 | `--radius-pill` | 999px | Chips and pills |
 | `--font-size-control` / `--font-size-control-lg` | 14px / 16px | Control text by size |
 | `--font-size-label` | 12px | Pill text |
@@ -63,9 +63,17 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; colours come from the per
 
 ### Why `--control-border` exists
 
-A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages above were chosen so it reaches at least 3:1 against `--surface` in all four themes. `theme-tokens.test.ts` checks this, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages above were chosen so it reaches at least 3:1 against both `--surface` and `--surface-card` in all five themes. Both matter: a control can sit on the page (a button on the navigation column) or on a card (the theme select in Settings → Appearance), and the card is lighter than the page in every theme, so it is the stricter background. `theme-tokens.test.ts` checks both, plus: `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+
+Light sits at 55% rather than 50% because #629 darkened light `--surface` to `#f1f5f9` for visible layering. At 50% the mix resolves to `#888f98` on that surface — 2.98:1, just under the 3:1 threshold. 55% restores it to 3.41:1.
+
+Dark sits at 45% rather than 35% for the same reason on the card. #629 lightened dark `--surface-card` to `#2a2c37`, which took the 35% mix from 2.45:1 to 2.35:1 against it — below 3:1 before the change and lower after. 45% resolves to `#797a7f`, which clears 3:1 against every surface the token renders on: 3.24 on the card, 3.78 on `--surface-raised`, 4.18 on `--surface`, and 3.06 on `--surface-control`.
 
 `--focus-ring` already exists as a per-theme colour used by older controls and is unchanged. The mobile sheet handle keeps its own focus tint; that is a documented exception.
+
+### Favourite and success-strong tokens
+
+`--text-favorite` paints star icons only, never text, so WCAG 1.4.11's 3:1 for non-text graphics applies rather than the 4.5:1 text threshold. The test holds it at 3:1 on `--surface`, `--surface-raised`, `--surface-card` (stop cards) and `--accent-soft` (the settings favourite tile) in every theme, and each theme keeps the star a recognisable gold or amber. `--text-success-strong` and `--status-success-strong` do carry text, so both are held at 4.5:1 on `--surface`, `--surface-raised` and `--surface-card`.
 
 ## Select
 

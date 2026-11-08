@@ -44,3 +44,41 @@ export function subscribeToPushClicks(onTarget: (target: PushClickTarget) => voi
   navigator.serviceWorker.addEventListener('message', listener)
   return () => navigator.serviceWorker.removeEventListener('message', listener)
 }
+
+export interface LaunchPushClickOptions {
+  /** The current `window.location.search`, or the launch URL handed to the app. */
+  readonly search: string
+  /** Performs the in-app navigation for a launch link. */
+  readonly open: (target: PushClickTarget) => void
+  /** Drops the query string so a reload does not repeat the navigation. */
+  readonly clearQuery: () => void
+  /** Schedules the work and returns a cancel function. Defaults to a zero-delay timeout. */
+  readonly schedule?: (run: () => void) => () => void
+}
+
+/**
+ * Handles a push link on app launch, where no service-worker message exists.
+ *
+ * The navigation is scheduled, not immediate, because it depends on state that is not ready on
+ * the first render. The query is cleared only inside that scheduled work: clearing it up front
+ * loses the link if the effect is cleaned up before the timeout runs, which is exactly what
+ * StrictMode does on every mount. Leaving it in place until the navigation actually happens
+ * means the second mount still finds it.
+ *
+ * Returns a cancel function for the effect's cleanup.
+ */
+export function scheduleLaunchPushClick(options: LaunchPushClickOptions): () => void {
+  const target = parsePushClickTarget(options.search)
+  if (!target) return () => undefined
+
+  const schedule = options.schedule ?? defaultSchedule
+  return schedule(() => {
+    options.open(target)
+    options.clearQuery()
+  })
+}
+
+function defaultSchedule(run: () => void): () => void {
+  const timeout = window.setTimeout(run, 0)
+  return () => window.clearTimeout(timeout)
+}

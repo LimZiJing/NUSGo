@@ -10,7 +10,7 @@ const PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckj
 const subscription = {
   endpoint: 'https://fcm.googleapis.com/fcm/send/abc123:def-456',
   keys: { p256dh: 'BCV2Y0YnotzQ', auth: 'k8Z0dP2vG2s' },
-  topic: 'service-updates',
+  topic: 'service-updates' as const,
 }
 
 const servers: Awaited<ReturnType<typeof listenHttpServer>>[] = []
@@ -21,11 +21,16 @@ after(async () => {
 
 interface ServerOptions {
   readonly push?: boolean
+  readonly maxSubscriptions?: number
   readonly subscriptionRateLimitMaxRequests?: number
 }
 
 async function withServer(
-  run: (baseUrl: string, store: ReturnType<typeof createPushSubscriptionStore>) => Promise<void>,
+  run: (
+    baseUrl: string,
+    store: ReturnType<typeof createPushSubscriptionStore>,
+    cap: ReturnType<typeof createNotificationCap>,
+  ) => Promise<void>,
   options: ServerOptions = {},
 ): Promise<void> {
   const config = loadBackendConfig({
@@ -40,7 +45,7 @@ async function withServer(
         : {}),
     }),
   })
-  const store = createPushSubscriptionStore()
+  const store = createPushSubscriptionStore({ maxSubscriptions: options.maxSubscriptions })
   const cap = createNotificationCap({ maxPerHour: 4 })
   const server = await listenHttpServer(
     createApp(config, null, null, null, { store, cap }),
@@ -51,7 +56,7 @@ async function withServer(
   const address = server.address()
   if (!address || typeof address === 'string') throw new Error('Test server did not expose its port')
   try {
-    await run('http://127.0.0.1:' + address.port, store)
+    await run('http://127.0.0.1:' + address.port, store, cap)
   } finally {
     await closeHttpServer(server)
   }
@@ -101,18 +106,37 @@ describe('push subscription routes', () => {
     })
   })
 
-  it('rejects a non-HTTPS endpoint, which could point the sender at any host', async () => {
+  it('rejects endpoints that are not a supported push service on the default HTTPS port', async () => {
     await withServer(async (baseUrl, store) => {
       for (const endpoint of [
         'http://push.example.com/send/a',
-        'https://user:pass@push.example.com/send/a',
+        'https://user:pass@fcm.googleapis.com/send/a',
         'https://push.example.com/send/a\nx',
+        'https://fcm.googleapis.com:8443/fcm/send/a',
+        'https://fcm.googleapis.com.attacker.test/fcm/send/a',
+        'https://localhost/fcm/send/a',
+        'https://127.0.0.1:8002/x',
+        'https://10.0.0.5/fcm/send/a',
       ]) {
         const response = await post(baseUrl, '/api/push/subscriptions', { ...subscription, endpoint })
         assert.equal(response.status, 400, endpoint)
         assert.equal(((await response.json()) as { code?: string }).code, 'invalid_request')
       }
       assert.equal(store.size, 0)
+    })
+  })
+
+  it('accepts each supported push service host', async () => {
+    await withServer(async (baseUrl, store) => {
+      for (const endpoint of [
+        'https://fcm.googleapis.com/fcm/send/a',
+        'https://updates.push.services.mozilla.com/wpush/v2/a',
+        'https://web.push.apple.com/QGa',
+      ]) {
+        const response = await post(baseUrl, '/api/push/subscriptions', { ...subscription, endpoint })
+        assert.equal(response.status, 201, endpoint)
+      }
+      assert.equal(store.size, 3)
     })
   })
 
@@ -164,6 +188,19 @@ describe('push subscription routes', () => {
     })
   })
 
+  it('removes an endpoint stored before the registration allowlist existed', async () => {
+    await withServer(async (baseUrl, store) => {
+      // A record from an earlier deployment whose host the allowlist no longer accepts must still
+      // be removable, or the owner could never unsubscribe from it.
+      const legacyEndpoint = 'https://push.example.com/send/legacy'
+      store.add({ endpoint: legacyEndpoint, keys: subscription.keys, topic: 'service-updates' })
+
+      const response = await post(baseUrl, '/api/push/subscriptions/remove', { endpoint: legacyEndpoint })
+      assert.equal(response.status, 204)
+      assert.equal(store.size, 0)
+    })
+  })
+
   it('rate limits subscription writes per client', async () => {
     await withServer(async (baseUrl, store) => {
       const responses: number[] = []
@@ -184,5 +221,55 @@ describe('push subscription routes', () => {
       assert.equal(response.status, 503)
       assert.equal(((await response.json()) as { code?: string }).code, 'not_ready')
     }, { push: false })
+  })
+
+  it('resets the delivered-notification cap when the same endpoint re-registers', async () => {
+    await withServer(async (baseUrl, _store, cap) => {
+      const maxPerHour = 4
+      for (let index = 0; index < maxPerHour; index += 1) {
+        assert.equal(cap.hasCapacity(subscription.endpoint), true)
+        cap.reserve(subscription.endpoint)?.commit()
+      }
+      assert.equal(cap.hasCapacity(subscription.endpoint), false)
+
+      const response = await post(baseUrl, '/api/push/subscriptions', subscription)
+
+      assert.equal(response.status, 201)
+      assert.equal(cap.hasCapacity(subscription.endpoint), true)
+    })
+  })
+
+  it('resets the delivered-notification cap when the endpoint unsubscribes', async () => {
+    await withServer(async (baseUrl, _store, cap) => {
+      for (let index = 0; index < 4; index += 1) cap.reserve(subscription.endpoint)?.commit()
+      assert.equal(cap.hasCapacity(subscription.endpoint), false)
+
+      const response = await post(baseUrl, '/api/push/subscriptions/remove', { endpoint: subscription.endpoint })
+
+      assert.equal(response.status, 204)
+      assert.equal(cap.hasCapacity(subscription.endpoint), true)
+    })
+  })
+})
+
+
+describe('push enrollment capacity', () => {
+  it('returns a retryable failure without evicting riders or resetting their cap', async () => {
+    await withServer(async (baseUrl, store, cap) => {
+      store.add(subscription)
+      for (let index = 0; index < 4; index += 1) cap.reserve(subscription.endpoint)?.commit()
+      const incumbent = store.get(subscription.endpoint)
+      const newcomer = { ...subscription, endpoint: 'https://fcm.googleapis.com/fcm/send/newcomer' }
+
+      const denied = await post(baseUrl, '/api/push/subscriptions', newcomer)
+      assert.equal(denied.status, 503)
+      assert.equal(store.get(subscription.endpoint), incumbent)
+      assert.equal(store.get(newcomer.endpoint), null)
+      assert.equal(cap.hasCapacity(subscription.endpoint), false)
+
+      assert.equal((await post(baseUrl, '/api/push/subscriptions/remove', { endpoint: subscription.endpoint })).status, 204)
+      assert.equal((await post(baseUrl, '/api/push/subscriptions', newcomer)).status, 201)
+      assert.notEqual(store.get(newcomer.endpoint), null)
+    }, { maxSubscriptions: 1 })
   })
 })

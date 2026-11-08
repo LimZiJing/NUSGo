@@ -185,6 +185,11 @@ async function requestPermission(): Promise<PushPermission> {
  *
  * Shared by service updates and reminders: a browser holds one endpoint, so both topics reuse the
  * same subscription rather than asking the browser to subscribe twice.
+ *
+ * A subscription is bound to the VAPID key it was created with and cannot be rotated in place, so
+ * one made for a previous key is removed from the server and cancelled before a replacement is
+ * created. A failed server removal stops the replacement: the old endpoint must not be orphaned
+ * on the server while the browser silently moves to a new one.
  */
 async function obtainSubscription(client: PushSubscriptionClient): Promise<{
   endpoint: string
@@ -194,10 +199,22 @@ async function obtainSubscription(client: PushSubscriptionClient): Promise<{
   if (!publicKey) throw new PushSubscriptionError('not-configured')
 
   const registration = await getRegistration()
-  const existing = await registration.pushManager.getSubscription()
-  const subscription = existing ?? await registration.pushManager.subscribe({
+  const applicationServerKey = base64UrlToUint8Array(publicKey)
+  let subscription = await registration.pushManager.getSubscription()
+  if (subscription) {
+    const existingKey = subscription.options.applicationServerKey
+    const existingBytes = existingKey ? new Uint8Array(existingKey) : null
+    const matchesKey = existingBytes?.length === applicationServerKey.length &&
+      existingBytes.every((byte, index) => byte === applicationServerKey[index])
+    if (!matchesKey) {
+      await client.unregister(subscription.endpoint)
+      if (!await subscription.unsubscribe()) throw new PushSubscriptionError('invalid-subscription')
+      subscription = null
+    }
+  }
+  subscription ??= await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: base64UrlToUint8Array(publicKey),
+    applicationServerKey,
   })
   const { endpoint, keys } = subscription.toJSON()
   if (!endpoint || !keys?.p256dh || !keys.auth) throw new PushSubscriptionError('invalid-subscription')
@@ -230,10 +247,13 @@ export async function enablePush(
 /**
  * Forgets this browser's service-update subscription on the server.
  *
- * The server call is attempted first so a failure there leaves the local preference intact and
- * the toggle honest. The browser subscription is cancelled only when no alight reminder still
- * depends on it: both topics share one endpoint, so cancelling it here would silently stop
- * reminders the rider never asked to turn off.
+ * Both the saved endpoint and the browser's current endpoint are removed before the browser
+ * subscription is cancelled, so an endpoint the browser refreshed since enrollment is not left
+ * on the server. A failed server removal keeps the saved preference for a retry.
+ *
+ * The browser subscription is cancelled only when no alight reminder still depends on it: both
+ * topics share one endpoint, so cancelling it here would silently stop reminders the rider never
+ * asked to turn off.
  */
 export async function disablePush(client: PushSubscriptionClient): Promise<PushPreference | null> {
   const preference = readPushPreference()
@@ -241,6 +261,10 @@ export async function disablePush(client: PushSubscriptionClient): Promise<PushP
   const subscription = await registration?.pushManager.getSubscription()
   const endpoint = subscription?.endpoint ?? preference?.endpoint ?? null
 
+  // The saved endpoint can differ from the current one after a browser refresh or key rotation.
+  if (preference?.endpoint && preference.endpoint !== endpoint) {
+    await client.unregister(preference.endpoint)
+  }
   if (endpoint) await client.unregister(endpoint)
   const reminder = readReminderPreference()
   if (!reminder || reminder.endpoint !== endpoint) await subscription?.unsubscribe()

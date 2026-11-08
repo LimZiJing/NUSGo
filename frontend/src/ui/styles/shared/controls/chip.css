@@ -52,7 +52,7 @@
 
 @media (hover: hover) {
   .chip:not(:disabled):not([aria-pressed='true']):hover {
-    filter: brightness(0.85);
+    background-color: var(--surface-control-hover);
   }
 }
 

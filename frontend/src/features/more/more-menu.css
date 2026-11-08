@@ -4,6 +4,7 @@
   text-align: left;
 }
 
+/* Destination rows keep their card layout here; Button owns shared control behavior. */
 .more-menu-row {
   display: flex;
   min-height: 54px;
@@ -27,8 +28,6 @@
   flex: 0 0 34px;
   place-items: center;
   border-radius: 10px;
-  color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .more-menu-row-icon svg {
@@ -74,5 +73,8 @@
 }
 
 @media (hover: hover) {
-  .more-menu-row:hover { background: var(--surface-raised); }
+  /* Keep the established More row fill above Button's shared hover rule. */
+  .button.more-menu-row[data-hover-treatment='custom']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background: var(--surface-raised);
+  }
 }

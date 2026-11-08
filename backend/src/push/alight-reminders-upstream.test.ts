@@ -8,6 +8,7 @@ import { loadBackendConfig } from '../config.ts'
 import { validateCanonicalData, type BackendData } from '../canonical-data.ts'
 import { createBackendLiveData } from '../live-data/runtime.ts'
 import { createAlightReminderPublisher } from '../push/alight-reminders.ts'
+import { createNotificationCap } from '../push/notification-cap.ts'
 import { createAlightReminderRegistry } from '../push/reminder-registry.ts'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
@@ -102,13 +103,7 @@ describe('alight reminders and upstream call volume', () => {
     const sent: string[] = []
     const publisher = createAlightReminderPublisher({
       registry,
-      push: {
-        publicKey: 'BPublicKeyValue',
-        privateKey: 'PrivateKeyValue',
-        subject: 'mailto:test@example.com',
-        subscriptionRateLimitMaxRequests: 10,
-        notificationsPerHourCap: 4,
-      },
+      cap: createNotificationCap({ maxPerHour: 4 }),
       stopName: () => stop.longName,
       sendNotification: async (_subscription, payload) => {
         sent.push(payload)

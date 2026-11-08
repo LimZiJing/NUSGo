@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { ShuttleArrivalSnapshot } from '@nusgo/shared'
-import type { PushConfig } from '../config.ts'
 import {
   createAlightReminderPublisher,
   evaluateAlightReminders,
   type ReminderSkipReason,
 } from './alight-reminders.ts'
 import type { PushSendNotification } from './delivery.ts'
+import { createNotificationCap } from './notification-cap.ts'
 import {
   DEFAULT_ALIGHT_REMINDER_TTL_MS,
   createAlightReminderRegistry,
@@ -15,13 +15,7 @@ import {
   type AlightReminderRegistration,
 } from './reminder-registry.ts'
 
-const push: PushConfig = {
-  publicKey: 'BPublicKeyValue',
-  privateKey: 'PrivateKeyValue',
-  subject: 'mailto:test@example.com',
-  subscriptionRateLimitMaxRequests: 10,
-  notificationsPerHourCap: 4,
-}
+const notificationsPerHourCap = 4
 
 const observedAt = '2026-11-06T10:00:00Z'
 const nowMs = Date.parse(observedAt)
@@ -228,23 +222,26 @@ describe('alight reminder publisher', () => {
   }
 
   function setup(options: SetupOptions = {}) {
-    const registry = createAlightReminderRegistry({
-      now: options.now ?? (() => nowMs),
-    })
+    const now = options.now ?? (() => nowMs)
+    const registry = createAlightReminderRegistry({ now })
     registry.upsert(registration('a'))
     const payloads: string[] = []
     const sendNotification: PushSendNotification = options.sendNotification ?? (async (_subscription, payload) => {
       payloads.push(payload)
       return { statusCode: 201 }
     })
+    const cap = createNotificationCap({
+      maxPerHour: options.notificationsPerHourCap ?? notificationsPerHourCap,
+      now,
+    })
     const publisher = createAlightReminderPublisher({
       registry,
-      push: { ...push, notificationsPerHourCap: options.notificationsPerHourCap ?? push.notificationsPerHourCap },
+      cap,
       stopName: (stopId) => (stopId === 'COM3' ? 'COM3 Opp' : null),
       sendNotification,
-      now: options.now ?? (() => nowMs),
+      now,
     })
-    return { registry, payloads, publisher }
+    return { registry, payloads, publisher, cap }
   }
 
   it('pushes one reminder payload with the stop deep link and reminder topic', async () => {
@@ -283,7 +280,7 @@ describe('alight reminder publisher', () => {
   it('keeps the watch eligible when a send fails for a transient reason', async () => {
     let failNext = true
     const streamed: string[] = []
-    const { registry, publisher } = setup({
+    const { registry, publisher, cap } = setup({
       sendNotification: async (_subscription, payload) => {
         if (failNext) {
           failNext = false
@@ -296,9 +293,9 @@ describe('alight reminder publisher', () => {
 
     const failed = await publisher.publish(snapshot({ seconds: 90 }))
     assert.equal(failed.notificationsSent, 0)
-    // Neither the watch nor the announced state was consumed by the failure.
+    // Neither the watch nor the reserved allowance was consumed by the failure.
     assert.notEqual(registry.get(endpoint('a')), null)
-    assert.equal(publisher.cap.trackedCount, 0)
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
 
     const retried = await publisher.publish(snapshot({ seconds: 80 }))
     assert.equal(retried.notificationsSent, 1)
@@ -307,12 +304,26 @@ describe('alight reminder publisher', () => {
   })
 
   it('does not spend the hourly cap or remove the watch when the cap refuses the send', async () => {
-    const { registry, payloads, publisher } = setup({ notificationsPerHourCap: 0 })
+    const { registry, payloads, publisher, cap } = setup({ notificationsPerHourCap: 0 })
 
     const result = await publisher.publish(snapshot({ seconds: 60 }))
 
     assert.equal(result.notificationsSent, 0)
     assert.equal(payloads.length, 0)
+    assert.notEqual(registry.get(endpoint('a')), null)
+    // A refused reservation leaves no trace, so the watch can fire once the window reopens.
+    assert.equal(cap.trackedCount, 0)
+  })
+
+  it('spends one shared allowance for both topics rather than one per publisher', async () => {
+    const { registry, publisher, cap } = setup({ notificationsPerHourCap: 1 })
+
+    assert.equal((await publisher.publish(snapshot({ seconds: 90 }))).notificationsSent, 1)
+    // The reminder spent the only slot this hour, so the next bus cannot push even though the
+    // publisher itself has no private budget left to give.
+    registry.upsert(registration('a'))
+    assert.equal((await publisher.publish(snapshot({ seconds: 90 }))).notificationsSent, 0)
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
     assert.notEqual(registry.get(endpoint('a')), null)
   })
 

@@ -57,4 +57,22 @@ describe('PushNotificationsSection', () => {
     expect(screen.getByRole('alert').textContent).toBe('Notifications could not be changed. Try again.')
     expect(screen.getByText(/NUSGo only asks for permission/)).toBeTruthy()
   })
+
+  it('keeps an empty live region mounted before any failure, so the first one is announced', () => {
+    const view = render(<PushNotificationsSection {...defaults} />)
+
+    // The region must exist and be silent on first render; a region created together with its
+    // text is frequently skipped by screen readers.
+    const region = screen.getByRole('alert')
+    expect(region.textContent).toBe('')
+    expect(document.body.contains(region)).toBe(true)
+
+    view.rerender(
+      <PushNotificationsSection {...defaults} errorMessage="Notifications could not be changed. Try again." />,
+    )
+
+    // The same element is reused rather than replaced.
+    expect(screen.getByRole('alert')).toBe(region)
+    expect(region.textContent).toBe('Notifications could not be changed. Try again.')
+  })
 })

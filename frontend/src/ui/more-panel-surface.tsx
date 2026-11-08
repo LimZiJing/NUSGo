@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react'
-import { ArrowLeftIcon, CloseIcon } from './icons'
+import { BackButton } from './back-button'
 
 export type MorePanelPage =
   | 'closed'
@@ -44,32 +44,15 @@ export function MorePanelSurface({
         aria-live="polite"
       >{statusMessage}</p>}
       <header className="more-panel-header">
-        {isMenu ? <h2 id="more-panel-heading">{title}</h2> : (
-          <>
-            <button
-              className="more-back-button"
-              ref={initialFocusRef}
-              type="button"
-              aria-label="Back to previous view"
-              title="Back"
-              onClick={onClose}
-            >
-              <ArrowLeftIcon />
-            </button>
-            <h2 id="more-panel-heading">{title}</h2>
-          </>
-        )}
-        {headerAction}
-        {isMenu && <button
-          className="more-close-button"
+        <BackButton
+          mode="header"
+          label="Back to previous view"
+          title="Back"
           ref={initialFocusRef}
-          type="button"
-          aria-label="Close More"
-          title="Close More"
           onClick={onClose}
-        >
-          <CloseIcon />
-        </button>}
+        />
+        <h2 id="more-panel-heading">{title}</h2>
+        {headerAction}
       </header>
       <div className="more-panel-content-scroll" id="more-panel-scroll">
         {children}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { IconProps } from '../../../../ui/icons'
+import { Button } from '../../../../ui/button'
 import type { PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import {
   DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
@@ -44,12 +45,12 @@ export function PersonalWaypointAppearanceFields({
   const MarkerIcon = markerIcons[markerIcon]
 
   return <section className="personal-waypoint-appearance" aria-labelledby="personal-waypoint-appearance-label">
-    <button
+    <Button
       className="personal-waypoint-appearance-trigger"
       type="button"
-      aria-label={`Marker style, ${markerColorLabel} marker, ${markerIconLabel} icon`}
-      aria-expanded={isExpanded}
-      aria-controls="personal-waypoint-appearance-options"
+      ariaLabel={`Marker style, ${markerColorLabel} marker, ${markerIconLabel} icon`}
+      expanded={isExpanded}
+      controls="personal-waypoint-appearance-options"
       onClick={() => setIsExpanded((expanded) => !expanded)}
     >
       <span id="personal-waypoint-appearance-label" className="personal-waypoint-appearance-title">Marker style</span>
@@ -61,7 +62,7 @@ export function PersonalWaypointAppearanceFields({
         <MarkerIcon className="personal-waypoint-marker-preview-icon" size={14} />
       </span>
       <ChevronDownIcon className="personal-waypoint-appearance-chevron" size={18} aria-hidden />
-    </button>
+    </Button>
 
     <div id="personal-waypoint-appearance-options" className="personal-waypoint-appearance-options" hidden={!isExpanded}>
       <fieldset className="personal-waypoint-choice-group">

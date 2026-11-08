@@ -53,7 +53,7 @@ interface StopsWorkspaceProps {
   readonly backLabel: string
   readonly onBackToStops: (backToStops: () => void) => void
   readonly onSelectOppositeStop: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
 }
 
@@ -164,6 +164,7 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
         locationNotice={workflow.locationNotice}
         noLiveData={workflow.noLiveData}
         liveArrivalMessage={workflow.liveArrivalMessage}
+        isMobileViewport={isMobileViewport}
         onSelectStopList={workflow.selectStopList}
         onToggleFavorite={workflow.toggleFavorite}
         onToggleExpanded={workflow.toggleExpanded}

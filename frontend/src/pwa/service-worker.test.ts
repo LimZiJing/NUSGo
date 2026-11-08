@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it, vi } from 'vitest'
+import { parsePushNotificationPayload } from '@nusgo/shared'
 
 function worker(cached: Response | undefined, fetch = vi.fn(() => new Promise<Response>(() => {}))) {
   const handlers = new Map<string, (event: unknown) => void>()
@@ -236,5 +237,33 @@ describe('push notifications', () => {
     await runtime.click({ url: 'https://evil.test/' })
     expect(runtime.messages).toEqual([])
     expect(runtime.opened).toEqual([])
+  })
+
+  it.each([
+    ['missing tag', { ...validPayload, tag: '' }],
+    ['missing title', { ...validPayload, title: '' }],
+    ['over-long title', { ...validPayload, title: 'x'.repeat(81) }],
+    ['missing body', { ...validPayload, body: '' }],
+    ['over-long tag', { ...validPayload, tag: 'x'.repeat(129) }],
+    ['empty URL', { ...validPayload, url: '' }],
+    ['URL with whitespace', { ...validPayload, url: '?stop=COM 3' }],
+    ['URL with a hash', { ...validPayload, url: '?stop=COM3#x' }],
+    ['null topic', { ...validPayload, topic: null }],
+    ['array payload', [{ ...validPayload }]],
+  ])('drops the same malformed payload the shared validator drops: %s', async (_label, payload) => {
+    expect(parsePushNotificationPayload(payload)).toBeNull()
+    const runtime = pushWorker()
+    await runtime.push(payload)
+    expect(runtime.shown).toHaveLength(0)
+  })
+
+  it.each([
+    ['valid payload', validPayload],
+    ['encoded stop id', { ...validPayload, url: '?stop=COM3%20Opp' }],
+  ])('accepts the same well-formed payload the shared validator accepts: %s', async (_label, payload) => {
+    expect(parsePushNotificationPayload(payload)).toEqual(payload)
+    const runtime = pushWorker()
+    await runtime.push(payload)
+    expect(runtime.shown).toHaveLength(1)
   })
 })

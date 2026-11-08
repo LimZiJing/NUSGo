@@ -1,13 +1,7 @@
-import {
-  SHUTTLE_ARRIVAL_FRESHNESS_MS,
-  createAlightReminderPayload,
-  type PushNotificationPayload,
-  type ShuttleArrivalSnapshot,
-  type ShuttleServiceStatus,
-} from '@nusgo/shared'
-import type { PushConfig } from '../config.ts'
+import type { PushNotificationPayload, ShuttleArrivalSnapshot, ShuttleServiceStatus } from '@nusgo/shared'
+import { SHUTTLE_ARRIVAL_FRESHNESS_MS, createAlightReminderPayload } from '@nusgo/shared'
 import { deliverPushNotifications, type PushSendNotification } from './delivery.ts'
-import { createNotificationCap, type NotificationCap } from './notification-cap.ts'
+import type { NotificationCap } from './notification-cap.ts'
 import type { AlightReminderRecord, AlightReminderRegistry } from './reminder-registry.ts'
 
 /**
@@ -159,7 +153,14 @@ export function evaluateAlightReminders(
 
 export interface AlightReminderPublisherOptions {
   readonly registry: AlightReminderRegistry
-  readonly push: PushConfig
+  /**
+   * The process-wide hourly cap, shared with the service-update publisher and the HTTP routes.
+   *
+   * Delivery reserves a slot before each send and either commits or releases it, so one endpoint
+   * cannot spend more than its hour across both topics, and a refused reservation leaves the watch
+   * in place for a later snapshot.
+   */
+  readonly cap: NotificationCap
   readonly sendNotification: PushSendNotification
   /** Resolves a canonical stop name for a notification body. */
   readonly stopName: (stopId: string) => string | null
@@ -208,7 +209,7 @@ export function createAlightReminderPublisher(
   options: AlightReminderPublisherOptions,
 ): AlightReminderPublisher {
   const now = options.now ?? Date.now
-  const cap = createNotificationCap({ maxPerHour: options.push.notificationsPerHourCap, now })
+  const cap = options.cap
   // Endpoints with a delivery started but not yet settled. A second snapshot that arrives while
   // the first send is still awaiting the push service must not send the same reminder again.
   const inFlight = new Set<string>()
@@ -236,14 +237,14 @@ export function createAlightReminderPublisher(
     }
 
     const dueByEndpoint = new Map(evaluation.due.map((candidate) => [candidate.record.endpoint, candidate]))
-    // Reading, not spending, the hourly cap: the watch must survive a refused send so the rider
-    // still gets the reminder once the window reopens.
+    // Choosing a payload does not spend the hourly cap: delivery reserves the slot and commits it
+    // only after the push service accepts the send, so a refused reservation leaves the watch
+    // eligible for the next snapshot rather than silently dropping the reminder.
     const payloadFor = (record: AlightReminderRecord): PushNotificationPayload | null => {
       const match = dueByEndpoint.get(record.endpoint)
       if (!match) return null
       const stopName = options.stopName(match.stopId)
       if (!stopName) return null
-      if (!cap.canSend(record.endpoint)) return null
       return createAlightReminderPayload(stopName, match.stopId, match.routeId, match.minutesUntilArrival)
     }
 
@@ -263,15 +264,16 @@ export function createAlightReminderPublisher(
         pruner,
         options.sendNotification,
         evaluation.due.map(({ record }) => record),
-        { payloadFor },
+        {
+          cap,
+          payloadFor,
+          // Retiring the watch here keeps it one-shot: delivery committed the cap slot already, and
+          // the generation check leaves a watch re-registered during the send in place.
+          onDelivered: (record) => {
+            options.registry.removeIfCurrent(record.endpoint, record.generation)
+          },
+        },
       )
-
-      for (const endpoint of summary.deliveredEndpoints) {
-        // Record the send only now that it actually happened, then retire this exact watch.
-        cap.tryConsume(endpoint)
-        const generation = generations.get(endpoint)
-        if (generation !== undefined) options.registry.removeIfCurrent(endpoint, generation)
-      }
 
       return {
         notificationsSent: summary.deliveredCount,

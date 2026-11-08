@@ -76,7 +76,10 @@ export function registerPushRoutes(app: Express, dependencies: PushRouteDependen
           sendApiError(response, 400, 'Push subscription is invalid', 'invalid_request')
           return
         }
-        store.add(registration)
+        if (!store.add(registration)) {
+          sendApiError(response, 503, 'Notification registration is at capacity. Try again later.', 'not_ready')
+          return
+        }
         // Re-registering resets this endpoint's hourly window rather than inheriting an old one.
         cap.reset(registration.endpoint)
         response.status(201).json({ topic: registration.topic } satisfies PushSubscriptionResponse)

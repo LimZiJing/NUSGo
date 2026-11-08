@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { SavedListRow } from './saved-list-row'
 
 describe('SavedListRow', () => {
@@ -20,5 +20,24 @@ describe('SavedListRow', () => {
     )
 
     expect(rowRef.current).toBe(screen.getByRole('listitem'))
+  })
+
+  it('uses a shared Button for selectable row copy', () => {
+    const onSelect = vi.fn()
+    render(
+      <ul>
+        <SavedListRow
+          leading={<span />}
+          title="Quiet bench"
+          subtitle="Rest areas"
+          onSelect={onSelect}
+        />
+      </ul>,
+    )
+
+    const selectButton = screen.getByRole('button', { name: 'Quiet bench, Rest areas' })
+    expect(selectButton.classList.contains('button')).toBe(true)
+    fireEvent.click(selectButton)
+    expect(onSelect).toHaveBeenCalledOnce()
   })
 })

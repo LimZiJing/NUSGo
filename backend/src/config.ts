@@ -176,6 +176,26 @@ function isPrivateNetworkAddress(hostname: string): boolean {
     localName.endsWith('.local') || localName.endsWith('.internal') || !localName.includes('.')
 }
 
+function decodeBase64Url(value: string): Buffer | null {
+  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(value)) return null
+  const bytes = Buffer.from(value.replace(/=+$/, '').replace(/-/g, '+').replace(/_/g, '/'), 'base64')
+  return bytes.length > 0 ? bytes : null
+}
+
+/**
+ * A push service may contact the operator at this address, so it must be a real, absolute
+ * contact URL rather than a bare host string.
+ */
+function isValidPushSubject(value: string): boolean {
+  if (/^mailto:[^\s@]+@[^\s@]+$/.test(value)) return true
+  if (!value.startsWith('https://')) return false
+  try {
+    return new URL(value).hostname.length > 0
+  } catch {
+    return false
+  }
+}
+
 /**
  * Web push is optional: without VAPID keys the API reports push as unavailable instead of
  * failing startup, so a developer can run the backend without generating key pairs.
@@ -189,13 +209,16 @@ function parsePushConfig(
   if (!publicKey || !privateKey) {
     throw new Error('Web push requires both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY')
   }
-  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(publicKey)) {
-    throw new Error('VAPID_PUBLIC_KEY must be a base64url encoded P-256 public key')
+  // web-push needs an uncompressed P-256 point: 0x04 followed by 32-byte X and Y coordinates.
+  // Checking the decoded length rejects a truncated placeholder that the old pattern accepted.
+  const publicKeyBytes = decodeBase64Url(publicKey)
+  if (!publicKeyBytes || publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+    throw new Error('VAPID_PUBLIC_KEY must be a base64url encoded uncompressed P-256 public key')
   }
 
   const subject = optionalText(environment, 'VAPID_SUBJECT')
-  if (subject && !/^mailto:[^\s@]+@[^\s@]+$/.test(subject) && !subject.startsWith('https://')) {
-    throw new Error('VAPID_SUBJECT must be a mailto: or https: URL')
+  if (subject && !isValidPushSubject(subject)) {
+    throw new Error('VAPID_SUBJECT must be a mailto: or https: URL with a host')
   }
 
   return Object.freeze({

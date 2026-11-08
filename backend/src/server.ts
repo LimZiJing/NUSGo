@@ -48,6 +48,9 @@ async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const pushStore = createPushSubscriptionStore()
+  // One cap instance is shared by the HTTP routes and both topic publishers, so unsubscribing or
+  // re-registering resets the same window that limits delivery and two topics never double-spend
+  // one endpoint's hourly allowance.
   const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
   const reminderRegistry = createAlightReminderRegistry()
   const stopNameFor = (stopId: string): string | null =>
@@ -55,16 +58,17 @@ async function startBackend(): Promise<void> {
   const pushPublisher = config.push
     ? createServiceUpdatePublisher({
       store: pushStore,
-      push: config.push,
+      cap: pushCap,
       sendNotification: createWebPushSender(config.push).sendNotification,
       stopName: stopNameFor,
     })
     : null
-  // Reminders share the VAPID sender but keep their own delivery history and topic.
+  // Reminders share the VAPID sender and the hourly cap, but keep their own registry and topic:
+  // an endpoint's allowance is spent once across both topics, not once per publisher.
   const reminderPublisher = config.push
     ? createAlightReminderPublisher({
       registry: reminderRegistry,
-      push: config.push,
+      cap: pushCap,
       sendNotification: createWebPushSender(config.push).sendNotification,
       stopName: stopNameFor,
     })

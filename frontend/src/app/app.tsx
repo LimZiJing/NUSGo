@@ -76,7 +76,7 @@ import {
   getPersonalWaypointCategoryOptions,
 } from '../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { createPushNotificationService } from '../infrastructure/push/push-runtime'
-import { parsePushClickTarget, subscribeToPushClicks } from '../pwa/push-click'
+import { scheduleLaunchPushClick, subscribeToPushClicks } from '../pwa/push-click'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -416,14 +416,12 @@ function App() {
     () => subscribeToPushClicks((target) => openStopFromNotification(target.stopId)),
     [openStopFromNotification],
   )
-  useEffect(() => {
-    const target = parsePushClickTarget(window.location.search)
-    if (!target) return
-    // Drop the link so a reload or a later visit does not reopen the same stop.
-    window.history.replaceState(null, '', window.location.pathname + window.location.hash)
-    const timeout = window.setTimeout(() => openStopFromNotification(target.stopId), 0)
-    return () => window.clearTimeout(timeout)
-  }, [openStopFromNotification])
+  useEffect(() => scheduleLaunchPushClick({
+    search: window.location.search,
+    open: (target) => openStopFromNotification(target.stopId),
+    // Dropping the link after navigation keeps a reload or later visit from reopening the stop.
+    clearQuery: () => window.history.replaceState(null, '', window.location.pathname + window.location.hash),
+  }), [openStopFromNotification])
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return
@@ -714,6 +712,8 @@ function App() {
     buildings: state.buildings,
     transitIndex: state.transitIndex,
     selectedRouteId: state.selectedRouteId,
+    routeStopFocusRequest: appNavigation.routeStopFocusRequest,
+    onRouteStopFocusHandled: appNavigation.clearRouteStopFocusRequest,
     onRouteSelect: commands.selectMobileRoute,
     focus: explorePanelFocus,
     status: explorePanelStatus,
@@ -1001,6 +1001,9 @@ function App() {
       data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
+      <p className="visually-hidden" role="alert" aria-label="Personal waypoint status" aria-atomic="true">
+        {personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : ''}
+      </p>
       <div className="map-stage" ref={mapPresentationRef}>
         <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
@@ -1044,7 +1047,7 @@ function App() {
             <div className="map-control-action-slot">
               <LocationControl
                 visible={!isMobileViewport || !(
-                  navigation.activeView === 'plan' && navigation.sheets.plan.detent !== 'collapsed'
+                  navigation.activeView === 'plan' && navigation.sheets.plan.detent === 'full'
                 )}
                 onRootChange={(root) => {
                   locationControlRef.current = root

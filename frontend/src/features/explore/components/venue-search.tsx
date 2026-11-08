@@ -7,7 +7,7 @@ import type { TransitIndex } from '../../../domain/transit'
 import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { BuildingIcon, BusIcon, CloseIcon, RoomIcon, SearchIcon } from '../../../ui/icons'
-import { IconButton } from '../../../ui/button'
+import { Button, IconButton } from '../../../ui/button'
 import { ScrollArea } from '../../../ui/scroll-area'
 import { SearchField } from '../../../ui/search-field'
 
@@ -109,58 +109,58 @@ export function VenueSearch({
                   const { stop } = item
                   const secondary = getStopSecondaryText(stop)
                   return (
-                    <button
+                    <Button
                       className="explore-content-result"
                       data-focus-id={`stop-result-${stop.id}`}
                       type="button"
                       key={`stop:${stop.id}`}
                       onClick={(event) => onStopSelect?.(stop.id, event)}
-                      aria-label={`${stop.longName}, bus stop, code ${stop.id}`}
+                      ariaLabel={`${stop.longName}, bus stop, code ${stop.id}`}
                     >
                       <span className="explore-content-result-identity">
                         <BusIcon className="location-identity-icon location-identity-icon--stop" />
                         <strong>{stop.longName}</strong>
                       </span>
                       {secondary && <span>{secondary}</span>}
-                    </button>
+                    </Button>
                   )
                 }
                 if (item.kind === 'building') {
                   const { entry } = item
                   const secondary = describeBuildingEntry(entry)
                   return (
-                    <button
+                    <Button
                       className="explore-content-result"
                       data-focus-id={`building-result-${entry.id}`}
                       type="button"
                       key={`building:${entry.id}`}
                       onClick={(event) => onBuildingSelect(entry.id, event)}
-                      aria-label={secondary ? `${entry.name}, building, ${secondary}` : `${entry.name}, building`}
+                      ariaLabel={secondary ? `${entry.name}, building, ${secondary}` : `${entry.name}, building`}
                     >
                       <span className="explore-content-result-identity">
                         <BuildingIcon className="location-identity-icon location-identity-icon--building" />
                         <strong>{entry.name}</strong>
                       </span>
                       {secondary && <span>{secondary}</span>}
-                    </button>
+                    </Button>
                   )
                 }
                 const { result } = item
                 return (
-                  <button
+                  <Button
                     className="explore-content-result"
                     data-focus-id={`venue-result-${result.code}`}
                     type="button"
                     key={`venue:${result.code}`}
                     onClick={(event) => onSelect(result, event)}
-                    aria-label={`${result.code}, venue, ${result.venue.roomName}`}
+                    ariaLabel={`${result.code}, venue, ${result.venue.roomName}`}
                   >
                     <span className="explore-content-result-identity">
                       <RoomIcon className="location-identity-icon location-identity-icon--venue" />
                       <strong>{result.code}</strong>
                     </span>
                     <span>{result.venue.roomName}</span>
-                  </button>
+                  </Button>
                 )
               })
             ) : (

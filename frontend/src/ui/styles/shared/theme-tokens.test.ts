@@ -163,6 +163,9 @@ describe('control token contrast', () => {
     const checks = [
       // Non-text boundary of secondary controls and chips (WCAG 1.4.11).
       ['--control-border', '--surface', 3],
+      // The same boundary where controls sit on a card rather than the page,
+      // e.g. the theme select in Settings → Appearance.
+      ['--control-border', '--surface-card', 3],
       // Secondary label and unselected chip label on the neutral control fill.
       ['--text-primary', '--surface-control', 4.5],
       // Primary button and selected chip label on the accent fill.
@@ -200,5 +203,135 @@ describe('control token contrast', () => {
         expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
       }
     }
+  })
+
+  it.each(themes)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --text-favorite paints star icons only, so WCAG 1.4.11's 3:1 for non-text graphics
+    // applies. --surface-card is the stops list card and --accent-soft the settings tile.
+    const favouriteSurfaces = ['--surface', '--surface-raised', '--surface-card', '--accent-soft'] as const
+
+    for (const background of favouriteSurfaces) {
+      const ratio = contrastRatio(resolveColour(styles, '--text-favorite'), resolveColour(styles, background))
+
+      expect(ratio, `${themeName}: --text-favorite on ${background}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it.each(themes)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    // --status-success-strong paints the recommended journey heading on a card;
+    // --text-success-strong is its text-named twin.
+    const successTokens = ['--text-success-strong', '--status-success-strong'] as const
+    const successSurfaces = ['--surface', '--surface-raised', '--surface-card'] as const
+
+    for (const foreground of successTokens) {
+      for (const background of successSurfaces) {
+        const ratio = contrastRatio(resolveColour(styles, foreground), resolveColour(styles, background))
+
+        expect(ratio, `${themeName}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  describe('departure row divider', () => {
+    const dividerOnCard = (themeName: string) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+
+      return contrastRatio(resolveColour(styles, '--border-divider'), resolveColour(styles, '--surface-card'))
+    }
+
+    it.each(themes)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+      const previous = contrastRatio(resolveColour(styles, '--border-subtle'), resolveColour(styles, '--surface-card'))
+
+      // The divider may only ever be as visible as, or more visible than, the token it replaced.
+      expect(dividerOnCard(themeName), `${themeName}: --border-divider on --surface-card`)
+        .toBeGreaterThanOrEqual(previous)
+    })
+
+    it.each(['light', 'nus', 'matcha', 'sakura'] as const)(
+      'keeps the %s theme divider on its palette --border-default step',
+      (themeName) => {
+        const styles = readStyleFile(`themes/${themeName}.css`)
+
+        // Only dark needs a heavier divider than the details panel already used.
+        expect(resolveColour(styles, '--border-divider'), `${themeName}: --border-divider`)
+          .toBe(resolveColour(styles, '--border-default'))
+      },
+    )
+
+    it('uses the --border-subtle step in dark mode', () => {
+      const styles = readStyleFile('themes/dark.css')
+
+      expect(resolveColour(styles, '--border-divider'))
+        .toBe(resolveColour(styles, '--border-subtle'))
+    })
+
+    it('keeps the dark divider quieter than the row text it separates', () => {
+      const styles = readStyleFile('themes/dark.css')
+      const card = resolveColour(styles, '--surface-card')
+      const divider = contrastRatio(resolveColour(styles, '--border-divider'), card)
+      const rowText = contrastRatio(resolveColour(styles, '--text-strong'), card)
+
+      // A separator must not compete with the departure times it sits between.
+      expect(divider, 'dark: divider vs --text-strong').toBeLessThan(rowText)
+    })
+  })
+
+
+  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+    const styles = readStyleFile('themes/' + themeName + '.css')
+    const tokens = readCustomPropertyNames(styles)
+
+    expect(tokens).toEqual(expect.arrayContaining(['--accent-selected', '--surface-control-hover']))
+    expect(readCustomPropertyValue(styles, '--accent-selected'))
+      .toBe('color-mix(in srgb, var(--accent) 26%, var(--surface-control))')
+    expect(readCustomPropertyValue(styles, '--surface-control-hover'))
+      .toBe('color-mix(in srgb, var(--text-primary) 11%, var(--surface-control))')
+
+    const ratioOf = (foreground: string, background: string) => contrastRatio(
+      resolveColour(styles, foreground),
+      resolveColour(styles, background),
+    )
+
+    expect(ratioOf('--text-primary', '--accent-selected')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-hover', '--accent-selected')).toBeGreaterThanOrEqual(3)
+    expect(ratioOf('--text-primary', '--surface-control-hover')).toBeGreaterThanOrEqual(4.5)
+    expect(ratioOf('--accent-selected', '--surface-control')).toBeGreaterThanOrEqual(1.25)
+    expect(ratioOf('--surface-control-hover', '--surface-control')).toBeGreaterThanOrEqual(1.1)
+  })
+
+  it('uses semantic control colors instead of brightness filters', () => {
+    for (const file of ['base.css', 'controls/button.css', 'controls/chip.css', 'map.css']) {
+      expect(readStyleFile(file), file).not.toMatch(/brightness\s*\(/)
+    }
+  })
+
+  it('keeps selected map overlay controls above their base icon-button styles', () => {
+    const styles = readStyleFile('map.css')
+
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-pressed='true']")
+    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-expanded='true']")
+    expect(styles).toContain('background: var(--accent-selected)')
+    expect(styles).not.toMatch(/\.button\.icon-button\.map-overlay-button:active:not\(:disabled\)\s*{[^}]*transform:\s*none;/s)
+  })
+
+  it('keeps plain and nested SVGs on their feature-owned colors', () => {
+    const styles = readStyleFile('controls/button.css')
+
+    expect(styles).toMatch(/\.button\[aria-pressed='true'\]:not\(\[data-variant='plain'\]\)\s+svg\s*{[^}]*color:\s*var\(--accent-hover\);/s)
+    expect(styles).not.toContain(".button[aria-expanded='true'] {")
+    expect(styles).not.toContain(".button[aria-expanded='true']:not([data-variant='plain']) svg {")
+    expect(readStyleFile('../../../features/waypoints/personal/personal-waypoints.css'))
+      .toMatch(/\.button\.personal-waypoint-appearance-trigger\[aria-expanded='true'\]\s+\.personal-waypoint-marker-preview-icon\s*{[^}]*color:\s*var\(--map-waypoint-marker-ink\);/s)
+  })
+
+  it('uses a named journey stop ring token with route color at the marker', () => {
+    const styles = readStyleFile('../../../features/plan/styles/plan-content.css')
+    const tokens = readStyleFile('tokens.css')
+
+    expect(tokens).toMatch(/--ring-journey-stop:\s*0 0 0 1px currentColor;/)
+    expect(styles).toMatch(/\.journey-stop-marker\s*{[^}]*color:\s*var\(--journey-route-color,\s*var\(--status-info\)\);[^}]*box-shadow:\s*var\(--ring-journey-stop\);/s)
   })
 })

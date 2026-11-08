@@ -190,3 +190,13 @@ Codex In-App Browser (Chromium-based; exact version unavailable), local Vite app
 - Toggling a category removed its marker and list row; Show all restored them. The fixture was removed and the checked-in collection returned to empty after the smoke check.
 - At 390 × 844, the list and details fit the mobile sheet without overlap. Keyboard activation opened details; Back returned focus to the same list row. The browser console had no errors.
 - Targeted interactions were checked at desktop 1280 × 720 and mobile 390 × 844; this was not the full release checklist.
+
+## Community waypoint submission entry and empty state — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local managed Vite app at `http://localhost:32916`, application code HEAD `46fc9a7`:
+
+- At 390 × 844 and 1280 × 800, Explore → Community showed the concise “No places yet” state with one Suggest a place action. Category filters and zero-count chips were absent while the approved dataset was empty. The basemap and existing stop markers rendered at both sizes.
+- At 390 × 844, Tab from the Community selector focused Suggest a place. Enter opened the text-only form; Cancel returned to Community and restored focus to the same action.
+- At 1280 × 800, the form opened from Suggest a place. Adjust on map → Use map centre → Done returned to the form with the selected coordinate updated. Cancel returned to Community and restored focus to Suggest a place.
+- The form displayed its review and privacy notice. No suggestion was submitted; the private API and review queue were not exercised. The browser console had no errors.
+- The earlier discovery pass above remains evidence for the temporary approved-place marker, filtering, details, provenance, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.

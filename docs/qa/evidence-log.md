@@ -218,3 +218,12 @@ Codex In-App Browser (Chromium-based; exact version unavailable), local managed 
 - At 1280 × 800, the form opened from Suggest a place. Adjust on map → Use map centre → Done returned to the form with the selected coordinate updated. Cancel returned to Community and restored focus to Suggest a place.
 - The form displayed its review and privacy notice. No suggestion was submitted; the private API and review queue were not exercised. The browser console had no errors.
 - The earlier discovery pass above remains evidence for the temporary approved-place marker, filtering, details, provenance, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.
+
+## Community submission form redesign verification — 2026-11-09
+
+Codex In-App Browser, local managed Vite app at `http://localhost:32916`, application code HEAD `cd7061c000b3e287bb0adb744b4ee3b944360153`:
+
+- At 390 × 844, Explore → Community showed the top-aligned empty state and Suggest a place action. Tab focused the action and Enter opened the text-only form. The compact fields, separate-coordinate Location card, collapsed Additional details section, and Cancel/Send actions fit the mobile panel.
+- Keyboard Tab and Space opened Additional details. With an invalid floor entered and the section collapsed, Send suggestion reopened it, exposed the inline whole-number error, and moved focus to Floor. Cancel returned focus to Suggest a place. No suggestion was sent.
+- At 1280 × 800, the form remained readable in the desktop panel alongside the map. The map and existing stops remained visible.
+- The submission API, private review queue, and browser console were not exercised in this pass; it is targeted UI evidence, not the full release checklist.

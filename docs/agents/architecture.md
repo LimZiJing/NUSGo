@@ -14,7 +14,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `backend/src/live-data/providers/nus` and `backend/src/live-data/providers/lta` own provider authentication, mappings, requests, payload parsing, and provider caches. Provider credentials stay in backend configuration.
 - `backend/src/live-data/upstream` owns reusable concurrency, retry, and timeout controls used by provider modules.
 - `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, domain transformations, and the Personal Waypoint storage contract.
-- `frontend/src/features` owns product workflows and their feature-specific styles: Explore, Stops, Plan, Settings, the global More menu, and Personal Waypoints under `waypoints/personal`.
+- `frontend/src/features` owns product workflows and their feature-specific styles: Explore, Stops, Plan, route following, Settings, the global More menu, and Personal Waypoints under `waypoints/personal`.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
 - frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
@@ -79,6 +79,24 @@ frontend/src/features/
 ```
 
 App composition owns navigation between destinations, focus handling, and the map-placement callback. Waypoint validation and browser persistence stay in domain and infrastructure modules, respectively.
+
+## Route following
+
+`frontend/src/features/route-following` owns the temporary route-following workflow and controls. App composition mounts `RouteFollowingBar` in the map's top overlay stack, above the shared Explore, Stops, and Plan surface. Explore's existing Bus routes timeline keeps ownership of the ordered route rows and marks the current and passed stops only while that route is active. The app passes route progress as data; the timeline does not own the workflow. Pure accuracy, freshness, proximity, and ordered-stop rules live in `frontend/src/domain/transit/route-following.ts`; browser visibility and geolocation watch lifecycle stay in `frontend/src/infrastructure/location`.
+
+```text
+frontend/src/domain/transit/
+└── route-following.ts
+
+frontend/src/features/route-following/
+├── use-route-following.ts
+├── route-following-bar.tsx
+├── route-following-demo-button.tsx
+├── route-stop-picker.tsx
+└── route-following.css
+```
+
+The feature does not import app navigation or perform browser location effects. App composition passes domain state and user-intent callbacks into its components. Route progress is passed into `frontend/src/features/explore/components/bus-route-list.tsx`, which owns the current-stop marker and timeline styling.
 ## State, callbacks, and seams
 
 - Feature modules own workflow state such as search queries, selections, and commands. UI modules may own only transient presentation state that has no domain meaning.

@@ -28,7 +28,7 @@ What data the app ships with and how the map is built. For a one-page summary se
 - `frontend/public/data/community-waypoints.geojson` is the public source for reviewed Community Waypoints. It is an empty FeatureCollection until locations have been reviewed and approved; submissions, Personal Waypoints, the private review queue, and test fixtures are not published from this file.
 - The browser loader is `loadCommunityWaypoints` under `frontend/src/infrastructure/data/`. It fetches the public file through the base-path-aware JSON client and validates the whole response with the shared parser. Fetch and validation failures reject instead of appearing as an empty dataset.
 - `npm run community-waypoints:validate` checks the checked-in file with that same parser. Normal and local-rehearsal frontend builds run the check.
-- Download the public GeoJSON from Settings → About → Data sources → Community waypoints. #213 owns map display; submissions are not implemented yet. The [data contract](community-waypoints/data-contract.md) defines review and publication rules.
+- Download the public GeoJSON from Settings → Waypoints → Community waypoints. #213 owns map display; submissions are not implemented yet. The [data contract](community-waypoints/data-contract.md) defines review and publication rules.
 
 ## Basemap and markers
 

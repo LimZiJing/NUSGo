@@ -8,4 +8,4 @@
 
 Add only approved public locations. Test fixtures, pending submissions, browser Personal Waypoints, and the private review queue are not sources for this file. Keep reporter identity, private issue links, review notes, and photo evidence out of the public data. The shared `parseCommunityWaypointsGeoJson` parser is the single authority for the file's shape and values; the build runs that parser against this exact file.
 
-After editing the file, run `npm run community-waypoints:validate` and review the provenance and public fields before publishing. The manual download is in Settings → About → Data sources → Community waypoints.
+After editing the file, run `npm run community-waypoints:validate` and review the provenance and public fields before publishing. The manual download is in Settings → Waypoints → Community waypoints.

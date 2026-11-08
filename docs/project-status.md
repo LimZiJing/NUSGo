@@ -17,9 +17,9 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
-| More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
+| More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites, About and Waypoints | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
-| Community Waypoints | Empty public GeoJSON file, validated browser loader, and Settings download; map display and submissions do not yet exist | [Data contract](community-waypoints/data-contract.md), [data and map](data-and-map.md#community-waypoints) |
+| Community Waypoints | Empty public GeoJSON file, validated browser loader, and a download in Settings → Waypoints; map display and submissions do not yet exist | [Data contract](community-waypoints/data-contract.md), [data and map](data-and-map.md#community-waypoints) |
 | Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |

@@ -55,7 +55,7 @@ Vehicle markers snap to the checked-in route geometry and interpolate between fr
 
 Copy backend/.env.example to backend/.env for local settings. NUS live shuttle data requires all four values NUS_BUS_PROXY_BASE_URL, NUS_X_HTD_API, NUS_X_APP_API, and NUS_X_API_KEY; the token URL, app version, and device ID can use their defaults. An initial NUS_UNIVUS_JWT and NUS_USER_ID are optional; Express can obtain a session token when they are absent.
 
-LTA_ACCOUNT_KEY enables public-bus arrivals. Credentials are read only by the backend and must not be exposed through Vite environment variables or frontend builds. Live-data timeout, concurrency, retry count, retry delay, and shuttle refresh interval settings are range-checked by backend configuration.
+LTA_ACCOUNT_KEY enables public-bus arrivals. COMMUNITY_WAYPOINT_GITHUB_TOKEN enables private Community Waypoint issue creation. Keep all credentials backend-only; never expose them through Vite variables or frontend builds. Give the Community Waypoint credential only issue-creation permission for LimZiJing/NUSGo-waypoint-submissions. Live-data timeout, concurrency, retry count, retry delay, and shuttle refresh interval settings are range-checked by backend configuration.
 
 Vehicle settings are NUS_VEHICLE_REFRESH_INTERVAL_MS (default 30000, minimum 15000), NUS_VEHICLE_EXPIRY_MS (default 90000, at least twice the refresh interval), and NUS_VEHICLE_IDLE_TIMEOUT_MS (default 120000). If you raise the refresh interval, raise the expiry too, or startup fails.
 

@@ -436,10 +436,6 @@
   background: var(--surface-subtle);
 }
 @media (max-width: 768px) {
-  .navigation-panel.explore-sheet {
-    background: var(--surface-raised);
-  }
-
   .navigation-panel .explore-mode-selector {
     margin-top: 8px;
   }

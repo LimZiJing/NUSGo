@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -14,6 +15,7 @@ import type { TransitNetwork, BusRoute } from '@nusgo/shared/transit/types'
 import { BusIcon } from '../../../ui/icons'
 import { RouteChip } from '../../../ui/route-chip'
 import { ScrollArea } from '../../../ui/scroll-area'
+import type { RouteStopFocusRequest } from '../route-stop-focus.ts'
 import '../styles/bus-route-list.css'
 
 interface BusRouteListProps {
@@ -21,6 +23,8 @@ interface BusRouteListProps {
   networkIndex: TransitNetworkIndex | null
   selectedRouteId: string | null
   onRouteSelect: (routeId: string) => void
+  routeStopFocusRequest?: RouteStopFocusRequest | null
+  onRouteStopFocusHandled?: (sequence: number) => void
   firstRouteCardRef?: RefObject<HTMLButtonElement | null>
   onFocusStop?: (stopId: string, focusTarget?: HTMLElement) => void
 }
@@ -56,11 +60,18 @@ export function BusRouteList({
   networkIndex,
   selectedRouteId,
   onRouteSelect,
+  routeStopFocusRequest = null,
+  onRouteStopFocusHandled,
   firstRouteCardRef,
   onFocusStop,
 }: BusRouteListProps) {
   const selectedChipRef = useRef<HTMLButtonElement>(null)
   const routeListRef = useRef<HTMLDivElement>(null)
+  const stopListRef = useRef<HTMLDivElement>(null)
+  const [targetedStop, setTargetedStop] = useState<{
+    readonly routeId: string
+    readonly stopId: string
+  } | null>(null)
   const dragRef = useRef<{
     pointerId: number
     startX: number
@@ -135,6 +146,34 @@ export function BusRouteList({
   const stopsById = selectedRoute && networkIndex
     ? getRouteStops(networkIndex, selectedRoute)
     : new Map<string, TransitNetwork['stops'][number]>()
+
+  useLayoutEffect(() => {
+    const request = routeStopFocusRequest
+    if (!request || !selectedRoute || request.routeId !== selectedRoute.id) return
+
+    const scrollArea = stopListRef.current
+    if (!scrollArea) return
+    const stopRow = Array.from(
+      scrollArea.querySelectorAll<HTMLButtonElement>('[data-route-stop-id]'),
+    ).find((row) => row.dataset.routeStopId === request.stopId)
+    if (!stopRow) {
+      onRouteStopFocusHandled?.(request.sequence)
+      return
+    }
+
+    const scrollAreaBounds = scrollArea.getBoundingClientRect()
+    const stopRowBounds = stopRow.getBoundingClientRect()
+    const scrollOffset = stopRowBounds.bottom > scrollAreaBounds.bottom
+      ? stopRowBounds.bottom - scrollAreaBounds.bottom
+      : stopRowBounds.top < scrollAreaBounds.top
+        ? stopRowBounds.top - scrollAreaBounds.top
+        : 0
+    if (scrollOffset !== 0) scrollArea.scrollTop += scrollOffset
+
+    stopRow.focus({ preventScroll: true })
+    setTargetedStop({ routeId: request.routeId, stopId: request.stopId })
+    onRouteStopFocusHandled?.(request.sequence)
+  }, [onRouteStopFocusHandled, routeStopFocusRequest, selectedRoute])
 
   function scrollRoutes(direction: -1 | 1) {
     const routeList = routeListRef.current
@@ -225,6 +264,7 @@ export function BusRouteList({
       suppressChipClickRef.current = false
       return
     }
+    setTargetedStop(null)
     onRouteSelect(routeId)
   }
 
@@ -303,10 +343,12 @@ export function BusRouteList({
       {selectedRoute ? (
         <div className="navigation-panel-content explore-bus-route-list-timeline" style={{ '--route-color': selectedRoute.color } as CSSProperties}>
           <p className="explore-bus-route-list-timeline-count">{selectedRoute.stopIds.length} stops</p>
-          <ScrollArea className="navigation-panel-scroll-content explore-bus-route-list-scroll">
+          <ScrollArea ref={stopListRef} className="navigation-panel-scroll-content explore-bus-route-list-scroll">
             <ol className="explore-bus-route-list-stop-list" aria-label={`Route ${selectedRoute.id} ordered stops`}>
               {selectedRoute.stopIds.map((stopId, index) => {
                 const stop = stopsById.get(stopId)
+                const isTargetedStop = targetedStop?.routeId === selectedRoute.id
+                  && targetedStop.stopId === stopId
                 return (
                   <li key={`${stopId}-${index}`}>
                     <button
@@ -314,8 +356,17 @@ export function BusRouteList({
                       className="explore-bus-route-list-stop"
                       data-hover-filter="none"
                       data-route-stop-id={stopId}
-                      aria-label={`${stop?.longName ?? stopId}, bus stop, code ${stopId}. Focus on map`}
-                      onClick={(event) => onFocusStop?.(stopId, event.currentTarget)}
+                      data-route-stop-targeted={isTargetedStop ? 'true' : undefined}
+                      aria-label={
+                        (stop?.longName ?? stopId)
+                        + ', bus stop, code ' + stopId
+                        + (isTargetedStop ? '. Selected from Stops.' : '.')
+                        + ' Focus on map'
+                      }
+                      onClick={(event) => {
+                        setTargetedStop(null)
+                        onFocusStop?.(stopId, event.currentTarget)
+                      }}
                     >
                       <span className="explore-bus-route-list-node" aria-hidden="true" />
                       <span className="explore-bus-route-list-stop-text">

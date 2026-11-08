@@ -1,6 +1,6 @@
 :root[data-theme='dark'] {
-    --surface: #16171d;
-    --surface-raised: #1f2028;
+    --surface: #1f2028;
+    --surface-raised: #16171d;
     --surface-muted: #24252b;
     --surface-subtle: #2e303a;
     --surface-inverse: #f3f4f6;

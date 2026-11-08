@@ -1331,7 +1331,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     expect(screen.getByRole('button', { name: 'Add waypoint' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: 'Back to previous view' })).toBe(document.activeElement)
-    expect(screen.getByRole('alert').textContent).toContain('needs recovery')
+    expect(screen.getByText('Saved waypoint data needs recovery. It has been left untouched.').textContent).toContain('needs recovery')
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBe('{broken')
   })
 

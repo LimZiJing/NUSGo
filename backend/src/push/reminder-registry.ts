@@ -25,8 +25,8 @@ export interface AlightReminderRecord extends AlightReminderRegistration {
 }
 
 export interface AlightReminderRegistry {
-  /** Adds or replaces the watch for one endpoint. One endpoint watches one stop and route. */
-  upsert(registration: AlightReminderRegistration): AlightReminderRecord
+  /** Adds or refreshes one watch. Returns null for a new endpoint at capacity; incumbents remain. */
+  upsert(registration: AlightReminderRegistration): AlightReminderRecord | null
   remove(endpoint: string): boolean
   /**
    * Removes the watch only while it is still the record a caller acted on. Returns false when the
@@ -43,7 +43,7 @@ export interface AlightReminderRegistry {
 }
 
 export interface AlightReminderRegistryOptions {
-  /** Bounds memory for a single process; the oldest watch is evicted first. */
+  /** Bounds memory for a single process; new endpoints are rejected when full. */
   readonly maxReminders?: number
   readonly ttlMs?: number
   readonly now?: () => number
@@ -101,6 +101,8 @@ export function createAlightReminderRegistry(
   return {
     upsert(registration) {
       const createdAtMs = now()
+      dropExpired(createdAtMs)
+      if (!records.has(registration.endpoint) && records.size >= maxReminders) return null
       lastGeneration += 1
       const record: AlightReminderRecord = {
         endpoint: registration.endpoint,
@@ -111,12 +113,6 @@ export function createAlightReminderRegistry(
         createdAtMs,
         expiresAtMs: createdAtMs + ttlMs,
         generation: lastGeneration,
-      }
-      // Delete first so a refreshed watch moves to the newest position and is evicted last.
-      records.delete(record.endpoint)
-      if (records.size >= maxReminders) {
-        const oldestEndpoint = records.keys().next().value
-        if (oldestEndpoint !== undefined) records.delete(oldestEndpoint)
       }
       records.set(record.endpoint, record)
       return copyRecord(record)

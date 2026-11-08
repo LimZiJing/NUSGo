@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { PushReminderLeadTimeSeconds } from '@nusgo/shared/push/reminders'
 import {
   PushSubscriptionError,
+  PUSH_PREFERENCE_CHANGED_EVENT,
   type PushNotificationService,
   type ReminderPreference,
   type ReminderState,
@@ -21,8 +22,8 @@ function errorMessageFor(error: unknown): string {
 /**
  * Owns one stop's "remind me" control.
  *
- * The saved reminder is read once and then kept in state, so the control survives re-renders while
- * the browser's own environment is re-read on focus (Safari reports standalone state late).
+ * Saved preferences and browser capability are refreshed on focus, storage changes and shared
+ * subscription changes, so key rotation cannot leave a mounted control watching a dead endpoint.
  * Permission is requested only inside `enable`, which the control calls from the user's tap.
  *
  * A saved watch that has passed the server's expiry is treated as gone: the server has already
@@ -39,12 +40,19 @@ export function useAlightReminder(
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    const refresh = (): void => setEnvironment(service.getEnvironment())
+    const refresh = (): void => {
+      setEnvironment(service.getEnvironment())
+      setPreference(service.readReminder())
+    }
     document.addEventListener('visibilitychange', refresh)
     window.addEventListener('focus', refresh)
+    window.addEventListener('storage', refresh)
+    window.addEventListener(PUSH_PREFERENCE_CHANGED_EVENT, refresh)
     return () => {
       document.removeEventListener('visibilitychange', refresh)
       window.removeEventListener('focus', refresh)
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener(PUSH_PREFERENCE_CHANGED_EVENT, refresh)
     }
   }, [service])
 

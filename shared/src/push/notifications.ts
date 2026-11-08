@@ -26,7 +26,7 @@ export function buildStopDeepLink(stopId: string): string {
 }
 
 /**
- * Builds the "your bus is here" reminder a rider asked for when they registered the watch.
+ * Builds the approximate arrival reminder a rider asked for when they registered the watch.
  *
  * Title and body are kept inside the shared bounds so the same payload passes
  * `parsePushNotificationPayload` on the service worker side, and the tag is per stop and route so
@@ -40,7 +40,7 @@ export function createAlightReminderPayload(
 ): PushNotificationPayload {
   const minutes = Math.max(1, Math.round(minutesUntilArrival))
   return {
-    title: bound('Bus ' + routeId + ' is arriving', PUSH_NOTIFICATION_TITLE_MAX_LENGTH),
+    title: bound('Bus ' + routeId + ' is due soon', PUSH_NOTIFICATION_TITLE_MAX_LENGTH),
     // A long stop name must not push the body past the bound, or the service worker drops it.
     body: bound('About ' + minutes + ' min to ' + stopName, PUSH_NOTIFICATION_BODY_MAX_LENGTH),
     url: buildStopDeepLink(stopId),

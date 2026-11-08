@@ -197,6 +197,76 @@ describe('enablePush', () => {
 })
 
 describe('subscription key rotation', () => {
+
+  it('does not leave a dead reminder marked active if restoring it fails after rotation', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    stubServiceWorker(old, vi.fn(async () => fakeSubscription('https://push.example.test/new')))
+    saveReminderPreference({ stopId: 'COM3', routeId: 'D1', endpoint: old.endpoint, leadTimeSeconds: 120, expiresAt: null })
+    const pushClient = client({ registerReminder: vi.fn(async () => { throw new Error('capacity') }) })
+
+    await expect(enablePush(pushClient)).rejects.toThrow('capacity')
+    expect(readReminderPreference()).toBeNull()
+    expect(pushClient.register).not.toHaveBeenCalled()
+  })
+
+  it('does not renew an expired reminder during key rotation', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    stubServiceWorker(old, vi.fn(async () => fakeSubscription('https://push.example.test/new')))
+    saveReminderPreference({ stopId: 'COM3', routeId: 'D1', endpoint: old.endpoint, leadTimeSeconds: 120, expiresAt: '2000-01-01T00:00:00Z' })
+    const pushClient = client()
+
+    await enablePush(pushClient)
+
+    expect(pushClient.registerReminder).not.toHaveBeenCalled()
+    expect(readReminderPreference()).toBeNull()
+  })
+
+
+  it('moves an active reminder to the replacement endpoint when enabling service updates', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    const replacement = fakeSubscription('https://push.example.test/new')
+    stubServiceWorker(old, vi.fn(async () => replacement))
+    saveReminderPreference({ stopId: 'COM3', routeId: 'D1', endpoint: old.endpoint, leadTimeSeconds: 60, expiresAt: '2030-01-01T00:00:00Z' })
+    const pushClient = client()
+
+    await enablePush(pushClient)
+
+    expect(pushClient.unregisterReminder).toHaveBeenCalledWith(old.endpoint)
+    expect(pushClient.registerReminder).toHaveBeenCalledWith(expect.objectContaining({ endpoint: replacement.endpoint, watch: { stopId: 'COM3', routeId: 'D1' }, leadTimeSeconds: 60 }))
+    expect(readReminderPreference()?.endpoint).toBe(replacement.endpoint)
+  })
+
+  it('moves service updates to the replacement endpoint when enabling a reminder', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    const replacement = fakeSubscription('https://push.example.test/new')
+    stubServiceWorker(old, vi.fn(async () => replacement))
+    savePushPreference({ topic: 'service-updates', endpoint: old.endpoint })
+    const pushClient = client()
+
+    await enableReminder(pushClient, { stopId: 'COM3', routeId: 'D1', leadTimeSeconds: 120 })
+
+    expect(pushClient.register).toHaveBeenCalledWith(expect.objectContaining({ endpoint: replacement.endpoint }))
+    expect(readPushPreference()?.endpoint).toBe(replacement.endpoint)
+  })
+
+  it('keeps the old browser endpoint and reminder when reminder cleanup fails during rotation', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    const subscribe = vi.fn()
+    stubServiceWorker(old, subscribe)
+    saveReminderPreference({ stopId: 'COM3', routeId: 'D1', endpoint: old.endpoint, leadTimeSeconds: 120, expiresAt: null })
+    const pushClient = client({ unregisterReminder: vi.fn(async () => { throw new Error('network') }) })
+
+    await expect(enablePush(pushClient)).rejects.toThrow('network')
+    expect(old.unsubscribe).not.toHaveBeenCalled()
+    expect(subscribe).not.toHaveBeenCalled()
+    expect(readReminderPreference()?.endpoint).toBe(old.endpoint)
+  })
+
   it('replaces an old-key subscription when registration is retried after key rotation', async () => {
     stubNotification('default', vi.fn(async () => 'granted' as const))
     const old = fakeSubscription('https://push.example.test/old')
@@ -531,6 +601,46 @@ describe('enableReminder', () => {
 })
 
 describe('disableReminder', () => {
+  it('removes both the saved and refreshed endpoint before forgetting a reminder', async () => {
+    const subscription = fakeSubscription('https://push.example.test/new')
+    stubServiceWorker(subscription)
+    const saved = {
+      stopId: 'COM3', routeId: 'D1', endpoint: 'https://push.example.test/old',
+      leadTimeSeconds: 120 as const, expiresAt: null,
+    }
+    saveReminderPreference(saved)
+    const endpoints: string[] = []
+    const pushClient = client({ unregisterReminder: vi.fn(async (endpoint) => {
+      expect(readReminderPreference()).toEqual(saved)
+      endpoints.push(endpoint)
+    }) })
+
+    await disableReminder(pushClient)
+
+    expect(endpoints).toEqual([saved.endpoint, subscription.endpoint])
+    expect(readReminderPreference()).toBeNull()
+    expect(subscription.unsubscribe).not.toHaveBeenCalled()
+  })
+
+  it.each(['https://push.example.test/old', 'https://push.example.test/new'])(
+    'keeps the reminder for retry when removing %s fails', async (failedEndpoint) => {
+      const subscription = fakeSubscription('https://push.example.test/new')
+      stubServiceWorker(subscription)
+      const saved = {
+        stopId: 'COM3', routeId: 'D1', endpoint: 'https://push.example.test/old',
+        leadTimeSeconds: 120 as const, expiresAt: null,
+      }
+      saveReminderPreference(saved)
+      const pushClient = client({ unregisterReminder: vi.fn(async (endpoint) => {
+        if (endpoint === failedEndpoint) throw new Error('network')
+      }) })
+
+      await expect(disableReminder(pushClient)).rejects.toThrow('network')
+      expect(readReminderPreference()).toEqual(saved)
+      expect(subscription.unsubscribe).not.toHaveBeenCalled()
+    },
+  )
+
   it('forgets the reminder on the server without cancelling the shared subscription', async () => {
     const subscription = fakeSubscription()
     stubServiceWorker(subscription)

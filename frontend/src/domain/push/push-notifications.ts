@@ -10,6 +10,9 @@ import type {
   PushReminderTarget,
 } from '@nusgo/shared/push/reminders'
 
+/** Same-document notification when shared subscription rotation changes another topic. */
+export const PUSH_PREFERENCE_CHANGED_EVENT = 'navus:push-preference-changed'
+
 export const PUSH_SUBSCRIPTION_PREFERENCE_STORAGE_KEY = 'navus:push-subscription:v1'
 
 /**

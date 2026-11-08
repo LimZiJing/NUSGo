@@ -1,6 +1,7 @@
 import {
   PushSubscriptionError,
   PUSH_SUBSCRIPTION_PREFERENCE_STORAGE_KEY,
+  PUSH_PREFERENCE_CHANGED_EVENT,
   ALIGHT_REMINDER_PREFERENCE_STORAGE_KEY,
   type EnablePushResult,
   type EnableReminderResult,
@@ -105,6 +106,7 @@ export function savePushPreference(preference: PushPreference | null): void {
   } catch {
     // The toggle still reflects the current session when storage is unavailable.
   }
+  window.dispatchEvent(new Event(PUSH_PREFERENCE_CHANGED_EVENT))
 }
 
 /**
@@ -156,6 +158,7 @@ export function saveReminderPreference(preference: ReminderPreference | null): v
   } catch {
     // The control still reflects the current session when storage is unavailable.
   }
+  window.dispatchEvent(new Event(PUSH_PREFERENCE_CHANGED_EVENT))
 }
 
 /* PushSubscriptionError now lives in the domain contract so features can type against it. */
@@ -191,7 +194,7 @@ async function requestPermission(): Promise<PushPermission> {
  * created. A failed server removal stops the replacement: the old endpoint must not be orphaned
  * on the server while the browser silently moves to a new one.
  */
-async function obtainSubscription(client: PushSubscriptionClient): Promise<{
+async function obtainSubscription(client: PushSubscriptionClient, topic: 'service-updates' | 'alight-reminders'): Promise<{
   endpoint: string
   keys: { p256dh: string; auth: string }
 }> {
@@ -201,13 +204,23 @@ async function obtainSubscription(client: PushSubscriptionClient): Promise<{
   const registration = await getRegistration()
   const applicationServerKey = base64UrlToUint8Array(publicKey)
   let subscription = await registration.pushManager.getSubscription()
+  let restoreUpdates = false
+  let restoreReminder: ReminderPreference | null = null
   if (subscription) {
     const existingKey = subscription.options.applicationServerKey
     const existingBytes = existingKey ? new Uint8Array(existingKey) : null
     const matchesKey = existingBytes?.length === applicationServerKey.length &&
       existingBytes.every((byte, index) => byte === applicationServerKey[index])
     if (!matchesKey) {
+      const savedUpdates = readPushPreference()
+      const savedReminder = readReminderPreference()
+      // Clean both topics before destroying the one browser endpoint they share.
+      await client.unregisterReminder(subscription.endpoint)
+      restoreReminder = savedReminder?.endpoint === subscription.endpoint ? savedReminder : null
+      if (restoreReminder) saveReminderPreference(null)
       await client.unregister(subscription.endpoint)
+      restoreUpdates = savedUpdates?.endpoint === subscription.endpoint
+      if (restoreUpdates) savePushPreference(null)
       if (!await subscription.unsubscribe()) throw new PushSubscriptionError('invalid-subscription')
       subscription = null
     }
@@ -218,7 +231,22 @@ async function obtainSubscription(client: PushSubscriptionClient): Promise<{
   })
   const { endpoint, keys } = subscription.toJSON()
   if (!endpoint || !keys?.p256dh || !keys.auth) throw new PushSubscriptionError('invalid-subscription')
-  return { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } }
+  const replacement = { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } }
+  // The caller enrolls its requested topic; restore the other topic if rotation displaced it.
+  if (topic !== 'service-updates' && restoreUpdates) {
+    const body = toPushSubscriptionRegistration(replacement)
+    if (!body) throw new PushSubscriptionError('invalid-subscription')
+    await client.register(body)
+    savePushPreference({ topic: body.topic, endpoint })
+  }
+  if (topic !== 'alight-reminders' && restoreReminder &&
+    (restoreReminder.expiresAt === null || Date.parse(restoreReminder.expiresAt) > Date.now())) {
+    const body = toPushReminderRegistration(replacement, restoreReminder)
+    if (!body) throw new PushSubscriptionError('invalid-subscription')
+    const acknowledgement = await client.registerReminder(body)
+    saveReminderPreference({ ...restoreReminder, endpoint, expiresAt: acknowledgement?.expiresAt ?? null })
+  }
+  return replacement
 }
 
 /**
@@ -235,7 +263,7 @@ export async function enablePush(
   const permission = await requestPermission()
   if (permission !== 'granted') return { preference: previous, permission }
 
-  const registrationBody = toPushSubscriptionRegistration(await obtainSubscription(client))
+  const registrationBody = toPushSubscriptionRegistration(await obtainSubscription(client, 'service-updates'))
   if (!registrationBody) throw new PushSubscriptionError('invalid-subscription')
 
   await client.register(registrationBody)
@@ -291,7 +319,7 @@ export async function enableReminder(
   const permission = await requestPermission()
   if (permission !== 'granted') return { preference: previous, permission }
 
-  const registrationBody = toPushReminderRegistration(await obtainSubscription(client), target)
+  const registrationBody = toPushReminderRegistration(await obtainSubscription(client, 'alight-reminders'), target)
   if (!registrationBody) throw new PushSubscriptionError('invalid-subscription')
 
   const acknowledgement = await client.registerReminder(registrationBody)
@@ -319,6 +347,9 @@ export async function disableReminder(client: PushSubscriptionClient): Promise<R
   const subscription = await registration?.pushManager.getSubscription()
   const endpoint = subscription?.endpoint ?? preference?.endpoint ?? null
 
+  if (preference?.endpoint && preference.endpoint !== endpoint) {
+    await client.unregisterReminder(preference.endpoint)
+  }
   if (endpoint) await client.unregisterReminder(endpoint)
   saveReminderPreference(null)
   return null

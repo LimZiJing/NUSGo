@@ -88,6 +88,10 @@ export function registerReminderRoutes(app: Express, dependencies: ReminderRoute
           return
         }
         const record = registry.upsert(registration)
+        if (!record) {
+          sendApiError(response, 503, 'Reminder capacity is full', 'not_ready')
+          return
+        }
         // A new watch starts with a fresh hourly window rather than inheriting an old one.
         reminders?.forgetSubscription(registration.endpoint)
         response.status(201).json({

@@ -94,6 +94,18 @@ function skipReason(
 }
 
 describe('alight reminder evaluation', () => {
+
+  it('uses the observation age before checking the lead-time boundary', () => {
+    const result = evaluate([reminder('aged')], snapshot({ seconds: 140, expiresAt: '2026-11-06T10:01:00Z' }), { now: nowMs + 25_000 })
+    assert.equal(result.due.length, 1)
+    assert.equal(result.due[0]?.minutesUntilArrival, 115 / 60)
+  })
+
+  it('does not send an arrival whose predicted time has already passed', () => {
+    const result = evaluate([reminder('passed')], snapshot({ seconds: 10, expiresAt: '2026-11-06T10:01:00Z' }), { now: nowMs + 25_000 })
+    assert.equal(skipReason(result, 'passed'), 'no-arrival')
+  })
+
   it('fires when the next bus is inside the lead time the rider chose', () => {
     const result = evaluate([reminder('a', 'COM3', 'D1', 180)], snapshot({ seconds: 175 }))
 
@@ -258,7 +270,7 @@ describe('alight reminder publisher', () => {
       topic: string
       tag: string
     }
-    assert.equal(payload.title, 'Bus D1 is arriving')
+    assert.equal(payload.title, 'Bus D1 is due soon')
     assert.equal(payload.body, 'About 2 min to COM3 Opp')
     assert.equal(payload.url, '?stop=COM3')
     assert.equal(payload.topic, 'alight-reminders')
@@ -468,4 +480,41 @@ describe('alight reminder publisher', () => {
     assert.equal(payloads.length, 0)
     assert.equal(result.skipped[0]?.reason, 'not-running')
   })
+})
+
+
+describe('queued alight reminder delivery', () => {
+  for (const change of ['cancel', 'expire', 'replace', 'stale'] as const) {
+    it(`does not start a queued send after ${change}`, async () => {
+      let clock = nowMs
+      const now = () => clock
+      const registry = createAlightReminderRegistry({ now, ttlMs: change === 'expire' ? 1_000 : DEFAULT_ALIGHT_REMINDER_TTL_MS })
+      for (let index = 0; index < 9; index += 1) registry.upsert(registration(String(index)))
+      const cap = createNotificationCap({ maxPerHour: 1, now })
+      let release!: () => void
+      const blocked = new Promise<void>((resolve) => { release = resolve })
+      const sent: string[] = []
+      const publisher = createAlightReminderPublisher({
+        registry, cap, now, stopName: () => 'COM3',
+        sendNotification: async ({ endpoint }) => {
+          sent.push(endpoint)
+          await blocked
+          return { statusCode: 201 }
+        },
+      })
+      const pending = publisher.publish(snapshot({ expiresAt: new Date(nowMs + 60_000).toISOString() }))
+      assert.equal(sent.length, 8)
+      const queuedEndpoint = endpoint('8')
+      if (change === 'cancel') registry.remove(queuedEndpoint)
+      if (change === 'expire') clock += 1_000
+      if (change === 'replace') registry.upsert(registration('8', 'COM3', 'A1'))
+      if (change === 'stale') clock += 60_001
+      release()
+      await pending
+
+      assert.equal(sent.includes(queuedEndpoint), false)
+      assert.equal(cap.trackedCount, 8)
+      if (change === 'replace') assert.equal(registry.get(queuedEndpoint)?.watch.routeId, 'A1')
+    })
+  }
 })

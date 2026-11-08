@@ -17,6 +17,7 @@ afterEach(() => {
 })
 
 const selectedStop: StopDetailsModel = {
+  reminderRoutes: [],
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: { id: 'SR8', longName: 'University Hall (Opposite)' },

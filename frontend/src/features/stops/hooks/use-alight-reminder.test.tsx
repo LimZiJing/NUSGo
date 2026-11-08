@@ -8,6 +8,7 @@ import type {
   PushNotificationService,
   ReminderPreference,
 } from '../../../domain/push/push-notifications'
+import { PUSH_PREFERENCE_CHANGED_EVENT } from '../../../domain/push/push-notifications'
 import { useAlightReminder } from './use-alight-reminder'
 
 afterEach(cleanup)
@@ -74,6 +75,16 @@ function granted(overrides: Partial<PushNotificationService> = {}): PushNotifica
 }
 
 describe('useAlightReminder', () => {
+
+  it('refreshes a mounted control after shared subscription rotation changes its preference', () => {
+    const readReminder = vi.fn<() => ReminderPreference | null>().mockReturnValue(SAVED)
+    render(<Probe pushService={granted({ readReminder })} />)
+    expect(state('watched')).toBe('D1')
+    readReminder.mockReturnValue(null)
+    act(() => window.dispatchEvent(new Event(PUSH_PREFERENCE_CHANGED_EVENT)))
+    expect(state('watched')).toBe('none')
+  })
+
   it('reports no watch for a stop nobody asked about', () => {
     render(<Probe pushService={granted({ readReminder: () => SAVED })} stopId="OTHER" />)
 

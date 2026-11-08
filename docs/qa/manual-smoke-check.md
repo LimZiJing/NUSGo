@@ -96,3 +96,9 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 ## Evidence
 
 Record each pass in the [evidence log](evidence-log.md) with the browser, URL, date, viewport and result.
+
+## Alight reminders (#503)
+
+- [ ] On stop details, including with Live times unavailable, select a canonical route and each offered lead time (1, 2, 3 minutes). Verify the approximate-live-ETA explanation precedes Remind me, permission is requested only after activation, and success shows the selected lead time and server expiry. Cancel and verify the reminder stops while service updates remain enabled.
+- [ ] With service updates and a reminder sharing one endpoint, rotate the deployment VAPID key and re-enable either topic. Verify both old-topic registrations are removed before browser replacement, the other active topic is restored on the new endpoint, and mounted controls show the new preferences. A failed restore must show an error and must not claim the removed watch is active.
+- [ ] On an installed physical device, verify one reminder within the chosen live-ETA window while the screen is off, then no repeat; verify cancellation, two-hour expiry, notification tap routing and unavailable/stale arrivals. Record exact head, device and results; unit tests and mocked browser APIs do not supply this delivery evidence.

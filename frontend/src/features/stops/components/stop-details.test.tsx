@@ -10,6 +10,7 @@ import { StopDetails } from './stop-details.tsx'
 afterEach(cleanup)
 
 const stop: StopDetailsModel = {
+  reminderRoutes: [],
   id: 'SR7',
   longName: 'University Hall',
   oppositeStop: null,
@@ -138,13 +139,13 @@ describe('StopDetails reminder control', () => {
     expect(screen.queryByRole('button', { name: /Remind me/ })).toBeNull()
   })
 
-  it('offers the routes this stop serves, live or scheduled', async () => {
+  it('offers canonical routes even while live arrivals are unavailable', async () => {
     const user = userEvent.setup()
     const enable = vi.fn()
     renderStopDetails(undefined, vi.fn(), {
       ...stop,
-      departures: [{ routeId: 'A1', routeName: 'A1', routeColor: '#123456', load: 'unknown', timings: ['2m', '8m', '-'] }],
-      scheduledDepartures: [{ routeId: 'D2', routeName: 'D2', routeColor: '#654321', message: 'Starts tomorrow 7:00 AM' }],
+      reminderRoutes: [{ routeId: 'A1', routeName: 'A1' }, { routeId: 'D2', routeName: 'D2' }],
+      liveArrivalMessage: 'Live times unavailable',
     }, reminder({ enable }))
 
     // One route choice per route even though the same route can appear in both lists.

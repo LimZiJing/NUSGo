@@ -73,9 +73,9 @@ function isFresh(observedAtMs: number, expiresAtMs: number, nowMs: number): bool
  * This is a pure read of `snapshot`: it never calls a provider, so adding reminders cannot change
  * upstream call volume. Every reason not to fire is checked before the arrival threshold, and a
  * reminder needs an unexpired watch with a fresh, observed, available stop, a real arrival for
- * that route while the service is running, and the bus inside the rider's own lead time. Anything
+ * that route without a known service-hours restriction, and the bus inside the rider's lead time. Anything
  * less is skipped, which is what keeps NUSGo from announcing "arriving now" for a bus that is
- * stale, dropped, or not in service.
+ * stale, dropped, or known to be outside service hours. Unknown cached hours trust a fresh ETA.
  */
 export function evaluateAlightReminders(
   records: readonly AlightReminderRecord[],
@@ -135,7 +135,13 @@ export function evaluateAlightReminders(
       continue
     }
 
-    if (arrival.nextArrivalSeconds > record.leadTimeSeconds) {
+    const ageSeconds = Math.max(0, (nowMs - parseTime(observation.observedAt)) / 1_000)
+    const remainingSeconds = arrival.nextArrivalSeconds - ageSeconds
+    if (remainingSeconds < 0) {
+      skipped.push({ record, reason: 'no-arrival' })
+      continue
+    }
+    if (remainingSeconds > record.leadTimeSeconds) {
       skipped.push({ record, reason: 'not-yet-close' })
       continue
     }
@@ -145,7 +151,7 @@ export function evaluateAlightReminders(
       continue
     }
 
-    due.push({ record, stopId, routeId, minutesUntilArrival: arrival.nextArrivalSeconds / 60 })
+    due.push({ record, stopId, routeId, minutesUntilArrival: remainingSeconds / 60 })
   }
 
   return { due, skipped }
@@ -236,12 +242,18 @@ export function createAlightReminderPublisher(
       return { notificationsSent: 0, prunedEndpoints: [], expiredEndpoints, skipped: evaluation.skipped }
     }
 
-    const dueByEndpoint = new Map(evaluation.due.map((candidate) => [candidate.record.endpoint, candidate]))
     // Choosing a payload does not spend the hourly cap: delivery reserves the slot and commits it
     // only after the push service accepts the send, so a refused reservation leaves the watch
     // eligible for the next snapshot rather than silently dropping the reminder.
     const payloadFor = (record: AlightReminderRecord): PushNotificationPayload | null => {
-      const match = dueByEndpoint.get(record.endpoint)
+      // Workers can queue behind slow providers. Recheck cancellation, expiry, generation and
+      // snapshot freshness immediately before starting a send, without spending an allowance.
+      const current = options.registry.get(record.endpoint)
+      if (!current || current.generation !== record.generation) return null
+      const match = evaluateAlightReminders([current], snapshot, {
+        now,
+        ...(readServiceStatus ? { serviceStatus: readServiceStatus } : {}),
+      }).due[0]
       if (!match) return null
       const stopName = options.stopName(match.stopId)
       if (!stopName) return null

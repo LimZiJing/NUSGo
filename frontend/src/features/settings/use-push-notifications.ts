@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   PushSubscriptionError,
+  PUSH_PREFERENCE_CHANGED_EVENT,
   type PushNotificationService,
   type PushNotificationsState,
   type PushPreference,
@@ -31,12 +32,19 @@ export function usePushNotifications(service: PushNotificationService): PushNoti
   // Safari exposes loading and standalone state later than first render; re-read when the
   // document may have been installed or when the tab becomes visible again.
   useEffect(() => {
-    const refresh = (): void => setEnvironment(service.getEnvironment())
+    const refresh = (): void => {
+      setEnvironment(service.getEnvironment())
+      setPreference(service.readPreference())
+    }
     document.addEventListener('visibilitychange', refresh)
     window.addEventListener('focus', refresh)
+    window.addEventListener('storage', refresh)
+    window.addEventListener(PUSH_PREFERENCE_CHANGED_EVENT, refresh)
     return () => {
       document.removeEventListener('visibilitychange', refresh)
       window.removeEventListener('focus', refresh)
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener(PUSH_PREFERENCE_CHANGED_EVENT, refresh)
     }
   }, [service])
 

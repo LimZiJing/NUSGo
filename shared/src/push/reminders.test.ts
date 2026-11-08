@@ -22,7 +22,7 @@ describe('alight reminder payload', () => {
     const payload = createAlightReminderPayload('COM3 Opp', 'COM3', 'D1', 1.6)
 
     expect(payload).toEqual({
-      title: 'Bus D1 is arriving',
+      title: 'Bus D1 is due soon',
       body: 'About 2 min to COM3 Opp',
       url: '?stop=COM3',
       topic: 'alight-reminders',

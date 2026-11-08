@@ -59,6 +59,7 @@ after(async () => {
 })
 
 interface ServerOptions {
+  readonly maxReminders?: number
   readonly push?: boolean
   readonly subscriptionRateLimitMaxRequests?: number
   /** Server clock for the registry, so expiry assertions are exact rather than timing-dependent. */
@@ -83,7 +84,7 @@ async function withServer(
   })
   const store = createPushSubscriptionStore()
   const cap = createNotificationCap({ maxPerHour: 4 })
-  const registry = createAlightReminderRegistry({ now: options.now ?? (() => registeredAtMs) })
+  const registry = createAlightReminderRegistry({ now: options.now ?? (() => registeredAtMs), maxReminders: options.maxReminders })
   const server = await listenHttpServer(
     createApp(config, backendData, null, null, { store, cap, reminderRegistry: registry }),
     '127.0.0.1',
@@ -274,4 +275,20 @@ describe('alight reminder routes', () => {
       assert.deepEqual(registry.get(registration.endpoint)?.watch, registration.watch)
     })
   })
+})
+
+
+it('rejects new reminder endpoints at capacity without displacing existing riders', async () => {
+  await withServer(async (baseUrl, registry) => {
+    const enroll = (suffix: string) => post(baseUrl, '/api/push/reminders', {
+      ...registration, endpoint: registration.endpoint + suffix,
+    })
+    assert.equal((await enroll('a')).status, 201)
+    assert.equal((await enroll('b')).status, 201)
+    assert.equal((await enroll('c')).status, 503)
+    assert.notEqual(registry.get(registration.endpoint + 'a'), null)
+    assert.equal((await enroll('a')).status, 201)
+    assert.equal((await post(baseUrl, '/api/push/reminders/remove', { endpoint: registration.endpoint + 'b' })).status, 204)
+    assert.equal((await enroll('c')).status, 201)
+  }, { maxReminders: 2 })
 })

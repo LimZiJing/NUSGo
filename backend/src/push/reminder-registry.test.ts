@@ -31,6 +31,7 @@ describe('alight reminder registry', () => {
     const registry = registryAt(now)
 
     const stored = registry.upsert(reminder('a'))
+    assert.ok(stored)
 
     assert.deepEqual(stored, {
       endpoint: endpoint('a'),
@@ -121,7 +122,9 @@ describe('alight reminder registry', () => {
   it('removes only the generation a caller evaluated, so a re-registration survives', () => {
     const registry = registryAt({ value: startMs })
     const first = registry.upsert(reminder('a'))
+    assert.ok(first)
     const replacement = registry.upsert(reminder('a', 'CLB', 'A1'))
+    assert.ok(replacement)
 
     // A delivery that started before the rider changed stops must not delete the newer watch.
     assert.equal(registry.removeIfCurrent(endpoint('a'), first.generation), false)
@@ -133,19 +136,28 @@ describe('alight reminder registry', () => {
   it('reports no removal for an endpoint that was already removed', () => {
     const registry = registryAt({ value: startMs })
     const record = registry.upsert(reminder('a'))
+    assert.ok(record)
     registry.remove(endpoint('a'))
 
     assert.equal(registry.removeIfCurrent(endpoint('a'), record.generation), false)
   })
 
-  it('evicts the oldest watch when the registry reaches its bound', () => {
-    const registry = registryAt({ value: startMs }, { maxReminders: 2 })
+  it('rejects new watches at capacity while retaining and allowing refresh of existing watches', () => {
+    const now = { value: startMs }
+    const registry = registryAt(now, { maxReminders: 2 })
     registry.upsert(reminder('a'))
     registry.upsert(reminder('b'))
-    registry.upsert(reminder('c'))
 
+    assert.equal(registry.upsert(reminder('c')), null)
+    assert.notEqual(registry.get(endpoint('a')), null)
+    assert.notEqual(registry.upsert(reminder('a', 'CLB', 'A1')), null)
+    assert.deepEqual(registry.get(endpoint('a'))?.watch, { stopId: 'CLB', routeId: 'A1' })
     assert.equal(registry.size, 2)
-    assert.equal(registry.get(endpoint('a')), null)
-    assert.notEqual(registry.get(endpoint('c')), null)
+    registry.remove(endpoint('b'))
+    assert.notEqual(registry.upsert(reminder('c')), null)
+
+    now.value = startMs + DEFAULT_ALIGHT_REMINDER_TTL_MS
+    assert.notEqual(registry.upsert(reminder('d')), null)
+    assert.deepEqual(registry.list().map(({ endpoint }) => endpoint), [endpoint('d')])
   })
 })

@@ -92,12 +92,8 @@ export function StopDetails({
         <AlightReminderControl
           stopId={stop.id}
           stopName={stop.longName}
-          // Live rows first, then routes that are simply outside service hours: a rider can still
-          // ask for the first bus tomorrow.
-          routes={[
-            ...stop.departures.map(({ routeId, routeName }) => ({ routeId, routeName })),
-            ...stop.scheduledDepartures.map(({ routeId, routeName }) => ({ routeId, routeName })),
-          ]}
+          // Canonical routes remain available while arrivals or service hours are unavailable.
+          routes={stop.reminderRoutes}
           reminder={reminder}
         />
       )}

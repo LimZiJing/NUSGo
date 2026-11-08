@@ -100,7 +100,7 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.button[data-variant='ghost']:focus-visible {
+.button[data-variant='ghost']:not([aria-pressed='true']):focus-visible {
   background: var(--accent-soft);
 }
 
@@ -180,7 +180,7 @@
     opacity: 0.7;
   }
 
-  .button[data-variant='ghost']:not(:disabled):hover,
+  .button[data-variant='ghost']:not(:disabled):not([aria-pressed='true']):hover,
   .menu-item:not(:disabled):hover {
     background: var(--accent-soft);
   }

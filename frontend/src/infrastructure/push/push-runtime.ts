@@ -133,10 +133,23 @@ export async function enablePush(
   if (!publicKey) throw new PushSubscriptionError('not-configured')
 
   const registration = await getRegistration()
-  const existing = await registration.pushManager.getSubscription()
-  const subscription = existing ?? await registration.pushManager.subscribe({
+  const applicationServerKey = base64UrlToUint8Array(publicKey)
+  let subscription = await registration.pushManager.getSubscription()
+  if (subscription) {
+    const existingKey = subscription.options.applicationServerKey
+    const existingBytes = existingKey ? new Uint8Array(existingKey) : null
+    // A subscription is bound to its original VAPID key; re-registering cannot rotate it.
+    const matchesKey = existingBytes?.length === applicationServerKey.length &&
+      existingBytes.every((byte, index) => byte === applicationServerKey[index])
+    if (!matchesKey) {
+      await client.unregister(subscription.endpoint)
+      if (!await subscription.unsubscribe()) throw new PushSubscriptionError('invalid-subscription')
+      subscription = null
+    }
+  }
+  subscription ??= await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: base64UrlToUint8Array(publicKey),
+    applicationServerKey,
   })
   const wireSubscription = subscription.toJSON()
   const registrationBody = toPushSubscriptionRegistration(wireSubscription)
@@ -151,9 +164,9 @@ export async function enablePush(
 /**
  * Unsubscribes this browser and forgets it on the server.
  *
- * The server call is attempted first so a failure there leaves the local preference intact and
- * the toggle honest; the browser subscription is always cancelled, so no push is delivered after
- * the user turns this off.
+ * Remove both the saved and current endpoints before cancelling the browser subscription.
+ * A failed server removal retains the saved preference for retry, including when the browser
+ * has refreshed its endpoint since enrollment.
  */
 export async function disablePush(client: PushSubscriptionClient): Promise<PushPreference | null> {
   const preference = readPushPreference()
@@ -161,6 +174,9 @@ export async function disablePush(client: PushSubscriptionClient): Promise<PushP
   const subscription = await registration?.pushManager.getSubscription()
   const endpoint = subscription?.endpoint ?? preference?.endpoint ?? null
 
+  if (preference?.endpoint && preference.endpoint !== endpoint) {
+    await client.unregister(preference.endpoint)
+  }
   if (endpoint) await client.unregister(endpoint)
   await subscription?.unsubscribe()
   savePushPreference(null)

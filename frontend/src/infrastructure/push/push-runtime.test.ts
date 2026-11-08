@@ -14,13 +14,18 @@ import {
 
 interface FakeSubscription {
   endpoint: string
+  options: { applicationServerKey: ArrayBuffer | null }
   toJSON: () => { endpoint: string; keys: { p256dh: string; auth: string } }
   unsubscribe: () => Promise<boolean>
 }
 
-function fakeSubscription(endpoint = 'https://push.example.test/sub/1'): FakeSubscription {
+function fakeSubscription(
+  endpoint = 'https://push.example.test/sub/1',
+  publicKey: string | null = 'BPublicKey',
+): FakeSubscription {
   return {
     endpoint,
+    options: { applicationServerKey: publicKey === null ? null : Uint8Array.from(window.atob(publicKey), (c) => c.charCodeAt(0)).buffer },
     toJSON: () => ({ endpoint, keys: { p256dh: 'p256dh-key', auth: 'auth-key' } }),
     unsubscribe: vi.fn(async () => true),
   }
@@ -183,6 +188,81 @@ describe('enablePush', () => {
   })
 })
 
+describe('subscription key rotation', () => {
+  it('replaces an old-key subscription when registration is retried after key rotation', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old')
+    const replacement = fakeSubscription('https://push.example.test/new', 'QPublicKey')
+    const order: string[] = []
+    old.unsubscribe = vi.fn(async () => { order.push('unsubscribe'); return true })
+    const subscribe = vi.fn<(options: PushSubscriptionOptionsInit) => Promise<FakeSubscription>>(
+      async () => { order.push('subscribe'); return replacement },
+    )
+    stubServiceWorker(old, subscribe)
+    const pushClient = client({
+      getPublicKey: vi.fn().mockResolvedValueOnce('BPublicKey').mockResolvedValue('QPublicKey'),
+      register: vi.fn().mockRejectedValueOnce(new Error('network')).mockImplementation(async () => { order.push('register') }),
+      unregister: vi.fn(async () => { order.push('unregister') }),
+    })
+
+    await expect(enablePush(pushClient)).rejects.toThrow('network')
+    expect(readPushPreference()).toBeNull()
+    expect(old.unsubscribe).not.toHaveBeenCalled()
+    await enablePush(pushClient)
+
+    expect(pushClient.unregister).toHaveBeenCalledWith(old.endpoint)
+    expect(order).toEqual(['unregister', 'unsubscribe', 'subscribe', 'register'])
+    const requestedKey = subscribe.mock.calls[0][0].applicationServerKey as Uint8Array
+    expect(Array.from(requestedKey))
+      .toEqual(Array.from(window.atob('QPublicKey'), (c) => c.charCodeAt(0)))
+    expect(readPushPreference()?.endpoint).toBe(replacement.endpoint)
+  })
+
+  it('replaces an existing subscription whose application server key is unavailable', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', null)
+    const replacement = fakeSubscription()
+    const subscribe = vi.fn(async () => replacement)
+    stubServiceWorker(old, subscribe)
+
+    await enablePush(client())
+
+    expect(old.unsubscribe).toHaveBeenCalledOnce()
+    expect(subscribe).toHaveBeenCalledOnce()
+    expect(readPushPreference()?.endpoint).toBe(replacement.endpoint)
+  })
+
+  it('does not replace the browser subscription if removing the old registration fails', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    const subscribe = vi.fn()
+    stubServiceWorker(old, subscribe)
+    savePushPreference({ topic: 'service-updates', endpoint: old.endpoint })
+
+    await expect(enablePush(client({ unregister: vi.fn(async () => { throw new Error('network') }) })))
+      .rejects.toThrow('network')
+
+    expect(old.unsubscribe).not.toHaveBeenCalled()
+    expect(subscribe).not.toHaveBeenCalled()
+    expect(readPushPreference()?.endpoint).toBe(old.endpoint)
+  })
+
+  it('does not register an old-key subscription when browser cancellation fails', async () => {
+    stubNotification('default', vi.fn(async () => 'granted' as const))
+    const old = fakeSubscription('https://push.example.test/old', 'QPublicKey')
+    old.unsubscribe = vi.fn(async () => false)
+    const subscribe = vi.fn()
+    stubServiceWorker(old, subscribe)
+    const pushClient = client()
+
+    await expect(enablePush(pushClient)).rejects.toThrow(PushSubscriptionError)
+
+    expect(subscribe).not.toHaveBeenCalled()
+    expect(pushClient.register).not.toHaveBeenCalled()
+    expect(readPushPreference()).toBeNull()
+  })
+})
+
 describe('disablePush', () => {
   it('removes the server registration before cancelling the browser subscription', async () => {
     const subscription = fakeSubscription()
@@ -203,6 +283,41 @@ describe('disablePush', () => {
     expect(order).toEqual(['server', 'browser'])
     expect(readPushPreference()).toBeNull()
   })
+
+  it('removes both saved and current endpoints before clearing the preference', async () => {
+    const subscription = fakeSubscription('https://push.example.test/new')
+    stubServiceWorker(subscription)
+    const saved = { topic: 'service-updates' as const, endpoint: 'https://push.example.test/old' }
+    savePushPreference(saved)
+    const order: string[] = []
+    const pushClient = client({ unregister: vi.fn(async (endpoint) => {
+      expect(readPushPreference()).toEqual(saved)
+      order.push(endpoint)
+    }) })
+    subscription.unsubscribe = vi.fn(async () => { order.push('browser'); return true })
+
+    await disablePush(pushClient)
+
+    expect(order).toEqual([saved.endpoint, subscription.endpoint, 'browser'])
+    expect(readPushPreference()).toBeNull()
+  })
+
+  it.each(['https://push.example.test/old', 'https://push.example.test/new'])(
+    'retains saved state for retry when removal of %s fails', async (failedEndpoint) => {
+      const subscription = fakeSubscription('https://push.example.test/new')
+      stubServiceWorker(subscription)
+      const saved = { topic: 'service-updates' as const, endpoint: 'https://push.example.test/old' }
+      savePushPreference(saved)
+      const pushClient = client({ unregister: vi.fn(async (endpoint) => {
+        if (endpoint === failedEndpoint) throw new Error('network')
+      }) })
+
+      await expect(disablePush(pushClient)).rejects.toThrow('network')
+
+      expect(readPushPreference()).toEqual(saved)
+      expect(subscription.unsubscribe).not.toHaveBeenCalled()
+    },
+  )
 
   it('keeps the preference when the server call fails so the toggle stays honest', async () => {
     const subscription = fakeSubscription()

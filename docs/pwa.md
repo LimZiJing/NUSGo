@@ -29,6 +29,8 @@ The notices are compact pills that stay centred at the top of the map. At 320px 
 
 Settings offers an opt-in **Notifications** section for service updates: a delayed bus or live arrivals pausing at a stop. The browser prompt is requested only after **Enable notifications** is tapped, and the explanation stays visible above the button. The stored choice survives a reload; a stored preference only counts as on while the browser still permits notifications. On iOS a browser tab has no Push API, so the section explains that NUSGo must be added to the Home Screen and opened from there. A denied permission points at browser settings and offers no in-app toggle.
 
+When enabling notifications, the browser reuses its subscription only if it is bound to the deployment's current VAPID public key. After key rotation, enabling removes the old server registration and browser subscription before creating a replacement. Turning notifications off removes both the saved endpoint and the current browser endpoint if they differ; a failed server removal keeps the saved choice so the operation can be retried.
+
 The notification has a short title, a one-line body and a deep link to the affected stop. Tapping it focuses an open app window and hands it the link, or opens the installed app at that stop when none is open.
 
 Server side:

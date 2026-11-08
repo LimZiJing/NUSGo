@@ -1,6 +1,12 @@
 import { buildApiUrl } from '../api/api-url'
 import type { PushNotificationTopic } from '@nusgo/shared/push/notifications'
-import type { PushReminderRegistration } from '@nusgo/shared/push/reminders'
+import {
+  parsePushReminderResponse,
+  type PushReminderLeadTimeSeconds,
+  type PushReminderRegistration,
+  type PushReminderResponse,
+  type PushReminderTarget,
+} from '@nusgo/shared/push/reminders'
 import type {
   PushSubscriptionRegistration,
   PushSubscriptionUnsubscribeRequest,
@@ -11,8 +17,17 @@ export interface PushSubscriptionClient {
   getPublicKey(signal?: AbortSignal): Promise<string | null>
   register(registration: PushSubscriptionRegistration, signal?: AbortSignal): Promise<void>
   unregister(endpoint: string, signal?: AbortSignal): Promise<void>
-  /** Registers, or replaces, this endpoint's alight reminder for one stop and route. */
-  registerReminder(registration: PushReminderRegistration, signal?: AbortSignal): Promise<void>
+  /**
+   * Registers, or replaces, this endpoint's alight reminder for one stop, route and lead time.
+   *
+   * Returns the server's acknowledgement when it carries a valid expiry, so the control can show
+   * the same deadline the evaluator enforces. A missing or malformed body resolves to null rather
+   * than failing a registration the server already accepted.
+   */
+  registerReminder(
+    registration: PushReminderRegistration,
+    signal?: AbortSignal,
+  ): Promise<PushReminderResponse | null>
   unregisterReminder(endpoint: string, signal?: AbortSignal): Promise<void>
 }
 
@@ -70,6 +85,13 @@ export function createPushSubscriptionClient(
     async registerReminder(registration, signal) {
       const response = await post(remindersUrl, registration, signal)
       if (!response.ok) throw new Error(`push reminder request failed: ${response.status}`)
+      // The registration already succeeded, so a proxy or older server body must not turn a
+      // stored watch into an error: the caller falls back to the lead time it asked for.
+      try {
+        return parsePushReminderResponse(await response.json() as unknown)
+      } catch {
+        return null
+      }
     },
     async unregisterReminder(endpoint, signal) {
       const body: PushSubscriptionUnsubscribeRequest = { endpoint }
@@ -96,11 +118,17 @@ export function toPushSubscriptionRegistration(
 /** Same conversion for a reminder, whose topic is fixed by the shared contract. */
 export function toPushReminderRegistration(
   subscription: { readonly endpoint?: string; readonly keys?: { readonly p256dh?: string; readonly auth?: string } },
-  watch: { readonly stopId: string; readonly routeId: string },
+  watch: PushReminderTarget & { readonly leadTimeSeconds: PushReminderLeadTimeSeconds },
 ): PushReminderRegistration | null {
   const endpoint = subscription.endpoint
   const p256dh = subscription.keys?.p256dh
   const auth = subscription.keys?.auth
   if (!endpoint || !p256dh || !auth) return null
-  return { endpoint, keys: { p256dh, auth }, topic: 'alight-reminders', watch }
+  return {
+    endpoint,
+    keys: { p256dh, auth },
+    topic: 'alight-reminders',
+    watch: { stopId: watch.stopId, routeId: watch.routeId },
+    leadTimeSeconds: watch.leadTimeSeconds,
+  }
 }

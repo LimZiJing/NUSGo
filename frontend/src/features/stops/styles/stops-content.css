@@ -313,10 +313,10 @@
   }
 
   /* The reminder sits above the departures card as its own quiet block: it explains what the
-     notification does before anything asks the browser for permission. */
+     notification does before anything asks the browser for permission. Spacing is on the visible
+     children rather than a grid gap so the always-mounted, initially empty alert row adds none. */
   .stop-reminder {
     display: grid;
-    gap: var(--space-2);
     min-width: 0;
   }
 
@@ -328,11 +328,13 @@
 
   .stop-reminder-description {
     color: var(--text-muted);
+    margin-block-end: var(--space-2);
   }
 
   .stop-reminder-error {
     color: var(--text-error-strong);
     font-weight: 600;
+    margin-block-start: var(--space-2);
   }
 
   .stop-reminder-actions {
@@ -342,9 +344,15 @@
     flex-wrap: wrap;
   }
 
-  .stop-reminder-actions .stop-reminder-route {
-    flex: 1 1 140px;
+  .stop-reminder-actions .stop-reminder-route,
+  .stop-reminder-actions .stop-reminder-lead-time {
+    flex: 1 1 120px;
     min-width: 0;
+  }
+
+  /* The alert stays mounted as an empty live region; an empty one must not reserve a line. */
+  .stop-reminder-error:empty {
+    margin: 0;
   }
 
   .stop-reminder-actions .button {

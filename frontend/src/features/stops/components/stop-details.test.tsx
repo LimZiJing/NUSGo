@@ -92,6 +92,8 @@ describe('StopDetails reminder control', () => {
     availability: 'available',
     permission: 'default',
     watchedRouteId: null,
+    watchedLeadTimeSeconds: null,
+    watchedExpiresAt: null,
     busy: false,
     errorMessage: '',
     enable: vi.fn(),
@@ -102,7 +104,7 @@ describe('StopDetails reminder control', () => {
   it('is absent when app composition supplies no push capability', () => {
     renderStopDetails()
 
-    expect(screen.queryByText(/about to reach University Hall/)).toBeNull()
+    expect(screen.queryByText(/before the next bus on the chosen route/)).toBeNull()
     expect(screen.queryByRole('button', { name: /Remind me/ })).toBeNull()
   })
 
@@ -120,6 +122,7 @@ describe('StopDetails reminder control', () => {
     await user.click(screen.getByRole('option', { name: 'D2' }))
     await user.click(screen.getByRole('button', { name: /Remind me/ }))
 
-    expect(enable).toHaveBeenCalledWith('D2')
+    // The default two-minute lead time travels with the route, never one without the other.
+    expect(enable).toHaveBeenCalledWith('D2', 120)
   })
 })

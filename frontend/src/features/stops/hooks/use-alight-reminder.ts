@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { PushReminderLeadTimeSeconds } from '@nusgo/shared/push/reminders'
 import {
   PushSubscriptionError,
   type PushNotificationService,
@@ -23,10 +24,14 @@ function errorMessageFor(error: unknown): string {
  * The saved reminder is read once and then kept in state, so the control survives re-renders while
  * the browser's own environment is re-read on focus (Safari reports standalone state late).
  * Permission is requested only inside `enable`, which the control calls from the user's tap.
+ *
+ * A saved watch that has passed the server's expiry is treated as gone: the server has already
+ * removed it, so the control must not offer to stop a reminder that can never fire.
  */
 export function useAlightReminder(
   service: PushNotificationService,
   stopId: string | null,
+  now: () => number = Date.now,
 ): ReminderState {
   const [environment, setEnvironment] = useState(service.getEnvironment)
   const [preference, setPreference] = useState<ReminderPreference | null>(service.readReminder)
@@ -43,11 +48,11 @@ export function useAlightReminder(
     }
   }, [service])
 
-  const enable = useCallback((routeId: string): void => {
+  const enable = useCallback((routeId: string, leadTimeSeconds: PushReminderLeadTimeSeconds): void => {
     if (!stopId) return
     setBusy(true)
     setErrorMessage('')
-    void service.enableReminder({ stopId, routeId })
+    void service.enableReminder({ stopId, routeId, leadTimeSeconds })
       .then((result) => {
         setPreference(result.preference)
         // A refusal leaves the answer unchanged, but the button must stop claiming it worked.
@@ -74,13 +79,19 @@ export function useAlightReminder(
 
   // Only a reminder for *this* stop counts as watched; a reminder saved elsewhere stays untouched
   // in storage and is replaced only when the rider asks for this stop instead.
-  const watchedRouteId = stopId && preference?.stopId === stopId ? preference.routeId : null
+  const activePreference = preference && (preference.expiresAt === null || Date.parse(preference.expiresAt) > now())
+    ? preference
+    : null
+  const watchedRouteId = stopId && activePreference?.stopId === stopId ? activePreference.routeId : null
+  const watching = environment.permission === 'granted' ? watchedRouteId : null
 
   return {
     availability: environment.availability,
     permission: environment.permission,
     // A stored reminder only means "watching" while the browser still permits notifications.
-    watchedRouteId: environment.permission === 'granted' ? watchedRouteId : null,
+    watchedRouteId: watching,
+    watchedLeadTimeSeconds: watching ? activePreference?.leadTimeSeconds ?? null : null,
+    watchedExpiresAt: watching ? activePreference?.expiresAt ?? null : null,
     busy,
     errorMessage,
     enable,

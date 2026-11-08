@@ -25,15 +25,26 @@ function service(overrides: Partial<PushNotificationService> = {}): PushNotifica
   }
 }
 
-function Probe({ pushService, stopId = 'COM3' }: { readonly pushService: PushNotificationService; readonly stopId?: string | null }) {
-  const reminder = useAlightReminder(pushService, stopId)
+function Probe({
+  pushService,
+  stopId = 'COM3',
+  now,
+}: {
+  readonly pushService: PushNotificationService
+  readonly stopId?: string | null
+  readonly now?: () => number
+}) {
+  const reminder = useAlightReminder(pushService, stopId, now)
   return (
     <>
       <span data-testid="watched">{reminder.watchedRouteId ?? 'none'}</span>
+      <span data-testid="lead">{String(reminder.watchedLeadTimeSeconds)}</span>
+      <span data-testid="expires">{String(reminder.watchedExpiresAt)}</span>
       <span data-testid="permission">{reminder.permission}</span>
       <span data-testid="busy">{String(reminder.busy)}</span>
       <span data-testid="error">{reminder.errorMessage}</span>
-      <button type="button" onClick={() => reminder.enable('D1')}>enable</button>
+      <button type="button" onClick={() => reminder.enable('D1', 120)}>enable</button>
+      <button type="button" onClick={() => reminder.enable('D1', 60)}>enable one minute</button>
       <button type="button" onClick={reminder.disable}>disable</button>
     </>
   )
@@ -43,7 +54,16 @@ function state(testId: string): string | null {
   return screen.getByTestId(testId).textContent
 }
 
-const SAVED: ReminderPreference = { stopId: 'COM3', routeId: 'D1', endpoint: 'https://push.example.test/sub/1' }
+// A watch the server has not expired; the clock is injected wherever the test is about expiry.
+const SAVED: ReminderPreference = {
+  stopId: 'COM3',
+  routeId: 'D1',
+  endpoint: 'https://push.example.test/sub/1',
+  leadTimeSeconds: 120,
+  expiresAt: '2030-01-01T12:00:00.000Z',
+}
+
+const AFTER_SAVED_EXPIRY = Date.parse('2030-01-01T12:00:00.000Z')
 
 /** A browser that already lets NUSGo show notifications, which is what a saved reminder implies. */
 function granted(overrides: Partial<PushNotificationService> = {}): PushNotificationService {
@@ -60,10 +80,12 @@ describe('useAlightReminder', () => {
     expect(state('watched')).toBe('none')
   })
 
-  it('reports the saved route only for the stop it names', () => {
+  it('reports the saved route, lead time and expiry only for the stop it names', () => {
     render(<Probe pushService={granted({ readReminder: () => SAVED })} />)
 
     expect(state('watched')).toBe('D1')
+    expect(state('lead')).toBe('120')
+    expect(state('expires')).toBe(SAVED.expiresAt)
   })
 
   it('does not claim a watch the browser no longer permits', () => {
@@ -76,18 +98,47 @@ describe('useAlightReminder', () => {
     expect(state('permission')).toBe('denied')
   })
 
-  it('registers a watch from a tap and stores the result', async () => {
+  // The server removes the watch at expiry, so the control must not offer to stop a reminder that
+  // can never fire again.
+  it('does not claim a saved watch past the server expiry', () => {
+    render(
+      <Probe
+        pushService={granted({ readReminder: () => SAVED })}
+        now={() => AFTER_SAVED_EXPIRY}
+      />,
+    )
+
+    expect(state('watched')).toBe('none')
+    expect(state('expires')).toBe('null')
+  })
+
+  it('keeps a saved watch one millisecond before its expiry', () => {
+    render(
+      <Probe
+        pushService={granted({ readReminder: () => SAVED })}
+        now={() => AFTER_SAVED_EXPIRY - 1}
+      />,
+    )
+
+    expect(state('watched')).toBe('D1')
+  })
+
+  it('registers a watch from a tap with the chosen lead time and stores the result', async () => {
     const user = userEvent.setup()
+    const saved: ReminderPreference = { ...SAVED, leadTimeSeconds: 60 }
     const enableReminder = vi.fn(async (): Promise<EnableReminderResult> => ({
-      preference: SAVED,
+      preference: saved,
       permission: 'granted',
     }))
     render(<Probe pushService={granted({ enableReminder })} />)
 
-    await user.click(screen.getByRole('button', { name: 'enable' }))
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'enable one minute' }))
+    })
 
-    expect(enableReminder).toHaveBeenCalledWith({ stopId: 'COM3', routeId: 'D1' })
+    expect(enableReminder).toHaveBeenCalledWith({ stopId: 'COM3', routeId: 'D1', leadTimeSeconds: 60 })
     expect(state('watched')).toBe('D1')
+    expect(state('lead')).toBe('60')
     expect(state('busy')).toBe('false')
   })
 
@@ -134,7 +185,6 @@ describe('useAlightReminder without a selected stop', () => {
     const user = userEvent.setup()
     const enableReminder = vi.fn(async (): Promise<EnableReminderResult> => ({ preference: null, permission: 'granted' }))
     render(<Probe pushService={service({ enableReminder })} stopId={null} />)
-
     await user.click(screen.getByRole('button', { name: 'enable' }))
 
     expect(enableReminder).not.toHaveBeenCalled()

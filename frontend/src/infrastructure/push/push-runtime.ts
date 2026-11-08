@@ -10,7 +10,14 @@ import {
   type PushPreference,
   type ReminderPreference,
 } from '../../domain/push/push-notifications'
-import type { PushReminderTarget } from '@nusgo/shared/push/reminders'
+import type {
+  PushReminderLeadTimeSeconds,
+  PushReminderTarget,
+} from '@nusgo/shared/push/reminders'
+import {
+  DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS,
+  isPushReminderLeadTimeSeconds,
+} from '@nusgo/shared/push/reminders'
 import type { PushSubscriptionClient } from './push-subscription-client'
 import {
   createPushSubscriptionClient,
@@ -103,6 +110,8 @@ export function savePushPreference(preference: PushPreference | null): void {
 /**
  * Reads the saved reminder. A record that no longer has a stop, a route and an endpoint is
  * discarded rather than half-restored, so the control never claims a watch the server cannot hold.
+ * A record from before lead times existed keeps the default lead time and an unknown expiry,
+ * which is honest: the rider still sees the watch they asked for.
  */
 export function readReminderPreference(): ReminderPreference | null {
   try {
@@ -110,10 +119,12 @@ export function readReminderPreference(): ReminderPreference | null {
     if (!stored) return null
     const parsed: unknown = JSON.parse(stored)
     if (typeof parsed !== 'object' || parsed === null) return null
-    const { stopId, routeId, endpoint } = parsed as {
+    const { stopId, routeId, endpoint, leadTimeSeconds, expiresAt } = parsed as {
       stopId?: unknown
       routeId?: unknown
       endpoint?: unknown
+      leadTimeSeconds?: unknown
+      expiresAt?: unknown
     }
     if (
       typeof stopId !== 'string' || stopId.length === 0 ||
@@ -122,7 +133,17 @@ export function readReminderPreference(): ReminderPreference | null {
     ) {
       return null
     }
-    return { stopId, routeId, endpoint }
+    return {
+      stopId,
+      routeId,
+      endpoint,
+      leadTimeSeconds: isPushReminderLeadTimeSeconds(leadTimeSeconds)
+        ? leadTimeSeconds
+        : DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS,
+      expiresAt: typeof expiresAt === 'string' && Number.isFinite(Date.parse(expiresAt))
+        ? expiresAt
+        : null,
+    }
   } catch {
     return null
   }
@@ -228,16 +249,19 @@ export async function disablePush(client: PushSubscriptionClient): Promise<PushP
 }
 
 /**
- * Registers this browser to be reminded at one stop on one route.
+ * Registers this browser to be reminded before one stop on one route.
  *
  * Same order as service updates: the UI has already said why, then this requests permission, then
  * reuses or creates the browser's single subscription, then replaces the server-side watch. It
  * replaces rather than adds because a browser holds one endpoint and the control asks for one stop
  * at a time, so a second tap reads as "remind me here instead".
+ *
+ * The server owns the expiry, so this stores the expiry it echoes back. When the acknowledgement
+ * is missing the lead time the rider chose is still recorded, so the control shows what was sent.
  */
 export async function enableReminder(
   client: PushSubscriptionClient,
-  target: PushReminderTarget,
+  target: PushReminderTarget & { readonly leadTimeSeconds: PushReminderLeadTimeSeconds },
   previous: ReminderPreference | null = null,
 ): Promise<EnableReminderResult> {
   const permission = await requestPermission()
@@ -246,11 +270,14 @@ export async function enableReminder(
   const registrationBody = toPushReminderRegistration(await obtainSubscription(client), target)
   if (!registrationBody) throw new PushSubscriptionError('invalid-subscription')
 
-  await client.registerReminder(registrationBody)
+  const acknowledgement = await client.registerReminder(registrationBody)
   const preference: ReminderPreference = {
     stopId: registrationBody.watch.stopId,
     routeId: registrationBody.watch.routeId,
     endpoint: registrationBody.endpoint,
+    // Prefer the server's echo: it is the value the evaluator will actually use.
+    leadTimeSeconds: acknowledgement?.leadTimeSeconds ?? registrationBody.leadTimeSeconds,
+    expiresAt: acknowledgement?.expiresAt ?? null,
   }
   saveReminderPreference(preference)
   return { preference, permission }

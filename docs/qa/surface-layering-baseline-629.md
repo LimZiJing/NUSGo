@@ -70,6 +70,20 @@ Two things to decide before choosing values:
 
 The page surface has to be painted by something for any of this to be visible. The desktop navigation column, its scroll container, the mobile sheets and the mobile tab-bar backdrop now paint `--surface` instead of `--surface-raised`, so the page layer is the recessed one and cards sit above it.
 
+All mobile sheet shells use the same `--surface` role: Explore, Stops and Plan inherit it from `.navigation-panel`; Settings uses `.more-panel-surface`. Feature styles may set borders and layout, but must not replace the shell fill. Nested cards and controls continue to use their raised or card tokens. The theme-token test discovers every theme CSS file, verifies that it is imported and defines the required surface roles, and the sheet test guards the shared shell fill. Theme-specific tokens, such as the NUS brand colors, remain valid.
+
+**Follow-up #655 current mapping.** The measurements and captures below record the #641 values. The current token values are:
+
+| Theme | `--surface` | `--surface-raised` | `--surface-card` |
+|---|---|---|---|
+| light | `#f1f5f9` | `#fff` | `#fff` |
+| dark | `#1f2028` | `#16171d` | `#2a2c37` |
+| nus | `#fffaf4` | `#fff3e7` | `#fffaf4` |
+| matcha | `#f0f2e7` | `#e1e7d6` | `#f0f2e7` |
+| sakura | `#f4e7eb` | `#e9d4db` | `#f4e7eb` |
+
+Captures and contrast measurements below are historical for the #641 mapping; the swapped dark and brand-theme roles in #655 make those theme captures stale.
+
 | Theme | Token | Before | After | Card on column |
 |---|---|---|---|---|
 | light | `--surface` | `#fff` | `#f1f5f9` | 1.10 |

@@ -53,6 +53,7 @@ import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
 import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
+import { buildBasePathUrl } from '../infrastructure/data/json'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
   readMinuteFormatPreference,
@@ -1160,6 +1161,7 @@ function App() {
               }}
             /> : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
               <SettingsContent
+                communityWaypointDownloadUrl={buildBasePathUrl('data/community-waypoints.geojson')}
                 themePreference={themePreference}
                 onThemePreferenceChange={changeThemePreference}
                 minuteFormat={minuteFormat}

@@ -20,6 +20,7 @@ interface SettingsContentProps {
   readonly onClearFavorites: () => void
   readonly transitMetadata: TransitNetworkMetadata | null
   readonly buildingSource: BuildingCatalogueSource | null
+  readonly communityWaypointDownloadUrl: string
   readonly dataVersion: string
 }
 
@@ -43,6 +44,7 @@ export function SettingsContent({
   onClearFavorites,
   transitMetadata,
   buildingSource,
+  communityWaypointDownloadUrl,
   dataVersion,
 }: SettingsContentProps) {
   return (
@@ -80,6 +82,7 @@ export function SettingsContent({
           dataVersion={dataVersion}
           transitMetadata={transitMetadata}
           buildingSource={buildingSource}
+          communityWaypointDownloadUrl={communityWaypointDownloadUrl}
         />
       </SettingsDisclosure>
     </div>

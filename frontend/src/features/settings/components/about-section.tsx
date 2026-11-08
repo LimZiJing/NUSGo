@@ -8,6 +8,7 @@ interface AboutSectionProps {
   readonly dataVersion: string
   readonly transitMetadata: TransitNetworkMetadata | null
   readonly buildingSource: BuildingCatalogueSource | null
+  readonly communityWaypointDownloadUrl: string
 }
 
 interface SourceLinkProps {
@@ -65,7 +66,12 @@ function AboutCardRow({ children, className = '' }: { readonly children: ReactNo
   return <div className={`settings-about-row ${className}`.trim()}>{children}</div>
 }
 
-export function AboutSection({ dataVersion, transitMetadata, buildingSource }: AboutSectionProps) {
+export function AboutSection({
+  dataVersion,
+  transitMetadata,
+  buildingSource,
+  communityWaypointDownloadUrl,
+}: AboutSectionProps) {
   const buildVersion = dataVersion === LOCAL_DATA_VERSION
     ? 'Development'
     : `Production · ${dataVersion.slice(0, 7)}`
@@ -93,6 +99,18 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
             <h4>Venue data</h4>
             <p className="settings-about-link-line">
               <SourceLink href="https://nusmods.com">NUSMods</SourceLink>
+            </p>
+          </AboutCardRow>
+
+          <AboutCardRow>
+            <h4>Community waypoints</h4>
+            <p className="settings-about-link-line">
+              <a
+                href={communityWaypointDownloadUrl}
+                download="community-waypoints.geojson"
+              >
+                Download approved data (GeoJSON)
+              </a>
             </p>
           </AboutCardRow>
 

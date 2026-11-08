@@ -12,6 +12,7 @@ describe('Settings sections', () => {
     const user = userEvent.setup()
     render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="system"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -58,6 +59,7 @@ describe('Settings sections', () => {
     const onRemoveFavorite = vi.fn()
     const view = render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -79,6 +81,7 @@ describe('Settings sections', () => {
     expect(onRemoveFavorite).toHaveBeenCalledWith('kent-ridge')
     view.rerender(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -102,6 +105,7 @@ describe('Settings sections', () => {
     const onMinuteFormatChange = vi.fn()
     render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="system"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"

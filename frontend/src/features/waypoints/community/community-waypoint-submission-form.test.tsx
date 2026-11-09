@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import { buildBuildingIndex } from '../../../domain/venue/building-index'
 import { CommunityWaypointSubmissionError } from '../../../domain/waypoints/community-waypoint-submission'
 import { CommunityWaypointSubmissionForm } from './community-waypoint-submission-form'
 
@@ -27,6 +28,9 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
   const props = {
     waypoint: null,
     coordinate,
+    locationStatus: 'ready' as const,
+    locationAccuracy: 12,
+    buildingIndex: null,
     onAdjustLocation: vi.fn(),
     onSubmit: vi.fn(async () => undefined),
     onBack: vi.fn(),
@@ -37,22 +41,30 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
 }
 
 describe('CommunityWaypointSubmissionForm', () => {
-  it('validates a place suggestion and shows a private-safe review receipt', async () => {
+  it('validates a Community Waypoint suggestion and shows a private-safe review receipt', async () => {
     const user = userEvent.setup()
     const { props } = renderForm()
 
     expect(screen.getByRole('status').textContent).toBe('')
-    expect(screen.getByText('Reviewed before publishing. No photos, photo links or personal details.')).toBeTruthy()
+    expect(screen.getByText('Using current location')).toBeTruthy()
+    expect(screen.queryByText(/Current location accuracy/)).toBeNull()
+    expect(screen.queryByText(/Anonymous\. Your pin and optional note/)).toBeNull()
+    expect(screen.queryByText('Only reviewers see this note.')).toBeNull()
     expect(screen.queryByLabelText(/name or email/i)).toBeNull()
     expect(screen.queryByLabelText(/photo/i)).toBeNull()
 
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
-    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
-    const additionalDetails = screen.getByText('Additional details').closest('details')
-    expect(additionalDetails?.open).toBe(false)
-    await user.click(screen.getByText('Additional details'))
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.type(screen.getByLabelText('Note for reviewers'), 'Near the library entrance.')
+    expect(screen.getByLabelText('Building or landmark')).toBeTruthy()
+    expect(screen.getByLabelText('Floor')).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Building or landmark' })).toBeTruthy()
+    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
+    expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByRole('heading', { name: 'Details and accessibility', level: 4 })).toBeTruthy()
+    expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
     await user.type(screen.getByLabelText(/Building or landmark/), 'Central Library')
-    await user.type(screen.getByLabelText('Details (optional)', { exact: true }), 'Near the east entrance.')
+    await user.click(extendedDetailsButton)
+    await user.type(screen.getByLabelText('Details', { exact: true }), 'Near the east entrance.')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     expect(props.onAdjustLocation).toHaveBeenCalledOnce()
 
@@ -60,48 +72,119 @@ describe('CommunityWaypointSubmissionForm', () => {
 
     expect(props.onSubmit).toHaveBeenCalledWith({
       kind: 'new-place',
-      name: 'ATM beside the library',
       category: 'atm',
       longitude: 103.78,
       latitude: 1.29,
       building: 'Central Library',
       details: 'Near the east entrance.',
+      explanation: 'Near the library entrance.',
     }, expect.any(AbortSignal))
     expect((await screen.findByRole('status')).textContent).toMatch(/review it before publication/)
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Suggestion received' }))
     expect(screen.queryByText(/issue|github\.com/i)).toBeNull()
   })
 
-  it('requires a category and place name before sending a new suggestion', async () => {
+  it('requires a category before sending a new suggestion', async () => {
     const user = userEvent.setup()
     const { props } = renderForm()
 
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/place name/i)
       expect(screen.getByRole('alert').textContent).toMatch(/category/i)
     })
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
 
-  it('opens optional details and focuses the visible field when its value is invalid', async () => {
+  it('requires a current or manually selected location before sending', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm({ locationStatus: 'required', locationAccuracy: null })
+
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(screen.getByText('Set the waypoint location before sending.', { selector: 'span' })).toBeTruthy()
+    expect(props.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('keeps its location status region mounted and silent on the initial state', () => {
+    const { props, rerender } = renderForm({ locationStatus: 'locating', locationAccuracy: null })
+
+    expect(screen.getByRole('status').textContent).toBe('')
+    expect(screen.getByText('Getting your current location…')).toBeTruthy()
+
+    rerender(<CommunityWaypointSubmissionForm {...props} locationStatus="ready" locationAccuracy={8} />)
+
+    expect(screen.getByRole('status').textContent).toBe('Waypoint location set. Check the pin before sending.')
+  })
+
+  it('autofills buildings and keeps details and accessibility inside their dropdown', async () => {
+    const user = userEvent.setup()
+    const buildingIndex = buildBuildingIndex([{
+      id: 'central-library',
+      name: 'Central Library',
+      aliases: [],
+      elementId: 'n123',
+      location: { x: coordinate.longitude, y: coordinate.latitude },
+      roomCodePrefixes: [],
+      sourceRefs: [{ source: 'openstreetmap', elementId: 'n123' }],
+    }])
+    renderForm({ buildingIndex })
+
+    const buildingInput = screen.getByLabelText('Building or landmark') as HTMLInputElement
+    await waitFor(() => {
+      expect(buildingInput.value).toBe('Central Library')
+    })
+    expect(buildingInput.type).toBe('text')
+    expect(screen.getByLabelText('Floor')).toBeTruthy()
+    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
+    expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
+
+    await user.click(extendedDetailsButton)
+    expect(screen.getByLabelText('Details')).toBeTruthy()
+    expect(screen.getByLabelText('Accessibility note')).toBeTruthy()
+
+    await user.clear(buildingInput)
+    await user.type(buildingInput, 'central')
+    const buildingOption = await screen.findByRole('option', { name: /Central Library/ })
+    await user.click(buildingOption)
+    expect(buildingInput.value).toBe('Central Library')
+  })
+
+  it('focuses the visible floor field when its value is invalid', async () => {
     const user = userEvent.setup()
     const { props } = renderForm()
 
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
-    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
-    await user.click(screen.getByText('Additional details'))
-    await user.type(screen.getByLabelText('Floor (optional)'), '1.5')
-    await user.click(screen.getByText('Additional details'))
-    expect(screen.getByText('Additional details').closest('details')?.open).toBe(false)
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.type(screen.getByLabelText('Floor'), '1.5')
 
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Additional details').closest('details')?.open).toBe(true)
-      expect(document.activeElement).toBe(screen.getByLabelText('Floor (optional)'))
+      expect(document.activeElement).toBe(screen.getByLabelText('Floor'))
       expect(screen.getByText('Enter a whole-number floor.', { selector: 'span' })).toBeTruthy()
+    })
+    expect(props.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('opens the extended details dropdown to focus a hidden invalid field', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm()
+
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
+    await user.click(extendedDetailsButton)
+    const detailsField = screen.getByLabelText('Details')
+    fireEvent.change(detailsField, { target: { value: 'x'.repeat(501) } })
+    await user.click(extendedDetailsButton)
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    await waitFor(() => {
+      expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('true')
+      expect(document.activeElement).toBe(screen.getByLabelText('Details'))
+      expect(screen.getByText('Keep the details within 500 characters.', { selector: 'span' })).toBeTruthy()
     })
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
@@ -111,8 +194,9 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm({ waypoint })
 
     expect(screen.getByText('Correction for')).toBeTruthy()
-    expect(screen.getByText('Additional details').closest('details')?.open).toBe(true)
-    expect((screen.getByLabelText('Place name (optional)') as HTMLInputElement).value).toBe(waypoint.name)
+    expect(screen.getByRole('heading', { name: 'Additional details (optional)' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Details and accessibility' }).getAttribute('aria-expanded')).toBe('false')
+    expect((screen.getByLabelText('Waypoint name') as HTMLInputElement).value).toBe(waypoint.name)
     await user.type(screen.getByLabelText('What needs correcting?'), 'The cooler has moved upstairs.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -136,8 +220,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       onSubmit: vi.fn(async () => { throw new CommunityWaypointSubmissionError('network') }),
     })
 
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
-    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => expect(screen.getByRole('alert').textContent)
@@ -145,16 +228,17 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(props.onBack).not.toHaveBeenCalled()
   })
 
-  it('counts Unicode code points the same way as the shared submission validator', async () => {
+  it('counts Unicode code points in the reviewer note', async () => {
     const user = userEvent.setup()
     const { props } = renderForm()
-    const name = '🧊'.repeat(80)
+    const note = '🧊'.repeat(1_001)
 
-    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: name } })
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
+    fireEvent.change(screen.getByLabelText('Note for reviewers'), { target: { value: note } })
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
-    expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name }), expect.any(AbortSignal))
+    expect(screen.getByRole('alert').textContent).toMatch(/note within 1,000 characters/i)
+    expect(props.onSubmit).not.toHaveBeenCalled()
   })
 
   it('keeps focus on an announced busy submit button and ignores repeated submits', async () => {
@@ -162,8 +246,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     let resolveSubmission = (): void => undefined
     const onSubmit = vi.fn(async () => new Promise<void>((resolve) => { resolveSubmission = resolve }))
     renderForm({ onSubmit })
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
-    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     const sendingButton = screen.getByRole('button', { name: 'Sending…' }) as HTMLButtonElement
@@ -187,8 +270,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       },
     )
     const view = renderForm({ onSubmit })
-    await user.selectOptions(screen.getByLabelText('Category'), 'atm')
-    await user.type(screen.getByLabelText('Place name'), 'ATM beside the library')
+    await user.click(screen.getByRole('radio', { name: 'ATM' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
     await waitFor(() => expect(submittedSignals).toHaveLength(1))
 

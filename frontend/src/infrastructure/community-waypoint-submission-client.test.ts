@@ -7,7 +7,6 @@ import {
 
 const submission: CommunityWaypointSubmission = {
   kind: 'new-place',
-  name: 'Water station',
   category: 'water_cooler',
   longitude: 103.78,
   latitude: 1.29,

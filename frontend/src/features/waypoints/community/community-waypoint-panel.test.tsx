@@ -39,12 +39,12 @@ function DiscoveryHarness({
   load,
   onSelectWaypoint = () => undefined,
   onSuggestCorrection = () => undefined,
-  onSuggestPlace = () => undefined,
+  onSuggestWaypoint = () => undefined,
 }: {
   readonly load: CommunityWaypointLoader
   readonly onSelectWaypoint?: (id: string) => void
   readonly onSuggestCorrection?: (id: string, trigger: HTMLButtonElement) => void
-  readonly onSuggestPlace?: (trigger: HTMLButtonElement) => void
+  readonly onSuggestWaypoint?: (trigger: HTMLButtonElement) => void
 }) {
   const discovery = useCommunityWaypointDiscovery(load)
   return (
@@ -52,13 +52,13 @@ function DiscoveryHarness({
       discovery={discovery}
       onSelectWaypoint={onSelectWaypoint}
       onSuggestCorrection={onSuggestCorrection}
-      onSuggestPlace={onSuggestPlace}
+      onSuggestWaypoint={onSuggestWaypoint}
     />
   )
 }
 
 describe('CommunityWaypointPanel', () => {
-  it('filters approved places and restores keyboard focus after opening details', async () => {
+  it('filters approved Community Waypoints and restores keyboard focus after opening details', async () => {
     const user = userEvent.setup()
     const load = vi.fn(async () => waypoints)
     const onSelectWaypoint = vi.fn()
@@ -67,15 +67,15 @@ describe('CommunityWaypointPanel', () => {
 
     await screen.findByRole('button', { name: /Water cooler at UTown/ })
     expect(screen.getByRole('button', { name: /ATM at Central Library/ })).toBeTruthy()
-    const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 place' })
+    const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 waypoint' })
     expect(waterFilter.getAttribute('aria-pressed')).toBe('true')
     await user.click(waterFilter)
 
     expect(screen.queryByRole('button', { name: /Water cooler at UTown/ })).toBeNull()
     expect(screen.getByRole('button', { name: /ATM at Central Library/ })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'ATM, 1 place' }))
+    await user.click(screen.getByRole('button', { name: 'ATM, 1 waypoint' }))
     expect(screen.getByText('No matches.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Show all places' }))
+    await user.click(screen.getByRole('button', { name: 'Show all waypoints' }))
 
     const row = screen.getByRole('button', { name: /Water cooler at UTown/ })
     await user.click(row)
@@ -92,21 +92,21 @@ describe('CommunityWaypointPanel', () => {
     expect(onSuggestCorrection.mock.calls[0][1]).toBeInstanceOf(HTMLButtonElement)
     expect(screen.queryByText('Correction submissions are not open yet.')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Community places' }))
+    await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
     await waitFor(() => expect(document.activeElement).toBe(row))
   })
 
-  it('offers one direct action instead of empty filters when no places are approved', async () => {
+  it('offers one direct action instead of empty filters when no Community Waypoints are approved', async () => {
     const user = userEvent.setup()
-    const onSuggestPlace = vi.fn()
-    render(<DiscoveryHarness load={async () => []} onSuggestPlace={onSuggestPlace} />)
+    const onSuggestWaypoint = vi.fn()
+    render(<DiscoveryHarness load={async () => []} onSuggestWaypoint={onSuggestWaypoint} />)
 
-    expect(await screen.findByRole('heading', { name: 'No places yet' })).toBeTruthy()
+    expect(await screen.findByText('Know a useful campus location? Suggest it for others.')).toBeTruthy()
+    expect(screen.queryByRole('heading')).toBeNull()
     expect(screen.queryByRole('group', { name: 'Filter by category' })).toBeNull()
-    expect(screen.queryByText(/Browse places reviewed/)).toBeNull()
-    const suggestButton = screen.getByRole('button', { name: 'Suggest a place' })
+    const suggestButton = screen.getByRole('button', { name: 'Suggest a waypoint' })
     await user.click(suggestButton)
-    expect(onSuggestPlace).toHaveBeenCalledWith(suggestButton)
+    expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton)
   })
 
   it('offers retry when approved data fails to load', async () => {

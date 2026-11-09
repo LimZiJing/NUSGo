@@ -39,14 +39,6 @@ function getCategoryLabel(category: string): string {
   return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
 }
 
-function getCategoryIssueLabels(submission: CommunityWaypointSubmission): readonly string[] {
-  if (submission.kind === 'new-place') return ['category:' + submission.category]
-  if (submission.kind === 'correction' && submission.category !== undefined) {
-    return ['category:' + submission.category]
-  }
-  return []
-}
-
 function getIssueTitle(submission: CommunityWaypointSubmission): string {
   if (submission.kind === 'new-place') {
     return '[New place] ' + getCategoryLabel(submission.category) + ' waypoint'
@@ -181,7 +173,7 @@ export function createPrivateSubmissionIssueDraft(
       '- [ ] Approved, rejected, duplicate, or outdated outcome is recorded with reason and date',
       '- Photo evidence is disabled at launch; do not collect or attach it.',
     ].join('\n'),
-    labels: ['kind:' + submission.kind, 'review:new', ...getCategoryIssueLabels(submission)],
+    labels: ['kind:' + submission.kind, 'review:new'],
   }
 }
 export function createPrivateSubmissionIssueWriter(

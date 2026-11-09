@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { buildReviewGeoJson } from './sync-waypoint-issues.mjs'
+import {
+  buildReviewGeoJson,
+  fetchOpenIssues,
+  syncWaypointIssues,
+} from './sync-waypoint-issues.mjs'
+
 const START = '<!-- NUSGO_SUBMISSION_JSON_V1_START -->'
 const END = '<!-- NUSGO_SUBMISSION_JSON_V1_END -->'
 const fence = String.fromCharCode(96).repeat(3)
@@ -203,5 +211,96 @@ describe('buildReviewGeoJson', () => {
       () => buildReviewGeoJson([missingTarget], publicWaypoints),
       /Issue #11: targets a Community Waypoint that is not in the public dataset/,
     )
+  })
+})
+
+describe('fetchOpenIssues', () => {
+  it('rejects repository names that could alter the GitHub API path', async () => {
+    for (const repository of ['owner/repo?state=all', '../repo', 'owner/repo\n']) {
+      await assert.rejects(
+        fetchOpenIssues('test-token', repository, async () => { throw new Error('must not fetch') }),
+        /A valid issue repository is required/,
+      )
+    }
+  })
+  it('fetches all pages and skips pull requests', async () => {
+    const calls = []
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({ number: index + 1, state: 'open' }))
+    firstPage[0] = { number: 1, state: 'open', pull_request: { url: 'https://example.test/pr/1' } }
+    const fetcher = async (url, options) => {
+      calls.push({ url: new URL(url), options })
+      const page = new URL(url).searchParams.get('page')
+      return {
+        ok: true,
+        json: async () => page === '1' ? firstPage : [{ number: 101, state: 'open' }],
+      }
+    }
+
+    const issues = await fetchOpenIssues('test-token', 'owner/repo', fetcher)
+
+    assert.equal(calls.length, 2)
+    assert.equal(calls[0].url.searchParams.get('per_page'), '100')
+    assert.equal(calls[1].url.searchParams.get('page'), '2')
+    assert.equal(calls[0].options.headers.Authorization, 'Bearer test-token')
+    assert.equal(issues.length, 100)
+    assert.equal(issues.some(({ pull_request }) => pull_request), false)
+    await assert.rejects(fetchOpenIssues('test-token', 'owner/repo', async () => ({
+      ok: true,
+      json: async () => [{ number: 102, state: 'open', pull_request: 'malformed' }],
+    })), /Issue #102: pull_request must be an object when present/)
+  })
+})
+
+describe('syncWaypointIssues', () => {
+  it('writes both snapshots and preserves them when the issue fetch fails', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'nusgo-waypoint-review-'))
+    const publicDataFile = join(directory, 'public.geojson')
+    const outputDirectory = join(directory, 'generated')
+    await writeFile(publicDataFile, JSON.stringify({ type: 'FeatureCollection', features: [] }), 'utf8')
+    const submission = {
+      kind: 'new-place',
+      category: 'atm',
+      longitude: 103.781,
+      latitude: 1.291,
+    }
+    const fetcher = async () => ({
+      ok: true,
+      json: async () => [issue(15, 'new-place', 'review:approved', submission)],
+    })
+
+    try {
+      const first = await syncWaypointIssues({
+        token: 'test-token',
+        repository: 'owner/repo',
+        publicDataFile,
+        outputDirectory,
+        fetcher,
+      })
+      assert.equal(first.approvedFeatureCount, 1)
+
+      const approvedPath = join(outputDirectory, 'approved.geojson')
+      const beforeFailure = await readFile(approvedPath, 'utf8')
+      await assert.rejects(syncWaypointIssues({
+        token: 'test-token',
+        repository: 'owner/repo',
+        publicDataFile,
+        outputDirectory,
+        fetcher: async () => ({ ok: false, status: 503 }),
+      }), /GitHub issue fetch failed with status 503/)
+      assert.equal(await readFile(approvedPath, 'utf8'), beforeFailure)
+      await assert.rejects(syncWaypointIssues({
+        token: 'test-token',
+        repository: 'owner/repo',
+        publicDataFile,
+        outputDirectory,
+        fetcher: async () => ({
+          ok: true,
+          json: async () => [{ ...issue(15, 'new-place', 'review:approved', submission), state: null }],
+        }),
+      }), /Issue #15: state must be open or closed/)
+      assert.equal(await readFile(approvedPath, 'utf8'), beforeFailure)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 })

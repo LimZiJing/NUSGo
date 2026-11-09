@@ -1,5 +1,10 @@
+import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { parseCommunityWaypointSubmission } from '../shared/src/waypoints/community-submission-validation.ts'
 import { parseCommunityWaypointsGeoJson } from '../shared/src/waypoints/community-geojson.ts'
+
+const API_VERSION = '2022-11-28'
 const ISSUE_MARKER_START = '<!-- NUSGO_SUBMISSION_JSON_V1_START -->'
 const ISSUE_MARKER_END = '<!-- NUSGO_SUBMISSION_JSON_V1_END -->'
 const ISSUE_REPOSITORY_DEFAULT = 'LimZiJing/NUSGo-waypoint-submissions'
@@ -235,3 +240,135 @@ export function buildReviewGeoJson(issues, publicWaypoints, issueRepository = IS
   return { toReview, approved }
 }
 
+export async function fetchOpenIssues(token, repository, fetcher = fetch) {
+  const credential = token?.trim()
+  if (!credential) throw new Error('A GitHub token is required')
+  if (!isValidIssueRepository(repository)) {
+    throw new Error('A valid issue repository is required')
+  }
+
+  const allIssues = []
+  for (let page = 1; ; page += 1) {
+    const url = new URL('https://api.github.com/repos/' + repository + '/issues')
+    url.searchParams.set('state', 'open')
+    url.searchParams.set('per_page', String(PAGE_SIZE))
+    url.searchParams.set('page', String(page))
+    const response = await fetcher(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: 'Bearer ' + credential,
+        'X-GitHub-Api-Version': API_VERSION,
+      },
+    })
+    if (!response.ok) throw new Error('GitHub issue fetch failed with status ' + response.status)
+
+    const payload = await response.json()
+    if (!Array.isArray(payload)) throw new Error('GitHub issue response must be an array')
+    allIssues.push(...payload)
+    if (payload.length < PAGE_SIZE) break
+  }
+
+  return allIssues.filter((issue) => {
+    if (!isRecord(issue)) throw new Error('GitHub issue response must contain issue objects')
+    assertIssueState(issue)
+    return !isPullRequest(issue)
+  })
+}
+
+async function readPublicWaypoints(filePath) {
+  const input = JSON.parse(await readFile(filePath, 'utf8'))
+  return parseCommunityWaypointsGeoJson(input)
+}
+
+async function readExistingFile(filePath) {
+  try {
+    return await readFile(filePath, 'utf8')
+  } catch (error) {
+    if (error?.code === 'ENOENT') return undefined
+    throw error
+  }
+}
+
+async function replaceFileIfChanged(filePath, content) {
+  if (await readExistingFile(filePath) === content) return false
+  const temporaryPath = filePath + '.' + process.pid + '.tmp'
+  try {
+    await writeFile(temporaryPath, content, 'utf8')
+    await rename(temporaryPath, filePath)
+  } catch (error) {
+    await unlink(temporaryPath).catch(() => {})
+    throw error
+  }
+  return true
+}
+
+async function writeReviewGeoJson(outputDirectory, layers) {
+  await mkdir(outputDirectory, { recursive: true })
+  const files = [
+    ['to-review.geojson', layers.toReview],
+    ['approved.geojson', layers.approved],
+  ]
+  const changed = []
+  for (const [name, collection] of files) {
+    const filePath = resolve(outputDirectory, name)
+    const content = JSON.stringify(collection, null, 2) + '\n'
+    if (await replaceFileIfChanged(filePath, content)) changed.push(filePath)
+  }
+  return changed
+}
+
+export async function syncWaypointIssues({
+  token,
+  repository,
+  publicDataFile,
+  outputDirectory,
+  fetcher = fetch,
+}) {
+  const [issues, publicWaypoints] = await Promise.all([
+    fetchOpenIssues(token, repository, fetcher),
+    readPublicWaypoints(publicDataFile),
+  ])
+  const layers = buildReviewGeoJson(issues, publicWaypoints, repository)
+  const changedFiles = await writeReviewGeoJson(outputDirectory, layers)
+  return {
+    issueCount: issues.length,
+    toReviewFeatureCount: layers.toReview.features.length,
+    approvedFeatureCount: layers.approved.features.length,
+    changedFiles,
+  }
+}
+
+function readFlag(args, name) {
+  const index = args.indexOf(name)
+  if (index < 0) return undefined
+  const value = args[index + 1]
+  if (!value || value.startsWith('--')) throw new Error(name + ' needs a value')
+  return value
+}
+
+async function main() {
+  const args = process.argv.slice(2)
+  const publicDataFile = readFlag(args, '--public-data-file')
+  const outputDirectory = readFlag(args, '--output-dir')
+  if (!publicDataFile) throw new Error('Pass --public-data-file with the current public GeoJSON')
+  if (!outputDirectory) throw new Error('Pass --output-dir inside the private submissions repository')
+  const result = await syncWaypointIssues({
+    token: process.env.GITHUB_TOKEN,
+    repository: process.env.COMMUNITY_WAYPOINT_ISSUES_REPOSITORY ?? ISSUE_REPOSITORY_DEFAULT,
+    publicDataFile: resolve(publicDataFile),
+    outputDirectory: resolve(outputDirectory),
+  })
+  console.log(
+    'Synced ' + result.issueCount + ' open issues: ' +
+    result.toReviewFeatureCount + ' to-review features and ' +
+    result.approvedFeatureCount + ' approved features.',
+  )
+}
+
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : undefined
+if (invokedPath === import.meta.url) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : 'Waypoint issue sync failed')
+    process.exitCode = 1
+  })
+}

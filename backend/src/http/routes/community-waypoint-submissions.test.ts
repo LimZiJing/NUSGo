@@ -12,7 +12,6 @@ import {
 
 const validNewPlace = {
   kind: 'new-place',
-  name: 'Water station',
   category: 'water_cooler',
   longitude: 103.78,
   latitude: 1.29,
@@ -60,20 +59,20 @@ describe('private submission issue creation', () => {
   it('formats a private issue with the controlled labels and no reporter fields', () => {
     const submission = parseCommunityWaypointSubmission(validNewPlace)
     const issue = createPrivateSubmissionIssueDraft(submission)
-    assert.equal(issue.title, '[new-place] Water station')
+    assert.equal(issue.title, '[new-place] Water cooler waypoint')
     assert.deepEqual(issue.labels, ['kind:new-place', 'review:new'])
     assert.match(issue.body, /\*\*Kind:\*\* New place/)
     assert.match(issue.body, /\*\*Kind label:\*\* kind:new-place/)
-    assert.match(issue.body, /Suggested name \(new place\)/)
+    assert.match(issue.body, /\*\*Waypoint name:\*\*/)
     assert.match(issue.body, /Longitude \(new place or correction\)/)
     assert.match(issue.body, /Private photo evidence IDs.*Disabled at launch/)
     assert.match(issue.body, /## Maintainer review/)
     assert.doesNotMatch(issue.body, /\*\*Reporter (name|email)/i)
-    const markdownName = parseCommunityWaypointSubmission({
+    const markdownNote = parseCommunityWaypointSubmission({
       ...validNewPlace,
-      name: 'Water ~~station~~',
+      explanation: 'Water ~~station~~',
     })
-    const safeIssue = createPrivateSubmissionIssueDraft(markdownName)
+    const safeIssue = createPrivateSubmissionIssueDraft(markdownNote)
     assert.doesNotMatch(safeIssue.body, /~~/)
     assert.match(safeIssue.body, /\\~\\~/)
   })
@@ -141,7 +140,7 @@ describe('private submission issue creation', () => {
       assert.equal(response.status, 202)
       const receipt = await response.json() as Record<string, unknown>
       assert.deepEqual(receipt, { status: 'received' })
-      assert.equal(receivedTitle, '[new-place] Water station')
+      assert.equal(receivedTitle, '[new-place] Water cooler waypoint')
       assert.equal('issueUrl' in receipt, false)
       assert.equal('issueNumber' in receipt, false)
     })

@@ -7,7 +7,6 @@ import {
 
 const validNewPlace = {
   kind: 'new-place',
-  name: 'Water station',
   category: 'water_cooler',
   longitude: 103.78,
   latitude: 1.29,
@@ -17,6 +16,13 @@ const validNewPlace = {
 describe('parseCommunityWaypointSubmission', () => {
   it('accepts a new-place submission with only supported fields', () => {
     assert.deepEqual(parseCommunityWaypointSubmission(validNewPlace), validNewPlace)
+  })
+
+  it('does not accept a contributor supplied display name for a new waypoint', () => {
+    assert.throws(() => parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      name: 'Water station',
+    }), InvalidCommunityWaypointSubmissionError)
   })
 
   it('accepts correction and removal submissions with stable public IDs', () => {

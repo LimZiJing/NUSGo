@@ -116,7 +116,6 @@ function optionalFloor(input: Record<string, unknown>): number | undefined {
 }
 
 function readProposedFields(input: Record<string, unknown>): ProposedCommunityWaypointFields {
-  const name = optionalText(input, 'name', COMMUNITY_WAYPOINT_TEXT_LIMITS.name)
   const category = optionalCategory(input)
   const coordinates = readCoordinates(input, false)
   const building = optionalText(input, 'building', COMMUNITY_WAYPOINT_TEXT_LIMITS.building)
@@ -129,7 +128,6 @@ function readProposedFields(input: Record<string, unknown>): ProposedCommunityWa
   const details = optionalText(input, 'details', COMMUNITY_WAYPOINT_TEXT_LIMITS.details)
 
   return {
-    ...(name === undefined ? {} : { name }),
     ...(category === undefined ? {} : { category }),
     ...(coordinates === undefined ? {} : coordinates),
     ...(building === undefined ? {} : { building }),
@@ -150,7 +148,7 @@ const NEW_PLACE_FIELDS = new Set([
   'accessibilityNote', 'details', 'explanation',
 ])
 const CORRECTION_FIELDS = new Set([
-  'kind', 'waypointId', 'requestedChange', 'name', 'category', 'longitude',
+  'kind', 'waypointId', 'requestedChange', 'category', 'longitude',
   'latitude', 'building', 'floor', 'accessibilityNote', 'details',
 ])
 const REMOVAL_FIELDS = new Set(['kind', 'waypointId', 'reason'])

@@ -25,6 +25,15 @@ describe('parseCommunityWaypointSubmission', () => {
     }), InvalidCommunityWaypointSubmissionError)
   })
 
+  it('does not accept a proposed name in a correction submission', () => {
+    assert.throws(() => parseCommunityWaypointSubmission({
+      kind: 'correction',
+      waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+      requestedChange: 'Correct the location details.',
+      name: 'Water station',
+    }), InvalidCommunityWaypointSubmissionError)
+  })
+
   it('accepts correction and removal submissions with stable public IDs', () => {
     assert.deepEqual(parseCommunityWaypointSubmission({
       kind: 'correction',

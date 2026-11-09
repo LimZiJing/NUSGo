@@ -94,7 +94,6 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
   }
   if (submission.kind === 'correction') {
     const proposedFields = [
-      ...(submission.name === undefined ? [] : [formatIssueField('Proposed name', submission.name)]),
       ...(submission.category === undefined ? [] : [formatIssueField('Proposed category', getCategoryLabel(submission.category))]),
       ...(submission.latitude === undefined || submission.longitude === undefined
         ? []

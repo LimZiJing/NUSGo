@@ -15,7 +15,6 @@ export const COMMUNITY_WAYPOINT_READABLE_CATEGORIES = [
 ] as const
 
 export const COMMUNITY_WAYPOINT_TEXT_LIMITS = {
-  name: 80,
   source: 160,
   building: 80,
   accessibilityNote: 280,

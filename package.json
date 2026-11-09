@@ -26,7 +26,7 @@
     "shuttle:timing:generate:geometry": "node --experimental-strip-types scripts/generate-shuttle-timing.mjs --allow-geometry-fallback",
     "community-waypoints:validate": "node --experimental-strip-types scripts/validate-community-waypoints.mjs",
     "bus:call": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/nus-bus-stops.ps1",
-    "test": "node --test scripts/servers.test.mjs scripts/release-history.test.mjs scripts/publish-website-release.test.mjs && npm --workspace @nusgo/shared run test && npm --workspace @nusgo/frontend run test && npm --workspace @nusgo/backend run test",
+    "test": "node --experimental-strip-types --test scripts/servers.test.mjs scripts/release-history.test.mjs scripts/publish-website-release.test.mjs scripts/sync-waypoint-issues.test.mjs && npm --workspace @nusgo/shared run test && npm --workspace @nusgo/frontend run test && npm --workspace @nusgo/backend run test",
     "benchmark:pathfinding": "npm --workspace @nusgo/frontend run benchmark:pathfinding --",
     "dev:frontend": "npm --workspace @nusgo/frontend run dev",
     "dev:backend": "npm --workspace @nusgo/backend run dev",

@@ -65,6 +65,7 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /\| Category \| Water cooler \|/)
     assert.match(issue.body, /\| Location \| Latitude 1\.29, longitude 103\.78/)
     assert.match(issue.body, /\[open map\]\(https:\/\/www\.openstreetmap\.org/)
+    assert.doesNotMatch(issue.body, /\| (?:Building|Floor) \|/)
     assert.match(issue.body, /## Submitted details \(unverified\)/)
     assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
     assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
@@ -80,6 +81,27 @@ describe('private submission issue creation', () => {
     const markdownIssue = createPrivateSubmissionIssueDraft(markdownNote)
     assert.doesNotMatch(markdownIssue.body, /~~/)
     assert.match(markdownIssue.body, /\\~\\~/)
+  })
+
+  it('adds building and floor to the summary only when they are supplied', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      building: 'Central Library',
+      floor: 2,
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    assert.match(issue.body, /\| Building \| Central Library \|/)
+    assert.match(issue.body, /\| Floor \| 2 \|/)
+
+    const correction = parseCommunityWaypointSubmission({
+      kind: 'correction',
+      waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+      requestedChange: 'Clarify the floor.',
+      floor: 1,
+    })
+    const correctionIssue = createPrivateSubmissionIssueDraft(correction)
+    assert.match(correctionIssue.body, /\| Proposed floor \| 1 \|/)
+    assert.doesNotMatch(correctionIssue.body, /\| Proposed building \|/)
   })
 
   it('uses the matching kind label for corrections and removals', () => {

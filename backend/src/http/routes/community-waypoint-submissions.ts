@@ -58,6 +58,8 @@ function getSummaryRows(submission: CommunityWaypointSubmission): readonly (read
       ['Report', 'New place'],
       ['Category', getCategoryLabel(submission.category)],
       ['Location', locationSummary(submission.latitude, submission.longitude)],
+      ...(submission.building === undefined ? [] : [['Building', submission.building] as const]),
+      ...(submission.floor === undefined ? [] : [['Floor', String(submission.floor)] as const]),
     ]
   }
   if (submission.kind === 'correction') {
@@ -67,6 +69,8 @@ function getSummaryRows(submission: CommunityWaypointSubmission): readonly (read
       ...(submission.latitude === undefined || submission.longitude === undefined
         ? []
         : [['Proposed location', locationSummary(submission.latitude, submission.longitude)] as const]),
+      ...(submission.building === undefined ? [] : [['Proposed building', submission.building] as const]),
+      ...(submission.floor === undefined ? [] : [['Proposed floor', String(submission.floor)] as const]),
     ]
   }
   return [

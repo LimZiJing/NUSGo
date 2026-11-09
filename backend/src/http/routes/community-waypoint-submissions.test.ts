@@ -55,6 +55,14 @@ function post(
   })
 }
 
+function readRawSubmissionJson(body: string): unknown {
+  const match = body.match(
+    /<!-- NUSGO_SUBMISSION_JSON_V1_START -->\r?\n(`{3,})json\r?\n([\s\S]*?)\r?\n\1\r?\n<!-- NUSGO_SUBMISSION_JSON_V1_END -->/,
+  )
+  assert.ok(match, 'issue should include a marked JSON code block')
+  return JSON.parse(match[2]) as unknown
+}
+
 describe('private submission issue creation', () => {
   it('formats submission details by report kind without empty placeholder fields', () => {
     const submission = parseCommunityWaypointSubmission(validNewPlace)
@@ -70,6 +78,8 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
     assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
     assert.match(issue.body, /\*\*Submitter explanation \(unverified\):\*\*/)
+    assert.match(issue.body, /<summary>Raw submission JSON — unverified/)
+    assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
     assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
     assert.match(issue.body, /Photo retention and orphan cleanup/)
     assert.match(issue.body, /## Maintainer review/)
@@ -79,8 +89,8 @@ describe('private submission issue creation', () => {
       explanation: 'Water ~~station~~',
     })
     const markdownIssue = createPrivateSubmissionIssueDraft(markdownNote)
-    assert.doesNotMatch(markdownIssue.body, /~~/)
-    assert.match(markdownIssue.body, /\\~\\~/)
+    assert.match(markdownIssue.body, /Submitter explanation \(unverified\):\*\* Water \\~\\~station\\~\\~/)
+    assert.deepEqual(readRawSubmissionJson(markdownIssue.body), { schemaVersion: 1, submission: markdownNote })
   })
 
   it('adds building and floor to the summary only when they are supplied', () => {

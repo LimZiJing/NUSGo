@@ -115,6 +115,26 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
   ]
 }
 
+function formatSubmissionJson(submission: CommunityWaypointSubmission): string {
+  const json = JSON.stringify({ schemaVersion: 1, submission }, null, 2)
+    .replaceAll('&', '\\u0026')
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+  const longestBacktickRun = Math.max(0, ...[...json.matchAll(/`+/g)].map(([run]) => run.length))
+  const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1))
+  return [
+    '<details>',
+    '<summary>Raw submission JSON — unverified (schema version 1)</summary>',
+    '',
+    '<!-- NUSGO_SUBMISSION_JSON_V1_START -->',
+    fence + 'json',
+    json,
+    fence,
+    '<!-- NUSGO_SUBMISSION_JSON_V1_END -->',
+    '</details>',
+  ].join('\n')
+}
+
 export function createPrivateSubmissionIssueDraft(
   submission: CommunityWaypointSubmission,
 ): PrivateSubmissionIssueDraft {
@@ -136,6 +156,8 @@ export function createPrivateSubmissionIssueDraft(
       '## Submitted details (unverified)',
       '',
       ...getSubmissionDetailLines(submission),
+      '',
+      formatSubmissionJson(submission),
       '',
       '## Maintainer review',
       '',

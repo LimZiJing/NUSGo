@@ -13,6 +13,7 @@ const entries: readonly StopListEntry[] = [
       id: 'STOP-PUBLIC',
       longName: 'Museum',
       oppositeStop: null,
+      reminderRoutes: [],
       departures: [],
       scheduledDepartures: [],
       publicServices: [{ serviceNumber: '151', timings: null, status: 'provider-error' }],
@@ -29,6 +30,7 @@ const entries: readonly StopListEntry[] = [
       id: 'STOP-INTERNAL',
       longName: 'University Town',
       oppositeStop: null,
+      reminderRoutes: [],
       departures: [],
       scheduledDepartures: [{
         routeId: 'A1',

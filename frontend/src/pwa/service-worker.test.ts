@@ -199,6 +199,23 @@ describe('push notifications', () => {
     expect(runtime.shown).toHaveLength(0)
   })
 
+  it('shows an alight reminder with its stop deep link', async () => {
+    const runtime = pushWorker()
+    await runtime.push({
+      title: 'Bus D1 is arriving',
+      body: 'About 2 min to COM3 Opp',
+      url: '?stop=COM3',
+      topic: 'alight-reminders',
+      tag: 'reminder:COM3:D1',
+    })
+
+    expect(runtime.shown).toHaveLength(1)
+    expect(runtime.shown[0]?.options).toMatchObject({
+      tag: 'reminder:COM3:D1',
+      data: { url: '?stop=COM3', topic: 'alight-reminders' },
+    })
+  })
+
   it('focuses an open app window and hands it the deep link', async () => {
     const runtime = pushWorker()
     await runtime.click({ url: '?stop=COM3', topic: 'service-updates' })

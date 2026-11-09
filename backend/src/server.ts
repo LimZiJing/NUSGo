@@ -9,9 +9,11 @@ import { createPathfindingService } from './pathfinding/service.ts'
 import { createPushSubscriptionStore } from './push/subscription-store.ts'
 import { createNotificationCap } from './push/notification-cap.ts'
 import { createServiceUpdatePublisher } from './push/service-update-publisher.ts'
+import { createAlightReminderPublisher } from './push/alight-reminders.ts'
+import { createAlightReminderRegistry } from './push/reminder-registry.ts'
 import { createServiceAnnouncementPublisher } from './push/service-announcement-publisher.ts'
-import { createWebPushSender } from './push/web-push-sender.ts'
 import type { ServiceAnnouncement } from './live-data/service-announcements.ts'
+import { createWebPushSender } from './push/web-push-sender.ts'
 import type { BackendConfig } from './config.ts'
 
 export function listenHttpServer(
@@ -48,22 +50,33 @@ async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const pushStore = createPushSubscriptionStore()
-  // One cap instance is shared by the HTTP routes and the publisher, so unsubscribing or
-  // re-registering resets the same window that limits delivery.
+  // One cap instance is shared by the HTTP routes and all publishers, so unsubscribing or
+  // re-registering resets the same window that limits delivery and two topics never double-spend
+  // one endpoint's hourly allowance.
   const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
-  // One sender for every topic, so TTL, timeout and VAPID handling cannot drift between them.
   const sendNotification = config.push ? createWebPushSender(config.push).sendNotification : null
+  const reminderRegistry = createAlightReminderRegistry()
+  const stopNameFor = (stopId: string): string | null =>
+    data.network.stops.find(({ id }) => id === stopId)?.longName ?? null
   const pushPublisher = config.push && sendNotification
     ? createServiceUpdatePublisher({
       store: pushStore,
       cap: pushCap,
       sendNotification,
-      stopName: (stopId) => data.network.stops.find(({ id }) => id === stopId)?.longName ?? null,
+      stopName: stopNameFor,
+    })
+    : null
+  // Reminders share the VAPID sender and the hourly cap, but keep their own registry and topic:
+  // an endpoint's allowance is spent once across both topics, not once per publisher.
+  const reminderPublisher = config.push && sendNotification
+    ? createAlightReminderPublisher({
+      registry: reminderRegistry,
+      cap: pushCap,
+      sendNotification,
+      stopName: stopNameFor,
     })
     : null
   let currentAnnouncements: readonly ServiceAnnouncement[] = []
-  // Announcement delivery uses the same store, sender and hourly cap as arrival updates, so the
-  // two publishers cannot each spend a separate budget for one endpoint.
   const announcementPublisher = config.push && sendNotification
     ? createServiceAnnouncementPublisher({
       store: pushStore,
@@ -74,12 +87,16 @@ async function startBackend(): Promise<void> {
     : null
   const liveData = await createBackendLiveData(config, data, {
     onArrivalSnapshotPublished: (snapshot) => {
-      // Delivery is intentionally fire-and-forget: a slow push service must not delay the next refresh.
+      // Both publishers read the snapshot this refresh already produced, so neither adds an
+      // upstream request. Delivery is fire-and-forget: a slow push service must not delay the
+      // next refresh.
       void pushPublisher?.publish(snapshot).catch((error: unknown) => {
         console.error('NUSGo push notification failed.', error instanceof Error ? error.name : typeof error)
       })
+      void reminderPublisher?.publish(snapshot).catch((error: unknown) => {
+        console.error('NUSGo alight reminder failed.', error instanceof Error ? error.name : typeof error)
+      })
     },
-    // Without push configured there is no hook, so the backend never calls the ticker tape.
     ...(announcementPublisher
       ? {
         onServiceAnnouncementsRefreshed: (announcements) => {
@@ -91,9 +108,19 @@ async function startBackend(): Promise<void> {
       }
       : {}),
   })
+  if (reminderPublisher) {
+    // Service hours are only cached for routes someone asked about, and a reminder check must not
+    // fetch them. Reading that existing cache is what makes "is the service running" free.
+    reminderPublisher.setServiceStatus((routeId, atMs) => liveData.getShuttleServiceStatus(routeId, atMs))
+  }
   const pathfinding = createPathfindingService(data, liveData, config)
   const server = await listenHttpServer(
-    createApp(config, data, liveData, pathfinding, { store: pushStore, cap: pushCap }),
+    createApp(config, data, liveData, pathfinding, {
+      store: pushStore,
+      cap: pushCap,
+      reminderRegistry,
+      reminderPublisher,
+    }),
     config.host,
     config.port,
   )

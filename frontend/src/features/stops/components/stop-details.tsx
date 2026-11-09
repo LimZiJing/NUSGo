@@ -3,13 +3,16 @@ import { NavigateButton } from '../../../ui/navigate-button'
 import { Button, IconButton } from '../../../ui/button'
 import { InfoPill } from '../../../ui/info-pill'
 import { BusIcon, ChevronRightIcon, FavoriteIcon } from '../../../ui/icons'
+import type { ReminderState } from '../../../domain/push/push-notifications'
 import type { StopDetailsModel } from '../data/stop-details-model'
+import { AlightReminderControl } from './alight-reminder-control'
 import { StopDepartureList } from './stop-departure-list'
 
 export function StopDetails({
   stop,
   favorite,
   liveArrivalMessage,
+  reminder = null,
   backLabel = 'Back to stops',
   onBackToStops,
   onSelectOppositeStop,
@@ -20,6 +23,8 @@ export function StopDetails({
   readonly stop: StopDetailsModel
   readonly favorite: boolean
   readonly liveArrivalMessage: string | null
+  /** Supplied by app composition; absent when the browser cannot hold a reminder. */
+  readonly reminder?: ReminderState | null
   readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
@@ -82,6 +87,15 @@ export function StopDetails({
         <p className="stop-live-arrival-message" role="status">
           {liveArrivalMessage}
         </p>
+      )}
+      {reminder && (
+        <AlightReminderControl
+          stopId={stop.id}
+          stopName={stop.longName}
+          // Canonical routes remain available while arrivals or service hours are unavailable.
+          routes={stop.reminderRoutes}
+          reminder={reminder}
+        />
       )}
       <div className="stop-departures">
         <StopDepartureList

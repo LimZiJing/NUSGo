@@ -16,6 +16,13 @@ export interface NusServiceWindowData {
 
 export interface NusServiceWindowsProvider {
   load(routeId: string, signal: AbortSignal): Promise<NusServiceWindowData | null>
+  /**
+   * Reads only what is already cached and still fresh, without making a request.
+   *
+   * Alight reminders use this so deciding whether the service is running costs no upstream call;
+   * a route nobody has asked about lately simply reports null.
+   */
+  peek(routeId: string): NusServiceWindowData | null
 }
 
 interface NusServiceWindowsProviderOptions {
@@ -127,5 +134,11 @@ export function createNusServiceWindowsProvider(
     return request
   }
 
-  return { load }
+  return {
+    load,
+    peek(routeId) {
+      const cached = cache.get(routeId)
+      return cached && Date.parse(cached.expiresAt) > now() ? cached : null
+    },
+  }
 }

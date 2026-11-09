@@ -2,6 +2,15 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Alight reminder controls (#503, PR #644) — 2026-11-09
+
+Application head `6df3dcedeadcf2b022cc00c46dadffd8f6821e55`, managed development group at `http://localhost:35758/`, headless Microsoft Edge 157.0.4341.42 driven by Playwright. Fresh contexts used actual viewports 1280 × 800 and 390 × 844, DPR 1. Browser Notification, PushManager and service-worker registration APIs were mocked; API requests returned controlled responses. This is UI verification, not real push-service or screen-off delivery evidence.
+
+- Opened COM3 through its launch link with live API responses returning unavailable. Canonical route D1 and Remind me remained available.
+- Changed Lead time from 2 minutes to 1 minute, clicked Remind me and verified the registration sent COM3/D1 and `leadTimeSeconds: 60`.
+- Verified the watched explanation said once, about 1 minute, with the persistent error region empty. Clicked Stop reminding me, verified the remove request and cleared local reminder preference, and observed Remind me return.
+- Both runs completed with zero page errors. Existing unit tests cover cross-topic key rotation and failures; that lifecycle was not exercised with a real browser push subscription. Physical phones, screen-off delivery, Wear OS and notification-tap delivery remain unverified. Earlier control evidence at `5d4e5d32` predates the canonical-route and runtime corrections and is stale for those changes.
+
 ## Animation performance baseline — 2026-11-02 (#558)
 
 Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).
@@ -211,6 +220,17 @@ Tested application head `7dac6ac3c60a9d9225ca991f33de5ea89322ecf9` in real headl
 
 Full gates at this application head: `npm test` exit 0 (root 31 passed / 2 skipped; shared 32 passed; frontend 1532 passed / 1 skipped; backend 234 Node and 105 Vitest passed), `npm run lint` exit 0, `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0, and `git diff --check` exit 0. The local rehearsal build also passed; builds emitted the existing bundle-size advisory.
 
+## 2026-11-09 — PR #644 integrated reminder and service-notice checks
+
+Tested application head `cfa16e3de8e71dcaf80048f5c4234bdfcbea8f25` in real headless Edge 157.0.4341.42 with actual 1280×800 and 390×844 viewports. This supersedes the earlier `6df3dced` reminder evidence for the integrated application. A managed static rehearsal preview ran and stopped automatically; Docker was unavailable.
+
+- With arrival requests returning 503, COM 3 details still offered canonical D1 enrollment. Pointer actions changed the lead time from 2 minutes to 1 minute; registration sent 60 seconds and displayed the one-shot expiry copy with an initially empty persistent alert region.
+- Pointer cancellation removed the reminder through the API boundary and cleared the stored preference.
+- `?view=stops` launch navigation selected Stops and cleared the query. A simulated service-worker notice over Settings closed Settings and selected Stops; a stop-specific message still opened COM 3.
+- Zero page errors in either viewport. Notification permission, PushManager, service-worker registration/messages and API responses were mocked. This does not verify actual push delivery, screen-off operation, a real notification tap, a physical device or Wear OS.
+
+Full integrated gates: `npm test` exit 0 (root 31 passed / 2 skipped; shared 59 passed; frontend 1581 passed / 1 skipped; backend 296 Node and 105 Vitest passed); `npm run lint` exit 0; `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0; backend typecheck and `git diff --check` exit 0. The rehearsal build passed too. Existing bundle-size advisory only.
+
 ## 2026-11-09 — PR #643 final notification focus and mobile visibility
 
 Application head `3922c459ae94f3519edf48e34586663cbe1bbdbb`, real headless Edge 157.0.4341.42, actual 1280×800 and 390×844 viewports. This supersedes the `7dac6ac3` navigation evidence after the focus fix. A managed static rehearsal preview completed and stopped.
@@ -218,3 +238,11 @@ Application head `3922c459ae94f3519edf48e34586663cbe1bbdbb`, real headless Edge 
 Launch `?view=stops` selected Stops, cleared the query and focused its content. Pointer actions opened Explore, More and Settings; a simulated service-worker notice closed Settings and moved focus into Stops. Pressing Tab kept focus within Stops. On mobile, pointer/keyboard actions collapsed Stops, switched to Explore, then a notice reopened Stops at the partial detent with focus inside. A stop-specific message still opened COM 3. Both viewports had zero page errors.
 
 API responses and service-worker container/messages were mocked. No real delivery, notification tap, screen-off, physical-device, Wear OS or screen-reader speech claim is made. Full gates on this application head passed: `npm test` (root 31 passed / 2 skipped; shared 32 passed; frontend 1535 passed / 1 skipped; backend 235 Node and 105 Vitest passed), `npm run lint`, `npm run build` with explicit HTTPS `VITE_API_ORIGIN`, and `git diff --check`. The rehearsal build passed too; existing bundle-size advisory only.
+
+## 2026-11-09 — PR #644 final integrated verification
+
+Application head `a5720b46ec31a63c207ca67c585a2a1106366529`, real headless Edge 157.0.4341.42, actual 1280×800 and 390×844 viewports. This supersedes `cfa16e3d` after the notification focus fix. The managed static rehearsal preview completed and stopped automatically.
+
+With arrivals returning 503, COM 3 still offered canonical D1 enrollment. Pointer actions changed 2 minutes to 1 minute, registered a 60-second one-shot reminder with expiry copy and an initially empty persistent alert, then cancelled and cleared the saved preference. Notice launch and simulated existing-window messages selected Stops; Settings closed without stealing focus back to More. Focus remained in Stops after Tab. On mobile, a notice from Explore reopened a collapsed Stops sheet at the partial detent. A stop-specific message still opened COM 3. Zero page errors in both viewports.
+
+Notification permission, PushManager, service-worker registration/messages and API responses were mocked. Actual push delivery, a real notification tap, screen-off operation, physical devices, Wear OS and screen-reader speech remain unverified. Full gates at this application head passed: `npm test` (root 31 passed / 2 skipped; shared 59 passed; frontend 1584 passed / 1 skipped; backend 297 Node and 105 Vitest passed), `npm run lint`, `npm run build` with explicit HTTPS `VITE_API_ORIGIN`, and `git diff --check`. The local rehearsal build also passed; existing bundle-size advisory only.

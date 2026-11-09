@@ -14,7 +14,6 @@ export interface ProposedCommunityWaypointFields {
 export type CommunityWaypointSubmission =
   | ({
       readonly kind: 'new-place'
-      readonly name: string
       readonly category: ActiveCommunityWaypointCategory
       readonly longitude: number
       readonly latitude: number

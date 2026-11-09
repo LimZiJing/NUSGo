@@ -1,4 +1,5 @@
 import type { Express } from 'express'
+import { COMMUNITY_WAYPOINT_CATEGORIES } from '@nusgo/shared/waypoints/community'
 import { InvalidCommunityWaypointSubmissionError, parseCommunityWaypointSubmission, type CommunityWaypointSubmission } from '../validation/community-waypoint-submission.ts'
 import { sendApiError } from '../error-response.ts'
 import { createClientRateLimiter } from '../rate-limiter.ts'
@@ -59,7 +60,7 @@ export function createPrivateSubmissionIssueDraft(
     kindDisplay = 'New place'
     kindLabel = 'kind:new-place'
     category = submission.category
-    name = submission.name
+    name = 'Not supplied; reviewer assigns the public name if approved'
     longitude = String(submission.longitude)
     latitude = String(submission.latitude)
     building = optionalValue(submission.building, 'Not provided')
@@ -70,7 +71,9 @@ export function createPrivateSubmissionIssueDraft(
     evidence = submission.explanation === undefined
       ? 'Not provided; maintainer must verify independently'
       : 'Unverified submitter note: ' + submission.explanation
-    titleSuffix = cleanMarkdownText(submission.name)
+    const categoryLabel = COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === submission.category)?.label
+      ?? submission.category
+    titleSuffix = cleanMarkdownText(categoryLabel + ' waypoint')
   } else if (submission.kind === 'correction') {
     kindDisplay = 'Correction'
     kindLabel = 'kind:correction'
@@ -105,7 +108,7 @@ export function createPrivateSubmissionIssueDraft(
     formatIssueField('Kind', kindDisplay),
     formatIssueField('Kind label', kindLabel),
     formatIssueField('Requested category', category),
-    formatIssueField('Suggested name (new place)', name),
+    formatIssueField('Waypoint name', name),
     formatIssueField('Longitude (new place or correction)', longitude),
     formatIssueField('Latitude (new place or correction)', latitude),
     formatIssueField('Building or nearby landmark (optional)', building),

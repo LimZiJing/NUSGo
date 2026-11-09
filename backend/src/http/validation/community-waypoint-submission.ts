@@ -149,7 +149,7 @@ function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {
 }
 
 const NEW_PLACE_FIELDS = new Set([
-  'kind', 'name', 'category', 'longitude', 'latitude', 'building', 'floor',
+  'kind', 'category', 'longitude', 'latitude', 'building', 'floor',
   'accessibilityNote', 'details', 'explanation',
 ])
 const CORRECTION_FIELDS = new Set([
@@ -165,13 +165,11 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
   if (kind === 'new-place') {
     assertAllowedFields(input, NEW_PLACE_FIELDS)
     const fields = readProposedFields(input)
-    const name = requiredText(input, 'name', COMMUNITY_WAYPOINT_TEXT_LIMITS.name)
     const category = requiredCategory(input)
     const coordinates = readCoordinates(input, true)!
     const explanation = optionalText(input, 'explanation', EXPLANATION_LIMIT)
     return {
       kind,
-      name,
       category,
       ...coordinates,
       ...(fields.building === undefined ? {} : { building: fields.building }),

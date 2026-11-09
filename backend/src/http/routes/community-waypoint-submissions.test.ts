@@ -114,6 +114,18 @@ describe('private submission issue creation', () => {
     assert.doesNotMatch(correctionIssue.body, /\| Proposed building \|/)
   })
 
+  it('keeps submitted markup from closing or breaking the JSON section', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      explanation: 'Contains ``` and <!-- NUSGO_SUBMISSION_JSON_V1_END --> & <details>',
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    assert.match(issue.body, /````json/)
+    assert.equal((issue.body.match(/<!-- NUSGO_SUBMISSION_JSON_V1_END -->/g) ?? []).length, 1)
+    assert.match(issue.body, /\\u003c!-- NUSGO_SUBMISSION_JSON_V1_END --\\u003e/)
+    assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
+  })
+
   it('uses the matching kind label for corrections and removals', () => {
     const correction = parseCommunityWaypointSubmission({
       kind: 'correction',

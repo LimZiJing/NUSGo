@@ -229,7 +229,11 @@ export async function createBackendLiveData(
       if (serviceAnnouncements && options.onServiceAnnouncementsRefreshed) {
         const notify = options.onServiceAnnouncementsRefreshed
         const refresh = serviceAnnouncements.refresh(shutdownController.signal)
-          .then((announcements) => notify(announcements))
+          // Shutdown cancels the request on purpose; a cached feed returned after the abort must
+          // not start a delivery the process is being torn down for.
+          .then((announcements) => {
+            if (!shutdownController.signal.aborted) notify(announcements)
+          })
           .catch((error: unknown) => {
             if (shutdownController.signal.aborted) return
             console.error('NUSGo announcement notification hook failed.', error instanceof Error ? error.name : typeof error)

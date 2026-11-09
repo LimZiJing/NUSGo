@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { PushNotificationPayload } from '@nusgo/shared'
 import type { ServiceAnnouncement } from '../live-data/service-announcements.ts'
+import { MAX_ACTIVE_SERVICE_ANNOUNCEMENTS } from '../live-data/service-announcements.ts'
 import { createNotificationCap } from './notification-cap.ts'
 import {
   ANNOUNCEMENT_BODY_MAX_LENGTH,
@@ -219,6 +220,40 @@ describe('service announcement publisher', () => {
     assert.deepEqual(result.prunedEndpoints, [endpoint('gone')])
     assert.equal(store.size, 0)
     assert.equal(publisher.cap, cap)
+  })
+
+  it('remembers every delivered notice in a full active feed instead of resending one', async () => {
+    const store = createPushSubscriptionStore()
+    subscribe(store, 'a')
+    // The feed can hold up to MAX_ACTIVE_SERVICE_ANNOUNCEMENTS notices at once, so the delivery
+    // history must be at least that large or an already-sent notice would repeat.
+    const active: ServiceAnnouncement[] = Array.from(
+      { length: MAX_ACTIVE_SERVICE_ANNOUNCEMENTS + 3 },
+      (_unused, index) => announcement({
+        id: 'notice-' + index,
+        identity: 'notice-' + index + '|Notice ' + index,
+        message: 'Notice ' + index,
+      }),
+    )
+    let sends = 0
+    const publisher = createServiceAnnouncementPublisher({
+      store,
+      cap: createNotificationCap({ maxPerHour: 100 }),
+      sendNotification: async () => {
+        sends += 1
+        return { statusCode: 201 }
+      },
+      announcements: () => active.slice(0, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS),
+    })
+
+    for (let cycle = 0; cycle < MAX_ACTIVE_SERVICE_ANNOUNCEMENTS; cycle += 1) {
+      await publisher.publish()
+    }
+    assert.equal(sends, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS)
+
+    // Every notice in the feed has been delivered, so no further cycle may send any of them.
+    assert.equal((await publisher.publish()).notificationsSent, 0)
+    assert.equal(sends, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS)
   })
 
   it('forgets delivery history for endpoints and announcements that are gone', async () => {

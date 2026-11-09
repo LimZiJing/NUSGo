@@ -1,6 +1,9 @@
 import type { PushNotificationPayload } from '@nusgo/shared'
 import { buildStopsViewDeepLink } from '@nusgo/shared'
-import type { ServiceAnnouncement } from '../live-data/service-announcements.ts'
+import {
+  MAX_ACTIVE_SERVICE_ANNOUNCEMENTS,
+  type ServiceAnnouncement,
+} from '../live-data/service-announcements.ts'
 import type { PushSendNotification } from './delivery.ts'
 import { deliverPushNotifications } from './delivery.ts'
 import type { NotificationCap } from './notification-cap.ts'
@@ -9,8 +12,14 @@ import type { PushSubscriptionRecord, PushSubscriptionStore } from './subscripti
 /** The notification body is a one-line excerpt; the full notice stays in the Stops view. */
 export const ANNOUNCEMENT_BODY_MAX_LENGTH = 120
 
-/** How many delivered announcement identities are remembered per endpoint. */
-const MAX_REMEMBERED_IDENTITIES_PER_ENDPOINT = 32
+/**
+ * How many delivered announcement identities are remembered per endpoint.
+ *
+ * This equals the largest feed the selection can produce, so forgetting an identity can only
+ * happen for a notice that is no longer active. A smaller cap would re-send a still-showing
+ * notice to an endpoint that had already received it.
+ */
+const MAX_REMEMBERED_IDENTITIES_PER_ENDPOINT = MAX_ACTIVE_SERVICE_ANNOUNCEMENTS
 
 const ANNOUNCEMENT_TITLE = 'Service notice'
 

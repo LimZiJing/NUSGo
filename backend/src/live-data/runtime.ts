@@ -45,8 +45,6 @@ export interface BackendLiveData {
   getVehicles(routeIds: readonly string[]): ApiShuttleVehiclesResponse
   getServiceWindows(routeIds: readonly string[], signal?: AbortSignal): Promise<ApiShuttleServiceWindowsResponse>
   getPublicBusArrivals(stopIds: readonly string[]): Promise<ApiPublicBusArrivalsResponse>
-  /** The last loaded service announcements; always empty when the feed is not configured. */
-  getServiceAnnouncements(): readonly ServiceAnnouncement[]
   start(): void
   stop(): Promise<void>
 }
@@ -415,9 +413,6 @@ export async function createBackendLiveData(
       }
       const operation = ltaProvider.getArrivals(stopIds, shutdownController.signal) as Promise<PublicBusArrivalSnapshot>
       return track(operation)
-    },
-    getServiceAnnouncements() {
-      return serviceAnnouncements?.current() ?? []
     },
     start() {
       snapshotStore.start()

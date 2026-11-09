@@ -52,6 +52,15 @@ describe('service announcement notification', () => {
     assert.equal(payload.tag, 'announcement:414')
   })
 
+  it('names affected routes while keeping a one-line bounded body', () => {
+    const payload = createServiceAnnouncementNotification(announcement({
+      audience: { kind: 'routes', routeIds: ['D1', 'A2'] },
+      message: 'Service is delayed. ' + 'x'.repeat(200),
+    }))
+    assert.ok(payload.body.startsWith('D1, A2: Service is delayed.'))
+    assert.ok(payload.body.length <= ANNOUNCEMENT_BODY_MAX_LENGTH)
+  })
+
   it('collapses whitespace and bounds a long message to one line', () => {
     const payload = createServiceAnnouncementNotification(announcement({
       message: 'Line one\n\nline   two ' + 'x'.repeat(400),
@@ -138,7 +147,7 @@ describe('service announcement publisher', () => {
     assert.deepEqual(topics, ['High notice', 'Low notice'])
   })
 
-  it('skips an announcement already showing when the subscription appears later', async () => {
+  it('sends an active announcement when the subscription appears later', async () => {
     const store = createPushSubscriptionStore()
     const payloads: string[] = []
     const publisher = createServiceAnnouncementPublisher({

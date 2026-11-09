@@ -552,7 +552,6 @@ describe('Service announcements in the arrival refresh lifecycle', () => {
       await waitForSnapshot(liveData)
       await sleepFor(30)
       assert.equal(counts.tickerTape, 0)
-      assert.deepEqual(liveData.getServiceAnnouncements(), [])
     } finally {
       await liveData.stop()
     }
@@ -560,7 +559,8 @@ describe('Service announcements in the arrival refresh lifecycle', () => {
 
   it('fetches announcements once per minute rather than once per stop or refresh cycle', async () => {
     const counts = { tickerTape: 0, shuttleStops: 0 }
-    const announced: number[] = []
+    const announced: string[][] = []
+    let lastAnnouncementsJson = ''
     let clock = fixedNow
     // The shortest allowed refresh interval, so several full 33-stop cycles happen inside a minute.
     const config = createConfig('test-lta-account-key', { NUS_SHUTTLE_REFRESH_INTERVAL_MS: '1000' })
@@ -569,7 +569,8 @@ describe('Service announcements in the arrival refresh lifecycle', () => {
       now: () => clock,
       ltaMappings: [],
       onServiceAnnouncementsRefreshed: (announcements) => {
-        announced.push(announcements.length)
+        announced.push(announcements.map(({ id }) => id))
+        lastAnnouncementsJson = JSON.stringify(announcements)
       },
     })
 
@@ -583,9 +584,8 @@ describe('Service announcements in the arrival refresh lifecycle', () => {
       assert.ok(counts.shuttleStops >= 66, 'expected a second arrival cycle')
       assert.equal(counts.tickerTape, 1)
       assert.ok(announced.length >= 2, 'every refresh cycle still hands the cached feed to the hook')
-      assert.deepEqual(liveData.getServiceAnnouncements().map(({ id }) => id), ['414'])
-      // The normalized feed never carries the provider's author field.
-      assert.equal(JSON.stringify(liveData.getServiceAnnouncements()).includes('A staff member'), false)
+      assert.deepEqual(announced[0], ['414'])
+      assert.equal(lastAnnouncementsJson.includes('A staff member'), false)
 
       // Past the cache window the next cycle asks the provider again.
       clock += 61_000

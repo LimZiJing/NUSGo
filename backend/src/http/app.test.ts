@@ -92,7 +92,6 @@ function fakeLiveData(
     getVehicles,
     getServiceWindows: unused,
     getPublicBusArrivals: unused,
-    getServiceAnnouncements: () => [],
     start: () => undefined,
     stop: () => Promise.resolve(),
   }

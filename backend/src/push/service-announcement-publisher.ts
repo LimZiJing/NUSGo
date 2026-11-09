@@ -61,7 +61,9 @@ export function createServiceAnnouncementNotification(
 ): PushNotificationPayload {
   return {
     title: ANNOUNCEMENT_TITLE,
-    body: oneLine(announcement.message),
+    body: oneLine(announcement.audience.kind === 'routes'
+      ? announcement.audience.routeIds.join(', ') + ': ' + announcement.message
+      : announcement.message),
     url: buildStopsViewDeepLink(),
     topic: 'service-updates',
     tag: 'announcement:' + announcement.id.slice(0, 100),

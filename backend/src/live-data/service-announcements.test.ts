@@ -31,7 +31,7 @@ describe('service announcement selection', () => {
 
     assert.equal(announcement?.id, '414')
     assert.deepEqual(announcement?.audience, { kind: 'global' })
-    assert.equal(announcement?.identity, '414|Term Sunday/PH schedule applies.')
+    assert.match(announcement?.identity ?? '', /^[a-f0-9]{64}$/)
   })
 
   it('drops an announcement whose display window has passed or has not started', () => {
@@ -94,6 +94,15 @@ describe('service announcement selection', () => {
   })
 
 
+  it('keeps digest keys short for long messages and changes them with route scope', () => {
+    const input = record({ message: 'x'.repeat(4_096), affectedServiceRouteIds: ['D1'] })
+    const [before] = selectActiveServiceAnnouncements([input], { nowMs: insideWindowMs, canonicalRouteIds })
+    const [after] = selectActiveServiceAnnouncements([{ ...input, affectedServiceRouteIds: ['A2'] }],
+      { nowMs: insideWindowMs, canonicalRouteIds })
+    assert.equal(before?.identity.length, 64)
+    assert.notEqual(before?.identity, after?.identity)
+  })
+
   it('treats an edited message as a new identity so the correction is announced', () => {
     const [before] = selectActiveServiceAnnouncements([record()], { nowMs: insideWindowMs, canonicalRouteIds })
     const [after] = selectActiveServiceAnnouncements([
@@ -151,7 +160,6 @@ describe('service announcement feed', () => {
     fail = true
     nowMs += 61_000
     assert.equal((await feed.refresh()).length, 1)
-    assert.equal(feed.current().length, 1)
   })
 
   it('rechecks display windows on cache hits and failed refreshes, with bounded retries', async () => {
@@ -169,7 +177,6 @@ describe('service announcement feed', () => {
     assert.equal((await feed.refresh()).length, 1)
     nowMs += 25_000
     assert.deepEqual(await feed.refresh(), [])
-    assert.deepEqual(feed.current(), [])
     assert.equal(loads, 1)
     nowMs += 40_000
     assert.deepEqual(await feed.refresh(), [])
@@ -192,13 +199,5 @@ describe('service announcement feed', () => {
   })
 
 
-  it('starts with no announcements before the first load', () => {
-    const feed = createServiceAnnouncementFeed({
-      load: async () => [record()],
-      canonicalRouteIds,
-      now: () => insideWindowMs,
-    })
 
-    assert.deepEqual(feed.current(), [])
-  })
 })

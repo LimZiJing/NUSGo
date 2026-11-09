@@ -7,6 +7,8 @@
  * fields (author, created-by, incident coordinates) are never carried past the parser.
  */
 
+import { createHash } from 'node:crypto'
+
 export type ServiceAnnouncementPriority = 'high' | 'medium' | 'low'
 
 /** One enabled ticker-tape record, with only the fields NUSGo uses. */
@@ -35,7 +37,7 @@ export type ServiceAnnouncementAudience =
 
 export interface ServiceAnnouncement {
   readonly id: string
-  /** Dedupe key: a stable id plus the message, so an edited message is announced again. */
+  /** Fixed-size digest of id, message and canonical scope; corrections can be announced again. */
   readonly identity: string
   readonly message: string
   readonly priority: ServiceAnnouncementPriority
@@ -102,7 +104,9 @@ export function selectActiveServiceAnnouncements(
 
     active.push({
       id: record.id,
-      identity: record.id + '|' + record.message,
+      identity: createHash('sha256')
+        .update(JSON.stringify([record.id, record.message, [...routeIds].sort()]))
+        .digest('hex'),
       message: record.message,
       priority: record.priority,
       displayFromMs: record.displayFromMs,
@@ -133,8 +137,6 @@ export interface ServiceAnnouncementFeed {
    * without extra provider traffic.
    */
   refresh(signal?: AbortSignal): Promise<readonly ServiceAnnouncement[]>
-  /** The last successfully loaded announcements; empty until the first load succeeds. */
-  current(): readonly ServiceAnnouncement[]
 }
 
 /**
@@ -179,9 +181,6 @@ export function createServiceAnnouncementFeed(
       inFlight = request
       void request.finally(() => { inFlight = null })
       return request
-    },
-    current() {
-      return select(cachedRecords)
     },
   }
 }

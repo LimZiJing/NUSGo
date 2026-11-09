@@ -147,6 +147,16 @@ describe('private submission issue creation', () => {
     assert.match(removalIssue.body, /\*\*Removal reason \(unverified\):\*\*/)
     assert.deepEqual(correctionIssue.labels, ['kind:correction', 'review:new'])
     assert.deepEqual(removalIssue.labels, ['kind:removal', 'review:new'])
+
+    const categoryCorrection = parseCommunityWaypointSubmission({
+      kind: 'correction',
+      waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+      requestedChange: 'This is an ATM, not a water cooler.',
+      category: 'atm',
+    })
+    const categoryCorrectionIssue = createPrivateSubmissionIssueDraft(categoryCorrection)
+    assert.match(categoryCorrectionIssue.body, /\| Proposed category \| ATM \|/)
+    assert.deepEqual(categoryCorrectionIssue.labels, ['kind:correction', 'review:new', 'category:atm'])
   })
 
   it('sends the server credential only to the fixed private repository endpoint', async () => {

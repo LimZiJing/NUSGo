@@ -40,8 +40,11 @@ function getCategoryLabel(category: string): string {
 }
 
 function getCategoryIssueLabels(submission: CommunityWaypointSubmission): readonly string[] {
-  if (submission.kind !== 'new-place') return []
-  return ['category:' + submission.category]
+  if (submission.kind === 'new-place') return ['category:' + submission.category]
+  if (submission.kind === 'correction' && submission.category !== undefined) {
+    return ['category:' + submission.category]
+  }
+  return []
 }
 
 function getIssueTitle(submission: CommunityWaypointSubmission): string {
@@ -71,6 +74,7 @@ function getSummaryRows(submission: CommunityWaypointSubmission): readonly (read
     return [
       ['Report', 'Correction'],
       ['Waypoint ID', submission.waypointId],
+      ...(submission.category === undefined ? [] : [['Proposed category', getCategoryLabel(submission.category)] as const]),
       ...(submission.latitude === undefined || submission.longitude === undefined
         ? []
         : [['Proposed location', locationSummary(submission.latitude, submission.longitude)] as const]),

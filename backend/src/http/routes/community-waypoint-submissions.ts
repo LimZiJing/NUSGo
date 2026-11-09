@@ -32,102 +32,138 @@ function cleanMarkdownText(value: string): string {
 }
 
 function formatIssueField(label: string, value: string | number): string {
-  return '**' + label + ':** ' + cleanMarkdownText(String(value))
+  return '- **' + label + ':** ' + cleanMarkdownText(String(value))
 }
 
-function optionalValue(value: string | number | undefined, fallback: string): string {
-  return value === undefined ? fallback : String(value)
+function getCategoryLabel(category: string): string {
+  return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
+}
+
+function getIssueTitle(submission: CommunityWaypointSubmission): string {
+  if (submission.kind === 'new-place') {
+    return '[New place] ' + getCategoryLabel(submission.category) + ' waypoint'
+  }
+  const kind = submission.kind === 'correction' ? 'Correction' : 'Removal'
+  return '[' + kind + '] ' + submission.waypointId
+}
+
+function locationSummary(latitude: number, longitude: number): string {
+  const mapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=19/${latitude}/${longitude}`
+  return `Latitude ${latitude}, longitude ${longitude} ([open map](${mapUrl}))`
+}
+
+function getSummaryRows(submission: CommunityWaypointSubmission): readonly (readonly [string, string])[] {
+  if (submission.kind === 'new-place') {
+    return [
+      ['Report', 'New place'],
+      ['Category', getCategoryLabel(submission.category)],
+      ['Location', locationSummary(submission.latitude, submission.longitude)],
+      ...(submission.building === undefined ? [] : [['Building', submission.building] as const]),
+      ...(submission.floor === undefined ? [] : [['Floor', String(submission.floor)] as const]),
+    ]
+  }
+  if (submission.kind === 'correction') {
+    return [
+      ['Report', 'Correction'],
+      ['Waypoint ID', submission.waypointId],
+      ...(submission.category === undefined ? [] : [['Proposed category', getCategoryLabel(submission.category)] as const]),
+      ...(submission.latitude === undefined || submission.longitude === undefined
+        ? []
+        : [['Proposed location', locationSummary(submission.latitude, submission.longitude)] as const]),
+      ...(submission.building === undefined ? [] : [['Proposed building', submission.building] as const]),
+      ...(submission.floor === undefined ? [] : [['Proposed floor', String(submission.floor)] as const]),
+    ]
+  }
+  return [
+    ['Report', 'Removal'],
+    ['Waypoint ID', submission.waypointId],
+  ]
+}
+
+function getSubmissionDetailLines(submission: CommunityWaypointSubmission): readonly string[] {
+  if (submission.kind === 'new-place') {
+    return [
+      formatIssueField('Category', getCategoryLabel(submission.category)),
+      formatIssueField('Coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`),
+      formatIssueField('Building or nearby landmark', submission.building ?? 'Not provided'),
+      formatIssueField('Floor', submission.floor ?? 'Not provided'),
+      formatIssueField('Accessibility note', submission.accessibilityNote ?? 'Not provided'),
+      formatIssueField('Other details', submission.details ?? 'Not provided'),
+      formatIssueField('Submitter explanation (unverified)', submission.explanation ?? 'Not provided'),
+    ]
+  }
+  if (submission.kind === 'correction') {
+    const proposedFields = [
+      ...(submission.name === undefined ? [] : [formatIssueField('Proposed name', submission.name)]),
+      ...(submission.category === undefined ? [] : [formatIssueField('Proposed category', getCategoryLabel(submission.category))]),
+      ...(submission.latitude === undefined || submission.longitude === undefined
+        ? []
+        : [formatIssueField('Proposed coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`)]),
+      ...(submission.building === undefined ? [] : [formatIssueField('Proposed building', submission.building)]),
+      ...(submission.floor === undefined ? [] : [formatIssueField('Proposed floor', submission.floor)]),
+      ...(submission.accessibilityNote === undefined ? [] : [formatIssueField('Proposed accessibility note', submission.accessibilityNote)]),
+      ...(submission.details === undefined ? [] : [formatIssueField('Proposed details', submission.details)]),
+    ]
+    return [
+      formatIssueField('Public waypoint ID', submission.waypointId),
+      formatIssueField('Requested change (unverified)', submission.requestedChange),
+      ...(proposedFields.length === 0 ? [] : ['', '### Proposed field values', '', ...proposedFields]),
+    ]
+  }
+  return [
+    formatIssueField('Public waypoint ID', submission.waypointId),
+    formatIssueField('Removal reason (unverified)', submission.reason),
+  ]
+}
+
+function formatSubmissionJson(submission: CommunityWaypointSubmission): string {
+  const json = JSON.stringify({ schemaVersion: 1, submission }, null, 2)
+    .replaceAll('&', '\\u0026')
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+  const longestBacktickRun = Math.max(0, ...[...json.matchAll(/`+/g)].map(([run]) => run.length))
+  const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1))
+  return [
+    '<details>',
+    '<summary>Raw submission JSON — unverified (schema version 1)</summary>',
+    '',
+    '<!-- NUSGO_SUBMISSION_JSON_V1_START -->',
+    fence + 'json',
+    json,
+    fence,
+    '<!-- NUSGO_SUBMISSION_JSON_V1_END -->',
+    '</details>',
+  ].join('\n')
 }
 
 export function createPrivateSubmissionIssueDraft(
   submission: CommunityWaypointSubmission,
 ): PrivateSubmissionIssueDraft {
-  let kindDisplay: string
-  let kindLabel: string
-  let category: string
-  let name: string
-  let longitude: string
-  let latitude: string
-  let building: string
-  let floor: string
-  let details: string
-  let correction: string
-  let removal: string
-  let evidence: string
-  let titleSuffix: string
-
-  if (submission.kind === 'new-place') {
-    kindDisplay = 'New place'
-    kindLabel = 'kind:new-place'
-    category = submission.category
-    name = 'Not supplied; reviewer assigns the public name if approved'
-    longitude = String(submission.longitude)
-    latitude = String(submission.latitude)
-    building = optionalValue(submission.building, 'Not provided')
-    floor = optionalValue(submission.floor, 'Not provided')
-    details = [submission.accessibilityNote, submission.details].filter(Boolean).join(' — ') || 'Not provided'
-    correction = 'N/A'
-    removal = 'N/A'
-    evidence = submission.explanation === undefined
-      ? 'Not provided; maintainer must verify independently'
-      : 'Unverified submitter note: ' + submission.explanation
-    const categoryLabel = COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === submission.category)?.label
-      ?? submission.category
-    titleSuffix = cleanMarkdownText(categoryLabel + ' waypoint')
-  } else if (submission.kind === 'correction') {
-    kindDisplay = 'Correction'
-    kindLabel = 'kind:correction'
-    category = optionalValue(submission.category, 'No change proposed')
-    name = optionalValue(submission.name, 'No change proposed')
-    longitude = optionalValue(submission.longitude, 'No change proposed')
-    latitude = optionalValue(submission.latitude, 'No change proposed')
-    building = optionalValue(submission.building, 'No change proposed')
-    floor = optionalValue(submission.floor, 'No change proposed')
-    details = [submission.accessibilityNote, submission.details].filter(Boolean).join(' — ') || 'No change proposed'
-    correction = submission.waypointId + ' — ' + submission.requestedChange
-    removal = 'N/A'
-    evidence = 'Not provided; maintainer must verify independently'
-    titleSuffix = submission.waypointId
-  } else {
-    kindDisplay = 'Removal'
-    kindLabel = 'kind:removal'
-    category = 'N/A'
-    name = 'N/A'
-    longitude = 'N/A'
-    latitude = 'N/A'
-    building = 'N/A'
-    floor = 'N/A'
-    details = 'N/A'
-    correction = 'N/A'
-    removal = submission.waypointId + ' — ' + submission.reason
-    evidence = 'Not provided; maintainer must verify independently'
-    titleSuffix = submission.waypointId
-  }
-
-  const lines = [
-    formatIssueField('Kind', kindDisplay),
-    formatIssueField('Kind label', kindLabel),
-    formatIssueField('Requested category', category),
-    formatIssueField('Waypoint name', name),
-    formatIssueField('Longitude (new place or correction)', longitude),
-    formatIssueField('Latitude (new place or correction)', latitude),
-    formatIssueField('Building or nearby landmark (optional)', building),
-    formatIssueField('Floor (optional)', floor),
-    formatIssueField('Accessibility and other details (optional)', details),
-    formatIssueField('For a correction, public waypoint ID and requested change', correction),
-    formatIssueField('For a removal, public waypoint ID and reason', removal),
-    formatIssueField('Evidence summary and public source wording, if approved', evidence),
-    formatIssueField('Private photo evidence IDs', 'Disabled at launch'),
+  const summaryTable = [
+    '| Field | Summary |',
+    '| --- | --- |',
+    ...getSummaryRows(submission).map(([field, value]) => {
+      const summary = field === 'Location' || field === 'Proposed location'
+        ? value
+        : cleanMarkdownText(value)
+      return `| ${field} | ${summary} |`
+    }),
   ]
 
   return {
-    title: '[' + submission.kind + '] ' + titleSuffix,
+    title: getIssueTitle(submission),
     body: [
-      '> Anonymous NUSGo submission. All submitted details are unverified until maintainer review.',
+      '> Anonymous NUSGo submission. Submitted values are unverified and must be checked before publication.',
       '',
-      '## Submission',
+      '## Summary',
       '',
-      ...lines,
+      ...summaryTable,
+      '',
+      '## Submitted details (unverified)',
+      '',
+      ...getSubmissionDetailLines(submission),
+      '',
+      formatSubmissionJson(submission),
       '',
       '## Maintainer review',
       '',
@@ -140,7 +176,7 @@ export function createPrivateSubmissionIssueDraft(
       '- [ ] If approved, cleaned public GeoJSON change and public provenance are reviewed and published',
       '- [ ] Private issue URL, raw text, reviewer notes, reporter identity, and photo IDs are excluded from the public change',
       '- [ ] Approved, rejected, duplicate, or outdated outcome is recorded with reason and date',
-      '- [ ] Photo retention and orphan cleanup are handled before closure, if private photo evidence was accepted',
+      '- Photo evidence is disabled at launch; do not collect or attach it.',
     ].join('\n'),
     labels: ['kind:' + submission.kind, 'review:new'],
   }

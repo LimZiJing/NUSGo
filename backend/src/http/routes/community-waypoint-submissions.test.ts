@@ -55,26 +55,87 @@ function post(
   })
 }
 
+function readRawSubmissionJson(body: string): unknown {
+  const match = body.match(
+    /<!-- NUSGO_SUBMISSION_JSON_V1_START -->\r?\n(`{3,})json\r?\n([\s\S]*?)\r?\n\1\r?\n<!-- NUSGO_SUBMISSION_JSON_V1_END -->/,
+  )
+  assert.ok(match, 'issue should include a marked JSON code block')
+  return JSON.parse(match[2]) as unknown
+}
+
 describe('private submission issue creation', () => {
-  it('formats a private issue with the controlled labels and no reporter fields', () => {
+  it('formats submission details by report kind without empty placeholder fields', () => {
     const submission = parseCommunityWaypointSubmission(validNewPlace)
     const issue = createPrivateSubmissionIssueDraft(submission)
-    assert.equal(issue.title, '[new-place] Water cooler waypoint')
+    assert.equal(issue.title, '[New place] Water cooler waypoint')
     assert.deepEqual(issue.labels, ['kind:new-place', 'review:new'])
-    assert.match(issue.body, /\*\*Kind:\*\* New place/)
-    assert.match(issue.body, /\*\*Kind label:\*\* kind:new-place/)
-    assert.match(issue.body, /\*\*Waypoint name:\*\*/)
-    assert.match(issue.body, /Longitude \(new place or correction\)/)
-    assert.match(issue.body, /Private photo evidence IDs.*Disabled at launch/)
+    assert.match(issue.body, /## Summary/)
+    assert.match(issue.body, /\| Category \| Water cooler \|/)
+    assert.match(issue.body, /\| Location \| Latitude 1\.29, longitude 103\.78/)
+    assert.match(issue.body, /\[open map\]\(https:\/\/www\.openstreetmap\.org/)
+    assert.doesNotMatch(issue.body, /\| (?:Building|Floor) \|/)
+    assert.match(issue.body, /## Submitted details \(unverified\)/)
+    assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
+    assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
+    assert.match(issue.body, /\*\*Submitter explanation \(unverified\):\*\*/)
+    assert.match(issue.body, /<summary>Raw submission JSON — unverified/)
+    assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
+    assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
+    assert.match(issue.body, /Photo evidence is disabled at launch/)
+    assert.doesNotMatch(issue.body, /Photo retention and orphan cleanup/)
     assert.match(issue.body, /## Maintainer review/)
     assert.doesNotMatch(issue.body, /\*\*Reporter (name|email)/i)
     const markdownNote = parseCommunityWaypointSubmission({
       ...validNewPlace,
       explanation: 'Water ~~station~~',
     })
-    const safeIssue = createPrivateSubmissionIssueDraft(markdownNote)
-    assert.doesNotMatch(safeIssue.body, /~~/)
-    assert.match(safeIssue.body, /\\~\\~/)
+    const markdownIssue = createPrivateSubmissionIssueDraft(markdownNote)
+    assert.match(markdownIssue.body, /Submitter explanation \(unverified\):\*\* Water \\~\\~station\\~\\~/)
+    assert.deepEqual(readRawSubmissionJson(markdownIssue.body), { schemaVersion: 1, submission: markdownNote })
+  })
+
+  it('adds building and floor to the summary only when they are supplied', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      building: 'Central Library',
+      floor: 2,
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    assert.match(issue.body, /\| Building \| Central Library \|/)
+    assert.match(issue.body, /\| Floor \| 2 \|/)
+
+    const correction = parseCommunityWaypointSubmission({
+      kind: 'correction',
+      waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+      requestedChange: 'Clarify the floor.',
+      floor: 1,
+    })
+    const correctionIssue = createPrivateSubmissionIssueDraft(correction)
+    assert.match(correctionIssue.body, /\| Proposed floor \| 1 \|/)
+    assert.doesNotMatch(correctionIssue.body, /\| Proposed building \|/)
+  })
+
+  it('escapes building text in the summary table', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      building: 'West Hall\n| Added row | injected @here',
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    const summary = issue.body.split('## Submitted details')[0]
+
+    assert.equal((summary.match(/^\| /gm) ?? []).length, 6)
+    assert.ok(summary.includes('West Hall \\| Added row \\| injected @​here'))
+  })
+  it('keeps submitted markup from closing or breaking the JSON section', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      explanation: 'Contains ``` and <!-- NUSGO_SUBMISSION_JSON_V1_END --> & <details>',
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    assert.match(issue.body, /````json/)
+    assert.equal((issue.body.match(/<!-- NUSGO_SUBMISSION_JSON_V1_END -->/g) ?? []).length, 1)
+    assert.match(issue.body, /\\u003c!-- NUSGO_SUBMISSION_JSON_V1_END --\\u003e/)
+    assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
   })
 
   it('uses the matching kind label for corrections and removals', () => {
@@ -88,8 +149,26 @@ describe('private submission issue creation', () => {
       waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
       reason: 'The amenity has been removed.',
     })
-    assert.deepEqual(createPrivateSubmissionIssueDraft(correction).labels, ['kind:correction', 'review:new'])
-    assert.deepEqual(createPrivateSubmissionIssueDraft(removal).labels, ['kind:removal', 'review:new'])
+    const correctionIssue = createPrivateSubmissionIssueDraft(correction)
+    const removalIssue = createPrivateSubmissionIssueDraft(removal)
+    assert.equal(correctionIssue.title, '[Correction] cw-123e4567-e89b-42d3-a456-426614174000')
+    assert.match(correctionIssue.body, /\| Report \| Correction \|/)
+    assert.match(correctionIssue.body, /\*\*Requested change \(unverified\):\*\*/)
+    assert.doesNotMatch(correctionIssue.body, /No change proposed/)
+    assert.equal(removalIssue.title, '[Removal] cw-123e4567-e89b-42d3-a456-426614174000')
+    assert.match(removalIssue.body, /\*\*Removal reason \(unverified\):\*\*/)
+    assert.deepEqual(correctionIssue.labels, ['kind:correction', 'review:new'])
+    assert.deepEqual(removalIssue.labels, ['kind:removal', 'review:new'])
+
+    const categoryCorrection = parseCommunityWaypointSubmission({
+      kind: 'correction',
+      waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+      requestedChange: 'This is an ATM, not a water cooler.',
+      category: 'atm',
+    })
+    const categoryCorrectionIssue = createPrivateSubmissionIssueDraft(categoryCorrection)
+    assert.match(categoryCorrectionIssue.body, /\| Proposed category \| ATM \|/)
+    assert.deepEqual(categoryCorrectionIssue.labels, ['kind:correction', 'review:new'])
   })
 
   it('sends the server credential only to the fixed private repository endpoint', async () => {
@@ -140,7 +219,7 @@ describe('private submission issue creation', () => {
       assert.equal(response.status, 202)
       const receipt = await response.json() as Record<string, unknown>
       assert.deepEqual(receipt, { status: 'received' })
-      assert.equal(receivedTitle, '[new-place] Water cooler waypoint')
+      assert.equal(receivedTitle, '[New place] Water cooler waypoint')
       assert.equal('issueUrl' in receipt, false)
       assert.equal('issueNumber' in receipt, false)
     })

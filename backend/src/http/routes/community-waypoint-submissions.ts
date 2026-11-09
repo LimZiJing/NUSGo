@@ -47,6 +47,34 @@ function getIssueTitle(submission: CommunityWaypointSubmission): string {
   return '[' + kind + '] ' + submission.waypointId
 }
 
+function locationSummary(latitude: number, longitude: number): string {
+  const mapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=19/${latitude}/${longitude}`
+  return `Latitude ${latitude}, longitude ${longitude} ([open map](${mapUrl}))`
+}
+
+function getSummaryRows(submission: CommunityWaypointSubmission): readonly (readonly [string, string])[] {
+  if (submission.kind === 'new-place') {
+    return [
+      ['Report', 'New place'],
+      ['Category', getCategoryLabel(submission.category)],
+      ['Location', locationSummary(submission.latitude, submission.longitude)],
+    ]
+  }
+  if (submission.kind === 'correction') {
+    return [
+      ['Report', 'Correction'],
+      ['Waypoint ID', submission.waypointId],
+      ...(submission.latitude === undefined || submission.longitude === undefined
+        ? []
+        : [['Proposed location', locationSummary(submission.latitude, submission.longitude)] as const]),
+    ]
+  }
+  return [
+    ['Report', 'Removal'],
+    ['Waypoint ID', submission.waypointId],
+  ]
+}
+
 function getSubmissionDetailLines(submission: CommunityWaypointSubmission): readonly string[] {
   if (submission.kind === 'new-place') {
     return [
@@ -86,13 +114,22 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
 export function createPrivateSubmissionIssueDraft(
   submission: CommunityWaypointSubmission,
 ): PrivateSubmissionIssueDraft {
+  const summaryTable = [
+    '| Field | Summary |',
+    '| --- | --- |',
+    ...getSummaryRows(submission).map(([field, value]) => `| ${field} | ${value} |`),
+  ]
 
   return {
     title: getIssueTitle(submission),
     body: [
       '> Anonymous NUSGo submission. Submitted values are unverified and must be checked before publication.',
       '',
-      '## Submission',
+      '## Summary',
+      '',
+      ...summaryTable,
+      '',
+      '## Submitted details (unverified)',
       '',
       ...getSubmissionDetailLines(submission),
       '',

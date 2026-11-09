@@ -9,11 +9,11 @@ afterEach(() => {
 
 describe('parsePushClickTarget', () => {
   it('reads a stop deep link from the service worker', () => {
-    expect(parsePushClickTarget('?stop=COM3')).toEqual({ stopId: 'COM3' })
+    expect(parsePushClickTarget('?stop=COM3')).toEqual({ kind: 'stop', stopId: 'COM3' })
   })
 
   it('decodes an encoded stop id', () => {
-    expect(parsePushClickTarget('?stop=COM3%20Opp')).toEqual({ stopId: 'COM3 Opp' })
+    expect(parsePushClickTarget('?stop=COM3%20Opp')).toEqual({ kind: 'stop', stopId: 'COM3 Opp' })
   })
 
   it('ignores links that are not app-relative stop links', () => {
@@ -24,6 +24,15 @@ describe('parsePushClickTarget', () => {
 
   it('ignores an oversized stop id', () => {
     expect(parsePushClickTarget(`?stop=${'a'.repeat(65)}`)).toBeNull()
+  })
+
+  it('reads the Stops view deep link used by a service notice', () => {
+    expect(parsePushClickTarget('?view=stops')).toEqual({ kind: 'stops' })
+  })
+
+  it('ignores a view it does not route to, and a stop link wins over one', () => {
+    expect(parsePushClickTarget('?view=settings')).toBeNull()
+    expect(parsePushClickTarget('?view=stops&stop=COM3')).toEqual({ kind: 'stop', stopId: 'COM3' })
   })
 })
 
@@ -46,7 +55,7 @@ describe('subscribeToPushClicks', () => {
     }))
 
     expect(onTarget).toHaveBeenCalledOnce()
-    expect(onTarget).toHaveBeenCalledWith({ stopId: 'COM3' })
+    expect(onTarget).toHaveBeenCalledWith({ kind: 'stop', stopId: 'COM3' })
     unsubscribe()
   })
 
@@ -92,7 +101,7 @@ describe('scheduleLaunchPushClick', () => {
 
     runtime.scheduled[0]?.()
 
-    expect(runtime.open).toHaveBeenCalledWith({ stopId: 'COM3' })
+    expect(runtime.open).toHaveBeenCalledWith({ kind: 'stop', stopId: 'COM3' })
     expect(runtime.clearQuery).toHaveBeenCalledOnce()
     // The navigation must happen before the link is dropped.
     expect(runtime.open.mock.invocationCallOrder[0]).toBeLessThan(
@@ -115,8 +124,17 @@ describe('scheduleLaunchPushClick', () => {
     const second = harness('?stop=COM3')
     second.scheduled[0]?.()
 
-    expect(second.open).toHaveBeenCalledWith({ stopId: 'COM3' })
+    expect(second.open).toHaveBeenCalledWith({ kind: 'stop', stopId: 'COM3' })
     expect(second.clearQuery).toHaveBeenCalledOnce()
+  })
+
+  it('opens the Stops view for a service-notice launch link', () => {
+    const runtime = harness('?view=stops')
+
+    runtime.scheduled[0]?.()
+
+    expect(runtime.open).toHaveBeenCalledWith({ kind: 'stops' })
+    expect(runtime.clearQuery).toHaveBeenCalledOnce()
   })
 
   it('does nothing when the launch URL carries no stop link', () => {
@@ -141,7 +159,7 @@ describe('scheduleLaunchPushClick', () => {
       const clearQuery = vi.fn()
       scheduleLaunchPushClick({ search: '?stop=CLB', open, clearQuery })
       vi.runAllTimers()
-      expect(open).toHaveBeenCalledWith({ stopId: 'CLB' })
+      expect(open).toHaveBeenCalledWith({ kind: 'stop', stopId: 'CLB' })
 
       const cancelledOpen = vi.fn()
       const cancel = scheduleLaunchPushClick({ search: '?stop=COM3', open: cancelledOpen, clearQuery })

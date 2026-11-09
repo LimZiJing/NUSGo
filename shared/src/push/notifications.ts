@@ -25,6 +25,16 @@ export function buildStopDeepLink(stopId: string): string {
   return '?stop=' + encodeURIComponent(stopId)
 }
 
+/**
+ * Deep link that opens the Stops view without selecting a stop.
+ *
+ * Service announcements can apply to every service, and NUSGo has no canonical route-to-stop
+ * mapping to pick a representative stop, so the link must not name an unrelated stop.
+ */
+export function buildStopsViewDeepLink(): string {
+  return '?view=stops'
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

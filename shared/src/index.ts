@@ -135,6 +135,7 @@ export {
   PUSH_NOTIFICATION_TITLE_MAX_LENGTH,
   PUSH_NOTIFICATION_BODY_MAX_LENGTH,
   buildStopDeepLink,
+  buildStopsViewDeepLink,
   parsePushNotificationPayload,
 } from './push/notifications.ts'
 export type { PushNotificationPayload, PushNotificationTopic } from './push/notifications.ts'

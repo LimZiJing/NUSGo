@@ -8,18 +8,32 @@
 
 export const PUSH_NOTIFICATION_CLICK_MESSAGE = 'PUSH_NOTIFICATION_CLICK'
 
-export interface PushClickTarget {
-  readonly stopId: string
-}
+/**
+ * An in-app destination from a push link.
+ *
+ * `stop` is the specific stop an alert is about. `stops` is the Stops view itself, used by
+ * service announcements that apply to every service, where naming any one stop would send the
+ * rider somewhere unrelated.
+ */
+export type PushClickTarget =
+  | { readonly kind: 'stop'; readonly stopId: string }
+  | { readonly kind: 'stops' }
 
-/** Reads `?stop=<id>` from a link the service worker produced; anything else is ignored. */
+/**
+ * Reads `?stop=<id>` or `?view=stops` from a link the service worker produced; anything else is
+ * ignored. The link is untrusted input, so only these two shapes are accepted.
+ */
 export function parsePushClickTarget(url: string): PushClickTarget | null {
   if (!url.startsWith('?')) return null
   try {
     const params = new URLSearchParams(url.slice(1))
     const stopId = params.get('stop')
-    if (!stopId || stopId.length > 64) return null
-    return { stopId }
+    if (stopId !== null) {
+      if (!stopId || stopId.length > 64) return null
+      return { kind: 'stop', stopId }
+    }
+    if (params.get('view') === 'stops') return { kind: 'stops' }
+    return null
   } catch {
     return null
   }

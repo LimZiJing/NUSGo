@@ -55,8 +55,6 @@ export interface BackendLiveData {
    * to suppress" rather than as "running".
    */
   getShuttleServiceStatus(routeId: string, atMs?: number): ShuttleServiceStatus | 'unknown'
-  /** The last loaded service announcements; always empty when the feed is not configured. */
-  getServiceAnnouncements(): readonly ServiceAnnouncement[]
   start(): void
   stop(): Promise<void>
 }
@@ -431,9 +429,6 @@ export async function createBackendLiveData(
       }
       const operation = ltaProvider.getArrivals(stopIds, shutdownController.signal) as Promise<PublicBusArrivalSnapshot>
       return track(operation)
-    },
-    getServiceAnnouncements() {
-      return serviceAnnouncements?.current() ?? []
     },
     start() {
       snapshotStore.start()

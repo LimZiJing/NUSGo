@@ -2,12 +2,12 @@
 
 The checked-in `frontend/public/data/community-waypoints.geojson` file is the public source of truth. Publish only reviewed place facts. Keep moderation records and evidence private.
 
-## Prepare a public change
+## Review a Community Waypoint batch PR
 
-1. Start from the current GeoJSON and edit a focused copy or temporary GIS layer. Do not commit GIS project files, generated fields, or a second public dataset. See the [data contract](data-contract.md#gis-import-and-export-settings) for QGIS and ArcGIS Pro export settings.
-2. Check for duplicates. A correction updates the existing feature and keeps its stable ID. Never reuse an ID after removal.
-3. Add or update `id`, `category`, `source`, `updatedAt`, and supported optional details. The app derives its display label from the category, building, floor, and details. `source` describes the public verification method. `updatedAt` is the date the location and details were last reviewed.
-4. Keep public provenance clean. Do not include private issue links, submitted text, reviewer notes, reporter details, or evidence references in GeoJSON or the public pull request.
+1. A maintainer runs the publish workflow in the private submissions repository. It builds the complete candidate from the approved issues and opens a draft PR against `main`.
+2. Review the full diff in `frontend/public/data/community-waypoints.geojson`. Check for duplicates, confirm each location and category, and verify that corrections preserve their existing IDs and removals delete the intended feature.
+3. Confirm every changed feature has a maintainer-verified `source` and review date in `updatedAt`. The workflow uses one source value for the entire batch. The app derives labels from category, building, floor, and `details`; `accessibilityNote` stays in the detail view.
+4. Keep public provenance clean. The PR must not include private issue links, submitted explanations, reviewer notes, reporter details, or evidence references.
 5. Validate the complete file and review its diff:
 
    ```powershell
@@ -18,7 +18,7 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
    ```
 
    The validator rejects malformed features, unsupported properties or categories, out-of-area coordinates, invalid dates, and duplicate IDs. Do not publish a partial dataset if any feature fails validation.
-6. Open the usual public pull request with the reviewed data change. Merge and deploy it through the normal NUSGo release process.
+6. Mark the PR ready when the review is complete, then merge it through the normal NUSGo review process. Production deployment remains a separate release step.
 
 ## Corrections, removals, and maintenance
 
@@ -31,3 +31,4 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
 ## Rollback
 
 If a published edit is malformed, exposes private information, or materially misrepresents a place, stop further edits and notify the release owner. Revert the specific public data commit through a new reviewed change, rerun the validator, tests, build, and diff checks, then publish the rollback. For an exposure, remove the content from the public branch promptly and follow repository incident procedures; a normal revert does not erase it from Git history.
+

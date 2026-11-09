@@ -163,7 +163,15 @@ export function createServiceAnnouncementPublisher(
         },
         onDelivered: (record) => {
           const announcement = selected.get(record.endpoint)
-          if (announcement) rememberDelivered(record.endpoint, announcement.identity)
+          // A completed send may belong to the previous feed or subscription generation.
+          // Prune against the current feed before adding history so it cannot evict a still-active
+          // notice merely because an older, edited notice completed late.
+          const current = options.announcements().filter(isActive)
+          pruneMemory(options.store.list('service-updates'), new Set(current.map(({ identity }) => identity)))
+          if (announcement && options.store.get(record.endpoint) === record &&
+              current.some(({ identity }) => identity === announcement.identity)) {
+            rememberDelivered(record.endpoint, announcement.identity)
+          }
         },
       })
     } finally {

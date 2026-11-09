@@ -76,7 +76,7 @@ import {
   getPersonalWaypointCategoryOptions,
 } from '../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { createPushNotificationService } from '../infrastructure/push/push-runtime'
-import { scheduleLaunchPushClick, subscribeToPushClicks } from '../pwa/push-click'
+import { scheduleLaunchPushClick, subscribeToPushClicks, type PushClickTarget } from '../pwa/push-click'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -410,18 +410,28 @@ function App() {
     setMorePage('closed')
     openStopInStopsFromNotification(stopId)
   }, [openStopInStopsFromNotification])
+  const openNotificationTarget = useCallback((target: PushClickTarget): void => {
+    if (target.kind === 'stops') {
+      // A service announcement may apply to every service, so it opens the Stops view itself
+      // rather than an unrelated stop.
+      setMorePage('closed')
+      appNavigation.selectView('stops')
+      return
+    }
+    openStopFromNotification(target.stopId)
+  }, [appNavigation, openStopFromNotification])
   // A notification tap arrives as a service-worker message when a window is open, and as the
-  // launch URL when it is not. Both routes open the affected stop in Stops.
+  // launch URL when it is not. Both routes open the affected destination in Stops.
   useEffect(
-    () => subscribeToPushClicks((target) => openStopFromNotification(target.stopId)),
-    [openStopFromNotification],
+    () => subscribeToPushClicks(openNotificationTarget),
+    [openNotificationTarget],
   )
   useEffect(() => scheduleLaunchPushClick({
     search: window.location.search,
-    open: (target) => openStopFromNotification(target.stopId),
+    open: openNotificationTarget,
     // Dropping the link after navigation keeps a reload or later visit from reopening the stop.
     clearQuery: () => window.history.replaceState(null, '', window.location.pathname + window.location.hash),
-  }), [openStopFromNotification])
+  }), [openNotificationTarget])
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return

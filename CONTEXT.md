@@ -36,6 +36,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Live bus**: A bus currently in service on a Bus route, with a vehicle plate, a position, a heading and an observation time. It is distinct from a Bus route and from a scheduled or estimated arrival. A Live bus that has not been refreshed recently is not shown.
 - **Load level**: The crowding of a Live bus, one of low, medium, high or unknown. Unknown is used when no reliable level is available; it is never guessed.
 - **Load estimate**: A Load level presented to users as an estimate, because the upstream source does not document it as a live passenger count.
+- **Service notice**: A notice NUS publishes about bus operations, such as a public-holiday schedule. It applies to every service or to named Bus routes, and it is shown only within its published display interval. NUSGo delivers it as a push notification titled “Service notice,” and the notice is not a Live bus, a Bus route, or an announcement about a single stop.
 
 ## Map presentation
 

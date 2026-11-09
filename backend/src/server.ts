@@ -11,6 +11,8 @@ import { createNotificationCap } from './push/notification-cap.ts'
 import { createServiceUpdatePublisher } from './push/service-update-publisher.ts'
 import { createAlightReminderPublisher } from './push/alight-reminders.ts'
 import { createAlightReminderRegistry } from './push/reminder-registry.ts'
+import { createServiceAnnouncementPublisher } from './push/service-announcement-publisher.ts'
+import type { ServiceAnnouncement } from './live-data/service-announcements.ts'
 import { createWebPushSender } from './push/web-push-sender.ts'
 import type { BackendConfig } from './config.ts'
 
@@ -48,29 +50,39 @@ async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const pushStore = createPushSubscriptionStore()
-  // One cap instance is shared by the HTTP routes and both topic publishers, so unsubscribing or
+  // One cap instance is shared by the HTTP routes and all publishers, so unsubscribing or
   // re-registering resets the same window that limits delivery and two topics never double-spend
   // one endpoint's hourly allowance.
   const pushCap = createNotificationCap({ maxPerHour: config.push?.notificationsPerHourCap ?? 1 })
+  const sendNotification = config.push ? createWebPushSender(config.push).sendNotification : null
   const reminderRegistry = createAlightReminderRegistry()
   const stopNameFor = (stopId: string): string | null =>
     data.network.stops.find(({ id }) => id === stopId)?.longName ?? null
-  const pushPublisher = config.push
+  const pushPublisher = config.push && sendNotification
     ? createServiceUpdatePublisher({
       store: pushStore,
       cap: pushCap,
-      sendNotification: createWebPushSender(config.push).sendNotification,
+      sendNotification,
       stopName: stopNameFor,
     })
     : null
   // Reminders share the VAPID sender and the hourly cap, but keep their own registry and topic:
   // an endpoint's allowance is spent once across both topics, not once per publisher.
-  const reminderPublisher = config.push
+  const reminderPublisher = config.push && sendNotification
     ? createAlightReminderPublisher({
       registry: reminderRegistry,
       cap: pushCap,
-      sendNotification: createWebPushSender(config.push).sendNotification,
+      sendNotification,
       stopName: stopNameFor,
+    })
+    : null
+  let currentAnnouncements: readonly ServiceAnnouncement[] = []
+  const announcementPublisher = config.push && sendNotification
+    ? createServiceAnnouncementPublisher({
+      store: pushStore,
+      cap: pushCap,
+      sendNotification,
+      announcements: () => currentAnnouncements,
     })
     : null
   const liveData = await createBackendLiveData(config, data, {
@@ -85,6 +97,16 @@ async function startBackend(): Promise<void> {
         console.error('NUSGo alight reminder failed.', error instanceof Error ? error.name : typeof error)
       })
     },
+    ...(announcementPublisher
+      ? {
+        onServiceAnnouncementsRefreshed: (announcements) => {
+          currentAnnouncements = announcements
+          void announcementPublisher.publish().catch((error: unknown) => {
+            console.error('NUSGo announcement push failed.', error instanceof Error ? error.name : typeof error)
+          })
+        },
+      }
+      : {}),
   })
   if (reminderPublisher) {
     // Service hours are only cached for routes someone asked about, and a reminder check must not

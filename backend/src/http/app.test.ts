@@ -94,6 +94,7 @@ function fakeLiveData(
     getPublicBusArrivals: unused,
     // No cached service hours in this fake, which is exactly the "unknown, trust the snapshot" case.
     getShuttleServiceStatus: () => 'unknown',
+    getServiceAnnouncements: () => [],
     start: () => undefined,
     stop: () => Promise.resolve(),
   }

@@ -26,8 +26,8 @@ function availabilityMessage(
   if (permission === 'denied') {
     return 'Notifications are blocked for NUSGo in your browser settings. Allow them there, then try again.'
   }
-  if (enabled) return 'You will get a notification when a bus is delayed or live arrivals pause. Notifications show on this device only.'
-  return 'Get a notification when a bus is delayed or live arrivals pause. You choose to turn this on; NUSGo only asks for permission after you tap Enable.'
+  if (enabled) return 'You will get a notification when a bus is delayed, live arrivals pause, or NUS posts a service notice. Notifications show on this device only.'
+  return 'Get a notification when a bus is delayed, live arrivals pause, or NUS posts a service notice. You choose to turn this on; NUSGo only asks for permission after you tap Enable.'
 }
 
 /**

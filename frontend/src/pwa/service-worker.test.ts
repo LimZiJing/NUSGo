@@ -232,6 +232,19 @@ describe('push notifications', () => {
     expect(runtime.opened).toEqual(['https://nusgo.test/pwa/?stop=COM3'])
   })
 
+  it('routes a service-notice click to the Stops view', async () => {
+    const runtime = pushWorker()
+    await runtime.click({ url: '?view=stops', topic: 'service-updates' })
+
+    expect(runtime.focusedClient.focus).toHaveBeenCalledOnce()
+    expect(runtime.messages).toEqual([{ type: 'PUSH_NOTIFICATION_CLICK', url: '?view=stops' }])
+
+    const cold = pushWorker()
+    cold.focusedClient.url = 'https://other.test/pwa/'
+    await cold.click({ url: '?view=stops' })
+    expect(cold.opened).toEqual(['https://nusgo.test/pwa/?view=stops'])
+  })
+
   it('ignores a click without a valid app link', async () => {
     const runtime = pushWorker()
     await runtime.click({ url: 'https://evil.test/' })
@@ -260,6 +273,7 @@ describe('push notifications', () => {
   it.each([
     ['valid payload', validPayload],
     ['encoded stop id', { ...validPayload, url: '?stop=COM3%20Opp' }],
+    ['Stops view deep link', { ...validPayload, url: '?view=stops', tag: 'announcement:414' }],
   ])('accepts the same well-formed payload the shared validator accepts: %s', async (_label, payload) => {
     expect(parsePushNotificationPayload(payload)).toEqual(payload)
     const runtime = pushWorker()

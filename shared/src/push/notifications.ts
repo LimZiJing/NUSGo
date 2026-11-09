@@ -55,6 +55,11 @@ function bound(text: string, maxLength: number): string {
   return text.slice(0, maxLength - 1).trimEnd() + '…'
 }
 
+/** Opens Stops for a service notice that does not name a particular stop. */
+export function buildStopsViewDeepLink(): string {
+  return '?view=stops'
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

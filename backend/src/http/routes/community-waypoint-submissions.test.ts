@@ -56,25 +56,25 @@ function post(
 }
 
 describe('private submission issue creation', () => {
-  it('formats a private issue with the controlled labels and no reporter fields', () => {
+  it('formats submission details by report kind without empty placeholder fields', () => {
     const submission = parseCommunityWaypointSubmission(validNewPlace)
     const issue = createPrivateSubmissionIssueDraft(submission)
-    assert.equal(issue.title, '[new-place] Water cooler waypoint')
+    assert.equal(issue.title, '[New place] Water cooler waypoint')
     assert.deepEqual(issue.labels, ['kind:new-place', 'review:new'])
-    assert.match(issue.body, /\*\*Kind:\*\* New place/)
-    assert.match(issue.body, /\*\*Kind label:\*\* kind:new-place/)
-    assert.match(issue.body, /\*\*Waypoint name:\*\*/)
-    assert.match(issue.body, /Longitude \(new place or correction\)/)
-    assert.match(issue.body, /Private photo evidence IDs.*Disabled at launch/)
+    assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
+    assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
+    assert.match(issue.body, /\*\*Submitter explanation \(unverified\):\*\*/)
+    assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
+    assert.match(issue.body, /Photo retention and orphan cleanup/)
     assert.match(issue.body, /## Maintainer review/)
     assert.doesNotMatch(issue.body, /\*\*Reporter (name|email)/i)
     const markdownNote = parseCommunityWaypointSubmission({
       ...validNewPlace,
       explanation: 'Water ~~station~~',
     })
-    const safeIssue = createPrivateSubmissionIssueDraft(markdownNote)
-    assert.doesNotMatch(safeIssue.body, /~~/)
-    assert.match(safeIssue.body, /\\~\\~/)
+    const markdownIssue = createPrivateSubmissionIssueDraft(markdownNote)
+    assert.doesNotMatch(markdownIssue.body, /~~/)
+    assert.match(markdownIssue.body, /\\~\\~/)
   })
 
   it('uses the matching kind label for corrections and removals', () => {
@@ -88,8 +88,15 @@ describe('private submission issue creation', () => {
       waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
       reason: 'The amenity has been removed.',
     })
-    assert.deepEqual(createPrivateSubmissionIssueDraft(correction).labels, ['kind:correction', 'review:new'])
-    assert.deepEqual(createPrivateSubmissionIssueDraft(removal).labels, ['kind:removal', 'review:new'])
+    const correctionIssue = createPrivateSubmissionIssueDraft(correction)
+    const removalIssue = createPrivateSubmissionIssueDraft(removal)
+    assert.equal(correctionIssue.title, '[Correction] cw-123e4567-e89b-42d3-a456-426614174000')
+    assert.match(correctionIssue.body, /\*\*Requested change \(unverified\):\*\*/)
+    assert.doesNotMatch(correctionIssue.body, /No change proposed/)
+    assert.equal(removalIssue.title, '[Removal] cw-123e4567-e89b-42d3-a456-426614174000')
+    assert.match(removalIssue.body, /\*\*Removal reason \(unverified\):\*\*/)
+    assert.deepEqual(correctionIssue.labels, ['kind:correction', 'review:new'])
+    assert.deepEqual(removalIssue.labels, ['kind:removal', 'review:new'])
   })
 
   it('sends the server credential only to the fixed private repository endpoint', async () => {
@@ -140,7 +147,7 @@ describe('private submission issue creation', () => {
       assert.equal(response.status, 202)
       const receipt = await response.json() as Record<string, unknown>
       assert.deepEqual(receipt, { status: 'received' })
-      assert.equal(receivedTitle, '[new-place] Water cooler waypoint')
+      assert.equal(receivedTitle, '[New place] Water cooler waypoint')
       assert.equal('issueUrl' in receipt, false)
       assert.equal('issueNumber' in receipt, false)
     })

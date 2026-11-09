@@ -66,6 +66,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Place the fix within 25 m of multiple stops, including two close opposite stops. Confirm prompts appear one at a time in distance order. Confirming one clears the remaining prompts from that cluster; crossing one advances to the next. Confirm a stop can prompt again only after the fix moves beyond 40 m and returns within 25 m.
 - [ ] At a confirmed stop, set the fake internal ETA to 2 minutes, then advance the simulated clock by 1 minute. Confirm “[route] arrived. Follow?” appears and expires after 15 seconds if unanswered. Yes starts following from the current stop; No dismisses it. Switch to the public-service 95 fixture at 1 minute and confirm it does not prompt. Prompts are suppressed while following.
 - [ ] While following, start Drive bus. Confirm the simulated location moves along the stop sequence and the Here marker advances as it reaches each stop. Pause and resume the drive, then Get off; following should end and the last Here stop should remain marked. Reset the simulator and confirm the app returns to the real location source.
+- [ ] While following, confirm stops passed since the confirmed start are slightly faded with their normal route-coloured nodes; the current stop remains identified by Here.
 - [ ] Confirm denied or unavailable location shows no location-driven prompts. Confirm Follow route never says that it tracks a bus or detects boarding.
 
 ## Personal Waypoints (#207)

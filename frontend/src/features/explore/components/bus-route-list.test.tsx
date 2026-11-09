@@ -157,6 +157,34 @@ describe('BusRouteList', () => {
     expect(timeline.contains(currentStop)).toBe(true)
   })
 
+  it('fades passed stops while keeping the current stop identified', () => {
+    const network = createD2Network()
+    render(
+      <BusRouteList
+        network={network}
+        networkIndex={createTransitIndex(network)}
+        selectedRouteId="D2"
+        onRouteSelect={() => undefined}
+        routeProgress={{ routeId: 'D2', startIndex: 1, stopIndex: 2 }}
+      />,
+    )
+
+    const passedStop = screen.getByRole('button', {
+      name: 'TCOMS-OPP, bus stop, code TCOMS-OPP, passed stop. Focus on map',
+    })
+    const currentStop = screen.getByRole('button', {
+      name: 'PGP, bus stop, code PGP, current stop. Focus on map',
+    })
+    const upcomingStop = screen.getByRole('button', {
+      name: 'KR-MRT, bus stop, code KR-MRT. Focus on map',
+    })
+
+    expect(passedStop.className).toContain('is-passed')
+    expect(currentStop.className).toContain('is-current')
+    expect(currentStop.className).not.toContain('is-passed')
+    expect(upcomingStop.className).not.toContain('is-passed')
+  })
+
   it('keeps the bus-route timeline in browse mode when following is inactive', () => {
     const network = createValidTransitNetwork()
     render(

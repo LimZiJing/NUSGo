@@ -87,11 +87,15 @@
 }
 
 .explore-content .explore-bus-route-list-stop.is-passed {
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  background-color: var(--surface-faint);
 }
 
 @media (hover: hover) {
   .explore-bus-route-list-stop:hover {
+    background-color: var(--surface-subtle);
+  }
+  .explore-content .explore-bus-route-list-stop.is-passed:hover {
     background-color: var(--surface-subtle);
   }
 }
@@ -107,11 +111,6 @@
   border-radius: 50%;
   background: var(--surface-card);
   box-shadow: var(--shadow-card-strong);
-}
-
-.explore-bus-route-list-stop.is-passed .explore-bus-route-list-node {
-  border-color: var(--text-success-strong);
-  background: var(--text-success-strong);
 }
 
 .route-following-here {

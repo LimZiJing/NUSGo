@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
+  Banknote,
   Building2,
   BusFront,
   CircleAlert,
@@ -15,7 +16,9 @@ import {
   Compass,
   Coffee,
   CircleDot,
+  CupSoda,
   DoorOpen,
+  Droplets,
   Download,
   EllipsisVertical,
   ExternalLink,
@@ -38,6 +41,7 @@ import {
   Settings,
   Star,
   Sun,
+  Toilet,
   TreePine,
   X,
 } from 'lucide-react'
@@ -67,6 +71,10 @@ export function ArrowLeftIcon(props: IconProps) {
 
 export function ArmchairIcon(props: IconProps) {
   return renderDecorativeIcon(Armchair, props)
+}
+
+export function BanknoteIcon(props: IconProps) {
+  return renderDecorativeIcon(Banknote, props)
 }
 
 export function BuildingIcon(props: IconProps) {
@@ -107,6 +115,14 @@ export function CompassIcon(props: IconProps) {
 
 export function CoffeeIcon(props: IconProps) {
   return renderDecorativeIcon(Coffee, props)
+}
+
+export function CupSodaIcon(props: IconProps) {
+  return renderDecorativeIcon(CupSoda, props)
+}
+
+export function DropletsIcon(props: IconProps) {
+  return renderDecorativeIcon(Droplets, props)
 }
 
 export function CircleDotIcon(props: IconProps) {
@@ -179,6 +195,10 @@ export function InfoIcon(props: IconProps) {
 
 export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
+}
+
+export function ToiletIcon(props: IconProps) {
+  return renderDecorativeIcon(Toilet, props)
 }
 
 export function TreePineIcon(props: IconProps) {

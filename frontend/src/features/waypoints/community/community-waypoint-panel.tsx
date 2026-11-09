@@ -6,6 +6,7 @@ import {
 } from '@nusgo/shared/waypoints/community'
 import { BackButton } from '../../../ui/back-button.tsx'
 import { Button } from '../../../ui/button.tsx'
+import { MapPinIcon } from '../../../ui/icons'
 import type { CommunityWaypointDiscovery } from './use-community-waypoint-discovery'
 import './community-waypoint-panel.css'
 
@@ -13,11 +14,11 @@ interface CommunityWaypointPanelProps {
   readonly discovery: CommunityWaypointDiscovery
   readonly onSelectWaypoint: (waypointId: string) => void
   readonly onSuggestCorrection: (waypointId: string, trigger: HTMLButtonElement) => void
-  readonly onSuggestPlace: (trigger: HTMLButtonElement) => void
+  readonly onSuggestWaypoint: (trigger: HTMLButtonElement) => void
 }
 
 function getCategoryLabel(category: CommunityWaypointCategory): string {
-  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community place'
+  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community Waypoint'
 }
 
 function getFloorLabel(floor: number): string {
@@ -43,7 +44,7 @@ function WaypointDetails({
 
   return (
     <section className="community-waypoint-details" aria-labelledby="community-waypoint-detail-heading">
-      <BackButton mode="inline" label="Community places" onClick={onBack} />
+      <BackButton mode="inline" label="Community Waypoints" onClick={onBack} />
       <div className="community-waypoint-details-scroll">
         <h3 id="community-waypoint-detail-heading" ref={headingRef} tabIndex={-1}>
           {waypoint.name}
@@ -101,7 +102,7 @@ export function CommunityWaypointPanel({
   discovery,
   onSelectWaypoint,
   onSuggestCorrection,
-  onSuggestPlace,
+  onSuggestWaypoint,
 }: CommunityWaypointPanelProps) {
   const {
     status,
@@ -123,25 +124,26 @@ export function CommunityWaypointPanel({
   return (
     <div className="community-waypoint-panel">
       <div className="community-waypoint-browser" hidden={selectedWaypoint !== null}>
-        <h3>Community places</h3>
-        {status === 'loading' && <p className="community-waypoint-status" role="status">Loading approved places…</p>}
+        {!(status === 'ready' && noPlaces) && <h3>Community Waypoints</h3>}
+        {status === 'loading' && <p className="community-waypoint-status" role="status">Loading approved Community Waypoints…</p>}
         {status === 'failed' && (
           <div className="community-waypoint-load-error">
-            <p role="alert">Approved places could not be loaded.</p>
+            <p role="alert">Community Waypoints could not be loaded.</p>
             <Button label="Try again" onClick={retry} />
           </div>
         )}
         {status === 'ready' && (
           <>
             {noPlaces ? (
-              <section className="community-waypoint-empty-state" aria-labelledby="community-waypoint-empty-heading">
-                <h4 id="community-waypoint-empty-heading">No places yet</h4>
+              <div className="community-waypoint-empty-state">
+                <MapPinIcon className="community-waypoint-empty-icon" />
+                <p>Know a useful campus location? Suggest it for others.</p>
                 <Button
-                  label="Suggest a place"
-                  variant="primary"
-                  onClick={(event) => onSuggestPlace(event.currentTarget)}
+                  label="Suggest a waypoint"
+                  variant="secondary"
+                  onClick={(event) => onSuggestWaypoint(event.currentTarget)}
                 />
-              </section>
+              </div>
             ) : (
               <>
                 <fieldset className="community-waypoint-filters">
@@ -153,7 +155,7 @@ export function CommunityWaypointPanel({
                         type="button"
                         className="community-waypoint-filter"
                         aria-pressed={visibleCategories.includes(value)}
-                        aria-label={`${label}, ${count} ${count === 1 ? 'place' : 'places'}`}
+                        aria-label={`${label}, ${count} ${count === 1 ? 'waypoint' : 'waypoints'}`}
                         onClick={() => toggleCategory(value)}
                       >
                         <span>{label}</span>
@@ -162,7 +164,7 @@ export function CommunityWaypointPanel({
                     ))}
                     {!allCategoriesVisible && (
                       <button type="button" className="community-waypoint-show-all" onClick={showAllCategories}>
-                        Show all places
+                        Show all waypoints
                       </button>
                     )}
                   </div>

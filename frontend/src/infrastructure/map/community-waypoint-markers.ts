@@ -31,7 +31,7 @@ const CATEGORY_TOKENS: Readonly<Record<CommunityWaypointCategory, string>> = {
 }
 
 function getCategoryLabel(category: CommunityWaypointCategory): string {
-  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community place'
+  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community Waypoint'
 }
 
 function updateElement(

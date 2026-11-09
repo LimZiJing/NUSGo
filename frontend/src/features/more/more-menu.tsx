@@ -4,11 +4,11 @@ import { ChevronRightIcon, MapIcon, MapPinIcon, SettingsIcon, FileTextIcon } fro
 import './more-menu.css'
 
 /** Lists destinations while each destination screen stays with its owning feature. */
-export function MoreMenu({ waypointCount, onOpenWaypoints, onSuggestPlace, onOpenSettings, onOpenReleaseNotes, installSection }: {
+export function MoreMenu({ waypointCount, onOpenWaypoints, onSuggestCommunityWaypoint, onOpenSettings, onOpenReleaseNotes, installSection }: {
   readonly installSection?: ReactNode
   readonly waypointCount: number | null
   readonly onOpenWaypoints: () => void
-  readonly onSuggestPlace: () => void
+  readonly onSuggestCommunityWaypoint: () => void
   readonly onOpenSettings: () => void
   readonly onOpenReleaseNotes: () => void
 }) {
@@ -30,11 +30,10 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onSuggestPlace, onOpe
       </span>
       <ChevronRightIcon />
     </Button>
-    <Button className="more-menu-row" ariaLabel="Suggest a place" onClick={onSuggestPlace}>
+    <Button className="more-menu-row" ariaLabel="Suggest a waypoint" onClick={onSuggestCommunityWaypoint}>
       <span className="more-menu-row-icon menu-icon-tile"><MapIcon /></span>
       <span className="more-menu-row-copy">
-        <span>Suggest a place</span>
-        <span className="more-menu-row-description">Reviewed before publishing</span>
+        <span>Suggest a waypoint</span>
       </span>
       <ChevronRightIcon />
     </Button>

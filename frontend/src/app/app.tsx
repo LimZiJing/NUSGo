@@ -82,6 +82,7 @@ import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
@@ -146,6 +147,8 @@ function App() {
   const [communitySubmissionCoordinate, setCommunitySubmissionCoordinate] = useState<WaypointCoordinate>(
     DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
   )
+  const [communitySubmissionLocationStatus, setCommunitySubmissionLocationStatus] = useState<'locating' | 'ready' | 'required'>('required')
+  const [communitySubmissionLocationAccuracy, setCommunitySubmissionLocationAccuracy] = useState<number | null>(null)
   const [communitySubmissionReturnPage, setCommunitySubmissionReturnPage] = useState<'menu' | 'explore'>('menu')
   const [isCommunitySubmissionPending, setIsCommunitySubmissionPending] = useState(false)
   const communitySubmissionReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -182,6 +185,21 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
+  if (
+    morePage === 'community-submission' && communitySubmissionWaypoint === null &&
+    communitySubmissionLocationStatus === 'locating'
+  ) {
+    const { status, latestFix } = state.location
+    if (status === 'tracking' && latestFix && isValidLocationCoordinates(latestFix.longitude, latestFix.latitude)) {
+      setCommunitySubmissionCoordinate({ longitude: latestFix.longitude, latitude: latestFix.latitude })
+      setCommunitySubmissionLocationAccuracy(latestFix.accuracy)
+      setCommunitySubmissionLocationStatus('ready')
+    } else if (
+      status === 'denied' || status === 'unavailable' || status === 'timeout' || status === 'invalid'
+    ) {
+      setCommunitySubmissionLocationStatus('required')
+    }
+  }
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
     state.mapError,
@@ -300,6 +318,8 @@ function App() {
   }, [updatePersonalWaypointDraft])
   const handleCommunityWaypointMapChange = useCallback((coordinate: readonly [number, number]): void => {
     setCommunitySubmissionCoordinate({ longitude: coordinate[0], latitude: coordinate[1] })
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
   }, [])
   // A typed or pasted coordinate can be anywhere, so bring the pin into view as well as moving it.
   const applyTypedWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
@@ -308,6 +328,8 @@ function App() {
   }, [commands, updatePersonalWaypointDraft])
   const applyTypedCommunityWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
     setCommunitySubmissionCoordinate(coordinate)
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
     commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
   }, [commands])
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
@@ -459,23 +481,42 @@ function App() {
     const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
     if (waypoint) focusCommunityWaypoint(waypoint)
   }, [communityWaypoints, focusCommunityWaypoint])
-  const beginCommunityPlaceSuggestion = useCallback((
+  const beginCommunityWaypointSuggestion = useCallback((
     returnPage: 'menu' | 'explore' = 'menu',
     trigger: HTMLButtonElement | null = null,
   ): void => {
+    const location = state.location.status === 'tracking' && state.location.latestFix &&
+      isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
+      ? state.location.latestFix
+      : null
     setCommunitySubmissionWaypoint(null)
-    setCommunitySubmissionCoordinate(DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
+    setCommunitySubmissionCoordinate(location
+      ? { longitude: location.longitude, latitude: location.latitude }
+      : DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
+    setCommunitySubmissionLocationStatus(location ? 'ready' : session ? 'locating' : 'required')
+    setCommunitySubmissionLocationAccuracy(location?.accuracy ?? null)
     setCommunitySubmissionReturnPage(returnPage)
     setIsCommunitySubmissionPending(false)
     communitySubmissionReturnFocusRef.current = returnPage === 'explore' ? trigger : null
     setMoreSheetDetent('full')
     setMorePage('community-submission')
-  }, [])
+    if (!location && session) {
+      const needsLocationRestart = state.location.status === 'stale' ||
+        state.location.status === 'denied' ||
+        state.location.status === 'unavailable' ||
+        state.location.status === 'timeout' ||
+        state.location.status === 'invalid'
+      if (needsLocationRestart) commands.locateUser()
+      else commands.enableLocationTracking()
+    }
+  }, [commands, session, state.location])
   const beginCommunityCorrection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
     const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
     if (!waypoint) return
     setCommunitySubmissionWaypoint(waypoint)
     setCommunitySubmissionCoordinate(waypoint.coordinate)
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
     setCommunitySubmissionReturnPage('explore')
     setIsCommunitySubmissionPending(false)
     communitySubmissionReturnFocusRef.current = trigger
@@ -487,7 +528,7 @@ function App() {
       discovery={communityDiscovery}
       onSelectWaypoint={handleCommunityWaypointListSelection}
       onSuggestCorrection={beginCommunityCorrection}
-      onSuggestPlace={(trigger) => beginCommunityPlaceSuggestion('explore', trigger)}
+      onSuggestWaypoint={(trigger) => beginCommunityWaypointSuggestion('explore', trigger)}
     />
   )
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
@@ -1127,7 +1168,11 @@ function App() {
         {morePage === 'community-placing' && <PersonalWaypointPlacement
           coordinate={communitySubmissionCoordinate}
           onUseMapCentre={mapCenter && !isMapMoving
-            ? () => setCommunitySubmissionCoordinate(mapCenter)
+            ? () => {
+              setCommunitySubmissionCoordinate(mapCenter)
+              setCommunitySubmissionLocationStatus('ready')
+              setCommunitySubmissionLocationAccuracy(null)
+            }
             : undefined}
           onApplyCoordinate={applyTypedCommunityWaypointCoordinate}
           onContinue={() => {
@@ -1195,7 +1240,7 @@ function App() {
             style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
           >
             <div><span className="legend-marker venue-marker" /> Venues</div>
-            <div><span className="legend-marker community-waypoint-legend-marker" /> Community places</div>
+            <div><span className="legend-marker community-waypoint-legend-marker" /> Community Waypoints</div>
             <div className="bus-stop-legend-item">
               <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
               On selected route
@@ -1229,7 +1274,7 @@ function App() {
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'placing' ? 'Adjust location'
                   : morePage === 'community-submission'
-                    ? communitySubmissionWaypoint ? 'Suggest a correction' : 'Suggest a place'
+                    ? communitySubmissionWaypoint ? 'Suggest a correction' : 'Suggest a waypoint'
                     : morePage === 'community-placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
                     : morePage === 'settings' ? 'Settings'
@@ -1242,7 +1287,7 @@ function App() {
                 ? personalWaypoints.readResult.waypoints.length
                 : null}
               onOpenWaypoints={openWaypoints}
-              onSuggestPlace={() => beginCommunityPlaceSuggestion()}
+              onSuggestCommunityWaypoint={() => beginCommunityWaypointSuggestion()}
               onOpenSettings={openSettings}
               onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
@@ -1316,6 +1361,9 @@ function App() {
               <CommunityWaypointSubmissionForm
                 waypoint={communitySubmissionWaypoint}
                 coordinate={communitySubmissionCoordinate}
+                locationStatus={communitySubmissionLocationStatus}
+                locationAccuracy={communitySubmissionLocationAccuracy}
+                buildingIndex={state.buildings}
                 onAdjustLocation={(trigger) => {
                   communitySubmissionPlacementFocusRef.current = trigger
                   setMorePage('community-placing')

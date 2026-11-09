@@ -102,7 +102,7 @@ export function AppViews({
             summary={views.explore.community?.active
               ? views.explore.community.selectedWaypointName
                 ? `Explore · ${views.explore.community.selectedWaypointName}`
-                : 'Explore · Community places'
+                : 'Explore · Community Waypoints'
               : getExploreSheetSummary(
                 views.explore.state,
                 selectedRoute,

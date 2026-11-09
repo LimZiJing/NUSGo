@@ -55,7 +55,7 @@ interface ExploreContentProps {
 }
 
 function getExplorePanelHeading(state: ExploreState, communityMode: boolean): string {
-  if (communityMode) return 'Community places'
+  if (communityMode) return 'Community Waypoints'
   if (state.mode === 'bus-routes') return EXPLORE_LABELS.busRoutes
   if (state.mode === 'venue-detail') return 'Venue details'
   return 'Find a venue'
@@ -66,7 +66,7 @@ function getExplorePanelAnnouncement(
   buildingName?: string,
   communityMode = false,
 ): string | null {
-  if (communityMode) return 'Community places opened.'
+  if (communityMode) return 'Community Waypoints opened.'
   if (state.mode === 'bus-routes') return null
   if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {

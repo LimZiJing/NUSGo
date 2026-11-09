@@ -1,5 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { ReactNode } from 'react'
+import { Accordion } from '@base-ui/react/accordion'
+import { Autocomplete } from '@base-ui/react/autocomplete'
 import { Field } from '@base-ui/react/field'
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
@@ -11,9 +13,24 @@ import {
   type ProposedCommunityWaypointFields,
 } from '@nusgo/shared'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
+import { getDistanceMeters } from '../../../domain/location/coordinates'
+import {
+  describeBuildingEntry,
+  searchBuildings,
+  type BuildingIndex,
+} from '../../../domain/venue/building-index'
 import { CommunityWaypointSubmissionError } from '../../../domain/waypoints/community-waypoint-submission'
 import { Button } from '../../../ui/button'
-import { AlertCircleIcon } from '../../../ui/icons'
+import {
+  AlertCircleIcon,
+  BanknoteIcon,
+  BuildingIcon,
+  ChevronDownIcon,
+  CupSodaIcon,
+  DropletsIcon,
+  SearchIcon,
+  ToiletIcon,
+} from '../../../ui/icons'
 import './community-waypoint-submission-form.css'
 
 interface SubmissionFields {
@@ -30,20 +47,26 @@ interface SubmissionFields {
 type SubmissionField = keyof SubmissionFields | 'coordinate'
 type SubmissionErrors = Partial<Record<SubmissionField, string>>
 type FormStatus = 'editing' | 'submitting' | 'received'
+type LocationStatus = 'locating' | 'ready' | 'required'
 
-const ADDITIONAL_DETAIL_FIELDS = new Set<keyof SubmissionFields>([
-  'building',
-  'floor',
+const CATEGORY_ICONS = {
+  water_cooler: DropletsIcon,
+  atm: BanknoteIcon,
+  toilet: ToiletIcon,
+  vending_machine: CupSodaIcon,
+} satisfies Record<ActiveCommunityWaypointCategory, typeof DropletsIcon>
+
+const EXTENDED_DETAILS_VALUE = 'extended-details'
+
+const EXTENDED_DETAIL_FIELDS = new Set<keyof SubmissionFields>([
   'details',
   'accessibilityNote',
-  'explanation',
 ])
 
 function SubmissionField({
   id,
   name,
   label,
-  optional = false,
   error,
   layout,
   children,
@@ -51,9 +74,8 @@ function SubmissionField({
   readonly id: string
   readonly name: keyof SubmissionFields
   readonly label: string
-  readonly optional?: boolean
   readonly error: string | undefined
-  readonly layout?: 'select' | 'multiline'
+  readonly layout?: 'select' | 'multiline' | 'search'
   readonly children: ReactNode
 }) {
   const className = ['community-waypoint-field', layout && `community-waypoint-field--${layout}`]
@@ -62,7 +84,7 @@ function SubmissionField({
   return (
     <Field.Root className={className} name={name} invalid={Boolean(error)}>
       <Field.Label className="community-waypoint-field-label" htmlFor={id}>
-        {label}{optional && <span> (optional)</span>}
+        {label}
       </Field.Label>
       {children}
       {error && <Field.Error
@@ -98,9 +120,9 @@ function validateFields(
   fields: SubmissionFields,
   waypoint: CommunityWaypoint | null,
   coordinate: WaypointCoordinate,
+  locationReady: boolean,
 ): SubmissionErrors {
   const errors: SubmissionErrors = {}
-  if (!waypoint && !fields.name.trim()) errors.name = 'Enter a place name.'
   if (!waypoint && !fields.category) errors.category = 'Choose a category.'
   if (textExceedsLimit(fields.name, COMMUNITY_WAYPOINT_TEXT_LIMITS.name)) errors.name = 'Keep the name within 80 characters.'
   if (textExceedsLimit(fields.building, COMMUNITY_WAYPOINT_TEXT_LIMITS.building)) errors.building = 'Keep the building within 80 characters.'
@@ -112,6 +134,7 @@ function validateFields(
   if (textExceedsLimit(fields.requestedChange, 1_000)) errors.requestedChange = 'Keep the reason within 1,000 characters.'
   if (waypoint && !fields.requestedChange.trim()) errors.requestedChange = 'Explain what needs correcting.'
   if (fields.floor.trim() && !Number.isSafeInteger(Number(fields.floor))) errors.floor = 'Enter a whole-number floor.'
+  if (!locationReady) errors.coordinate = 'Set the waypoint location before sending.'
 
   const { south, north, west, east } = SINGAPORE_COORDINATE_BOUNDS
   if (
@@ -136,9 +159,7 @@ function createSubmission(
   waypoint: CommunityWaypoint | null,
   coordinate: WaypointCoordinate,
 ): CommunityWaypointSubmission {
-  const proposedFields: ProposedCommunityWaypointFields = {
-    ...(optionalText(fields.name) ? { name: fields.name.trim() } : {}),
-    ...(fields.category ? { category: fields.category as ActiveCommunityWaypointCategory } : {}),
+  const optionalFields: Omit<ProposedCommunityWaypointFields, 'name' | 'category' | 'longitude' | 'latitude'> = {
     ...(optionalText(fields.building) ? { building: fields.building.trim() } : {}),
     ...(fields.floor.trim() ? { floor: Number(fields.floor) } : {}),
     ...(optionalText(fields.accessibilityNote) ? { accessibilityNote: fields.accessibilityNote.trim() } : {}),
@@ -150,21 +171,37 @@ function createSubmission(
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: fields.requestedChange.trim(),
-      ...proposedFields,
+      ...(optionalText(fields.name) ? { name: fields.name.trim() } : {}),
+      ...(fields.category ? { category: fields.category as ActiveCommunityWaypointCategory } : {}),
       longitude: coordinate.longitude,
       latitude: coordinate.latitude,
+      ...optionalFields,
     }
   }
 
   return {
     kind: 'new-place',
-    ...proposedFields,
-    name: fields.name.trim(),
     category: fields.category as ActiveCommunityWaypointCategory,
     longitude: coordinate.longitude,
     latitude: coordinate.latitude,
+    ...optionalFields,
     ...(optionalText(fields.explanation) ? { explanation: fields.explanation.trim() } : {}),
   }
+}
+
+function getNearestBuildingName(buildings: BuildingIndex | null, coordinate: WaypointCoordinate): string | null {
+  if (!buildings) return null
+  let nearest: { readonly name: string; readonly distance: number } | null = null
+
+  for (const building of buildings.entries) {
+    const distance = getDistanceMeters(coordinate, {
+      longitude: building.location.x,
+      latitude: building.location.y,
+    })
+    if (nearest === null || distance < nearest.distance) nearest = { name: building.name, distance }
+  }
+
+  return nearest?.name ?? null
 }
 
 function errorMessage(error: unknown, isCorrection: boolean): string {
@@ -181,6 +218,9 @@ function errorMessage(error: unknown, isCorrection: boolean): string {
 export function CommunityWaypointSubmissionForm({
   waypoint,
   coordinate,
+  locationStatus,
+  locationAccuracy,
+  buildingIndex,
   onAdjustLocation,
   onSubmit,
   onBack,
@@ -188,6 +228,9 @@ export function CommunityWaypointSubmissionForm({
 }: {
   readonly waypoint: CommunityWaypoint | null
   readonly coordinate: WaypointCoordinate
+  readonly locationStatus: LocationStatus
+  readonly locationAccuracy: number | null
+  readonly buildingIndex: BuildingIndex | null
   readonly onAdjustLocation: (trigger: HTMLButtonElement) => void
   readonly onSubmit: (submission: CommunityWaypointSubmission, signal: AbortSignal) => Promise<void>
   readonly onBack: () => void
@@ -197,30 +240,62 @@ export function CommunityWaypointSubmissionForm({
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
   const [submissionError, setSubmissionError] = useState<string | null>(null)
-  const [isAdditionalDetailsOpen, setIsAdditionalDetailsOpen] = useState(() => waypoint !== null)
+  const [isExtendedDetailsOpen, setIsExtendedDetailsOpen] = useState(false)
+  const [previousLocationStatus, setPreviousLocationStatus] = useState(locationStatus)
+  const [locationAnnouncement, setLocationAnnouncement] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const receiptHeadingRef = useRef<HTMLHeadingElement>(null)
   const submissionControllerRef = useRef<AbortController | null>(null)
-  const focusAfterDisclosureOpenRef = useRef<keyof SubmissionFields | null>(null)
+  const focusAfterExtendedDetailsOpenRef = useRef<keyof SubmissionFields | null>(null)
   const isCorrection = waypoint !== null
+  const nearestBuildingName = !isCorrection && locationStatus === 'ready'
+    ? getNearestBuildingName(buildingIndex, coordinate)
+    : null
+  const buildingSearchResults = useMemo(
+    () => buildingIndex && fields.building.trim()
+      ? searchBuildings(buildingIndex, fields.building)
+      : [],
+    [buildingIndex, fields.building],
+  )
   const receiptHeading = isCorrection ? 'Correction received' : 'Suggestion received'
   const fieldErrorMessage = Object.values(errors).filter(Boolean).join(' ')
   const errorMessageText = [fieldErrorMessage, submissionError].filter(Boolean).join(' ')
 
+  if (locationStatus !== previousLocationStatus) {
+    setPreviousLocationStatus(locationStatus)
+    setLocationAnnouncement(locationStatus === 'ready'
+      ? 'Waypoint location set. Check the pin before sending.'
+      : locationStatus === 'required'
+        ? 'Current location unavailable. Set the waypoint on the map before sending.'
+        : 'Getting your current location.')
+  }
+
   useEffect(() => () => {
     submissionControllerRef.current?.abort()
   }, [])
+
+  const autoFilledBuildingRef = useRef<string | null>(null)
+  useEffect(() => {
+    setFields((current) => {
+      const canUpdateBuilding = !current.building.trim() || current.building === autoFilledBuildingRef.current
+      if (!canUpdateBuilding) return current
+      autoFilledBuildingRef.current = nearestBuildingName
+      return current.building === (nearestBuildingName ?? '')
+        ? current
+        : { ...current, building: nearestBuildingName ?? '' }
+    })
+  }, [nearestBuildingName])
 
   useLayoutEffect(() => {
     if (status === 'received') receiptHeadingRef.current?.focus()
   }, [status])
 
   useLayoutEffect(() => {
-    if (!isAdditionalDetailsOpen || !focusAfterDisclosureOpenRef.current) return
-    const field = focusAfterDisclosureOpenRef.current
-    focusAfterDisclosureOpenRef.current = null
+    if (!isExtendedDetailsOpen || !focusAfterExtendedDetailsOpenRef.current) return
+    const field = focusAfterExtendedDetailsOpenRef.current
+    focusAfterExtendedDetailsOpenRef.current = null
     formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)?.focus()
-  }, [isAdditionalDetailsOpen])
+  }, [isExtendedDetailsOpen])
 
   const updateField = (field: keyof SubmissionFields, value: string): void => {
     setFields((current) => ({ ...current, [field]: value }))
@@ -236,17 +311,17 @@ export function CommunityWaypointSubmissionForm({
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     if (status === 'submitting') return
-    const validationErrors = validateFields(fields, waypoint, coordinate)
+    const validationErrors = validateFields(fields, waypoint, coordinate, locationStatus === 'ready')
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       const firstInvalidField = Object.keys(validationErrors)[0] as SubmissionField
       if (
         firstInvalidField !== 'coordinate' &&
-        ADDITIONAL_DETAIL_FIELDS.has(firstInvalidField) &&
-        !isAdditionalDetailsOpen
+        EXTENDED_DETAIL_FIELDS.has(firstInvalidField) &&
+        !isExtendedDetailsOpen
       ) {
-        focusAfterDisclosureOpenRef.current = firstInvalidField
-        setIsAdditionalDetailsOpen(true)
+        focusAfterExtendedDetailsOpenRef.current = firstInvalidField
+        setIsExtendedDetailsOpen(true)
         return
       }
       const target = firstInvalidField === 'coordinate'
@@ -281,7 +356,7 @@ export function CommunityWaypointSubmissionForm({
       <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
         {status === 'received'
           ? `${receiptHeading}. A maintainer will review it before publication. This anonymous form cannot send a personal reply.`
-          : status === 'submitting' ? 'Sending suggestion.' : ''}
+          : status === 'submitting' ? 'Sending suggestion.' : locationAnnouncement}
       </p>
       {status === 'received' ? (
         <section className="community-waypoint-submission-receipt" aria-labelledby="community-waypoint-receipt-heading">
@@ -292,19 +367,15 @@ export function CommunityWaypointSubmissionForm({
           <Button label="Done" variant="primary" onClick={onBack} />
         </section>
       ) : <form ref={formRef} className="community-waypoint-submission-form" onSubmit={(event) => { void submit(event) }} noValidate>
-      <p className="community-waypoint-submission-guidance">
-        Reviewed before publishing. No photos, photo links or personal details.
-      </p>
       {isCorrection && <p className="community-waypoint-submission-target">
         <span>Correction for</span>
         <strong>{waypoint.name}</strong>
       </p>}
 
-      <SubmissionField
+      {isCorrection && <SubmissionField
         id="community-submission-name"
         name="name"
-        label="Place name"
-        optional={isCorrection}
+        label="Waypoint name"
         error={errors.name}
       >
         <input
@@ -313,56 +384,101 @@ export function CommunityWaypointSubmissionForm({
           className="community-waypoint-field-control"
           placeholder=" "
           value={fields.name}
-          required={!isCorrection}
           maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.name + 1) * 2}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? 'community-submission-name-error' : undefined}
           onChange={(event) => updateField('name', event.target.value)}
         />
-      </SubmissionField>
+      </SubmissionField>}
 
-      <SubmissionField
-        id="community-submission-category"
-        name="category"
-        label="Category"
-        optional={isCorrection}
-        error={errors.category}
-        layout="select"
-      >
-        <select
+      {isCorrection ? (
+        <SubmissionField
           id="community-submission-category"
           name="category"
-          className="community-waypoint-field-control"
-          value={fields.category}
-          required={!isCorrection}
+          label="Category"
+          error={errors.category}
+          layout="select"
+        >
+          <select
+            id="community-submission-category"
+            name="category"
+            className="community-waypoint-field-control"
+            value={fields.category}
+            aria-invalid={Boolean(errors.category)}
+            aria-describedby={errors.category ? 'community-submission-category-error' : undefined}
+            onChange={(event) => updateField('category', event.target.value)}
+          >
+            <option value="">No change proposed</option>
+            {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </SubmissionField>
+      ) : (
+        <fieldset
+          className="community-waypoint-category-picker"
           aria-invalid={Boolean(errors.category)}
           aria-describedby={errors.category ? 'community-submission-category-error' : undefined}
-          onChange={(event) => updateField('category', event.target.value)}
         >
-          <option value="">{isCorrection ? 'No change proposed' : 'Choose a type'}</option>
-          {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </SubmissionField>
+          <legend>Choose a category</legend>
+          <div className="community-waypoint-category-options">
+            {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => {
+              const Icon = CATEGORY_ICONS[value]
+              return (
+                <label key={value} className="community-waypoint-category-option">
+                  <input
+                    type="radio"
+                    name="category"
+                    value={value}
+                    checked={fields.category === value}
+                    required
+                    onChange={(event) => updateField('category', event.target.value)}
+                  />
+                  <span className="community-waypoint-category-card">
+                    <Icon size={23} />
+                    <span>{label}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          {errors.category && <p id="community-submission-category-error" className="community-waypoint-field-error">
+            <AlertCircleIcon className="community-waypoint-field-error-icon" size={14} />
+            <span>{errors.category}</span>
+          </p>}
+        </fieldset>
+      )}
 
       <div
         className="community-waypoint-submission-coordinate"
         role="group"
         aria-labelledby="community-submission-coordinate-label"
       >
-        <strong id="community-submission-coordinate-label">Location</strong>
+        <div className="community-waypoint-submission-coordinate-heading">
+          <strong id="community-submission-coordinate-label">Location</strong>
+          {locationStatus === 'ready' && locationAccuracy !== null && Number.isFinite(locationAccuracy) && (
+            <span className="community-waypoint-location-status">Using current location</span>
+          )}
+        </div>
         <div className="community-waypoint-submission-coordinate-content">
-          <dl className="community-waypoint-submission-coordinate-values">
-            <div>
-              <dt>Latitude</dt>
-              <dd>{coordinateValue(coordinate.latitude, 'N', 'S')}</dd>
-            </div>
-            <div>
-              <dt>Longitude</dt>
-              <dd>{coordinateValue(coordinate.longitude, 'E', 'W')}</dd>
-            </div>
-          </dl>
+          {locationStatus === 'ready' ? (
+            <dl className="community-waypoint-submission-coordinate-values">
+              <div>
+                <dt>Latitude</dt>
+                <dd>{coordinateValue(coordinate.latitude, 'N', 'S')}</dd>
+              </div>
+              <div>
+                <dt>Longitude</dt>
+                <dd>{coordinateValue(coordinate.longitude, 'E', 'W')}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="community-waypoint-location-message">
+              {locationStatus === 'locating'
+                ? 'Getting your current location…'
+                : 'Could not get your location. Set the waypoint location on the map before sending.'}
+            </p>
+          )}
           <Button
             label="Adjust on map"
             onClick={(event) => onAdjustLocation(event.currentTarget)}
@@ -397,37 +513,76 @@ export function CommunityWaypointSubmissionForm({
         />
       </SubmissionField>}
 
-      <details
-        className="community-waypoint-extra-fields"
-        open={isAdditionalDetailsOpen}
-        onToggle={(event) => setIsAdditionalDetailsOpen(event.currentTarget.open)}
-      >
-        <summary>Additional details <span>(optional)</span></summary>
+      <section className="community-waypoint-extra-fields" aria-labelledby="community-submission-additional-details-heading">
+        <h3 id="community-submission-additional-details-heading" className="community-waypoint-extra-fields-title">
+          Additional details <span>(optional)</span>
+        </h3>
         <div className="community-waypoint-extra-fields-content">
           <SubmissionField
             id="community-submission-building"
             name="building"
             label="Building or landmark"
-            optional
             error={errors.building}
+            layout="search"
           >
-            <input
-              id="community-submission-building"
-              name="building"
-              className="community-waypoint-field-control"
-              placeholder=" "
+            <Autocomplete.Root
+              items={buildingIndex?.entries ?? []}
+              filteredItems={buildingSearchResults}
               value={fields.building}
-              maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.building + 1) * 2}
-              aria-invalid={Boolean(errors.building)}
-              aria-describedby={errors.building ? 'community-submission-building-error' : undefined}
-              onChange={(event) => updateField('building', event.target.value)}
-            />
+              itemToStringValue={(entry) => entry.name}
+              openOnInputClick
+              onValueChange={(value) => updateField('building', value)}
+            >
+              <Autocomplete.InputGroup className="community-waypoint-building-input-group">
+                <SearchIcon className="community-waypoint-building-search-icon" />
+                <Autocomplete.Input
+                  id="community-submission-building"
+                  name="building"
+                  className="community-waypoint-field-control community-waypoint-building-input"
+                  placeholder=" "
+                  maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.building + 1) * 2}
+                  aria-invalid={Boolean(errors.building)}
+                  aria-describedby={errors.building ? 'community-submission-building-error' : undefined}
+                  autoComplete="off"
+                />
+              </Autocomplete.InputGroup>
+              <Autocomplete.Portal>
+                <Autocomplete.Positioner className="community-waypoint-building-positioner" sideOffset={4}>
+                  <Autocomplete.Popup className="community-waypoint-building-popup">
+                    <Autocomplete.Empty>
+                      <div className="community-waypoint-building-empty">
+                        {fields.building.trim()
+                          ? 'No matching buildings. You can keep your text.'
+                          : 'Search for a building or landmark.'}
+                      </div>
+                    </Autocomplete.Empty>
+                    <Autocomplete.List className="community-waypoint-building-list">
+                      {(entry) => {
+                        const secondary = describeBuildingEntry(entry)
+                        return (
+                          <Autocomplete.Item
+                            key={entry.id}
+                            value={entry}
+                            className="community-waypoint-building-item"
+                          >
+                            <BuildingIcon className="community-waypoint-building-item-icon" />
+                            <span className="community-waypoint-building-item-label">
+                              <strong>{entry.name}</strong>
+                              {secondary && <span>{secondary}</span>}
+                            </span>
+                          </Autocomplete.Item>
+                        )
+                      }}
+                    </Autocomplete.List>
+                  </Autocomplete.Popup>
+                </Autocomplete.Positioner>
+              </Autocomplete.Portal>
+            </Autocomplete.Root>
           </SubmissionField>
           <SubmissionField
             id="community-submission-floor"
             name="floor"
             label="Floor"
-            optional
             error={errors.floor}
           >
             <input
@@ -442,71 +597,90 @@ export function CommunityWaypointSubmissionForm({
               onChange={(event) => updateField('floor', event.target.value)}
             />
           </SubmissionField>
-          <SubmissionField
-            id="community-submission-details"
-            name="details"
-            label="Details"
-            optional
-            error={errors.details}
-            layout="multiline"
+          <Accordion.Root
+            className="community-waypoint-extra-fields-disclosure"
+            value={isExtendedDetailsOpen ? [EXTENDED_DETAILS_VALUE] : []}
+            onValueChange={(value) => setIsExtendedDetailsOpen(value.includes(EXTENDED_DETAILS_VALUE))}
           >
-            <textarea
-              id="community-submission-details"
-              name="details"
-              className="community-waypoint-field-control community-waypoint-field-control--multiline"
-              placeholder=" "
-              rows={2}
-              value={fields.details}
-              maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.details + 1) * 2}
-              aria-invalid={Boolean(errors.details)}
-              aria-describedby={errors.details ? 'community-submission-details-error' : undefined}
-              onChange={(event) => updateField('details', event.target.value)}
-            />
-          </SubmissionField>
-          <SubmissionField
-            id="community-submission-accessibility"
-            name="accessibilityNote"
-            label="Accessibility note"
-            optional
-            error={errors.accessibilityNote}
-            layout="multiline"
-          >
-            <textarea
-              id="community-submission-accessibility"
-              name="accessibilityNote"
-              className="community-waypoint-field-control community-waypoint-field-control--multiline"
-              placeholder=" "
-              rows={2}
-              value={fields.accessibilityNote}
-              maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote + 1) * 2}
-              aria-invalid={Boolean(errors.accessibilityNote)}
-              aria-describedby={errors.accessibilityNote ? 'community-submission-accessibility-error' : undefined}
-              onChange={(event) => updateField('accessibilityNote', event.target.value)}
-            />
-          </SubmissionField>
-          {!isCorrection && <SubmissionField
-            id="community-submission-explanation"
-            name="explanation"
-            label="Note for maintainers"
-            optional
-            error={errors.explanation}
-            layout="multiline"
-          >
-            <textarea
-              id="community-submission-explanation"
-              name="explanation"
-              className="community-waypoint-field-control community-waypoint-field-control--multiline"
-              placeholder=" "
-              rows={2}
-              value={fields.explanation}
-              maxLength={2_002}
-              aria-invalid={Boolean(errors.explanation)}
-              aria-describedby={errors.explanation ? 'community-submission-explanation-error' : undefined}
-              onChange={(event) => updateField('explanation', event.target.value)}
-            />
-          </SubmissionField>}
+            <Accordion.Item className="community-waypoint-extra-fields-item" value={EXTENDED_DETAILS_VALUE}>
+              <Accordion.Header render={<h4 />} className="community-waypoint-extra-fields-header">
+                <Accordion.Trigger
+                  id="community-submission-extended-details-heading"
+                  className="community-waypoint-extra-fields-trigger"
+                >
+                  <span>Details and accessibility</span>
+                  <ChevronDownIcon className="community-waypoint-extra-fields-chevron" size={16} />
+                </Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Panel className="community-waypoint-extra-fields-panel">
+                <div className="community-waypoint-extra-fields-disclosure-content">
+                  <SubmissionField
+                    id="community-submission-details"
+                    name="details"
+                    label="Details"
+                    error={errors.details}
+                    layout="multiline"
+                  >
+                    <textarea
+                      id="community-submission-details"
+                      name="details"
+                      className="community-waypoint-field-control community-waypoint-field-control--multiline"
+                      placeholder=" "
+                      rows={2}
+                      value={fields.details}
+                      maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.details + 1) * 2}
+                      aria-invalid={Boolean(errors.details)}
+                      aria-describedby={errors.details ? 'community-submission-details-error' : undefined}
+                      onChange={(event) => updateField('details', event.target.value)}
+                    />
+                  </SubmissionField>
+                  <SubmissionField
+                    id="community-submission-accessibility"
+                    name="accessibilityNote"
+                    label="Accessibility note"
+                    error={errors.accessibilityNote}
+                    layout="multiline"
+                  >
+                    <textarea
+                      id="community-submission-accessibility"
+                      name="accessibilityNote"
+                      className="community-waypoint-field-control community-waypoint-field-control--multiline"
+                      placeholder=" "
+                      rows={2}
+                      value={fields.accessibilityNote}
+                      maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote + 1) * 2}
+                      aria-invalid={Boolean(errors.accessibilityNote)}
+                      aria-describedby={errors.accessibilityNote ? 'community-submission-accessibility-error' : undefined}
+                      onChange={(event) => updateField('accessibilityNote', event.target.value)}
+                    />
+                  </SubmissionField>
+                </div>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion.Root>
         </div>
-      </details>
+      </section>
+
+      {!isCorrection && <SubmissionField
+        id="community-submission-explanation"
+        name="explanation"
+        label="Note for reviewers"
+        error={errors.explanation}
+        layout="multiline"
+      >
+        <textarea
+          id="community-submission-explanation"
+          name="explanation"
+          className="community-waypoint-field-control community-waypoint-field-control--multiline"
+          placeholder=" "
+          rows={2}
+          value={fields.explanation}
+          maxLength={2_002}
+          aria-invalid={Boolean(errors.explanation)}
+          aria-describedby={errors.explanation ? 'community-submission-explanation-error' : undefined}
+          onChange={(event) => updateField('explanation', event.target.value)}
+        />
+      </SubmissionField>}
 
       {submissionError && <p className="community-waypoint-submission-error" aria-hidden="true">{submissionError}</p>}
       <div className="community-waypoint-submission-actions">

@@ -289,6 +289,11 @@ describe('service announcement publisher', () => {
     // Every notice in the feed has been delivered, so no further cycle may send any of them.
     assert.equal((await publisher.publish()).notificationsSent, 0)
     assert.equal(sends, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS)
+
+    active[0] = announcement({ id: 'notice-0', identity: 'notice-0|Corrected', message: 'Corrected' })
+    assert.equal((await publisher.publish()).notificationsSent, 1)
+    assert.equal((await publisher.publish()).notificationsSent, 0)
+    assert.equal(sends, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS + 1)
   })
 
   it('forgets delivery history for endpoints and announcements that are gone', async () => {

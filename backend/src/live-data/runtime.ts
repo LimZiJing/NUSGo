@@ -246,8 +246,7 @@ export async function createBackendLiveData(
             if (shutdownController.signal.aborted) return
             console.error('NUSGo announcement notification hook failed.', error instanceof Error ? error.name : typeof error)
           })
-        activeOperations.add(refresh)
-        void refresh.finally(() => activeOperations.delete(refresh)).catch(() => undefined)
+        void track(refresh)
       }
     },
   })

@@ -126,6 +126,7 @@ function App() {
   const focusCategoryPickerAfterBackRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
+  const [notificationNavigationRevision, setNotificationNavigationRevision] = useState(0)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
@@ -404,22 +405,22 @@ function App() {
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
   const openStopInStopsFromNotification = appNavigation.openStopDetailsFromMap
-  const openStopFromNotification = useCallback((stopId: string): void => {
-    // A tap from a notification is an explicit navigation request, so close More (Settings and
-    // waypoints screens) before revealing Stops.
-    setMorePage('closed')
-    openStopInStopsFromNotification(stopId)
-  }, [openStopInStopsFromNotification])
   const openNotificationTarget = useCallback((target: PushClickTarget): void => {
+    // Notification navigation owns focus after closing More; restoring its entry button would
+    // pull keyboard and screen-reader users away from the destination.
+    skipMoreFocusRestoreRef.current = true
+    pendingViewFocusRef.current = 'stops'
+    setNotificationNavigationRevision((revision) => revision + 1)
+    setMorePage('closed')
     if (target.kind === 'stops') {
-      // A service announcement may apply to every service, so it opens the Stops view itself
-      // rather than an unrelated stop.
-      setMorePage('closed')
+      if (isMobileViewport && navigation.sheets.stops.detent === 'collapsed') {
+        appNavigation.dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
+      }
       appNavigation.selectView('stops')
       return
     }
-    openStopFromNotification(target.stopId)
-  }, [appNavigation, openStopFromNotification])
+    openStopInStopsFromNotification(target.stopId)
+  }, [appNavigation, isMobileViewport, navigation.sheets.stops.detent, openStopInStopsFromNotification])
   // A notification tap arrives as a service-worker message when a window is open, and as the
   // launch URL when it is not. Both routes open the affected destination in Stops.
   useEffect(
@@ -574,7 +575,7 @@ function App() {
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
-  }, [activeView, isMoreOpen])
+  }, [activeView, isMoreOpen, notificationNavigationRevision])
 
   useLayoutEffect(() => {
     if (activeView !== 'explore') return

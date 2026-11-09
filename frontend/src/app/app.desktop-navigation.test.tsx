@@ -494,6 +494,33 @@ describe('push notification navigation', () => {
     expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy()
   })
 
+  it.each(['?view=stops', '?stop=STOP-A'])('keeps notification focus in Stops after closing Settings (%s)', async (url) => {
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    clickNotification(worker, url)
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true))
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'More' }))
+  })
+
+  it('reveals a collapsed Stops sheet when a service notice arrives from Explore', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    await user.keyboard('{ArrowDown}')
+    expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    clickNotification(worker, '?view=stops')
+    await waitFor(() => expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('partial'))
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true)
+  })
+
   it('still opens the affected stop for a stop-scoped notification', async () => {
     const user = userEvent.setup()
     const worker = stubServiceWorker()
@@ -521,6 +548,7 @@ describe('push notification navigation', () => {
     // Clearing the query proves the parsed target reached the navigation callback, which only
     // runs for a link it accepted.
     await waitFor(() => expect(window.location.search).toBe(''))
+    expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true)
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.queryByRole('heading', { name: /bus stop$/ })).toBeNull()
   })

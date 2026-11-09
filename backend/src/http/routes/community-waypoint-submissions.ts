@@ -39,6 +39,11 @@ function getCategoryLabel(category: string): string {
   return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
 }
 
+function getCategoryIssueLabels(submission: CommunityWaypointSubmission): readonly string[] {
+  if (submission.kind !== 'new-place') return []
+  return ['category:' + submission.category]
+}
+
 function getIssueTitle(submission: CommunityWaypointSubmission): string {
   if (submission.kind === 'new-place') {
     return '[New place] ' + getCategoryLabel(submission.category) + ' waypoint'
@@ -172,7 +177,7 @@ export function createPrivateSubmissionIssueDraft(
       '- [ ] Approved, rejected, duplicate, or outdated outcome is recorded with reason and date',
       '- [ ] Photo retention and orphan cleanup are handled before closure, if private photo evidence was accepted',
     ].join('\n'),
-    labels: ['kind:' + submission.kind, 'review:new'],
+    labels: ['kind:' + submission.kind, 'review:new', ...getCategoryIssueLabels(submission)],
   }
 }
 export function createPrivateSubmissionIssueWriter(

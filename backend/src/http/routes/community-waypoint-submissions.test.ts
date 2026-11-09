@@ -68,7 +68,7 @@ describe('private submission issue creation', () => {
     const submission = parseCommunityWaypointSubmission(validNewPlace)
     const issue = createPrivateSubmissionIssueDraft(submission)
     assert.equal(issue.title, '[New place] Water cooler waypoint')
-    assert.deepEqual(issue.labels, ['kind:new-place', 'review:new'])
+    assert.deepEqual(issue.labels, ['kind:new-place', 'review:new', 'category:water_cooler'])
     assert.match(issue.body, /## Summary/)
     assert.match(issue.body, /\| Category \| Water cooler \|/)
     assert.match(issue.body, /\| Location \| Latitude 1\.29, longitude 103\.78/)
@@ -173,7 +173,7 @@ describe('private submission issue creation', () => {
     )
     assert.equal(requestHeaders.get('authorization'), 'Bearer server-only-token')
     assert.equal(requestHeaders.get('x-github-api-version'), '2022-11-28')
-    assert.deepEqual(requestBody?.labels, ['kind:new-place', 'review:new'])
+    assert.deepEqual(requestBody?.labels, ['kind:new-place', 'review:new', 'category:water_cooler'])
     assert.equal(createPrivateSubmissionIssueWriter(null), null)
   })
 

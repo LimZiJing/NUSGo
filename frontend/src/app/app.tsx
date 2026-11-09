@@ -838,7 +838,7 @@ function App() {
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
     community: {
       active: communityExploreActive,
-      selectedWaypointName: communityDiscovery.selectedWaypoint?.name ?? null,
+      selectedWaypointLabel: communityDiscovery.selectedWaypoint?.displayLabel ?? null,
       content: communityContent,
       onModeChange: setCommunityExploreActive,
       onOpen: communityDiscovery.showWaypointList,

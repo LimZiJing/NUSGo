@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import {
-  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
+  getCommunityWaypointCategoryLabel,
+  getCommunityWaypointFloorLabel,
   type CommunityWaypoint,
-  type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
 import { BackButton } from '../../../ui/back-button.tsx'
 import { Button } from '../../../ui/button.tsx'
@@ -15,16 +15,6 @@ interface CommunityWaypointPanelProps {
   readonly onSelectWaypoint: (waypointId: string) => void
   readonly onSuggestCorrection: (waypointId: string, trigger: HTMLButtonElement) => void
   readonly onSuggestWaypoint: (trigger: HTMLButtonElement) => void
-}
-
-function getCategoryLabel(category: CommunityWaypointCategory): string {
-  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community Waypoint'
-}
-
-function getFloorLabel(floor: number): string {
-  if (floor === 0) return 'Ground floor'
-  if (floor < 0) return `Basement ${Math.abs(floor)}`
-  return `Floor ${floor}`
 }
 
 function WaypointDetails({
@@ -47,23 +37,23 @@ function WaypointDetails({
       <BackButton mode="inline" label="Community Waypoints" onClick={onBack} />
       <div className="community-waypoint-details-scroll">
         <h3 id="community-waypoint-detail-heading" ref={headingRef} tabIndex={-1}>
-          {waypoint.name}
+          {waypoint.displayLabel}
         </h3>
         <dl className="community-waypoint-facts">
           <div>
             <dt>Category</dt>
-            <dd>{getCategoryLabel(waypoint.category)}</dd>
+            <dd>{getCommunityWaypointCategoryLabel(waypoint.category)}</dd>
           </div>
           {waypoint.building && (
             <div>
               <dt>Building</dt>
-              <dd>{waypoint.building}{waypoint.floor === undefined ? '' : ` · ${getFloorLabel(waypoint.floor)}`}</dd>
+              <dd>{waypoint.building}{waypoint.floor === undefined ? '' : ` · ${getCommunityWaypointFloorLabel(waypoint.floor)}`}</dd>
             </div>
           )}
           {waypoint.building === undefined && waypoint.floor !== undefined && (
             <div>
               <dt>Floor</dt>
-              <dd>{getFloorLabel(waypoint.floor)}</dd>
+              <dd>{getCommunityWaypointFloorLabel(waypoint.floor)}</dd>
             </div>
           )}
           {waypoint.details && (
@@ -178,15 +168,14 @@ export function CommunityWaypointPanel({
                         <button
                           type="button"
                           className="community-waypoint-row"
-                          aria-label={`${waypoint.name}, ${getCategoryLabel(waypoint.category)}. Open details.`}
+                          aria-label={`Open details for ${waypoint.displayLabel}`}
                           onClick={(event) => {
                             selectWaypoint(waypoint.id, event.currentTarget)
                             onSelectWaypoint(waypoint.id)
                           }}
                         >
                           <span className="community-waypoint-row-copy">
-                            <strong>{waypoint.name}</strong>
-                            <span>{getCategoryLabel(waypoint.category)}{waypoint.building ? ` · ${waypoint.building}` : ''}</span>
+                            <strong>{waypoint.displayLabel}</strong>
                           </span>
                         </button>
                       </li>

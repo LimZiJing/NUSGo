@@ -48,7 +48,7 @@ vi.mock('maplibre-gl', () => {
 
 const waypoint: CommunityWaypoint = {
   id: 'cw-water-001',
-  name: 'Water cooler',
+  displayLabel: 'Water cooler',
   category: 'water_cooler',
   coordinate: { longitude: 103.78, latitude: 1.29 },
   source: 'NUS Campus Facilities',
@@ -71,7 +71,7 @@ describe('createCommunityWaypointMarkers', () => {
 
     expect(button?.type).toBe('button')
     expect(button?.dataset.category).toBe('water_cooler')
-    expect(button?.getAttribute('aria-label')).toBe('Open Water cooler, Water cooler details.')
+    expect(button?.getAttribute('aria-label')).toBe('Open details for Water cooler')
     expect(button?.querySelector('.community-waypoint-marker-token')?.textContent).toBe('W')
     expect(markerState.instances[0]?.coordinates).toEqual([103.78, 1.29])
 
@@ -88,7 +88,7 @@ describe('createCommunityWaypointMarkers', () => {
     const markers = createCommunityWaypointMarkers({} as Map)
     const revisedWaypoint: CommunityWaypoint = {
       ...waypoint,
-      name: 'Accessible toilet',
+      displayLabel: 'Accessible toilet',
       category: 'toilet',
       coordinate: { longitude: 103.79, latitude: 1.30 },
     }
@@ -100,7 +100,7 @@ describe('createCommunityWaypointMarkers', () => {
     expect(markerState.instances).toHaveLength(1)
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(button.dataset.category).toBe('toilet')
-    expect(button.getAttribute('aria-label')).toBe('Open Accessible toilet, Toilet details.')
+    expect(button.getAttribute('aria-label')).toBe('Open details for Accessible toilet')
     expect(button.querySelector('.community-waypoint-marker-token')?.textContent).toBe('T')
 
     markers.setWaypoints([], onSelect)

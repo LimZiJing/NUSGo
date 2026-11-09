@@ -17,7 +17,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 - **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.
 - **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note, marker color and icon, and timestamps. The saved record stays local; after the user requests a Journey, only the selected coordinate is sent to the Journey backend.
-- **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
+- **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. Its display label is derived from its category and optional building, floor, and details. It remains separate from Personal Waypoints.
 
 ## Bus transit
 

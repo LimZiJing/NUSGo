@@ -100,8 +100,8 @@ export function AppViews({
             className="explore-sheet"
             label="Explore panel"
             summary={views.explore.community?.active
-              ? views.explore.community.selectedWaypointName
-                ? `Explore · ${views.explore.community.selectedWaypointName}`
+              ? views.explore.community.selectedWaypointLabel
+                ? `Explore · ${views.explore.community.selectedWaypointLabel}`
                 : 'Explore · Community Waypoints'
               : getExploreSheetSummary(
                 views.explore.state,

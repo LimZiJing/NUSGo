@@ -46,7 +46,7 @@ interface ExploreContentProps {
   onSearchFocus?: () => void
   community?: {
     readonly active: boolean
-    readonly selectedWaypointName: string | null
+    readonly selectedWaypointLabel: string | null
     readonly content: ReactNode
     readonly onModeChange: (active: boolean) => void
     readonly onOpen: () => void

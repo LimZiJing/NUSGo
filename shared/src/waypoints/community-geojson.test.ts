@@ -8,7 +8,6 @@ import {
 
 const requiredProperties = {
   id: 'cw-550e8400-e29b-41d4-a716-446655440000',
-  name: 'Campus place',
   category: 'water_cooler',
   source: 'Checked on site',
   updatedAt: '2026-11-08',
@@ -50,7 +49,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
           geometry: { type: 'Point', coordinates: [103.7844, 1.2933] },
           properties: {
             id: 'cw-550e8400-e29b-41d4-a716-446655440000',
-            name: 'Water cooler',
             category: 'water_cooler',
             source: 'Checked on site',
             updatedAt: '2026-11-08',
@@ -66,7 +64,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
     expect(parseCommunityWaypointsGeoJson(input)).toEqual([
       {
         id: 'cw-550e8400-e29b-41d4-a716-446655440000',
-        name: 'Water cooler',
+        displayLabel: 'Water cooler · Central Library · Floor 2 · Near the study area',
         category: 'water_cooler',
         coordinate: { longitude: 103.7844, latitude: 1.2933 },
         source: 'Checked on site',
@@ -86,6 +84,11 @@ describe('parseCommunityWaypointsGeoJson', () => {
     },
   )
 
+  it('uses the category label when no location details are available', () => {
+    expect(parseCommunityWaypointsGeoJson(collectionWith({ category: 'vending_machine' }))[0]?.displayLabel)
+      .toBe('Vending machine')
+  })
+
   it('accepts an empty FeatureCollection', () => {
     expect(parseCommunityWaypointsGeoJson({ type: 'FeatureCollection', features: [] })).toEqual([])
   })
@@ -93,7 +96,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
   it('treats missing and null optional fields as empty', () => {
     const expected = {
       id: requiredProperties.id,
-      name: requiredProperties.name,
+      displayLabel: 'Water cooler',
       category: 'water_cooler',
       coordinate: { longitude: 103.7844, latitude: 1.2933 },
       source: requiredProperties.source,
@@ -149,8 +152,13 @@ describe('parseCommunityWaypointsGeoJson', () => {
 
     expect(() => parseCommunityWaypointsGeoJson({
       type: 'FeatureCollection',
-      features: [feature, { ...feature, properties: { ...feature.properties, name: 'Another place' } }],
+      features: [feature, { ...feature, properties: { ...feature.properties, details: 'Another place' } }],
     })).toThrow(CommunityWaypointGeoJsonValidationError)
+  })
+
+  it('rejects a submitted name in public properties', () => {
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ name: 'Water station' })))
+      .toThrow(CommunityWaypointGeoJsonValidationError)
   })
 
   it('rejects private review fields in public properties', () => {
@@ -183,12 +191,14 @@ describe('parseCommunityWaypointsGeoJson', () => {
 
   it('trims public text and enforces its documented length limits', () => {
     expect(parseCommunityWaypointsGeoJson(collectionWith({
-      name: '  Campus place  ',
+      building: '  Central Library  ',
+      details: '  Near the study area  ',
       source: '  Checked on site  ',
-    }))[0]).toMatchObject({ name: 'Campus place', source: 'Checked on site' })
+    }))[0]).toMatchObject({
+      displayLabel: 'Water cooler · Central Library · Near the study area',
+      source: 'Checked on site',
+    })
 
-    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ name: 'x'.repeat(81) })))
-      .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ source: 'x'.repeat(161) })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ building: 'x'.repeat(81) })))
@@ -236,7 +246,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
     })).toThrow(CommunityWaypointGeoJsonValidationError)
   })
 
-  it('parses the representative GIS round-trip fixture without losing category or ID fields', () => {
+  it('parses the GIS round-trip fixture and derives labels from public fields', () => {
     const fixture = JSON.parse(roundTripFixture) as unknown
     const parsed = parseCommunityWaypointsGeoJson(fixture)
 
@@ -248,10 +258,15 @@ describe('parseCommunityWaypointsGeoJson', () => {
       ['cw-550e8400-e29b-41d4-a716-446655440004', 'vending_machine'],
     ])
     expect(parsed[1]).toMatchObject({
-      name: 'ATM',
+      displayLabel: 'ATM',
       updatedAt: '2026-11-08',
       coordinate: { longitude: 103.7801, latitude: 1.2978 },
     })
+    expect(parsed[0]?.displayLabel)
+      .toBe('Water cooler · Central Library · Floor 1 · Near the main entrance')
     expect(parsed[2]).toMatchObject({ floor: -1 })
+    expect(parsed[2]?.displayLabel).toBe('Toilet · Basement 1')
+    expect(parsed[3]?.displayLabel)
+      .toBe('Vending machine · Faculty Building · Ground floor · Next to the service counter')
   })
 })

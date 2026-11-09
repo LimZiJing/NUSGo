@@ -14,7 +14,7 @@ const coordinate = { longitude: 103.78, latitude: 1.29 }
 
 const waypoint: CommunityWaypoint = {
   id: 'cw-water-001',
-  name: 'Water cooler at UTown',
+  displayLabel: 'Water cooler at UTown',
   category: 'water_cooler',
   coordinate,
   source: 'NUS Campus Facilities',
@@ -196,7 +196,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.getByText('Correction for')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Additional details (optional)' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Details and accessibility' }).getAttribute('aria-expanded')).toBe('false')
-    expect((screen.getByLabelText('Waypoint name') as HTMLInputElement).value).toBe(waypoint.name)
+    expect(screen.queryByLabelText('Waypoint name')).toBeNull()
     await user.type(screen.getByLabelText('What needs correcting?'), 'The cooler has moved upstairs.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -204,7 +204,6 @@ describe('CommunityWaypointSubmissionForm', () => {
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: 'The cooler has moved upstairs.',
-      name: waypoint.name,
       category: waypoint.category,
       longitude: waypoint.coordinate.longitude,
       latitude: waypoint.coordinate.latitude,

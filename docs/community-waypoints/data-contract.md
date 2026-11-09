@@ -24,7 +24,6 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | Field | Required | Rule |
 | --- | --- | --- |
 | `id` | Yes | Stable opaque ID in lower-case `cw-<UUID>` form. The parser normalizes UUID hex to lower case. Never reuse an ID, including after removal. IDs must be unique in the collection. |
-| `name` | Yes | Reviewed display name, 1–80 characters after trimming. |
 | `category` | Yes | One active controlled value: `water_cooler`, `atm`, `toilet`, or `vending_machine`. |
 | `geometry` | Yes | GeoJSON `Point`; coordinates must be within the supported Singapore box. |
 | `source` | Yes | Short public description of how the place was verified, 1–160 characters after trimming. Do not put a private issue link or raw evidence reference here. |
@@ -38,6 +37,8 @@ Text is trimmed at the parser boundary and length limits count Unicode code poin
 
 The initial category labels are **Water cooler**, **ATM**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
 
+The app derives `CommunityWaypoint.displayLabel` for display from the category label and any available building, floor, and details, in that order. `accessibilityNote` remains a separate detail and is not part of the display label. Do not add a `name` property to public GeoJSON.
+
 Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
 
 ## Provenance and review metadata
@@ -50,7 +51,7 @@ Keep moderation metadata in the private submission issue only. That private reco
 
 `parseCommunityWaypointsGeoJson(input)` accepts `unknown` and returns a complete readonly Community Waypoint list. It throws `CommunityWaypointGeoJsonValidationError` with the failing path and reason if the collection, any feature, coordinate, property, category, date, ID, or value is invalid. A bad feature rejects the whole dataset; the parser never silently drops it or returns a partial list.
 
-The allowlist for `properties` is `id`, `name`, `category`, `source`, `updatedAt`, `building`, `floor`, `accessibilityNote`, and `details`. This prevents private moderation fields from being carried into the public dataset.
+The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `accessibilityNote`, and `details`. This prevents display labels and private moderation fields from being carried into the public dataset.
 
 ## GIS import and export settings
 
@@ -72,7 +73,7 @@ RFC 7946 requires WGS 84 coordinates in longitude/latitude order. Keep the coord
 
 ### Round-trip evidence
 
-After each GIS export, parse the output with `parseCommunityWaypointsGeoJson` and compare the four fixture IDs, categories, names, source text, dates, optional values, floor numbers, and coordinates. Any new public property or changed ID is a failure.
+After each GIS export, parse the output with `parseCommunityWaypointsGeoJson` and compare the four fixture IDs, categories, source text, dates, optional values, floor numbers, and coordinates. Confirm the app derives labels from the remaining fields. Any new public property or changed ID is a failure.
 
 | Tool | Result |
 | --- | --- |

@@ -351,7 +351,7 @@ describe('desktop shared navigation shell', () => {
     }))
     const waypoint: CommunityWaypoint = {
       id: 'cw-water-001',
-      name: 'Water cooler at UTown',
+      displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
       source: 'NUS Campus Facilities',
@@ -370,7 +370,7 @@ describe('desktop shared navigation shell', () => {
     await user.click(correctionTrigger)
 
     expect(await screen.findByText(/^Correction for/)).toBeTruthy()
-    expect((screen.getByLabelText(/Waypoint name/) as HTMLInputElement).value).toBe(waypoint.name)
+    expect(screen.queryByLabelText(/Waypoint name/)).toBeNull()
     await user.type(screen.getByLabelText('What needs correcting?'), 'It has moved to the next floor.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -379,13 +379,13 @@ describe('desktop shared navigation shell', () => {
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: 'It has moved to the next floor.',
-      name: waypoint.name,
       longitude: waypoint.coordinate.longitude,
       latitude: waypoint.coordinate.latitude,
     })
+    expect(submittedBody).not.toHaveProperty('name')
     await user.click(screen.getByRole('button', { name: 'Done' }))
     await waitFor(() => expect(document.activeElement).toBe(correctionTrigger))
-    expect(screen.getByRole('heading', { name: waypoint.name })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: waypoint.displayLabel })).toBeTruthy()
     },
   )
 
@@ -429,7 +429,7 @@ describe('desktop shared navigation shell', () => {
     const user = userEvent.setup()
     const waypoint: CommunityWaypoint = {
       id: 'cw-water-001',
-      name: 'Water cooler at UTown',
+      displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
       source: 'NUS Campus Facilities',
@@ -447,7 +447,7 @@ describe('desktop shared navigation shell', () => {
 
     act(() => onSelect?.(waypoint.id, trigger))
 
-    expect(await screen.findByRole('heading', { name: waypoint.name })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: waypoint.displayLabel })).toBeTruthy()
     expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
     expect(appHarness.commands.focusCommunityWaypoint).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))

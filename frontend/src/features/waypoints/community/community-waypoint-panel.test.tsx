@@ -10,7 +10,7 @@ import { useCommunityWaypointDiscovery, type CommunityWaypointLoader } from './u
 const waypoints: readonly CommunityWaypoint[] = [
   {
     id: 'cw-water-001',
-    name: 'Water cooler at UTown',
+    displayLabel: 'Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
     category: 'water_cooler',
     coordinate: { longitude: 103.78, latitude: 1.29 },
     source: 'NUS Campus Facilities',
@@ -22,7 +22,7 @@ const waypoints: readonly CommunityWaypoint[] = [
   },
   {
     id: 'cw-atm-001',
-    name: 'ATM at Central Library',
+    displayLabel: 'ATM',
     category: 'atm',
     coordinate: { longitude: 103.77, latitude: 1.30 },
     source: 'NUS Campus Facilities',
@@ -65,22 +65,24 @@ describe('CommunityWaypointPanel', () => {
     const onSuggestCorrection = vi.fn()
     render(<DiscoveryHarness load={load} onSelectWaypoint={onSelectWaypoint} onSuggestCorrection={onSuggestCorrection} />)
 
-    await screen.findByRole('button', { name: /Water cooler at UTown/ })
-    expect(screen.getByRole('button', { name: /ATM at Central Library/ })).toBeTruthy()
+    await screen.findByRole('button', {
+      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
+    })
+    expect(screen.getByRole('button', { name: 'Open details for ATM' })).toBeTruthy()
     const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 waypoint' })
     expect(waterFilter.getAttribute('aria-pressed')).toBe('true')
     await user.click(waterFilter)
 
-    expect(screen.queryByRole('button', { name: /Water cooler at UTown/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /ATM at Central Library/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Open details for Water cooler/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open details for ATM' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'ATM, 1 waypoint' }))
     expect(screen.getByText('No matches.')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Show all waypoints' }))
 
-    const row = screen.getByRole('button', { name: /Water cooler at UTown/ })
+    const row = screen.getByRole('button', { name: /Open details for Water cooler/ })
     await user.click(row)
     expect(onSelectWaypoint).toHaveBeenCalledWith('cw-water-001')
-    expect(screen.getByRole('heading', { name: 'Water cooler at UTown' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: waypoints[0]?.displayLabel })).toBeTruthy()
     expect(screen.getByText('Stephen Riady Centre · Floor 1')).toBeTruthy()
     expect(screen.getByText('Beside the east stairwell.')).toBeTruthy()
     expect(screen.getByText('Reachable without stairs.')).toBeTruthy()
@@ -122,7 +124,7 @@ describe('CommunityWaypointPanel', () => {
     expect(logError).toHaveBeenCalledWith('Community waypoint load failed:', loadError)
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('button', {
-      name: 'Water cooler at UTown, Water cooler. Open details.',
+      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
     })).toBeTruthy()
     expect(load).toHaveBeenCalledTimes(2)
   })

@@ -34,7 +34,6 @@ import {
 import './community-waypoint-submission-form.css'
 
 interface SubmissionFields {
-  readonly name: string
   readonly category: string
   readonly building: string
   readonly floor: string
@@ -101,7 +100,6 @@ function SubmissionField({
 
 function initialFields(waypoint: CommunityWaypoint | null): SubmissionFields {
   return {
-    name: waypoint?.name ?? '',
     category: waypoint?.category ?? '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
@@ -124,7 +122,6 @@ function validateFields(
 ): SubmissionErrors {
   const errors: SubmissionErrors = {}
   if (!waypoint && !fields.category) errors.category = 'Choose a category.'
-  if (textExceedsLimit(fields.name, COMMUNITY_WAYPOINT_TEXT_LIMITS.name)) errors.name = 'Keep the name within 80 characters.'
   if (textExceedsLimit(fields.building, COMMUNITY_WAYPOINT_TEXT_LIMITS.building)) errors.building = 'Keep the building within 80 characters.'
   if (textExceedsLimit(fields.details, COMMUNITY_WAYPOINT_TEXT_LIMITS.details)) errors.details = 'Keep the details within 500 characters.'
   if (textExceedsLimit(fields.accessibilityNote, COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote)) {
@@ -159,7 +156,7 @@ function createSubmission(
   waypoint: CommunityWaypoint | null,
   coordinate: WaypointCoordinate,
 ): CommunityWaypointSubmission {
-  const optionalFields: Omit<ProposedCommunityWaypointFields, 'name' | 'category' | 'longitude' | 'latitude'> = {
+  const optionalFields: Omit<ProposedCommunityWaypointFields, 'category' | 'longitude' | 'latitude'> = {
     ...(optionalText(fields.building) ? { building: fields.building.trim() } : {}),
     ...(fields.floor.trim() ? { floor: Number(fields.floor) } : {}),
     ...(optionalText(fields.accessibilityNote) ? { accessibilityNote: fields.accessibilityNote.trim() } : {}),
@@ -171,7 +168,6 @@ function createSubmission(
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: fields.requestedChange.trim(),
-      ...(optionalText(fields.name) ? { name: fields.name.trim() } : {}),
       ...(fields.category ? { category: fields.category as ActiveCommunityWaypointCategory } : {}),
       longitude: coordinate.longitude,
       latitude: coordinate.latitude,
@@ -369,27 +365,8 @@ export function CommunityWaypointSubmissionForm({
       ) : <form ref={formRef} className="community-waypoint-submission-form" onSubmit={(event) => { void submit(event) }} noValidate>
       {isCorrection && <p className="community-waypoint-submission-target">
         <span>Correction for</span>
-        <strong>{waypoint.name}</strong>
+        <strong>{waypoint.displayLabel}</strong>
       </p>}
-
-      {isCorrection && <SubmissionField
-        id="community-submission-name"
-        name="name"
-        label="Waypoint name"
-        error={errors.name}
-      >
-        <input
-          id="community-submission-name"
-          name="name"
-          className="community-waypoint-field-control"
-          placeholder=" "
-          value={fields.name}
-          maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.name + 1) * 2}
-          aria-invalid={Boolean(errors.name)}
-          aria-describedby={errors.name ? 'community-submission-name-error' : undefined}
-          onChange={(event) => updateField('name', event.target.value)}
-        />
-      </SubmissionField>}
 
       {isCorrection ? (
         <SubmissionField

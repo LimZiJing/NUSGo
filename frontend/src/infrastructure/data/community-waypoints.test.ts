@@ -8,7 +8,6 @@ const validFeature = {
   geometry: { type: 'Point', coordinates: [103.7764, 1.2966] },
   properties: {
     id: 'cw-7f0d8a24-93de-4e30-a02c-6f8cbd064120',
-    name: 'Test water cooler',
     category: 'water_cooler',
     source: 'Example for loader test',
     updatedAt: '2026-10-30',
@@ -31,7 +30,7 @@ describe('loadCommunityWaypoints', () => {
     expect(fetcher).toHaveBeenCalledWith('/data/community-waypoints.geojson', signal, 'Community waypoints')
     expect(waypoints).toEqual([{
       id: 'cw-7f0d8a24-93de-4e30-a02c-6f8cbd064120',
-      name: 'Test water cooler',
+      displayLabel: 'Water cooler',
       category: 'water_cooler',
       coordinate: { longitude: 103.7764, latitude: 1.2966 },
       source: 'Example for loader test',

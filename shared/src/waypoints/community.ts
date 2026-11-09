@@ -26,13 +26,25 @@ export type ActiveCommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_CATEGORI
 export type CommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_READABLE_CATEGORIES[number]['value']
 export type CommunityWaypointId = `cw-${string}`
 
-export interface CommunityWaypoint extends Waypoint {
+export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly id: CommunityWaypointId
   readonly category: CommunityWaypointCategory
+  /** Derived app display label; this is not a public GeoJSON property. */
+  readonly displayLabel: string
   readonly source: string
   readonly updatedAt: string
   readonly building?: string
   readonly floor?: number
   readonly accessibilityNote?: string
   readonly details?: string
+}
+
+export function getCommunityWaypointCategoryLabel(category: CommunityWaypointCategory): string {
+  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community Waypoint'
+}
+
+export function getCommunityWaypointFloorLabel(floor: number): string {
+  if (floor === 0) return 'Ground floor'
+  if (floor < 0) return `Basement ${Math.abs(floor)}`
+  return `Floor ${floor}`
 }

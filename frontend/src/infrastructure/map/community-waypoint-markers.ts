@@ -1,6 +1,5 @@
 import { Marker, type Map } from 'maplibre-gl'
 import {
-  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
   type CommunityWaypoint,
   type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
@@ -11,7 +10,7 @@ interface CommunityWaypointMarkerRecord {
   readonly element: HTMLButtonElement
   readonly handleClick: (event: MouseEvent) => void
   coordinate: [number, number]
-  name: string
+  displayLabel: string
   category: CommunityWaypointCategory
 }
 
@@ -30,25 +29,18 @@ const CATEGORY_TOKENS: Readonly<Record<CommunityWaypointCategory, string>> = {
   vending_machine: 'V',
 }
 
-function getCategoryLabel(category: CommunityWaypointCategory): string {
-  return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.find(({ value }) => value === category)?.label ?? 'Community Waypoint'
-}
-
 function updateElement(
   element: HTMLButtonElement,
   waypoint: CommunityWaypoint,
-  previous: Pick<CommunityWaypointMarkerRecord, 'name' | 'category'> | null,
+  previous: Pick<CommunityWaypointMarkerRecord, 'displayLabel' | 'category'> | null,
 ): void {
   if (previous?.category !== waypoint.category) {
     element.dataset.category = waypoint.category
     const token = element.querySelector<HTMLElement>('.community-waypoint-marker-token')
     if (token) token.textContent = CATEGORY_TOKENS[waypoint.category]
   }
-  if (previous === null || previous.name !== waypoint.name || previous.category !== waypoint.category) {
-    element.setAttribute(
-      'aria-label',
-      `Open ${waypoint.name}, ${getCategoryLabel(waypoint.category)} details.`,
-    )
+  if (previous === null || previous.displayLabel !== waypoint.displayLabel) {
+    element.setAttribute('aria-label', `Open details for ${waypoint.displayLabel}`)
   }
 }
 
@@ -93,7 +85,7 @@ export function createCommunityWaypointMarkers(map: Map): CommunityWaypointMarke
         const record = markerRecords.get(waypoint.id)
         if (record) {
           updateElement(record.element, waypoint, record)
-          record.name = waypoint.name
+          record.displayLabel = waypoint.displayLabel
           record.category = waypoint.category
           if (record.coordinate[0] !== coordinate[0] || record.coordinate[1] !== coordinate[1]) {
             record.marker.setLngLat(coordinate)
@@ -114,7 +106,7 @@ export function createCommunityWaypointMarkers(map: Map): CommunityWaypointMarke
           element,
           handleClick,
           coordinate,
-          name: waypoint.name,
+          displayLabel: waypoint.displayLabel,
           category: waypoint.category,
         })
       }

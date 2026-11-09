@@ -1,6 +1,8 @@
 import {
   COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
+  getCommunityWaypointCategoryLabel,
+  getCommunityWaypointFloorLabel,
   type CommunityWaypoint,
   type CommunityWaypointCategory,
   type CommunityWaypointId,
@@ -14,7 +16,6 @@ const FEATURE_MEMBERS = new Set(['type', 'geometry', 'properties', 'id', 'bbox']
 const GEOMETRY_MEMBERS = new Set(['type', 'coordinates', 'bbox'])
 const PROPERTY_MEMBERS = new Set([
   'id',
-  'name',
   'category',
   'source',
   'updatedAt',
@@ -80,6 +81,20 @@ function isCommunityWaypointCategory(value: string): value is CommunityWaypointC
   return COMMUNITY_WAYPOINT_READABLE_CATEGORIES.some((category) => category.value === value)
 }
 
+function createDisplayLabel(
+  category: CommunityWaypointCategory,
+  building: string | undefined,
+  floor: number | undefined,
+  details: string | undefined,
+): string {
+  return [
+    getCommunityWaypointCategoryLabel(category),
+    building,
+    floor === undefined ? undefined : getCommunityWaypointFloorLabel(floor),
+    details,
+  ].filter((part): part is string => part !== undefined).join(' · ')
+}
+
 function isValidDateOnly(value: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) return false
@@ -125,12 +140,6 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
   if (!COMMUNITY_WAYPOINT_ID_PATTERN.test(id)) {
     invalid(`${location}.properties.id`, 'must be a stable cw- UUID')
   }
-  const name = readString(
-    properties,
-    'name',
-    `${location}.properties`,
-    COMMUNITY_WAYPOINT_TEXT_LIMITS.name,
-  )
   const category = readString(properties, 'category', `${location}.properties`)
   if (!isCommunityWaypointCategory(category)) {
     invalid(`${location}.properties.category`, 'must be a supported Community Waypoint category')
@@ -158,6 +167,7 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     invalid(`${location}.properties.floor`, 'must be a signed integer, null, or missing')
   }
   const floor = typeof floorValue === 'number' ? floorValue : undefined
+  const displayLabel = createDisplayLabel(category, building, floor, details)
 
   const { south, north, west, east } = SINGAPORE_COORDINATE_BOUNDS
   if (
@@ -169,7 +179,7 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
 
   return {
     id: id.toLowerCase() as CommunityWaypointId,
-    name,
+    displayLabel,
     category,
     coordinate,
     source,

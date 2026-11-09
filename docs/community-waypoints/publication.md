@@ -6,7 +6,7 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
 
 1. Start from the current GeoJSON and edit a focused copy or temporary GIS layer. Do not commit GIS project files, generated fields, or a second public dataset. See the [data contract](data-contract.md#gis-import-and-export-settings) for QGIS and ArcGIS Pro export settings.
 2. Check for duplicates. A correction updates the existing feature and keeps its stable ID. Never reuse an ID after removal.
-3. Add or update `id`, `name`, `category`, `source`, `updatedAt`, and supported optional details. `source` describes the public verification method. `updatedAt` is the date the location and details were last reviewed.
+3. Add or update `id`, `category`, `source`, `updatedAt`, and supported optional details. The app derives its display label from the category, building, floor, and details. `source` describes the public verification method. `updatedAt` is the date the location and details were last reviewed.
 4. Keep public provenance clean. Do not include private issue links, submitted text, reviewer notes, reporter details, or evidence references in GeoJSON or the public pull request.
 5. Validate the complete file and review its diff:
 

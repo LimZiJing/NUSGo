@@ -1,6 +1,5 @@
-import type { Express, RequestHandler, Response } from 'express'
+import type { Express } from 'express'
 import {
-  PUSH_SUBSCRIPTION_BODY_MAX_BYTES,
   parsePushReminderRegistration,
   parsePushReminderRequest,
   type PushReminderResponse,
@@ -9,6 +8,7 @@ import type { PushConfig } from '../../config.ts'
 import type { AlightReminderPublisher } from '../../push/alight-reminders.ts'
 import type { AlightReminderRegistry } from '../../push/reminder-registry.ts'
 import { sendApiError } from '../error-response.ts'
+import { methodNotAllowed, sendNotConfigured, exceedsBodyLimit } from '../push-route-guards.ts'
 import { createClientRateLimiter } from '../rate-limiter.ts'
 
 export interface ReminderRouteDependencies {
@@ -21,22 +21,6 @@ export interface ReminderRouteDependencies {
   /** The canonical stop and route ids a reminder may name, so a watch cannot target nothing. */
   readonly canonicalStopIds: ReadonlySet<string>
   readonly canonicalRouteIds: ReadonlySet<string>
-}
-
-function methodNotAllowed(allowed: string): RequestHandler {
-  return (_request, response) => {
-    response.setHeader('Allow', allowed)
-    sendApiError(response, 405, 'Only ' + (allowed.split(',')[0]?.trim() ?? 'GET') + ' is supported', 'invalid_request')
-  }
-}
-
-function sendNotConfigured(response: Response): void {
-  sendApiError(response, 503, 'Web push is not configured', 'not_ready')
-}
-
-function exceedsBodyLimit(body: unknown): boolean {
-  const serialized = body === undefined ? '' : JSON.stringify(body)
-  return Buffer.byteLength(serialized, 'utf8') > PUSH_SUBSCRIPTION_BODY_MAX_BYTES
 }
 
 /**

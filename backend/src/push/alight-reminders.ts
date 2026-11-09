@@ -195,7 +195,6 @@ export interface AlightReminderPublisher {
    * reader is attached here instead of making the publisher constructor depend on itself.
    */
   setServiceStatus(reader: (routeId: string, atMs: number) => ShuttleServiceStatus | 'unknown'): void
-  readonly cap: NotificationCap
 }
 
 /**
@@ -307,6 +306,5 @@ export function createAlightReminderPublisher(
     setServiceStatus(reader) {
       serviceStatus = reader
     },
-    cap,
   }
 }

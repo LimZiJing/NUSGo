@@ -115,6 +115,17 @@ describe('private submission issue creation', () => {
     assert.doesNotMatch(correctionIssue.body, /\| Proposed building \|/)
   })
 
+  it('escapes building text in the summary table', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      building: 'West Hall\n| Added row | injected @here',
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    const summary = issue.body.split('## Submitted details')[0]
+
+    assert.equal((summary.match(/^\| /gm) ?? []).length, 6)
+    assert.ok(summary.includes('West Hall \\| Added row \\| injected @​here'))
+  })
   it('keeps submitted markup from closing or breaking the JSON section', () => {
     const submission = parseCommunityWaypointSubmission({
       ...validNewPlace,

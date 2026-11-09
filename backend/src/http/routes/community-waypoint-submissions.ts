@@ -142,7 +142,12 @@ export function createPrivateSubmissionIssueDraft(
   const summaryTable = [
     '| Field | Summary |',
     '| --- | --- |',
-    ...getSummaryRows(submission).map(([field, value]) => `| ${field} | ${value} |`),
+    ...getSummaryRows(submission).map(([field, value]) => {
+      const summary = field === 'Location' || field === 'Proposed location'
+        ? value
+        : cleanMarkdownText(value)
+      return `| ${field} | ${summary} |`
+    }),
   ]
 
   return {

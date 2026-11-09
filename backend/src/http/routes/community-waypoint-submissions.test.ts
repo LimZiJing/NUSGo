@@ -81,7 +81,8 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /<summary>Raw submission JSON — unverified/)
     assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
     assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
-    assert.match(issue.body, /Photo retention and orphan cleanup/)
+    assert.match(issue.body, /Photo evidence is disabled at launch/)
+    assert.doesNotMatch(issue.body, /Photo retention and orphan cleanup/)
     assert.match(issue.body, /## Maintainer review/)
     assert.doesNotMatch(issue.body, /\*\*Reporter (name|email)/i)
     const markdownNote = parseCommunityWaypointSubmission({

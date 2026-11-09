@@ -179,7 +179,7 @@ export function createPrivateSubmissionIssueDraft(
       '- [ ] If approved, cleaned public GeoJSON change and public provenance are reviewed and published',
       '- [ ] Private issue URL, raw text, reviewer notes, reporter identity, and photo IDs are excluded from the public change',
       '- [ ] Approved, rejected, duplicate, or outdated outcome is recorded with reason and date',
-      '- [ ] Photo retention and orphan cleanup are handled before closure, if private photo evidence was accepted',
+      '- Photo evidence is disabled at launch; do not collect or attach it.',
     ].join('\n'),
     labels: ['kind:' + submission.kind, 'review:new', ...getCategoryIssueLabels(submission)],
   }

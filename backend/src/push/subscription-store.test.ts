@@ -1,0 +1,166 @@
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { createNotificationCap } from './notification-cap.ts'
+import { createPushSubscriptionStore } from './subscription-store.ts'
+
+const endpoint = (suffix: string): string => 'https://push.example.com/send/' + suffix
+
+const registration = (suffix: string) => ({
+  endpoint: endpoint(suffix),
+  keys: { p256dh: 'BPublicKeyValue', auth: 'AuthSecretValue' },
+  topic: 'service-updates' as const,
+})
+
+describe('push subscription store', () => {
+  it('stores only the endpoint, keys and chosen topic', () => {
+    const store = createPushSubscriptionStore()
+    store.add(registration('a'))
+
+    const stored = store.get(endpoint('a'))
+    assert.deepEqual(stored, {
+      endpoint: endpoint('a'),
+      keys: { p256dh: 'BPublicKeyValue', auth: 'AuthSecretValue' },
+      topic: 'service-updates',
+    })
+  })
+
+  it('replaces an existing endpoint and keeps one record per endpoint', () => {
+    const store = createPushSubscriptionStore()
+    store.add(registration('a'))
+    store.add({ ...registration('a'), keys: { p256dh: 'BRotatedKey', auth: 'RotatedAuth' } })
+
+    assert.equal(store.size, 1)
+    assert.equal(store.get(endpoint('a'))?.keys.p256dh, 'BRotatedKey')
+  })
+
+  it('removes a subscription and reports whether it existed', () => {
+    const store = createPushSubscriptionStore()
+    store.add(registration('a'))
+
+    assert.equal(store.remove(endpoint('a')), true)
+    assert.equal(store.remove(endpoint('a')), false)
+    assert.equal(store.size, 0)
+  })
+
+  it('lists subscriptions by topic without exposing another topic', () => {
+    const store = createPushSubscriptionStore()
+    store.add(registration('a'))
+
+    assert.equal(store.list('service-updates').length, 1)
+    assert.equal(store.list().length, 1)
+  })
+
+  it('rejects new endpoints at capacity without displacing current riders', () => {
+    const store = createPushSubscriptionStore({ maxSubscriptions: 2 })
+    store.add(registration('a'))
+    store.add(registration('b'))
+    const incumbent = store.get(endpoint('a'))
+
+    assert.equal(store.add(registration('c')), false)
+    assert.equal(store.size, 2)
+    assert.equal(store.get(endpoint('a')), incumbent)
+    assert.notEqual(store.get(endpoint('b')), null)
+    assert.equal(store.get(endpoint('c')), null)
+    assert.equal(store.add({ ...registration('a'), keys: { p256dh: 'RotatedKey', auth: 'RotatedAuth' } }), true)
+    assert.equal(store.get(endpoint('a'))?.keys.p256dh, 'RotatedKey')
+  })
+})
+
+describe('notification hourly cap', () => {
+  it('rejects delivery past the cap and allows it again in the next hour', () => {
+    let nowMs = 1_000
+    const cap = createNotificationCap({ maxPerHour: 2, now: () => nowMs })
+
+    cap.reserve(endpoint('a'))?.commit()
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+
+    // Just under an hour later the same window still applies.
+    nowMs += 60 * 60_000 - 1
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+
+    nowMs += 1
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+  })
+
+  it('keeps the cap independent per subscription', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+    assert.equal(cap.hasCapacity(endpoint('b')), true)
+  })
+
+  it('does not count a delivery that was never recorded', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+
+    // A caller that checks capacity but never records a delivery, for example because the push
+    // service failed, leaves the allowance untouched.
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+  })
+
+  it('forgets a subscription window on reset', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+    cap.reset(endpoint('a'))
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.trackedCount, 1)
+  })
+})
+
+
+describe('notification reservations', () => {
+  it('holds capacity during delivery and returns it after a transient failure', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    const first = cap.reserve(endpoint('a'))
+    assert.ok(first)
+    assert.equal(cap.reserve(endpoint('a')), null)
+    first.release()
+    first.release()
+    const retry = cap.reserve(endpoint('a'))
+    assert.ok(retry)
+    retry.commit()
+    retry.release()
+    assert.equal(cap.reserve(endpoint('a')), null)
+  })
+
+  it('does not charge a re-registered endpoint for an old in-flight send', () => {
+    const cap = createNotificationCap({ maxPerHour: 1 })
+    const old = cap.reserve(endpoint('a'))
+    assert.ok(old)
+    cap.reset(endpoint('a'))
+    old.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), true)
+    cap.reserve(endpoint('a'))?.commit()
+    assert.equal(cap.hasCapacity(endpoint('a')), false)
+  })
+})
+
+
+describe('notification tracking capacity', () => {
+  it('preserves active delivery budgets at capacity and recovers expired space', () => {
+    let nowMs = 1_000
+    const cap = createNotificationCap({ maxPerHour: 1, now: () => nowMs })
+    for (let index = 0; index < 10_000; index += 1) {
+      const reservation = cap.reserve(endpoint(String(index)))
+      assert.ok(reservation)
+      reservation.commit()
+    }
+
+    assert.equal(cap.reserve(endpoint('new')), null)
+    assert.equal(cap.hasCapacity(endpoint('new')), false)
+    assert.equal(cap.hasCapacity(endpoint('0')), false)
+    assert.equal(cap.trackedCount, 10_000)
+
+    nowMs += 60 * 60_000
+    const nextHour = cap.reserve(endpoint('new'))
+    assert.ok(nextHour)
+    nextHour.commit()
+    assert.equal(cap.trackedCount, 10_000)
+    assert.equal(cap.hasCapacity(endpoint('new')), false)
+  })
+})

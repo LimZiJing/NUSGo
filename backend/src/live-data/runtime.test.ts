@@ -502,6 +502,164 @@ describe('Express live transit API', () => {
   })
 })
 
+describe('Service announcements in the arrival refresh lifecycle', () => {
+  const tickerTape = {
+    code: '00000',
+    data: {
+      TimeStamp: new Date(fixedNow).toISOString(),
+      TickerTape: [{
+        ID: '414',
+        Message: 'Term Sunday/PH schedule applies.',
+        Status: 'Enabled',
+        Priority: 'Medium',
+        Display_From: new Date(fixedNow - 60_000).toISOString(),
+        Display_To: new Date(fixedNow + 60 * 60_000).toISOString(),
+        Affected_Service_Ids: '',
+        Created_On: new Date(fixedNow).toISOString(),
+        Created_By: 'A staff member',
+        Accident_Latitude: null,
+        Accident_Longitude: null,
+      }],
+    },
+  }
+
+  function createAnnouncementFetcher(
+    counts: { tickerTape: number; shuttleStops?: number },
+  ): typeof fetch {
+    const arrivalCounts = { routeWindows: 0, shuttleStops: 0 }
+    const arrivalFetcher = createSuccessfulFetcher(arrivalCounts)
+    return async (input, init) => {
+      if (!String(input).endsWith('/ticker-tapes')) {
+        const response = await arrivalFetcher(input, init)
+        counts.shuttleStops = arrivalCounts.shuttleStops ?? 0
+        return response
+      }
+      counts.tickerTape += 1
+      return jsonResponse(tickerTape)
+    }
+  }
+
+  it('never calls the ticker tape when no announcement hook is supplied', async () => {
+    const counts = { tickerTape: 0, shuttleStops: 0 }
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: createAnnouncementFetcher(counts),
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+      await sleepFor(30)
+      assert.equal(counts.tickerTape, 0)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('fetches announcements once per minute rather than once per stop or refresh cycle', async () => {
+    const counts = { tickerTape: 0, shuttleStops: 0 }
+    const announced: string[][] = []
+    let lastAnnouncementsJson = ''
+    let clock = fixedNow
+    // The shortest allowed refresh interval, so several full 33-stop cycles happen inside a minute.
+    const config = createConfig('test-lta-account-key', { NUS_SHUTTLE_REFRESH_INTERVAL_MS: '1000' })
+    const liveData = await createBackendLiveData(config, backendData, {
+      fetcher: createAnnouncementFetcher(counts),
+      now: () => clock,
+      ltaMappings: [],
+      onServiceAnnouncementsRefreshed: (announcements) => {
+        announced.push(announcements.map(({ id }) => id))
+        lastAnnouncementsJson = JSON.stringify(announcements)
+      },
+    })
+
+    try {
+      liveData.start()
+      await waitForSnapshot(liveData)
+      const firstDeadline = Date.now() + 5_000
+      while (counts.shuttleStops < 66 && Date.now() < firstDeadline) await sleepFor(10)
+
+      // Two arrival cycles of 33 stops each, but a single ticker-tape request.
+      assert.ok(counts.shuttleStops >= 66, 'expected a second arrival cycle')
+      assert.equal(counts.tickerTape, 1)
+      assert.ok(announced.length >= 2, 'every refresh cycle still hands the cached feed to the hook')
+      assert.deepEqual(announced[0], ['414'])
+      assert.equal(lastAnnouncementsJson.includes('A staff member'), false)
+
+      // Past the cache window the next cycle asks the provider again.
+      clock += 61_000
+      const secondDeadline = Date.now() + 5_000
+      while (counts.tickerTape < 2 && Date.now() < secondDeadline) await sleepFor(10)
+      assert.equal(counts.tickerTape, 2)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('refreshes announcements even when every arrival stop fails', async () => {
+    const announced: string[][] = []
+    let announcements = 0
+    const arrivalFetcher = createSuccessfulFetcher({ routeWindows: 0 })
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: async (input, init) => {
+        if (String(input).endsWith('/ticker-tapes')) {
+          announcements += 1
+          return jsonResponse(tickerTape)
+        }
+        // Fail every stop so the arrival batch cannot publish a snapshot.
+        if (String(input).endsWith('/shuttle-service')) return jsonResponse({ error: 'down' }, 503)
+        return arrivalFetcher(input, init)
+      },
+      now: () => fixedNow,
+      ltaMappings: [],
+      onServiceAnnouncementsRefreshed: (feed) => {
+        announced.push(feed.map(({ id }) => id))
+      },
+    })
+
+    try {
+      liveData.start()
+      const deadline = Date.now() + 2_000
+      while (announced.length === 0 && Date.now() < deadline) await sleepFor(5)
+
+      assert.equal(liveData.isSnapshotReady(), false)
+      assert.deepEqual(announced, [['414']])
+      assert.equal(announcements, 1)
+    } finally {
+      await liveData.stop()
+    }
+  })
+
+  it('aborts an in-flight announcement request during shutdown', async () => {
+    let announcementsStarted = 0
+    let announcementsAborted = 0
+    const arrivalFetcher = createSuccessfulFetcher({ routeWindows: 0 })
+    const liveData = await createBackendLiveData(createConfig(), backendData, {
+      fetcher: async (input, init) => {
+        if (!String(input).endsWith('/ticker-tapes')) return arrivalFetcher(input, init)
+        announcementsStarted += 1
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            announcementsAborted += 1
+            reject(new DOMException('Aborted', 'AbortError'))
+          }, { once: true })
+        })
+      },
+      now: () => fixedNow,
+      ltaMappings: [],
+      onServiceAnnouncementsRefreshed: () => undefined,
+    })
+
+    liveData.start()
+    const deadline = Date.now() + 2_000
+    while (announcementsStarted === 0 && Date.now() < deadline) await sleepFor(5)
+    assert.ok(announcementsStarted > 0)
+    await liveData.stop()
+    assert.ok(announcementsAborted > 0)
+  })
+})
+
 function sleepFor(ms: number): Promise<void> {
   return new Promise<void>((resolveWait) => setTimeout(resolveWait, ms))
 }

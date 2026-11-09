@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it, vi } from 'vitest'
+import { parsePushNotificationPayload } from '@nusgo/shared'
 
 function worker(cached: Response | undefined, fetch = vi.fn(() => new Promise<Response>(() => {}))) {
   const handlers = new Map<string, (event: unknown) => void>()
@@ -102,5 +103,164 @@ describe('runtime asset caching', () => {
   it('returns an offline response when the download itself fails', async () => {
     const runtime = worker(undefined, vi.fn().mockRejectedValue(new Error('offline')))
     expect((await runtime.asset())?.status).toBe(504)
+  })
+})
+
+function pushWorker() {
+  const handlers = new Map<string, (event: unknown) => void>()
+  const shown: Array<{ title: string; options: Record<string, unknown> }> = []
+  const opened: string[] = []
+  const messages: unknown[] = []
+  const focusedClient = {
+    url: 'https://nusgo.test/pwa/stops',
+    focus: vi.fn(async () => undefined),
+    postMessage: (message: unknown) => messages.push(message),
+  }
+  runInNewContext(readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8'), {
+    __NUSGO_PWA_CACHE_NAME__: 'nusgo-pwa-test',
+    __NUSGO_PWA_PRECACHE_URLS__: [],
+    self: {
+      location: { origin: 'https://nusgo.test' },
+      registration: {
+        scope: 'https://nusgo.test/pwa/',
+        showNotification: async (title: string, options: Record<string, unknown>) => {
+          shown.push({ title, options })
+        },
+      },
+      clients: {
+        matchAll: async () => [focusedClient],
+        openWindow: async (url: string) => { opened.push(url) },
+      },
+      addEventListener: (name: string, handler: (event: unknown) => void) => handlers.set(name, handler),
+    },
+    caches: { open: async () => ({ match: async () => undefined, put: async () => undefined }) },
+    fetch: vi.fn(),
+    URL,
+    Response,
+    console: { warn: vi.fn() },
+  })
+  return {
+    shown,
+    opened,
+    messages,
+    focusedClient,
+    push(payload: unknown) {
+      let done: Promise<unknown> | undefined
+      handlers.get('push')?.({
+        data: payload === undefined ? null : { json: () => payload },
+        waitUntil: (value: Promise<unknown>) => { done = value },
+      })
+      return done
+    },
+    click(data: unknown) {
+      let done: Promise<unknown> | undefined
+      handlers.get('notificationclick')?.({
+        notification: { close: vi.fn(), data },
+        waitUntil: (value: Promise<unknown>) => { done = value },
+      })
+      return done
+    },
+  }
+}
+
+const validPayload = {
+  title: 'Bus D1 delayed',
+  body: '7 min late at COM3 Opp',
+  url: '?stop=COM3',
+  topic: 'service-updates',
+  tag: 'delay:COM3:D1',
+}
+
+describe('push notifications', () => {
+  it('shows a validated push with its tag and deep link', async () => {
+    const runtime = pushWorker()
+    await runtime.push(validPayload)
+
+    expect(runtime.shown).toHaveLength(1)
+    expect(runtime.shown[0]?.title).toBe('Bus D1 delayed')
+    expect(runtime.shown[0]?.options).toMatchObject({
+      body: '7 min late at COM3 Opp',
+      tag: 'delay:COM3:D1',
+      data: { url: '?stop=COM3', topic: 'service-updates' },
+    })
+    expect(runtime.shown[0]?.options.icon).toBe('https://nusgo.test/pwa/icons/pwa-icon-192.png')
+  })
+
+  it.each([
+    ['no payload', undefined],
+    ['missing title', { ...validPayload, title: '' }],
+    ['absolute URL', { ...validPayload, url: 'https://evil.test/' }],
+    ['javascript URL', { ...validPayload, url: 'javascript:alert(1)' }],
+    ['unknown topic', { ...validPayload, topic: 'marketing' }],
+    ['over-long body', { ...validPayload, body: 'x'.repeat(161) }],
+  ])('shows nothing for %s', async (_label, payload) => {
+    const runtime = pushWorker()
+    await runtime.push(payload)
+    expect(runtime.shown).toHaveLength(0)
+  })
+
+  it('focuses an open app window and hands it the deep link', async () => {
+    const runtime = pushWorker()
+    await runtime.click({ url: '?stop=COM3', topic: 'service-updates' })
+
+    expect(runtime.focusedClient.focus).toHaveBeenCalledOnce()
+    expect(runtime.messages).toEqual([{ type: 'PUSH_NOTIFICATION_CLICK', url: '?stop=COM3' }])
+    expect(runtime.opened).toEqual([])
+  })
+
+  it('opens a new window when no app window exists', async () => {
+    const runtime = pushWorker()
+    runtime.focusedClient.url = 'https://other.test/pwa/'
+    await runtime.click({ url: '?stop=COM3' })
+    expect(runtime.opened).toEqual(['https://nusgo.test/pwa/?stop=COM3'])
+  })
+
+  it('routes a service-notice click to the Stops view', async () => {
+    const runtime = pushWorker()
+    await runtime.click({ url: '?view=stops', topic: 'service-updates' })
+
+    expect(runtime.focusedClient.focus).toHaveBeenCalledOnce()
+    expect(runtime.messages).toEqual([{ type: 'PUSH_NOTIFICATION_CLICK', url: '?view=stops' }])
+
+    const cold = pushWorker()
+    cold.focusedClient.url = 'https://other.test/pwa/'
+    await cold.click({ url: '?view=stops' })
+    expect(cold.opened).toEqual(['https://nusgo.test/pwa/?view=stops'])
+  })
+
+  it('ignores a click without a valid app link', async () => {
+    const runtime = pushWorker()
+    await runtime.click({ url: 'https://evil.test/' })
+    expect(runtime.messages).toEqual([])
+    expect(runtime.opened).toEqual([])
+  })
+
+  it.each([
+    ['missing tag', { ...validPayload, tag: '' }],
+    ['missing title', { ...validPayload, title: '' }],
+    ['over-long title', { ...validPayload, title: 'x'.repeat(81) }],
+    ['missing body', { ...validPayload, body: '' }],
+    ['over-long tag', { ...validPayload, tag: 'x'.repeat(129) }],
+    ['empty URL', { ...validPayload, url: '' }],
+    ['URL with whitespace', { ...validPayload, url: '?stop=COM 3' }],
+    ['URL with a hash', { ...validPayload, url: '?stop=COM3#x' }],
+    ['null topic', { ...validPayload, topic: null }],
+    ['array payload', [{ ...validPayload }]],
+  ])('drops the same malformed payload the shared validator drops: %s', async (_label, payload) => {
+    expect(parsePushNotificationPayload(payload)).toBeNull()
+    const runtime = pushWorker()
+    await runtime.push(payload)
+    expect(runtime.shown).toHaveLength(0)
+  })
+
+  it.each([
+    ['valid payload', validPayload],
+    ['encoded stop id', { ...validPayload, url: '?stop=COM3%20Opp' }],
+    ['Stops view deep link', { ...validPayload, url: '?view=stops', tag: 'announcement:414' }],
+  ])('accepts the same well-formed payload the shared validator accepts: %s', async (_label, payload) => {
+    expect(parsePushNotificationPayload(payload)).toEqual(payload)
+    const runtime = pushWorker()
+    await runtime.push(payload)
+    expect(runtime.shown).toHaveLength(1)
   })
 })

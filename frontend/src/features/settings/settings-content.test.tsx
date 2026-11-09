@@ -3,9 +3,17 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PushNotificationService } from '../../domain/push/push-notifications'
 import { SettingsContent } from './settings-content'
 
 afterEach(cleanup)
+
+const pushNotifications: PushNotificationService = {
+  getEnvironment: () => ({ availability: 'unsupported', permission: 'denied' }),
+  readPreference: () => null,
+  enable: async () => ({ preference: null, permission: 'denied' }),
+  disable: async () => null,
+}
 
 describe('Settings sections', () => {
   it('starts all sections collapsed and opens them independently when saved stops exist', async () => {
@@ -23,10 +31,9 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
-
-    expect(document.querySelectorAll('.settings-disclosure-icon.menu-icon-tile')).toHaveLength(3)
 
     const getSection = (title: string): HTMLDetailsElement => {
       const summary = screen.getByText(title)
@@ -38,18 +45,28 @@ describe('Settings sections', () => {
     const appearance = getSection('Appearance')
     const favourites = getSection('Favourites')
     const about = getSection('About')
+    const notifications = getSection('Notifications')
 
-    expect(appearance.open).toBe(false)
-    expect(favourites.open).toBe(false)
-    expect(about.open).toBe(false)
+    for (const section of [appearance, favourites, about, notifications]) {
+      expect(section.querySelector('summary > .settings-disclosure-icon.menu-icon-tile')).not.toBeNull()
+      expect(section.open).toBe(false)
+    }
 
     await user.click(screen.getByText('Appearance'))
     await user.click(screen.getByText('About'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
+    expect(notifications.open).toBe(false)
 
     await user.click(screen.getByText('Favourites'))
+    expect(appearance.open).toBe(true)
+    expect(favourites.open).toBe(true)
+    expect(about.open).toBe(true)
+    expect(notifications.open).toBe(false)
+
+    await user.click(screen.getByText('Notifications'))
+    expect(notifications.open).toBe(true)
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(true)
     expect(about.open).toBe(true)
@@ -71,6 +88,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
 
@@ -92,6 +110,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
@@ -115,6 +134,7 @@ describe('Settings sections', () => {
         transitMetadata={null}
         buildingSource={null}
         dataVersion={'a'.repeat(40)}
+        pushNotifications={pushNotifications}
       />,
     )
 

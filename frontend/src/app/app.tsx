@@ -75,6 +75,8 @@ import {
   filterPersonalWaypointsByCategoryVisibility,
   getPersonalWaypointCategoryOptions,
 } from '../domain/waypoints/personal/personal-waypoint-category-visibility'
+import { createPushNotificationService } from '../infrastructure/push/push-runtime'
+import { scheduleLaunchPushClick, subscribeToPushClicks, type PushClickTarget } from '../pwa/push-click'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
@@ -124,6 +126,7 @@ function App() {
   const focusCategoryPickerAfterBackRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
+  const [notificationNavigationRevision, setNotificationNavigationRevision] = useState(0)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
@@ -139,6 +142,7 @@ function App() {
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const [pushNotifications] = useState(createPushNotificationService)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
   const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
     personalWaypointCategoryVisibilityStore,
@@ -400,6 +404,35 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const openStopInStopsFromNotification = appNavigation.openStopDetailsFromMap
+  const openNotificationTarget = useCallback((target: PushClickTarget): void => {
+    // Notification navigation owns focus after closing More; restoring its entry button would
+    // pull keyboard and screen-reader users away from the destination.
+    skipMoreFocusRestoreRef.current = true
+    pendingViewFocusRef.current = 'stops'
+    setNotificationNavigationRevision((revision) => revision + 1)
+    setMorePage('closed')
+    if (target.kind === 'stops') {
+      if (isMobileViewport && navigation.sheets.stops.detent === 'collapsed') {
+        appNavigation.dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
+      }
+      appNavigation.selectView('stops')
+      return
+    }
+    openStopInStopsFromNotification(target.stopId)
+  }, [appNavigation, isMobileViewport, navigation.sheets.stops.detent, openStopInStopsFromNotification])
+  // A notification tap arrives as a service-worker message when a window is open, and as the
+  // launch URL when it is not. Both routes open the affected destination in Stops.
+  useEffect(
+    () => subscribeToPushClicks(openNotificationTarget),
+    [openNotificationTarget],
+  )
+  useEffect(() => scheduleLaunchPushClick({
+    search: window.location.search,
+    open: openNotificationTarget,
+    // Dropping the link after navigation keeps a reload or later visit from reopening the stop.
+    clearQuery: () => window.history.replaceState(null, '', window.location.pathname + window.location.hash),
+  }), [openNotificationTarget])
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return
@@ -542,7 +575,7 @@ function App() {
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
-  }, [activeView, isMoreOpen])
+  }, [activeView, isMoreOpen, notificationNavigationRevision])
 
   useLayoutEffect(() => {
     if (activeView !== 'explore') return
@@ -1176,6 +1209,7 @@ function App() {
                 transitMetadata={state.transitIndex?.network.metadata ?? null}
                 buildingSource={state.buildings?.source ?? null}
                 dataVersion={__NUSGO_DATA_VERSION__}
+                pushNotifications={pushNotifications}
               />
             ) : null,
           }}

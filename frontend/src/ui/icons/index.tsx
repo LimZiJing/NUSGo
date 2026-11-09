@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
+  Bell,
   Building2,
   BusFront,
   CircleAlert,
@@ -79,6 +80,10 @@ export function RoomIcon(props: IconProps) {
 
 export function BusIcon(props: IconProps) {
   return renderDecorativeIcon(BusFront, props)
+}
+
+export function BellIcon(props: IconProps) {
+  return renderDecorativeIcon(Bell, props)
 }
 
 export function ChevronDownIcon(props: IconProps) {

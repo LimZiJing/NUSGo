@@ -31,6 +31,17 @@ export interface NusProviderConfig {
   readonly initialDomain?: string
 }
 
+export interface PushConfig {
+  /** VAPID public key. Safe to send to browsers; the private key never leaves the server. */
+  readonly publicKey: string
+  readonly privateKey: string
+  /** Contact address that push services can use to reach the operator, as a `mailto:` URL. */
+  readonly subject: string
+  readonly subscriptionRateLimitMaxRequests: number
+  /** Upper bound on notifications delivered to one subscription within an hour. */
+  readonly notificationsPerHourCap: number
+}
+
 export interface BackendConfig {
   readonly environment: 'development' | 'test' | 'production'
   readonly host: string
@@ -44,6 +55,8 @@ export interface BackendConfig {
   readonly journeyRateLimitMaxRequests: number
   readonly journeyMaxConcurrentRequests: number
   readonly journeyRequestTimeoutMs: number
+  /** Null when no VAPID keys are configured, which disables web push without failing startup. */
+  readonly push: PushConfig | null
   readonly liveData: {
     readonly shuttleRefreshIntervalMs: number
     readonly vehicleRefreshIntervalMs: number
@@ -163,6 +176,72 @@ function isPrivateNetworkAddress(hostname: string): boolean {
     localName.endsWith('.local') || localName.endsWith('.internal') || !localName.includes('.')
 }
 
+function decodeBase64Url(value: string): Buffer | null {
+  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(value)) return null
+  const bytes = Buffer.from(value.replace(/=+$/, '').replace(/-/g, '+').replace(/_/g, '/'), 'base64')
+  return bytes.length > 0 ? bytes : null
+}
+
+/**
+ * A push service may contact the operator at this address, so it must be a real, absolute
+ * contact URL rather than a bare host string.
+ */
+function isValidPushSubject(value: string): boolean {
+  if (/^mailto:[^\s@]+@[^\s@]+$/.test(value)) return true
+  if (!value.startsWith('https://')) return false
+  try {
+    return new URL(value).hostname.length > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Web push is optional: without VAPID keys the API reports push as unavailable instead of
+ * failing startup, so a developer can run the backend without generating key pairs.
+ */
+function parsePushConfig(
+  environment: Record<string, string | undefined>,
+): PushConfig | null {
+  const publicKey = optionalText(environment, 'VAPID_PUBLIC_KEY')
+  const privateKey = optionalText(environment, 'VAPID_PRIVATE_KEY')
+  if (!publicKey && !privateKey) return null
+  if (!publicKey || !privateKey) {
+    throw new Error('Web push requires both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY')
+  }
+  // web-push needs an uncompressed P-256 point: 0x04 followed by 32-byte X and Y coordinates.
+  // Checking the decoded length rejects a truncated placeholder that the old pattern accepted.
+  const publicKeyBytes = decodeBase64Url(publicKey)
+  if (!publicKeyBytes || publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+    throw new Error('VAPID_PUBLIC_KEY must be a base64url encoded uncompressed P-256 public key')
+  }
+
+  const subject = optionalText(environment, 'VAPID_SUBJECT')
+  if (subject && !isValidPushSubject(subject)) {
+    throw new Error('VAPID_SUBJECT must be a mailto: or https: URL with a host')
+  }
+
+  return Object.freeze({
+    publicKey,
+    privateKey,
+    subject: subject || 'mailto:nusgo@u.nus.edu',
+    subscriptionRateLimitMaxRequests: parseInteger(
+      environment.PUSH_SUBSCRIPTION_RATE_LIMIT_MAX_REQUESTS,
+      10,
+      'PUSH_SUBSCRIPTION_RATE_LIMIT_MAX_REQUESTS',
+      1,
+      100,
+    ),
+    notificationsPerHourCap: parseInteger(
+      environment.PUSH_NOTIFICATIONS_PER_HOUR_CAP,
+      4,
+      'PUSH_NOTIFICATIONS_PER_HOUR_CAP',
+      1,
+      60,
+    ),
+  })
+}
+
 function parseValhallaBaseUrl(value: string | undefined): string {
   const configured = value?.trim() || 'http://127.0.0.1:8002'
   let url: URL
@@ -279,6 +358,7 @@ export function loadBackendConfig(
       100,
       60_000,
     ),
+    push: parsePushConfig(environment),
     liveData: Object.freeze({
       shuttleRefreshIntervalMs: parseInteger(
         environment.NUS_SHUTTLE_REFRESH_INTERVAL_MS,

@@ -6,6 +6,7 @@ import type {
   ApiShuttleServiceWindowsResponse,
   ApiShuttleVehiclesResponse,
   PublicBusArrivalSnapshot,
+  ShuttleArrivalSnapshot,
   ShuttleLoadLevel,
 } from '@nusgo/shared'
 import type { BackendConfig } from '../config.ts'
@@ -20,6 +21,12 @@ import { createNusBusArrivalProvider } from './providers/nus/bus-arrivals.ts'
 import { loadNusBusStopMapping } from './providers/nus/bus-stop-mapping.ts'
 import { createNusServiceWindowsProvider } from './providers/nus/service-windows.ts'
 import { createNusActiveBusProvider } from './providers/nus/active-buses.ts'
+import { createNusServiceAnnouncementProvider } from './providers/nus/service-announcements.ts'
+import {
+  createServiceAnnouncementFeed,
+  type ServiceAnnouncement,
+  type ServiceAnnouncementFeed,
+} from './service-announcements.ts'
 import {
   createBusArrivalSnapshotStore,
   type BusArrivalStop,
@@ -58,6 +65,16 @@ interface BackendLiveDataOptions {
   readonly fetcher?: typeof fetch
   readonly now?: () => number
   readonly ltaMappings?: readonly LtaPublicBusStopMapping[]
+  /**
+   * Called with each newly published arrival snapshot. Web push reads this snapshot rather than
+   * polling upstream again, so notification delivery costs no extra provider request.
+   */
+  readonly onArrivalSnapshotPublished?: (snapshot: ShuttleArrivalSnapshot) => void
+  /**
+   * Called with the current service announcements after each arrival refresh. Supplying the hook
+   * is what enables the ticker-tape provider: without it, no announcement request is ever made.
+   */
+  readonly onServiceAnnouncementsRefreshed?: (announcements: readonly ServiceAnnouncement[]) => void
 }
 
 function toIso(timestampMs: number): string {
@@ -161,6 +178,23 @@ export async function createBackendLiveData(
     })
     : null
 
+  // Announcements are only fetched when a consumer asked for them, so a deployment without push
+  // costs no extra upstream request.
+  const serviceAnnouncements: ServiceAnnouncementFeed | null =
+    options.onServiceAnnouncementsRefreshed && providerConfig && nusClient
+      ? createServiceAnnouncementFeed({
+        load: createNusServiceAnnouncementProvider({
+          provider: providerConfig,
+          client: nusClient,
+          deviceId,
+          retryAttempts: config.liveData.retryAttempts,
+          retryBaseDelayMs: config.liveData.retryBaseDelayMs,
+        }).load,
+        canonicalRouteIds,
+        now,
+      })
+      : null
+
   const snapshotStore = createBusArrivalSnapshotStore({
     stops: providerStops,
     loadStop(stop, signal) {
@@ -178,6 +212,31 @@ export async function createBackendLiveData(
           stopIds: failures.map(({ stopId }) => stopId),
           failureCount: failures.length,
         })
+      }
+      // Reuses the snapshot this refresh already produced; notification code never fetches upstream.
+      const published = log.published ? snapshotStore.getSnapshot() : null
+      if (published) {
+        try {
+          options.onArrivalSnapshotPublished?.(published)
+        } catch (error: unknown) {
+          console.error('NUSGo snapshot notification hook failed.', error instanceof Error ? error.name : typeof error)
+        }
+      }
+      // Announcements are independent of arrival success: a failed batch must not suppress a
+      // service notice. The feed caches for a minute, so most cycles make no upstream call.
+      if (serviceAnnouncements && options.onServiceAnnouncementsRefreshed) {
+        const notify = options.onServiceAnnouncementsRefreshed
+        const refresh = serviceAnnouncements.refresh(shutdownController.signal)
+          // Shutdown cancels the request on purpose; a cached feed returned after the abort must
+          // not start a delivery the process is being torn down for.
+          .then((announcements) => {
+            if (!shutdownController.signal.aborted) notify(announcements)
+          })
+          .catch((error: unknown) => {
+            if (shutdownController.signal.aborted) return
+            console.error('NUSGo announcement notification hook failed.', error instanceof Error ? error.name : typeof error)
+          })
+        void track(refresh)
       }
     },
   })

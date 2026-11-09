@@ -2,7 +2,8 @@
 
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { StrictMode } from 'react'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
 import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import type { Path } from '@nusgo/shared/routing/path'
@@ -438,6 +439,118 @@ describe('desktop shared navigation shell', () => {
 
     expect(screen.getByRole('button', { name: 'Favourites' }).getAttribute('aria-pressed'))
       .toBe('true')
+  })
+})
+
+describe('push notification navigation', () => {
+  function stubServiceWorker(): EventTarget {
+    const worker = new EventTarget()
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: worker })
+    return worker
+  }
+
+  function clickNotification(worker: EventTarget, url: string): void {
+    act(() => {
+      worker.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'PUSH_NOTIFICATION_CLICK', url },
+      }))
+    })
+  }
+
+  // The stub stays installed through the shared `cleanup()` in the file-level afterEach, which
+  // would otherwise unmount the app after the worker container disappeared.
+  afterAll(() => {
+    Reflect.deleteProperty(navigator as unknown as Record<string, unknown>, 'serviceWorker')
+  })
+
+  afterEach(() => {
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('opens the Stops view without selecting a stop for a service notice', async () => {
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    clickNotification(worker, '?view=stops')
+
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy()
+    // A global notice must not fabricate a stop details screen.
+    expect(screen.queryByRole('heading', { name: /bus stop$/ })).toBeNull()
+  })
+
+  it('closes More and opens the Stops view for a service notice', async () => {
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+
+    clickNotification(worker, '?view=stops')
+
+    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Stops' })).toBeTruthy()
+  })
+
+  it.each(['?view=stops', '?stop=STOP-A'])('keeps notification focus in Stops after closing Settings (%s)', async (url) => {
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    clickNotification(worker, url)
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true))
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'More' }))
+  })
+
+  it('reveals a collapsed Stops sheet when a service notice arrives from Explore', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Expand Stops panel' }))
+    await user.click(screen.getByRole('button', { name: 'Reduce Stops panel' }))
+    await user.keyboard('{ArrowDown}')
+    expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('collapsed')
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    clickNotification(worker, '?view=stops')
+    await waitFor(() => expect(document.querySelector('.stops-sheet')?.getAttribute('data-detent')).toBe('partial'))
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true)
+  })
+
+  it('still opens the affected stop for a stop-scoped notification', async () => {
+    const user = userEvent.setup()
+    const worker = stubServiceWorker()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    clickNotification(worker, '?stop=STOP-A')
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens a launch-link stop once under StrictMode and clears the query afterwards', async () => {
+    window.history.replaceState(null, '', '/?stop=STOP-A')
+    render(<StrictMode><App /></StrictMode>)
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
+    await waitFor(() => expect(window.location.search).toBe(''))
+  })
+
+  it('handles a service-notice launch link under StrictMode without naming a stop', async () => {
+    window.history.replaceState(null, '', '/?view=stops')
+    render(<StrictMode><App /></StrictMode>)
+
+    // Clearing the query proves the parsed target reached the navigation callback, which only
+    // runs for a link it accepted.
+    await waitFor(() => expect(window.location.search).toBe(''))
+    expect(screen.getByRole('region', { name: 'Stops' }).contains(document.activeElement)).toBe(true)
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('heading', { name: /bus stop$/ })).toBeNull()
   })
 })
 

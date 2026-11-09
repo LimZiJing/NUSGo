@@ -2,6 +2,8 @@
 
 The checked-in `frontend/public/data/community-waypoints.geojson` file is the public source of truth. A suggestion, correction, or removal report changes that file only after review in the private submissions repository. The public dataset contains approved place facts; the private issue remains the moderation and audit record.
 
+Private review maps are generated from GitHub issue labels; see the [review export workflow](review-export.md). They remain read-only views of the private issue queue. Approval moves a report into the approved export; closure happens after the public data change is merged and deployed.
+
 The initial review owner is LimZiJing, who triages the private queue weekly with a seven-calendar-day target for initial review. Revisit needs-check issues monthly. Photo intake is disabled: do not accept, attach, store, or publish photos or photo references. See the private queue policy in #214 for the current labels and review states.
 
 ## Publish an approved issue

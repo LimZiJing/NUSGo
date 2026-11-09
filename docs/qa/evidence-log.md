@@ -208,3 +208,25 @@ Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0
 ## Earlier browser evidence
 
 The [responsive layout browser evidence](responsive-layout-browser-evidence.md) preserves earlier headless and device-emulation results. It is historical evidence, not a standing checklist. Record only the targeted checks or release result that applies to each change.
+
+## 2026-11-09 — PR #643 service-notice navigation
+
+Tested application head `7dac6ac3c60a9d9225ca991f33de5ea89322ecf9` in real headless Edge 157.0.4341.42 at actual 1280×800 and 390×844 viewports. A managed static rehearsal preview was used because Docker was unavailable for the development group. The preview stopped after the check.
+
+- Launching `?view=stops` selected Stops, cleared the query after navigation, and did not invent a stop selection.
+- After pointer-clicking Explore, More and Settings, a simulated service-worker service-notice message closed Settings and selected Stops.
+- A simulated stop-specific message still opened the canonical COM 3 details.
+- Both viewports reported zero page errors. API responses and the service-worker container/messages were mocked; this is navigation evidence, not actual delivery or a device notification tap. Android screen-off, Wear OS and physical-device delivery remain unverified.
+
+Full gates at this application head: `npm test` exit 0 (root 31 passed / 2 skipped; shared 32 passed; frontend 1532 passed / 1 skipped; backend 234 Node and 105 Vitest passed), `npm run lint` exit 0, `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0, and `git diff --check` exit 0. The local rehearsal build also passed; builds emitted the existing bundle-size advisory.
+
+## 2026-11-09 — PR #644 integrated reminder and service-notice checks
+
+Tested application head `cfa16e3de8e71dcaf80048f5c4234bdfcbea8f25` in real headless Edge 157.0.4341.42 with actual 1280×800 and 390×844 viewports. This supersedes the earlier `6df3dced` reminder evidence for the integrated application. A managed static rehearsal preview ran and stopped automatically; Docker was unavailable.
+
+- With arrival requests returning 503, COM 3 details still offered canonical D1 enrollment. Pointer actions changed the lead time from 2 minutes to 1 minute; registration sent 60 seconds and displayed the one-shot expiry copy with an initially empty persistent alert region.
+- Pointer cancellation removed the reminder through the API boundary and cleared the stored preference.
+- `?view=stops` launch navigation selected Stops and cleared the query. A simulated service-worker notice over Settings closed Settings and selected Stops; a stop-specific message still opened COM 3.
+- Zero page errors in either viewport. Notification permission, PushManager, service-worker registration/messages and API responses were mocked. This does not verify actual push delivery, screen-off operation, a real notification tap, a physical device or Wear OS.
+
+Full integrated gates: `npm test` exit 0 (root 31 passed / 2 skipped; shared 59 passed; frontend 1581 passed / 1 skipped; backend 296 Node and 105 Vitest passed); `npm run lint` exit 0; `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0; backend typecheck and `git diff --check` exit 0. The rehearsal build passed too. Existing bundle-size advisory only.

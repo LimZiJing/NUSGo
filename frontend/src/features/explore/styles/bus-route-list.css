@@ -78,6 +78,9 @@
 }
 
 .explore-content .explore-bus-route-list-stop.is-current {
+  border-left: 3px solid var(--status-success-strong);
+  border-radius: var(--radius-sm);
+  padding-left: 17px;
   color: var(--text-primary);
   background: var(--surface-info-soft);
   font-weight: 700;
@@ -106,7 +109,6 @@
   box-shadow: var(--shadow-card-strong);
 }
 
-.explore-bus-route-list-stop.is-current .explore-bus-route-list-node,
 .explore-bus-route-list-stop.is-passed .explore-bus-route-list-node {
   border-color: var(--text-success-strong);
   background: var(--text-success-strong);

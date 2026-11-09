@@ -25,6 +25,10 @@ import {
  */
 
 const NUS_TICKER_TAPE_ENDPOINT = 'ticker-tapes'
+// The observed historic feed has 310 records. Reject oversized responses instead of retaining
+// unbounded external messages in the process cache.
+const MAX_TICKER_TAPE_RECORDS = 2_000
+const MAX_MESSAGE_LENGTH = 4_096
 
 const PRIORITY_BY_NORMALIZED_NAME: Readonly<Record<string, ServiceAnnouncementPriority>> = {
   high: 'high',
@@ -48,7 +52,7 @@ function text(record: RecordValue, key: string): string | null {
 }
 
 function timestampMs(value: string | null): number | null {
-  if (!value) return null
+  if (!value || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null
   const parsed = Date.parse(value)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -78,6 +82,12 @@ function parseRecord(value: unknown): ServiceAnnouncementRecord | null {
   const displayToMs = timestampMs(text(value, 'Display_To'))
   if (!id || !message || !priority || displayFromMs === null || displayToMs === null) return null
   if (displayToMs <= displayFromMs) return null
+  if (id.length > 128 || message.length > MAX_MESSAGE_LENGTH) return null
+  // Only an explicitly empty string is global; missing or malformed audience data fails closed.
+  if (typeof value.Affected_Service_Ids !== 'string' || value.Affected_Service_Ids.length > 1_024) return null
+
+  const affectedServiceRouteIds = splitServiceIds(text(value, 'Affected_Service_Ids'))
+  if (value.Affected_Service_Ids.trim().length > 0 && affectedServiceRouteIds.length === 0) return null
 
   return {
     id,
@@ -85,7 +95,7 @@ function parseRecord(value: unknown): ServiceAnnouncementRecord | null {
     priority,
     displayFromMs,
     displayToMs,
-    affectedServiceRouteIds: splitServiceIds(text(value, 'Affected_Service_Ids')),
+    affectedServiceRouteIds,
   }
 }
 
@@ -96,7 +106,8 @@ function parseRecord(value: unknown): ServiceAnnouncementRecord | null {
  * with nothing would silently stop pushing a genuine notice.
  */
 export function parseNusTickerTapeResponse(input: unknown): readonly ServiceAnnouncementRecord[] {
-  if (!isRecord(input) || !isRecord(input.data) || !Array.isArray(input.data.TickerTape)) {
+  if (!isRecord(input) || input.code !== '00000' || !isRecord(input.data) ||
+      !Array.isArray(input.data.TickerTape) || input.data.TickerTape.length > MAX_TICKER_TAPE_RECORDS) {
     throw new Error('NUS ticker-tape response was invalid')
   }
   return input.data.TickerTape.flatMap((value) => {

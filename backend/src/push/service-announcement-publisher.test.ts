@@ -21,8 +21,8 @@ function announcement(overrides: Partial<ServiceAnnouncement> = {}): ServiceAnno
     identity: '414|Term Sunday/PH schedule applies.',
     message: 'Term Sunday/PH schedule applies.',
     priority: 'medium',
-    displayFromMs: Date.parse('2026-11-08T16:55:00+08:00'),
-    displayToMs: Date.parse('2026-11-09T23:00:00+08:00'),
+    displayFromMs: Date.now() - 60_000,
+    displayToMs: Date.now() + 3_600_000,
     audience: { kind: 'global' },
     ...overrides,
   }
@@ -65,6 +65,32 @@ describe('service announcement notification', () => {
 })
 
 describe('service announcement publisher', () => {
+  it('does not send queued work after its notice expires', async () => {
+    const store = createPushSubscriptionStore()
+    for (let index = 0; index < 9; index += 1) subscribe(store, String(index))
+    let nowMs = 1_000
+    const release: Array<() => void> = []
+    let sends = 0
+    const publisher = createServiceAnnouncementPublisher({
+      store,
+      now: () => nowMs,
+      cap: createNotificationCap({ maxPerHour: 4 }),
+      announcements: () => [announcement({ displayFromMs: 0, displayToMs: 2_000 })],
+      sendNotification: async () => {
+        sends += 1
+        return new Promise((resolve) => { release.push(() => resolve({ statusCode: 201 })) })
+      },
+    })
+    const publishing = publisher.publish()
+    assert.equal(sends, 8)
+    nowMs = 2_000
+    for (const resolve of release) resolve()
+    assert.equal((await publishing).notificationsSent, 8)
+    assert.equal(sends, 8)
+    assert.equal((await publisher.publish()).notificationsSent, 0)
+  })
+
+
   it('sends one announcement per endpoint and does not repeat it on the next cycle', async () => {
     const store = createPushSubscriptionStore()
     subscribe(store, 'a')

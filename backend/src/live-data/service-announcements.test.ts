@@ -85,6 +85,15 @@ describe('service announcement selection', () => {
     assert.deepEqual(selected.map(({ id }) => id), ['high', 'medium-new', 'medium-old', 'low'])
   })
 
+  it('applies the feed bound after priority ordering', () => {
+    const records = Array.from({ length: 50 }, (_, index) => record({ id: String(index), priority: 'low' }))
+    records.push(record({ id: 'urgent', priority: 'high' }))
+    const selected = selectActiveServiceAnnouncements(records, { nowMs: insideWindowMs, canonicalRouteIds })
+    assert.equal(selected.length, 50)
+    assert.equal(selected[0]?.id, 'urgent')
+  })
+
+
   it('treats an edited message as a new identity so the correction is announced', () => {
     const [before] = selectActiveServiceAnnouncements([record()], { nowMs: insideWindowMs, canonicalRouteIds })
     const [after] = selectActiveServiceAnnouncements([
@@ -144,6 +153,44 @@ describe('service announcement feed', () => {
     assert.equal((await feed.refresh()).length, 1)
     assert.equal(feed.current().length, 1)
   })
+
+  it('rechecks display windows on cache hits and failed refreshes, with bounded retries', async () => {
+    let nowMs = insideWindowMs
+    let loads = 0
+    const feed = createServiceAnnouncementFeed({
+      now: () => nowMs,
+      canonicalRouteIds,
+      load: async () => {
+        loads += 1
+        if (loads > 1) throw new Error('unavailable')
+        return [record({ displayToMs: insideWindowMs + 20_000 })]
+      },
+    })
+    assert.equal((await feed.refresh()).length, 1)
+    nowMs += 25_000
+    assert.deepEqual(await feed.refresh(), [])
+    assert.deepEqual(feed.current(), [])
+    assert.equal(loads, 1)
+    nowMs += 40_000
+    assert.deepEqual(await feed.refresh(), [])
+    assert.equal(loads, 2)
+    nowMs += 30_000
+    await feed.refresh()
+    assert.equal(loads, 2)
+  })
+
+  it('activates a cached future notice when its window begins', async () => {
+    let nowMs = insideWindowMs
+    const feed = createServiceAnnouncementFeed({
+      now: () => nowMs,
+      canonicalRouteIds,
+      load: async () => [record({ displayFromMs: insideWindowMs + 20_000 })],
+    })
+    assert.deepEqual(await feed.refresh(), [])
+    nowMs += 25_000
+    assert.equal((await feed.refresh()).length, 1)
+  })
+
 
   it('starts with no announcements before the first load', () => {
     const feed = createServiceAnnouncementFeed({

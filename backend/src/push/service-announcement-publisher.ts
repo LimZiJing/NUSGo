@@ -9,7 +9,7 @@ import { deliverPushNotifications } from './delivery.ts'
 import type { NotificationCap } from './notification-cap.ts'
 import type { PushSubscriptionRecord, PushSubscriptionStore } from './subscription-store.ts'
 
-/** The notification body is a one-line excerpt; the full notice stays in the Stops view. */
+/** The notification body is a bounded one-line excerpt of the upstream notice. */
 export const ANNOUNCEMENT_BODY_MAX_LENGTH = 120
 
 /**
@@ -36,6 +36,7 @@ export interface ServiceAnnouncementPublisherOptions {
   readonly cap: NotificationCap
   /** The announcements currently showing, highest priority first. */
   readonly announcements: () => readonly ServiceAnnouncement[]
+  readonly now?: () => number
 }
 
 export interface ServiceAnnouncementPublisher {
@@ -80,6 +81,9 @@ export function createServiceAnnouncementPublisher(
   options: ServiceAnnouncementPublisherOptions,
 ): ServiceAnnouncementPublisher {
   const cap = options.cap
+  const now = options.now ?? Date.now
+  const isActive = (announcement: ServiceAnnouncement): boolean =>
+    announcement.displayFromMs <= now() && announcement.displayToMs > now()
   /** endpoint -> identities the push service accepted at least once. */
   const deliveredIdentities = new Map<string, Map<string, true>>()
   /** Endpoints a cycle is currently delivering to. */
@@ -119,7 +123,7 @@ export function createServiceAnnouncementPublisher(
   }
 
   const publish = async (): Promise<ServiceAnnouncementPublishResult> => {
-    const active = options.announcements()
+    const active = options.announcements().filter(isActive)
     const subscriptions = options.store.list('service-updates')
     pruneMemory(subscriptions, new Set(active.map(({ identity }) => identity)))
 
@@ -148,7 +152,13 @@ export function createServiceAnnouncementPublisher(
     try {
       summary = await deliverPushNotifications(options.store, options.sendNotification, subscriptions, {
         cap,
-        payloadFor: (record) => payloads.get(record.endpoint) ?? null,
+        payloadFor: (record) => {
+          const announcement = selected.get(record.endpoint)
+          // Recheck queued work after earlier sends: the rider may have opted out, or the
+          // notice's display window may have ended while another push was in flight.
+          if (!announcement || !isActive(announcement) || options.store.get(record.endpoint) !== record) return null
+          return payloads.get(record.endpoint) ?? null
+        },
         onDelivered: (record) => {
           const announcement = selected.get(record.endpoint)
           if (announcement) rememberDelivered(record.endpoint, announcement.identity)

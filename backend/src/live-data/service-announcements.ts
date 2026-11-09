@@ -109,13 +109,12 @@ export function selectActiveServiceAnnouncements(
       displayToMs: record.displayToMs,
       audience: routeIds.length === 0 ? { kind: 'global' } : { kind: 'routes', routeIds },
     })
-    if (active.length >= MAX_ACTIVE_SERVICE_ANNOUNCEMENTS) break
   }
 
   return active.sort((first, second) =>
     PRIORITY_RANK[first.priority] - PRIORITY_RANK[second.priority] ||
     second.displayFromMs - first.displayFromMs ||
-    first.id.localeCompare(second.id))
+    first.id.localeCompare(second.id)).slice(0, MAX_ACTIVE_SERVICE_ANNOUNCEMENTS)
 }
 
 export interface ServiceAnnouncementFeedOptions {
@@ -150,7 +149,7 @@ export function createServiceAnnouncementFeed(
   const now = options.now ?? Date.now
   const refreshIntervalMs = options.refreshIntervalMs ?? SERVICE_ANNOUNCEMENT_REFRESH_INTERVAL_MS
   let cachedAtMs = Number.NEGATIVE_INFINITY
-  let current: readonly ServiceAnnouncement[] = []
+  let cachedRecords: readonly ServiceAnnouncementRecord[] = []
   let inFlight: Promise<readonly ServiceAnnouncement[]> | null = null
 
   const select = (records: readonly ServiceAnnouncementRecord[]): readonly ServiceAnnouncement[] =>
@@ -158,15 +157,14 @@ export function createServiceAnnouncementFeed(
 
   return {
     refresh(signal) {
-      if (now() - cachedAtMs < refreshIntervalMs) return Promise.resolve(current)
       if (inFlight) return inFlight
+      if (now() - cachedAtMs < refreshIntervalMs) return Promise.resolve(select(cachedRecords))
 
+      cachedAtMs = now()
       const request = (async (): Promise<readonly ServiceAnnouncement[]> => {
         try {
-          const records = await options.load(signal ?? new AbortController().signal)
-          current = select(records)
-          cachedAtMs = now()
-          return current
+          cachedRecords = await options.load(signal ?? new AbortController().signal)
+          return select(cachedRecords)
         } catch (error: unknown) {
           // A failed refresh keeps the last good feed; it does not blank a genuine live notice.
           // Shutdown cancels the request on purpose, so that case is not worth a warning.
@@ -175,16 +173,15 @@ export function createServiceAnnouncementFeed(
               errorType: error instanceof Error ? error.name : typeof error,
             })
           }
-          return current
-        } finally {
-          inFlight = null
+          return select(cachedRecords)
         }
       })()
       inFlight = request
+      void request.finally(() => { inFlight = null })
       return request
     },
     current() {
-      return current
+      return select(cachedRecords)
     },
   }
 }

@@ -94,6 +94,27 @@ describe('NUS ticker-tape announcements', () => {
     assert.throws(() => parseNusTickerTapeResponse([]))
   })
 
+  it('rejects malformed audience fields instead of treating them as global', () => {
+    const records = parseNusTickerTapeResponse(tickerTape([
+      { ...activeRecord, Affected_Service_Ids: undefined },
+      { ...activeRecord, Affected_Service_Ids: ['D1'] },
+      { ...activeRecord, Affected_Service_Ids: 0 },
+      { ...activeRecord, Affected_Service_Ids: ',' },
+    ]))
+    // An explicitly non-empty token list with no route is malformed, not global.
+    assert.deepEqual(records, [])
+  })
+
+  it('bounds retained input and requires offset timestamps and a successful envelope', () => {
+    assert.throws(() => parseNusTickerTapeResponse(tickerTape(Array(2_001).fill(activeRecord))))
+    assert.throws(() => parseNusTickerTapeResponse({ code: '10000', data: { TickerTape: [] } }))
+    assert.deepEqual(parseNusTickerTapeResponse(tickerTape([
+      { ...activeRecord, Message: 'x'.repeat(4_097) },
+      { ...activeRecord, Display_From: '2026-11-08T16:55:00' },
+    ])), [])
+  })
+
+
   it('returns an empty list for a valid envelope with no records', () => {
     assert.deepEqual(parseNusTickerTapeResponse(tickerTape([])), [])
   })

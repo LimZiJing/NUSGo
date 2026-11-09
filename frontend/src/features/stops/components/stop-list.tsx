@@ -10,6 +10,7 @@ export function StopList({
   locationNotice,
   noLiveData,
   liveArrivalMessage,
+  currentStopId = null,
   onSelectStopList,
   onToggleFavorite,
   onToggleExpanded,
@@ -22,6 +23,7 @@ export function StopList({
   readonly locationNotice: string | null
   readonly noLiveData: boolean
   readonly liveArrivalMessage: string | null
+  readonly currentStopId?: string | null
   readonly onSelectStopList: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
@@ -54,6 +56,7 @@ export function StopList({
               stopId={stop.id}
               stopName={stop.longName}
               distanceMeters={distanceMeters}
+              isCurrentStop={stop.id === currentStopId}
               favorite={favorite}
               expanded={expanded}
               noLiveData={noLiveData}

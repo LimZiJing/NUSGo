@@ -1,5 +1,83 @@
+.route-following-stack {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  pointer-events: auto;
+}
+
+.route-following-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: min(420px, 100%);
+  justify-self: center;
+  box-sizing: border-box;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  background: var(--surface-overlay-strong);
+  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  pointer-events: auto;
+}
+
+.route-following-prompt p {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  color: var(--text-secondary);
+  font: 600 var(--font-size-sm)/1.3 var(--sans);
+  white-space: nowrap;
+}
+
+.route-following-prompt p strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-following-arrival-prompt .route-following-route-badge {
+  flex: 0 0 auto;
+}
+
+.route-following-prompt-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.route-following-prompt-actions .button.icon-button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.route-following-prompt-actions .route-following-prompt-confirm {
+  border-color: var(--status-success-strong);
+  color: var(--text-inverse);
+  background: var(--status-success-strong);
+}
+
+.route-following-prompt-actions .route-following-prompt-dismiss {
+  border-color: var(--status-error-surface);
+  color: var(--status-error);
+  background: var(--status-error-surface);
+}
+
 .route-following-island {
   position: relative;
+  justify-self: center;
   width: fit-content;
   min-width: 168px;
   max-width: min(420px, 100%);
@@ -22,17 +100,9 @@
   box-shadow: var(--shadow-lg);
 }
 
-.route-following-island-trigger-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 4px;
-}
-
 .route-following-island-main.button {
   min-width: 0;
   min-height: 40px;
-  flex: 1;
   justify-content: flex-start;
   padding-inline: var(--space-3);
   border-color: transparent;
@@ -42,15 +112,19 @@
   font-weight: 650;
 }
 
-.route-following-island-options.button.icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.route-following-island-main.button > span:not(.route-following-route-badge) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-following-route-badge {
+  cursor: default;
 }
 
 .route-following-island-panel {
   display: grid;
-  gap: var(--space-2);
   padding: 0 var(--space-2) var(--space-2);
 }
 
@@ -58,68 +132,168 @@
   display: none;
 }
 
-.route-following-island-content {
+.route-following-island-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.route-following-island-actions .button {
+  border-radius: var(--radius-pill);
+}
+
+.route-following-island-actions .route-following-get-off.button {
+  width: auto;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-color: var(--status-error-strong);
+  color: var(--text-inverse);
+  background: var(--status-error-strong);
+  font-size: var(--font-size-sm);
+}
+
+.route-following-dev-demo-controls {
+  position: relative;
+  width: max-content;
+  pointer-events: auto;
+}
+
+.route-following-dev-demo-controls .route-following-demo {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.route-following-demo-toggle.button {
+  border-radius: var(--radius-pill);
+}
+
+.route-following-demo-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 14;
   display: grid;
   gap: var(--space-2);
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(68vh, 560px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  background: var(--surface-overlay-strong);
+  box-shadow: var(--shadow-panel);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
 }
 
-.route-following-island-notice,
-.route-following-island-current-stop {
-  margin: 0;
-  color: var(--text-secondary);
-  font: 500 var(--font-size-sm)/1.35 var(--sans);
-}
-
-.route-following-island-current-stop {
+.route-following-demo-header,
+.route-following-demo-header > div,
+.route-following-demo-control-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
 }
 
-.route-following-island-current-stop strong {
-  overflow: hidden;
-  color: var(--text-primary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.route-following-demo-header > div {
+  min-width: 0;
+  justify-content: flex-start;
 }
 
-.route-following-island-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+.route-following-demo-header strong {
+  color: var(--status-warning);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+}
+
+.route-following-demo-header span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.route-following-demo-section {
+  display: grid;
   gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
 }
 
-.route-following-island-actions .button,
-.route-following-demo-button.button {
-  border-radius: var(--radius-pill);
+.route-following-demo-section legend {
+  padding-inline: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
 }
 
-.route-following-stop-picker {
+.route-following-demo-section label {
+  display: grid;
+  flex: 1 1 0;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.route-following-demo-section select {
   width: 100%;
-}
-
-.route-following-island-main.button:focus-visible,
-.route-following-island-options.button:focus-visible {
-  position: relative;
-  z-index: 1;
-}
-
-.route-following-island-notice {
-  max-width: 100%;
-  padding: var(--space-1) var(--space-2);
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
-  overflow-wrap: anywhere;
-  text-align: center;
+  background: var(--surface-raised);
+  font: 500 var(--font-size-sm)/1.2 var(--sans);
 }
 
-.route-following-demo-button.button {
-  justify-self: start;
+.route-following-demo-section select:disabled {
+  opacity: 0.55;
+}
+
+.route-following-demo-control-row > .button {
+  flex: 0 0 auto;
+}
+
+.route-following-demo-hint,
+.route-following-demo-footnote {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.route-following-demo-footnote {
+  padding-inline: var(--space-1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .route-following-island {
     transition: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .route-following-dev-demo-controls {
+    position: absolute;
+    z-index: 21;
+    top: calc(
+      var(--map-control-inset-top, 12px) +
+      var(--map-control-row-step, 52px) +
+      var(--map-control-row-step, 52px) +
+      var(--map-control-row-step, 52px)
+    );
+    left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px));
+  }
+
+  .route-following-demo-panel {
+    width: min(320px, calc(100vw - 24px));
+    max-height: min(68dvh, 560px);
   }
 }

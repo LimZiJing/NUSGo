@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { TransitNetwork } from '@nusgo/shared/transit/types'
 import type { LocationTrackingState } from '../../domain/location/types'
@@ -41,43 +41,40 @@ function locationAt(longitude: number, timestamp: number, accuracy = 10): Locati
 }
 
 describe('useRouteFollowing', () => {
-  it('confirms and dismisses nearby suggestions without conflating them with selection state', () => {
+  it('confirms or rejects nearby stop prompts and waits for a new visit before asking again', async () => {
     const { result, rerender } = renderHook(
       ({ location, clock }) => useRouteFollowing(location, index, clock),
       { initialProps: { location: locationAt(103.78, now), clock: now } },
     )
 
-    expect(result.current.suggestion?.id).toBe('STOP-1')
+    await waitFor(() => expect(result.current.suggestion?.id).toBe('STOP-1'))
     act(() => result.current.confirmSuggestion())
     expect(result.current.currentStop?.id).toBe('STOP-1')
+    expect(result.current.hereStopId).toBe('STOP-1')
     expect(result.current.suggestion).toBeNull()
 
-    act(() => result.current.clearCurrentStop())
-    expect(result.current.currentStop).toBeNull()
-    expect(result.current.suggestion?.id).not.toBe('STOP-1')
+    rerender({ location: locationAt(longitudeForMeters(-100), now + 1_000), clock: now + 1_000 })
+    await waitFor(() => expect(result.current.suggestion).toBeNull())
+    rerender({ location: locationAt(103.78, now + 2_000), clock: now + 2_000 })
+    await waitFor(() => expect(result.current.suggestion?.id).toBe('STOP-1'))
 
     act(() => result.current.dismissSuggestion())
-    rerender({ location: locationAt(103.78, now + 1), clock: now + 1 })
-    expect(result.current.suggestion?.id).not.toBe('STOP-1')
+    expect(result.current.suggestion).toBeNull()
+    rerender({ location: locationAt(103.78, now + 3_000), clock: now + 3_000 })
+    await waitFor(() => expect(result.current.suggestion).toBeNull())
   })
 
-  it('asks for a route start stop, advances on two fresh fixes, and stops cleanly', () => {
+  it('advances on two fresh fixes and leaves the last Here stop when following ends', () => {
     let clock = now
     const { result, rerender } = renderHook(
       ({ location }) => useRouteFollowing(location, index, clock),
       { initialProps: { location: locationAt(103.78, now) } },
     )
 
-    act(() => {
-      expect(result.current.requestFollowRoute('A1')).toBe(false)
-    })
-    expect(result.current.pendingRoute?.id).toBe('A1')
-
-    act(() => result.current.startAtStop('STOP-1'))
+    act(() => result.current.demoFollowRoute('A1'))
     expect(result.current.activeRoute?.id).toBe('A1')
     expect(result.current.activeStartIndex).toBe(0)
     expect(result.current.activeStopIndex).toBe(0)
-    expect(result.current.currentStop?.id).toBe('STOP-1')
 
     clock = now + 1_000
     rerender({ location: locationAt(longitudeForMeters(300), clock) })
@@ -87,40 +84,17 @@ describe('useRouteFollowing', () => {
     rerender({ location: locationAt(longitudeForMeters(300), clock) })
     expect(result.current.activeStopIndex).toBe(1)
     expect(result.current.currentStop?.id).toBe('STOP-2')
+    expect(result.current.hereStopId).toBe('STOP-2')
 
     act(() => result.current.stopFollowing())
     expect(result.current.activeRoute).toBeNull()
     expect(result.current.activeStartIndex).toBeNull()
     expect(result.current.currentStop?.id).toBe('STOP-2')
+    expect(result.current.hereStopId).toBe('STOP-2')
 
     clock = now + 3_000
     rerender({ location: locationAt(longitudeForMeters(600), clock) })
     expect(result.current.activeStopIndex).toBeNull()
-  })
-
-  it('uses a selected mid-route stop as the baseline for passed-stop progress', () => {
-    let clock = now
-    const { result, rerender } = renderHook(
-      ({ location }) => useRouteFollowing(location, index, clock),
-      { initialProps: { location: locationAt(103.78, now) } },
-    )
-
-    act(() => result.current.requestFollowRoute('A1'))
-    act(() => result.current.startAtStop('STOP-2'))
-    expect(result.current.activeStartIndex).toBe(1)
-    expect(result.current.activeStopIndex).toBe(1)
-
-    clock = now + 1_000
-    rerender({ location: locationAt(longitudeForMeters(600), clock) })
-    clock = now + 2_000
-    rerender({ location: locationAt(longitudeForMeters(600), clock) })
-
-    expect(result.current.activeStartIndex).toBe(1)
-    expect(result.current.activeStopIndex).toBe(2)
-
-    act(() => result.current.setCurrentStop('STOP-1'))
-    expect(result.current.activeStartIndex).toBe(0)
-    expect(result.current.activeStopIndex).toBe(0)
   })
 
   it('simulates a route from its first stop and advances one stop per demo click', () => {
@@ -152,8 +126,7 @@ describe('useRouteFollowing', () => {
       { initialProps: { location: locationAt(103.78, now) } },
     )
 
-    act(() => result.current.requestFollowRoute('A1'))
-    act(() => result.current.startAtStop('STOP-1'))
+    act(() => result.current.demoFollowRoute('A1'))
     clock = now + 1_000
     rerender({ location: locationAt(longitudeForMeters(300), clock, 25.1) })
     clock = now + 2_000
@@ -162,15 +135,13 @@ describe('useRouteFollowing', () => {
     expect(result.current.activeStopIndex).toBe(0)
   })
 
-  it('pauses suggestions and route progress while the location tracker is not tracking', () => {
+  it('pauses route progress while location tracking is unavailable', () => {
     const { result, rerender } = renderHook(
       ({ location }) => useRouteFollowing(location, index, now),
       { initialProps: { location: { ...locationAt(103.78, now), status: 'stale' as const } } },
     )
 
-    expect(result.current.suggestion).toBeNull()
-    act(() => result.current.requestFollowRoute('A1'))
-    act(() => result.current.startAtStop('STOP-1'))
+    act(() => result.current.demoFollowRoute('A1'))
     rerender({ location: { ...locationAt(longitudeForMeters(300), now + 1_000), status: 'stale' } })
 
     expect(result.current.activeStopIndex).toBe(0)

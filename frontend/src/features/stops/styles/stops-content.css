@@ -97,6 +97,10 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .stop-card[data-current-stop='true'] {
+    box-shadow: inset 3px 0 0 var(--status-success-strong), var(--shadow-sm);
+  }
+
   .stop-card-header {
     position: relative;
     min-height: var(--control-height-lg);
@@ -255,6 +259,11 @@
     text-align: left;
   }
 
+  .stop-selection[data-current-stop='true'] .stop-identity-copy {
+    padding-left: var(--space-2);
+    border-left: 3px solid var(--status-success-strong);
+  }
+
   .stops-content .ghost-back-button {
     justify-self: start;
   }
@@ -301,6 +310,11 @@
     flex: 1 1 0;
     min-width: 0;
     justify-content: center;
+  }
+
+  .stop-actions .stop-clear-here {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
   }
 
   .stop-departures {

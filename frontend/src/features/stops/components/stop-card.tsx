@@ -15,6 +15,7 @@ export interface StopCardProps {
   readonly stopId: string
   readonly stopName: string
   readonly distanceMeters: number | null
+  readonly isCurrentStop?: boolean
   readonly favorite: boolean
   readonly expanded: boolean
   readonly noLiveData?: boolean
@@ -51,6 +52,7 @@ export function StopCard({
   stopId,
   stopName,
   distanceMeters,
+  isCurrentStop = false,
   favorite,
   expanded,
   noLiveData = false,
@@ -66,7 +68,7 @@ export function StopCard({
 }: StopCardProps) {
   const timingsId = `stop-card-timings-${stopId}`
   return (
-    <article className="stop-card">
+    <article className="stop-card" data-current-stop={isCurrentStop ? 'true' : undefined}>
       <div className="stop-card-header">
         <button
           className="stop-card-toggle"

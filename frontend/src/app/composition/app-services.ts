@@ -7,6 +7,7 @@ import type { JourneyPlanningClient } from '../../infrastructure/pathfinding/cli
 import { createJourneyPlanningClient } from '../../infrastructure/pathfinding/client'
 import { loadTransitMapData, loadVenueData } from '../../infrastructure/data/loaders'
 import { createBrowserLocationTracker } from '../../infrastructure/location/browser'
+import { createRouteFollowingDemoLocationTracker, RouteFollowingDemoController } from '../../features/route-following/route-following-demo-controller'
 import { createPublicBusArrivalClient } from '../../infrastructure/lta-datamall/client'
 import { createShuttleArrivalClient } from '../../infrastructure/shuttle-arrivals/client'
 import { createShuttleVehicleClient } from '../../infrastructure/shuttle-vehicles/client'
@@ -24,6 +25,7 @@ export interface AppServices {
   readonly publicBusArrivalClient: PublicBusArrivalClient
   readonly shuttleServiceHoursClient: ShuttleServiceHoursClient
   readonly pathfinder: JourneyPlanningClient
+  readonly routeFollowingDemo?: RouteFollowingDemoController
 }
 
 export interface CreateAppServicesOptions {
@@ -31,6 +33,7 @@ export interface CreateAppServicesOptions {
     readonly get: () => number | null
   }
   readonly isDevelopment?: boolean
+  readonly enableRouteFollowingDemo?: boolean
 }
 
 /** Creates the browser collaborators; Journey candidates and routed geometry come from Express. */
@@ -40,18 +43,26 @@ export function createAppServices(options: CreateAppServicesOptions): AppService
   const publicBusArrivalClient = createPublicBusArrivalClient()
   const shuttleServiceHoursClient = createShuttleServiceHoursClient()
   const isDevelopment = options.isDevelopment ?? import.meta.env.DEV
+  const routeFollowingDemo = options.enableRouteFollowingDemo
+    ? new RouteFollowingDemoController()
+    : null
   const pathfinder = createJourneyPlanningClient({
     getSimulatedDepartureMs: isDevelopment ? options.journeyTestClock.get : () => null,
   })
 
+  const createLocationTracker = routeFollowingDemo
+    ? () => createRouteFollowingDemoLocationTracker(createBrowserLocationTracker(), routeFollowingDemo)
+    : createBrowserLocationTracker
+
   return {
     loadTransit: loadTransitMapData,
     loadVenues: loadVenueData,
-    createLocationTracker: createBrowserLocationTracker,
+    createLocationTracker,
     shuttleArrivalClient,
     shuttleVehicleClient,
     publicBusArrivalClient,
     shuttleServiceHoursClient,
     pathfinder,
+    ...(routeFollowingDemo ? { routeFollowingDemo } : {}),
   }
 }

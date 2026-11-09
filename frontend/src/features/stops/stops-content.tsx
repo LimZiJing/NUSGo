@@ -26,6 +26,9 @@ function resetScrollOwner(element: Element | null): void {
 
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null
+  readonly currentStopId?: string | null
+  readonly isFollowing?: boolean
+  readonly onClearCurrentStop?: () => void
   readonly backLabel?: string
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
@@ -52,6 +55,9 @@ interface StopsContentProps {
  */
 export function StopsContent({
   selectedStop,
+  currentStopId = null,
+  isFollowing = false,
+  onClearCurrentStop,
   backLabel,
   onBackToStops,
   onSelectOppositeStop,
@@ -92,6 +98,9 @@ export function StopsContent({
           <StopDetails
             stop={selectedStop}
             favorite={selectedStopFavorite}
+            isCurrentStop={selectedStop.id === currentStopId}
+            isFollowing={isFollowing}
+            onClearCurrentStop={onClearCurrentStop}
             liveArrivalMessage={liveArrivalMessage}
             backLabel={backLabel}
             onBackToStops={onBackToStops}
@@ -121,6 +130,7 @@ export function StopsContent({
               locationNotice={locationNotice}
               noLiveData={noLiveData}
               liveArrivalMessage={liveArrivalMessage}
+              currentStopId={currentStopId}
               onSelectStopList={onSelectStopList}
               onToggleFavorite={onToggleFavorite}
               onToggleExpanded={onToggleExpanded}

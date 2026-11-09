@@ -30,7 +30,8 @@ describe('RouteFollowingDemoButton', () => {
     expect(onDemo).toHaveBeenLastCalledWith('A1')
 
     rerender(<RouteFollowingDemoButton route={route} activeRouteId="A1" activeStopIndex={0} onDemo={onDemo} />)
-    expect(screen.getByRole('button', { name: 'Advance A1 demo' }).textContent).toBe('Next stop')
+    expect(screen.getByRole('button', { name: 'Advance A1 demo' }).textContent).toBe('Next')
+    expect(screen.getByRole('button', { name: 'Advance A1 demo' }).getAttribute('data-variant')).toBe('primary')
 
     rerender(<RouteFollowingDemoButton route={route} activeRouteId="A1" activeStopIndex={1} onDemo={onDemo} />)
     expect(screen.getByRole('button', { name: 'Restart A1 demo' }).textContent).toBe('Restart')

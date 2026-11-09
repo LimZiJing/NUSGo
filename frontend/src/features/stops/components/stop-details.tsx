@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Button, IconButton } from '../../../ui/button'
@@ -9,6 +10,7 @@ import { StopDepartureList } from './stop-departure-list'
 export function StopDetails({
   stop,
   favorite,
+  isCurrentStop = false,
   liveArrivalMessage,
   backLabel = 'Back to stops',
   onBackToStops,
@@ -16,9 +18,12 @@ export function StopDetails({
   onSelectRoute,
   onNavigateToStop,
   onToggleFavorite,
+  onClearCurrentStop,
+  isFollowing = false,
 }: {
   readonly stop: StopDetailsModel
   readonly favorite: boolean
+  readonly isCurrentStop?: boolean
   readonly liveArrivalMessage: string | null
   readonly backLabel?: string
   readonly onBackToStops: () => void
@@ -26,18 +31,23 @@ export function StopDetails({
   readonly onSelectRoute: (routeId: string) => void
   readonly onNavigateToStop: (stopId: string) => void
   readonly onToggleFavorite: (stopId: string) => void
+  readonly onClearCurrentStop?: () => void
+  readonly isFollowing?: boolean
 }) {
   const oppositeStop = stop.oppositeStop
+  const stopHeadingRef = useRef<HTMLHeadingElement>(null)
 
   return (
-    <div className="stop-selection" data-testid="stop-detail">
+    <div className="stop-selection" data-testid="stop-detail" data-current-stop={isCurrentStop ? 'true' : undefined}>
       <GhostBackButton label={backLabel} onClick={onBackToStops} />
       <div className="stop-identity">
         <div className="stop-identity-copy">
           <h2
+            ref={stopHeadingRef}
             id="stops-content-heading"
             className="stop-selection-name"
             aria-label={`${stop.longName}, bus stop`}
+            tabIndex={-1}
           >
             <BusIcon className="location-identity-icon location-identity-icon--stop" />
             <span>{stop.longName}</span>
@@ -78,6 +88,18 @@ export function StopDetails({
             onClick={() => onSelectOppositeStop(oppositeStop.id)}
           />
         ) : null}
+        {isCurrentStop && !isFollowing && onClearCurrentStop && (
+          <Button
+            className="stop-clear-here"
+            label="Clear Here"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onClearCurrentStop()
+              stopHeadingRef.current?.focus()
+            }}
+          />
+        )}
       </div>
       {liveArrivalMessage && (
         <p className="stop-live-arrival-message" role="status">

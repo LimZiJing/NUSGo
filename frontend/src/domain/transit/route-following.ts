@@ -5,10 +5,11 @@ import type { TransitIndex } from './index'
 
 export const MAX_ROUTE_FOLLOW_ACCURACY_METERS = 25
 export const MAX_ROUTE_FOLLOW_FIX_AGE_MS = 30_000
-export const MAX_NEARBY_STOP_DISTANCE_METERS = 250
+export const STOP_CONFIRMATION_RADIUS_METERS = 25
+export const STOP_CONFIRMATION_RESET_RADIUS_METERS = 40
 export const STOP_ARRIVAL_RADIUS_METERS = 75
 
-interface StopCandidate {
+export interface NearbyBusStopCandidate {
   readonly stop: TransitStop
   readonly distanceMeters: number
 }
@@ -28,26 +29,7 @@ export function isRouteFollowFixUsable(
     age <= MAX_ROUTE_FOLLOW_FIX_AGE_MS
 }
 
-function selectUnambiguousStop(
-  fix: DeviceLocationFix,
-  candidates: readonly StopCandidate[],
-  excludedStopIds: ReadonlySet<string>,
-): TransitStop | null {
-  const orderedCandidates = candidates
-    .filter(({ stop }) => !excludedStopIds.has(stop.id))
-    .sort((first, second) => first.distanceMeters - second.distanceMeters || first.stop.id.localeCompare(second.stop.id))
-  const closest = orderedCandidates[0]
-  if (!closest || closest.distanceMeters > MAX_NEARBY_STOP_DISTANCE_METERS) return null
-
-  const nextClosest = orderedCandidates[1]
-  if (nextClosest && nextClosest.distanceMeters - closest.distanceMeters <= fix.accuracy * 2) {
-    return null
-  }
-
-  return closest.stop
-}
-
-function getCandidate(stop: TransitStop, fix: DeviceLocationFix): StopCandidate {
+function getCandidate(stop: TransitStop, fix: DeviceLocationFix): NearbyBusStopCandidate {
   return {
     stop,
     distanceMeters: getDistanceMeters(
@@ -57,38 +39,31 @@ function getCandidate(stop: TransitStop, fix: DeviceLocationFix): StopCandidate 
   }
 }
 
-export function findNearbyBusStopSuggestion(
+export function findNearbyBusStopCandidates(
   fix: DeviceLocationFix | null,
   transitIndex: TransitIndex,
-  excludedStopIds: ReadonlySet<string> = new Set(),
+  radiusMeters = STOP_CONFIRMATION_RADIUS_METERS,
   now = Date.now(),
-): TransitStop | null {
-  if (!isRouteFollowFixUsable(fix, now)) return null
+): readonly NearbyBusStopCandidate[] {
+  if (!isRouteFollowFixUsable(fix, now)) return []
 
-  const candidates = getRouteFollowingStops(transitIndex).map((stop) => getCandidate(stop, fix))
-
-  return selectUnambiguousStop(fix, candidates, excludedStopIds)
-}
-
-export function getRouteFollowingStops(transitIndex: TransitIndex): TransitStop[] {
-  return transitIndex.stops.filter((stop) => stop.services.some((serviceId) => transitIndex.routeById.has(serviceId)))
-}
-
-export function findRouteStopSuggestion(
-  fix: DeviceLocationFix | null,
-  route: BusRoute,
-  transitIndex: TransitIndex,
-  excludedStopIds: ReadonlySet<string> = new Set(),
-  now = Date.now(),
-): TransitStop | null {
-  if (!isRouteFollowFixUsable(fix, now)) return null
-
-  const stopIds = new Set(route.stopIds)
-  const candidates = transitIndex.stops
-    .filter((stop) => stopIds.has(stop.id))
+  return getRouteFollowingStops(transitIndex)
     .map((stop) => getCandidate(stop, fix))
+    .filter(({ distanceMeters }) => distanceMeters <= radiusMeters)
+    .sort((first, second) => first.distanceMeters - second.distanceMeters || first.stop.id.localeCompare(second.stop.id))
+}
 
-  return selectUnambiguousStop(fix, candidates, excludedStopIds)
+export function isWithinStopConfirmationRadius(
+  fix: DeviceLocationFix | null,
+  stop: TransitStop,
+  now = Date.now(),
+): boolean {
+  if (!isRouteFollowFixUsable(fix, now)) return false
+  return getCandidate(stop, fix).distanceMeters <= STOP_CONFIRMATION_RADIUS_METERS
+}
+
+function getRouteFollowingStops(transitIndex: TransitIndex): TransitStop[] {
+  return transitIndex.stops.filter((stop) => stop.services.some((serviceId) => transitIndex.routeById.has(serviceId)))
 }
 
 export function isAtBusStop(

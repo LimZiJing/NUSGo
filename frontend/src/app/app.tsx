@@ -44,6 +44,9 @@ import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-shee
 const JourneyTestTimeControl = import.meta.env.DEV
   ? lazy(() => import('../ui/journey-test-time-control').then((module) => ({ default: module.JourneyTestTimeControl })))
   : null
+const RouteFollowingDemoPanel = import.meta.env.DEV
+  ? lazy(() => import('../features/route-following/route-following-demo-panel').then((module) => ({ default: module.RouteFollowingDemoPanel })))
+  : null
 import { createJourneyTestClockStore } from './journey-test-clock-store'
 import { createAppServices } from './composition/app-services'
 import { AppViews, type AppViewsProps } from './composition/app-views'
@@ -88,7 +91,7 @@ import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-way
 import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
-import { getRouteFollowingStops } from '../domain/transit'
+import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
 import type { StopsServiceWindowsLoader } from '../features/stops/hooks/use-stops-service-windows'
 
@@ -105,6 +108,7 @@ interface PersonalWaypointDetailsSelection {
 }
 
 const EMPTY_PERSONAL_WAYPOINTS: readonly PersonalWaypoint[] = []
+const EMPTY_TRANSIT_STOPS: readonly TransitStop[] = []
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -156,7 +160,26 @@ function App() {
   const [liveBusLayerEnabled, setLiveBusLayerEnabled] = useState(false)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
-  const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
+  const [services] = useState(() => createAppServices({
+    journeyTestClock: testClock,
+    isDevelopment: import.meta.env.DEV,
+    enableRouteFollowingDemo: import.meta.env.DEV,
+  }))
+  const routeFollowingDemo = services.routeFollowingDemo ?? null
+  const [routeFollowingDemoState, setRouteFollowingDemoState] = useState(
+    () => routeFollowingDemo?.getSnapshot() ?? null,
+  )
+
+  useEffect(() => {
+    if (!routeFollowingDemo) return
+    const unsubscribe = routeFollowingDemo.subscribe(() => {
+      setRouteFollowingDemoState(routeFollowingDemo.getSnapshot())
+    })
+    return () => {
+      unsubscribe()
+      routeFollowingDemo.reset()
+    }
+  }, [routeFollowingDemo])
 
   useEffect(() => {
     const applyPreference = (): void => {
@@ -169,12 +192,31 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
-  const routeFollowing = useRouteFollowing(state.location, state.transitIndex)
-  const selectedExploreRoute = state.transitIndex?.routeById.get(state.selectedRouteId ?? '') ?? null
-  const routeFollowingStops = useMemo(
-    () => state.transitIndex ? getRouteFollowingStops(state.transitIndex) : [],
-    [state.transitIndex],
+  const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
+    (stops, signal) => services.shuttleArrivalClient.getArrivals(stops, signal),
+    [services],
   )
+  const selectedExploreRoute = state.transitIndex?.routeById.get(state.selectedRouteId ?? '') ?? null
+  const loadTestableStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
+    (stops, signal) => routeFollowingDemo && routeFollowingDemoState?.active
+      ? routeFollowingDemo.loadArrivals(stops, signal)
+      : loadStopsArrivals(stops, signal),
+    [loadStopsArrivals, routeFollowingDemo, routeFollowingDemoState?.active],
+  )
+  const routeFollowing = useRouteFollowing(
+    state.location,
+    state.transitIndex,
+    routeFollowingDemoState?.active ? routeFollowingDemoState.now : undefined,
+    loadTestableStopsArrivals,
+    routeFollowingDemoState?.arrivalRevision,
+  )
+  const demoRoute = routeFollowing.activeRoute ?? selectedExploreRoute
+  const demoRouteStops = useMemo(() => demoRoute && state.transitIndex
+    ? demoRoute.stopIds.flatMap((stopId) => {
+      const stop = state.transitIndex?.stopById.get(stopId)
+      return stop ? [stop] : []
+    })
+    : [], [demoRoute, state.transitIndex])
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
     state.mapError,
@@ -231,10 +273,6 @@ function App() {
   const publishNearbyHighlight = useCallback((stopIds: readonly string[]): void => {
     commands.setNearbyStopHighlight(stopIds)
   }, [commands])
-  const loadStopsArrivals = useCallback<StopsArrivalLoader<ShuttleArrivalSnapshot>>(
-    (stops, signal) => services.shuttleArrivalClient.getArrivals(stops, signal),
-    [services],
-  )
   const loadPublicBusArrivals = useCallback<StopsArrivalLoader<PublicBusArrivalSnapshot>>(
     (stops, signal) => services.publicBusArrivalClient.getArrivals(stops, signal),
     [services],
@@ -708,12 +746,7 @@ function App() {
         stopIndex: routeFollowing.activeStopIndex,
       }
       : null,
-    onRouteSelect: (routeId) => {
-      if (routeFollowing.pendingRoute && routeFollowing.pendingRoute.id !== routeId) {
-        routeFollowing.cancelRouteStart()
-      }
-      commands.selectMobileRoute(routeId)
-    },
+    onRouteSelect: (routeId) => commands.selectMobileRoute(routeId),
     focus: explorePanelFocus,
     status: explorePanelStatus,
     onQueryChange: commands.setExploreQuery,
@@ -750,6 +783,9 @@ function App() {
       ref={stopsWorkspaceRef}
       minuteFormat={minuteFormat}
       transitIndex={state.transitIndex}
+      currentStopId={routeFollowing.hereStopId ?? null}
+      isFollowing={routeFollowing.activeRoute !== null}
+      onClearCurrentStop={routeFollowing.clearCurrentStop}
       mapCenter={mapCenter}
       location={state.location}
       active={navigationState.state.activeView === 'stops'}
@@ -759,7 +795,7 @@ function App() {
       portalContainer={sheetPortalContainer}
       shellRef={stopsSheetRef}
       onDetentChange={handleStopsDetentChange}
-      loadArrivals={loadStopsArrivals}
+      loadArrivals={loadTestableStopsArrivals}
       loadPublicArrivals={loadPublicBusArrivals}
       loadServiceWindows={loadStopsServiceWindows}
       requestLocation={session ? requestNearbyLocation : null}
@@ -1005,9 +1041,7 @@ function App() {
             workflow={routeFollowing}
             selectedRoute={selectedExploreRoute}
             selectedRouteVisible={activeView === 'explore' && state.exploreState.mode === 'bus-routes'}
-            stops={routeFollowingStops}
             hidden={isMoreOpen || morePage === 'placing'}
-            showDemo={import.meta.env.DEV}
           />
           <PwaNotices basemapUnavailable={basemapUnavailable} />
         </div>
@@ -1046,6 +1080,25 @@ function App() {
                 }}
               />
             </Suspense>
+          )}
+          {RouteFollowingDemoPanel && routeFollowingDemo && !isMoreOpen && morePage !== 'placing' && (
+            (routeFollowing.activeRoute !== null || (
+              activeView === 'explore' &&
+              state.exploreState.mode === 'bus-routes' &&
+              selectedExploreRoute !== null
+            )) && (
+              <div className="route-following-dev-demo-controls" aria-label="Route following test controls">
+                <Suspense fallback={null}>
+                  <RouteFollowingDemoPanel
+                    controller={routeFollowingDemo}
+                    workflow={routeFollowing}
+                    route={routeFollowing.activeRoute ?? selectedExploreRoute}
+                    allStops={state.transitIndex?.stops ?? EMPTY_TRANSIT_STOPS}
+                    routeStops={demoRouteStops}
+                  />
+                </Suspense>
+              </div>
+            )
           )}
           <div className="map-control-actions">
             <LiveBusToggle

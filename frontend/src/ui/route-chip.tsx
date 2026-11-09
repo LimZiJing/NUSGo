@@ -1,8 +1,33 @@
-import type { Ref } from 'react'
+import type { CSSProperties, Ref } from 'react'
 import { getRouteContrastTextColor } from '../domain/transit/route-color'
 import { Chip } from './chip'
 
 type RouteChipSize = 'default' | 'compact'
+
+export function RouteBadge({
+  routeId,
+  routeColor,
+  ariaHidden = false,
+}: {
+  readonly routeId: string
+  readonly routeColor: string
+  readonly ariaHidden?: boolean
+}) {
+  return (
+    <span
+      className="route-chip route-following-route-badge"
+      data-size="compact"
+      data-active="true"
+      aria-hidden={ariaHidden}
+      style={{
+        '--route-color': routeColor,
+        '--route-text-color': getRouteContrastTextColor(routeColor),
+      } as CSSProperties}
+    >
+      {routeId}
+    </span>
+  )
+}
 
 interface RouteChipProps {
   readonly routeId: string

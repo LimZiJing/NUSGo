@@ -1,14 +1,37 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { BusRoute, TransitStop } from '@nusgo/shared/transit/types'
 import type { LocationTrackingState } from '../../domain/location/types'
-import type { TransitIndex } from '../../domain/transit'
 import {
-  findNearbyBusStopSuggestion,
-  findRouteStopSuggestion,
+  findNearbyBusStopCandidates,
   getRouteStartIndex,
   isAtBusStop,
+  isRouteFollowFixUsable,
+  isWithinStopConfirmationRadius,
   MAX_ROUTE_FOLLOW_FIX_AGE_MS,
+  STOP_CONFIRMATION_RESET_RADIUS_METERS,
+  type TransitIndex,
 } from '../../domain/transit'
+import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import {
+  SHUTTLE_ARRIVAL_MAX_AGE_MS,
+  SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
+} from '../../domain/transit/arrivals'
+
+export interface RouteFollowingArrivalRequest {
+  readonly stopId: string
+  readonly stopName: string
+}
+
+export type RouteFollowingArrivalLoader = (
+  stops: readonly RouteFollowingArrivalRequest[],
+  signal: AbortSignal,
+) => Promise<ShuttleArrivalSnapshot>
+
+export interface RouteArrivalPrompt {
+  readonly stop: TransitStop
+  readonly route: BusRoute
+  readonly createdAtMs?: number
+}
 
 interface ActiveRouteFollowing {
   readonly routeId: string
@@ -18,30 +41,23 @@ interface ActiveRouteFollowing {
 
 interface RouteFollowingState {
   readonly currentStopId: string | null
-  readonly dismissedStopIds: ReadonlySet<string>
-  readonly pendingRouteId: string | null
+  readonly currentStopConfirmed: boolean
   readonly activeFollowing: ActiveRouteFollowing | null
   readonly announcement: string
   readonly announcementRevision: number
 }
 
 type RouteFollowingAction =
-  | {
-    readonly type: 'set-current-stop'
-    readonly stopId: string
-    readonly activeFollowing: ActiveRouteFollowing | null
-    readonly announcement: string
-  }
-  | { readonly type: 'clear-current-stop'; readonly announcement?: string }
-  | { readonly type: 'dismiss-suggestion'; readonly stopId: string; readonly announcement: string }
-  | { readonly type: 'request-route'; readonly routeId: string }
-  | { readonly type: 'cancel-route-start' }
+  | { readonly type: 'set-current-stop'; readonly stopId: string; readonly announcement: string }
+  | { readonly type: 'clear-current-stop'; readonly announcement: string }
+  | { readonly type: 'announce'; readonly announcement: string }
   | {
     readonly type: 'start-route'
     readonly routeId: string
     readonly stopId: string
     readonly startIndex: number
     readonly stopIndex: number
+    readonly confirmed: boolean
     readonly announcement: string
   }
   | { readonly type: 'stop-following'; readonly announcement?: string }
@@ -51,13 +67,13 @@ type RouteFollowingAction =
     readonly previousStopIndex: number
     readonly stopId: string
     readonly stopIndex: number
+    readonly confirmed: boolean
     readonly announcement: string
   }
 
 const INITIAL_ROUTE_FOLLOWING_STATE: RouteFollowingState = {
   currentStopId: null,
-  dismissedStopIds: new Set(),
-  pendingRouteId: null,
+  currentStopConfirmed: false,
   activeFollowing: null,
   announcement: '',
   announcementRevision: 0,
@@ -71,8 +87,8 @@ function routeFollowingReducer(
     return {
       ...state,
       currentStopId: action.stopId,
-      dismissedStopIds: new Set(state.dismissedStopIds).add(action.stopId),
-      activeFollowing: action.activeFollowing,
+      currentStopConfirmed: true,
+      activeFollowing: null,
       announcement: action.announcement,
       announcementRevision: state.announcementRevision + 1,
     }
@@ -81,28 +97,24 @@ function routeFollowingReducer(
     return {
       ...state,
       currentStopId: null,
-      pendingRouteId: null,
+      currentStopConfirmed: false,
       activeFollowing: null,
-      announcement: action.announcement ?? 'Current stop cleared',
-      announcementRevision: state.announcementRevision + 1,
-    }
-  }
-  if (action.type === 'dismiss-suggestion') {
-    return {
-      ...state,
-      dismissedStopIds: new Set(state.dismissedStopIds).add(action.stopId),
       announcement: action.announcement,
       announcementRevision: state.announcementRevision + 1,
     }
   }
-  if (action.type === 'request-route') return { ...state, pendingRouteId: action.routeId }
-  if (action.type === 'cancel-route-start') return { ...state, pendingRouteId: null }
+  if (action.type === 'announce') {
+    return {
+      ...state,
+      announcement: action.announcement,
+      announcementRevision: state.announcementRevision + 1,
+    }
+  }
   if (action.type === 'start-route') {
     return {
       ...state,
       currentStopId: action.stopId,
-      dismissedStopIds: new Set(state.dismissedStopIds).add(action.stopId),
-      pendingRouteId: null,
+      currentStopConfirmed: action.confirmed,
       activeFollowing: {
         routeId: action.routeId,
         startIndex: action.startIndex,
@@ -115,7 +127,6 @@ function routeFollowingReducer(
   if (action.type === 'stop-following') {
     return {
       ...state,
-      pendingRouteId: null,
       activeFollowing: null,
       announcement: action.announcement ?? state.announcement,
       announcementRevision: action.announcement
@@ -131,7 +142,7 @@ function routeFollowingReducer(
   return {
     ...state,
     currentStopId: action.stopId,
-    dismissedStopIds: new Set(state.dismissedStopIds).add(action.stopId),
+    currentStopConfirmed: action.confirmed,
     activeFollowing: { ...state.activeFollowing, stopIndex: action.stopIndex },
     announcement: action.announcement,
     announcementRevision: state.announcementRevision + 1,
@@ -140,24 +151,21 @@ function routeFollowingReducer(
 
 export interface RouteFollowingWorkflow {
   readonly currentStop: TransitStop | null
-  readonly dismissedStopIds: ReadonlySet<string>
+  readonly hereStopId: string | null
   readonly suggestion: TransitStop | null
-  readonly pendingRoute: BusRoute | null
-  readonly pendingRouteSuggestion: TransitStop | null
+  readonly arrivalPrompt: RouteArrivalPrompt | null
   readonly activeRoute: BusRoute | null
   readonly activeStops: readonly TransitStop[]
   readonly activeStartIndex: number | null
   readonly activeStopIndex: number | null
   readonly announcement: string
   readonly announcementRevision: number
-  readonly setCurrentStop: (stopId: string) => void
-  readonly clearCurrentStop: () => void
   readonly confirmSuggestion: () => void
   readonly dismissSuggestion: () => void
-  readonly requestFollowRoute: (routeId: string) => boolean
+  readonly clearCurrentStop?: () => void
+  readonly followArrivalRoute: () => boolean
+  readonly dismissArrivalPrompt: () => void
   readonly demoFollowRoute: (routeId: string) => void
-  readonly startAtStop: (stopId: string) => void
-  readonly cancelRouteStart: () => void
   readonly stopFollowing: () => void
 }
 
@@ -165,12 +173,34 @@ export function useRouteFollowing(
   location: LocationTrackingState,
   transitIndex: TransitIndex | null,
   nowOverride?: number,
+  loadArrivals?: RouteFollowingArrivalLoader,
+  arrivalDataRevision?: number,
 ): RouteFollowingWorkflow {
   const [workflowState, dispatch] = useReducer(routeFollowingReducer, INITIAL_ROUTE_FOLLOWING_STATE)
   const [observedNow, setObservedNow] = useState(() => Date.now())
+  const [isPageVisible, setIsPageVisible] = useState(
+    () => typeof document === 'undefined' || document.visibilityState === 'visible',
+  )
   const now = nowOverride ?? observedNow
   const lastProgressFixTimestampRef = useRef<number | null>(null)
   const arrivalSampleRef = useRef<{ readonly stopId: string; readonly count: number } | null>(null)
+  const encounteredStopIdsRef = useRef(new Set<string>())
+  const arrivalPromptedRouteIdsRef = useRef(new Set<string>())
+  const [nearbyStopQueue, setNearbyStopQueue] = useState<readonly string[]>([])
+  const [arrivalQueue, setArrivalQueue] = useState<readonly RouteArrivalPrompt[]>([])
+  const [arrivalSnapshot, setArrivalSnapshot] = useState<{
+    readonly stopId: string
+    readonly snapshot: ShuttleArrivalSnapshot
+  } | null>(null)
+
+  useEffect(() => {
+    const updateVisibility = (): void => {
+      setIsPageVisible(document.visibilityState === 'visible')
+      setObservedNow(Date.now())
+    }
+    document.addEventListener('visibilitychange', updateVisibility)
+    return () => document.removeEventListener('visibilitychange', updateVisibility)
+  }, [])
 
   useEffect(() => {
     const fix = location.latestFix
@@ -185,14 +215,12 @@ export function useRouteFollowing(
 
   const {
     currentStopId,
-    dismissedStopIds,
-    pendingRouteId,
+    currentStopConfirmed,
     activeFollowing,
     announcement,
     announcementRevision,
   } = workflowState
   const currentStop = currentStopId ? transitIndex?.stopById.get(currentStopId) ?? null : null
-  const pendingRoute = pendingRouteId ? transitIndex?.routeById.get(pendingRouteId) ?? null : null
   const activeRoute = activeFollowing ? transitIndex?.routeById.get(activeFollowing.routeId) ?? null : null
   const activeStops = useMemo(() => activeRoute && transitIndex
     ? activeRoute.stopIds.flatMap((stopId) => {
@@ -200,16 +228,112 @@ export function useRouteFollowing(
       return stop ? [stop] : []
     })
     : [], [activeRoute, transitIndex])
-  const suggestion = useMemo(() => (
-    !currentStopId && !pendingRouteId && !activeFollowing && location.status === 'tracking' && transitIndex
-      ? findNearbyBusStopSuggestion(location.latestFix, transitIndex, dismissedStopIds, now)
-      : null
-  ), [activeFollowing, currentStopId, dismissedStopIds, location, now, pendingRouteId, transitIndex])
-  const pendingRouteSuggestion = useMemo(() => (
-    pendingRoute && location.status === 'tracking' && transitIndex
-      ? findRouteStopSuggestion(location.latestFix, pendingRoute, transitIndex, dismissedStopIds, now)
-      : null
-  ), [dismissedStopIds, location, now, pendingRoute, transitIndex])
+  const suggestion = useMemo(() => {
+    if (!isPageVisible || !transitIndex || !isRouteFollowFixUsable(location.latestFix, now)) return null
+    if (location.status !== 'tracking' || activeFollowing) return null
+    const stopId = nearbyStopQueue[0]
+    return stopId ? transitIndex.stopById.get(stopId) ?? null : null
+  }, [activeFollowing, isPageVisible, location.latestFix, location.status, nearbyStopQueue, now, transitIndex])
+  const canPromptAtCurrentStop = Boolean(
+    isPageVisible && currentStop && currentStopConfirmed && location.status === 'tracking' &&
+    isWithinStopConfirmationRadius(location.latestFix, currentStop, now),
+  )
+
+  useEffect(() => {
+    if (!isPageVisible || !transitIndex || location.status !== 'tracking' || activeFollowing) {
+      return
+    }
+    const fix = location.latestFix
+    if (!isRouteFollowFixUsable(fix, now)) {
+      return
+    }
+
+    const withinResetRadius = new Set(
+      findNearbyBusStopCandidates(fix, transitIndex, STOP_CONFIRMATION_RESET_RADIUS_METERS, now)
+        .map(({ stop }) => stop.id),
+    )
+    const candidates = findNearbyBusStopCandidates(fix, transitIndex, undefined, now)
+    const candidateStopIds = candidates.map(({ stop }) => stop.id)
+    const updateTimer = window.setTimeout(() => {
+      for (const stopId of encounteredStopIdsRef.current) {
+        if (!withinResetRadius.has(stopId)) encounteredStopIdsRef.current.delete(stopId)
+      }
+      const newlyReachedStopIds = candidateStopIds
+        .filter((stopId) => !encounteredStopIdsRef.current.has(stopId))
+      for (const stopId of newlyReachedStopIds) encounteredStopIdsRef.current.add(stopId)
+      setNearbyStopQueue((current) => [
+        ...current.filter((stopId) => withinResetRadius.has(stopId)),
+        ...newlyReachedStopIds.filter((stopId) => !current.includes(stopId)),
+      ])
+    }, 0)
+    return () => window.clearTimeout(updateTimer)
+  }, [activeFollowing, isPageVisible, location.latestFix, location.status, now, transitIndex])
+
+  useEffect(() => {
+    if (
+      !isPageVisible || !loadArrivals || !currentStop || activeFollowing || !canPromptAtCurrentStop
+    ) return
+
+    let disposed = false
+    let refreshTimer: number | null = null
+    let controller: AbortController | null = null
+
+    const load = async (): Promise<void> => {
+      controller = new AbortController()
+      try {
+        const snapshot = await loadArrivals(
+          [{ stopId: currentStop.id, stopName: currentStop.longName }],
+          controller.signal,
+        )
+        if (!disposed) setArrivalSnapshot({ stopId: currentStop.id, snapshot })
+      } catch (error: unknown) {
+        if (!disposed && !(error instanceof Error && error.name === 'AbortError')) setArrivalSnapshot(null)
+      }
+      if (!disposed) refreshTimer = window.setTimeout(() => { void load() }, SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS)
+    }
+
+    void load()
+    return () => {
+      disposed = true
+      controller?.abort()
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+    }
+  }, [activeFollowing, arrivalDataRevision, canPromptAtCurrentStop, currentStop, isPageVisible, loadArrivals])
+
+  useEffect(() => {
+    if (
+      !transitIndex || !currentStop || !arrivalSnapshot || arrivalSnapshot.stopId !== currentStop.id ||
+      !isPageVisible || location.status !== 'tracking' || activeFollowing || !canPromptAtCurrentStop
+    ) return
+
+    const observationAt = Date.parse(
+      arrivalSnapshot.snapshot.stopObservations?.[currentStop.id]?.observedAt ?? arrivalSnapshot.snapshot.observedAt,
+    )
+    const ageMs = Math.max(0, now - observationAt)
+    if (
+      !Number.isFinite(observationAt) || ageMs > SHUTTLE_ARRIVAL_MAX_AGE_MS ||
+      arrivalSnapshot.snapshot.unavailableStopIds?.includes(currentStop.id)
+    ) return
+
+    const arrivals = arrivalSnapshot.snapshot.stops[currentStop.id] ?? {}
+    const routes = [...(transitIndex.routeIdsByStopId.get(currentStop.id) ?? [])]
+      .flatMap((routeId) => {
+        const route = transitIndex.routeById.get(routeId)
+        const nextArrivalSeconds = arrivals[routeId]?.upcomingArrivalSeconds[0]
+        if (!route || nextArrivalSeconds === undefined) return []
+        const secondsUntilArrival = nextArrivalSeconds - Math.floor(ageMs / 1_000)
+        return secondsUntilArrival >= 0 && secondsUntilArrival <= 60
+          ? [{ stop: currentStop, route, createdAtMs: now }]
+          : []
+      })
+    const newPrompts = routes.filter(({ route }) => !arrivalPromptedRouteIdsRef.current.has(route.id))
+    if (newPrompts.length === 0) return
+    for (const { route } of newPrompts) arrivalPromptedRouteIdsRef.current.add(route.id)
+    setArrivalQueue((current) => [
+      ...current,
+      ...newPrompts.filter(({ route }) => !current.some((prompt) => prompt.route.id === route.id)),
+    ])
+  }, [activeFollowing, arrivalSnapshot, canPromptAtCurrentStop, currentStop, isPageVisible, location.status, now, transitIndex])
   useEffect(() => {
     if (!activeFollowing || !activeRoute || !transitIndex || location.status !== 'tracking') {
       arrivalSampleRef.current = null
@@ -238,12 +362,15 @@ export function useRouteFollowing(
     const stopIndex = activeFollowing.stopIndex + 1
     const reachedStop = transitIndex.stopById.get(activeRoute.stopIds[stopIndex])
     if (reachedStop) {
+      encounteredStopIdsRef.current.add(reachedStop.id)
+      arrivalPromptedRouteIdsRef.current.clear()
       dispatch({
         type: 'stop-reached',
         routeId: activeFollowing.routeId,
         previousStopIndex: activeFollowing.stopIndex,
         stopId: reachedStop.id,
         stopIndex,
+        confirmed: true,
         announcement: stopIndex === activeRoute.stopIds.length - 1
           ? `${activeRoute.id} · Arrived · ${reachedStop.shortName || reachedStop.longName}`
           : `${activeRoute.id} · ${reachedStop.shortName || reachedStop.longName} · Approx.`,
@@ -251,89 +378,81 @@ export function useRouteFollowing(
     }
   }, [activeFollowing, activeRoute, dispatch, location.latestFix, location.status, now, transitIndex])
 
-  const setCurrentStop = (stopId: string): void => {
-    const stop = transitIndex?.stopById.get(stopId)
-    if (!stop) return
+  const confirmSuggestion = (): void => {
+    if (!suggestion) return
+    for (const stopId of nearbyStopQueue) encounteredStopIdsRef.current.add(stopId)
+    setNearbyStopQueue([])
     arrivalSampleRef.current = null
-
-    const route = activeFollowing ? transitIndex?.routeById.get(activeFollowing.routeId) : undefined
-    const stopIndex = route ? getRouteStartIndex(route, stopId) : -1
-    const nextActiveFollowing = activeFollowing && stopIndex >= 0
-      ? { ...activeFollowing, startIndex: stopIndex, stopIndex }
-      : null
+    arrivalPromptedRouteIdsRef.current.clear()
+    setArrivalQueue([])
     dispatch({
       type: 'set-current-stop',
-      stopId,
-      activeFollowing: nextActiveFollowing,
-      announcement: nextActiveFollowing && route
-        ? `${route.id} · ${stop.shortName || stop.longName} · Approx.`
-        : `Current stop · ${stop.shortName || stop.longName}`,
+      stopId: suggestion.id,
+      announcement: `Here · ${suggestion.shortName || suggestion.longName}`,
     })
-    if (nextActiveFollowing) lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
-  }
-
-  const clearCurrentStop = (): void => {
-    if (!currentStopId) return
-    dispatch({
-      type: 'clear-current-stop',
-      announcement: 'Current stop cleared',
-    })
-    arrivalSampleRef.current = null
-  }
-
-  const confirmSuggestion = (): void => {
-    if (suggestion) setCurrentStop(suggestion.id)
   }
 
   const dismissSuggestion = (): void => {
     if (!suggestion) return
-    dispatch({
-      type: 'dismiss-suggestion',
-      stopId: suggestion.id,
-      announcement: `Dismissed · ${suggestion.shortName || suggestion.longName}`,
-    })
+    setNearbyStopQueue((current) => current.filter((stopId) => stopId !== suggestion.id))
   }
 
-  const startAtStop = (stopId: string): void => {
-    if (!pendingRoute || !transitIndex || !pendingRoute.stopIds.includes(stopId)) return
-    const stop = transitIndex.stopById.get(stopId)
-    const stopIndex = getRouteStartIndex(pendingRoute, stopId)
-    if (!stop || stopIndex < 0) return
-    dispatch({
-      type: 'start-route',
-      routeId: pendingRoute.id,
-      stopId,
-      startIndex: stopIndex,
-      stopIndex,
-      announcement: `Following ${pendingRoute.id} · ${stop.shortName || stop.longName} · Approx.`,
-    })
-    lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
+  const clearCurrentStop = (): void => {
+    if (!currentStopConfirmed || !currentStopId || activeFollowing) return
     arrivalSampleRef.current = null
+    setArrivalQueue([])
+    setNearbyStopQueue([])
+    setArrivalSnapshot(null)
+    arrivalPromptedRouteIdsRef.current.clear()
+    dispatch({ type: 'clear-current-stop', announcement: 'Current bus stop cleared' })
   }
 
   const requestFollowRoute = (routeId: string): boolean => {
     const route = transitIndex?.routeById.get(routeId)
-    if (!route) return false
-    const currentIndex = currentStopId ? getRouteStartIndex(route, currentStopId) : -1
-    if (currentIndex >= 0 && currentStop) {
-      dispatch({
-        type: 'start-route',
-        routeId,
-        stopId: currentStop.id,
-        startIndex: currentIndex,
-        stopIndex: currentIndex,
-        announcement: `Following ${route.id} · ${currentStop.shortName || currentStop.longName} · Approx.`,
-      })
-      lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
-      arrivalSampleRef.current = null
-      return true
-    }
+    if (!route || !currentStop || !currentStopConfirmed) return false
+    const currentIndex = getRouteStartIndex(route, currentStop.id)
+    if (currentIndex < 0) return false
 
-    dispatch({ type: 'request-route', routeId })
-    return false
+    encounteredStopIdsRef.current.add(currentStop.id)
+    dispatch({
+      type: 'start-route',
+      routeId,
+      stopId: currentStop.id,
+      startIndex: currentIndex,
+      stopIndex: currentIndex,
+      confirmed: true,
+      announcement: `Following ${route.id} · ${currentStop.shortName || currentStop.longName} · Approx.`,
+    })
+    setArrivalQueue([])
+    setNearbyStopQueue([])
+    lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
+    arrivalSampleRef.current = null
+    return true
   }
 
-  const cancelRouteStart = (): void => dispatch({ type: 'cancel-route-start' })
+  const followArrivalRoute = (): boolean => {
+    const prompt = arrivalQueue.find((item) => (
+      item.stop.id === currentStopId && now - (item.createdAtMs ?? 0) <= 60_000
+    ))
+    if (!prompt) return false
+    const started = requestFollowRoute(prompt.route.id)
+    if (started) {
+      setArrivalQueue([])
+      setNearbyStopQueue([])
+    }
+    return started
+  }
+
+  const dismissArrivalPrompt = (): void => {
+    const prompt = arrivalQueue.find((item) => (
+      item.stop.id === currentStopId && now - (item.createdAtMs ?? 0) <= 60_000
+    ))
+    if (!prompt) return
+    setArrivalQueue((current) => current.filter((item) => (
+      item.route.id !== prompt.route.id || item.stop.id !== prompt.stop.id
+    )))
+  }
+
 
   const stopFollowing = (): void => {
     dispatch({
@@ -341,6 +460,7 @@ export function useRouteFollowing(
       ...(activeRoute ? { announcement: `Stopped · ${activeRoute.id}` } : {}),
     })
     arrivalSampleRef.current = null
+    setNearbyStopQueue([])
   }
 
   const demoFollowRoute = (routeId: string): void => {
@@ -358,8 +478,12 @@ export function useRouteFollowing(
         previousStopIndex: activeFollowing.stopIndex,
         stopId: stop.id,
         stopIndex,
+        confirmed: false,
         announcement: `Demo · ${route.id} · ${stop.shortName || stop.longName}`,
       })
+      encounteredStopIdsRef.current.add(stop.id)
+      arrivalPromptedRouteIdsRef.current.clear()
+      setArrivalQueue([])
       lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
       arrivalSampleRef.current = null
       return
@@ -375,32 +499,38 @@ export function useRouteFollowing(
       stopId: startStop.id,
       startIndex: 0,
       stopIndex: 0,
+      confirmed: false,
       announcement: `Demo · ${route.id} · ${startStop.shortName || startStop.longName}`,
     })
+    encounteredStopIdsRef.current.add(startStop.id)
+    arrivalPromptedRouteIdsRef.current.clear()
+    setArrivalQueue([])
     lastProgressFixTimestampRef.current = location.latestFix?.timestamp ?? null
     arrivalSampleRef.current = null
   }
 
   return {
     currentStop,
-    dismissedStopIds,
+    hereStopId: currentStopConfirmed ? currentStopId : null,
     suggestion,
-    pendingRoute,
-    pendingRouteSuggestion,
+    arrivalPrompt: isPageVisible && currentStopConfirmed && !activeFollowing &&
+      location.status === 'tracking' && canPromptAtCurrentStop
+      ? arrivalQueue.find((item) => (
+        item.stop.id === currentStopId && now - (item.createdAtMs ?? 0) <= 60_000
+      )) ?? null
+      : null,
     activeRoute,
     activeStops,
     activeStartIndex: activeFollowing?.startIndex ?? null,
     activeStopIndex: activeFollowing?.stopIndex ?? null,
     announcement,
     announcementRevision,
-    setCurrentStop,
-    clearCurrentStop,
     confirmSuggestion,
     dismissSuggestion,
-    requestFollowRoute,
+    clearCurrentStop,
+    followArrivalRoute,
+    dismissArrivalPrompt,
     demoFollowRoute,
-    startAtStop,
-    cancelRouteStart,
     stopFollowing,
   }
 }

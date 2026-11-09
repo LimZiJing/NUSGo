@@ -29,6 +29,9 @@ export interface StopsWorkspaceState {
 interface StopsWorkspaceProps {
   readonly minuteFormat: MinuteFormat
   readonly transitIndex: TransitIndex | null
+  readonly currentStopId?: string | null
+  readonly isFollowing?: boolean
+  readonly onClearCurrentStop?: () => void
   readonly mapCenter: { readonly longitude: number; readonly latitude: number } | null
   readonly location: LocationTrackingState
   readonly active: boolean
@@ -56,6 +59,9 @@ interface StopsWorkspaceProps {
 const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspaceProps>(function StopsWorkspaceView({
   minuteFormat,
   transitIndex,
+  currentStopId = null,
+  isFollowing = false,
+  onClearCurrentStop,
   mapCenter,
   location,
   active,
@@ -145,6 +151,9 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
     >
       <StopsContent
         selectedStop={workflow.selectedStop}
+        currentStopId={currentStopId}
+        isFollowing={isFollowing}
+        onClearCurrentStop={onClearCurrentStop}
         backLabel={backLabel}
         onBackToStops={() => onBackToStops(workflow.backToStops)}
         onSelectOppositeStop={onSelectOppositeStop}

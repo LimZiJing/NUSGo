@@ -96,13 +96,19 @@
     grid-template-areas:
       'legend'
       'actions'
-      'test';
+      'test'
+      'route-test';
     gap: var(--space-2);
     align-items: start;
   }
 
   .map-control-stack > .map-control-actions {
     grid-area: actions;
+  }
+
+  .map-control-stack > .route-following-dev-demo-controls {
+    grid-area: route-test;
+    justify-self: start;
   }
 
   .map-control-stack > .map-legend {

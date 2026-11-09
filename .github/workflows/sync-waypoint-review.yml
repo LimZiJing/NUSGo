@@ -1,0 +1,62 @@
+name: Sync private waypoint review exports
+
+on:
+  workflow_call:
+    inputs:
+      tools_ref:
+        description: Branch or tag of NUSGo that contains the sync script
+        required: false
+        type: string
+        default: community-waypoints
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: waypoint-review-sync-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the private submissions repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          path: queue
+          token: ${{ github.token }}
+
+      - name: Check out NUSGo tools and public data
+        uses: actions/checkout@v4
+        with:
+          repository: LimZiJing/NUSGo
+          ref: ${{ inputs.tools_ref }}
+          path: tools
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rebuild private review GeoJSON
+        working-directory: queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COMMUNITY_WAYPOINT_ISSUES_REPOSITORY: ${{ github.repository }}
+        run: node --experimental-strip-types ../tools/scripts/sync-waypoint-issues.mjs --public-data-file ../tools/frontend/public/data/community-waypoints.geojson --output-dir data/generated
+
+      - name: Commit changed review files
+        working-directory: queue
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/generated/to-review.geojson data/generated/approved.geojson
+          if git diff --cached --quiet; then
+            echo "Review files are unchanged."
+            exit 0
+          fi
+          git commit -m "chore: refresh waypoint review exports"
+          git push

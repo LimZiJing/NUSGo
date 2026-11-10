@@ -2,6 +2,7 @@
 
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { GALLERY_THEMES } from '../themes/catalog'
 import { Gallery, GalleryPanel } from './gallery'
 
 afterEach(() => {
@@ -57,21 +58,19 @@ describe('controls gallery', () => {
   it('renders a frame for each theme on the gallery page', () => {
     const { container } = render(<Gallery />)
 
-    expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src'))).toEqual([
-      expect.stringContaining('frame=light'),
-      expect.stringContaining('frame=dark'),
-      expect.stringContaining('frame=matcha'),
-      expect.stringContaining('frame=sakura'),
-      expect.stringContaining('frame=nus'),
-    ])
+    expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src')))
+      .toEqual(GALLERY_THEMES.map(({ id }) => expect.stringContaining(`frame=${id}`)))
   })
 
-  it.each(['matcha', 'sakura', 'nus'] as const)('applies the %s theme through data-theme', (theme) => {
-    render(<GalleryPanel theme={theme} />)
+  it.each(GALLERY_THEMES.filter(({ category }) => category === 'other'))(
+    'applies the $label theme through data-theme',
+    ({ id }) => {
+      render(<GalleryPanel theme={id} />)
 
-    expect(document.documentElement.dataset.theme).toBe(theme)
-    expect(screen.getByRole('main', { name: `${theme} theme controls` })).toBeTruthy()
-  })
+      expect(document.documentElement.dataset.theme).toBe(id)
+      expect(screen.getByRole('main', { name: `${id} theme controls` })).toBeTruthy()
+    },
+  )
 
   it('renders a single themed panel when a frame is requested', () => {
     window.history.replaceState(null, '', '/?gallery&frame=dark')

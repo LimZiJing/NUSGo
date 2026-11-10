@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T17:13:45Z",
+  "generatedAt": "2026-11-05T17:30:04Z",
   "title": "Design System: NUSGo",
   "extensions": {
     "colorMeta": {
@@ -45,6 +45,72 @@
         "displayName": "Sakura accent",
         "canonical": "#963b56",
         "tonalRamp": ["#1c0108", "#41061c", "#6b1032", "#8b314d", "#ac4e68", "#cd6c86", "#fd9db4", "#ffe8ec"]
+      },
+      "rainroom-accent": {
+        "role": "primary",
+        "displayName": "Rainroom lamplight",
+        "canonical": "#f28a24",
+        "tonalRamp": ["#1d0b04", "#3b1608", "#5c220c", "#813311", "#a8481f", "#d66e12", "#f28a24", "#ffe0bf"]
+      },
+      "rainroom-lamplight": {
+        "role": "tertiary",
+        "displayName": "Rainroom bulb glow",
+        "canonical": "#f28a24",
+        "tonalRamp": ["#1d0b04", "#3b1608", "#5c220c", "#813311", "#a8481f", "#d66e12", "#f28a24", "#ffe0bf"]
+      },
+      "rainroom-amber": {
+        "role": "tertiary",
+        "displayName": "Rainroom amber",
+        "canonical": "#e8b466",
+        "tonalRamp": ["#110a02", "#301d00", "#503400", "#734d00", "#976707", "#b48a4a", "#d1b287", "#eee3d3"]
+      },
+      "rainroom-slate": {
+        "role": "secondary",
+        "displayName": "Rainroom slate blue",
+        "canonical": "#152a40",
+        "tonalRamp": ["#050a10", "#0b1521", "#152a40", "#29425c", "#45627e", "#6b88a3", "#a0b6c8", "#dce7ef"]
+      },
+      "rainroom-wood": {
+        "role": "tertiary",
+        "displayName": "Rainroom warm wood",
+        "canonical": "#845638",
+        "tonalRamp": ["#110905", "#301c10", "#51321d", "#76492b", "#946547", "#b2886d", "#cfb09d", "#eee2db"]
+      },
+      "rainroom-dark-oak": {
+        "role": "tertiary",
+        "displayName": "Rainroom dark oak",
+        "canonical": "#4a3427",
+        "tonalRamp": ["#0d0805", "#24170f", "#3b271b", "#4a3427", "#6b4b35", "#8e6c54", "#bba08b", "#f0e8e2"]
+      },
+      "rainroom-moss": {
+        "role": "tertiary",
+        "displayName": "Rainroom moss",
+        "canonical": "#586b50",
+        "tonalRamp": ["#090c08", "#1c2419", "#323f2c", "#495c41", "#65785d", "#879880", "#afbcaa", "#e1e6df"]
+      },
+      "rainroom-pine": {
+        "role": "tertiary",
+        "displayName": "Rainroom pine",
+        "canonical": "#5f7b59",
+        "tonalRamp": ["#0a1009", "#1c2d1b", "#384b32", "#5f7b59", "#7e986f", "#a3b697", "#c8d4c1", "#e8eee3"]
+      },
+      "rainroom-surface": {
+        "role": "neutral",
+        "displayName": "Rainroom deep blue surface",
+        "canonical": "#0c1924",
+        "tonalRamp": ["#050b11", "#0c1924", "#20303c", "#394e5c", "#596d7c", "#82929f", "#b0bdc5", "#e5ebee"]
+      },
+      "rainroom-surface-raised": {
+        "role": "neutral",
+        "displayName": "Rainroom raised blue panel",
+        "canonical": "#122330",
+        "tonalRamp": ["#070c12", "#122330", "#253845", "#405767", "#5c7484", "#8498a5", "#b1bec6", "#e5e9ec"]
+      },
+      "rainroom-surface-step": {
+        "role": "neutral",
+        "displayName": "Rainroom slate step surface",
+        "canonical": "#263a46",
+        "tonalRamp": ["#080d11", "#162a35", "#263a46", "#405564", "#607482", "#8498a4", "#b4c0c8", "#e7ebee"]
       }
     },
     "typographyMeta": {
@@ -191,10 +257,10 @@
   ],
   "narrative": {
     "northStar": "The Quiet Wayfinder",
-    "overview": "NUSGo is warm, approachable, and grounded in the campus it helps people navigate. The shared map remains the main spatial reference; Explore, Stops, and Plan place focused workflows over it so people can keep their bearings while searching, checking arrivals, or planning a trip. Familiar system typography, soft tonal surfaces, and rounded controls make the interface welcoming without taking attention away from places and routes.\n\nThe same control and status language carries across Light, Dark, NUS, Matcha, and Sakura. Soft shadows give panels and floating controls structural separation from the map. Official route colors appear in route-specific contexts; the wider network stays neutral.",
+    "overview": "NUSGo is warm, approachable, and grounded in the campus it helps people navigate. The shared map remains the main spatial reference; Explore, Stops, and Plan place focused workflows over it so people can keep their bearings while searching, checking arrivals, or planning a trip. Familiar system typography, soft tonal surfaces, and rounded controls make the interface welcoming without taking attention away from places and routes.\n\nThe same control and status language carries across Light, Dark, NUS, Matcha, Sakura, and Rainroom. Soft shadows give panels and floating controls structural separation from the map. Official route colors appear in route-specific contexts; the wider network stays neutral. Rainroom keeps its blue-hour map dark and clear, frames the selected tab in a thicker dark-oak rim over walnut and amber, uses cool slate-blue workflow sheets, and reserves pine for a small panel-seam accent. Rain streaks keep their slow fall while droplet highlights fade in place, with reduced-motion settings keeping the atmosphere still.",
     "keyCharacteristics": [
       "The map carries campus geography while panels carry the current workflow.",
-      "Theme-aware surfaces and accents preserve the same control language across all five palettes.",
+      "Theme-aware surfaces and accents preserve the same control language across all six palettes.",
       "Rounded controls and softly separated cards keep dense transit information approachable.",
       "Route color stays contextual to the selected route."
     ],

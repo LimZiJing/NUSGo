@@ -7,6 +7,62 @@ const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const styles = readFileSync(resolve(stylesDirectory, 'sheet.css'), 'utf8')
 const lightTheme = readFileSync(resolve(stylesDirectory, '../../styles/shared/themes/light.css'), 'utf8')
 const darkTheme = readFileSync(resolve(stylesDirectory, '../../styles/shared/themes/dark.css'), 'utf8')
+const exploreStyles = readFileSync(resolve(stylesDirectory, '../../../features/explore/styles/explore-content.css'), 'utf8')
+const stopsStyles = readFileSync(resolve(stylesDirectory, '../../../features/stops/styles/stops-content.css'), 'utf8')
+const planStyles = readFileSync(resolve(stylesDirectory, '../../../features/plan/styles/plan-content.css'), 'utf8')
+const morePanelStyles = readFileSync(resolve(stylesDirectory, '../../styles/shared/more-panel.css'), 'utf8')
+
+function readRule(stylesheet: string, selector: string): string {
+  const escapedSelector = selector.replaceAll('.', '\\.')
+  const match = stylesheet.match(new RegExp(`${escapedSelector}\\s*{([^}]*)}`, 's'))
+
+  if (!match) {
+    throw new Error(`Missing CSS rule for ${selector}`)
+  }
+
+  return match[1]
+}
+
+function readRules(stylesheet: string, selector: string): string[] {
+  const escapedSelector = selector.replaceAll('.', '\\.')
+
+  return [...stylesheet.matchAll(new RegExp(`${escapedSelector}\\s*{([^}]*)}`, 'gs'))]
+    .map(([, declarations]) => declarations)
+}
+
+describe('mobile sheet surfaces', () => {
+  it('uses the shared page surface for workflow and settings sheets', () => {
+    expect(readRule(styles, '.navigation-panel')).toMatch(/background:\s*var\(--surface\);/)
+
+    for (const [stylesheet, selector] of [
+      [exploreStyles, '.navigation-panel.explore-sheet'],
+      [stopsStyles, '.navigation-panel.stops-sheet'],
+      [planStyles, '.navigation-panel.plan-sheet'],
+    ]) {
+      const hasBackgroundOverride = readRules(stylesheet, selector)
+        .some((declarations) => /background(?:-color)?\s*:/.test(declarations))
+
+      expect(hasBackgroundOverride, selector).toBe(false)
+    }
+
+    expect(readRule(morePanelStyles, '.more-panel-surface')).toMatch(/background:\s*var\(--surface\);/)
+
+    const fullSettingsRule = morePanelStyles.match(
+      /\.mobile-sheet-popup\.more-panel-surface\[data-page='settings'\]\[data-detent='full'\][^{}]*\{([^}]*)\}/s,
+    )
+
+    expect(fullSettingsRule?.[1]).toMatch(/background:\s*var\(--surface\);/)
+  })
+
+  it('keeps sticky Plan wrappers blended with the sheet surface', () => {
+    for (const selector of ['.plan-trip-pin', '.plan-search-header']) {
+      const usesSheetSurface = readRules(planStyles, selector)
+        .some((declarations) => /background:\s*var\(--surface\);/.test(declarations))
+
+      expect(usesSheetSurface, selector).toBe(true)
+    }
+  })
+})
 
 describe('mobile sheet handle focus styles', () => {
   it('shows keyboard focus as a tint without an outline ring', () => {

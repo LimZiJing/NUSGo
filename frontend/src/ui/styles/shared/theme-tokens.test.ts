@@ -1,9 +1,14 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
+const themeFileNames = readdirSync(resolve(stylesDirectory, 'themes'), { withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+  .map((entry) => entry.name)
+  .sort()
+const themeNames = themeFileNames.map((fileName) => fileName.replace(/\.css$/, ''))
 
 function readStyleFile(name: string): string {
   return readFileSync(resolve(stylesDirectory, name), 'utf8')
@@ -85,18 +90,13 @@ function contrastRatio(foreground: string, background: string): number {
 }
 
 describe('semantic theme tokens', () => {
-  it('defines the same tokens for light and dark themes', () => {
-    const lightTokens = readCustomPropertyNames(readStyleFile('themes/light.css'))
-    const darkTokens = readCustomPropertyNames(readStyleFile('themes/dark.css'))
+  it.each(themeFileNames)('includes the shared surface tokens needed by sheets in %s', (fileName) => {
+    const tokens = readCustomPropertyNames(readStyleFile(`themes/${fileName}`))
 
-    expect(darkTokens).toEqual(lightTokens)
-  })
-
-  it('includes the shared token groups needed by UI components', () => {
-    const lightTokens = readCustomPropertyNames(readStyleFile('themes/light.css'))
-
-    expect(lightTokens).toEqual(expect.arrayContaining([
+    expect(tokens).toEqual(expect.arrayContaining([
       '--surface',
+      '--surface-raised',
+      '--surface-card',
       '--text-primary',
       '--border-default',
       '--accent',
@@ -112,23 +112,32 @@ describe('semantic theme tokens', () => {
     ]))
   })
 
-  it('loads every theme from the shared style entrypoint', () => {
-    const indexStyles = readStyleFile('index.css')
+  it.each(themeNames)('inherits the theme surface on mobile panels in the %s theme', (themeName) => {
+    const styles = readStyleFile(`themes/${themeName}.css`)
+    const mobileSurfaceOverride = styles.match(new RegExp(
+      `:root\\[data-theme=['"]${themeName}['"]\\]\\s+\\.navigation-panel\\s*\\{[^}]*--surface\\s*:`,
+    ))
 
-    expect(indexStyles).toContain('@import \'./themes/light.css\';')
-    expect(indexStyles).toContain('@import \'./themes/dark.css\';')
-    expect(indexStyles).toContain('@import \'./themes/matcha.css\';')
-    expect(indexStyles).toContain('@import \'./themes/sakura.css\';')
-    expect(indexStyles).toContain('@import \'./themes/nus.css\';')
+    expect(mobileSurfaceOverride).toBeNull()
   })
 
-  it.each([
-    ['light', 'themes/light.css'],
-    ['dark', 'themes/dark.css'],
-    ['matcha', 'themes/matcha.css'],
-    ['sakura', 'themes/sakura.css'],
-    ['nus', 'themes/nus.css'],
-  ])('keeps key theme text pairs readable in the %s theme', (_themeName, fileName) => {
+  it('loads every theme from the shared style entrypoint', () => {
+    const indexStyles = readStyleFile('index.css')
+    const importedThemeFiles = [...indexStyles.matchAll(/@import ['"]\.\/themes\/([^'"]+\.css)['"];?/g)]
+      .map(([, fileName]) => fileName)
+      .sort()
+
+    expect(importedThemeFiles).toEqual(themeFileNames)
+
+    for (const themeName of themeNames) {
+      const themeStyles = readStyleFile(`themes/${themeName}.css`)
+
+      expect(themeStyles).toMatch(new RegExp(`:root\\[data-theme=['"]${themeName}['"]\\]`))
+    }
+  })
+
+  it.each(themeFileNames.map((fileName) => [fileName.replace(/\.css$/, ''), `themes/${fileName}`] as const))(
+    'keeps key theme text pairs readable in the %s theme', (_themeName, fileName) => {
     const styles = readStyleFile(fileName)
     const pairs = [
       ['--text-primary', '--surface'],
@@ -147,13 +156,12 @@ describe('semantic theme tokens', () => {
 
       expect(ratio, `${foregroundToken} on ${backgroundToken}`).toBeGreaterThanOrEqual(4.5)
     }
-  })
+    },
+  )
 })
 
 describe('control token contrast', () => {
-  const themes = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
-
-  it.each(themes)('keeps the soft tonal control colours accessible in the %s theme', (themeName) => {
+  it.each(themeNames)('keeps the soft tonal control colours accessible in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)
     const ratioOf = (foreground: string, background: string) => contrastRatio(
       resolveColour(styles, foreground),
@@ -182,11 +190,11 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themes)('defines --control-border in the %s theme', (themeName) => {
+  it.each(themeNames)('defines --control-border in the %s theme', (themeName) => {
     expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
   })
 
-  it.each(themes)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
+  it.each(themeNames)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)
     const loadLevelTokens = [
       '--load-level-low',
@@ -205,7 +213,7 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themes)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
+  it.each(themeNames)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)
     // --text-favorite paints star icons only, so WCAG 1.4.11's 3:1 for non-text graphics
     // applies. --surface-card is the stops list card and --accent-soft the settings tile.
@@ -218,7 +226,7 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themes)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
+  it.each(themeNames)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
     const styles = readStyleFile(`themes/${themeName}.css`)
     // --status-success-strong paints the recommended journey heading on a card;
     // --text-success-strong is its text-named twin.
@@ -241,7 +249,7 @@ describe('control token contrast', () => {
       return contrastRatio(resolveColour(styles, '--border-divider'), resolveColour(styles, '--surface-card'))
     }
 
-    it.each(themes)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
+    it.each(themeNames)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
       const styles = readStyleFile(`themes/${themeName}.css`)
       const previous = contrastRatio(resolveColour(styles, '--border-subtle'), resolveColour(styles, '--surface-card'))
 
@@ -280,7 +288,7 @@ describe('control token contrast', () => {
   })
 
 
-  it.each(themes)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
+  it.each(themeNames)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
     const styles = readStyleFile('themes/' + themeName + '.css')
     const tokens = readCustomPropertyNames(styles)
 

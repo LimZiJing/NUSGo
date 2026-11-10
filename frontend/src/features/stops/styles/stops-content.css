@@ -546,7 +546,6 @@
   .navigation-panel.stops-sheet {
     border: 1px solid var(--border-subtle);
     border-bottom: 0;
-    background: var(--surface-raised);
   }
 
   .navigation-panel .stops-list-selector {

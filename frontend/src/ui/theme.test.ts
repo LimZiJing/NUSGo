@@ -7,6 +7,13 @@ import {
   saveThemePreference,
   THEME_PREFERENCE_STORAGE_KEY,
 } from './theme'
+import type { ThemePreference } from './theme'
+import { THEME_CATALOG } from './themes/catalog'
+
+const THEME_PREFERENCES: readonly ThemePreference[] = [
+  'system',
+  ...THEME_CATALOG.map(({ id }) => id),
+]
 
 afterEach(() => {
   delete document.documentElement.dataset.theme
@@ -23,7 +30,7 @@ describe('theme', () => {
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 
-  it.each(['system', 'light', 'dark', 'nus', 'matcha', 'sakura'] as const)(
+  it.each(THEME_PREFERENCES)(
     'reads and saves the %s preference',
     (preference) => {
       saveThemePreference(preference)

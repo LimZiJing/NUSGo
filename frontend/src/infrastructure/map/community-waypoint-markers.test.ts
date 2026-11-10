@@ -71,8 +71,9 @@ describe('createCommunityWaypointMarkers', () => {
 
     expect(button?.type).toBe('button')
     expect(button?.dataset.category).toBe('water_cooler')
+    expect(button?.dataset.hoverTreatment).toBe('custom')
     expect(button?.getAttribute('aria-label')).toBe('Open details for Water cooler')
-    expect(button?.querySelector('.community-waypoint-marker-token')?.textContent).toBe('W')
+    expect(button?.querySelector('.community-waypoint-marker-icon svg')?.classList.contains('lucide-droplets')).toBe(true)
     expect(markerState.instances[0]?.coordinates).toEqual([103.78, 1.29])
 
     await user.click(button!)
@@ -101,7 +102,7 @@ describe('createCommunityWaypointMarkers', () => {
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(button.dataset.category).toBe('toilet')
     expect(button.getAttribute('aria-label')).toBe('Open details for Accessible toilet')
-    expect(button.querySelector('.community-waypoint-marker-token')?.textContent).toBe('T')
+    expect(button.querySelector('.community-waypoint-marker-icon svg')?.classList.contains('lucide-toilet')).toBe(true)
 
     markers.setWaypoints([], onSelect)
     expect(document.querySelector('.community-waypoint-marker')).toBeNull()

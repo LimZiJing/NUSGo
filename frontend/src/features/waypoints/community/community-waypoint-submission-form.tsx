@@ -272,13 +272,13 @@ export function CommunityWaypointSubmissionForm({
 
   const autoFilledBuildingRef = useRef<string | null>(null)
   useEffect(() => {
+    const previousAutoFill = autoFilledBuildingRef.current
+    const nextBuilding = nearestBuildingName ?? ''
+    autoFilledBuildingRef.current = nearestBuildingName
     setFields((current) => {
-      const canUpdateBuilding = !current.building.trim() || current.building === autoFilledBuildingRef.current
-      if (!canUpdateBuilding) return current
-      autoFilledBuildingRef.current = nearestBuildingName
-      return current.building === (nearestBuildingName ?? '')
-        ? current
-        : { ...current, building: nearestBuildingName ?? '' }
+      const canUpdateBuilding = !current.building.trim() || current.building === previousAutoFill
+      if (!canUpdateBuilding || current.building === nextBuilding) return current
+      return { ...current, building: nextBuilding }
     })
   }, [nearestBuildingName])
 

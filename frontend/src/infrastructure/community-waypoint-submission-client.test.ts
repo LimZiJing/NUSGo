@@ -23,7 +23,8 @@ describe('community waypoint submission client', () => {
       endpoint: '/api/community-waypoint-submissions',
       fetcher,
     })
-    const signal = new AbortController().signal
+    const controller = new AbortController()
+    const signal = controller.signal
 
     await submit(submission, signal)
 
@@ -33,7 +34,9 @@ describe('community waypoint submission client', () => {
     expect(request?.method).toBe('POST')
     expect(new Headers(request?.headers).get('content-type')).toBe('application/json')
     expect(JSON.parse(String(request?.body))).toEqual(submission)
-    expect(request?.signal).toBe(signal)
+    expect(request?.signal).not.toBe(signal)
+    controller.abort()
+    expect(request?.signal?.aborted).toBe(true)
   })
 
   it.each([

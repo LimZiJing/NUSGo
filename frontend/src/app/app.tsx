@@ -459,22 +459,26 @@ function App() {
   }, [commands])
   const communityWaypoints = communityDiscovery.waypoints
   const selectCommunityWaypoint = communityDiscovery.selectWaypoint
+  const communityMarkersEnabled = !waypointPlacementActive && !isMoreOpen
   const handleCommunityWaypointMapSelection = useCallback((
     waypointId: string,
     trigger: HTMLButtonElement,
   ): void => {
     const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
-    if (!waypoint) return
+    if (!waypoint || !communityMarkersEnabled) return
     selectCommunityWaypoint(waypointId, trigger)
     setCommunityExploreActive(true)
     if (isMobileViewport) {
       dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'full' })
     }
     selectNavigationView('explore')
-  }, [communityWaypoints, dispatchNavigation, isMobileViewport, selectCommunityWaypoint, selectNavigationView])
+  }, [communityMarkersEnabled, communityWaypoints, dispatchNavigation, isMobileViewport, selectCommunityWaypoint, selectNavigationView])
   useEffect(() => {
-    commands.setCommunityWaypoints(communityDiscovery.visibleWaypoints, handleCommunityWaypointMapSelection)
-  }, [commands, communityDiscovery.visibleWaypoints, handleCommunityWaypointMapSelection])
+    commands.setCommunityWaypoints(
+      communityMarkersEnabled ? communityDiscovery.visibleWaypoints : [],
+      handleCommunityWaypointMapSelection,
+    )
+  }, [commands, communityDiscovery.visibleWaypoints, communityMarkersEnabled, handleCommunityWaypointMapSelection])
   useEffect(() => () => {
     commands.setCommunityWaypoints([], handleCommunityWaypointMapSelection)
   }, [commands, handleCommunityWaypointMapSelection])

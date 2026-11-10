@@ -6,6 +6,7 @@ import { CommunityWaypointSubmissionError } from '../domain/waypoints/community-
 import { buildApiUrl } from './api/api-url'
 
 const SUBMISSION_PATH = '/api/community-waypoint-submissions'
+const SUBMISSION_TIMEOUT_MS = 20_000
 
 export type CommunityWaypointSubmitter = (
   submission: CommunityWaypointSubmission,
@@ -20,6 +21,7 @@ export function createCommunityWaypointSubmissionClient(options: {
   const fetcher = options.fetcher ?? fetch
 
   return async (submission, signal) => {
+    const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(SUBMISSION_TIMEOUT_MS)])
     let response: Response
     try {
       response = await fetcher(endpoint, {
@@ -29,7 +31,7 @@ export function createCommunityWaypointSubmissionClient(options: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(submission),
-        signal,
+        signal: requestSignal,
       })
     } catch {
       if (signal.aborted) throw new DOMException('Submission was cancelled', 'AbortError')
@@ -50,6 +52,8 @@ export function createCommunityWaypointSubmissionClient(options: {
     try {
       receipt = await response.json()
     } catch {
+      if (signal.aborted) throw new DOMException('Submission was cancelled', 'AbortError')
+      if (requestSignal.aborted) throw new CommunityWaypointSubmissionError('network')
       throw new CommunityWaypointSubmissionError('unavailable')
     }
     if (!isSubmissionReceipt(receipt)) throw new CommunityWaypointSubmissionError('unavailable')

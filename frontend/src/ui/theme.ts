@@ -1,4 +1,7 @@
-export type Theme = 'light' | 'dark' | 'nus' | 'matcha' | 'sakura'
+import { isTheme, type Theme } from './themes/catalog'
+
+export type { Theme } from './themes/catalog'
+
 export type ThemePreference = 'system' | Theme
 
 export const THEME_PREFERENCE_STORAGE_KEY = 'navus:theme-preference:v1'
@@ -21,12 +24,7 @@ export function saveThemePreference(preference: ThemePreference): void {
 }
 
 function isThemePreference(value: string | null): value is ThemePreference {
-  return value === 'system' ||
-    value === 'light' ||
-    value === 'dark' ||
-    value === 'nus' ||
-    value === 'matcha' ||
-    value === 'sakura'
+  return value === 'system' || isTheme(value)
 }
 
 export function getSystemTheme(): Theme {

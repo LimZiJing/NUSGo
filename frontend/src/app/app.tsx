@@ -13,6 +13,7 @@ import {
 import { LocationControl } from '../ui/location-control'
 import { PwaNotices } from './pwa-notices'
 import { NearbyCrosshair } from '../ui/nearby-crosshair'
+import { RainroomAtmosphere } from '../ui/themes/rainroom'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
@@ -998,6 +999,7 @@ function App() {
         {isCrosshairVisible && (
           <NearbyCrosshair insets={mapInsets} />
         )}
+        <RainroomAtmosphere />
         <div className="map-control-stack">
           {JourneyTestTimeControl && (
             <Suspense fallback={null}>

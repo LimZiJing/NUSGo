@@ -10,14 +10,6 @@ import type { CommunityWaypointSubmission, ProposedCommunityWaypointFields } fro
 const CATEGORY_VALUES = new Set<string>(COMMUNITY_WAYPOINT_CATEGORIES.map(({ value }) => value))
 const WAYPOINT_ID_PATTERN = /^cw-[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const EXPLANATION_LIMIT = 1_000
-const SUBMISSION_URL_PATTERNS = [
-  /\b[a-z][a-z\d+.-]*:\/\/\S+/i,
-  /\/\/\S+/,
-  /\b(?:www\.|data:image\/|blob:)\S+/i,
-  /\b[\w.-]+\.(?:avif|bmp|gif|heic|jpe?g|png|tiff?|webp)(?:[?#]\S*|\/\S*)?/i,
-  /\b(?:[\w-]+\.)+[a-z]{2,}(?:\/\S*)?/i,
-]
-const PHOTO_ID_REFERENCE_PATTERN = /\b(?:photo|image)[\s_-]*(?:evidence[\s_-]*)?ids?\b/i
 
 export class InvalidCommunityWaypointSubmissionError extends Error {
   constructor(message: string) {
@@ -34,11 +26,6 @@ function invalid(message: string): never {
   throw new InvalidCommunityWaypointSubmissionError(message)
 }
 
-function rejectPhotoEvidence(value: string, field: string): void {
-  if (SUBMISSION_URL_PATTERNS.some((pattern) => pattern.test(value))) invalid(field + ' must not include URLs')
-  if (PHOTO_ID_REFERENCE_PATTERN.test(value)) invalid(field + ' must not include photo evidence IDs')
-}
-
 function assertAllowedFields(input: Record<string, unknown>, allowed: ReadonlySet<string>): void {
   if (Object.keys(input).some((key) => !allowed.has(key))) {
     invalid('Submission contains unsupported fields')
@@ -50,7 +37,6 @@ function requiredText(input: Record<string, unknown>, field: string, maximumLeng
   if (typeof value !== 'string') invalid(field + ' must be text')
   const trimmed = value.trim()
   if (!trimmed) invalid(field + ' must not be empty')
-  rejectPhotoEvidence(trimmed, field)
   if ([...trimmed].length > maximumLength) invalid(field + ' is too long')
   return trimmed
 }
@@ -65,7 +51,6 @@ function optionalText(
   if (typeof value !== 'string') invalid(field + ' must be text when provided')
   const trimmed = value.trim()
   if (!trimmed) invalid(field + ' must not be empty')
-  rejectPhotoEvidence(trimmed, field)
   if ([...trimmed].length > maximumLength) invalid(field + ' is too long')
   return trimmed
 }

@@ -74,11 +74,6 @@ describe('parseCommunityWaypointSubmission', () => {
       { photoId: 'private-photo-id' },
       { photoIds: ['private-photo-id'] },
       { photoFile: { name: 'evidence.jpg', type: 'image/jpeg' } },
-      { details: 'https://images.example.test/evidence.jpg' },
-      { explanation: 'Private photo ID: opaque-evidence-reference' },
-      { details: 'data:image/png;base64,YWJj' },
-      { explanation: '//photos.example.test/private' },
-      { details: 'images.example.test/private' },
     ]) {
       assert.throws(() => parseCommunityWaypointSubmission({
         ...validNewPlace,
@@ -90,5 +85,14 @@ describe('parseCommunityWaypointSubmission', () => {
       waypointId: 'private-id',
       reason: 'No longer present.',
     }), InvalidCommunityWaypointSubmissionError)
+  })
+
+  it('accepts URLs as ordinary free-text details while photo intake is deferred', () => {
+    const submission = {
+      ...validNewPlace,
+      details: 'More information: https://example.test/amenity',
+    }
+
+    assert.deepEqual(parseCommunityWaypointSubmission(submission), submission)
   })
 })

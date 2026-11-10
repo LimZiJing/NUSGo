@@ -31,4 +31,3 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
 ## Rollback
 
 If a published edit is malformed, exposes private information, or materially misrepresents a place, stop further edits and notify the release owner. Revert the specific public data commit through a new reviewed change, rerun the validator, tests, build, and diff checks, then publish the rollback. For an exposure, remove the content from the public branch promptly and follow repository incident procedures; a normal revert does not erase it from Git history.
-

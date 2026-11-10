@@ -11,6 +11,8 @@ import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import App from './app'
 import { createInitialNavigationSessionState } from './navigation-session'
 
+const COMMUNITY_VISIBILITY_KEY = 'navus:community-waypoint-visible-categories:v1'
+
 const appHarness = vi.hoisted(() => {
   const noop = () => undefined
   const commandStubs = {
@@ -327,7 +329,7 @@ describe('desktop shared navigation shell', () => {
 
       await user.click(screen.getByRole('button', { name: 'Explore' }))
       await user.click(screen.getByRole('button', { name: 'Community' }))
-      const trigger = await screen.findByRole('button', { name: 'Suggest a waypoint' })
+      const trigger = await screen.findByRole('button', { name: 'Suggest Water cooler location' })
       await user.click(trigger)
 
       expect(screen.getByRole('radio', { name: 'Water cooler' })).toBeTruthy()
@@ -359,6 +361,10 @@ describe('desktop shared navigation shell', () => {
     }
     appHarness.communityWaypoints = [waypoint]
     render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    await user.click(screen.getByRole('button', { name: 'Community' }))
+    await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
+    await user.click(screen.getByRole('button', { name: 'Save Community Waypoint categories' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([waypoint], expect.any(Function)))
     const mapTrigger = document.createElement('button')
@@ -436,6 +442,7 @@ describe('desktop shared navigation shell', () => {
       updatedAt: '2026-10-26',
     }
     appHarness.communityWaypoints = [waypoint]
+    localStorage.setItem(COMMUNITY_VISIBILITY_KEY, JSON.stringify(['water_cooler']))
     render(<App />)
 
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
@@ -453,10 +460,14 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
     await waitFor(() => expect(document.activeElement).toBe(trigger))
 
-    await user.click(screen.getByRole('button', { name: /Water cooler at UTown/ }))
-    expect(appHarness.commands.focusCommunityWaypoint).toHaveBeenCalledWith(waypoint)
-    await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Water cooler, 1 waypoint' }))
+    act(() => onSelect?.(waypoint.id, trigger))
+    await screen.findByRole('heading', { name: waypoint.displayLabel })
+    await user.click(screen.getByRole('button', { name: 'Bus routes' }))
+    await user.click(screen.getByRole('button', { name: 'Community' }))
+    expect(screen.getByRole('group', { name: 'Categories' })).toBeTruthy()
+
+    await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
+    await user.click(screen.getByRole('button', { name: 'Save Community Waypoint categories' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([], expect.any(Function)))
   })

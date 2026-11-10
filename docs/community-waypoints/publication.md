@@ -26,7 +26,7 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
 - **Moved facility:** preserve its ID when it is the same continuing place. Use a new ID only for a distinct facility.
 - **Removal:** delete the feature. Never leave a tombstone or private explanation in public GeoJSON; never reuse the retired ID.
 - **Unverified place:** keep the last verified facts while they remain useful. Remove a feature only when it is confirmed closed, gone, or materially misleading.
-- **Periodic maintenance:** review the public list against available evidence and prior verification dates. Keep `updatedAt` unchanged until a feature is reverified.
+- **Periodic maintenance:** during initial operation, review the public list as maintenance capacity allows; no fixed interval is set. Prioritize credible reports or other evidence that a place may be stale, moved, or closed. Keep `updatedAt` unchanged until a feature is reverified.
 
 ## Rollback
 

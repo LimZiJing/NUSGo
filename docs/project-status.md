@@ -19,7 +19,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |
 | More and Settings | My waypoints, Settings and Release notes destinations; themes, minute format for Stops timings, favourites and About | [UI behaviour](ui/behaviour.md#settings-and-themes), [release notes](release-notes.md) |
 | Personal Waypoints | Save and manage private waypoints in this browser profile, browse places by category, stage map visibility changes, edit or remove saved places, and select saved coordinates as Plan endpoints | [UI behaviour](ui/behaviour.md#personal-waypoints), [data](data-and-map.md#code-layout) |
-| Layout | Desktop column and mobile bottom sheets | [UI behaviour](ui/behaviour.md#layout) |
+| Layout | Desktop column and mobile bottom sheets, including short coarse-pointer landscape | [UI behaviour](ui/behaviour.md#layout) |
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
 | Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |

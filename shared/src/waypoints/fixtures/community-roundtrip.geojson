@@ -14,7 +14,6 @@
         "updatedAt": "2026-11-08",
         "building": "Central Library",
         "floor": 1,
-        "accessibilityNote": "Beside the lift lobby",
         "details": "Near the main entrance"
       }
     },
@@ -31,7 +30,6 @@
         "updatedAt": "2026-11-08",
         "building": null,
         "floor": null,
-        "accessibilityNote": null,
         "details": null
       }
     },
@@ -48,7 +46,6 @@
         "updatedAt": "2026-11-08",
         "building": null,
         "floor": -1,
-        "accessibilityNote": "Accessible from the corridor",
         "details": null
       }
     },
@@ -65,7 +62,6 @@
         "updatedAt": "2026-11-08",
         "building": "Faculty Building",
         "floor": 0,
-        "accessibilityNote": null,
         "details": "Next to the service counter"
       }
     }

@@ -54,7 +54,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
             updatedAt: '2026-11-08',
             building: 'Central Library',
             floor: 2,
-            accessibilityNote: 'Located beside the lift lobby',
             details: 'Near the study area',
           },
         },
@@ -64,14 +63,13 @@ describe('parseCommunityWaypointsGeoJson', () => {
     expect(parseCommunityWaypointsGeoJson(input)).toEqual([
       {
         id: 'cw-550e8400-e29b-41d4-a716-446655440000',
-        displayLabel: 'Water cooler · Central Library · Floor 2 · Near the study area',
+        displayLabel: 'Water cooler · Central Library · Floor 2',
         category: 'water_cooler',
         coordinate: { longitude: 103.7844, latitude: 1.2933 },
         source: 'Checked on site',
         updatedAt: '2026-11-08',
         building: 'Central Library',
         floor: 2,
-        accessibilityNote: 'Located beside the lift lobby',
         details: 'Near the study area',
       },
     ])
@@ -106,7 +104,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
     const nulls = parseCommunityWaypointsGeoJson(collectionWith({
       building: null,
       floor: null,
-      accessibilityNote: null,
       details: null,
     }))
 
@@ -161,6 +158,11 @@ describe('parseCommunityWaypointsGeoJson', () => {
       .toThrow(CommunityWaypointGeoJsonValidationError)
   })
 
+  it('rejects the retired accessibility note field in public properties', () => {
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ accessibilityNote: 'Step-free route' })))
+      .toThrow(CommunityWaypointGeoJsonValidationError)
+  })
+
   it('rejects private review fields in public properties', () => {
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ reporterEmail: 'person@example.com' })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
@@ -195,15 +197,14 @@ describe('parseCommunityWaypointsGeoJson', () => {
       details: '  Near the study area  ',
       source: '  Checked on site  ',
     }))[0]).toMatchObject({
-      displayLabel: 'Water cooler · Central Library · Near the study area',
+      displayLabel: 'Water cooler · Central Library',
+      details: 'Near the study area',
       source: 'Checked on site',
     })
 
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ source: 'x'.repeat(161) })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ building: 'x'.repeat(81) })))
-      .toThrow(CommunityWaypointGeoJsonValidationError)
-    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ accessibilityNote: 'x'.repeat(281) })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ details: 'x'.repeat(501) })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
@@ -262,11 +263,11 @@ describe('parseCommunityWaypointsGeoJson', () => {
       updatedAt: '2026-11-08',
       coordinate: { longitude: 103.7801, latitude: 1.2978 },
     })
-    expect(parsed[0]?.displayLabel)
-      .toBe('Water cooler · Central Library · Floor 1 · Near the main entrance')
+    expect(parsed[0]?.displayLabel).toBe('Water cooler · Central Library · Floor 1')
+    expect(parsed[0]?.details).toBe('Near the main entrance')
     expect(parsed[2]).toMatchObject({ floor: -1 })
     expect(parsed[2]?.displayLabel).toBe('Toilet · Basement 1')
-    expect(parsed[3]?.displayLabel)
-      .toBe('Vending machine · Faculty Building · Ground floor · Next to the service counter')
+    expect(parsed[3]?.displayLabel).toBe('Vending machine · Faculty Building · Ground floor')
+    expect(parsed[3]?.details).toBe('Next to the service counter')
   })
 })

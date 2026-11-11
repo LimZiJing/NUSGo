@@ -107,7 +107,7 @@
   line-height: 1.5;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none) {
   .pwa-notices {
     right: max(12px, env(safe-area-inset-right, 0px));
     left: auto;

@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   DESKTOP_LAYOUT_MIN_WIDTH,
+  DESKTOP_LAYOUT_MEDIA_QUERY,
   MOBILE_LAYOUT_MAX_WIDTH,
   MOBILE_LAYOUT_MEDIA_QUERY,
+  SHORT_LANDSCAPE_MAX_WIDTH,
   isMobileLayoutWidth,
 } from './layout-breakpoint'
 
@@ -14,6 +16,8 @@ const frontendSourceDirectory = resolve(dirname(fileURLToPath(import.meta.url)),
 const LAYOUT_FEATURES = new Set([
   `max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`,
   `min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`,
+  `max-width: ${SHORT_LANDSCAPE_MAX_WIDTH}px`,
+  `min-width: ${SHORT_LANDSCAPE_MAX_WIDTH + 1}px`,
 ])
 
 // Component-level breakpoints that are deliberately not the mobile/desktop layout breakpoint.
@@ -70,8 +74,26 @@ describe('layout breakpoint', () => {
     expect(isMobileLayoutWidth(769)).toBe(false)
   })
 
-  it('exposes the mobile media query for the shared breakpoint', () => {
-    expect(MOBILE_LAYOUT_MEDIA_QUERY).toBe('(max-width: 768px)')
+  it('exposes matching mobile and desktop media queries for the shared layout mode', () => {
+    expect(MOBILE_LAYOUT_MEDIA_QUERY).toBe(
+      '(max-width: 768px), (max-width: 900px) and (max-height: 420px) and (pointer: coarse)',
+    )
+    expect(DESKTOP_LAYOUT_MEDIA_QUERY).toBe(
+      '(min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none)',
+    )
+  })
+
+  it('uses the same complete layout query in each mobile and desktop stylesheet', () => {
+    const mediaQueries = cssFiles.flatMap(({ file, css }) => (
+      scanMediaQueries(css).map(({ query }) => ({ file, query }))
+    ))
+    const mobileRules = mediaQueries.filter(({ query }) => query.includes(`max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`))
+    const desktopRules = mediaQueries.filter(({ query }) => query.includes(`min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`))
+
+    expect(mobileRules.length).toBeGreaterThan(0)
+    expect(mobileRules.every(({ query }) => query === `@media ${MOBILE_LAYOUT_MEDIA_QUERY}`)).toBe(true)
+    expect(desktopRules.length).toBeGreaterThan(0)
+    expect(desktopRules.every(({ query }) => query === `@media ${DESKTOP_LAYOUT_MEDIA_QUERY}`)).toBe(true)
   })
 
   it('keeps every CSS width media query on the layout breakpoint or a listed component breakpoint', () => {

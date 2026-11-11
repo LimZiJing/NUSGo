@@ -1,4 +1,4 @@
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none) {
   .navigation-column {
     position: absolute;
     z-index: 20;

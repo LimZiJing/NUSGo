@@ -590,7 +590,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 900px) and (max-height: 420px) and (pointer: coarse) {
   .navigation-panel.plan-sheet {
     overflow: hidden;
   }
@@ -702,7 +702,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none) {
   .navigation-column .plan-content {
     display: block;
     width: 100%;

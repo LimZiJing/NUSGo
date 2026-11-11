@@ -7,7 +7,7 @@ const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const styles = readFileSync(resolve(stylesDirectory, 'stops-content.css'), 'utf8')
 
 const desktopBlock = styles.slice(styles.indexOf('@media (min-width: 769px)'))
-const mobileBlock = styles.slice(styles.indexOf('@media (max-width: 768px)'), styles.indexOf('@media (min-width: 769px)'))
+const mobileBlock = styles.slice(styles.indexOf('@media (max-width: 640px)'), styles.indexOf('@media (min-width: 769px)'))
 const rule = (block: string, selector: string) => {
   const match = block.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*{([^}]*)}`, 's'))
   return match?.[1] ?? ''

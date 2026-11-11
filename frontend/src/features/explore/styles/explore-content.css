@@ -435,7 +435,7 @@
 .explore-content .nearby-stop-row:focus-visible {
   background: var(--surface-subtle);
 }
-@media (max-width: 768px), (max-width: 900px) and (max-height: 420px) and (pointer: coarse) {
+@media (max-width: 640px), (max-width: 768px) and (min-height: 421px) {
   .navigation-panel.explore-sheet {
     background: var(--surface-raised);
   }
@@ -597,7 +597,7 @@
 
 }
 
-@media (min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none) {
+@media (min-width: 769px), (min-width: 641px) and (max-height: 420px) {
   .navigation-column .explore-content {
     display: grid;
     align-content: start;

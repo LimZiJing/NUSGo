@@ -6,8 +6,9 @@ import {
   DESKTOP_LAYOUT_MIN_WIDTH,
   DESKTOP_LAYOUT_MEDIA_QUERY,
   MOBILE_LAYOUT_MAX_WIDTH,
+  MOBILE_LAYOUT_NARROW_MAX_WIDTH,
   MOBILE_LAYOUT_MEDIA_QUERY,
-  SHORT_LANDSCAPE_MAX_WIDTH,
+  SHORT_LANDSCAPE_MIN_WIDTH,
   isMobileLayoutWidth,
 } from './layout-breakpoint'
 
@@ -16,8 +17,8 @@ const frontendSourceDirectory = resolve(dirname(fileURLToPath(import.meta.url)),
 const LAYOUT_FEATURES = new Set([
   `max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`,
   `min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`,
-  `max-width: ${SHORT_LANDSCAPE_MAX_WIDTH}px`,
-  `min-width: ${SHORT_LANDSCAPE_MAX_WIDTH + 1}px`,
+  `max-width: ${MOBILE_LAYOUT_NARROW_MAX_WIDTH}px`,
+  `min-width: ${SHORT_LANDSCAPE_MIN_WIDTH}px`,
 ])
 
 // Component-level breakpoints that are deliberately not the mobile/desktop layout breakpoint.
@@ -76,10 +77,10 @@ describe('layout breakpoint', () => {
 
   it('exposes matching mobile and desktop media queries for the shared layout mode', () => {
     expect(MOBILE_LAYOUT_MEDIA_QUERY).toBe(
-      '(max-width: 768px), (max-width: 900px) and (max-height: 420px) and (pointer: coarse)',
+      '(max-width: 640px), (max-width: 768px) and (min-height: 421px)',
     )
     expect(DESKTOP_LAYOUT_MEDIA_QUERY).toBe(
-      '(min-width: 769px) and (min-height: 421px), (min-width: 901px), (min-width: 769px) and (pointer: fine), (min-width: 769px) and (pointer: none)',
+      '(min-width: 769px), (min-width: 641px) and (max-height: 420px)',
     )
   })
 

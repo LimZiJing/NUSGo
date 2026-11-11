@@ -1155,6 +1155,6 @@
 .map-shell[data-waypoint-placing='true'] .map-control-stack { visibility: hidden; }
 .map-shell[data-waypoint-placing='true']::after { display: none; }
 
-@media (max-width: 768px), (max-width: 900px) and (max-height: 420px) and (pointer: coarse) {
+@media (max-width: 640px), (max-width: 768px) and (min-height: 421px) {
   .personal-waypoint-placement { width: auto; max-height: 48vh; }
 }

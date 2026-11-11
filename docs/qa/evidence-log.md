@@ -4,7 +4,7 @@ This is a dated record of past browser passes, not a standing checklist. The reu
 
 ## Landscape side-panel follow-up — 2026-11-11 (#551)
 
-Application HEAD `0a30247c528f17377616eaf0807e37a2d0b58fdd` with the uncommitted follow-up changes built locally; Codex In-app Browser, Chromium-based with exact version unavailable; local rehearsal at `http://localhost:4173/`.
+Application HEAD `fc0f00b34241a9371e98cb26c26e42e81979bdc9`; Codex In-app Browser, Chromium-based with exact version unavailable; local rehearsal at `http://localhost:4173/`.
 
 - At 812 × 375, 740 × 360, and 641 × 360, the desktop-style left column held the workflow tabs along its lower edge and the map stayed visible to the right. At 641 × 360, the column narrowed to about 321px, leaving about 320px for the map.
 - At 740 × 360, the Stops list scrolled to its final rows while Nearby/Favourites stayed pinned at the top of the panel. The map's Zoom in control visibly changed map scale. Tab moved focus from Explore to Stops, and Enter activated Stops.

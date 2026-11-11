@@ -78,6 +78,7 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
     assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
     assert.match(issue.body, /\*\*Submitter explanation \(unverified\):\*\*/)
+    assert.doesNotMatch(issue.body, /Accessibility note|Other details|Proposed details/)
     assert.match(issue.body, /<summary>Raw submission JSON — unverified/)
     assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
     assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
@@ -231,6 +232,35 @@ describe('private submission issue creation', () => {
     await withServer(writer, async (baseUrl) => {
       const response = await post(baseUrl, { ...validNewPlace, photoUrl: 'https://example.test/photo' })
       assert.equal(response.status, 400)
+      assert.equal(writes, 0)
+    })
+  })
+
+  it('rejects display details and accessibility notes at the submission endpoint', async () => {
+    let writes = 0
+    const writer: PrivateSubmissionIssueWriter = async () => { writes += 1 }
+    await withServer(writer, async (baseUrl) => {
+      const submissions = [
+        { ...validNewPlace, details: 'Near the east entrance.' },
+        { ...validNewPlace, accessibilityNote: 'Step-free access.' },
+        {
+          kind: 'correction',
+          waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+          requestedChange: 'Please add a location detail.',
+          details: 'Near the east entrance.',
+        },
+        {
+          kind: 'correction',
+          waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+          requestedChange: 'Please add an access note.',
+          accessibilityNote: 'Step-free access.',
+        },
+      ]
+
+      for (const [index, submission] of submissions.entries()) {
+        const response = await post(baseUrl, submission, `198.51.100.${30 + index}`)
+        assert.equal(response.status, 400)
+      }
       assert.equal(writes, 0)
     })
   })

@@ -30,14 +30,13 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | `updatedAt` | Yes | Valid calendar date in `YYYY-MM-DD` form. It means the last reviewed update, not the creation date. |
 | `building` | No | Reviewed building name as plain text, 1–80 characters. It is not a venue ID or link. |
 | `floor` | No | Signed integer using the glossary meaning: below ground is negative, ground is zero, and above ground is positive. |
-| `accessibilityNote` | No | Factual public text, 1–280 characters. Describe a specific feature; do not use a vague accessibility boolean or claim. |
-| `details` | No | Short useful public text, 1–500 characters. |
+| `details` | No | Maintainer-written public display text, 1–500 characters. Include only a fact verified during review. Never copy submitter explanations or other private issue text into this field. |
 
 Text is trimmed at the parser boundary and length limits count Unicode code points. Optional fields may be omitted or set to `null`; the parsed model omits empty optional values. The round-trip fixture uses `null` for empty optional columns so GIS tools can retain a fixed set of fields.
 
 The initial category labels are **Water cooler**, **ATM**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
 
-The app derives `CommunityWaypoint.displayLabel` for display from the category label and any available building, floor, and details, in that order. `accessibilityNote` remains a separate detail and is not part of the display label. Do not add a `name` property to public GeoJSON.
+The app derives `CommunityWaypoint.displayLabel` from the category label and any available building and floor. It displays optional `details` separately in the waypoint detail view; details are not part of the label. The anonymous submission contract does not accept `details`; maintainers may add verified display text while reviewing a public data change. Do not add an `accessibilityNote` or `name` property to public GeoJSON.
 
 Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
 
@@ -51,7 +50,7 @@ Keep moderation metadata in the private submission issue only. That private reco
 
 `parseCommunityWaypointsGeoJson(input)` accepts `unknown` and returns a complete readonly Community Waypoint list. It throws `CommunityWaypointGeoJsonValidationError` with the failing path and reason if the collection, any feature, coordinate, property, category, date, ID, or value is invalid. A bad feature rejects the whole dataset; the parser never silently drops it or returns a partial list.
 
-The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `accessibilityNote`, and `details`. This prevents display labels and private moderation fields from being carried into the public dataset.
+The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, and `details`. This prevents display labels, unsupported accessibility claims, and private moderation fields from being carried into the public dataset.
 
 ## GIS import and export settings
 

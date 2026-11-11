@@ -1,0 +1,405 @@
+:root {
+  --rainroom-swatch-slate: #152a40;
+  --rainroom-swatch-walnut: #845638;
+  --rainroom-swatch-dark-oak: #4a3427;
+  --rainroom-swatch-moss: #586b50;
+  --rainroom-swatch-pine: #5f7b59;
+  --rainroom-swatch-amber: #e8b466;
+  --rainroom-lamplight: #f28a24;
+}
+
+:root[data-theme='rainroom'] {
+    --map-basemap-tone: dark;
+    --map-route-base: #c0bfad;
+    --map-route-casing: #273431;
+    --map-stop-text: #f2efe5;
+    --map-stop-text-muted: #c4c4b7;
+    --map-stop-halo: #293431;
+    --map-stop-halo-faded: rgba(41, 52, 49, 0.3);
+    --rainroom-slate: var(--rainroom-swatch-slate);
+    --rainroom-moss: var(--rainroom-swatch-moss);
+    --rainroom-pine: var(--rainroom-swatch-pine);
+
+    --surface: #0c1924;
+    --surface-raised: #122330;
+    --surface-muted: #1a2d3a;
+    --surface-subtle: #243947;
+    --surface-inverse: #f4eddd;
+    --surface-overlay: rgb(10 22 32 / 91%);
+    --surface-overlay-strong: rgb(8 17 26 / 98%);
+    --surface-overlay-soft: rgb(18 34 45 / 96%);
+    --surface-overlay-panel: rgb(16 31 42 / 97%);
+    --glass-edge:
+      inset 0 1px 0 rgb(238 246 250 / 25%),
+      inset 0 0 0 1px rgb(174 202 211 / 14%),
+      inset 0 0 14px rgb(226 237 240 / 5%),
+      inset 0 -1px 0 rgb(9 18 25 / 38%);
+    --surface-neutral: #182a31;
+    --surface-faint: #10222d;
+    --surface-info-soft: #17313c;
+    --surface-control: #1d323e;
+    --surface-warning: #473722;
+    --surface-segmented-control: #182d39;
+    --surface-card: #162a36;
+    --surface-handle: #a6ad98;
+    --surface-journey-step: #263a46;
+
+    --text-primary: #f0eee6;
+    --text-secondary: #d6d5ca;
+    --text-body: #c0c6ba;
+    --text-heading: #f2efe5;
+    --text-muted: #aab5aa;
+    --text-inverse: #282117;
+    --text-contrast: #f4f0e5;
+    --text-strong: #e8e6db;
+    --text-secondary-strong: #d5d6ca;
+    --text-disabled: #899489;
+    --text-warning: #f5cc85;
+    --text-success-strong: #c6d4ad;
+    --text-error-strong: #ffaaa3;
+    --text-favorite: #facc15;
+    --bus-stop-default-color: #bac4b5;
+    --personal-waypoint-marker-blue: #5b83e6;
+    --personal-waypoint-marker-red: #ed2224;
+    --personal-waypoint-marker-orange: #f8793b;
+    --personal-waypoint-marker-yellow: #f5bd42;
+    --personal-waypoint-marker-green: #a5b88e;
+    --personal-waypoint-marker-cyan: #4aa6dc;
+    --personal-waypoint-marker-purple: #9656eb;
+    --personal-waypoint-marker-gray: #b7b7b7;
+
+    --border-default: #40535c;
+    --border-subtle: #263840;
+    --border-strong: #718187;
+    --border-inverse: #d6d5ca;
+    --border-control: #6b808a;
+    --control-border: color-mix(in srgb, var(--text-primary) 40%, var(--surface));
+    --border-muted: #3a4e56;
+    --border-faint: #2d4048;
+    --border-success: #667b5a;
+    --border-warning: #927044;
+    --border-info: #617b80;
+    --border-focus: var(--rainroom-lamplight);
+    --border-card: #3b505a;
+
+    --accent: var(--rainroom-lamplight);
+    --accent-hover: #f7a24d;
+    --accent-contrast: #25231d;
+    --accent-soft: color-mix(in srgb, var(--rainroom-lamplight) 18%, var(--surface-raised));
+    --focus-ring: var(--rainroom-lamplight);
+    --focus-ring-soft: rgb(242 138 36 / 44%);
+    --focus-ring-strong: rgb(242 138 36 / 58%);
+    --focus-ring-neutral: rgb(174 190 169 / 38%);
+
+    --status-success: #b5c49a;
+    --status-success-surface: #2e4034;
+    --status-success-strong: #c6d4ad;
+    --status-warning: #f2ca82;
+    --status-warning-surface: #4a3925;
+    --status-warning-strong: #e8b66b;
+    --status-error: #ffaaa3;
+    --status-error-surface: #4b2f2d;
+    --status-error-strong: #ffaaa3;
+    --status-info: #bfd5d5;
+    --status-info-surface: #294040;
+    --load-level-low: var(--status-success);
+    --load-level-medium: var(--status-warning);
+    --load-level-high: var(--status-error);
+    --load-level-unknown: var(--text-muted);
+    --status-marker-origin: #aec18d;
+    --status-marker-destination: #f08a77;
+
+    --shadow-sm: 0 1px 3px rgb(0 0 0 / 25%);
+    --shadow-md: 0 1px 4px rgb(0 0 0 / 35%);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px -12px rgb(8 17 24 / 48%);
+    --shadow-panel: 0 1px 4px rgb(8 17 24 / 40%), 0 0 24px -12px rgb(242 138 36 / 26%);
+    --shadow-card-strong: 0 1px 3px rgb(8 17 24 / 44%), 0 0 16px -12px rgb(242 138 36 / 13%);
+    --shadow-chip: 0 2px 7px rgb(0 0 0 / 30%);
+    --shadow-sheet:
+      0 -6px 22px rgb(8 17 24 / 48%),
+      0 -16px 30px -22px rgb(242 138 36 / 30%);
+    --shadow-soft: 0 1px 4px rgb(0 0 0 / 25%);
+    --shadow-results: 0 4px 12px rgb(0 0 0 / 35%);
+    --shadow-marker: 0 1px 3px rgb(0 0 0 / 45%);
+}
+
+:root[data-theme='rainroom'] .map-stage {
+  isolation: isolate;
+}
+
+:root[data-theme='rainroom'] .navigation-column,
+:root[data-theme='rainroom'] .navigation-column .navigation-panel,
+:root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(
+      ellipse at 100% 46%,
+      color-mix(in srgb, var(--rainroom-lamplight) 14%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 8% 100%,
+      color-mix(in srgb, var(--rainroom-slate) 22%, transparent),
+      transparent 40%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 96%,
+      color-mix(in srgb, var(--rainroom-swatch-walnut) 22%, transparent) 98%,
+      color-mix(in srgb, var(--rainroom-swatch-amber) 24%, transparent) 99%,
+      color-mix(in srgb, var(--rainroom-lamplight) 30%, transparent) 100%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
+      color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
+      color-mix(in srgb, var(--rainroom-slate) 22%, transparent) 100%
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position: center, center, center, center;
+  background-blend-mode: screen, normal, normal, normal;
+  box-shadow: var(--shadow-panel);
+}
+
+:root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+  box-shadow:
+    var(--shadow-sheet),
+    inset 0 1px 0 color-mix(in srgb, var(--rainroom-lamplight) 32%, transparent),
+    0 -6px 22px -12px color-mix(in srgb, var(--rainroom-lamplight) 36%, transparent);
+}
+
+@media (max-width: 640px), (max-width: 768px) and (min-height: 421px) {
+  :root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
+    background-image:
+      radial-gradient(
+        ellipse at 50% 0%,
+        color-mix(in srgb, var(--rainroom-lamplight) 12%, transparent),
+        transparent 34%
+      ),
+      radial-gradient(
+        ellipse at 8% 100%,
+        color-mix(in srgb, var(--rainroom-slate) 22%, transparent),
+        transparent 38%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--rainroom-swatch-amber) 22%, transparent) 0,
+        color-mix(in srgb, var(--rainroom-swatch-walnut) 22%, transparent) 3px,
+        transparent 15px
+      ),
+      linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--rainroom-slate) 56%, transparent) 0%,
+        color-mix(in srgb, var(--rainroom-slate) 38%, transparent) 62%,
+        color-mix(in srgb, var(--rainroom-slate) 22%, transparent) 100%
+      );
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position: center, center, center, center;
+    background-blend-mode: screen, normal, normal, normal;
+  }
+}
+
+@media (min-width: 769px), (min-width: 641px) and (max-height: 420px) {
+  :root[data-theme='rainroom'] .navigation-column {
+    border-right-color: color-mix(
+      in srgb,
+      var(--rainroom-lamplight) 58%,
+      var(--border-subtle)
+    );
+    box-shadow:
+      var(--shadow-panel),
+      inset -1px 0 0 color-mix(in srgb, var(--rainroom-lamplight) 42%, transparent),
+      5px 0 20px -10px color-mix(in srgb, var(--rainroom-lamplight) 48%, transparent);
+  }
+}
+
+:root[data-theme='rainroom'] .main-navigation {
+  background: color-mix(in srgb, var(--rainroom-slate) 92%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, white 8%, transparent),
+    transparent 62%,
+    color-mix(in srgb, var(--rainroom-lamplight) 7%, transparent)
+  );
+  -webkit-backdrop-filter: var(--blur-overlay);
+  backdrop-filter: var(--blur-overlay);
+  box-shadow:
+    var(--glass-edge),
+    var(--shadow-lg),
+    0 0 22px -10px color-mix(in srgb, var(--rainroom-lamplight) 48%, transparent);
+}
+
+:root[data-theme='rainroom'] .main-navigation .navigation-tab[aria-current='page'] {
+  color: var(--text-contrast);
+  border: 2px solid transparent;
+  background-color: var(--rainroom-swatch-dark-oak);
+  background-image:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--rainroom-swatch-amber) 8%, var(--rainroom-swatch-walnut)) 0%,
+      color-mix(in srgb, var(--rainroom-swatch-amber) 12%, var(--rainroom-swatch-walnut)) 48%,
+      color-mix(in srgb, var(--rainroom-swatch-amber) 8%, var(--rainroom-swatch-walnut)) 100%
+    ),
+    linear-gradient(
+      120deg,
+      var(--rainroom-swatch-dark-oak) 0%,
+      color-mix(in srgb, var(--rainroom-swatch-dark-oak) 78%, var(--rainroom-swatch-walnut)) 50%,
+      var(--rainroom-swatch-dark-oak) 100%
+    );
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow:
+    0 0 14px -5px color-mix(in srgb, var(--rainroom-lamplight) 62%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--rainroom-swatch-amber) 36%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--rainroom-swatch-walnut) 40%, transparent);
+}
+
+.rainroom-atmosphere {
+  display: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:root[data-theme='rainroom'] .rainroom-atmosphere::before {
+  position: absolute;
+  inset: -540px 0 0;
+  display: block;
+  content: '';
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('./rainroom-rain.svg');
+  background-size: 720px 540px;
+  background-repeat: repeat;
+  opacity: 0.56;
+  animation: rainroom-fall 18s linear infinite;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  background-image: url('./rainroom-drops.svg');
+  background-size: 720px 540px;
+  background-repeat: repeat;
+  opacity: 0.12;
+  pointer-events: none;
+  animation: rainroom-droplet-glint 14s ease-in-out infinite;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet-layer--one {
+  clip-path: inset(0 66.6667% 0 0);
+  animation-delay: -3s;
+  animation-duration: 11s;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet-layer--two {
+  clip-path: inset(0 33.3333% 0 33.3333%);
+  animation-delay: -7s;
+  animation-duration: 14s;
+}
+
+:root[data-theme='rainroom'] .rainroom-droplet-layer--three {
+  clip-path: inset(0 0 0 66.6667%);
+  animation-delay: -11s;
+  animation-duration: 17s;
+}
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-top-left,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-top-right,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-bottom-left,
+:root[data-theme='rainroom'] .map .maplibregl-ctrl-bottom-right {
+  z-index: 7;
+}
+
+
+:root[data-theme='rainroom'] .map .maplibregl-popup,
+:root[data-theme='rainroom'] .map .nusgo-map-attribution {
+  z-index: 8;
+}
+
+@keyframes rainroom-fall {
+  to { transform: translate3d(0, 540px, 0); }
+}
+
+@keyframes rainroom-droplet-glint {
+  0%, 100% { opacity: 0.12; }
+  45% { opacity: 0.38; }
+  58% { opacity: 0.56; }
+  72% { opacity: 0.24; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='rainroom'] .rainroom-atmosphere::before {
+    animation: none;
+    transform: none;
+  }
+
+  :root[data-theme='rainroom'] .rainroom-droplet-layer {
+    animation: none;
+    opacity: 0.2;
+  }
+}
+
+:root[data-theme='rainroom'] .button[data-variant='primary'] {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%), 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
+  transition: box-shadow 180ms ease-out;
+}
+
+@media (hover: hover) {
+  :root[data-theme='rainroom'] .button[data-variant='primary']:not(:disabled):hover {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 32%), 0 4px 16px color-mix(in srgb, var(--accent) 34%, transparent);
+    filter: brightness(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='rainroom'] .button[data-variant='primary'] {
+    transition: none;
+  }
+}
+
+:root[data-theme='rainroom'] .explore-mode-selector .segmented-control-option[aria-pressed='true']::before,
+:root[data-theme='rainroom'] .stops-list-selector .segmented-control-option[aria-pressed='true']::before {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 12%, var(--surface-raised)),
+      var(--surface-raised)
+    );
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent),
+      0 0 12px -5px color-mix(in srgb, var(--accent) 52%, transparent),
+      var(--shadow-soft);
+  }
+
+:root[data-theme='rainroom'] .stop-card-toggle[aria-expanded='true'] {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 48%
+    );
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 86%, transparent);
+  }
+
+:root[data-theme='rainroom'] .stop-card-toggle[aria-expanded='true'] .location-identity-icon--stop {
+    color: var(--accent);
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 38%, transparent));
+  }
+
+:root .settings-theme-swatch[data-theme-choice='rainroom'] {
+  background: linear-gradient(
+    135deg,
+    var(--rainroom-swatch-slate) 0 58%,
+    var(--rainroom-swatch-walnut) 59% 77%,
+    var(--rainroom-swatch-moss) 78% 92%,
+    var(--rainroom-swatch-amber) 93%
+  );
+}

@@ -85,10 +85,12 @@
 }
 
 .explore-content .explore-bus-route-list-stop[data-route-stop-targeted='true'] {
-  outline: var(--focus-outline);
-  outline-offset: -2px;
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
+  border-left: 3px solid var(--status-success-strong);
+  padding-left: 17px;
+  color: var(--text-primary);
+  background: var(--surface-info-soft);
+  font-weight: 700;
 }
 
 .explore-bus-route-list-node {

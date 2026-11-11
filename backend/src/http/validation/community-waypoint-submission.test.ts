@@ -87,12 +87,32 @@ describe('parseCommunityWaypointSubmission', () => {
     }), InvalidCommunityWaypointSubmissionError)
   })
 
-  it('accepts URLs as ordinary free-text details while photo intake is deferred', () => {
+  it('keeps submission explanations as private free text while photo intake is deferred', () => {
     const submission = {
       ...validNewPlace,
-      details: 'More information: https://example.test/amenity',
+      explanation: 'More information: https://example.test/amenity',
     }
 
     assert.deepEqual(parseCommunityWaypointSubmission(submission), submission)
+  })
+
+  it('rejects display details and accessibility notes in new-place submissions', () => {
+    for (const field of ['details', 'accessibilityNote']) {
+      assert.throws(() => parseCommunityWaypointSubmission({
+        ...validNewPlace,
+        [field]: 'Extra location information',
+      }), InvalidCommunityWaypointSubmissionError)
+    }
+  })
+
+  it('rejects display details and accessibility notes in corrections', () => {
+    for (const field of ['details', 'accessibilityNote']) {
+      assert.throws(() => parseCommunityWaypointSubmission({
+        kind: 'correction',
+        waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+        requestedChange: 'Correct the location details.',
+        [field]: 'Extra location information',
+      }), InvalidCommunityWaypointSubmissionError)
+    }
   })
 })

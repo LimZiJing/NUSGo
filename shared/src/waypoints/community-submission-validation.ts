@@ -105,20 +105,12 @@ function readProposedFields(input: Record<string, unknown>): ProposedCommunityWa
   const coordinates = readCoordinates(input, false)
   const building = optionalText(input, 'building', COMMUNITY_WAYPOINT_TEXT_LIMITS.building)
   const floor = optionalFloor(input)
-  const accessibilityNote = optionalText(
-    input,
-    'accessibilityNote',
-    COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote,
-  )
-  const details = optionalText(input, 'details', COMMUNITY_WAYPOINT_TEXT_LIMITS.details)
 
   return {
     ...(category === undefined ? {} : { category }),
     ...(coordinates === undefined ? {} : coordinates),
     ...(building === undefined ? {} : { building }),
     ...(floor === undefined ? {} : { floor }),
-    ...(accessibilityNote === undefined ? {} : { accessibilityNote }),
-    ...(details === undefined ? {} : { details }),
   }
 }
 
@@ -129,12 +121,11 @@ function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {
 }
 
 const NEW_PLACE_FIELDS = new Set([
-  'kind', 'category', 'longitude', 'latitude', 'building', 'floor',
-  'accessibilityNote', 'details', 'explanation',
+  'kind', 'category', 'longitude', 'latitude', 'building', 'floor', 'explanation',
 ])
 const CORRECTION_FIELDS = new Set([
   'kind', 'waypointId', 'requestedChange', 'category', 'longitude',
-  'latitude', 'building', 'floor', 'accessibilityNote', 'details',
+  'latitude', 'building', 'floor',
 ])
 const REMOVAL_FIELDS = new Set(['kind', 'waypointId', 'reason'])
 
@@ -154,8 +145,6 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
       ...coordinates,
       ...(fields.building === undefined ? {} : { building: fields.building }),
       ...(fields.floor === undefined ? {} : { floor: fields.floor }),
-      ...(fields.accessibilityNote === undefined ? {} : { accessibilityNote: fields.accessibilityNote }),
-      ...(fields.details === undefined ? {} : { details: fields.details }),
       ...(explanation === undefined ? {} : { explanation }),
     }
   }

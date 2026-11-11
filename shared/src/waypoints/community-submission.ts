@@ -6,8 +6,6 @@ export interface ProposedCommunityWaypointFields {
   readonly latitude?: number
   readonly building?: string
   readonly floor?: number
-  readonly accessibilityNote?: string
-  readonly details?: string
 }
 
 export type CommunityWaypointSubmission =

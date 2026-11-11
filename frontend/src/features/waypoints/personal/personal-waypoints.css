@@ -22,6 +22,7 @@
   min-height: 40px;
   border-radius: 12px;
 }
+.personal-waypoint-header-actions { display: flex; align-items: center; gap: var(--space-2); }
 
 .personal-waypoint-details {
   display: grid;
@@ -212,10 +213,25 @@
   scrollbar-width: thin;
 }
 
+.personal-waypoint-list-rows[hidden] {
+  display: none;
+}
+
 .personal-waypoint-list-rows:focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--focus-ring-offset);
 }
+
+.personal-waypoint-groups-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.personal-waypoint-category-group { border: 1px solid var(--border-card); border-radius: var(--radius-card); background: var(--surface-card); }
+.personal-waypoint-category-heading-row { display: flex; min-height: 44px; align-items: center; padding-inline: var(--space-3); }
+.personal-waypoint-category-heading { display: flex; min-width: 0; min-height: 44px; flex: 1; align-items: center; gap: var(--space-2); padding: 0; border: 0; color: var(--text-primary); background: var(--surface-card); text-align: left; font: inherit; cursor: pointer; }
+.personal-waypoint-category-heading > span:first-child { flex: 1; }
+.personal-waypoint-category-count { color: var(--text-muted); font-size: var(--font-size-sm); }
+.personal-waypoint-category-heading:focus-visible { outline: var(--focus-outline); outline-offset: calc(-1 * var(--focus-ring-offset)); }
+.personal-waypoint-category-menu-root { position: relative; display: flex; align-items: center; }
+.personal-waypoint-category-menu { position: absolute; z-index: 20; inset-block-start: calc(100% + 3px); inset-inline-end: 0; width: 190px; padding: 4px; border: 1px solid var(--border-card); border-radius: var(--radius-control); background: var(--surface-card); box-shadow: var(--shadow-md); }
+.personal-waypoint-category-group .personal-waypoint-list-rows { max-height: none; border-top: 1px solid var(--border-subtle); }
 
 .personal-waypoint-pin {
   display: grid;
@@ -232,6 +248,15 @@
   width: 15px;
   height: 15px;
 }
+.personal-waypoint-pin-blue { color: var(--personal-waypoint-marker-blue); }
+.personal-waypoint-pin-red { color: var(--personal-waypoint-marker-red); }
+.personal-waypoint-pin-orange { color: var(--personal-waypoint-marker-orange); }
+.personal-waypoint-pin-yellow { color: var(--personal-waypoint-marker-yellow); }
+.personal-waypoint-pin-green { color: var(--personal-waypoint-marker-green); }
+.personal-waypoint-pin-cyan { color: var(--personal-waypoint-marker-cyan); }
+.personal-waypoint-pin-purple { color: var(--personal-waypoint-marker-purple); }
+.personal-waypoint-pin-gray { color: var(--personal-waypoint-marker-gray); }
+.personal-waypoint-directions { width: 36px; min-width: 36px; padding: 0; color: var(--text-muted); }
 
 .personal-waypoint-grip {
   width: 40px;
@@ -304,12 +329,6 @@
   width: 36px;
   min-width: 36px;
   min-height: 36px;
-}
-
-.personal-waypoint-directions {
-  min-height: 36px;
-  padding: 4px 8px;
-  white-space: nowrap;
 }
 
 .personal-waypoint-remove { color: var(--text-error-strong); }

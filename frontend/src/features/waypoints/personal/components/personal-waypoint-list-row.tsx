@@ -2,9 +2,9 @@ import { useCallback } from 'react'
 import type { KeyboardEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
-import { IconButton, Button } from '../../../../ui/button'
+import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { CloseIcon, GripVerticalIcon, MapPinIcon } from '../../../../ui/icons'
+import { ArmchairIcon, CircleDotIcon, CloseIcon, CoffeeIcon, GripVerticalIcon, NavigationIcon, TreePineIcon, FavoriteIcon } from '../../../../ui/icons'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
@@ -12,6 +12,7 @@ interface PersonalWaypointListRowProps {
   readonly handleDisabled: boolean
   readonly onRemove: (waypointId: string) => void
   readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
+  readonly onOpenDetails?: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onDirections?: (waypoint: PersonalWaypoint) => void
   readonly onHandleRef?: (waypointId: string, element: HTMLButtonElement | null) => void
   readonly rowRef?: Ref<HTMLLIElement>
@@ -29,6 +30,7 @@ export function PersonalWaypointListRow({
   handleDisabled,
   onRemove,
   onFocusWaypoint,
+  onOpenDetails,
   onDirections,
   onHandleRef,
   rowRef,
@@ -40,6 +42,11 @@ export function PersonalWaypointListRow({
   handleDescriptionId,
 }: PersonalWaypointListRowProps) {
   const label = `${waypoint.name}, ${waypoint.category}`
+  const markerIcon = waypoint.markerIcon === 'rest' ? <ArmchairIcon />
+    : waypoint.markerIcon === 'food' ? <CoffeeIcon />
+      : waypoint.markerIcon === 'nature' ? <TreePineIcon />
+        : waypoint.markerIcon === 'favorite' ? <FavoriteIcon filled={false} />
+          : <CircleDotIcon />
   const setHandleRef = useCallback((element: HTMLButtonElement | null): void => {
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
@@ -63,12 +70,14 @@ export function PersonalWaypointListRow({
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
-        <span className="personal-waypoint-pin"><MapPinIcon /></span>
+        <span className={`personal-waypoint-pin personal-waypoint-pin-${waypoint.markerColor}`}>{markerIcon}</span>
       </>}
       title={waypoint.name}
       subtitle={waypoint.category}
-      onSelect={onFocusWaypoint ? () => onFocusWaypoint(waypoint) : undefined}
-      selectLabel={`Show ${label} on map`}
+      onSelect={(event) => onOpenDetails
+        ? onOpenDetails(waypoint, event.currentTarget)
+        : onFocusWaypoint?.(waypoint)}
+      selectLabel={`Open ${label} details`}
       trailing={editing ? (
         <div className="personal-waypoint-row-actions">
           <IconButton
@@ -80,11 +89,12 @@ export function PersonalWaypointListRow({
         </div>
       ) : onDirections ? (
         <div className="personal-waypoint-row-actions">
-          <Button
+          <IconButton
             className="personal-waypoint-directions"
-            label="Directions"
-            ariaLabel={`Directions to ${label}`}
-            variant="ghost"
+            label={`Directions to ${label}`}
+            icon={<NavigationIcon />}
+            variant="plain"
+            title={`Directions to ${label}`}
             onClick={() => onDirections(waypoint)}
           />
         </div>

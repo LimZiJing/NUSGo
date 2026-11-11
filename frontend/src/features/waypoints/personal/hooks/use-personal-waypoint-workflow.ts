@@ -189,9 +189,9 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     return finishMutation(outcome, 'cleared', 'All places cleared.')
   }, [finishMutation, setStatus, store])
 
-  const startDraft = useCallback((coordinate: WaypointCoordinate) => {
+  const startDraft = useCallback((coordinate: WaypointCoordinate, category = '') => {
     setEditing(null)
-    setDraft(createEmptyPersonalWaypointDraft(coordinate))
+    setDraft({ ...createEmptyPersonalWaypointDraft(coordinate), category })
     setIssues([])
     clearStatus()
   }, [clearStatus])

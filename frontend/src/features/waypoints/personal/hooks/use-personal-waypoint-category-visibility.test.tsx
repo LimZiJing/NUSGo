@@ -96,4 +96,43 @@ describe('usePersonalWaypointCategoryVisibility', () => {
     expect(result.current.hiddenCategories).toEqual(['Food & drink', 'Rest spot'])
     expect(result.current.status).toContain('could not be saved')
   })
+
+  it('does not overwrite stored visibility when the latest settings cannot be read', () => {
+    const { store, getHiddenCategories, writes } = createStore(['Food & drink'])
+    const unreadableStore: PersonalWaypointCategoryVisibilityStore = {
+      ...store,
+      read: () => ({ kind: 'invalid' }),
+    }
+    const { result } = renderHook(() => usePersonalWaypointCategoryVisibility(unreadableStore))
+    let saved = true
+    act(() => { saved = result.current.setCategoryVisibleImmediately('Rest spot', false) })
+    expect(saved).toBe(false)
+    expect(getHiddenCategories()).toEqual(['Food & drink'])
+    expect(writes).toEqual([])
+    expect(result.current.status).toContain('could not be read')
+  })
+
+  it('preserves other staged changes when a category is saved immediately', () => {
+    const { store, getHiddenCategories } = createStore([])
+    const { result } = renderHook(() => usePersonalWaypointCategoryVisibility(store))
+    act(() => result.current.openPicker())
+    act(() => result.current.setCategoryVisible('Food & drink', false))
+    act(() => result.current.setCategoryVisibleImmediately('Rest spot', false))
+    expect(getHiddenCategories()).toEqual(['Rest spot'])
+    expect(result.current.draftHiddenCategories).toEqual(['Food & drink', 'Rest spot'])
+    act(() => result.current.saveCategoryVisibilityChanges())
+    expect(getHiddenCategories()).toEqual(['Food & drink', 'Rest spot'])
+  })
+
+  it('keeps saved visibility unchanged and reports a failed immediate write', () => {
+    const { store, getHiddenCategories, writes } = createStore(['Food & drink'], { kind: 'unavailable' })
+    const { result } = renderHook(() => usePersonalWaypointCategoryVisibility(store))
+    let saved = true
+    act(() => { saved = result.current.setCategoryVisibleImmediately('Rest spot', false) })
+    expect(saved).toBe(false)
+    expect(getHiddenCategories()).toEqual(['Food & drink'])
+    expect(writes).toEqual([['Food & drink', 'Rest spot']])
+    expect(result.current.hiddenCategories).toEqual(['Food & drink'])
+    expect(result.current.status).toContain('could not be saved')
+  })
 })

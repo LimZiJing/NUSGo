@@ -132,6 +132,8 @@ describe('PersonalWaypointsHome', () => {
       />,
     )
 
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+
     expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked).toBe(false)
     expect(screen.getByText('Cafe')).toBeTruthy()
     expect(screen.getByText('Quiet bench')).toBeTruthy()
@@ -142,7 +144,7 @@ describe('PersonalWaypointsHome', () => {
     expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
   })
 
-  it('shows a place on the map from its flat row and offers Directions separately', async () => {
+  it('opens waypoint details from a category row while retaining category navigation', async () => {
     const user = userEvent.setup()
     const onFocusWaypoint = vi.fn()
     const onDirectionsWaypoint = vi.fn()
@@ -167,10 +169,10 @@ describe('PersonalWaypointsHome', () => {
     expect(screen.queryByRole('heading', { name: 'All places 1' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
     expect(onFocusWaypoint).toHaveBeenCalledWith(waypoint)
-    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
-    expect(onDirectionsWaypoint).toHaveBeenCalledWith(waypoint)
+    expect(onDirectionsWaypoint).not.toHaveBeenCalled()
   })
 
   it('shows only the selected category and keeps Add waypoint on the main screen', async () => {
@@ -193,7 +195,7 @@ describe('PersonalWaypointsHome', () => {
       />,
     )
 
-    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Back to categories' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Back to categories' })).toBeTruthy()
 
@@ -215,12 +217,14 @@ describe('PersonalWaypointsHome', () => {
         selectedCategory={null}
       />,
     )
-    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
   })
 
   it('restores focus to the page empty state when the last waypoint is removed', async () => {
     const user = userEvent.setup()
     render(<StatefulPersonalWaypointsHome />)
+
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
 
     await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))
 

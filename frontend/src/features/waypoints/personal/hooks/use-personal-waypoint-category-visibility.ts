@@ -24,6 +24,29 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
       : current.includes(category) ? current : [...current, category])
   }, [])
 
+  const setCategoryVisibleImmediately = useCallback((category: string, visible: boolean) => {
+    const latest = store.read()
+    if (latest.kind !== 'ready') {
+      setStatus(getReadStatus(latest.kind))
+      return false
+    }
+    const currentHidden = latest.hiddenCategories
+    const nextHidden = visible
+      ? currentHidden.filter((item) => item !== category)
+      : currentHidden.includes(category) ? [...currentHidden] : [...currentHidden, category]
+    const result = store.write(nextHidden)
+    if (result.kind !== 'saved') {
+      setStatus('Map category settings could not be saved. The category visibility was not changed.')
+      return false
+    }
+    setHiddenCategories(nextHidden)
+    setDraftHiddenCategories((current) => visible
+      ? current.filter((item) => item !== category)
+      : current.includes(category) ? current : [...current, category])
+    setStatus(null)
+    return true
+  }, [store])
+
   const clearCategoryVisibilityChanges = useCallback((categories: readonly string[]) => {
     setDraftHiddenCategories([...categories])
   }, [])
@@ -53,6 +76,7 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
     draftHiddenCategories,
     pickerOpen,
     setCategoryVisible,
+    setCategoryVisibleImmediately,
     clearCategoryVisibilityChanges,
     cancelCategoryVisibilityChanges,
     saveCategoryVisibilityChanges,

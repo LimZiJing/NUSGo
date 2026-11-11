@@ -61,6 +61,7 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  window.localStorage.removeItem('navus:personal-waypoints:expanded-categories:v1')
   Object.defineProperty(document, 'getAnimations', { configurable: true, value: () => [] })
   Object.defineProperty(HTMLElement.prototype, 'getAnimations', { configurable: true, value: () => [] })
   vi.stubGlobal('IntersectionObserver', class {
@@ -92,7 +93,9 @@ describe('PersonalWaypointList', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
     expect(onFocusWaypoint).toHaveBeenCalledWith(waypoints[0])
 
     await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
@@ -123,11 +126,33 @@ describe('PersonalWaypointList', () => {
 
     await user.clear(search)
     expect(onSearchFilterChange).toHaveBeenLastCalledWith(false)
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
     expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
       'Quiet benchRest spot',
-      'Design studioStudy place',
       'Tea roomRest spot',
+      'Design studioStudy place',
     ])
+  })
+
+  it('starts groups collapsed, reveals matching groups during search, and restores expansion state', async () => {
+    const user = userEvent.setup()
+    window.localStorage.clear()
+    const { unmount } = render(
+      <PersonalWaypointList waypoints={waypoints} canEdit editing={false} onRemove={() => undefined} onMove={() => true} />,
+    )
+    expect(screen.getByRole('button', { name: 'Rest spot options' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByRole('button', { name: /Rest spot.*2/ }).getAttribute('aria-expanded')).toBe('false')
+    expect(document.getElementById('waypoint-category-list-Rest%20spot')?.hasAttribute('hidden')).toBe(true)
+    await user.click(screen.getByRole('button', { name: /Rest spot.*2/ }))
+    const search = screen.getByRole('searchbox', { name: 'Search saved places' })
+    await user.type(search, 'Design')
+    expect(screen.getByRole('button', { name: 'Open Design studio, Study place details' })).toBeTruthy()
+    await user.clear(search)
+    expect(screen.getByRole('button', { name: /Rest spot.*2/ }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: /Study place.*1/ }).getAttribute('aria-expanded')).toBe('false')
+    unmount()
+    render(<PersonalWaypointList waypoints={waypoints} canEdit editing={false} onRemove={() => undefined} onMove={() => true} />)
+    expect(screen.getByText('Quiet bench')).toBeTruthy()
   })
 
   it('shows only places from a fixed category and disables reordering', async () => {
@@ -282,7 +307,8 @@ describe('PersonalWaypointList', () => {
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Quiet bench remains at position 1 of 3.')
   })
 
-  it('keeps row management controls hidden outside edit mode', () => {
+  it('keeps row management controls hidden outside edit mode', async () => {
+    const user = userEvent.setup()
     render(
       <PersonalWaypointList
         waypoints={waypoints}
@@ -298,6 +324,8 @@ describe('PersonalWaypointList', () => {
     expect(screen.queryByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Remove Quiet bench, Rest spot' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Reorder Quiet bench, Rest spot' })).toBeNull()
+    expect(screen.getByRole('button', { name: /Rest spot.*2/ })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Rest spot.*2/ }))
     expect(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' })).toBeTruthy()
   })
 

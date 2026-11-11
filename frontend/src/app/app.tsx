@@ -29,6 +29,8 @@ import {
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { MoreEntryButton } from '../ui/more-entry-button'
+import { IconButton } from '../ui/button'
+import { PlusIcon } from '../ui/icons'
 import type { MorePanelPage } from '../ui/more-panel-surface'
 import {
   applyTheme,
@@ -80,7 +82,7 @@ import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
-import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
+import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE, PERSONAL_WAYPOINTS_MAX_COUNT } from '../domain/waypoints/personal/personal-waypoint'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
@@ -778,9 +780,9 @@ function App() {
     setMoreSheetDetent('full')
     setMorePage('release-notes')
   }
-  const beginWaypointCreation = (): void => {
+  const beginWaypointCreation = (category?: string): void => {
     setIsEditingPersonalWaypoints(false)
-    personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
+    personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE, category)
     setPlacementReturnPage(null)
     setMorePage('creating')
   }
@@ -907,14 +909,21 @@ function App() {
     setMorePage('editing-waypoint')
     setMoreSheetDetent('full')
   }
-  const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
-    ? <PersonalWaypointListActions
+  const personalWaypointHeaderAction = morePage === 'waypoints' ? <div className="personal-waypoint-header-actions">
+    <IconButton
+      label="Add waypoint"
+      icon={<PlusIcon />}
+      onClick={() => beginWaypointCreation()}
+      disabled={personalWaypointCollection === null || personalWaypointCollection.length >= PERSONAL_WAYPOINTS_MAX_COUNT}
+      ref={personalWaypointsInitialFocusRef}
+    />
+    {canEditPersonalWaypoints && <PersonalWaypointListActions
       editing={isEditingPersonalWaypoints}
       hasSearchFilter={hasPersonalWaypointSearchFilter}
       onToggleEditing={() => setIsEditingPersonalWaypoints((editing) => !editing)}
       onClearAll={clearPersonalWaypoints}
-    />
-    : undefined
+    />}
+  </div> : undefined
 
   useLayoutEffect(() => {
     const pendingReturnFocus = pendingWaypointReturnFocusRef.current
@@ -1096,6 +1105,7 @@ function App() {
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointCreation}
               onFocusWaypoint={focusPersonalWaypoint}
+              onOpenDetails={(waypoint, trigger) => openPersonalWaypointDetails(waypoint.id, morePage, moreSheetDetent, trigger)}
               onDirectionsWaypoint={navigateToPersonalWaypoint}
               onSearchFilterChange={setHasPersonalWaypointSearchFilter}
               editing={isEditingPersonalWaypoints}
@@ -1110,6 +1120,7 @@ function App() {
               selectedCategory={activePersonalWaypointCategory}
               categoryVisibilityStatus={personalWaypointCategoryVisibility.status}
               onSetCategoryVisible={personalWaypointCategoryVisibility.setCategoryVisible}
+              onSetCategoryVisibleImmediately={personalWaypointCategoryVisibility.setCategoryVisibleImmediately}
               onOpenCategory={openPersonalWaypointCategory}
               onBackToCategories={backToPersonalWaypointCategories}
               onToggleCategoryPicker={personalWaypointCategoryVisibility.togglePicker}
@@ -1118,7 +1129,6 @@ function App() {
               onDoneCategoryVisibilityChanges={personalWaypointCategoryVisibility.saveCategoryVisibilityChanges}
               categoryBackButtonRef={personalWaypointCategoryBackRef}
               categoryPickerTriggerRef={personalWaypointCategoryPickerRef}
-              initialFocusRef={personalWaypointsInitialFocusRef}
             /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
               waypoint={selectedPersonalWaypoint}
               canManage={canManageSelectedPersonalWaypoint}

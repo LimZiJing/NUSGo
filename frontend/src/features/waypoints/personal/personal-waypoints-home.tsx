@@ -13,6 +13,7 @@ export function PersonalWaypointsHome({
   status,
   onAdd,
   onFocusWaypoint,
+  onOpenDetails,
   onDirectionsWaypoint,
   onSearchFilterChange,
   editing,
@@ -27,6 +28,7 @@ export function PersonalWaypointsHome({
   selectedCategory,
   categoryVisibilityStatus,
   onSetCategoryVisible,
+  onSetCategoryVisibleImmediately,
   onOpenCategory,
   onBackToCategories,
   onToggleCategoryPicker,
@@ -35,12 +37,12 @@ export function PersonalWaypointsHome({
   onDoneCategoryVisibilityChanges,
   categoryBackButtonRef,
   categoryPickerTriggerRef,
-  initialFocusRef,
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
-  readonly onAdd: () => void
+  readonly onAdd: (category?: string) => void
   readonly onFocusWaypoint: (waypoint: PersonalWaypoint) => void
+  readonly onOpenDetails?: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onDirectionsWaypoint?: (waypoint: PersonalWaypoint) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly editing: boolean
@@ -55,6 +57,7 @@ export function PersonalWaypointsHome({
   readonly selectedCategory: string | null
   readonly categoryVisibilityStatus: string | null
   readonly onSetCategoryVisible: (category: string, visible: boolean) => void
+  readonly onSetCategoryVisibleImmediately?: (category: string, visible: boolean) => void
   readonly onOpenCategory: (category: string) => void
   readonly onBackToCategories: () => void
   readonly onToggleCategoryPicker: () => void
@@ -63,7 +66,6 @@ export function PersonalWaypointsHome({
   readonly onDoneCategoryVisibilityChanges: () => void
   readonly categoryBackButtonRef?: Ref<HTMLButtonElement>
   readonly categoryPickerTriggerRef?: Ref<HTMLButtonElement>
-  readonly initialFocusRef?: Ref<HTMLButtonElement>
 }) {
   const ready = readResult.kind === 'ready'
   const canAdd = ready && readResult.rejectedRecords.count === 0 &&
@@ -87,7 +89,6 @@ export function PersonalWaypointsHome({
   }, [waypointCount])
 
   return <div className="personal-waypoints-home">
-    {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
     {status && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{status}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.
@@ -156,7 +157,12 @@ export function PersonalWaypointsHome({
             onDone={onDoneCategoryVisibilityChanges}
           /> : undefined}
           onFocusWaypoint={onFocusWaypoint}
+          onOpenDetails={onOpenDetails}
           onDirections={onDirectionsWaypoint}
+          onAddCategory={onAdd}
+          canAddWaypoint={canAdd}
+          hiddenCategories={hiddenCategories}
+          onSetCategoryVisibleImmediately={onSetCategoryVisibleImmediately}
           onSearchFilterChange={onSearchFilterChange}
           onRemove={onRemove}
           onMove={onMove}

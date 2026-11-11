@@ -30,6 +30,8 @@ import {
   MoreHorizontal,
   Navigation,
   Palette,
+  Pencil,
+  Plus,
   Moon,
   RotateCw,
   Route,
@@ -38,6 +40,7 @@ import {
   Star,
   Sun,
   TreePine,
+  Trash2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -50,6 +53,14 @@ function renderDecorativeIcon(Icon: LucideIcon, props: IconProps) {
 
 export function ArrowDownUpIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowDownUp, props)
+}
+
+export function EditIcon(props: IconProps) {
+  return renderDecorativeIcon(Pencil, props)
+}
+
+export function TrashIcon(props: IconProps) {
+  return renderDecorativeIcon(Trash2, props)
 }
 
 export function ArrowRightIcon(props: IconProps) {
@@ -154,6 +165,10 @@ export function NavigationIcon(props: IconProps) {
 
 export function PaletteIcon(props: IconProps) {
   return renderDecorativeIcon(Palette, props)
+}
+
+export function PlusIcon(props: IconProps) {
+  return renderDecorativeIcon(Plus, props)
 }
 
 export function RouteIcon(props: IconProps) {

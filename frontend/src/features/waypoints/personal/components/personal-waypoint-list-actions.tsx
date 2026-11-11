@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { IconButton } from '../../../../ui/button'
-import { EllipsisVerticalIcon } from '../../../../ui/icons'
+import { EditIcon, EllipsisVerticalIcon, TrashIcon } from '../../../../ui/icons'
 import { MenuItem } from '../../../../ui/menu-item'
 
 export function PersonalWaypointListActions({
@@ -71,12 +71,13 @@ export function PersonalWaypointListActions({
     >
       <MenuItem
         label={editing ? 'Done' : 'Edit list'}
+        icon={<EditIcon />}
         onClick={() => {
           onToggleEditing()
           closeMenu()
         }}
       />
-      <MenuItem label="Clear all" disabled={hasSearchFilter} onClick={clearAll} />
+      <MenuItem label="Clear all" icon={<TrashIcon />} disabled={hasSearchFilter} onClick={clearAll} />
     </div>}
   </div>
 }

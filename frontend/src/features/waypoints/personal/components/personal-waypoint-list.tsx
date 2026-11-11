@@ -5,8 +5,10 @@ import { arrayMove, move } from '@dnd-kit/helpers'
 import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
 import type { DragEndEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { Button } from '../../../../ui/button'
+import { Button, IconButton } from '../../../../ui/button'
 import { SearchField } from '../../../../ui/search-field'
+import { MenuItem } from '../../../../ui/menu-item'
+import { EllipsisVerticalIcon, MapIcon, PlusIcon } from '../../../../ui/icons'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
 import {
   PersonalWaypointListRow,
@@ -14,6 +16,17 @@ import {
 } from './personal-waypoint-list-row'
 
 const reorderInstructionsId = 'personal-waypoint-reorder-instructions'
+const expandedCategoriesStorageKey = 'navus:personal-waypoints:expanded-categories:v1'
+
+function readExpandedCategories(): string[] {
+  try {
+    const stored = window.localStorage.getItem(expandedCategoriesStorageKey)
+    const parsed: unknown = stored ? JSON.parse(stored) : []
+    return Array.isArray(parsed) ? parsed.filter((category): category is string => typeof category === 'string') : []
+  } catch {
+    return []
+  }
+}
 
 interface KeyboardReorderState {
   readonly waypointId: string
@@ -28,7 +41,12 @@ interface PersonalWaypointListProps {
   readonly editing: boolean
   readonly categoryPicker?: ReactNode
   readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
+  readonly onOpenDetails?: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onDirections?: (waypoint: PersonalWaypoint) => void
+  readonly onAddCategory?: (category: string) => void
+  readonly canAddWaypoint?: boolean
+  readonly hiddenCategories?: readonly string[]
+  readonly onSetCategoryVisibleImmediately?: (category: string, visible: boolean) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
@@ -42,18 +60,28 @@ export function PersonalWaypointList({
   editing,
   categoryPicker,
   onFocusWaypoint,
+  onOpenDetails,
   onDirections,
+  onAddCategory,
+  canAddWaypoint = true,
+  hiddenCategories = [],
+  onSetCategoryVisibleImmediately,
   onSearchFilterChange,
   onRemove,
   onMove,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(readExpandedCategories)
   const [keyboardReorder, setKeyboardReorder] = useState<KeyboardReorderState | null>(null)
+  const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null)
   const previousEditing = useRef(editing)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
   const pendingFocusRef = useRef<{ readonly waypointId: string; readonly action: 'reorder' | 'remove' } | null>(null)
+  const categoryMenuRootRef = useRef<HTMLDivElement>(null)
+  const categoryMenuTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
+  const categoryMenuItemRef = useRef<HTMLButtonElement>(null)
   const categoryView = category !== undefined
   const activeCategory = categoryView ? category : ''
   const hasSearchFilter = searchQuery.trim().length > 0
@@ -62,8 +90,23 @@ export function PersonalWaypointList({
     searchQuery,
     activeCategory || null,
   ), [activeCategory, searchQuery, waypoints])
+  const groupedWaypoints = useMemo(() => {
+    const groups = new Map<string, PersonalWaypoint[]>()
+    for (const waypoint of visibleWaypoints) {
+      const group = groups.get(waypoint.category) ?? []
+      group.push(waypoint)
+      groups.set(waypoint.category, group)
+    }
+    return [...groups].sort(([left], [right]) => left.localeCompare(right))
+  }, [visibleWaypoints])
   const editMode = canEdit && editing && waypoints.length > 0
   const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter && !categoryView
+  const setCategoryExpanded = (category: string, expanded: boolean): void => {
+    if (hasSearchFilter) return
+    const next = expanded ? [...new Set([...expandedCategories, category])] : expandedCategories.filter((item) => item !== category)
+    setExpandedCategories(next)
+    try { window.localStorage.setItem(expandedCategoriesStorageKey, JSON.stringify(next)) } catch { /* Storage is optional. */ }
+  }
 
   const changeSearchQuery = (query: string): void => {
     setSearchQuery(query)
@@ -77,6 +120,19 @@ export function PersonalWaypointList({
   }, [editing, onEditAnnouncement])
 
   useEffect(() => () => onSearchFilterChange?.(false), [onSearchFilterChange])
+
+  useEffect(() => {
+    if (!openCategoryMenu) return
+    const closeOnOutside = (event: PointerEvent): void => {
+      if (!categoryMenuRootRef.current?.contains(event.target as Node)) setOpenCategoryMenu(null)
+    }
+    document.addEventListener('pointerdown', closeOnOutside)
+    return () => document.removeEventListener('pointerdown', closeOnOutside)
+  }, [openCategoryMenu])
+
+  useLayoutEffect(() => {
+    if (openCategoryMenu) categoryMenuItemRef.current?.focus()
+  }, [openCategoryMenu])
 
   useLayoutEffect(() => {
     const pendingFocus = pendingFocusRef.current
@@ -210,6 +266,7 @@ export function PersonalWaypointList({
           onRemove(id)
         },
         onFocusWaypoint,
+        onOpenDetails,
         onDirections,
         onHandleRef: registerHandleRef,
       }
@@ -253,7 +310,55 @@ export function PersonalWaypointList({
           <DragDropProvider sensors={[PointerSensor]} onDragEnd={handleDragEnd}>
             {listRows}
           </DragDropProvider>
-        ) : listRows}
+        ) : categoryView ? listRows : <>
+          {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
+            <Button label="Expand all" variant="ghost" onClick={() => {
+              const categories = groupedWaypoints.map(([name]) => name)
+              setExpandedCategories(categories)
+              try { window.localStorage.setItem(expandedCategoriesStorageKey, JSON.stringify(categories)) } catch { /* Storage is optional. */ }
+            }} />
+            <Button label="Collapse all" variant="ghost" onClick={() => {
+              setExpandedCategories([])
+              try { window.localStorage.setItem(expandedCategoriesStorageKey, '[]') } catch { /* Storage is optional. */ }
+            }} />
+          </div>}
+          {groupedWaypoints.map(([name, items]) => {
+            const expanded = hasSearchFilter || expandedCategories.includes(name)
+            const hidden = hiddenCategories.includes(name)
+            return <section className="personal-waypoint-category-group" key={name} aria-label={`${name}, ${items.length} places`}>
+              <div className="personal-waypoint-category-heading-row">
+                <button id={`waypoint-category-heading-${encodeURIComponent(name)}`} className="personal-waypoint-category-heading" type="button" aria-disabled={hasSearchFilter || undefined} aria-expanded={expanded} aria-controls={`waypoint-category-list-${encodeURIComponent(name)}`} onClick={() => setCategoryExpanded(name, !expanded)}>
+                  <span>{name}</span><span className="personal-waypoint-category-count">{items.length}</span>
+                  <span aria-hidden="true">{expanded ? '⌄' : '›'}</span>
+                </button>
+                <div className="personal-waypoint-category-menu-root" data-owns-escape={openCategoryMenu === name ? 'true' : undefined} ref={openCategoryMenu === name ? categoryMenuRootRef : undefined} onKeyDown={(event) => {
+                  if (event.key !== 'Escape') return
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setOpenCategoryMenu(null)
+                  categoryMenuTriggerRefs.current.get(name)?.focus()
+                }}>
+                  <IconButton label={`${name} options`} icon={<EllipsisVerticalIcon />} variant="plain" ref={(element) => { if (element) categoryMenuTriggerRefs.current.set(name, element) }} expanded={openCategoryMenu === name} controls={`waypoint-category-menu-${encodeURIComponent(name)}`} onClick={() => setOpenCategoryMenu(openCategoryMenu === name ? null : name)} />
+                  {openCategoryMenu === name && <div id={`waypoint-category-menu-${encodeURIComponent(name)}`} className="personal-waypoint-category-menu" role="group" aria-label={`${name} actions`}>
+                    {onAddCategory && <MenuItem ref={categoryMenuItemRef} label="Add waypoint here" icon={<PlusIcon />} disabled={!canAddWaypoint} onClick={() => { setOpenCategoryMenu(null); onAddCategory(name) }} />}
+                    {onSetCategoryVisibleImmediately && <MenuItem ref={onAddCategory ? undefined : categoryMenuItemRef} label={hidden ? 'Show pins on map' : 'Hide pins on map'} icon={<MapIcon />} onClick={() => {
+                      onSetCategoryVisibleImmediately(name, hidden)
+                      setOpenCategoryMenu(null)
+                      categoryMenuTriggerRefs.current.get(name)?.focus()
+                    }} />}
+                  </div>}
+                </div>
+              </div>
+              <ul id={`waypoint-category-list-${encodeURIComponent(name)}`} hidden={!expanded} data-editing={editMode ? 'true' : 'false'} className="personal-waypoint-list-rows" aria-label={`${name} waypoints`}>
+                {items.map((waypoint) => <PersonalWaypointListRow key={waypoint.id} {...{
+                  waypoint, editing: editMode, handleDisabled: true, index: 0, handleDescriptionId: reorderInstructionsId,
+                  onRemove: (id: string) => { pendingFocusRef.current = { waypointId: id, action: 'remove' }; onRemove(id) },
+                  onFocusWaypoint, onOpenDetails, onDirections, onHandleRef: registerHandleRef,
+                }} />)}
+              </ul>
+            </section>
+          })}
+        </>}
       </>
     ) : (
       <div className="personal-waypoint-list-empty">

@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { ReactNode } from 'react'
-import { Accordion } from '@base-ui/react/accordion'
 import { Autocomplete } from '@base-ui/react/autocomplete'
 import { Field } from '@base-ui/react/field'
 import {
@@ -25,7 +24,6 @@ import {
   AlertCircleIcon,
   BanknoteIcon,
   BuildingIcon,
-  ChevronDownIcon,
   CupSodaIcon,
   DropletsIcon,
   SearchIcon,
@@ -37,8 +35,6 @@ interface SubmissionFields {
   readonly category: string
   readonly building: string
   readonly floor: string
-  readonly details: string
-  readonly accessibilityNote: string
   readonly explanation: string
   readonly requestedChange: string
 }
@@ -54,13 +50,6 @@ const CATEGORY_ICONS = {
   toilet: ToiletIcon,
   vending_machine: CupSodaIcon,
 } satisfies Record<ActiveCommunityWaypointCategory, typeof DropletsIcon>
-
-const EXTENDED_DETAILS_VALUE = 'extended-details'
-
-const EXTENDED_DETAIL_FIELDS = new Set<keyof SubmissionFields>([
-  'details',
-  'accessibilityNote',
-])
 
 function SubmissionField({
   id,
@@ -103,8 +92,6 @@ function initialFields(waypoint: CommunityWaypoint | null): SubmissionFields {
     category: waypoint?.category ?? '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
-    details: waypoint?.details ?? '',
-    accessibilityNote: waypoint?.accessibilityNote ?? '',
     explanation: '',
     requestedChange: '',
   }
@@ -123,10 +110,6 @@ function validateFields(
   const errors: SubmissionErrors = {}
   if (!waypoint && !fields.category) errors.category = 'Choose a category.'
   if (textExceedsLimit(fields.building, COMMUNITY_WAYPOINT_TEXT_LIMITS.building)) errors.building = 'Keep the building within 80 characters.'
-  if (textExceedsLimit(fields.details, COMMUNITY_WAYPOINT_TEXT_LIMITS.details)) errors.details = 'Keep the details within 500 characters.'
-  if (textExceedsLimit(fields.accessibilityNote, COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote)) {
-    errors.accessibilityNote = 'Keep the accessibility details within 280 characters.'
-  }
   if (textExceedsLimit(fields.explanation, 1_000)) errors.explanation = 'Keep the note within 1,000 characters.'
   if (textExceedsLimit(fields.requestedChange, 1_000)) errors.requestedChange = 'Keep the reason within 1,000 characters.'
   if (waypoint && !fields.requestedChange.trim()) errors.requestedChange = 'Explain what needs correcting.'
@@ -159,8 +142,6 @@ function createSubmission(
   const optionalFields: Omit<ProposedCommunityWaypointFields, 'category' | 'longitude' | 'latitude'> = {
     ...(optionalText(fields.building) ? { building: fields.building.trim() } : {}),
     ...(fields.floor.trim() ? { floor: Number(fields.floor) } : {}),
-    ...(optionalText(fields.accessibilityNote) ? { accessibilityNote: fields.accessibilityNote.trim() } : {}),
-    ...(optionalText(fields.details) ? { details: fields.details.trim() } : {}),
   }
 
   if (waypoint) {
@@ -236,13 +217,11 @@ export function CommunityWaypointSubmissionForm({
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
   const [submissionError, setSubmissionError] = useState<string | null>(null)
-  const [isExtendedDetailsOpen, setIsExtendedDetailsOpen] = useState(false)
   const [previousLocationStatus, setPreviousLocationStatus] = useState(locationStatus)
   const [locationAnnouncement, setLocationAnnouncement] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const receiptHeadingRef = useRef<HTMLHeadingElement>(null)
   const submissionControllerRef = useRef<AbortController | null>(null)
-  const focusAfterExtendedDetailsOpenRef = useRef<keyof SubmissionFields | null>(null)
   const isCorrection = waypoint !== null
   const nearestBuildingName = !isCorrection && locationStatus === 'ready'
     ? getNearestBuildingName(buildingIndex, coordinate)
@@ -286,13 +265,6 @@ export function CommunityWaypointSubmissionForm({
     if (status === 'received') receiptHeadingRef.current?.focus()
   }, [status])
 
-  useLayoutEffect(() => {
-    if (!isExtendedDetailsOpen || !focusAfterExtendedDetailsOpenRef.current) return
-    const field = focusAfterExtendedDetailsOpenRef.current
-    focusAfterExtendedDetailsOpenRef.current = null
-    formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)?.focus()
-  }, [isExtendedDetailsOpen])
-
   const updateField = (field: keyof SubmissionFields, value: string): void => {
     setFields((current) => ({ ...current, [field]: value }))
     setErrors((current) => {
@@ -311,15 +283,6 @@ export function CommunityWaypointSubmissionForm({
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       const firstInvalidField = Object.keys(validationErrors)[0] as SubmissionField
-      if (
-        firstInvalidField !== 'coordinate' &&
-        EXTENDED_DETAIL_FIELDS.has(firstInvalidField) &&
-        !isExtendedDetailsOpen
-      ) {
-        focusAfterExtendedDetailsOpenRef.current = firstInvalidField
-        setIsExtendedDetailsOpen(true)
-        return
-      }
       const target = firstInvalidField === 'coordinate'
         ? formRef.current?.querySelector<HTMLElement>('.community-waypoint-submission-coordinate button')
         : formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalidField}"]`)
@@ -574,67 +537,6 @@ export function CommunityWaypointSubmissionForm({
               onChange={(event) => updateField('floor', event.target.value)}
             />
           </SubmissionField>
-          <Accordion.Root
-            className="community-waypoint-extra-fields-disclosure"
-            value={isExtendedDetailsOpen ? [EXTENDED_DETAILS_VALUE] : []}
-            onValueChange={(value) => setIsExtendedDetailsOpen(value.includes(EXTENDED_DETAILS_VALUE))}
-          >
-            <Accordion.Item className="community-waypoint-extra-fields-item" value={EXTENDED_DETAILS_VALUE}>
-              <Accordion.Header render={<h4 />} className="community-waypoint-extra-fields-header">
-                <Accordion.Trigger
-                  id="community-submission-extended-details-heading"
-                  className="community-waypoint-extra-fields-trigger"
-                >
-                  <span>Details and accessibility</span>
-                  <ChevronDownIcon className="community-waypoint-extra-fields-chevron" size={16} />
-                </Accordion.Trigger>
-              </Accordion.Header>
-              <Accordion.Panel className="community-waypoint-extra-fields-panel">
-                <div className="community-waypoint-extra-fields-disclosure-content">
-                  <SubmissionField
-                    id="community-submission-details"
-                    name="details"
-                    label="Details"
-                    error={errors.details}
-                    layout="multiline"
-                  >
-                    <textarea
-                      id="community-submission-details"
-                      name="details"
-                      className="community-waypoint-field-control community-waypoint-field-control--multiline"
-                      placeholder=" "
-                      rows={2}
-                      value={fields.details}
-                      maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.details + 1) * 2}
-                      aria-invalid={Boolean(errors.details)}
-                      aria-describedby={errors.details ? 'community-submission-details-error' : undefined}
-                      onChange={(event) => updateField('details', event.target.value)}
-                    />
-                  </SubmissionField>
-                  <SubmissionField
-                    id="community-submission-accessibility"
-                    name="accessibilityNote"
-                    label="Accessibility note"
-                    error={errors.accessibilityNote}
-                    layout="multiline"
-                  >
-                    <textarea
-                      id="community-submission-accessibility"
-                      name="accessibilityNote"
-                      className="community-waypoint-field-control community-waypoint-field-control--multiline"
-                      placeholder=" "
-                      rows={2}
-                      value={fields.accessibilityNote}
-                      maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.accessibilityNote + 1) * 2}
-                      aria-invalid={Boolean(errors.accessibilityNote)}
-                      aria-describedby={errors.accessibilityNote ? 'community-submission-accessibility-error' : undefined}
-                      onChange={(event) => updateField('accessibilityNote', event.target.value)}
-                    />
-                  </SubmissionField>
-                </div>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion.Root>
         </div>
       </section>
 

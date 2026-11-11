@@ -58,13 +58,9 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.getByLabelText('Building or landmark')).toBeTruthy()
     expect(screen.getByLabelText('Floor')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Building or landmark' })).toBeTruthy()
-    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
-    expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.getByRole('heading', { name: 'Details and accessibility', level: 4 })).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
     await user.type(screen.getByLabelText(/Building or landmark/), 'Central Library')
-    await user.click(extendedDetailsButton)
-    await user.type(screen.getByLabelText('Details', { exact: true }), 'Near the east entrance.')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     expect(props.onAdjustLocation).toHaveBeenCalledOnce()
 
@@ -76,7 +72,6 @@ describe('CommunityWaypointSubmissionForm', () => {
       longitude: 103.78,
       latitude: 1.29,
       building: 'Central Library',
-      details: 'Near the east entrance.',
       explanation: 'Near the library entrance.',
     }, expect.any(AbortSignal))
     expect((await screen.findByRole('status')).textContent).toMatch(/review it before publication/)
@@ -118,7 +113,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.getByRole('status').textContent).toBe('Waypoint location set. Check the pin before sending.')
   })
 
-  it('autofills buildings and keeps details and accessibility inside their dropdown', async () => {
+  it('autofills buildings and keeps building and floor available in Additional details', async () => {
     const user = userEvent.setup()
     const buildingIndex = buildBuildingIndex([{
       id: 'central-library',
@@ -137,14 +132,8 @@ describe('CommunityWaypointSubmissionForm', () => {
     })
     expect(buildingInput.type).toBe('text')
     expect(screen.getByLabelText('Floor')).toBeTruthy()
-    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
-    expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
-
-    await user.click(extendedDetailsButton)
-    expect(screen.getByLabelText('Details')).toBeTruthy()
-    expect(screen.getByLabelText('Accessibility note')).toBeTruthy()
 
     await user.clear(buildingInput)
     await user.type(buildingInput, 'central')
@@ -169,33 +158,14 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
 
-  it('opens the extended details dropdown to focus a hidden invalid field', async () => {
-    const user = userEvent.setup()
-    const { props } = renderForm()
-
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
-    const extendedDetailsButton = screen.getByRole('button', { name: 'Details and accessibility' })
-    await user.click(extendedDetailsButton)
-    const detailsField = screen.getByLabelText('Details')
-    fireEvent.change(detailsField, { target: { value: 'x'.repeat(501) } })
-    await user.click(extendedDetailsButton)
-    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
-
-    await waitFor(() => {
-      expect(extendedDetailsButton.getAttribute('aria-expanded')).toBe('true')
-      expect(document.activeElement).toBe(screen.getByLabelText('Details'))
-      expect(screen.getByText('Keep the details within 500 characters.', { selector: 'span' })).toBeTruthy()
-    })
-    expect(props.onSubmit).not.toHaveBeenCalled()
-  })
-
   it('sends a correction reason and the proposed approved-place fields', async () => {
     const user = userEvent.setup()
     const { props } = renderForm({ waypoint })
 
     expect(screen.getByText('Correction for')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Additional details (optional)' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Details and accessibility' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
     expect(screen.queryByLabelText('Waypoint name')).toBeNull()
     await user.type(screen.getByLabelText('What needs correcting?'), 'The cooler has moved upstairs.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
@@ -209,7 +179,6 @@ describe('CommunityWaypointSubmissionForm', () => {
       latitude: waypoint.coordinate.latitude,
       building: waypoint.building,
       floor: waypoint.floor,
-      details: waypoint.details,
     }, expect.any(AbortSignal))
   })
 

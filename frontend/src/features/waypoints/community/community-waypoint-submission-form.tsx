@@ -453,9 +453,9 @@ export function CommunityWaypointSubmissionForm({
         />
       </SubmissionField>}
 
-      <section className="community-waypoint-extra-fields" aria-labelledby="community-submission-additional-details-heading">
-        <h3 id="community-submission-additional-details-heading" className="community-waypoint-extra-fields-title">
-          Additional details <span>(optional)</span>
+      <section className="community-waypoint-extra-fields" aria-labelledby="community-submission-building-floor-heading">
+        <h3 id="community-submission-building-floor-heading" className="community-waypoint-extra-fields-title">
+          Building and floor <span>(optional)</span>
         </h3>
         <div className="community-waypoint-extra-fields-content">
           <SubmissionField

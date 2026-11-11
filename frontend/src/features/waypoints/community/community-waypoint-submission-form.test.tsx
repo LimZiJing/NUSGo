@@ -163,7 +163,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm({ waypoint })
 
     expect(screen.getByText('Correction for')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Additional details (optional)' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Building and floor (optional)' })).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
     expect(screen.queryByLabelText('Waypoint name')).toBeNull()

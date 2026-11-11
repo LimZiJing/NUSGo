@@ -88,7 +88,7 @@ describe('createCommunityWaypointMarkers', () => {
     const markers = createCommunityWaypointMarkers({} as Map)
     const revisedWaypoint: CommunityWaypoint = {
       ...waypoint,
-      displayLabel: 'Accessible toilet',
+      displayLabel: 'Toilet',
       category: 'toilet',
       coordinate: { longitude: 103.79, latitude: 1.30 },
     }
@@ -100,7 +100,7 @@ describe('createCommunityWaypointMarkers', () => {
     expect(markerState.instances).toHaveLength(1)
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(button.dataset.category).toBe('toilet')
-    expect(button.getAttribute('aria-label')).toBe('Open details for Accessible toilet')
+    expect(button.getAttribute('aria-label')).toBe('Open details for Toilet')
     expect(button.querySelector('.community-waypoint-marker-token')?.textContent).toBe('T')
 
     markers.setWaypoints([], onSelect)

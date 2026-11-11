@@ -28,7 +28,7 @@ NUSGo is an independent campus-navigation web app that brings venue search, near
 ## Capabilities and Constraints
 
 - The current app searches campus venues and buildings, shows the NUS internal bus network, provides NUS and public-bus arrivals, and plans journeys using walking and internal bus legs.
-- Personal Waypoints are private to the browser profile. Community Waypoints have a checked-in public GeoJSON file, a base-path-aware loader that validates it, and a download link in Settings → Waypoints. The file contains only maintainer-reviewed locations and remains empty until one is approved. Community Waypoints are not shown on the map, and the public submission UI is not implemented; the backend accepts no-photo submissions for private review.
+- Personal Waypoints are private to the browser profile. Community Waypoints have a checked-in public GeoJSON file, a base-path-aware loader that validates it, and a download link in Settings → Waypoints. The file contains only maintainer-reviewed locations and remains empty until one is approved. Explore shows approved Community Waypoints as map markers with category filters. People can send anonymous, text-only suggestions and corrections to a private review queue; photos are not accepted.
 - Device location stays in the browser. When a person uses Current location as a Plan endpoint, the app freezes the active coordinates into that endpoint and sends them with the journey request.
 - Public-bus arrivals are display-only. Journey recommendations depend on available route, timing, and endpoint data; walking data can miss covered paths, indoor links, and verified building entrances.
 - NUSGo is independent and is not affiliated with NUS. Map and data sources require visible attribution.

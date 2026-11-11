@@ -106,6 +106,101 @@
   padding-right: var(--space-8);
 }
 
+.community-waypoint-field--floor {
+  gap: var(--space-2);
+}
+
+.community-waypoint-field--floor > .community-waypoint-field-label {
+  position: static;
+  top: auto;
+  left: auto;
+  max-width: 100%;
+  overflow: visible;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  transform: none;
+  transition: none;
+}
+
+.community-waypoint-field--floor:focus-within > .community-waypoint-field-label,
+.community-waypoint-field--floor:has(.community-waypoint-field-control:not(:placeholder-shown)) > .community-waypoint-field-label {
+  top: auto;
+  left: auto;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  transform: none;
+}
+
+.community-waypoint-floor-scroll {
+  padding: 2px;
+  scroll-padding-inline-start: 2px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x;
+}
+
+.community-waypoint-floor-scroll::-webkit-scrollbar { display: none; }
+
+.community-waypoint-floor-options {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.route-chip.community-waypoint-floor-option {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  font-size: var(--font-size-sm);
+  scroll-snap-align: start;
+  white-space: nowrap;
+}
+
+.route-chip.community-waypoint-floor-option[aria-checked='true'] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+
+.community-waypoint-floor-option:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.community-waypoint-floor-value--unset { color: var(--text-muted); }
+
+.community-waypoint-floor-other-panel {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+}
+
+.community-waypoint-floor-other-label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.community-waypoint-floor-other-input {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+}
+
 .community-waypoint-field-control--multiline {
   min-height: calc(var(--space-8) + var(--control-height-lg));
   padding-top: var(--space-8);

@@ -4,9 +4,9 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
-import { buildBuildingIndex } from '../../../domain/venue/building-index'
-import { CommunityWaypointSubmissionError } from '../../../domain/waypoints/community-waypoint-submission'
-import { CommunityWaypointSubmissionForm } from './community-waypoint-submission-form'
+import { buildBuildingIndex } from '../../../../domain/venue/building-index'
+import { CommunityWaypointSubmissionError } from '../../../../domain/waypoints/community-waypoint-submission'
+import { CommunityWaypointSubmissionForm } from './form'
 
 afterEach(() => cleanup())
 
@@ -31,6 +31,7 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
     locationStatus: 'ready' as const,
     locationAccuracy: 12,
     buildingIndex: null,
+    venues: null,
     onAdjustLocation: vi.fn(),
     onSubmit: vi.fn(async () => undefined),
     onBack: vi.fn(),
@@ -148,12 +149,14 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm()
 
     await user.click(screen.getByRole('radio', { name: 'ATM' }))
-    await user.type(screen.getByLabelText('Floor'), '1.5')
+    await user.click(screen.getByRole('radio', { name: 'Other…' }))
+    const otherFloorInput = screen.getByLabelText('Other floor number')
+    await user.type(otherFloorInput, '1.5')
 
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(screen.getByLabelText('Floor'))
+      expect(document.activeElement).toBe(otherFloorInput)
       expect(screen.getByText('Enter a whole-number floor.', { selector: 'span' })).toBeTruthy()
     })
     expect(props.onSubmit).not.toHaveBeenCalled()

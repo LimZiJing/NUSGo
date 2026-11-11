@@ -87,7 +87,7 @@ import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
-import { CommunityWaypointSubmissionForm } from '../features/waypoints/community/community-waypoint-submission-form'
+import { CommunityWaypointSubmissionForm } from '../features/waypoints/community/submission/form'
 import { useCommunityWaypointDiscovery } from '../features/waypoints/community/use-community-waypoint-discovery'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
@@ -1370,6 +1370,7 @@ function App() {
                 locationStatus={communitySubmissionLocationStatus}
                 locationAccuracy={communitySubmissionLocationAccuracy}
                 buildingIndex={state.buildings}
+                venues={state.venues}
                 onAdjustLocation={(trigger) => {
                   communitySubmissionPlacementFocusRef.current = trigger
                   setMorePage('community-placing')

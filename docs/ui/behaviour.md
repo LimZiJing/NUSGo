@@ -6,14 +6,15 @@ How the app behaves today, by area. For a one-page summary see [project status](
 
 The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stops is the default tab. The map's More button opens My waypoints, Settings and Release notes, followed by a quiet Download NUSGo row while the app is not installed.
 
-**Desktop (769px and wider)**
+**Desktop (769px and wider, outside short coarse-pointer landscape)**
 - One persistent left column holds the tabs. The map reserves the column's measured width as its left inset.
 - Inactive tabs stay mounted but inert, so their state survives tab switches and breakpoint changes.
 - Stops starts loading live arrivals and service windows once it becomes active. After you leave the tab, arrivals keep refreshing every 30 seconds for the last polled stop set, and that set only follows new requests while Stops is active. Service windows load only while Stops is active.
 - The Stops column is the single vertical scroll owner for that pane: the wheel over a stop card, the stop details, the empty state, the gutter or the padding all move the column. Nothing inside it keeps a scroll range of its own, and the Nearby/Favourites switch sticks to the top of the column while it scrolls. Because the list and the stop details share that one scroller, opening details resets the column to its top so their Back control and stop name are always in view. Mobile keeps its own arrangement, where the sheet scrolls the card list and details keep whatever position the sheet had.
 
-**Mobile (768px and narrower)**
+**Mobile (768px and narrower, plus short coarse-pointer landscape up to 900px wide and 420px high)**
 - A bottom tab bar sits under feature sheets, which have three detents: collapsed (a 44px handle), partial (50% of the visual viewport above the tab bar) and full (covers the whole viewport).
+- Resizing or rotating follows the viewport into the matching layout. The app does not block or lock orientation.
 - Each tab keeps its own detent when you switch away and back.
 - Handle taps toggle partial and full, and a tap on the collapsed handle opens partial. Up and Down Arrow move one detent at a time. A swipe down from partial collapses.
 - A collapsed sheet shows a one-line summary of its tab, such as the Nearby stop count or the journey duration. The summary is part of the handle's accessible name.

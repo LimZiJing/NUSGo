@@ -18,7 +18,6 @@ const waypoints: readonly CommunityWaypoint[] = [
     building: 'Stephen Riady Centre',
     floor: 1,
     details: 'Beside the east stairwell.',
-    accessibilityNote: 'Reachable without stairs.',
   },
   {
     id: 'cw-atm-001',
@@ -85,7 +84,7 @@ describe('CommunityWaypointPanel', () => {
     expect(screen.getByRole('heading', { name: waypoints[0]?.displayLabel })).toBeTruthy()
     expect(screen.getByText('Stephen Riady Centre · Floor 1')).toBeTruthy()
     expect(screen.getByText('Beside the east stairwell.')).toBeTruthy()
-    expect(screen.getByText('Reachable without stairs.')).toBeTruthy()
+    expect(screen.queryByText('Accessibility')).toBeNull()
     expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
     expect(screen.getByText('2026-10-26').tagName).toBe('TIME')
 

@@ -62,12 +62,6 @@ function WaypointDetails({
               <dd>{waypoint.details}</dd>
             </div>
           )}
-          {waypoint.accessibilityNote && (
-            <div>
-              <dt>Accessibility</dt>
-              <dd>{waypoint.accessibilityNote}</dd>
-            </div>
-          )}
           <div>
             <dt>Source</dt>
             <dd>{waypoint.source}</dd>

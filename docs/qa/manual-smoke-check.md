@@ -29,7 +29,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Mobile — 390 × 844
 
-- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation is unchanged above 768px.
+- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation applies above 768px except for short coarse-pointer landscape viewports.
 - [ ] Explore, Stops, and Plan tabs remain visible while the sheet is partial or collapsed. Full reaches the top and bottom of the viewport and covers the tab bar; collapsed leaves the 44px handle above it.
 - [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
@@ -44,6 +44,9 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 ## Responsive boundary — 768 / 769px
 
 - [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
+- [ ] At 812 × 375 and 900 × 420 with a coarse primary pointer, the app uses the mobile tab bar, sheets, map insets and map controls. At 812 × 375 with a fine pointer, at 812 × 421 with a coarse pointer, and at 901 × 375 with a coarse pointer, it uses the desktop layout.
+- [ ] Rotate between 812 × 375 and 375 × 812 without reloading. Explore, Stops and Plan retain their selected state, sheet detents, journey endpoints and map centre.
+- [ ] At 130% text zoom, repeat the Explore, Stops and Plan reachability and scrolling checks in short landscape and portrait.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
 ## More menu and PWA installation

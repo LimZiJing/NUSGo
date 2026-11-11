@@ -10,7 +10,7 @@ import { useCommunityWaypointDiscovery, type CommunityWaypointLoader } from './u
 const waypoints: readonly CommunityWaypoint[] = [
   {
     id: 'cw-water-001',
-    displayLabel: 'Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
+    displayLabel: 'Water cooler · Stephen Riady Centre · Floor 1',
     category: 'water_cooler',
     coordinate: { longitude: 103.78, latitude: 1.29 },
     source: 'NUS Campus Facilities',
@@ -65,7 +65,7 @@ describe('CommunityWaypointPanel', () => {
     render(<DiscoveryHarness load={load} onSelectWaypoint={onSelectWaypoint} onSuggestCorrection={onSuggestCorrection} />)
 
     await screen.findByRole('button', {
-      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
+      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1',
     })
     expect(screen.getByRole('button', { name: 'Open details for ATM' })).toBeTruthy()
     const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 waypoint' })
@@ -123,7 +123,7 @@ describe('CommunityWaypointPanel', () => {
     expect(logError).toHaveBeenCalledWith('Community waypoint load failed:', loadError)
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('button', {
-      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1 · Beside the east stairwell.',
+      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1',
     })).toBeTruthy()
     expect(load).toHaveBeenCalledTimes(2)
   })

@@ -292,6 +292,36 @@ describe('useMapOverlayLayout', () => {
     expect(setViewportInsets).toHaveBeenCalledTimes(2)
   })
 
+  it('uses mobile inset measurements for a short wide viewport in mobile layout mode', () => {
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',
+    }))
+    vi.stubGlobal('innerHeight', 375)
+    vi.stubGlobal('innerWidth', 812)
+    vi.stubGlobal('visualViewport', undefined)
+    vi.stubGlobal('ResizeObserver', class {
+      observe = vi.fn()
+      disconnect = vi.fn()
+    })
+    const setViewportInsets = vi.fn()
+
+    render(
+      <Probe
+        isMobileViewport
+        sheetClassName="mobile-sheet-popup"
+        setViewportInsets={setViewportInsets}
+        onMeasurementsApplied={vi.fn()}
+      />,
+    )
+
+    expect(setViewportInsets).toHaveBeenLastCalledWith({
+      top: 0,
+      right: 12,
+      bottom: 264,
+      left: 12,
+    })
+  })
+
   it('sizes the bottom inset from the detent so it is correct before the sheet finishes moving', () => {
     vi.stubGlobal('getComputedStyle', () => ({
       getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',

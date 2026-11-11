@@ -12,6 +12,7 @@ import {
 
 function measurements(overrides: Partial<MapOverlayMeasurements> = {}): MapOverlayMeasurements {
   return {
+    isMobileLayout: true,
     viewportWidth: 390,
     viewportHeight: 844,
     tripCardHeight: 76,
@@ -58,8 +59,8 @@ describe('map camera application seams', () => {
 
   it('keeps a usable map gap in short landscape while accounting for both surfaces', () => {
     expect(calculateMapOverlayInsets(measurements({
-      viewportWidth: 568,
-      viewportHeight: 320,
+      viewportWidth: 812,
+      viewportHeight: 375,
       tripCardHeight: 72,
       activeSheetHeight: 150,
     }))).toEqual({
@@ -67,6 +68,20 @@ describe('map camera application seams', () => {
       right: 12,
       bottom: 162,
       left: 12,
+    })
+  })
+
+  it('keeps desktop navigation inset rules when a short viewport uses a desktop layout', () => {
+    expect(calculateMapOverlayInsets(measurements({
+      isMobileLayout: false,
+      viewportWidth: 812,
+      viewportHeight: 375,
+      desktopNavigationWidth: 280,
+    }))).toEqual({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 292,
     })
   })
 

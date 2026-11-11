@@ -1,6 +1,5 @@
 import type { ExploreMode } from '../features/explore/state/explore-state'
 import type { TransitIndex } from '../domain/transit'
-import { isMobileLayoutWidth } from '../domain/layout-breakpoint'
 import type { LocationTrackingState } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import type { TripRequest } from '../domain/trip/types'
@@ -36,6 +35,7 @@ export function getLocationControlTarget(location: LocationTrackingState): MapRe
 }
 
 export interface MapOverlayMeasurements {
+  readonly isMobileLayout: boolean
   readonly viewportWidth: number
   readonly viewportHeight: number
   readonly tripCardHeight: number
@@ -60,7 +60,7 @@ export interface ResetTargetContext {
 export function calculateMapOverlayInsets(
   measurements: MapOverlayMeasurements,
 ): MapViewportInsets {
-  if (!isMobileLayoutWidth(measurements.viewportWidth)) {
+  if (!measurements.isMobileLayout) {
     return {
       top: 0,
       right: 0,

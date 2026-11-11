@@ -10,7 +10,7 @@ const submission: CommunityWaypointSubmission = {
   category: 'water_cooler',
   longitude: 103.78,
   latitude: 1.29,
-  details: 'Near the west entrance.',
+  explanation: 'Near the west entrance.',
 }
 
 describe('community waypoint submission client', () => {

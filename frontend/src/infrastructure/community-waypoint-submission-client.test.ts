@@ -35,8 +35,7 @@ describe('community waypoint submission client', () => {
     expect(new Headers(request?.headers).get('content-type')).toBe('application/json')
     expect(JSON.parse(String(request?.body))).toEqual(submission)
     expect(request?.signal).not.toBe(signal)
-    controller.abort()
-    expect(request?.signal?.aborted).toBe(true)
+    expect(request?.signal?.aborted).toBe(false)
   })
 
   it.each([
@@ -71,5 +70,51 @@ describe('community waypoint submission client', () => {
       kind: 'network',
       message: 'Community Waypoint submission failed',
     })
+  })
+
+  it('aborts a stalled request at its deadline and reports a retryable network error', async () => {
+    vi.useFakeTimers()
+    try {
+      const controller = new AbortController()
+      const fetcher = vi.fn<typeof fetch>((_input, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Request aborted', 'AbortError'))
+        }, { once: true })
+      }))
+      const submit = createCommunityWaypointSubmissionClient({
+        endpoint: '/api/community-waypoint-submissions',
+        fetcher,
+      })
+      const result = submit(submission, controller.signal).then(
+        () => null,
+        (error: unknown) => error,
+      )
+
+      await vi.advanceTimersByTimeAsync(20_000)
+
+      expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
+      await expect(result).resolves.toMatchObject({ kind: 'network' })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps caller cancellation as an AbortError', async () => {
+    const controller = new AbortController()
+    const fetcher = vi.fn<typeof fetch>((_input, init) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('Request aborted', 'AbortError'))
+      }, { once: true })
+    }))
+    const submit = createCommunityWaypointSubmissionClient({
+      endpoint: '/api/community-waypoint-submissions',
+      fetcher,
+    })
+    const result = submit(submission, controller.signal)
+
+    controller.abort()
+
+    await expect(result).rejects.toMatchObject({ name: 'AbortError' })
+    expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
   })
 })

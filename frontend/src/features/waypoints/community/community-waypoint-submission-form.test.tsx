@@ -183,18 +183,27 @@ describe('CommunityWaypointSubmissionForm', () => {
     }, expect.any(AbortSignal))
   })
 
-  it('shows a safe retry message when the submission cannot reach the server', async () => {
+  it('recovers from a retryable submission failure and keeps the draft available', async () => {
     const user = userEvent.setup()
+    const onPendingChange = vi.fn()
     const { props } = renderForm({
       onSubmit: vi.fn(async () => { throw new CommunityWaypointSubmissionError('network') }),
+      onPendingChange,
     })
 
     await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.type(screen.getByLabelText('Note for reviewers'), 'Beside the west entrance.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => expect(screen.getByRole('alert').textContent)
       .toMatch(/check your connection and try again/i))
-    expect(props.onBack).not.toHaveBeenCalled()
+    expect((screen.getByLabelText('Note for reviewers') as HTMLTextAreaElement).value)
+      .toBe('Beside the west entrance.')
+    expect(onPendingChange.mock.calls).toEqual([[true], [false]])
+    expect((screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(props.onBack).toHaveBeenCalledOnce()
   })
 
   it('counts Unicode code points in the reviewer note', async () => {

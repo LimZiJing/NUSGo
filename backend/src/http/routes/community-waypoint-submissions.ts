@@ -87,8 +87,6 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
       formatIssueField('Coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`),
       formatIssueField('Building or nearby landmark', submission.building ?? 'Not provided'),
       formatIssueField('Floor', submission.floor ?? 'Not provided'),
-      formatIssueField('Accessibility note', submission.accessibilityNote ?? 'Not provided'),
-      formatIssueField('Other details', submission.details ?? 'Not provided'),
       formatIssueField('Submitter explanation (unverified)', submission.explanation ?? 'Not provided'),
     ]
   }
@@ -100,8 +98,6 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
         : [formatIssueField('Proposed coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`)]),
       ...(submission.building === undefined ? [] : [formatIssueField('Proposed building', submission.building)]),
       ...(submission.floor === undefined ? [] : [formatIssueField('Proposed floor', submission.floor)]),
-      ...(submission.accessibilityNote === undefined ? [] : [formatIssueField('Proposed accessibility note', submission.accessibilityNote)]),
-      ...(submission.details === undefined ? [] : [formatIssueField('Proposed details', submission.details)]),
     ]
     return [
       formatIssueField('Public waypoint ID', submission.waypointId),

@@ -61,6 +61,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
     await user.type(screen.getByLabelText(/Building or landmark/), 'Central Library')
+    await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     expect(props.onAdjustLocation).toHaveBeenCalledOnce()
 

@@ -17,7 +17,6 @@ export const COMMUNITY_WAYPOINT_READABLE_CATEGORIES = [
 export const COMMUNITY_WAYPOINT_TEXT_LIMITS = {
   source: 160,
   building: 80,
-  accessibilityNote: 280,
   details: 500,
 } as const
 
@@ -34,7 +33,7 @@ export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly updatedAt: string
   readonly building?: string
   readonly floor?: number
-  readonly accessibilityNote?: string
+  /** Optional reviewer-authored public display text; never accepted in submissions. */
   readonly details?: string
 }
 

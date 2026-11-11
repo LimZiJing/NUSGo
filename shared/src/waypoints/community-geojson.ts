@@ -21,7 +21,6 @@ const PROPERTY_MEMBERS = new Set([
   'updatedAt',
   'building',
   'floor',
-  'accessibilityNote',
   'details',
 ])
 
@@ -63,7 +62,7 @@ function readString(
 
 function readOptionalString(
   properties: Record<string, unknown>,
-  field: 'building' | 'accessibilityNote' | 'details',
+  field: 'building' | 'details',
   location: string,
 ): string | undefined {
   const value = properties[field]
@@ -85,13 +84,11 @@ function createDisplayLabel(
   category: CommunityWaypointCategory,
   building: string | undefined,
   floor: number | undefined,
-  details: string | undefined,
 ): string {
   return [
     getCommunityWaypointCategoryLabel(category),
     building,
     floor === undefined ? undefined : getCommunityWaypointFloorLabel(floor),
-    details,
   ].filter((part): part is string => part !== undefined).join(' · ')
 }
 
@@ -156,7 +153,6 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     invalid(`${location}.properties.updatedAt`, 'must be a valid YYYY-MM-DD date')
   }
   const building = readOptionalString(properties, 'building', `${location}.properties`)
-  const accessibilityNote = readOptionalString(properties, 'accessibilityNote', `${location}.properties`)
   const details = readOptionalString(properties, 'details', `${location}.properties`)
   const floorValue = properties.floor
   if (
@@ -167,7 +163,7 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     invalid(`${location}.properties.floor`, 'must be a signed integer, null, or missing')
   }
   const floor = typeof floorValue === 'number' ? floorValue : undefined
-  const displayLabel = createDisplayLabel(category, building, floor, details)
+  const displayLabel = createDisplayLabel(category, building, floor)
 
   const { south, north, west, east } = SINGAPORE_COORDINATE_BOUNDS
   if (
@@ -186,7 +182,6 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     updatedAt,
     ...(building === undefined ? {} : { building }),
     ...(floor === undefined ? {} : { floor }),
-    ...(accessibilityNote === undefined ? {} : { accessibilityNote }),
     ...(details === undefined ? {} : { details }),
   }
 }

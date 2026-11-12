@@ -52,6 +52,13 @@
   --map-pin-glyph-on-neutral: #1f2937;
   --map-pin-halo: rgb(29 78 216 / 22%);
   --map-pin-shadow: rgb(15 23 42 / 30%);
+  /* Journey endpoints: a grey origin circle and a red destination pin whose centre
+     stays dark in every theme. */
+  --map-endpoint-origin-fill: #556274;
+  --map-endpoint-origin-edge: #fff;
+  --map-endpoint-destination-edge: #fff;
+  --map-endpoint-destination-fill: #dc2626;
+  --map-endpoint-destination-centre: #0b1220;
 
   --border-default: #e5e4e7;
   --border-subtle: #e2e8f0;

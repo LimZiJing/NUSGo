@@ -112,6 +112,25 @@
 .map-pin[data-variant='waypoint'][data-marker-color='purple'] { --map-pin-fill: var(--personal-waypoint-marker-purple); --map-pin-glyph-colour: var(--map-pin-glyph-paper); }
 .map-pin[data-variant='waypoint'][data-marker-color='gray'] { --map-pin-fill: var(--personal-waypoint-marker-gray); }
 
+/* Journey destination: the red member of the family. Its dark centre dot is what makes it read as
+   a pin rather than a red blob, and the colour comes from the theme tokens. */
+.map-pin[data-variant='destination'] {
+  --map-pin-box: 34px;
+  --map-pin-size: 34px;
+  --map-pin-fill: var(--map-endpoint-destination-fill);
+  --map-pin-edge: var(--map-endpoint-destination-edge);
+
+  cursor: pointer;
+}
+
+.map-pin[data-variant='destination'] .map-pin-glyph::before {
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  background: var(--map-endpoint-destination-centre);
+  content: '';
+}
+
 /* Placement: the draggable pin that picks a waypoint's location. */
 .map-pin[data-variant='placement'] {
   --map-pin-box: 44px;

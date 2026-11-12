@@ -59,6 +59,19 @@
 
   --map-pin-shadow: rgb(15 23 42 / 30%);
 
+  /* Journey endpoints: a grey origin circle and a red destination pin whose centre
+
+     stays dark in every theme. */
+
+  --map-endpoint-origin-fill: #556274;
+
+  --map-endpoint-origin-edge: #fff;
+
+  --map-endpoint-destination-edge: #fff;
+  --map-endpoint-destination-fill: #dc2626;
+
+  --map-endpoint-destination-centre: #0b1220;
+
   --border-default: #c9d4c2;
   --border-subtle: #cddcc8;
   --border-strong: #acbea9;

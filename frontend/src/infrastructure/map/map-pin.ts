@@ -17,7 +17,7 @@ const MAP_PIN_TEARDROP_PATH =
  */
 export const MAP_PIN_ANCHOR = 'bottom' as const
 
-export type MapPinVariant = 'location' | 'waypoint' | 'placement'
+export type MapPinVariant = 'location' | 'waypoint' | 'placement' | 'destination'
 
 export interface MapPinElement {
   readonly element: HTMLElement

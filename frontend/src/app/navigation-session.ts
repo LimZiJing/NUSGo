@@ -283,7 +283,11 @@ export function createNavigationSession(
   const unsubscribeLocation = dependencies.locationTracker.subscribe(() => {
     if (disposed) return
     const location = dependencies.locationTracker.getState()
-    dependencies.map.setCurrentLocation(location.latestFix, state.locationMarkerVisible)
+    dependencies.map.setCurrentLocation(
+      location.latestFix,
+      state.locationMarkerVisible,
+      location.status === 'tracking',
+    )
     if (locationFocusRequested && location.latestFix) {
       locationFocusRequested = false
       dependencies.map.focusCurrentLocation(location.latestFix)
@@ -292,7 +296,11 @@ export function createNavigationSession(
     handlePendingOriginCapture(location)
   })
 
-  dependencies.map.setCurrentLocation(state.location.latestFix, state.locationMarkerVisible)
+  dependencies.map.setCurrentLocation(
+    state.location.latestFix,
+    state.locationMarkerVisible,
+    state.location.status === 'tracking',
+  )
 
   const cancelJourneyPlanning = (): void => {
     journeyPlanningRequestId += 1
@@ -796,7 +804,11 @@ export function createNavigationSession(
     enableLocationTracking() {
       if (disposed) return
       if (!state.locationMarkerVisible) {
-        dependencies.map.setCurrentLocation(state.location.latestFix, true)
+        dependencies.map.setCurrentLocation(
+          state.location.latestFix,
+          true,
+          state.location.status === 'tracking',
+        )
         updateState({ locationMarkerVisible: true })
       }
       // Keep this call synchronous so browsers can associate permission with the user's action.
@@ -817,7 +829,11 @@ export function createNavigationSession(
       }
 
       if (!state.locationMarkerVisible) {
-        dependencies.map.setCurrentLocation(currentLocation.latestFix, true)
+        dependencies.map.setCurrentLocation(
+          currentLocation.latestFix,
+          true,
+          currentLocation.status === 'tracking',
+        )
         updateState({ locationMarkerVisible: true })
       }
 
@@ -866,7 +882,11 @@ export function createNavigationSession(
         originLocationRequest: { status: 'requesting', error: null },
       })
       if (!state.locationMarkerVisible) {
-        dependencies.map.setCurrentLocation(state.location.latestFix, true)
+        dependencies.map.setCurrentLocation(
+          state.location.latestFix,
+          true,
+          state.location.status === 'tracking',
+        )
         updateState({ locationMarkerVisible: true })
       }
       // Keep this call synchronous so browsers can associate permission with the user's action.
@@ -887,13 +907,17 @@ export function createNavigationSession(
     },
     hideLocationMarker() {
       if (disposed) return
-      dependencies.map.setCurrentLocation(state.location.latestFix, false)
+      dependencies.map.setCurrentLocation(state.location.latestFix, false, false)
       updateState({ locationMarkerVisible: false })
     },
 
     showLocationMarker() {
       if (disposed) return
-      dependencies.map.setCurrentLocation(state.location.latestFix, true)
+      dependencies.map.setCurrentLocation(
+        state.location.latestFix,
+        true,
+        state.location.status === 'tracking',
+      )
       updateState({ locationMarkerVisible: true })
     },
 

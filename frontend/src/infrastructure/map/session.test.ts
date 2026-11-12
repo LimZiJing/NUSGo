@@ -599,6 +599,69 @@ describe('MapSession', () => {
     expect(marker?.remove).toHaveBeenCalledTimes(3)
   })
 
+  it('suppresses only the origin circle while the visible dot marks it, and never the Path', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    await session.ready
+
+    const map = fakeMapState.maps.at(-1) as {
+      readonly addedMarkers: Array<{
+        readonly element: FakeElement
+        readonly coordinate: unknown
+        readonly remove: ReturnType<typeof vi.fn>
+      }>
+      readonly sourceData: globalThis.Map<string, { data: unknown }>
+    }
+    const venues = {
+      ONE: { roomName: 'One', location: { x: 103.7812, y: 1.2961 } },
+      TWO: { roomName: 'Two', location: { x: 103.79, y: 1.31 } },
+    }
+    const request = {
+      origin: { kind: 'current-location' as const, coordinate: { longitude: 103.7812, latitude: 1.2961 } },
+      destination: { kind: 'venue' as const, id: 'TWO' },
+    }
+    // `addedMarkers` keeps removed markers, so count only the endpoints still on the map.
+    const endpointMarkers = () => map.addedMarkers.filter(({ element, remove }) => (
+      remove.mock.calls.length === 0
+      && (element.className.startsWith('trip-endpoint-marker')
+        || element.className.includes('trip-endpoint-marker-'))
+    ))
+
+    session.setTripRequest(request, venues, null)
+    expect(endpointMarkers()).toHaveLength(2)
+
+    // Inside 20 m the dot stands in, so only the grey circle disappears.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 1 }, true, true)
+    expect(endpointMarkers()).toHaveLength(1)
+    expect(endpointMarkers()[0]?.element.className).toContain('trip-endpoint-marker-destination')
+    expect(endpointMarkers()[0]?.coordinate).toEqual([103.79, 1.31])
+
+    // Beyond 20 m the circle comes back, still on the endpoint's own captured coordinate.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.2965, accuracy: 8, timestamp: 2 }, true, true)
+    expect(endpointMarkers()).toHaveLength(2)
+    const origin = endpointMarkers().find(({ element }) => element.className.includes('trip-endpoint-marker-origin'))
+    expect(origin?.coordinate).toEqual([103.7812, 1.2961])
+
+    // Hiding the dot or distrusting a stale fix restores the circle as well.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 3 }, false, true)
+    expect(endpointMarkers()).toHaveLength(2)
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 3 }, true, false)
+    expect(endpointMarkers()).toHaveLength(2)
+
+    // Re-applying the same selected request keeps the same endpoints and Path source data.
+    const pathSourceBefore = map.sourceData.get('journey-route')
+    session.setTripRequest(request, venues, null)
+    expect(endpointMarkers()).toHaveLength(2)
+    expect(map.sourceData.get('journey-route')).toBe(pathSourceBefore)
+
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
   it('focuses location and reset targets at the padded visible centre without applying the inset twice', async () => {
     const session = createMapSession({
       container: {} as HTMLElement,

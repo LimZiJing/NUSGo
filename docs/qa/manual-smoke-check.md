@@ -94,6 +94,15 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] Confirm Current location (the blue target marker), bus stops and live buses keep their existing round or vehicle marker types and that none of them shows a teardrop.
 - [ ] Repeat the marker checks at 390 × 844, 360 × 740 and 1280 × 800 in System, Light, Dark, NUS, Matcha and Sakura. Confirm pin fill, edge, glyph and halo colours follow the theme and that no pin colour is hard-coded.
 
+## Journey endpoint markers (#671)
+
+- [ ] Set a destination and an origin that is not Current location, then show a visible Current location dot at least 20 m away. Confirm the origin is a plain grey circle with no A/B label and the destination is a red pin with a dark centre. Zoom in and out several steps and confirm both stay on their own coordinates.
+- [ ] Stand within 20 m of the origin (or set the origin from Current location) and confirm the origin circle disappears while the blue dot remains, the destination stays visible, and the trip card still names the same origin. Move the fix beyond 20 m and confirm the circle returns at the captured origin coordinate. Nothing in the Path or trip card changes.
+- [ ] Hide the Current location dot, then deny location or wait for the fix to go stale, and confirm the origin circle is shown again each time.
+- [ ] Clear the origin and confirm the destination marker is untouched, then set the deleted endpoint as the destination instead and confirm origin suppression never depends on which role the destination holds.
+- [ ] Confirm the markers keep `Origin: <label>` and `Destination: <label>` accessible names, and that no marker displays `A` or `B`.
+- [ ] Repeat at 390 × 844, 360 × 740 and 1280 × 800 in System, Light, Dark, NUS, Matcha and Sakura. Confirm the grey circle, red pin and dark centre stay legible against each basemap and that the legend swatches match the map markers.
+
 ## Keyboard and accessibility
 
 - [ ] Focus is visible and follows a sensible order through the affected workflow.

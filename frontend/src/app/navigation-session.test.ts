@@ -2446,7 +2446,7 @@ describe('navigation session', () => {
 
     expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
     expect(session.getState().location).toEqual(locationState)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenCalledWith(locationState.latestFix, true)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenCalledWith(locationState.latestFix, true, true)
     expect(session.getState().tripRequest).toBe(initialTripRequest)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.setViewportInsets).not.toHaveBeenCalled()
@@ -2454,12 +2454,38 @@ describe('navigation session', () => {
 
     session.hideLocationMarker()
     expect(session.getState().locationMarkerVisible).toBe(false)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, false)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, false, false)
     expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
 
     session.showLocationMarker()
     expect(session.getState().locationMarkerVisible).toBe(true)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true, true)
+  })
+
+  it('marks a stale or failed location as untrusted while keeping an active fix trusted', () => {
+    const dependencies = createDependencies()
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    const session = createNavigationSession(dependencies)
+    const fix = { longitude: 103.7844, latitude: 1.2933, accuracy: 12, timestamp: 1_000 }
+
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, true)
+
+    // The dot stays drawn, but a stale fix may no longer stand in for the origin circle.
+    locationTracker.emit({ status: 'stale', latestFix: fix })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, false)
+
+    locationTracker.emit({ status: 'unavailable', latestFix: null })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(null, true, false)
+
+    // Hiding the dot reports an untrusted, invisible stand-in whatever the fix says.
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    session.hideLocationMarker()
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, false, false)
+    session.showLocationMarker()
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, true)
+
+    session.dispose()
   })
 
   it('uses an active device fix as the frozen Current location origin without venue data', async () => {

@@ -16,16 +16,30 @@ describe('shared map pin family', () => {
     const location = createMapPin({ variant: 'location', glyph: 'map-pin' })
     const waypoint = createMapPin({ variant: 'waypoint', interactive: true })
     const placement = createMapPin({ variant: 'placement', glyph: 'crosshair' })
+    const destination = createMapPin({ variant: 'destination', label: 'Destination: Two' })
 
-    const paths = [location, waypoint, placement].map(({ element }) => teardropPath(element))
+    const paths = [location, waypoint, placement, destination]
+      .map(({ element }) => teardropPath(element))
 
     expect(paths[0]).not.toBeNull()
     expect(new Set(paths).size).toBe(1)
     expect(MAP_PIN_ANCHOR).toBe('bottom')
-    for (const { element } of [location, waypoint, placement]) {
+    for (const { element } of [location, waypoint, placement, destination]) {
       expect(element.dataset.variant).toBeDefined()
       expect(element.querySelector('.map-pin-teardrop')?.getAttribute('viewBox')).toBe('0 0 24 32')
     }
+  })
+
+  it('keeps the destination pin presentational while still naming its endpoint', () => {
+    // The destination is a member of the family, so it keeps the same teardrop and bottom anchor,
+    // but it opens a popup rather than being an interactive button.
+    const destination = createMapPin({ variant: 'destination', label: 'Destination: Central Library' })
+
+    expect(destination.element.tagName).toBe('DIV')
+    expect(destination.element.dataset.variant).toBe('destination')
+    expect(destination.element.getAttribute('role')).toBe('img')
+    expect(destination.element.getAttribute('aria-label')).toBe('Destination: Central Library')
+    expect(destination.glyph.querySelector('span')).toBeNull()
   })
 
   it('gives waypoint pins a labelled button and placement pins no accessible name', () => {

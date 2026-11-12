@@ -20,6 +20,11 @@ import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
+import { getTripEndpointCoordinate } from '../../domain/trip/endpoint-location'
+import {
+  isOriginDuplicatedByCurrentLocation,
+  type CurrentLocationStandIn,
+} from '../../domain/trip/origin-proximity'
 import { createMapLifecycle } from './lifecycle'
 import { createLiveBusMarkers } from './live-bus-markers'
 import {
@@ -112,6 +117,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let visibleCenterZoomEnabled = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
+  // The dot's own fix and visibility, so a nearby origin circle can defer to it.
+  let currentLocationState: CurrentLocationStandIn = { fix: null, visible: false, trusted: false }
   let currentVenues: VenueLocationMap = {}
   let currentBuildings: BuildingIndex | null = null
   let currentTransitIndex: TransitIndex | null = null
@@ -310,12 +317,24 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const syncEndpointMarkers = (): void => {
     clearEndpointMarkers()
     if (!planLayersVisible || !currentTripRequest) return
+    const originCoordinate = currentTripRequest.origin
+      ? getTripEndpointCoordinate(currentTripRequest.origin, {
+          venues: currentVenues,
+          buildings: currentBuildings,
+          transitIndex: currentTransitIndex,
+        })
+      : null
     endpointMarkers = createTripEndpointMarkers(
       map,
       currentTripRequest,
       currentVenues,
       currentTransitIndex,
       currentBuildings,
+      {
+        // The visible Current location dot already marks this spot, so the grey circle would only
+        // stack a second marker on it.
+        hideOrigin: isOriginDuplicatedByCurrentLocation(originCoordinate, currentLocationState),
+      },
     )
   }
 
@@ -612,9 +631,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       fitJourneyOptions(selected)
     },
 
-    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean) {
+    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted = true) {
       if (disposed) return
       currentLocationMarker.setLocation(fix, visible)
+      const previous = currentLocationState
+      currentLocationState = { fix, visible, trusted }
+      // Only the origin circle depends on this, and only when the answer actually changed.
+      if (previous.fix === fix && previous.visible === visible && previous.trusted === trusted) return
+      syncEndpointMarkers()
     },
 
     focusCurrentLocation(fix: DeviceLocationFix) {

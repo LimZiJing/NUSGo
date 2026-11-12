@@ -407,4 +407,64 @@ describe('usePersonalWaypointWorkflow', () => {
     })
     expect(result.current.status).toContain('Readable waypoints were kept')
   })
+
+  it('renames a category through the validated store in one write', () => {
+    const alpha = { ...createWaypoint(61, 'Alpha place'), category: 'Alpha' }
+    const work = { ...createWaypoint(62, 'Work place'), category: 'Work' }
+    const { store, getWaypoints } = createMutableStore([alpha, work])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let outcome: ReturnType<typeof result.current.renameCategory> = { ok: false }
+    act(() => { outcome = result.current.renameCategory('Alpha', 'Study place') })
+
+    expect(outcome.ok).toBe(true)
+    expect(store.replaceAll).toHaveBeenCalledTimes(1)
+    expect(getWaypoints().map(({ category, name }) => `${name}:${category}`))
+      .toEqual(['Alpha place:Study place', 'Work place:Work'])
+    expect(result.current.status).toBe('Category renamed to Study place.')
+  })
+
+  it('appends incoming places after the existing destination places when merging', () => {
+    const alphaOne = { ...createWaypoint(71, 'Alpha one'), category: 'Alpha' }
+    const workOne = { ...createWaypoint(72, 'Work one'), category: 'Work' }
+    const alphaTwo = { ...createWaypoint(73, 'Alpha two'), category: 'Alpha' }
+    const workTwo = { ...createWaypoint(74, 'Work two'), category: 'Work' }
+    const { store, getWaypoints } = createMutableStore([alphaOne, workOne, alphaTwo, workTwo])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let outcome: ReturnType<typeof result.current.renameCategory> = { ok: false }
+    act(() => { outcome = result.current.renameCategory('Alpha', 'Work') })
+
+    expect(outcome).toMatchObject({ ok: true, merged: true })
+    expect(getWaypoints().filter(({ category }) => category === 'Work').map(({ name }) => name))
+      .toEqual(['Work one', 'Work two', 'Alpha one', 'Alpha two'])
+    // Identity survives, and the emptied category disappears.
+    expect(new Set(getWaypoints().map(({ id }) => id)))
+      .toEqual(new Set([alphaOne.id, workOne.id, alphaTwo.id, workTwo.id]))
+    expect(getWaypoints().every(({ category }) => category === 'Work')).toBe(true)
+    expect(result.current.status).toBe('Merged into Work.')
+  })
+
+  it('reports a persistence failure without claiming success', () => {
+    const alpha = { ...createWaypoint(81, 'Alpha place'), category: 'Alpha' }
+    const work = { ...createWaypoint(82, 'Work place'), category: 'Work' }
+    const store: PersonalWaypointStore = {
+      read: vi.fn((): PersonalWaypointStoreReadResult => ({
+        kind: 'ready',
+        waypoints: [alpha, work],
+        revision: null,
+        rejectedRecords: { count: 0, issues: [] },
+      })),
+      replaceAll: vi.fn((): PersonalWaypointStoreMutationResult => ({ kind: 'conflict' })),
+      clear: vi.fn((): PersonalWaypointStoreMutationResult => ({ kind: 'cleared' })),
+    }
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let outcome: ReturnType<typeof result.current.renameCategory> = { ok: true, merged: false, visibleAfter: true }
+    act(() => { outcome = result.current.renameCategory('Alpha', 'Work') })
+
+    expect(outcome.ok).toBe(false)
+    expect(result.current.statusKind).toBe('problem')
+    expect(result.current.status).toContain('could not be merged')
+  })
 })

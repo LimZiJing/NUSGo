@@ -9,6 +9,7 @@ import {
 import { createPersonalWaypoint, type PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import type { PersonalWaypoint, PersonalWaypointValidationIssue } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { updatePersonalWaypoint } from '../../../../domain/waypoints/personal/update-personal-waypoint'
+import { renamePersonalWaypointCategory } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import type {
   PersonalWaypointStore,
   PersonalWaypointStoreMutationResult,
@@ -439,6 +440,42 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     editing ? saveEditedWaypoint() : saveNewWaypoint()
   ), [editing, saveEditedWaypoint, saveNewWaypoint])
 
+  const renameCategory = useCallback((
+    from: string,
+    to: string,
+  ): { readonly ok: true; readonly merged: boolean; readonly visibleAfter: boolean } | { readonly ok: false } => {
+    moveUndo.current = null
+    setCanUndoMove(false)
+    const current = store.read()
+    setReadResult(current)
+    const blockedMessage = getBlockedMutationMessage(current)
+    if (blockedMessage) { setStatus(blockedMessage, 'problem'); return { ok: false } }
+    if (current.kind !== 'ready' || current.rejectedRecords.count > 0) return { ok: false }
+
+    const merged = current.waypoints.some(({ category }) => category === to.trim()) &&
+      to.trim() !== from.trim()
+    const next = renamePersonalWaypointCategory(current.waypoints, from, to, { now: () => new Date().toISOString() })
+    if (!next) {
+      setStatus('The category could not be renamed. Saved data was not changed.', 'problem')
+      return { ok: false }
+    }
+
+    const outcome = store.replaceAll(next, current.revision)
+    if (outcome.kind !== 'saved') {
+      finishMutation(outcome, 'saved', '', merged
+        ? 'The categories could not be merged. Saved data was not changed.'
+        : 'The category could not be renamed. Saved data was not changed.')
+      return { ok: false }
+    }
+    setReadResult(store.read())
+    if (merged) {
+      setStatus(`Merged into ${to.trim()}.`, 'success')
+      return { ok: true, merged, visibleAfter: true }
+    }
+    setStatus(`Category renamed to ${to.trim()}.`, 'success')
+    return { ok: true, merged, visibleAfter: true }
+  }, [finishMutation, setStatus, store])
+
   const resetUnreadableData = useCallback((): boolean => {
     const current = store.read()
     setReadResult(current)
@@ -477,6 +514,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     moveWaypointToCategory,
     moveWaypointToPosition,
     undoMoveWaypoint,
+    renameCategory,
     canUndoMove: canUndoMove && statusUpdate?.kind === 'success' && readResult.kind === 'ready',
     clearAll,
     resetUnreadableData,

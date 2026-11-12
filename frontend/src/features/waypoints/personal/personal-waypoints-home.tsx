@@ -21,6 +21,8 @@ export function PersonalWaypointsHome({
   onMove,
   onMoveToCategory,
   onMoveToPosition,
+  onRenameCategory,
+  onMergeCategoryVisibility,
   onResetUnreadableData,
   onDiscardRejectedRecords,
   categoryOptions,
@@ -52,6 +54,8 @@ export function PersonalWaypointsHome({
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
   readonly onMoveToPosition?: (waypointId: string, category: string, indexWithinCategory: number) => boolean
+  readonly onRenameCategory?: (from: string, to: string) => boolean
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
   readonly categoryOptions: readonly PersonalWaypointCategoryOption[]
@@ -173,6 +177,8 @@ export function PersonalWaypointsHome({
           moveCategoryOptions={categoryOptions.map(({ category }) => category)}
           onMoveToCategory={onMoveToCategory}
           onMoveToPosition={onMoveToPosition}
+          onRenameCategory={onRenameCategory}
+          onMergeCategoryVisibility={onMergeCategoryVisibility}
           onEditAnnouncement={setEditAnnouncement}
         />
       </>

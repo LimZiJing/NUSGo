@@ -78,6 +78,17 @@ beforeEach(() => {
 })
 
 describe('PersonalWaypointList', () => {
+  beforeEach(() => {
+    // jsdom has no dialog implementation; the component falls back to the `open` attribute.
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value: function showModal(this: HTMLDialogElement) { this.setAttribute('open', '') },
+    })
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value: function close(this: HTMLDialogElement) { this.removeAttribute('open') },
+    })
+  })
   it.each([
     { name: 'down within a category', source: waypoints[0]!, targetId: waypoints[0]!.id, group: 'Rest spot', index: 1, expected: ['Rest spot', 1] as const },
     { name: 'up within a category', source: waypoints[2]!, targetId: waypoints[2]!.id, group: 'Rest spot', index: 0, expected: ['Rest spot', 0] as const },
@@ -587,5 +598,221 @@ describe('PersonalWaypointList', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search saved places' }))
+  })
+
+  it('renames a category inline and returns focus to its heading', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => true)
+    const view = render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    expect(document.activeElement).toBe(input)
+    await user.clear(input)
+    await user.type(input, 'Relaxation{Enter}')
+
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Relaxation')
+    expect(screen.getByRole('status').textContent).toContain('Category renamed to Relaxation.')
+    // The parent owns the data, so re-render with the renamed list to see the new heading.
+    view.rerender(
+      <PersonalWaypointList
+        waypoints={waypoints.map((waypoint) => waypoint.category === 'Rest spot' ? { ...waypoint, category: 'Relaxation' } : waypoint)}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /Relaxation.*2/ })).toBeTruthy()
+  })
+
+  it('leaves the original category untouched when a rename is cancelled or rejected', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => false)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    await user.clear(screen.getByRole('textbox', { name: 'Rename Rest spot category' }))
+    await user.type(screen.getByRole('textbox', { name: 'Rename Rest spot category' }), 'Nothing{Escape}')
+
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /Rest spot.*2/ })).toBeTruthy()
+    expect(document.activeElement?.id).toBe('waypoint-category-heading-Rest%20spot')
+
+    // A rejected write keeps the original name and says so.
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Changed{Enter}')
+    expect(onRenameCategory).toHaveBeenCalledWith('Rest spot', 'Changed')
+    expect(onRenameCategory).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('status').textContent).toContain('The category could not be renamed. Saved data was not changed.')
+    expect(screen.getByRole('textbox', { name: 'Rename Rest spot category' })).toBe(document.activeElement)
+  })
+
+  it('asks before merging into an existing category and reports the visibility label', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => true)
+    const onMergeCategoryVisibility = vi.fn(() => true)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        hiddenCategories={['Rest spot']}
+        onRenameCategory={onRenameCategory}
+        onMergeCategoryVisibility={onMergeCategoryVisibility}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+
+    const dialog = screen.getByRole('dialog', { name: 'Merge into Study place?' })
+    expect(dialog).toBeTruthy()
+    // Nothing is rewritten until the user confirms.
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    expect(within(dialog).getByText('Shown on map after merging')).toBeTruthy()
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    await user.click(within(dialog).getByRole('button', { name: 'Merge categories' }))
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
+    expect(onMergeCategoryVisibility).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
+    expect(screen.getByRole('status').textContent).toContain('Merged Rest spot into Study place.')
+    expect(screen.getByRole('status').textContent).toContain('Shown on map after merging')
+  })
+
+  it('cancelling a merge keeps the original category and restores its heading', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => true)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement?.id).toBe('waypoint-category-heading-Rest%20spot')
+  })
+
+  it('focuses the first menu item and the rename field from a keyboard-opened menu', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => true)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    // Opening the menu by keyboard must move focus to its first item, which is Rename category.
+    const trigger = screen.getByRole('button', { name: 'Rest spot options' })
+    trigger.focus()
+    await user.keyboard('{Enter}')
+    const firstItem = screen.getByRole('button', { name: 'Rename category' })
+    expect(document.activeElement).toBe(firstItem)
+    await user.keyboard('{Enter}')
+
+    const input = screen.getByRole<HTMLInputElement>('textbox', { name: 'Rename Rest spot category' })
+    expect(document.activeElement).toBe(input)
+    // Typing replaces the current name instead of appending to it.
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, 'Rest spot'.length])
+    await user.keyboard('Quiet corner{Enter}')
+
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Quiet corner')
+  })
+
+  it('returns focus to the source heading when a merge write is refused', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => false)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Merge categories' }))
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('status').textContent).toContain('The categories could not be merged. Saved data was not changed.')
+    expect(document.activeElement?.id).toBe('waypoint-category-heading-Rest%20spot')
+  })
+
+  it('hides the merge label when both categories were hidden', async () => {
+    const user = userEvent.setup()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        hiddenCategories={['Rest spot', 'Study place']}
+        onRenameCategory={() => true}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+
+    expect(within(screen.getByRole('dialog')).getByText('Hidden on map after merging')).toBeTruthy()
   })
 })

@@ -232,6 +232,19 @@
 .personal-waypoint-category-heading:focus-visible { outline: var(--focus-outline); outline-offset: calc(-1 * var(--focus-ring-offset)); }
 .personal-waypoint-category-menu-root { position: relative; display: flex; align-items: center; }
 .personal-waypoint-category-menu { position: absolute; z-index: 20; inset-block-start: calc(100% + 3px); inset-inline-end: 0; width: 190px; padding: 4px; border: 1px solid var(--border-card); border-radius: var(--radius-control); background: var(--surface-card); box-shadow: var(--shadow-md); }
+.personal-waypoint-category-rename { display: flex; min-width: 0; flex: 1; align-items: center; gap: var(--space-1); }
+.personal-waypoint-category-rename-input {
+  min-width: 0;
+  min-height: 36px;
+  flex: 1;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  font: inherit;
+}
+.personal-waypoint-category-rename-input:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
 .personal-waypoint-category-group .personal-waypoint-list-rows { max-height: none; border-top: 1px solid var(--border-subtle); }
 
 .personal-waypoint-pin {
@@ -465,6 +478,14 @@
 :root[data-theme='dark'] .personal-waypoint-discard-dialog::backdrop { background: color-mix(in srgb, var(--text-inverse) 35%, transparent); }
 .personal-waypoint-discard-dialog h2 { margin: 0; font-size: var(--font-size-lg); }
 .personal-waypoint-discard-dialog p { color: var(--text-secondary); }
+
+.personal-waypoint-merge-dialog { width: min(24rem, calc(100vw - 32px)); padding: var(--space-4); border: 1px solid var(--border-card); border-radius: var(--radius-card); color: var(--text-primary); background: var(--surface-card); box-shadow: var(--shadow-md); }
+.personal-waypoint-merge-dialog::backdrop { background: color-mix(in srgb, var(--text-primary) 35%, transparent); }
+::root[data-theme='dark'] .personal-waypoint-merge-dialog::backdrop { background: color-mix(in srgb, var(--text-inverse) 35%, transparent); }
+.personal-waypoint-merge-dialog h2 { margin: 0 0 var(--space-2); font-size: var(--font-size-lg); }
+.personal-waypoint-merge-dialog p { margin: 0 0 var(--space-2); color: var(--text-secondary); }
+.personal-waypoint-merge-visibility { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--font-size-sm); }
+.personal-waypoint-merge-visibility svg { width: 16px; height: 16px; flex: 0 0 16px; }
 
 .personal-waypoint-category-empty {
   padding: 10px 12px;

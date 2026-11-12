@@ -7,10 +7,12 @@ import type { DragDropManager } from '@dnd-kit/react'
 import type { DragEndEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { Button, IconButton } from '../../../../ui/button'
+import { PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { SearchField } from '../../../../ui/search-field'
 import { MenuItem } from '../../../../ui/menu-item'
-import { EllipsisVerticalIcon, MapIcon, PlusIcon } from '../../../../ui/icons'
+import { CheckIcon, CloseIcon, EditIcon, EllipsisVerticalIcon, MapIcon, PlusIcon } from '../../../../ui/icons'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
+import { categoryMergeConfirmation } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import {
   isFocusReachable,
   moveGroupedWaypointFromDrag,
@@ -65,6 +67,10 @@ interface PersonalWaypointListProps {
   readonly moveCategoryOptions?: readonly string[]
   readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
   readonly onMoveToPosition?: (waypointId: string, category: string, indexWithinCategory: number) => boolean
+  /** Renames or merges a category. Returns false when the write was refused. */
+  readonly onRenameCategory?: (from: string, to: string) => boolean
+  /** Records the merged category's map visibility and reports whether it is shown. */
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onEditAnnouncement?: (message: string) => void
 }
@@ -87,6 +93,8 @@ export function PersonalWaypointList({
   moveCategoryOptions = [],
   onMoveToCategory,
   onMoveToPosition,
+  onRenameCategory,
+  onMergeCategoryVisibility,
   onMove,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
@@ -129,6 +137,15 @@ export function PersonalWaypointList({
   const categoryMenuRootRef = useRef<HTMLDivElement>(null)
   const categoryMenuTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const categoryMenuItemRef = useRef<HTMLButtonElement>(null)
+  // Inline heading rename. `merge` holds a requested name that already exists, so the user must
+  // confirm a lossless merge instead of the rename silently combining two categories.
+  const [renameState, setRenameState] = useState<{ readonly category: string; readonly value: string } | null>(null)
+  const [mergeRequest, setMergeRequest] = useState<{ readonly from: string; readonly to: string } | null>(null)
+  const renameInputRef = useRef<HTMLInputElement>(null)
+  const mergeDialogRef = useRef<HTMLDialogElement>(null)
+  const mergeCancelRef = useRef<HTMLButtonElement>(null)
+  const [renameAnnouncement, setRenameAnnouncement] = useState('')
+  const headingFocusRef = useRef<string | null>(null)
   const categoryView = category !== undefined
   const activeCategory = categoryView ? category : ''
   const hasSearchFilter = searchQuery.trim().length > 0
@@ -209,6 +226,121 @@ export function PersonalWaypointList({
     if (element) handleRefs.current.set(waypointId, element)
     else handleRefs.current.delete(waypointId)
   }, [])
+
+  const focusHeading = (categoryName: string): void => {
+    headingFocusRef.current = categoryName
+  }
+
+  // The heading may be remounted under a new id after a rename, so focus it after the next commit.
+  useLayoutEffect(() => {
+    const pendingHeading = headingFocusRef.current
+    if (!pendingHeading) return
+    headingFocusRef.current = null
+    const heading = document.getElementById(categoryHeadingId(pendingHeading))
+    if (heading) {
+      heading.focus({ preventScroll: true })
+      return
+    }
+    requestAnimationFrame(() => document.getElementById(categoryHeadingId(pendingHeading))?.focus({ preventScroll: true }))
+  })
+
+  const startRename = (categoryName: string): void => {
+    setOpenCategoryMenu(null)
+    setRenameState({ category: categoryName, value: categoryName })
+  }
+
+  const cancelRename = (): void => {
+    const editingCategory = renameState?.category
+    setRenameState(null)
+    if (editingCategory) focusHeading(editingCategory)
+  }
+
+  // A rename to a name that already exists cannot be applied silently: it would change data the
+  // user did not ask to merge. Ask first, and keep the original name until they confirm.
+  const commitRename = (): boolean => {
+    if (!renameState || !onRenameCategory) return false
+    const from = renameState.category
+    const to = renameState.value.trim()
+    if (!to) {
+      setRenameAnnouncement('Enter a category name before saving.')
+      renameInputRef.current?.focus()
+      return false
+    }
+    if (to === from) {
+      setRenameState(null)
+      focusHeading(from)
+      return true
+    }
+    const destinationExists = waypoints.some(({ category: name }) => name === to)
+    if (destinationExists) {
+      setRenameState(null)
+      setMergeRequest({ from, to })
+      return true
+    }
+    if (!onRenameCategory(from, to)) {
+      setRenameAnnouncement('The category could not be renamed. Saved data was not changed.')
+      renameInputRef.current?.focus()
+      return false
+    }
+    setRenameState(null)
+    setRenameAnnouncement(`Category renamed to ${to}.`)
+    focusHeading(to)
+    return true
+  }
+
+  // Closing a modal dialog restores focus to whatever was focused before showModal, which would
+  // undo the heading focus we set in the same commit. Close it ourselves before moving focus.
+  const closeMergeDialog = (): void => {
+    const dialog = mergeDialogRef.current
+    if (!dialog?.open) return
+    if (typeof dialog.close === 'function') dialog.close()
+    else dialog.removeAttribute('open')
+  }
+
+  const confirmMerge = (): void => {
+    const request = mergeRequest
+    closeMergeDialog()
+    setMergeRequest(null)
+    if (!request || !onRenameCategory) return
+    if (!onRenameCategory(request.from, request.to)) {
+      setRenameAnnouncement('The categories could not be merged. Saved data was not changed.')
+      focusHeading(request.from)
+      return
+    }
+    const visibleAfter = onMergeCategoryVisibility?.(request.from, request.to) ?? true
+    setRenameAnnouncement(`${categoryMergeConfirmation(visibleAfter)}. Merged ${request.from} into ${request.to}.`)
+    focusHeading(request.to)
+  }
+
+  const cancelMerge = (): void => {
+    const request = mergeRequest
+    closeMergeDialog()
+    setMergeRequest(null)
+    if (request) focusHeading(request.from)
+  }
+
+  // Keyed on the category, not on each keystroke, so typing does not keep reselecting the field.
+  const renameCategory = renameState?.category
+  useLayoutEffect(() => {
+    if (!renameCategory) return
+    // Preselect so typing replaces the current name instead of appending to it.
+    renameInputRef.current?.focus({ preventScroll: true })
+    renameInputRef.current?.select()
+  }, [renameCategory])
+
+  useEffect(() => {
+    const dialog = mergeDialogRef.current
+    if (!dialog) return
+    if (mergeRequest && !dialog.open) {
+      // jsdom does not implement showModal; a real browser always does.
+      if (typeof dialog.showModal === 'function') dialog.showModal()
+      else dialog.setAttribute('open', '')
+      mergeCancelRef.current?.focus({ preventScroll: true })
+    } else if (!mergeRequest && dialog.open) {
+      if (typeof dialog.close === 'function') dialog.close()
+      else dialog.removeAttribute('open')
+    }
+  }, [mergeRequest])
 
   const handleReorderKeyDown = (
     waypointId: string,
@@ -470,10 +602,25 @@ export function PersonalWaypointList({
             const hidden = hiddenCategories.includes(name)
             return <CategoryDropGroup category={name} enabled={canDragGrouped} key={name} className={canDragGrouped ? 'personal-waypoint-category-group personal-waypoint-category-drop-target' : 'personal-waypoint-category-group'} label={`${name}, ${items.length} places`}>
               <div className="personal-waypoint-category-heading-row">
-                <button id={`waypoint-category-heading-${encodeURIComponent(name)}`} className="personal-waypoint-category-heading" type="button" aria-disabled={hasSearchFilter || undefined} aria-expanded={expanded} aria-controls={`waypoint-category-list-${encodeURIComponent(name)}`} onClick={() => setCategoryExpanded(name, !expanded)}>
+                {renameState?.category === name ? <div className="personal-waypoint-category-rename">
+                  <input
+                    ref={renameInputRef}
+                    className="personal-waypoint-category-rename-input"
+                    aria-label={`Rename ${name} category`}
+                    value={renameState.value}
+                    maxLength={PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH}
+                    onChange={(event) => setRenameState({ category: name, value: event.target.value })}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') { event.preventDefault(); commitRename() }
+                      else if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); cancelRename() }
+                    }}
+                  />
+                  <IconButton label="Save category name" icon={<CheckIcon />} variant="plain" onClick={commitRename} />
+                  <IconButton label="Cancel category rename" icon={<CloseIcon />} variant="plain" onClick={cancelRename} />
+                </div> : <button id={categoryHeadingId(name)} className="personal-waypoint-category-heading" type="button" aria-disabled={hasSearchFilter || undefined} aria-expanded={expanded} aria-controls={`waypoint-category-list-${encodeURIComponent(name)}`} onClick={() => setCategoryExpanded(name, !expanded)}>
                   <span>{name}</span><span className="personal-waypoint-category-count">{items.length}</span>
                   <span aria-hidden="true">{expanded ? '⌄' : '›'}</span>
-                </button>
+                </button>}
                 <div className="personal-waypoint-category-menu-root" data-owns-escape={openCategoryMenu === name ? 'true' : undefined} ref={openCategoryMenu === name ? categoryMenuRootRef : undefined} onKeyDown={(event) => {
                   if (event.key !== 'Escape') return
                   event.preventDefault()
@@ -483,8 +630,9 @@ export function PersonalWaypointList({
                 }}>
                   <IconButton label={`${name} options`} icon={<EllipsisVerticalIcon />} variant="plain" ref={(element) => { if (element) categoryMenuTriggerRefs.current.set(name, element) }} expanded={openCategoryMenu === name} controls={`waypoint-category-menu-${encodeURIComponent(name)}`} onClick={() => setOpenCategoryMenu(openCategoryMenu === name ? null : name)} />
                   {openCategoryMenu === name && <div id={`waypoint-category-menu-${encodeURIComponent(name)}`} className="personal-waypoint-category-menu" role="group" aria-label={`${name} actions`}>
-                    {onAddCategory && <MenuItem ref={categoryMenuItemRef} label="Add waypoint here" icon={<PlusIcon />} disabled={!canAddWaypoint} onClick={() => { setOpenCategoryMenu(null); onAddCategory(name) }} />}
-                    {onSetCategoryVisibleImmediately && <MenuItem ref={onAddCategory ? undefined : categoryMenuItemRef} label={hidden ? 'Show pins on map' : 'Hide pins on map'} icon={<MapIcon />} onClick={() => {
+                    {onRenameCategory && <MenuItem ref={categoryMenuItemRef} label="Rename category" icon={<EditIcon />} onClick={() => startRename(name)} />}
+                    {onAddCategory && <MenuItem ref={onRenameCategory ? undefined : categoryMenuItemRef} label="Add waypoint here" icon={<PlusIcon />} disabled={!canAddWaypoint} onClick={() => { setOpenCategoryMenu(null); onAddCategory(name) }} />}
+                    {onSetCategoryVisibleImmediately && <MenuItem ref={onAddCategory || onRenameCategory ? undefined : categoryMenuItemRef} label={hidden ? 'Show pins on map' : 'Hide pins on map'} icon={<MapIcon />} onClick={() => {
                       onSetCategoryVisibleImmediately(name, hidden)
                       setOpenCategoryMenu(null)
                       categoryMenuTriggerRefs.current.get(name)?.focus()
@@ -517,6 +665,30 @@ export function PersonalWaypointList({
         <Button label="Clear search" onClick={() => changeSearchQuery('')} />
       </div>
     )}
+    {/* Rendered only when there is something to say, so the panel keeps one live region otherwise. */}
+    {renameAnnouncement && <p className="visually-hidden" role="status" aria-live="polite">{renameAnnouncement}</p>}
+    <dialog
+      ref={mergeDialogRef}
+      className="personal-waypoint-merge-dialog"
+      aria-labelledby="personal-waypoint-merge-heading"
+      data-owns-escape="true"
+      onCancel={(event) => { event.preventDefault(); cancelMerge() }}
+    >
+      <h2 id="personal-waypoint-merge-heading">Merge into {mergeRequest?.to}?</h2>
+      <p>{`Move all places from ${mergeRequest?.from ?? ''} into ${mergeRequest?.to ?? ''}. ${mergeRequest?.to ?? ''}'s places stay first; ${mergeRequest?.from ?? ''}'s places are appended.`}</p>
+      <p className="personal-waypoint-merge-visibility">
+        <MapIcon />
+        <span>{categoryMergeConfirmation(
+          mergeRequest
+            ? !hiddenCategories.includes(mergeRequest.from) || !hiddenCategories.includes(mergeRequest.to)
+            : true,
+        )}</span>
+      </p>
+      <div className="personal-waypoint-actions">
+        <Button label="Cancel" variant="secondary" onClick={cancelMerge} ref={mergeCancelRef} />
+        <Button label="Merge categories" variant="primary" onClick={confirmMerge} />
+      </div>
+    </dialog>
   </section>
 }
 

@@ -1181,6 +1181,8 @@ function App() {
               onMove={personalWaypoints.moveWaypoint}
               onMoveToCategory={personalWaypoints.moveWaypointToCategory}
               onMoveToPosition={personalWaypoints.moveWaypointToPosition}
+              onRenameCategory={(from, to) => personalWaypoints.renameCategory(from, to).ok}
+              onMergeCategoryVisibility={personalWaypointCategoryVisibility.mergeCategoryVisibilityFor}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}

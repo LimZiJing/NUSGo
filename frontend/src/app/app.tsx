@@ -29,7 +29,7 @@ import {
 import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { MoreEntryButton } from '../ui/more-entry-button'
-import { IconButton } from '../ui/button'
+import { Button, IconButton } from '../ui/button'
 import { PlusIcon } from '../ui/icons'
 import type { MorePanelPage } from '../ui/more-panel-surface'
 import {
@@ -139,6 +139,9 @@ function App() {
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
+  const personalWaypointDraftBaselineRef = useRef<string | null>(null)
+  const [discardWaypointDialogOpen, setDiscardWaypointDialogOpen] = useState(false)
+  const discardWaypointDialogRef = useRef<HTMLDialogElement>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
@@ -785,6 +788,7 @@ function App() {
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE, category)
     setPlacementReturnPage(null)
     setMorePage('creating')
+    personalWaypointDraftBaselineRef.current = null
   }
   const beginWaypointLocationAdjustment = (): void => {
     setPlacementReturnPage(morePage === 'editing-waypoint' ? 'editing-waypoint' : 'creating')
@@ -824,6 +828,29 @@ function App() {
         : moreInitialFocusRef.current
     returnFromWaypointDetails(focusTarget)
   }
+  const requestWaypointDismissal = useCallback((): boolean => {
+    const changed = personalWaypointDraftBaselineRef.current !== null &&
+      personalWaypointDraftBaselineRef.current !== JSON.stringify(personalWaypoints.draft)
+    if (changed) {
+      setDiscardWaypointDialogOpen(true)
+      return false
+    }
+    return true
+  }, [personalWaypoints.draft])
+  const discardWaypointDraft = (): void => {
+    // Release modal inertness before the restored page's layout effect focuses it.
+    if (discardWaypointDialogRef.current?.open) discardWaypointDialogRef.current.close()
+    if (morePage === 'editing-waypoint') {
+      cancelPersonalWaypointEdit()
+      setMorePage(personalWaypointEditReturnPage)
+    } else {
+      setIsEditingPersonalWaypoints(false)
+      setMorePage('waypoints')
+    }
+    personalWaypointDraftBaselineRef.current = null
+    setDiscardWaypointDialogOpen(false)
+    setMoreSheetDetent('full')
+  }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
       const returnPage = placementReturnPage
@@ -842,7 +869,9 @@ function App() {
       return
     }
     if (morePage === 'editing-waypoint') {
+      if (!requestWaypointDismissal()) return
       cancelPersonalWaypointEdit()
+      personalWaypointDraftBaselineRef.current = null
       setMorePage(personalWaypointEditReturnPage)
       setMoreSheetDetent('full')
       return
@@ -858,6 +887,8 @@ function App() {
       return
     }
     if (morePage === 'creating') {
+      if (!requestWaypointDismissal()) return
+      personalWaypointDraftBaselineRef.current = null
       setMorePage('waypoints')
       setMoreSheetDetent('full')
       return
@@ -869,6 +900,8 @@ function App() {
   }, [
     backToPersonalWaypointCategories,
     cancelPersonalWaypointEdit,
+    personalWaypointDraftBaselineRef,
+    requestWaypointDismissal,
     morePage,
     personalWaypointEditReturnPage,
     placementReturnPage,
@@ -905,6 +938,7 @@ function App() {
     returnPage: 'waypoints' | 'waypoint-details',
   ): void => {
     if (!personalWaypoints.startEdit(waypoint)) return
+    personalWaypointDraftBaselineRef.current = null
     setPersonalWaypointEditReturnPage(returnPage)
     setMorePage('editing-waypoint')
     setMoreSheetDetent('full')
@@ -926,6 +960,9 @@ function App() {
   </div> : undefined
 
   useLayoutEffect(() => {
+    if ((morePage === 'creating' || morePage === 'editing-waypoint') && personalWaypointDraftBaselineRef.current === null) {
+      personalWaypointDraftBaselineRef.current = JSON.stringify(personalWaypoints.draft)
+    }
     const pendingReturnFocus = pendingWaypointReturnFocusRef.current
     if (pendingReturnFocus) {
       pendingWaypointReturnFocusRef.current = null
@@ -962,9 +999,19 @@ function App() {
     }
     moreWasOpenRef.current = isMoreOpen
     skipMoreFocusRestoreRef.current = false
+  // Capture the draft once when a form opens; later draft changes must not rerun focus restoration.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePersonalWaypointCategory, isMobileViewport, isMoreOpen, morePage])
 
   useEffect(() => {
+    const dialog = discardWaypointDialogRef.current
+    if (!dialog) return
+    if (discardWaypointDialogOpen && !dialog.open) dialog.showModal()
+    else if (!discardWaypointDialogOpen && dialog.open) dialog.close()
+  }, [discardWaypointDialogOpen])
+
+  useEffect(() => {
+    if (discardWaypointDialogOpen) return
     if (morePage === 'closed') return
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
@@ -975,7 +1022,7 @@ function App() {
     }
     window.addEventListener('keydown', closeOnEscape, true)
     return () => window.removeEventListener('keydown', closeOnEscape, true)
-  }, [goBackInMore, morePage])
+  }, [discardWaypointDialogOpen, goBackInMore, morePage])
 
   return (
     <main
@@ -985,6 +1032,16 @@ function App() {
       data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
+      <dialog className="personal-waypoint-discard-dialog" ref={discardWaypointDialogRef}
+        aria-labelledby="personal-waypoint-discard-heading"
+        data-owns-escape="true" onCancel={(event) => { event.preventDefault(); setDiscardWaypointDialogOpen(false) }}>
+        <h2 id="personal-waypoint-discard-heading">Discard waypoint changes?</h2>
+        <p>Your changes have not been saved.</p>
+        <div className="personal-waypoint-actions">
+          <Button label="Keep editing" onClick={() => setDiscardWaypointDialogOpen(false)} variant="secondary" />
+          <Button label="Discard changes" onClick={discardWaypointDraft} variant="primary" />
+        </div>
+      </dialog>
       <div className="map-stage" ref={mapPresentationRef}>
         <PwaNotices basemapUnavailable={basemapUnavailable} />
         <div
@@ -1151,16 +1208,11 @@ function App() {
               submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save waypoint'}
               onAdjustLocation={beginWaypointLocationAdjustment}
               onCancel={() => {
-                if (morePage === 'editing-waypoint') {
-                  cancelPersonalWaypointEdit()
-                  setMorePage(personalWaypointEditReturnPage)
-                } else {
-                  setIsEditingPersonalWaypoints(false)
-                  setMorePage('waypoints')
-                }
+                if (requestWaypointDismissal()) discardWaypointDraft()
               }}
               onSave={() => {
                 if (personalWaypoints.save()) {
+                  personalWaypointDraftBaselineRef.current = null
                   if (morePage === 'editing-waypoint') setMorePage(personalWaypointEditReturnPage)
                   else {
                     setIsEditingPersonalWaypoints(false)

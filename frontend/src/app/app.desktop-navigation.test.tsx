@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTransitIndex } from '../domain/transit'
@@ -1171,6 +1171,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.type(screen.getByLabelText('Name'), 'Quiet bench')
     await user.type(screen.getByLabelText('Category'), 'Rest spot')
+    await user.click(screen.getByRole('option', { name: 'Create “Rest spot”' }))
     await user.type(screen.getByLabelText('Note (optional)'), 'Near the garden')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
 
@@ -1264,7 +1265,10 @@ describe('More surface', () => {
 
     await user.type(screen.getByLabelText('Name'), '  Quiet bench  ')
     await user.type(screen.getByLabelText('Category'), ' Study spot ')
-    await user.type(screen.getByLabelText('Note (optional)'), ' Near the trees ')
+    await user.click(screen.getByRole('option', { name: 'Create “Study spot”' }))
+    const noteInput = screen.getByLabelText('Note (optional)')
+    await user.type(noteInput, ' Near the trees ')
+    expect(document.activeElement).toBe(noteInput)
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
 
@@ -1313,6 +1317,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.type(screen.getByLabelText('Name'), 'Coffee stop')
     await user.type(screen.getByLabelText('Category'), 'Food')
+    await user.click(screen.getByRole('option', { name: 'Create “Food”' }))
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
 
     await user.click(screen.getByRole('button', { name: 'Expand all' }))
@@ -1346,6 +1351,48 @@ describe('More surface', () => {
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+  })
+
+  it('closes an unchanged waypoint draft without a prompt, including after category search dismissal', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    const category = screen.getByRole('combobox', { name: 'Category' })
+    await user.click(category)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Discard waypoint changes?' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog', { name: 'Discard waypoint changes?' })).toBeNull()
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+  })
+
+  it('gates changed waypoint drafts from both Back and Cancel and can keep editing', async () => {
+    const oldShowModal = HTMLDialogElement.prototype.showModal
+    const oldClose = HTMLDialogElement.prototype.close
+    HTMLDialogElement.prototype.showModal = function showModal() { this.setAttribute('open', '') }
+    HTMLDialogElement.prototype.close = function close() { this.removeAttribute('open') }
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    await user.type(screen.getByLabelText('Name'), 'Draft place')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('dialog', { name: 'Discard waypoint changes?' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Draft place')
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    const dialog = screen.getByRole('dialog', { name: 'Discard waypoint changes?' })
+    fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }))
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Draft place')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add waypoint' }))
+    HTMLDialogElement.prototype.showModal = oldShowModal
+    HTMLDialogElement.prototype.close = oldClose
   })
 
   it('preserves unreadable saved data and pauses creation', async () => {

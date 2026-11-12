@@ -34,7 +34,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
   it('exposes the approved category values with separate display labels', () => {
     expect(COMMUNITY_WAYPOINT_CATEGORIES).toEqual([
       { value: 'water_cooler', label: 'Water cooler' },
-      { value: 'atm', label: 'ATM' },
+      { value: 'printing', label: 'Printing / photocopying' },
       { value: 'toilet', label: 'Toilet' },
       { value: 'vending_machine', label: 'Vending machine' },
     ])
@@ -75,7 +75,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
     ])
   })
 
-  it.each(['water_cooler', 'atm', 'toilet', 'vending_machine'])(
+  it.each(['water_cooler', 'printing', 'toilet', 'vending_machine'])(
     'accepts the controlled category %s',
     (category) => {
       expect(parseCommunityWaypointsGeoJson(collectionWith({ category }))[0]?.category).toBe(category)
@@ -185,6 +185,8 @@ describe('parseCommunityWaypointsGeoJson', () => {
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ category: 'staff_room' })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ category: 'atm' })))
+      .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ floor: 1.5 })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ floor: '2' })))
@@ -254,12 +256,12 @@ describe('parseCommunityWaypointsGeoJson', () => {
     expect(parsed).toHaveLength(4)
     expect(parsed.map(({ id, category }) => [id, category])).toEqual([
       ['cw-550e8400-e29b-41d4-a716-446655440001', 'water_cooler'],
-      ['cw-550e8400-e29b-41d4-a716-446655440002', 'atm'],
+      ['cw-550e8400-e29b-41d4-a716-446655440002', 'printing'],
       ['cw-550e8400-e29b-41d4-a716-446655440003', 'toilet'],
       ['cw-550e8400-e29b-41d4-a716-446655440004', 'vending_machine'],
     ])
     expect(parsed[1]).toMatchObject({
-      displayLabel: 'ATM',
+      displayLabel: 'Printing / photocopying',
       updatedAt: '2026-11-08',
       coordinate: { longitude: 103.7801, latitude: 1.2978 },
     })

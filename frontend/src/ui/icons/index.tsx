@@ -5,7 +5,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
-  Banknote,
+  Printer,
   Building2,
   BusFront,
   CircleAlert,
@@ -73,8 +73,8 @@ export function ArmchairIcon(props: IconProps) {
   return renderDecorativeIcon(Armchair, props)
 }
 
-export function BanknoteIcon(props: IconProps) {
-  return renderDecorativeIcon(Banknote, props)
+export function PrinterIcon(props: IconProps) {
+  return renderDecorativeIcon(Printer, props)
 }
 
 export function BuildingIcon(props: IconProps) {

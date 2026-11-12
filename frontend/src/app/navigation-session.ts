@@ -31,7 +31,7 @@ import { reconcileRouteSelection } from './bus-route-selection'
 import { createNavigationSessionStartup } from './navigation-session-startup'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
-import type { MapCoordinate, MapJourneyOption, MapSession, MapViewportInsets } from './contracts/map'
+import type { MapCameraSnapshot, MapCoordinate, MapJourneyOption, MapSession, MapViewportInsets } from './contracts/map'
 import {
   INITIAL_LOCATION_TRACKING_STATE,
   isLocationRequestFailure,
@@ -158,7 +158,11 @@ export interface NavigationSession {
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
     selectedWaypointId?: string | null,
   ): void
-  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets): void
+  /** Reads the exact camera position so a temporary workflow can return to it unchanged. */
+  captureCamera(): MapCameraSnapshot
+  /** Returns to a captured camera position. */
+  restoreCamera(snapshot: MapCameraSnapshot): void
   panToCoordinate(coordinate: MapCoordinate): void
   dismissStopPopup(): boolean
   dismissMapPopup(): boolean
@@ -1055,9 +1059,19 @@ export function createNavigationSession(
       dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     },
 
-    focusPersonalWaypoint(waypoint) {
+    focusPersonalWaypoint(waypoint, occlusion) {
       if (disposed) return
-      dependencies.map.focusPersonalWaypoint(waypoint)
+      dependencies.map.focusPersonalWaypoint(waypoint, occlusion)
+    },
+
+    captureCamera() {
+      if (disposed) return { center: [0, 0], zoom: 0, bearing: 0, pitch: 0 }
+      return dependencies.map.captureCamera()
+    },
+
+    restoreCamera(snapshot) {
+      if (disposed) return
+      dependencies.map.restoreCamera(snapshot)
     },
 
     panToCoordinate(coordinate) {

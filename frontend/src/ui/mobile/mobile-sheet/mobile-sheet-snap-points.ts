@@ -1,8 +1,27 @@
 import type { Drawer } from '@base-ui/react/drawer'
 import type { MobileSheetDetent } from './mobile-sheet-detent'
 
-const PARTIAL_VIEWPORT_RATIO = 0.5
 const SNAP_POINT_TOLERANCE_PX = 1
+
+/**
+ * How much of the screen the partial detent covers. Other sheets measure the 50% above the tab
+ * bar; a feature can ask for a different share of the whole screen, tab pill included.
+ */
+export interface MobileSheetPartialExtent {
+  readonly viewportRatio: number
+  readonly includesTabBar: boolean
+}
+
+export const DEFAULT_MOBILE_SHEET_PARTIAL_EXTENT: MobileSheetPartialExtent = {
+  viewportRatio: 0.5,
+  includesTabBar: false,
+}
+
+/** Waypoint details cover 60% of the whole screen, so the navigation pill sits inside the sheet. */
+export const WAYPOINT_DETAILS_PARTIAL_EXTENT: MobileSheetPartialExtent = {
+  viewportRatio: 0.6,
+  includesTabBar: true,
+}
 
 export type MobileSheetSnapPoints = readonly [
   collapsed: string,
@@ -14,6 +33,7 @@ export function createMobileSheetSnapPoints(
   viewportHeight: number,
   tabBarInset: number,
   collapsedHeight: number,
+  partialExtent: MobileSheetPartialExtent = DEFAULT_MOBILE_SHEET_PARTIAL_EXTENT,
 ): MobileSheetSnapPoints {
   const visibleHeight = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0
   const visibleTabBarInset = Number.isFinite(tabBarInset) ? Math.max(0, tabBarInset) : 0
@@ -24,9 +44,11 @@ export function createMobileSheetSnapPoints(
     maximumHeight,
     (Number.isFinite(collapsedHeight) ? Math.max(0, collapsedHeight) : 0) + visibleTabBarInset,
   )
+  const partialHeight = visibleHeight * partialExtent.viewportRatio +
+    (partialExtent.includesTabBar ? 0 : visibleTabBarInset)
   const partial = Math.max(
     collapsed,
-    Math.min(maximumHeight, visibleHeight * PARTIAL_VIEWPORT_RATIO + visibleTabBarInset),
+    Math.min(maximumHeight, partialHeight),
   )
 
   return [`${collapsed}px`, `${partial}px`, `${maximumHeight}px`]

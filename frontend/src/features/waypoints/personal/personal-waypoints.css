@@ -112,28 +112,62 @@
   overflow-wrap: anywhere;
 }
 
-.personal-waypoint-details-location {
+.personal-waypoint-details-location-disclosure {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2);
+}
+
+.personal-waypoint-details-location-disclosure summary {
   display: flex;
+  min-height: 36px;
   align-items: center;
   gap: var(--space-2);
-  color: var(--accent);
-}
-
-.personal-waypoint-details-location dl {
-  min-width: 0;
-  margin: 0;
-}
-
-.personal-waypoint-details-location dd {
-  margin: 0;
   color: var(--text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.personal-waypoint-details-location-disclosure summary::-webkit-details-marker { display: none; }
+
+.personal-waypoint-details-location-disclosure summary svg {
+  flex: 0 0 16px;
+  transition: transform 150ms ease;
+}
+
+.personal-waypoint-details-location-disclosure[open] summary svg:last-child {
+  transform: rotate(180deg);
+}
+
+.personal-waypoint-details-location-disclosure summary:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The coordinate stays on the Location row so the row answers the question without expanding. */
+.personal-waypoint-details-location-disclosure > summary .personal-waypoint-details-coordinate {
+  margin-inline-start: auto;
+  color: var(--text-muted);
   font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.personal-waypoint-details-location > svg {
-  flex: 0 0 18px;
+.personal-waypoint-details-location-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.personal-waypoint-details-location-fields dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personal-waypoint-details-location-disclosure summary svg { transition: none; }
 }
 
 .personal-waypoint-details-status {
@@ -147,18 +181,53 @@
 }
 
 .personal-waypoint-details-actions {
-  display: grid;
-  gap: var(--space-1);
-}
-.personal-waypoint-details-directions { width: 100%; }
-.personal-waypoint-details-secondary-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
-.personal-waypoint-details-actions .button[data-variant='ghost'].personal-waypoint-details-delete {
-  color: var(--text-error-strong);
+.personal-waypoint-details-navigate { width: 100%; }
+
+.personal-waypoint-details-overflow {
+  position: relative;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  line-height: 0;
 }
+
+.personal-waypoint-details-overflow-trigger {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--surface);
+}
+
+.personal-waypoint-details-overflow-trigger svg { width: 18px; height: 18px; }
+
+.personal-waypoint-details-overflow-trigger:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.personal-waypoint-details-actions-menu {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 5px);
+  inset-inline-end: 0;
+  width: 180px;
+  padding: 4px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+  line-height: normal;
+}
+
+.personal-waypoint-details-delete { color: var(--text-error-strong); }
 
 .personal-waypoint-list {
   display: grid;

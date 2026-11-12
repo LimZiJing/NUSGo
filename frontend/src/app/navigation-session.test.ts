@@ -63,6 +63,8 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    captureCamera: vi.fn(() => ({ center: [0, 0] as const, zoom: 0, bearing: 0, pitch: 0 })),
+    restoreCamera: vi.fn(),
     panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
@@ -364,9 +366,41 @@ describe('navigation session', () => {
 
     session.focusPersonalWaypoint(waypoint)
 
-    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, undefined)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+  })
+
+  it('passes the caller occlusion through when focusing a Personal Waypoint', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue' as const,
+      markerIcon: 'dot' as const,
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const occlusion = { top: 0, right: 0, bottom: 320, left: 0 }
+
+    session.focusPersonalWaypoint(waypoint, occlusion)
+
+    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, occlusion)
+  })
+
+  it('captures and restores the camera through the map session', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const snapshot = { center: [103.78, 1.29] as const, zoom: 16, bearing: 12, pitch: 30 }
+
+    session.restoreCamera(snapshot)
+
+    expect(dependencies.map.restoreCamera).toHaveBeenCalledWith(snapshot)
+    expect(session.captureCamera()).toEqual({ center: [0, 0], zoom: 0, bearing: 0, pitch: 0 })
+    expect(dependencies.map.captureCamera).toHaveBeenCalledTimes(1)
   })
 
   it('pans the map to a coordinate without resetting the view', () => {

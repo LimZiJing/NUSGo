@@ -20,43 +20,107 @@ const waypoint: PersonalWaypoint = {
 
 afterEach(cleanup)
 
+function renderDetails(overrides: {
+  readonly canManage?: boolean
+  readonly onDirections?: () => void
+  readonly onEdit?: () => void
+  readonly onDelete?: () => void
+} = {}) {
+  const onDirections = overrides.onDirections ?? vi.fn()
+  const onEdit = overrides.onEdit ?? vi.fn()
+  const onDelete = overrides.onDelete ?? vi.fn()
+  render(<PersonalWaypointDetails
+    waypoint={waypoint}
+    canManage={overrides.canManage ?? true}
+    onDirections={onDirections}
+    onEdit={onEdit}
+    onDelete={onDelete}
+  />)
+  return { onDirections, onEdit, onDelete }
+}
+
 describe('PersonalWaypointDetails', () => {
-  it('shows waypoint details and offers Directions before quiet edit and delete actions', async () => {
-    const user = userEvent.setup()
-    const onDirections = vi.fn()
-    const onEdit = vi.fn()
-    const onDelete = vi.fn()
-    render(<PersonalWaypointDetails
-      waypoint={waypoint}
-      canManage
-      onDirections={onDirections}
-      onEdit={onEdit}
-      onDelete={onDelete}
-    />)
+  it('shows the waypoint identity, note and a compact Location disclosure', () => {
+    renderDetails()
 
     expect(screen.getByRole('heading', { name: 'Quiet bench' })).toBeTruthy()
     expect(screen.getByText('Rest spot')).toBeTruthy()
     expect(screen.getByText('Near the garden')).toBeTruthy()
+
+    const disclosure = document.querySelector('.personal-waypoint-details-location-disclosure')
+    expect(disclosure).toBeInstanceOf(HTMLDetailsElement)
+    expect(disclosure?.hasAttribute('open')).toBe(false)
+    expect(disclosure?.querySelector('summary')?.textContent).toContain('Location')
     expect(screen.getByText('1.290000, 103.780000').className)
       .toContain('personal-waypoint-details-coordinate')
+  })
 
-    const directions = screen.getByRole('button', { name: 'Directions' })
+  it('offers Navigate first with a leading icon and keeps edit and delete in the overflow', async () => {
+    const user = userEvent.setup()
+    const { onDirections, onEdit, onDelete } = renderDetails()
+
+    const navigate = screen.getByRole('button', { name: 'Navigate' })
+    const overflow = screen.getByRole('button', { name: 'More waypoint actions' })
+    expect(navigate.getAttribute('data-variant')).toBe('primary')
+    // The icon sits before the label, matching the Stop details action hierarchy.
+    expect(navigate.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+    expect(navigate.textContent).toBe('Navigate')
+    expect(screen.getAllByRole('button')).toEqual([overflow, navigate])
+
+    expect(overflow.getAttribute('aria-expanded')).toBe('false')
+    expect(overflow.getAttribute('aria-controls')).toBe('personal-waypoint-details-actions-menu')
+    expect(screen.queryByRole('group', { name: 'Waypoint actions' })).toBeNull()
+
+    await user.click(navigate)
+    expect(onDirections).toHaveBeenCalledOnce()
+
+    await user.click(overflow)
+    expect(overflow.getAttribute('aria-expanded')).toBe('true')
+    expect(document.querySelector('.personal-waypoint-details')?.getAttribute('data-menu-open'))
+      .toBe('true')
+
+    const menu = screen.getByRole('group', { name: 'Waypoint actions' })
+    expect(menu.querySelector('[disabled]')).toBeNull()
     const edit = screen.getByRole('button', { name: 'Edit waypoint' })
     const remove = screen.getByRole('button', { name: 'Delete waypoint' })
-    expect(directions.getAttribute('data-variant')).toBe('primary')
-    expect(edit.getAttribute('data-variant')).toBe('ghost')
-    expect(remove.getAttribute('data-variant')).toBe('ghost')
     expect(remove.className).toContain('personal-waypoint-details-delete')
-    expect(screen.getAllByRole('button')).toEqual([directions, edit, remove])
-
-    await user.click(directions)
-    expect(onDirections).toHaveBeenCalledOnce()
+    expect(Array.from(menu.querySelectorAll('button'))).toEqual([edit, remove])
 
     await user.click(edit)
     expect(onEdit).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('group', { name: 'Waypoint actions' })).toBeNull()
+    expect(document.activeElement).toBe(overflow)
 
-    await user.click(remove)
+    await user.click(overflow)
+    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
     expect(onDelete).toHaveBeenCalledOnce()
+  })
+
+  it('closes the overflow with Escape and returns focus to its trigger', async () => {
+    const user = userEvent.setup()
+    renderDetails()
+
+    const overflow = screen.getByRole('button', { name: 'More waypoint actions' })
+    await user.click(overflow)
+    expect(screen.getByRole('group', { name: 'Waypoint actions' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('group', { name: 'Waypoint actions' })).toBeNull()
+    expect(overflow.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(overflow)
+  })
+
+  it('disables the overflow entries when saved data cannot be managed', async () => {
+    const user = userEvent.setup()
+    renderDetails({ canManage: false })
+
+    await user.click(screen.getByRole('button', { name: 'More waypoint actions' }))
+
+    expect(screen.getByRole('button', { name: 'Edit waypoint' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Delete waypoint' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('status').textContent)
+      .toContain('Editing and deleting are unavailable')
   })
 
   it('explains when the selected waypoint is no longer available', () => {

@@ -20,6 +20,13 @@ const appHarness = vi.hoisted(() => {
     setPersonalWaypointPlacement: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    captureCamera: vi.fn(() => ({
+      center: [103.7764, 1.2966] as const,
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+    })),
+    restoreCamera: vi.fn(),
     panToCoordinate: vi.fn(),
   }
   return {
@@ -163,6 +170,15 @@ function selectPersonalWaypointFromMap(waypointId: string): HTMLButtonElement {
   return trigger
 }
 
+// Edit and Delete live in the details overflow menu, so every management action opens it first.
+async function clickWaypointDetailsOverflow(
+  user: ReturnType<typeof userEvent.setup>,
+  action: 'Edit waypoint' | 'Delete waypoint',
+): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'More waypoint actions' }))
+  await user.click(screen.getByRole('button', { name: action }))
+}
+
 beforeEach(() => {
   localStorage.removeItem('navus:personal-waypoints:expanded-categories:v1')
   mockDesktopViewport()
@@ -209,6 +225,9 @@ afterEach(() => {
   appHarness.commands.suspendMobileRoutes.mockReset()
   appHarness.commands.setPersonalWaypoints.mockReset()
   appHarness.commands.setPersonalWaypointPlacement.mockReset()
+  appHarness.commands.captureCamera.mockClear()
+  appHarness.commands.restoreCamera.mockReset()
+  appHarness.commands.focusPersonalWaypoint.mockReset()
 })
 
 describe('desktop shared navigation shell', () => {
@@ -712,7 +731,7 @@ describe('More surface', () => {
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
   })
 
-  it('uses the shared Directions action from the list and details', async () => {
+  it('uses the shared Navigate action from the list and details', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -736,7 +755,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
-    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith(expect.objectContaining({
       kind: 'personal-waypoint',
       id: waypoint.id,
@@ -752,7 +771,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
-    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledTimes(2)
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({
       kind: 'personal-waypoint',
@@ -795,8 +814,8 @@ describe('More surface', () => {
       expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
       expect(panel?.getAttribute('data-open')).toBe('true')
       expect(screen.getByRole('heading', { name: selected.name })).toBeTruthy()
-      const directions = screen.getByRole('button', { name: 'Directions' })
-      directions.focus()
+      const navigate = screen.getByRole('button', { name: 'Navigate' })
+      navigate.focus()
       await user.keyboard('{Enter}')
 
       expect(appHarness.commands.navigateToEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -959,7 +978,7 @@ describe('More surface', () => {
     const panel = document.querySelector('.more-panel-surface')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(screen.getByText('Near the garden')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    await clickWaypointDetailsOverflow(user, 'Edit waypoint')
     expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
     await user.clear(screen.getByLabelText('Name'))
     await user.type(screen.getByLabelText('Name'), 'Shaded bench')
@@ -975,14 +994,14 @@ describe('More surface', () => {
     })
     expect(saved.updatedAt).not.toBe(waypoint.updatedAt)
 
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await clickWaypointDetailsOverflow(user, 'Delete waypoint')
     expect(confirm).toHaveBeenCalledWith('Delete "Shaded bench"? This cannot be undone.')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints)
       .toHaveLength(1)
 
     confirm.mockReturnValue(true)
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await clickWaypointDetailsOverflow(user, 'Delete waypoint')
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
     confirm.mockRestore()
@@ -1009,7 +1028,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
-    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    await clickWaypointDetailsOverflow(user, 'Edit waypoint')
     await user.clear(screen.getByLabelText('Name'))
     await user.type(screen.getByLabelText('Name'), 'My unsaved edit')
 
@@ -1065,12 +1084,184 @@ describe('More surface', () => {
     expect(onSelectWaypoint).toBeTypeOf('function')
     act(() => onSelectWaypoint?.(waypoint.id, trigger))
     expect(panel?.dataset.page).toBe('waypoint-details')
+    // Details keep the map in view, so their own sheet extent replaces the originating detent.
+    expect(panel?.dataset.detent).toBe('partial')
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(panel?.dataset.page).toBe('settings')
     expect(panel?.dataset.detent).toBe('full')
+    expect(appHarness.commands.restoreCamera).toHaveBeenCalledOnce()
+    expect(appHarness.commands.restoreCamera).toHaveBeenCalledWith({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+    })
     expect(document.activeElement).toBe(trigger)
+    trigger.remove()
+  })
+
+  it('returns focus to the same list row after details opened from that row', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000036',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await user.click(screen.getByRole('button', { name: 'Rest spot1' }))
+
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+
+    // The row is rebuilt with the restored page, so its label re-finds it rather than focus
+    // landing on the list's first control.
+    expect(document.activeElement)
+      .toBe(screen.getByRole('button', { name: 'Open Quiet bench, Rest spot details' }))
+  })
+
+  it('captures the camera once and focuses each opened place once through the application seam', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000031',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const otherWaypoint = {
+      ...waypoint,
+      id: '00000000-0000-4000-8000-000000000032',
+      name: 'Library seat',
+      coordinate: { longitude: 103.77, latitude: 1.3 },
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1, waypoints: [waypoint, otherWaypoint],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+
+    const firstTrigger = selectPersonalWaypointFromMap(waypoint.id)
+    expect(appHarness.commands.captureCamera).toHaveBeenCalledOnce()
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledOnce()
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenLastCalledWith(waypoint, undefined)
+
+    // Re-renders while the same place stays open, such as a pan or an unrelated state change,
+    // must not move the camera again.
+    await user.click(screen.getByRole('button', { name: 'More waypoint actions' }))
+    await user.keyboard('{Escape}')
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledOnce()
+
+    // Switching places focuses the newly selected one once and keeps the original snapshot.
+    const secondTrigger = selectPersonalWaypointFromMap(otherWaypoint.id)
+    expect(screen.getByRole('heading', { name: 'Library seat' })).toBeTruthy()
+    expect(appHarness.commands.captureCamera).toHaveBeenCalledOnce()
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledTimes(2)
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenLastCalledWith(otherWaypoint, undefined)
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(appHarness.commands.restoreCamera).toHaveBeenCalledOnce()
+    expect(appHarness.commands.restoreCamera).toHaveBeenCalledWith({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+    })
+    firstTrigger.remove()
+    secondTrigger.remove()
+  })
+
+  it('follows the normal Plan workflow instead of restoring the camera when navigating from details', async () => {
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000033',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const trigger = selectPersonalWaypointFromMap(waypoint.id)
+
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
+
+    expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'personal-waypoint', id: waypoint.id,
+    }))
+    // Navigating is a new journey, so the previous view must not snap back under the new trip.
+    expect(appHarness.commands.restoreCamera).not.toHaveBeenCalled()
+    trigger.remove()
+  })
+
+  it('focuses waypoint details above their own mobile sheet extent', async () => {
+    mockMobileViewport()
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000034',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    render(<App />)
+
+    const trigger = selectPersonalWaypointFromMap(waypoint.id)
+
+    // Details cover 60% of the screen plus the shared overlay margin, so the marker stays above them.
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledOnce()
+    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, {
+      top: 0,
+      right: 0,
+      bottom: viewportHeight * 0.6 + 12,
+      left: 0,
+    })
+    trigger.remove()
+  })
+
+  it('does not restore the camera when details close through the More toggle', async () => {
+    mockMobileViewport()
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000035',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+    const trigger = selectPersonalWaypointFromMap(waypoint.id)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+
+    expect(appHarness.commands.restoreCamera).toHaveBeenCalledOnce()
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     trigger.remove()
   })
 
@@ -1128,7 +1319,7 @@ describe('More surface', () => {
 
     marker.remove()
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await clickWaypointDetailsOverflow(user, 'Delete waypoint')
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))

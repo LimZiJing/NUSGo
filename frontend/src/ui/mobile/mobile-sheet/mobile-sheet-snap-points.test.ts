@@ -4,6 +4,7 @@ import {
   getMobileSheetOccupiedHeight,
   getMobileSheetDetent,
   getMobileSheetSnapPoint,
+  WAYPOINT_DETAILS_PARTIAL_EXTENT,
 } from './mobile-sheet-snap-points'
 
 describe('mobile sheet snap points', () => {
@@ -61,5 +62,26 @@ describe('mobile sheet snap points', () => {
     expect(getMobileSheetOccupiedHeight('collapsed', points)).toBe(124)
     expect(getMobileSheetOccupiedHeight('partial', points)).toBe(580)
     expect(getMobileSheetOccupiedHeight('full', points)).toBe(1000)
+  })
+
+  it('gives waypoint details 60% of the whole screen while other sheets keep 50% above the tab bar', () => {
+    const shared = createMobileSheetSnapPoints(844, 80, 44)
+    const details = createMobileSheetSnapPoints(844, 80, 44, WAYPOINT_DETAILS_PARTIAL_EXTENT)
+
+    // The shared partial detent is 50% of the viewport, clipped above the tab bar, plus that bar.
+    expect(Number.parseFloat(shared[1]) - 80).toBe(844 * 0.5)
+    // Waypoint details cover 60% of the whole screen, so the navigation pill is inside the sheet.
+    expect(Number.parseFloat(details[1])).toBe(844 * 0.6)
+    expect(Number.parseFloat(details[1]) / 844).toBeCloseTo(0.6)
+    // Only the partial detent moves; the collapsed handle and full extent stay shared.
+    expect(details[0]).toBe(shared[0])
+    expect(details[2]).toBe(shared[2])
+    expect(getMobileSheetDetent('506.4px', details)).toBe('partial')
+  })
+
+  it('never lets the waypoint details partial detent fall below the collapsed handle', () => {
+    const points = createMobileSheetSnapPoints(300, 80, 44, WAYPOINT_DETAILS_PARTIAL_EXTENT)
+
+    expect(points).toEqual(['124px', '180px', '300px'])
   })
 })

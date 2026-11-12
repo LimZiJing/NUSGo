@@ -117,7 +117,10 @@ vi.mock('maplibre-gl', () => {
     readonly panBy = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly getBearing = vi.fn(() => 0)
+    readonly getPitch = vi.fn(() => 0)
+    readonly getCenter = vi.fn(() => ({ lng: 103.8, lat: 1.3 }))
     readonly flyTo = vi.fn()
+    readonly easeTo = vi.fn()
     readonly zoomIn = vi.fn()
     readonly zoomOut = vi.fn()
     readonly queryRenderedFeatures = vi.fn(() => [])
@@ -1811,6 +1814,107 @@ describe('MapSession', () => {
     session.setPersonalWaypoints([], true, vi.fn())
     expect(focusedMarker.remove).toHaveBeenCalledOnce()
     session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('centers a saved Personal Waypoint in the area a caller-provided occlusion leaves visible', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { flyTo: ReturnType<typeof vi.fn> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+
+    // The waypoint details sheet covers the bottom 60% of the mobile screen.
+    session.setPersonalWaypoints([waypoint], true, vi.fn())
+    session.focusPersonalWaypoint(waypoint, { top: 0, right: 0, bottom: 518, left: 0 })
+
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103.78, 1.29],
+      offset: [0, -259],
+      essential: true,
+    }))
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('captures the exact camera and restores centre, zoom, bearing and pitch', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      readonly getCenter: ReturnType<typeof vi.fn>
+      readonly getZoom: ReturnType<typeof vi.fn>
+      readonly getBearing: ReturnType<typeof vi.fn>
+      readonly getPitch: ReturnType<typeof vi.fn>
+      readonly easeTo: ReturnType<typeof vi.fn>
+    }
+
+    map.getCenter.mockReturnValue({ lng: 103.7764, lat: 1.2966 })
+    map.getZoom.mockReturnValue(17.25)
+    map.getBearing.mockReturnValue(-32)
+    map.getPitch.mockReturnValue(45)
+
+    const snapshot = session.captureCamera()
+
+    expect(snapshot).toEqual({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+    })
+    expect(map.easeTo).not.toHaveBeenCalled()
+
+    session.restoreCamera(snapshot)
+
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+      duration: 400,
+    })
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('stops camera captures and restores after disposal', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { readonly easeTo: ReturnType<typeof vi.fn> }
+
+    session.dispose()
+    // A disposed session still answers with a harmless camera rather than throwing.
+    expect(session.captureCamera()).toEqual({ center: [0, 0], zoom: 0, bearing: 0, pitch: 0 })
+    session.restoreCamera({ center: [103.78, 1.29], zoom: 16, bearing: 0, pitch: 0 })
+    expect(map.easeTo).not.toHaveBeenCalled()
     vi.unstubAllGlobals()
   })
 

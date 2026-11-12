@@ -38,6 +38,8 @@ function createMapDouble(): MapSession {
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    captureCamera: vi.fn(() => ({ center: [103.8, 1.3] as const, zoom: 15, bearing: 5, pitch: 10 })),
+    restoreCamera: vi.fn(),
     panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
@@ -63,6 +65,8 @@ function createSessionDouble(overrides: Partial<NavigationSession> = {}): Naviga
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    captureCamera: vi.fn(() => ({ center: [103.8, 1.3] as const, zoom: 15, bearing: 5, pitch: 10 })),
+    restoreCamera: vi.fn(),
     panToCoordinate: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -290,7 +294,16 @@ describe('navigation session application seam', () => {
       updatedAt: '2026-10-26T00:00:00.000Z',
     }
     firstCommands.focusPersonalWaypoint(waypoint)
-    expect(session.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    expect(session.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, undefined)
+    const occlusion = { top: 0, right: 0, bottom: 320, left: 0 }
+    firstCommands.focusPersonalWaypoint(waypoint, occlusion)
+    expect(session.focusPersonalWaypoint).toHaveBeenLastCalledWith(waypoint, occlusion)
+    const camera = { center: [103.78, 1.29] as const, zoom: 16, bearing: 0, pitch: 0 }
+    // The adapter reads straight from the live session rather than caching a stale camera.
+    expect(firstCommands.captureCamera())
+      .toEqual({ center: [103.8, 1.3], zoom: 15, bearing: 5, pitch: 10 })
+    firstCommands.restoreCamera(camera)
+    expect(session.restoreCamera).toHaveBeenCalledWith(camera)
     firstCommands.panToCoordinate([103.78, 1.29])
     expect(session.panToCoordinate).toHaveBeenCalledWith([103.78, 1.29])
     firstCommands.fitJourneyRoutes()

@@ -4,9 +4,11 @@ import { MobileSheetHandle } from './mobile-sheet-handle'
 import { MobileSheetMetricsContext } from './mobile-sheet-metrics'
 import type { MobileSheetDetent } from './mobile-sheet-detent'
 import {
+  DEFAULT_MOBILE_SHEET_PARTIAL_EXTENT,
   createMobileSheetSnapPoints,
   getMobileSheetDetent,
   getMobileSheetSnapPoint,
+  type MobileSheetPartialExtent,
   type MobileSheetSnapPoints,
 } from './mobile-sheet-snap-points'
 
@@ -19,6 +21,8 @@ interface MobileSheetProps {
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
   readonly onDetentChange: (detent: MobileSheetDetent) => void
+  /** Overrides how much of the screen the partial detent covers; omit for the shared 50%. */
+  readonly partialExtent?: MobileSheetPartialExtent
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
   readonly panelProps?: Omit<ComponentPropsWithoutRef<'section'>, 'className' | 'children' | 'ref'> & {
@@ -38,6 +42,7 @@ export function MobileSheet({
   portalContainer,
   detent,
   onDetentChange,
+  partialExtent = DEFAULT_MOBILE_SHEET_PARTIAL_EXTENT,
   onButtonRef,
   onPanelRef,
   panelProps,
@@ -64,9 +69,14 @@ export function MobileSheet({
   }, [onPanelRef])
   const metrics = useContext(MobileSheetMetricsContext)
   const snapPoints = useMemo<MobileSheetSnapPoints>(() => metrics
-    ? createMobileSheetSnapPoints(metrics.viewportHeight, metrics.tabBarInset, metrics.collapsedHeight)
+    ? createMobileSheetSnapPoints(
+      metrics.viewportHeight,
+      metrics.tabBarInset,
+      metrics.collapsedHeight,
+      partialExtent,
+    )
     : INITIAL_SNAP_POINTS,
-  [metrics])
+  [metrics, partialExtent])
 
   const changeDetent = (nextDetent: MobileSheetDetent): void => {
     if (nextDetent === detent) return

@@ -5,6 +5,7 @@ import { MainNavigation } from '../../ui/main-navigation'
 import { NavigationPanelShell } from '../../ui/navigation-panel-shell'
 import { NavigationViewShell } from '../../ui/navigation-view-shell'
 import { MorePanelSurface, type MorePanelPage } from '../../ui/more-panel-surface'
+import { WAYPOINT_DETAILS_PARTIAL_EXTENT } from '../../ui/mobile/mobile-sheet/mobile-sheet-snap-points'
 import type { MobileSheetDetent, NavigationState } from '../navigation/navigation-state'
 import { getExploreSheetSummary, getPlanSheetSummary } from './mobile-sheet-summary'
 
@@ -131,6 +132,9 @@ export function AppViews({
             label="More panel"
             controlsId="more-panel-content"
             detent={isMobileViewport ? morePanel.detent : 'partial'}
+            // Waypoint details keep the map in view, so their sheet covers 60% of the screen
+            // including the tab pill rather than the shared 50% above it.
+            partialExtent={morePanel.page === 'waypoint-details' ? WAYPOINT_DETAILS_PARTIAL_EXTENT : undefined}
             enabled={isMobileViewport}
             active={morePanel.open}
             portalContainer={sheetPortalContainer}

@@ -2,6 +2,7 @@ import type { LoadedTransitData } from '../../app/contracts/data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import { Marker } from 'maplibre-gl'
 import type {
+  MapCameraSnapshot,
   MapCoordinate,
   MapRouteSelection,
   MapSession,
@@ -178,6 +179,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       (viewportInsets.left - viewportInsets.right) / 2,
       (viewportInsets.top - viewportInsets.bottom) / 2,
     ]
+
+  // User-initiated camera moves stay `essential`, so the preference is honoured here instead:
+  // under reduced motion the camera jumps to the target without animating.
+  const getCameraMotionDuration = (duration: number): number => (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : duration
+  )
 
   const flyToStop = (stopId: string, zoom: number, popupOffset: number): void => {
     const stop = currentTransitIndex?.stopById.get(stopId)
@@ -687,16 +698,49 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     },
 
-    focusPersonalWaypoint(waypoint: PersonalWaypoint) {
+    focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets) {
       if (disposed) return
       pendingCameraFit = null
       personalWaypointMarkers.focusWaypoint(waypoint)
+      // The More panel that holds waypoint details is not one of the sheets this session measures,
+      // so the caller passes the occlusion it actually covers instead of relying on viewport insets.
+      // While MapLibre padding is active it already centres on the visible area.
+      const offset: [number, number] = occlusion && !visibleCenterZoomEnabled
+        ? [
+          (occlusion.left - occlusion.right) / 2,
+          (occlusion.top - occlusion.bottom) / 2,
+        ]
+        : getFitOffset()
       map.flyTo({
         center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
         zoom: Math.max(map.getZoom(), 16),
-        duration: 500,
-        offset: getFitOffset(),
+        duration: getCameraMotionDuration(500),
+        offset,
         essential: true,
+      })
+    },
+
+    captureCamera() {
+      if (disposed) return { center: [0, 0], zoom: 0, bearing: 0, pitch: 0 }
+      const { lng, lat } = map.getCenter()
+      return {
+        center: [lng, lat],
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+        pitch: map.getPitch(),
+      }
+    },
+
+    restoreCamera(snapshot: MapCameraSnapshot) {
+      if (disposed) return
+      pendingCameraFit = null
+      // The camera returns exactly as it was, so pitch and bearing come back with the centre.
+      map.easeTo({
+        center: [snapshot.center[0], snapshot.center[1]],
+        zoom: snapshot.zoom,
+        bearing: snapshot.bearing,
+        pitch: snapshot.pitch,
+        duration: getCameraMotionDuration(400),
       })
     },
 

@@ -22,7 +22,7 @@ import { CommunityWaypointSubmissionError } from '../../../domain/waypoints/comm
 import { Button } from '../../../ui/button'
 import {
   AlertCircleIcon,
-  BanknoteIcon,
+  PrinterIcon,
   BuildingIcon,
   CupSodaIcon,
   DropletsIcon,
@@ -46,7 +46,7 @@ type LocationStatus = 'locating' | 'ready' | 'required'
 
 const CATEGORY_ICONS = {
   water_cooler: DropletsIcon,
-  atm: BanknoteIcon,
+  printing: PrinterIcon,
   toilet: ToiletIcon,
   vending_machine: CupSodaIcon,
 } satisfies Record<ActiveCommunityWaypointCategory, typeof DropletsIcon>

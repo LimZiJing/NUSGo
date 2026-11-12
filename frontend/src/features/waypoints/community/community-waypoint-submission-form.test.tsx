@@ -45,15 +45,17 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props } = renderForm()
 
+    expect(screen.getByRole('radio', { name: 'Printing / photocopying' })).toBeTruthy()
+    expect(screen.queryByRole('radio', { name: 'ATM' })).toBeNull()
     expect(screen.getByRole('status').textContent).toBe('')
     expect(screen.getByText('Using current location')).toBeTruthy()
     expect(screen.queryByText(/Current location accuracy/)).toBeNull()
     expect(screen.queryByText(/Anonymous\. Your pin and optional note/)).toBeNull()
     expect(screen.queryByText('Only reviewers see this note.')).toBeNull()
     expect(screen.queryByLabelText(/name or email/i)).toBeNull()
-    expect(screen.queryByLabelText(/photo/i)).toBeNull()
+    expect(document.querySelector('input[type="file"]')).toBeNull()
 
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.type(screen.getByLabelText('Note for reviewers'), 'Near the library entrance.')
     expect(screen.getByLabelText('Building or landmark')).toBeTruthy()
     expect(screen.getByLabelText('Floor')).toBeTruthy()
@@ -69,7 +71,7 @@ describe('CommunityWaypointSubmissionForm', () => {
 
     expect(props.onSubmit).toHaveBeenCalledWith({
       kind: 'new-place',
-      category: 'atm',
+      category: 'printing',
       longitude: 103.78,
       latitude: 1.29,
       building: 'Central Library',
@@ -96,7 +98,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props } = renderForm({ locationStatus: 'required', locationAccuracy: null })
 
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(screen.getByText('Set the waypoint location before sending.', { selector: 'span' })).toBeTruthy()
@@ -147,7 +149,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props } = renderForm()
 
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.type(screen.getByLabelText('Floor'), '1.5')
 
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
@@ -191,7 +193,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       onPendingChange,
     })
 
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.type(screen.getByLabelText('Note for reviewers'), 'Beside the west entrance.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
@@ -212,7 +214,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const note = '🧊'.repeat(1_001)
 
     fireEvent.change(screen.getByLabelText('Note for reviewers'), { target: { value: note } })
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(screen.getByRole('alert').textContent).toMatch(/note within 1,000 characters/i)
@@ -224,7 +226,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     let resolveSubmission = (): void => undefined
     const onSubmit = vi.fn(async () => new Promise<void>((resolve) => { resolveSubmission = resolve }))
     renderForm({ onSubmit })
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     const sendingButton = screen.getByRole('button', { name: 'Sending…' }) as HTMLButtonElement
@@ -248,7 +250,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       },
     )
     const view = renderForm({ onSubmit })
-    await user.click(screen.getByRole('radio', { name: 'ATM' }))
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
     await waitFor(() => expect(submittedSignals).toHaveLength(1))
 

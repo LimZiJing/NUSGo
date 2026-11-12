@@ -136,6 +136,7 @@ export interface MapSession {
     waypoints: readonly PersonalWaypoint[],
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+    selectedWaypointId?: string | null,
   ): void
   /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void

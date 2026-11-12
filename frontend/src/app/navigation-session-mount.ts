@@ -147,6 +147,7 @@ export interface NavigationSessionCommands {
     waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
+    selectedWaypointId?: Parameters<NavigationSession['setPersonalWaypoints']>[3],
   ) => void
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
@@ -209,8 +210,8 @@ function createNavigationSessionCommands(
     setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
       session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
     ),
-    setPersonalWaypoints: (waypoints, visible, onSelect) => (
-      session?.setPersonalWaypoints(waypoints, visible, onSelect)
+    setPersonalWaypoints: (waypoints, visible, onSelect, selectedWaypointId) => (
+      session?.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     ),
     focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
     panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),

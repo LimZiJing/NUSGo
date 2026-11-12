@@ -27,9 +27,10 @@ import {
   type ShuttleStopMarkers,
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
-import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
+import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
+import { createMapPin, MAP_PIN_ANCHOR } from './map-pin'
 import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
@@ -665,10 +666,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
 
       if (!personalWaypointMarker) {
-        const element = document.createElement('div')
-        element.className = 'personal-waypoint-placement-marker'
-        element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
+        const { element } = createMapPin({ variant: 'placement', glyph: 'crosshair' })
+        personalWaypointMarker = new Marker({ anchor: MAP_PIN_ANCHOR, element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
         personalWaypointDragHandler = () => {
@@ -683,9 +682,9 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
-    setPersonalWaypoints(waypoints, visible, onSelect) {
+    setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId) {
       if (disposed) return
-      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     },
 
     focusPersonalWaypoint(waypoint: PersonalWaypoint) {
@@ -765,7 +764,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
 
       clearVenueMarker()
-      const marker = createVenueMarker(map, venue)
+      const marker = createVenueMarker(map, venue, { label: `Selected location: ${venue.roomName}` })
       if (!marker || !venue.location) return
 
       selectedVenueMarker = marker
@@ -791,7 +790,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         const marker = createVenueMarker(
           map,
           { roomName: building.name, location },
-          isHighlighted(location) ? BUILDING_PART_HIGHLIGHT_COLOR : undefined,
+          {
+            // Without a highlighted part every part is equally the selected location.
+            selected: highlighted === undefined || isHighlighted(location),
+            label: `Selected location: ${building.name}`,
+          },
         )
         return marker ? [marker] : []
       })

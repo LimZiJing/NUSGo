@@ -536,7 +536,7 @@ function createBusPath(): Path {
 
 describe('MapSession', () => {
   it('updates, hides, shows, and removes the current-location marker without moving the camera', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -678,7 +678,7 @@ describe('MapSession', () => {
   })
 
   it('dismisses only a shuttle-stop popup through the stop-specific command', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const closeEndpointPopup = vi.fn()
     fakeMapState.popupCloseButton = { click: closeEndpointPopup }
     const session = createMapSession({
@@ -702,7 +702,7 @@ describe('MapSession', () => {
   })
 
   it('preserves a valid route presentation across transit reloads without refitting', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -755,7 +755,7 @@ describe('MapSession', () => {
   })
 
   it('renders and clears the selected Journey independently of transit layers', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -789,7 +789,7 @@ describe('MapSession', () => {
   })
 
   it('fits every option with overlay insets, keeps the camera on selection, and refits on command', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -838,7 +838,7 @@ describe('MapSession', () => {
   })
 
   it('hides planned Journey layers and endpoint markers outside Plan and restores them without replanning', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -882,7 +882,7 @@ describe('MapSession', () => {
   })
 
   it('forwards rendered Journey route clicks through the MapSession callback', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     vi.stubGlobal('Element', class {})
     const onJourneyOptionSelected = vi.fn()
     const onEmptyMapClick = vi.fn()
@@ -917,7 +917,7 @@ describe('MapSession', () => {
   })
 
   it('waits for initial overlay measurements before fitting a new result', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -946,7 +946,7 @@ describe('MapSession', () => {
   })
 
   it('limits Journey fit breathing room on short mobile viewports', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -975,7 +975,7 @@ describe('MapSession', () => {
   })
 
   it('highlights only stops traversed by each bus leg with its Route color', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1058,7 +1058,7 @@ describe('MapSession', () => {
   })
 
   it('replaces route browsing with Journey legs and restores the prior route and stop interactions', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1116,7 +1116,7 @@ describe('MapSession', () => {
   })
 
   it('restores route browsing when MapLibre rejects Journey layers', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const onMapError = vi.fn()
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -1156,7 +1156,7 @@ describe('MapSession', () => {
   })
 
   it('replaces pending route framing when the selected route is missing from reloaded data', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1200,7 +1200,7 @@ describe('MapSession', () => {
   })
 
   it('fits the replacement route when the selected route changes during reload', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1229,7 +1229,7 @@ describe('MapSession', () => {
   })
 
   it('queues the latest venue fit and cancels pending framing on clear or dispose', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1286,7 +1286,7 @@ describe('MapSession', () => {
   })
 
   it('refits the selected venue immediately with the current insets, then leaves later inset reports alone', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1326,7 +1326,7 @@ describe('MapSession', () => {
   })
 
   it('marks every part of a selected building and fits the camera to all of them once insets are known', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1362,7 +1362,7 @@ describe('MapSession', () => {
   })
 
   it('uses measured insets for route, endpoint, zoom, and reset camera actions', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1425,7 +1425,7 @@ describe('MapSession', () => {
   })
 
   it('fits a route after focusing a venue beneath mobile sheets', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1466,7 +1466,7 @@ describe('MapSession', () => {
   })
 
   it('focuses a validated route stop above the sheet and opens its popup', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1497,7 +1497,7 @@ describe('MapSession', () => {
   })
 
   it('focuses a Stops pin in the exposed map without opening a popup', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1566,7 +1566,7 @@ describe('MapSession', () => {
   })
 
   it('clears a mobile route highlight without fitting all routes', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1586,7 +1586,7 @@ describe('MapSession', () => {
   })
 
   it('replaces endpoint markers from the current immutable transit index and clears them', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1647,7 +1647,7 @@ describe('MapSession', () => {
   })
 
   it('moves and clears the temporary Personal Waypoint marker', () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const onDrag = vi.fn()
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -1657,6 +1657,7 @@ describe('MapSession', () => {
     const map = fakeMapState.maps.at(-1) as {
       addedMarkers: Array<{
         options: { anchor?: string }
+        element: FakeElement
         coordinate: unknown
         draggable: boolean
         setLngLat(coordinate: unknown): void
@@ -1670,8 +1671,14 @@ describe('MapSession', () => {
     expect(marker.coordinate).toEqual([103.78, 1.29])
     expect(marker.draggable).toBe(true)
     expect(marker.options.anchor).toBe('bottom')
+    // The placement pin is the shared teardrop family with a crosshair glyph and no popup.
+    const placementElement = marker.element
+    expect(placementElement.className).toBe('map-pin')
+    expect(placementElement.dataset.variant).toBe('placement')
+    expect(placementElement.attributes.get('aria-hidden')).toBe('true')
     marker.setLngLat([103.79, 1.3])
     marker.fire('dragend')
+    // Dragging reports the marker's own geographic coordinate, so the pin tip and value agree.
     expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])
 
     session.setPersonalWaypointPlacement([103.8, 1.31], false, onDrag)
@@ -1808,7 +1815,7 @@ describe('MapSession', () => {
   })
 
   it('replaces transit installations and makes disposal idempotent', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),

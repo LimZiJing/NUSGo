@@ -1,0 +1,133 @@
+/* One teardrop family for selected locations, saved Personal Waypoints and placement. Every pin
+   anchors its tip on the geographic coordinate, so all three workflows share one anchor. Current
+   location, bus stops and live buses keep their own marker types. */
+
+.map-pin {
+  --map-pin-box: 28px;
+  --map-pin-size: 28px;
+
+  display: grid;
+  width: var(--map-pin-box);
+  height: var(--map-pin-box);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  appearance: none;
+}
+
+.map-pin-pin {
+  position: relative;
+  display: block;
+  width: var(--map-pin-size);
+  height: var(--map-pin-size);
+  /* The interactive box is taller than the pin, so nudge the pin down until its tip meets the
+     bottom edge, which is what a `bottom` anchor places on the coordinate. */
+  transform: translateY(calc((var(--map-pin-box) - var(--map-pin-size)) / 2));
+}
+
+.map-pin-teardrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: var(--map-pin-fill, var(--accent));
+  stroke: var(--map-pin-edge, var(--surface-card));
+  stroke-width: 1.5;
+  filter: drop-shadow(0 1px 2px var(--map-pin-shadow));
+}
+
+.map-pin-glyph {
+  position: absolute;
+  top: 37.5%;
+  left: 50%;
+  display: grid;
+  width: 64%;
+  height: 64%;
+  place-items: center;
+  color: var(--map-pin-glyph-colour, var(--text-primary));
+  transform: translate(-50%, -50%);
+}
+
+.map-pin-glyph-icon {
+  width: 100%;
+  height: 100%;
+}
+
+/* Selected member of the family: modestly larger body plus a soft halo. The halo is a painted
+   surface with no animation, so the selected cue survives reduced motion unchanged. */
+.map-pin[data-selected='true'] .map-pin-pin::before {
+  position: absolute;
+  top: 37.5%;
+  left: 50%;
+  width: calc(var(--map-pin-size) * 1.6);
+  height: calc(var(--map-pin-size) * 1.6);
+  border-radius: 50%;
+  background: var(--map-pin-halo);
+  content: '';
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Selected location: the venue or building part the map is focused on. */
+.map-pin[data-variant='location'] {
+  --map-pin-box: 22px;
+  --map-pin-size: 22px;
+  --map-pin-fill: var(--map-pin-fill-neutral);
+  --map-pin-edge: var(--border-control);
+  --map-pin-glyph-colour: var(--map-pin-glyph-on-neutral);
+}
+
+.map-pin[data-variant='location'][data-selected='true'] {
+  --map-pin-box: 28px;
+  --map-pin-size: 28px;
+  --map-pin-fill: var(--accent);
+  --map-pin-edge: var(--surface-card);
+  --map-pin-glyph-colour: var(--accent-contrast);
+}
+
+/* Saved Personal Waypoints keep their stored colour and icon; only size and halo change. */
+.map-pin[data-variant='waypoint'] {
+  --map-pin-box: 44px;
+  --map-pin-size: 28px;
+  --map-pin-fill: var(--personal-waypoint-marker-blue);
+  --map-pin-edge: var(--surface-card);
+  --map-pin-glyph-colour: var(--map-pin-glyph-ink);
+
+  cursor: pointer;
+}
+
+.map-pin[data-variant='waypoint'][data-selected='true'] {
+  --map-pin-size: 34px;
+}
+
+.map-pin[data-variant='waypoint'][data-marker-color='blue'] { --map-pin-fill: var(--personal-waypoint-marker-blue); }
+.map-pin[data-variant='waypoint'][data-marker-color='red'] { --map-pin-fill: var(--personal-waypoint-marker-red); --map-pin-glyph-colour: var(--map-pin-glyph-paper); }
+.map-pin[data-variant='waypoint'][data-marker-color='green'] { --map-pin-fill: var(--personal-waypoint-marker-green); }
+.map-pin[data-variant='waypoint'][data-marker-color='orange'] { --map-pin-fill: var(--personal-waypoint-marker-orange); }
+.map-pin[data-variant='waypoint'][data-marker-color='yellow'] { --map-pin-fill: var(--personal-waypoint-marker-yellow); }
+.map-pin[data-variant='waypoint'][data-marker-color='cyan'] { --map-pin-fill: var(--personal-waypoint-marker-cyan); }
+.map-pin[data-variant='waypoint'][data-marker-color='purple'] { --map-pin-fill: var(--personal-waypoint-marker-purple); --map-pin-glyph-colour: var(--map-pin-glyph-paper); }
+.map-pin[data-variant='waypoint'][data-marker-color='gray'] { --map-pin-fill: var(--personal-waypoint-marker-gray); }
+
+/* Placement: the draggable pin that picks a waypoint's location. */
+.map-pin[data-variant='placement'] {
+  --map-pin-box: 44px;
+  --map-pin-size: 36px;
+  --map-pin-fill: var(--accent);
+  --map-pin-edge: var(--surface-card);
+  --map-pin-glyph-colour: var(--accent-contrast);
+
+  cursor: grab;
+}
+
+.map-pin[data-variant='placement']:active {
+  cursor: grabbing;
+}
+
+.map-pin:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}

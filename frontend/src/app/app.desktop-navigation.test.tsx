@@ -1074,6 +1074,37 @@ describe('More surface', () => {
     trigger.remove()
   })
 
+  it('passes the opened waypoint to the map so its pin shows the selection cue', async () => {
+    mockDesktopViewport()
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000004',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [waypoint] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    const selectedBefore = appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[3]
+    expect(selectedBefore).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const onSelectWaypoint = appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[2]
+    act(() => onSelectWaypoint?.(waypoint.id, trigger))
+
+    expect(appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[3]).toBe(waypoint.id)
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[3]).toBeNull()
+    trigger.remove()
+  })
+
   it('returns focus to More when deleting a waypoint opened from the map', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000003',

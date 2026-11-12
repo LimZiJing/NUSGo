@@ -84,6 +84,15 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] With malformed/unsupported storage and with rejected records, verify there is no write before the user confirms reset or explicitly keeps readable records and discards rejected ones.
 - [ ] Repeat the edit conflict review at 390 × 844. Check keyboard focus, scrolling, and touch-sized controls.
 
+## Map marker family (#670)
+
+- [ ] Show two saved waypoints in different categories. Confirm both pins share one teardrop outline, keep their saved colour and icon, and their tips sit on their coordinates (a pin near a route line should point at it, not float above or below).
+- [ ] Open one waypoint from its map pin. Confirm only that pin grows modestly and gains a soft halo while the other pin keeps its normal size and no halo, and that opening details does not move the map. Repeat with reduced motion enabled and confirm the halo still shows without animating.
+- [ ] Within 30 m of a stop and a route, drag the placement pin while adjusting a waypoint's location. Confirm the pin keeps its crosshair and the map pan/drag updates the chosen coordinate by the same distance the pin moved. Place it on an existing saved pin's coordinate and confirm both tips land on the same map point.
+- [ ] Choose a venue from Explore and confirm the selected marker is the same teardrop family with a location glyph, that it is announced as `Selected location: <venue>`, and that no duplicate popup appears.
+- [ ] Confirm Current location (the blue target marker), bus stops and live buses keep their existing round or vehicle marker types and that none of them shows a teardrop.
+- [ ] Repeat the marker checks at 390 × 844, 360 × 740 and 1280 × 800 in System, Light, Dark, NUS, Matcha and Sakura. Confirm pin fill, edge, glyph and halo colours follow the theme and that no pin colour is hard-coded.
+
 ## Keyboard and accessibility
 
 - [ ] Focus is visible and follows a sensible order through the affected workflow.

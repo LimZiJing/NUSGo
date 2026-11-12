@@ -335,8 +335,15 @@ describe('navigation session', () => {
     const onSelect = vi.fn()
 
     session.setPersonalWaypoints([waypoint], true, onSelect)
+    expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect, undefined)
 
-    expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect)
+    session.setPersonalWaypoints([waypoint], true, onSelect, waypoint.id)
+    expect(dependencies.map.setPersonalWaypoints).toHaveBeenLastCalledWith(
+      [waypoint],
+      true,
+      onSelect,
+      waypoint.id,
+    )
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
   })

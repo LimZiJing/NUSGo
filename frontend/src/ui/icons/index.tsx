@@ -14,6 +14,7 @@ import {
   Compass,
   Coffee,
   CircleDot,
+  Crosshair,
   DoorOpen,
   Download,
   EllipsisVertical,
@@ -117,6 +118,10 @@ export function CoffeeIcon(props: IconProps) {
 
 export function CircleDotIcon(props: IconProps) {
   return renderDecorativeIcon(CircleDot, props)
+}
+
+export function CrosshairIcon(props: IconProps) {
+  return renderDecorativeIcon(Crosshair, props)
 }
 
 export function EllipsisVerticalIcon(props: IconProps) {

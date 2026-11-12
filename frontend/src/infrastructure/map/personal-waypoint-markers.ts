@@ -6,8 +6,8 @@ import {
   type PersonalWaypoint,
   type PersonalWaypointMarkerIcon,
 } from '../../domain/waypoints/personal/personal-waypoint'
+import { createMapPin, MAP_PIN_ANCHOR } from './map-pin'
 import { createMapSvgIcon, type MapSvgIconName } from './svg-icons'
-import './personal-waypoint-markers.css'
 
 interface PersonalWaypointMarkerPresentation {
   readonly name: string
@@ -31,6 +31,7 @@ export interface PersonalWaypointMarkers {
     waypoints: readonly PersonalWaypoint[],
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+    selectedWaypointId?: string | null,
   ): void
   focusWaypoint(waypoint: PersonalWaypoint): void
   dispose(): void
@@ -61,6 +62,10 @@ function getMarkerColorLabel(markerColor: PersonalWaypoint['markerColor']): stri
   return PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.find(({ value }) => value === markerColor)?.label ?? 'Blue'
 }
 
+function markerLabel(waypoint: PersonalWaypoint): string {
+  return `Open ${waypoint.name}, ${waypoint.category} details. ${getMarkerIconLabel(waypoint.markerIcon)} icon, ${getMarkerColorLabel(waypoint.markerColor)} marker.`
+}
+
 function updateMarkerElement(
   element: HTMLButtonElement,
   icon: HTMLSpanElement,
@@ -77,7 +82,7 @@ function updateMarkerElement(
       : 'circle-dot'
     icon.replaceChildren(createMapSvgIcon(iconName, {
       className: 'personal-waypoint-marker-glyph',
-      size: 13,
+      size: 15,
     }))
   }
   if (
@@ -87,27 +92,29 @@ function updateMarkerElement(
     previous.markerColor !== waypoint.markerColor ||
     previous.markerIcon !== waypoint.markerIcon
   ) {
-    element.setAttribute(
-      'aria-label',
-      `Open ${waypoint.name}, ${waypoint.category} details. ${getMarkerIconLabel(waypoint.markerIcon)} icon, ${getMarkerColorLabel(waypoint.markerColor)} marker.`,
-    )
+    element.setAttribute('aria-label', markerLabel(waypoint))
   }
+}
+
+function updateSelectionState(element: HTMLButtonElement, selected: boolean): void {
+  if (selected) element.dataset.selected = 'true'
+  else delete element.dataset.selected
 }
 
 function createMarkerElement(waypoint: PersonalWaypoint): {
   readonly element: HTMLButtonElement
   readonly icon: HTMLSpanElement
 } {
-  const element = document.createElement('button')
-  element.type = 'button'
-  element.className = 'personal-waypoint-marker'
-  const pin = document.createElement('span')
-  pin.className = 'personal-waypoint-marker-pin'
-  const icon = document.createElement('span')
-  icon.className = 'personal-waypoint-marker-icon'
-  icon.setAttribute('aria-hidden', 'true')
-  pin.append(icon)
-  element.append(pin)
+  const pin = createMapPin({
+    variant: 'waypoint',
+    interactive: true,
+    label: markerLabel(waypoint),
+  })
+  const element = pin.element as HTMLButtonElement
+  // The class stays on the shared pin so existing selectors and tests keep naming the waypoint.
+  element.classList.add('personal-waypoint-marker')
+  const icon = pin.glyph
+  icon.classList.add('personal-waypoint-marker-icon')
   updateMarkerElement(element, icon, waypoint, null)
   return { element, icon }
 }
@@ -151,7 +158,7 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
     }
     element.addEventListener('click', handleClick)
     const coordinate: [number, number] = [waypoint.coordinate.longitude, waypoint.coordinate.latitude]
-    const marker = new Marker({ anchor: 'bottom', element }).setLngLat(coordinate)
+    const marker = new Marker({ anchor: MAP_PIN_ANCHOR, element }).setLngLat(coordinate)
     const record = {
       marker,
       element,
@@ -172,7 +179,7 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
   }
 
   return {
-    setWaypoints(waypoints, nextVisible, nextOnSelect) {
+    setWaypoints(waypoints, nextVisible, nextOnSelect, selectedWaypointId = null) {
       if (disposed) return
       visible = nextVisible
       onSelect = nextOnSelect
@@ -191,6 +198,7 @@ export function createPersonalWaypointMarkers(map: Map): PersonalWaypointMarkers
 
       for (const waypoint of validWaypoints) {
         const record = getOrCreateRecord(waypoint)
+        updateSelectionState(record.element, waypoint.id === selectedWaypointId)
 
         if (visible && !record.attached) {
           attach(record)

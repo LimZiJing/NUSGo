@@ -156,6 +156,7 @@ export interface NavigationSession {
     waypoints: readonly PersonalWaypoint[],
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+    selectedWaypointId?: string | null,
   ): void
   focusPersonalWaypoint(waypoint: PersonalWaypoint): void
   panToCoordinate(coordinate: MapCoordinate): void
@@ -1049,9 +1050,9 @@ export function createNavigationSession(
       dependencies.map.setPersonalWaypointPlacement(coordinate, editable, onChange)
     },
 
-    setPersonalWaypoints(waypoints, visible, onSelect) {
+    setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId) {
       if (disposed) return
-      dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect)
+      dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     },
 
     focusPersonalWaypoint(waypoint) {

@@ -47,6 +47,18 @@
   --personal-waypoint-marker-purple: #9656eb;
   --personal-waypoint-marker-gray: #b7b7b7;
 
+  --map-pin-fill-neutral: #d9b8c3;
+
+  --map-pin-glyph-ink: #172033;
+
+  --map-pin-glyph-paper: #fff;
+
+  --map-pin-glyph-on-neutral: #55303d;
+
+  --map-pin-halo: rgb(150 59 86 / 24%);
+
+  --map-pin-shadow: rgb(15 23 42 / 30%);
+
   --border-default: #dac2cb;
   --border-subtle: #e1c9d2;
   --border-strong: #c9a6b2;

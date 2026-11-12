@@ -389,8 +389,10 @@ function App() {
       visiblePersonalWaypointsForMap,
       morePage !== 'placing' && morePage !== 'editing-waypoint',
       handlePersonalWaypointMapSelection,
+      // Opening details marks that waypoint as the selected member of the shared pin family.
+      selectedPersonalWaypointId,
     )
-  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
+  }, [commands, handlePersonalWaypointMapSelection, morePage, selectedPersonalWaypointId, visiblePersonalWaypointsForMap])
   useEffect(() => {
     commands.setPersonalWaypointCollection(personalWaypointCollection)
   }, [commands, personalWaypointCollection])

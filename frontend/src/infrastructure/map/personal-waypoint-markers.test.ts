@@ -235,6 +235,29 @@ describe('createPersonalWaypointMarkers', () => {
     markers.dispose()
   })
 
+  it('marks only the selected waypoint with the shared family selection cue', () => {
+    const markers = createPersonalWaypointMarkers({} as Map)
+    const secondWaypoint = { ...waypoint, id: '00000000-0000-4000-8000-000000000002', name: 'Quiet lawn' }
+
+    markers.setWaypoints([waypoint, secondWaypoint], true, () => undefined, secondWaypoint.id)
+
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.personal-waypoint-marker'))
+    expect(buttons.map((button) => button.dataset.selected)).toEqual([undefined, 'true'])
+    expect(buttons.map((button) => button.dataset.variant)).toEqual(['waypoint', 'waypoint'])
+    // The shared family outline keeps every saved marker on one teardrop.
+    expect(buttons.every((button) => button.querySelector('svg.map-pin-teardrop path') !== null)).toBe(true)
+    // Saved colour and icon are preserved, not replaced by the selection state.
+    expect(buttons.map((button) => button.dataset.markerColor)).toEqual(['blue', 'blue'])
+
+    markers.setWaypoints([waypoint, secondWaypoint], true, () => undefined, null)
+    expect(buttons.map((button) => button.dataset.selected)).toEqual([undefined, undefined])
+
+    markers.setWaypoints([waypoint, secondWaypoint], true, () => undefined, waypoint.id)
+    expect(buttons.map((button) => button.dataset.selected)).toEqual(['true', undefined])
+
+    markers.dispose()
+  })
+
   it('hides markers during placement and removes their listeners on disposal', () => {
     const onSelect = vi.fn()
     const markers = createPersonalWaypointMarkers({} as Map)

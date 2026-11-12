@@ -20,6 +20,7 @@ export function PersonalWaypointsHome({
   onRemove,
   onMove,
   onMoveToCategory,
+  onMoveToPosition,
   onResetUnreadableData,
   onDiscardRejectedRecords,
   categoryOptions,
@@ -50,6 +51,7 @@ export function PersonalWaypointsHome({
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
+  readonly onMoveToPosition?: (waypointId: string, category: string, indexWithinCategory: number) => boolean
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
   readonly categoryOptions: readonly PersonalWaypointCategoryOption[]
@@ -170,6 +172,7 @@ export function PersonalWaypointsHome({
           onMove={onMove}
           moveCategoryOptions={categoryOptions.map(({ category }) => category)}
           onMoveToCategory={onMoveToCategory}
+          onMoveToPosition={onMoveToPosition}
           onEditAnnouncement={setEditAnnouncement}
         />
       </>

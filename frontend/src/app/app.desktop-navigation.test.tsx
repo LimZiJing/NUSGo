@@ -861,7 +861,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
-    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    const waypointsList = screen.getByRole('list', { name: 'Rest spot waypoints' })
     const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
     handle.focus()
     await user.keyboard('{Space}')

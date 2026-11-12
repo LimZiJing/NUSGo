@@ -22,10 +22,12 @@ interface PersonalWaypointListRowProps {
   readonly rowRef?: Ref<HTMLLIElement>
   readonly handleRef?: (element: HTMLButtonElement | null) => void
   readonly isDragging?: boolean
+  readonly isDropTarget?: boolean
   readonly index: number
   readonly keyboardReordering?: boolean
   readonly onHandleKeyDown?: (waypointId: string, index: number, event: KeyboardEvent<HTMLButtonElement>) => void
   readonly handleDescriptionId: string
+  readonly group?: string
 }
 
 export function PersonalWaypointListRow({
@@ -42,6 +44,7 @@ export function PersonalWaypointListRow({
   rowRef,
   handleRef,
   isDragging = false,
+  isDropTarget = false,
   index,
   keyboardReordering = false,
   onHandleKeyDown,
@@ -88,7 +91,8 @@ export function PersonalWaypointListRow({
   return (
     <SavedListRow
       rowRef={rowRef}
-      className={`personal-waypoint-row${isDragging ? ' personal-waypoint-row-dragging' : ''}`}
+      className={`personal-waypoint-row${isDragging ? ' personal-waypoint-row-dragging' : ''}${isDropTarget ? ' personal-waypoint-row-drop-target' : ''}`}
+      dropTarget={isDropTarget}
       density="compact"
       leading={<>
         {editing && <IconButton
@@ -141,9 +145,16 @@ export function PersonalWaypointListRow({
 export function PersonalWaypointSortableListRow({
   waypoint,
   index,
+  group,
   ...props
 }: PersonalWaypointListRowProps) {
-  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index })
+  const { ref, handleRef, isDragging, isDropTarget } = useSortable({
+    id: waypoint.id,
+    index,
+    group,
+    // React owns rows across category lists; dnd-kit's optimistic plugin reparents their DOM nodes directly.
+    plugins: [],
+  })
 
   return (
     <PersonalWaypointListRow
@@ -153,6 +164,7 @@ export function PersonalWaypointSortableListRow({
       rowRef={ref}
       handleRef={handleRef}
       isDragging={isDragging}
+      isDropTarget={isDropTarget}
     />
   )
 }

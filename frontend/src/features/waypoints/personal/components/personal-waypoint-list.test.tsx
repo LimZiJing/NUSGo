@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { PersonalWaypointList } from './personal-waypoint-list'
+import { moveGroupedWaypointFromDrag, PersonalWaypointList, resolveInsertionIndexFromPointer } from './personal-waypoint-list'
 
 function createWaypoint(id: number, name: string, category: string): PersonalWaypoint {
   const suffix = String(id).padStart(12, '0')
@@ -77,6 +77,127 @@ beforeEach(() => {
 })
 
 describe('PersonalWaypointList', () => {
+  it.each([
+    { name: 'down within a category', source: waypoints[0]!, targetId: waypoints[0]!.id, group: 'Rest spot', index: 1, expected: ['Rest spot', 1] as const },
+    { name: 'up within a category', source: waypoints[2]!, targetId: waypoints[2]!.id, group: 'Rest spot', index: 0, expected: ['Rest spot', 0] as const },
+    { name: 'before a row in another category', source: waypoints[0]!, targetId: waypoints[1]!.id, targetGroup: 'Study place', targetIndex: 0, expected: ['Study place', 0] as const },
+    { name: 'after a row in another category', source: waypoints[0]!, targetId: waypoints[1]!.id, targetGroup: 'Study place', targetIndex: 1, expected: ['Study place', 1] as const },
+    { name: 'onto a collapsed category heading', source: waypoints[0]!, targetId: 'personal-waypoint-category:Study%20place', expected: ['Study place', 1] as const },
+  ])('resolves grouped drag $name to the exact insertion callback', ({ source, targetId, group, index, targetGroup, targetIndex, expected }) => {
+    const onMoveToPosition = vi.fn(() => true)
+    const result = moveGroupedWaypointFromDrag({
+      waypointId: source.id,
+      targetId,
+      sourceGroup: group,
+      sourceIndex: index,
+      targetGroup,
+      targetIndex,
+      waypoints,
+      onMoveToPosition,
+    })
+
+    expect(result.kind).toBe('moved')
+    expect(onMoveToPosition).toHaveBeenCalledExactlyOnceWith(source.id, expected[0], expected[1])
+  })
+
+  it('resolves pointer insertion so a row drop keeps its exact half-of-row position', () => {
+    // Midpoints for W1 and W2 rows sit at 100 and 200.
+    expect(resolveInsertionIndexFromPointer([100, 200], 60)).toBe(0)
+    expect(resolveInsertionIndexFromPointer([100, 200], 140)).toBe(1)
+    expect(resolveInsertionIndexFromPointer([100, 200], 260)).toBe(2)
+  })
+
+  it('prefers the pointer-derived index over the projected one so lower-half drops do not append', () => {
+    const onMoveToPosition = vi.fn(() => true)
+    const result = moveGroupedWaypointFromDrag({
+      waypointId: waypoints[0]!.id,
+      targetId: waypoints[1]!.id,
+      targetGroup: 'Study place',
+      targetIndex: 0,
+      resolvedIndex: 1,
+      waypoints,
+      onMoveToPosition,
+    })
+
+    expect(result.kind).toBe('moved')
+    expect(onMoveToPosition).toHaveBeenCalledExactlyOnceWith(waypoints[0]!.id, 'Study place', 1)
+  })
+
+  it('falls back to appending when the destination has no measurable rows', () => {
+    const onMoveToPosition = vi.fn(() => true)
+    const result = moveGroupedWaypointFromDrag({
+      waypointId: waypoints[0]!.id,
+      targetId: 'personal-waypoint-category:Study%20place',
+      resolvedIndex: undefined,
+      waypoints,
+      onMoveToPosition,
+    })
+
+    expect(result.kind).toBe('moved')
+    expect(onMoveToPosition).toHaveBeenCalledExactlyOnceWith(waypoints[0]!.id, 'Study place', 1)
+  })
+
+  it('keeps both category lists mounted after a grouped move to an exact position', () => {
+    let savedWaypoints = [...waypoints]
+    const onMoveToPosition = vi.fn((waypointId: string, category: string, insertionIndex: number) => {
+      const moved = savedWaypoints.find(({ id }) => id === waypointId)!
+      const remaining = savedWaypoints.filter(({ id }) => id !== waypointId)
+      const inCategory = remaining.filter(({ category: current }) => current === category)
+      const anchor = inCategory[insertionIndex]
+      const anchorIndex = anchor ? remaining.findIndex(({ id }) => id === anchor.id) : remaining.length
+      savedWaypoints = [...remaining.slice(0, anchorIndex), { ...moved, category }, ...remaining.slice(anchorIndex)]
+      view.rerender(<PersonalWaypointList waypoints={savedWaypoints} canEdit editing onRemove={() => undefined} onMove={() => true} onMoveToPosition={onMoveToPosition} />)
+      return true
+    })
+    const view = render(<PersonalWaypointList waypoints={savedWaypoints} canEdit editing onRemove={() => undefined} onMove={() => true} onMoveToPosition={onMoveToPosition} />)
+
+    act(() => {
+      moveGroupedWaypointFromDrag({
+        waypointId: waypoints[0]!.id,
+        targetId: waypoints[1]!.id,
+        targetGroup: 'Study place',
+        targetIndex: 1,
+        waypoints: savedWaypoints,
+        onMoveToPosition,
+      })
+    })
+
+    expect(onMoveToPosition).toHaveBeenCalledExactlyOnceWith(waypoints[0]!.id, 'Study place', 1)
+    expect(within(screen.getByRole('list', { name: 'Rest spot waypoints' })).getByText('Tea room')).toBeTruthy()
+    expect(within(screen.getByRole('list', { name: 'Study place waypoints' })).getByText('Quiet bench')).toBeTruthy()
+    expect(within(screen.getByRole('list', { name: 'Study place waypoints' })).getByText('Design studio')).toBeTruthy()
+  })
+
+  it('restores focus to a moved waypoint handle after its source category disappears', async () => {
+    const user = userEvent.setup()
+    const source = createWaypoint(41, 'Only place', 'Alpha')
+    const destination = createWaypoint(42, 'Work place', 'Work')
+    function MovingList() {
+      const [saved, setSaved] = useState([source, destination])
+      return <PersonalWaypointList
+        waypoints={saved}
+        canEdit
+        editing
+        moveCategoryOptions={['Alpha', 'Work']}
+        onMoveToCategory={(waypointId, category) => {
+          setSaved((current) => current.map((waypoint) => waypoint.id === waypointId ? { ...waypoint, category } : waypoint))
+          return true
+        }}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />
+    }
+    render(<MovingList />)
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Waypoint options for Only place, Alpha' }))
+    await user.click(screen.getByRole('button', { name: 'Move to category' }))
+    await user.click(screen.getByRole('combobox', { name: 'Move Only place to category' }))
+    await user.click(screen.getByRole('option', { name: 'Work' }))
+
+    expect(screen.queryByRole('region', { name: 'Alpha, 1 places' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reorder Only place, Work' })).toBe(document.activeElement)
+  })
+
   it('shows a waypoint on the map from its row and offers Directions as a separate action', async () => {
     const user = userEvent.setup()
     const onFocusWaypoint = vi.fn()
@@ -237,6 +358,29 @@ describe('PersonalWaypointList', () => {
     expect(screen.queryByRole('button', { name: /Move .* (up|down)/ })).toBeNull()
   })
 
+  it('enables grouped drag targets only in unfiltered Edit list', async () => {
+    const user = userEvent.setup()
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRemove={() => undefined}
+        onMove={() => true}
+        onMoveToPosition={() => true}
+      />,
+    )
+
+    expect(screen.getByRole('region', { name: 'Rest spot, 2 places' }).className)
+      .toContain('personal-waypoint-category-drop-target')
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
+      .toBe(false)
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search saved places' }), 'quiet')
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
+      .toBe(true)
+  })
+
   it('supports keyboard start, movement, drop, and focus restoration', async () => {
     const user = userEvent.setup()
     const onMove = vi.fn(() => true)
@@ -274,7 +418,7 @@ describe('PersonalWaypointList', () => {
     expect(onMove).toHaveBeenCalledOnce()
     expect(onMove).toHaveBeenCalledWith(waypoints[1]?.id, 0)
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Design studio moved to position 1 of 3.')
-    expect(document.activeElement).toBe(handle)
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Reorder Design studio, Study place')
   })
 
   it('cancels keyboard reordering and skips writes for a no-op', async () => {

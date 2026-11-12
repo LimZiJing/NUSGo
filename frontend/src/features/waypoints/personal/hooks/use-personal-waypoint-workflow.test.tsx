@@ -182,6 +182,60 @@ describe('usePersonalWaypointWorkflow', () => {
     expect(succeeded).toBe(true)
     expect(getWaypoints()).toEqual([first, moved, third])
   })
+  it('inserts a waypoint at an exact category position and offers the shared Undo', () => {
+    const first = createWaypoint(21, 'First place')
+    const moved = createWaypoint(22, 'Moved place')
+    const second = createWaypoint(23, 'Second place')
+    const elsewhere = { ...createWaypoint(24, 'Elsewhere'), category: 'Work' }
+    const { store, getWaypoints } = createMutableStore([first, moved, second, elsewhere])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let succeeded = false
+    act(() => { succeeded = result.current.moveWaypointToPosition(moved.id, 'Rest spot', 0) })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints().map(({ id }) => id)).toEqual([moved.id, first.id, second.id, elsewhere.id])
+    expect(result.current.canUndoMove).toBe(true)
+
+    act(() => { succeeded = result.current.undoMoveWaypoint() })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints()).toEqual([first, moved, second, elsewhere])
+  })
+  it.each([
+    { name: 'down within a category', waypointIndex: 0, category: 'Rest spot', index: 2, expected: ['Moved', 'Second', 'First', 'Elsewhere'] },
+    { name: 'up within a category', waypointIndex: 2, category: 'Rest spot', index: 0, expected: ['Second', 'First', 'Moved', 'Elsewhere'] },
+    { name: 'cross-category before a row', waypointIndex: 1, category: 'Work', index: 0, expected: ['First', 'Second', 'Moved', 'Elsewhere'] },
+    { name: 'append to another category', waypointIndex: 0, category: 'Work', index: 1, expected: ['Moved', 'Second', 'Elsewhere', 'First'] },
+  ])('persists $name and Undo restores the original order', ({ waypointIndex, category, index, expected }) => {
+    const rest = [createWaypoint(31, 'First'), createWaypoint(32, 'Moved'), createWaypoint(33, 'Second')]
+    const elsewhere = [{ ...createWaypoint(34, 'Elsewhere'), category: 'Work' }]
+    const initial = [...rest, ...elsewhere]
+    const movedId = rest[waypointIndex]!.id
+    const { store, getWaypoints } = createMutableStore(initial)
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let succeeded = false
+    act(() => { succeeded = result.current.moveWaypointToPosition(movedId, category, index) })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints().map(({ name }) => name)).toEqual(expected)
+    act(() => { succeeded = result.current.undoMoveWaypoint() })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints()).toEqual(initial)
+  })
+  it('keeps saved waypoints and reports failure when a category insertion cannot be persisted', () => {
+    const moved = createWaypoint(25, 'Saved place')
+    const { store, getWaypoints } = createMutableStore([moved])
+    store.replaceAll = vi.fn(() => ({ kind: 'unavailable', operation: 'write' } as const))
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let succeeded = true
+    act(() => { succeeded = result.current.moveWaypointToPosition(moved.id, 'Work', 0) })
+
+    expect(succeeded).toBe(false)
+    expect(getWaypoints()).toEqual([moved])
+    expect(result.current.statusKind).toBe('problem')
+    expect(result.current.status).toContain('Saved data was not changed.')
+    expect(result.current.canUndoMove).toBe(false)
+  })
   it('does not report Undo success when persistence fails', () => {
     const moved = createWaypoint(12, 'Saved place')
     const { store, getWaypoints } = createMutableStore([moved])

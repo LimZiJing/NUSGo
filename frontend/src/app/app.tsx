@@ -1180,6 +1180,7 @@ function App() {
               onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
               onMoveToCategory={personalWaypoints.moveWaypointToCategory}
+              onMoveToPosition={personalWaypoints.moveWaypointToPosition}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}

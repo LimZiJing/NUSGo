@@ -203,6 +203,44 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     return true
   }, [finishMutation, setStatus, store])
 
+  const moveWaypointToPosition = useCallback((waypointId: string, category: string, indexWithinCategory: number): boolean => {
+    const current = store.read()
+    setReadResult(current)
+    const blockedMessage = getBlockedMutationMessage(current)
+    if (blockedMessage) { setStatus(blockedMessage, 'problem'); return false }
+    if (current.kind !== 'ready' || current.rejectedRecords.count > 0) return false
+    const waypoint = current.waypoints.find(({ id }) => id === waypointId)
+    const normalizedCategory = category.trim()
+    if (!waypoint || !normalizedCategory || normalizedCategory.length > PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH || !Number.isInteger(indexWithinCategory) || indexWithinCategory < 0) return false
+    const updated = waypoint.category === normalizedCategory
+      ? { ok: true as const, waypoint }
+      : updatePersonalWaypoint(waypoint, { ...waypoint, category: normalizedCategory }, { now: () => new Date().toISOString() })
+    if (!updated.ok) { setStatus('The waypoint could not be safely moved. Saved data was not changed.', 'problem'); return false }
+    const next: PersonalWaypoint[] = []
+    let categoryIndex = 0
+    let inserted = false
+    for (const item of current.waypoints) {
+      if (item.id === waypointId) continue
+      if (item.category === normalizedCategory && categoryIndex === indexWithinCategory && !inserted) {
+        next.push(updated.waypoint)
+        inserted = true
+      }
+      next.push(item)
+      if (item.category === normalizedCategory) categoryIndex += 1
+    }
+    if (!inserted) {
+      const lastCategoryIndex = next.reduce((last, item, index) => item.category === normalizedCategory ? index : last, -1)
+      next.splice(lastCategoryIndex < 0 ? next.length : lastCategoryIndex + 1, 0, updated.waypoint)
+    }
+    const outcome = store.replaceAll(next, current.revision)
+    if (outcome.kind !== 'saved') { finishMutation(outcome, 'saved', '', 'The waypoint could not be moved. Saved data was not changed.'); return false }
+    setReadResult(store.read())
+    moveUndo.current = { waypointId, original: current.waypoints, revision: outcome.revision }
+    setCanUndoMove(true)
+    setStatus(waypoint.category === normalizedCategory ? `Order saved in ${normalizedCategory}.` : `Moved to ${normalizedCategory}.`, 'success')
+    return true
+  }, [finishMutation, setStatus, store])
+
   const undoMoveWaypoint = useCallback((): boolean => {
     const undo = moveUndo.current
     if (!undo) return false
@@ -437,6 +475,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     removeWaypoint,
     moveWaypoint,
     moveWaypointToCategory,
+    moveWaypointToPosition,
     undoMoveWaypoint,
     canUndoMove: canUndoMove && statusUpdate?.kind === 'success' && readResult.kind === 'ready',
     clearAll,

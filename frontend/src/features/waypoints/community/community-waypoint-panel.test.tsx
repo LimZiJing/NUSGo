@@ -20,9 +20,9 @@ const waypoints: readonly CommunityWaypoint[] = [
     details: 'Beside the east stairwell.',
   },
   {
-    id: 'cw-atm-001',
-    displayLabel: 'ATM',
-    category: 'atm',
+    id: 'cw-printing-001',
+    displayLabel: 'Printing / photocopying',
+    category: 'printing',
     coordinate: { longitude: 103.77, latitude: 1.30 },
     source: 'NUS Campus Facilities',
     updatedAt: '2026-10-25',
@@ -67,14 +67,14 @@ describe('CommunityWaypointPanel', () => {
     await screen.findByRole('button', {
       name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1',
     })
-    expect(screen.getByRole('button', { name: 'Open details for ATM' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open details for Printing / photocopying' })).toBeTruthy()
     const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 waypoint' })
     expect(waterFilter.getAttribute('aria-pressed')).toBe('true')
     await user.click(waterFilter)
 
     expect(screen.queryByRole('button', { name: /Open details for Water cooler/ })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Open details for ATM' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'ATM, 1 waypoint' }))
+    expect(screen.getByRole('button', { name: 'Open details for Printing / photocopying' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Printing / photocopying, 1 waypoint' }))
     expect(screen.getByText('No matches.')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Show all waypoints' }))
 

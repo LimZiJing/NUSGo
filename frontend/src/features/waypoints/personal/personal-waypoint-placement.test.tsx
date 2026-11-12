@@ -23,19 +23,19 @@ function renderPlacement(overrides: Partial<Parameters<typeof PersonalWaypointPl
 }
 
 describe('PersonalWaypointPlacement', () => {
-  it('shows only one extra control, Edit, until coordinate entry is opened', async () => {
+  it('shows compact location controls with coordinates collapsed initially', async () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    expect(screen.getByRole('heading', { name: 'Adjust waypoint location' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Adjust location' })).toBeTruthy()
     expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Edit', 'Use map centre', 'Cancel', 'Done adjusting location',
+    expect(screen.getAllByRole('button').map((button) => button.textContent?.trim())).toEqual([
+      'Use map centre', 'Coordinates', 'Cancel', 'Use location',
     ])
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByRole('spinbutton')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    await user.click(screen.getByRole('button', { name: 'Use location' }))
     expect(props.onContinue).toHaveBeenCalledOnce()
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(props.onCancel).toHaveBeenCalledOnce()
@@ -45,8 +45,8 @@ describe('PersonalWaypointPlacement', () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
-    const input = screen.getByRole('textbox', { name: 'Selected location' })
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
+    const input = screen.getByRole('textbox', { name: 'Latitude, longitude' })
     expect(document.activeElement).toBe(input)
     expect((input as HTMLInputElement).value).toBe('1.293300, 103.784400')
 
@@ -57,15 +57,15 @@ describe('PersonalWaypointPlacement', () => {
 
     expect(props.onApplyCoordinate).toHaveBeenCalledWith({ latitude: 1.2966, longitude: 103.7764 })
     expect(screen.queryByRole('textbox')).toBeNull()
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Coordinates' }))
   })
 
   it('shows the parser message for invalid input and keeps the previous coordinate', async () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
-    const input = screen.getByRole('textbox', { name: 'Selected location' })
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
+    const input = screen.getByRole('textbox', { name: 'Latitude, longitude' })
     await user.clear(input)
     await user.type(input, '103.7764, 1.2966{Enter}')
 
@@ -84,7 +84,7 @@ describe('PersonalWaypointPlacement', () => {
     window.addEventListener('keydown', onWindowKeyDown)
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
     await user.type(screen.getByRole('textbox'), '{Escape}')
     window.removeEventListener('keydown', onWindowKeyDown)
 
@@ -92,14 +92,14 @@ describe('PersonalWaypointPlacement', () => {
     expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
     expect(props.onApplyCoordinate).not.toHaveBeenCalled()
     expect(onWindowKeyDown).not.toHaveBeenCalled()
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Coordinates' }))
   })
 
   it('closes entry from the Close button', async () => {
     const user = userEvent.setup()
     renderPlacement()
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
-    await user.click(screen.getByRole('button', { name: 'Close coordinate entry' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
     expect(screen.queryByRole('textbox')).toBeNull()
   })
 
@@ -107,11 +107,11 @@ describe('PersonalWaypointPlacement', () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
     const input = screen.getByRole('textbox')
     await user.clear(input)
     await user.type(input, '1.30 103.78')
-    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    await user.click(screen.getByRole('button', { name: 'Use location' }))
 
     expect(props.onApplyCoordinate).toHaveBeenCalledWith({ latitude: 1.3, longitude: 103.78 })
     expect(props.onContinue).toHaveBeenCalledOnce()
@@ -121,11 +121,11 @@ describe('PersonalWaypointPlacement', () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
     const input = screen.getByRole('textbox')
     await user.clear(input)
     await user.type(input, 'nonsense')
-    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    await user.click(screen.getByRole('button', { name: 'Use location' }))
 
     expect(screen.getByRole('alert')).toBeTruthy()
     expect(props.onApplyCoordinate).not.toHaveBeenCalled()
@@ -136,8 +136,8 @@ describe('PersonalWaypointPlacement', () => {
     const user = userEvent.setup()
     const { props } = renderPlacement()
 
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
-    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Use location' }))
 
     expect(props.onApplyCoordinate).not.toHaveBeenCalled()
     expect(props.onContinue).toHaveBeenCalledOnce()
@@ -146,7 +146,7 @@ describe('PersonalWaypointPlacement', () => {
   it('follows the pin while the edit is untouched', async () => {
     const user = userEvent.setup()
     const { rerender, props } = renderPlacement()
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
 
     rerender(<PersonalWaypointPlacement {...props} coordinate={{ latitude: 1.31, longitude: 103.79 }} />)
 
@@ -156,7 +156,7 @@ describe('PersonalWaypointPlacement', () => {
   it('warns, without blocking, about a point outside Singapore and clears it when the pin moves', async () => {
     const user = userEvent.setup()
     const { rerender, props } = renderPlacement()
-    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    await user.click(screen.getByRole('button', { name: 'Coordinates' }))
     const input = screen.getByRole('textbox')
     await user.clear(input)
     await user.type(input, '51.5072, -0.1276{Enter}')

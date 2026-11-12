@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
-import { LocateIcon, MapPinIcon } from '../../../ui/icons'
+import { CheckIcon, ChevronDownIcon, LocateIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -32,7 +32,7 @@ export function PersonalWaypointPlacement({
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const editButtonRef = useRef<HTMLButtonElement>(null)
+  const editButtonRef = useRef<HTMLElement>(null)
   const returnFocusToEdit = useRef(false)
   const [editing, setEditing] = useState(false)
   // The input follows the pin until the person types, so a pin drag never leaves stale text to apply.
@@ -101,60 +101,50 @@ export function PersonalWaypointPlacement({
 
   return <section className="personal-waypoint-placement" aria-label="Adjust waypoint location">
     <header className="personal-waypoint-placement-header">
-      <h2 ref={headingRef} tabIndex={-1}>Adjust waypoint location</h2>
-      <p>Tap the map or use its centre to move the pin, then return to your form.</p>
+      <h2 ref={headingRef} tabIndex={-1}>Adjust location</h2>
+      <p>Tap the map or drag the pin.</p>
     </header>
     <div className="personal-waypoint-location-group">
-      <div className="personal-waypoint-selected-location" data-editing={editing || undefined}>
-        <span className="personal-waypoint-selected-location-icon" aria-hidden="true"><MapPinIcon size={17} /></span>
-        <div className="personal-waypoint-selected-location-copy">
-          <strong className="personal-waypoint-selected-location-label" id="personal-waypoint-selected-location-label">
-            Selected location
-          </strong>
-          {editing
-            ? <form className="personal-waypoint-coordinate-entry" data-owns-escape="true" onSubmit={submit} noValidate>
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                placeholder="1.2966, 103.7764"
-                aria-labelledby="personal-waypoint-selected-location-label"
-                aria-description="Latitude, then longitude, in decimal degrees"
-                aria-invalid={Boolean(error)}
-                aria-errormessage={error ? 'personal-waypoint-coordinate-error' : undefined}
-                autoCapitalize="off"
-                autoComplete="off"
-                spellCheck={false}
-                enterKeyHint="done"
-                onChange={(event) => { setTyped(event.target.value); setError(null) }}
-                onKeyDown={handleKeyDown}
-              />
-            </form>
-            : <span className="personal-waypoint-selected-location-coordinate" aria-live="polite">
-              {formatSelectedCoordinate(coordinate)}
-            </span>}
-        </div>
-        <Button
-          ref={editButtonRef}
-          label={editing ? 'Close' : 'Edit'}
-          ariaLabel={editing ? 'Close coordinate entry' : 'Edit coordinates'}
-          variant="ghost"
-          onClick={editing ? closeEdit : openEdit}
-        />
-      </div>
+      <Button className="personal-waypoint-use-centre" label="Use map centre" icon={<LocateIcon size={16} />}
+        disabled={!onUseMapCentre} onClick={() => onUseMapCentre?.()} />
+      <details className="personal-waypoint-coordinate-disclosure" open={editing}
+        data-owns-escape={editing ? 'true' : undefined}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape' || !editing) return
+          event.preventDefault()
+          event.stopPropagation()
+          closeEdit()
+        }}>
+        <summary ref={editButtonRef} role="button" aria-expanded={editing} onClick={(event) => {
+          event.preventDefault()
+          if (editing) { event.preventDefault(); closeEdit() } else openEdit()
+        }}>
+          Coordinates <ChevronDownIcon size={16} />
+        </summary>
+        <p className="personal-waypoint-selected-location-coordinate">{formatSelectedCoordinate(coordinate)}</p>
+        {editing && <form className="personal-waypoint-coordinate-entry" data-owns-escape="true" onSubmit={submit} noValidate>
+          <label htmlFor="personal-waypoint-coordinate-input">Latitude, longitude</label>
+          <input
+            ref={inputRef}
+            id="personal-waypoint-coordinate-input"
+            type="text"
+            value={inputValue}
+            placeholder="1.2966, 103.7764"
+            aria-description="Latitude, then longitude, in decimal degrees"
+            aria-invalid={Boolean(error)}
+            aria-errormessage={error ? 'personal-waypoint-coordinate-error' : undefined}
+            autoCapitalize="off" autoComplete="off" spellCheck={false} enterKeyHint="done"
+            onChange={(event) => { setTyped(event.target.value); setError(null) }}
+            onKeyDown={handleKeyDown}
+          />
+        </form>}
+      </details>
       {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
       <p className="personal-waypoint-coordinate-note" role="status">{visibleWarning}</p>
-      <Button
-        className="personal-waypoint-use-centre"
-        label="Use map centre"
-        icon={<LocateIcon size={16} />}
-        disabled={!onUseMapCentre}
-        onClick={() => onUseMapCentre?.()}
-      />
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />
-      <Button label="Done adjusting location" variant="primary" onClick={done} />
+      <Button label="Use location" icon={<CheckIcon size={16} />} variant="primary" onClick={done} />
     </div>
   </section>
 }

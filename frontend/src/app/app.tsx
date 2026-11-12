@@ -135,6 +135,7 @@ function App() {
   const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
+  const placementOriginalCoordinateRef = useRef<WaypointCoordinate | null>(null)
   const [personalWaypointDetails, setPersonalWaypointDetails] = useState<PersonalWaypointDetailsSelection | null>(null)
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
@@ -792,15 +793,19 @@ function App() {
   }
   const beginWaypointLocationAdjustment = (): void => {
     setPlacementReturnPage(morePage === 'editing-waypoint' ? 'editing-waypoint' : 'creating')
+    placementOriginalCoordinateRef.current = personalWaypoints.draft.coordinate
     setMorePage('placing')
   }
-  const cancelWaypointPlacement = (): void => {
+  const cancelWaypointPlacement = useCallback((): void => {
     const returnPage = placementReturnPage
+    const originalCoordinate = placementOriginalCoordinateRef.current
+    if (originalCoordinate) updatePersonalWaypointDraft({ coordinate: originalCoordinate })
+    placementOriginalCoordinateRef.current = null
     if (!returnPage) setIsEditingPersonalWaypoints(false)
     setPlacementReturnPage(null)
     setMoreSheetDetent('full')
     setMorePage(returnPage ?? 'waypoints')
-  }
+  }, [placementReturnPage, updatePersonalWaypointDraft])
   const clearPersonalWaypoints = (): void => {
     personalWaypoints.clearAll()
     setIsEditingPersonalWaypoints(false)
@@ -853,11 +858,7 @@ function App() {
   }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
-      const returnPage = placementReturnPage
-      if (!returnPage) setIsEditingPersonalWaypoints(false)
-      setPlacementReturnPage(null)
-      setMorePage(returnPage ?? 'waypoints')
-      setMoreSheetDetent('full')
+      cancelWaypointPlacement()
       return
     }
     if (morePage === 'waypoint-details') {
@@ -899,12 +900,12 @@ function App() {
     setIsEditingPersonalWaypoints(false)
   }, [
     backToPersonalWaypointCategories,
+    cancelWaypointPlacement,
     cancelPersonalWaypointEdit,
     personalWaypointDraftBaselineRef,
     requestWaypointDismissal,
     morePage,
     personalWaypointEditReturnPage,
-    placementReturnPage,
     returnFromWaypointDetails,
     activePersonalWaypointCategory,
   ])
@@ -1032,6 +1033,11 @@ function App() {
       data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
+      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+        {morePage === 'placing'
+          ? `${personalWaypoints.draft.coordinate.latitude.toFixed(6)}, ${personalWaypoints.draft.coordinate.longitude.toFixed(6)}`
+          : ''}
+      </p>
       <dialog className="personal-waypoint-discard-dialog" ref={discardWaypointDialogRef}
         aria-labelledby="personal-waypoint-discard-heading"
         data-owns-escape="true" onCancel={(event) => { event.preventDefault(); setDiscardWaypointDialogOpen(false) }}>

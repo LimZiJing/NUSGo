@@ -24,7 +24,7 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | Field | Required | Rule |
 | --- | --- | --- |
 | `id` | Yes | Stable opaque ID in lower-case `cw-<UUID>` form. The parser normalizes UUID hex to lower case. Never reuse an ID, including after removal. IDs must be unique in the collection. |
-| `category` | Yes | One active controlled value: `water_cooler`, `atm`, `toilet`, or `vending_machine`. |
+| `category` | Yes | One active controlled value: `water_cooler`, `printing`, `toilet`, or `vending_machine`. |
 | `geometry` | Yes | GeoJSON `Point`; coordinates must be within the supported Singapore box. |
 | `source` | Yes | Short public description of how the place was verified, 1–160 characters after trimming. Do not put a private issue link or raw evidence reference here. |
 | `updatedAt` | Yes | Valid calendar date in `YYYY-MM-DD` form. It means the last reviewed update, not the creation date. |
@@ -34,7 +34,7 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 
 Text is trimmed at the parser boundary and length limits count Unicode code points. Optional fields may be omitted or set to `null`; the parsed model omits empty optional values. The round-trip fixture uses `null` for empty optional columns so GIS tools can retain a fixed set of fields.
 
-The initial category labels are **Water cooler**, **ATM**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
+The initial category labels are **Water cooler**, **Printing / photocopying**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
 
 The app derives `CommunityWaypoint.displayLabel` from the category label and any available building and floor. It displays optional `details` separately in the waypoint detail view; details are not part of the label. The anonymous submission contract does not accept `details`; maintainers may add verified display text while reviewing a public data change. Do not add an `accessibilityNote` or `name` property to public GeoJSON.
 

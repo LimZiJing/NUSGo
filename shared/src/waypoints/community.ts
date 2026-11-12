@@ -2,7 +2,7 @@ import type { Waypoint } from './waypoint.ts'
 
 export const COMMUNITY_WAYPOINT_CATEGORIES = [
   { value: 'water_cooler', label: 'Water cooler' },
-  { value: 'atm', label: 'ATM' },
+  { value: 'printing', label: 'Printing / photocopying' },
   { value: 'toilet', label: 'Toilet' },
   { value: 'vending_machine', label: 'Vending machine' },
 ] as const

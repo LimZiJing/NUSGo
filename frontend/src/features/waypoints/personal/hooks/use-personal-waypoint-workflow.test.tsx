@@ -145,6 +145,20 @@ describe('usePersonalWaypointWorkflow', () => {
     expect(result.current.status).toContain('removed')
   })
 
+  it('does not write when the confirmed waypoint was already removed elsewhere', () => {
+    const remaining = createWaypoint(1, 'First place')
+    const removedElsewhere = createWaypoint(2, 'Second place')
+    const { store, getWaypoints } = createMutableStore([remaining])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let removed = true
+    act(() => { removed = result.current.removeWaypoint(removedElsewhere.id) })
+
+    expect(removed).toBe(false)
+    expect(store.replaceAll).not.toHaveBeenCalled()
+    expect(getWaypoints().map(({ id }) => id)).toEqual([remaining.id])
+  })
+
   it('moves a waypoint across multiple rows with one write and skips a no-op', () => {
     const first = createWaypoint(1, 'First place')
     const second = createWaypoint(2, 'Second place')

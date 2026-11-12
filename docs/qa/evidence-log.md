@@ -2,6 +2,30 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Personal Waypoint delete focus (#572, PR #637) — 2026-11-09
+
+Pre-integration application base `ed812995f966d3fbd83f37ba9d82a685e66b515b` with the local patch subsequently committed as `5eb8e9866fc828890efa338392816500ea0850d1`, local Vite development server at `http://localhost:32212/`, headless Microsoft Edge `Edg/157.0.4341.42` driven over the DevTools protocol. Each viewport ran in a fresh browser profile with `innerWidth`/`innerHeight` confirmed as 1280 × 800 and 390 × 844 at DPR 1, and with two temporary Personal Waypoints seeded in isolated storage. This pass replaces the earlier "no browser run" note on this PR. It predates integration of main `9dc33ad0`; the navigation evidence is stale for the integrated branch, which uses the shared Back button. Screen-reader speech was not tested.
+
+- Cancelling the confirmation named the place (`Delete "Quiet bench"? This cannot be undone.`), kept both saved records, left Details open and kept focus on the Delete waypoint button that invoked it, at both sizes.
+- Confirming from Details deleted only that record. On desktop, where Details was opened from a map marker while My waypoints was the underlying page, the panel returned to the list with "Place removed." and focus on the surviving row `Show Tea room, Rest spot on map`. On mobile the list fills the sheet, so Details was opened from the list row's show-on-map action and then More was closed; confirming returned to the More menu at its partial detent with focus on Close More, and the mounted live region contained the status message. This verifies DOM state, not spoken output.
+- Deleting the last desktop waypoint focused the empty-state heading `No saved waypoints yet. Add a waypoint to start your list.` with zero records left in storage.
+- The status region was mounted as `role="status" aria-live="polite"` with `data-empty="true"` before any message existed, and the same element carried the text afterwards — that is the change this pass verifies, since a region created together with its text is not reliably announced.
+- Keyboard: from the Details header, Tab reached Directions, Edit waypoint and Delete waypoint in that order, and Enter on Delete opened the same prompt; cancelling left focus on Delete.
+- Deleting a Details opened from a map marker while Settings was the active More page returned to Settings with focus on Back to previous view, not on the document body.
+- At 390 × 844 the list's Edit list Remove action also prompted, and cancelling kept the row and focus on that Remove button.
+- Both runners finished with zero page errors. The Express backend was not exercised for live arrivals, and physical-device gestures were not repeated. The harness itself is not committed.
+
+`CONTEXT.md` reviewed; no update needed.
+
+### Integrated focus check — 2026-11-09
+
+Application head `0a9ac90a71d0715c0aad092d41a01ee520f87cba`, managed development group at `http://localhost:32212/`, headless Microsoft Edge 157.0.4341.42 driven by Playwright. Fresh contexts used actual viewports 1280 × 800 and 390 × 844, DPR 1, with two temporary waypoints in isolated storage. This supersedes the pre-integration deletion-focus evidence above.
+
+- Opened My waypoints, used Show on map, and activated the actual waypoint marker with Enter while retaining the list as the return page. Clicked Delete and dismissed the native confirmation: both records remained and focus stayed on Delete at both sizes.
+- Clicked Delete again and accepted: only the selected record was removed, the panel returned to My waypoints, and focus landed on the surviving Tea room row at both sizes.
+- Activated the remaining marker with Enter, clicked Delete and accepted: storage contained zero waypoints and focus landed on the empty-state paragraph at both sizes.
+- Both runs completed with zero page errors. These checks cover keyboard marker activation and pointer deletion controls; they do not verify pointer marker hit areas, screen-reader speech, live arrivals or physical devices.
+
 ## Animation performance baseline — 2026-11-02 (#558)
 
 Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).

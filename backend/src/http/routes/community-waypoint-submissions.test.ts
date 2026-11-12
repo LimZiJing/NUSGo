@@ -164,11 +164,11 @@ describe('private submission issue creation', () => {
     const categoryCorrection = parseCommunityWaypointSubmission({
       kind: 'correction',
       waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
-      requestedChange: 'This is an ATM, not a water cooler.',
-      category: 'atm',
+      requestedChange: 'This is a printing and photocopying location, not a water cooler.',
+      category: 'printing',
     })
     const categoryCorrectionIssue = createPrivateSubmissionIssueDraft(categoryCorrection)
-    assert.match(categoryCorrectionIssue.body, /\| Proposed category \| ATM \|/)
+    assert.match(categoryCorrectionIssue.body, /\| Proposed category \| Printing \/ photocopying \|/)
     assert.deepEqual(categoryCorrectionIssue.labels, ['kind:correction', 'review:new'])
   })
 

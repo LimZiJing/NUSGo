@@ -23,7 +23,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 | Map | OpenFreeMap Liberty basemap, stop markers, route lines, opt-in stylised 3D live buses with route-coloured badges, heading and route movement, next-stop/crowding popups and a layer toggle | [Data and map](data-and-map.md#basemap-and-markers), [live transit data](backend-live-data.md#browser-presentation) |
 | PWA | Installable app shell with offline static data and install/update prompts | [PWA guide](pwa.md) |
 | Express API | Journey planning, NUS and LTA arrivals, service windows, active-bus snapshots, best-effort Load level joins on shuttle arrivals | [Express live transit data](backend-live-data.md), [local services](local-services.md) |
-| Hosting | Live at nusgo.app: frontend on Cloudflare Pages, API and Valhalla on one VM | [Production deployment](production-deploy.md) |
+| Hosting | Live at nusgo.app: production frontend on Cloudflare Pages; pushes to `main` auto-deploy a Cloudflare Pages staging preview; GitHub Pages remains manual for development-branch tests. API and Valhalla run on one VM. | [Production deployment](production-deploy.md) |
 
 Also in place:
 - A local Express container rehearsal (`backend/Dockerfile`, `docker-compose.rehearsal.yml`) with live NUS and LTA arrivals, checked locally on 22/10/2026. Results are in [local services](local-services.md#local-rehearsal-evidence--22-october-2026).

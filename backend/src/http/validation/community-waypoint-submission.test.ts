@@ -66,6 +66,10 @@ describe('parseCommunityWaypointSubmission', () => {
     }), InvalidCommunityWaypointSubmissionError)
     assert.throws(() => parseCommunityWaypointSubmission({
       ...validNewPlace,
+      category: 'atm',
+    }), InvalidCommunityWaypointSubmissionError)
+    assert.throws(() => parseCommunityWaypointSubmission({
+      ...validNewPlace,
       longitude: 181,
     }), InvalidCommunityWaypointSubmissionError)
     for (const photoField of [

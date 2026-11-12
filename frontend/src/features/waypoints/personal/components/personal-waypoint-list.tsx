@@ -49,6 +49,8 @@ interface PersonalWaypointListProps {
   readonly onSetCategoryVisibleImmediately?: (category: string, visible: boolean) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly onRemove: (waypointId: string) => void
+  readonly moveCategoryOptions?: readonly string[]
+  readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onEditAnnouncement?: (message: string) => void
 }
@@ -68,6 +70,8 @@ export function PersonalWaypointList({
   onSetCategoryVisibleImmediately,
   onSearchFilterChange,
   onRemove,
+  moveCategoryOptions = [],
+  onMoveToCategory,
   onMove,
   onEditAnnouncement,
 }: PersonalWaypointListProps) {
@@ -77,6 +81,21 @@ export function PersonalWaypointList({
   const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null)
   const previousEditing = useRef(editing)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const pendingMoveRestoreRef = useRef<number | null>(null)
+  useLayoutEffect(() => {
+    if (pendingMoveRestoreRef.current === null) return
+    const scrollTop = pendingMoveRestoreRef.current
+    pendingMoveRestoreRef.current = null
+    const panel = document.getElementById('more-panel-scroll')
+    if (panel) panel.scrollTop = scrollTop
+    searchInputRef.current?.focus({ preventScroll: true })
+  })
+  const moveToCategory = (waypointId: string, nextCategory: string): boolean => {
+    const panel = document.getElementById('more-panel-scroll')
+    const succeeded = onMoveToCategory?.(waypointId, nextCategory) ?? false
+    if (succeeded) pendingMoveRestoreRef.current = panel?.scrollTop ?? 0
+    return succeeded
+  }
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
   const pendingFocusRef = useRef<{ readonly waypointId: string; readonly action: 'reorder' | 'remove' } | null>(null)
   const categoryMenuRootRef = useRef<HTMLDivElement>(null)
@@ -265,6 +284,8 @@ export function PersonalWaypointList({
           pendingFocusRef.current = { waypointId: id, action: 'remove' }
           onRemove(id)
         },
+        moveCategoryOptions,
+        onMoveToCategory: moveToCategory,
         onFocusWaypoint,
         onOpenDetails,
         onDirections,
@@ -353,7 +374,7 @@ export function PersonalWaypointList({
                 {items.map((waypoint) => <PersonalWaypointListRow key={waypoint.id} {...{
                   waypoint, editing: editMode, handleDisabled: true, index: 0, handleDescriptionId: reorderInstructionsId,
                   onRemove: (id: string) => { pendingFocusRef.current = { waypointId: id, action: 'remove' }; onRemove(id) },
-                  onFocusWaypoint, onOpenDetails, onDirections, onHandleRef: registerHandleRef,
+                  onFocusWaypoint, onOpenDetails, onDirections, onHandleRef: registerHandleRef, moveCategoryOptions, onMoveToCategory: moveToCategory,
                 }} />)}
               </ul>
             </section>

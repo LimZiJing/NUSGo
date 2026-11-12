@@ -30,7 +30,7 @@ import type { NavigationView } from '../ui/navigation-view'
 import { createMapSession } from '../infrastructure/map/session'
 import { MoreEntryButton } from '../ui/more-entry-button'
 import { Button, IconButton } from '../ui/button'
-import { PlusIcon } from '../ui/icons'
+import { PlusIcon, UndoIcon } from '../ui/icons'
 import type { MorePanelPage } from '../ui/more-panel-surface'
 import {
   applyTheme,
@@ -1144,6 +1144,11 @@ function App() {
             detent: moreSheetDetent,
             statusMessage: personalWaypoints.statusKind === 'success' ? personalWaypoints.status : null,
             statusRevision: personalWaypoints.statusRevision,
+            statusAction: morePage === 'waypoints' && personalWaypoints.canUndoMove ? <IconButton label="Undo waypoint move" icon={<UndoIcon />} onClick={() => {
+              personalWaypoints.undoMoveWaypoint()
+              const focusTarget = document.querySelector<HTMLInputElement>('#more-panel-scroll input[type="search"]') ?? moreInitialFocusRef.current
+              focusTarget?.focus({ preventScroll: true })
+            }} /> : undefined,
             headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints'
               ? activePersonalWaypointCategory ?? 'My waypoints'
@@ -1174,6 +1179,7 @@ function App() {
               editing={isEditingPersonalWaypoints}
               onRemove={removePersonalWaypoint}
               onMove={personalWaypoints.moveWaypoint}
+              onMoveToCategory={personalWaypoints.moveWaypointToCategory}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}

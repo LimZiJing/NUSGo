@@ -175,6 +175,10 @@ export function RouteIcon(props: IconProps) {
   return renderDecorativeIcon(Route, props)
 }
 
+export function UndoIcon(props: IconProps) {
+  return renderDecorativeIcon(RotateCw, props)
+}
+
 export function MoonIcon(props: IconProps) {
   return renderDecorativeIcon(Moon, props)
 }

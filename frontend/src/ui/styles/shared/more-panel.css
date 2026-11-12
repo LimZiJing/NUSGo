@@ -65,27 +65,46 @@
   flex-direction: column;
 }
 
-.more-panel-status {
+.more-panel-status-row {
+  box-sizing: border-box;
   position: absolute;
   z-index: 20;
   right: 12px;
   bottom: max(12px, env(safe-area-inset-bottom, 0px));
   left: 12px;
-  margin: 0 auto;
-  box-sizing: border-box;
-  width: min(360px, 100%);
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(420px, calc(100% - 24px));
+  margin-inline: auto;
+  padding: 8px 10px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-control);
-  color: var(--text-secondary);
   background: var(--surface-card);
   box-shadow: var(--shadow-md);
-  font: var(--font-size-sm)/1.35 var(--sans);
+  pointer-events: none;
 }
 
-.more-panel-body:has(.more-panel-status) .more-panel-content-scroll {
+.more-panel-status {
+  position: static;
+  flex: 1 1 auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: auto;
+  padding: 0;
+  border: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  font: var(--font-size-sm)/1.35 var(--sans);
+  pointer-events: auto;
+}
+
+.more-panel-body:has(.more-panel-status-row) .more-panel-content-scroll {
   margin-bottom: 64px;
 }
+
+.more-panel-status-row .button.icon-button { flex: 0 0 auto; pointer-events: auto; }
 
 .more-panel-header {
   display: flex;
@@ -126,6 +145,9 @@
 }
 
 @media (max-width: 768px) {
+  /* Match the scroll surface's reserved space above the mobile navigation. */
+  .more-panel-status-row { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+
   .more-panel-body-menu .more-panel-header {
     min-height: 38px;
     margin: 0 1px 9px;

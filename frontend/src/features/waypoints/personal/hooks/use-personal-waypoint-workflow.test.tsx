@@ -65,7 +65,7 @@ function createMutableStore(initialWaypoints: readonly PersonalWaypoint[] = []) 
       return { kind: 'cleared' }
     }),
   }
-  return { store, getWaypoints: () => waypoints }
+  return { store, getWaypoints: () => waypoints, replaceExternally: (next: readonly PersonalWaypoint[]) => { waypoints = [...next]; revision = JSON.stringify(waypoints) as PersonalWaypointStoreRevision } }
 }
 
 type WorkflowResult = ReturnType<typeof usePersonalWaypointWorkflow>
@@ -163,6 +163,55 @@ describe('usePersonalWaypointWorkflow', () => {
     expect(store.replaceAll).toHaveBeenCalledTimes(1)
   })
 
+  it('moves a waypoint to a category and restores its original order with Undo', () => {
+    const first = createWaypoint(1, 'First place')
+    const moved = createWaypoint(2, 'Second place')
+    const third = createWaypoint(3, 'Third place')
+    const { store, getWaypoints } = createMutableStore([first, moved, third])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+
+    let succeeded = false
+    act(() => { succeeded = result.current.moveWaypointToCategory(moved.id, 'Work') })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints().map(({ id, category }) => [id, category])).toEqual([
+      [first.id, 'Rest spot'], [third.id, 'Rest spot'], [moved.id, 'Work'],
+    ])
+    expect(result.current.status).toBe('Moved to Work.')
+
+    act(() => { succeeded = result.current.undoMoveWaypoint() })
+    expect(succeeded).toBe(true)
+    expect(getWaypoints()).toEqual([first, moved, third])
+  })
+  it('does not report Undo success when persistence fails', () => {
+    const moved = createWaypoint(12, 'Saved place')
+    const { store, getWaypoints } = createMutableStore([moved])
+    const save = store.replaceAll
+    let writes = 0
+    store.replaceAll = vi.fn((next, revision) => {
+      writes += 1
+      if (writes > 1) return { kind: 'unavailable', operation: 'write' } as const
+      return save(next, revision)
+    })
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+    act(() => { result.current.moveWaypointToCategory(moved.id, 'Work') })
+    let undone = true
+    act(() => { undone = result.current.undoMoveWaypoint() })
+    expect(undone).toBe(false)
+    expect(getWaypoints()[0]?.category).toBe('Work')
+    expect(result.current.statusKind).toBe('problem')
+  })
+  it('refuses Undo after a newer saved revision appears', () => {
+    const moved = createWaypoint(13, 'Saved place')
+    const { store, getWaypoints, replaceExternally } = createMutableStore([moved])
+    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
+    act(() => { result.current.moveWaypointToCategory(moved.id, 'Work') })
+    const newer = { ...getWaypoints()[0]!, note: 'Edited elsewhere' }
+    replaceExternally([newer])
+    let undone = true
+    act(() => { undone = result.current.undoMoveWaypoint() })
+    expect(undone).toBe(false)
+    expect(getWaypoints()).toEqual([newer])
+  })
   it('saves waypoint edits while preserving the saved identity and creation time', () => {
     const original = createWaypoint(3, 'Quiet bench')
     const { store, getWaypoints } = createMutableStore([original])

@@ -1,16 +1,20 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import type { KeyboardEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
 import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { ArmchairIcon, CircleDotIcon, CloseIcon, CoffeeIcon, GripVerticalIcon, NavigationIcon, TreePineIcon, FavoriteIcon } from '../../../../ui/icons'
+import { ArmchairIcon, CircleDotIcon, CloseIcon, CoffeeIcon, GripVerticalIcon, NavigationIcon, TreePineIcon, FavoriteIcon, EllipsisVerticalIcon, MapIcon } from '../../../../ui/icons'
+import { ConnectedCategoryPicker } from '../connected-category-picker'
+import { useState } from 'react'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
   readonly editing: boolean
   readonly handleDisabled: boolean
   readonly onRemove: (waypointId: string) => void
+  readonly moveCategoryOptions?: readonly string[]
+  readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
   readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
   readonly onOpenDetails?: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onDirections?: (waypoint: PersonalWaypoint) => void
@@ -29,6 +33,8 @@ export function PersonalWaypointListRow({
   editing,
   handleDisabled,
   onRemove,
+  moveCategoryOptions = [],
+  onMoveToCategory,
   onFocusWaypoint,
   onOpenDetails,
   onDirections,
@@ -41,6 +47,9 @@ export function PersonalWaypointListRow({
   onHandleKeyDown,
   handleDescriptionId,
 }: PersonalWaypointListRowProps) {
+  const [moving, setMoving] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const label = `${waypoint.name}, ${waypoint.category}`
   const markerIcon = waypoint.markerIcon === 'rest' ? <ArmchairIcon />
     : waypoint.markerIcon === 'food' ? <CoffeeIcon />
@@ -51,6 +60,30 @@ export function PersonalWaypointListRow({
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
   }, [handleRef, onHandleRef, waypoint.id])
+  useLayoutEffect(() => {
+    if (moving) triggerRef.current?.closest('.personal-waypoint-row')?.querySelector<HTMLInputElement>('.personal-waypoint-category-input-group input')?.focus({ preventScroll: true })
+  }, [moving])
+  useEffect(() => {
+    if (!menuOpen && !moving) return
+    const onPointer = (event: PointerEvent): void => {
+      const target = event.target
+      if (!(target instanceof Node) || triggerRef.current?.closest('.personal-waypoint-row')?.contains(target) || (target instanceof Element && target.closest('.personal-waypoint-category-popup'))) return
+      setMenuOpen(false); setMoving(false); triggerRef.current?.focus({ preventScroll: true })
+    }
+    document.addEventListener('pointerdown', onPointer, true)
+    return () => document.removeEventListener('pointerdown', onPointer, true)
+  }, [menuOpen, moving])
+  const optionsMenu = onMoveToCategory ? <div className="personal-waypoint-list-actions" data-owns-escape={menuOpen || moving ? 'true' : undefined} onKeyDown={(event) => {
+    if (event.key !== 'Escape' || (!menuOpen && !moving)) return
+    event.preventDefault(); event.stopPropagation(); setMenuOpen(false); setMoving(false); triggerRef.current?.focus({ preventScroll: true })
+  }}><IconButton ref={triggerRef} label={`Waypoint options for ${label}`} icon={<EllipsisVerticalIcon />} variant="plain" expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} />{menuOpen && <div className="personal-waypoint-list-actions-menu"><button type="button" autoFocus className="personal-waypoint-move-menu-item" onClick={() => { setMenuOpen(false); setMoving(true) }}><MapIcon />Move to category</button></div>}</div> : null
+  const picker = moving && onMoveToCategory ? <div className="personal-waypoint-move-picker" data-owns-escape="true" onKeyDown={(event) => {
+    if (event.key !== 'Escape' || event.defaultPrevented) return
+    event.preventDefault()
+    event.stopPropagation()
+    setMoving(false)
+    triggerRef.current?.focus({ preventScroll: true })
+  }}><span>Move {waypoint.name} to</span><ConnectedCategoryPicker id={`move-category-${waypoint.id}`} label={`Move ${waypoint.name} to category`} category={waypoint.category} options={moveCategoryOptions} onSelect={(category) => { if (onMoveToCategory(waypoint.id, category)) setMoving(false) }} /></div> : null
 
   return (
     <SavedListRow
@@ -80,6 +113,7 @@ export function PersonalWaypointListRow({
       selectLabel={`Open ${label} details`}
       trailing={editing ? (
         <div className="personal-waypoint-row-actions">
+          {optionsMenu}
           <IconButton
             className="personal-waypoint-remove"
             label={`Remove ${label}`}
@@ -89,6 +123,7 @@ export function PersonalWaypointListRow({
         </div>
       ) : onDirections ? (
         <div className="personal-waypoint-row-actions">
+          {optionsMenu}
           <IconButton
             className="personal-waypoint-directions"
             label={`Directions to ${label}`}
@@ -99,7 +134,7 @@ export function PersonalWaypointListRow({
           />
         </div>
       ) : undefined}
-    />
+    >{picker}</SavedListRow>
   )
 }
 

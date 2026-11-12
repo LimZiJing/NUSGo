@@ -18,6 +18,7 @@ interface MorePanelSurfaceProps {
   readonly statusMessage: string | null
   readonly statusRevision: number
   readonly headerAction?: ReactNode
+  readonly statusAction?: ReactNode
   readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
   readonly children: ReactNode
@@ -29,6 +30,7 @@ export function MorePanelSurface({
   statusMessage,
   statusRevision,
   headerAction,
+  statusAction,
   initialFocusRef,
   onClose,
   children,
@@ -37,12 +39,14 @@ export function MorePanelSurface({
 
   return (
     <div className={`more-panel-body${isMenu ? ' more-panel-body-menu' : ''}`}>
-      {statusMessage && <p
-        key={statusRevision}
+      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true"><span key={statusRevision}>{statusMessage ?? ''}</span></p>
+      {statusMessage && <div className="more-panel-status-row">
+      <p
         className="more-panel-status"
-        role="status"
-        aria-live="polite"
-      >{statusMessage}</p>}
+        aria-hidden="true"
+      >{statusMessage}</p>
+      {statusAction}
+      </div>}
       <header className="more-panel-header">
         {isMenu ? <h2 id="more-panel-heading">{title}</h2> : (
           <>

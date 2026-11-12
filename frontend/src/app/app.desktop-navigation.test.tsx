@@ -1316,7 +1316,7 @@ describe('More surface', () => {
       name: 'Quiet bench', category: 'Study spot', note: 'Near the trees',
       coordinate: { longitude: 103, latitude: 1 },
     })])
-    expect(screen.getByText('Waypoint saved.').getAttribute('role')).toBe('status')
+    expect(screen.getAllByRole('status').some((status) => status.textContent === 'Waypoint saved.')).toBe(true)
     vi.unstubAllGlobals()
   })
 

@@ -6,6 +6,7 @@ interface SavedListRowProps {
   readonly title: string
   readonly subtitle?: string
   readonly trailing?: ReactNode
+  readonly children?: ReactNode
   readonly density?: 'compact' | 'regular'
   readonly className?: string
   readonly rowRef?: Ref<HTMLLIElement>
@@ -18,6 +19,7 @@ export function SavedListRow({
   title,
   subtitle,
   trailing,
+  children,
   density = 'regular',
   className,
   rowRef,
@@ -48,6 +50,7 @@ export function SavedListRow({
         </button>
       ) : <div className="saved-list-row-copy">{copy}</div>}
       {trailing}
+      {children}
     </li>
   )
 }

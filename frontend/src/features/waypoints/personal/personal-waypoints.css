@@ -326,6 +326,12 @@
   line-height: normal;
 }
 
+.personal-waypoint-move-menu-item { display: flex; width: 100%; min-height: 36px; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: var(--radius-control); color: var(--text-primary); background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.personal-waypoint-move-menu-item:hover, .personal-waypoint-move-menu-item:focus-visible { background: var(--surface-raised); }
+.personal-waypoint-move-menu-item svg { width: 16px; height: 16px; }
+.personal-waypoint-row { flex-wrap: wrap; }
+.personal-waypoint-move-picker { box-sizing: border-box; display: flex; flex: 0 0 100%; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border: 1px solid var(--border-card); border-radius: var(--radius-control); color: var(--text-primary); background: var(--surface-card); box-shadow: var(--shadow-md); }
+
 .personal-waypoint-row-actions .button.icon-button {
   width: 36px;
   min-width: 36px;

@@ -24,7 +24,7 @@ export interface CommunityWaypointMarkers {
 
 const CATEGORY_TOKENS: Readonly<Record<CommunityWaypointCategory, string>> = {
   water_cooler: 'W',
-  atm: 'ATM',
+  printing: 'PRN',
   toilet: 'T',
   vending_machine: 'V',
 }

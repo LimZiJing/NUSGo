@@ -83,6 +83,24 @@ describe('createCommunityWaypointMarkers', () => {
     markers.dispose()
   })
 
+  it('uses the printing and photocopying badge token', () => {
+    const printingWaypoint: CommunityWaypoint = {
+      ...waypoint,
+      id: 'cw-printing-001',
+      displayLabel: 'Printing / photocopying · Central Library · Floor 2',
+      category: 'printing',
+    }
+    const markers = createCommunityWaypointMarkers({} as Map)
+
+    markers.setWaypoints([printingWaypoint], vi.fn())
+    const button = document.querySelector<HTMLButtonElement>('.community-waypoint-marker')
+
+    expect(button?.dataset.category).toBe('printing')
+    expect(button?.getAttribute('aria-label')).toBe('Open details for Printing / photocopying · Central Library · Floor 2')
+    expect(button?.querySelector('.community-waypoint-marker-token')?.textContent).toBe('PRN')
+    markers.dispose()
+  })
+
   it('updates existing marker presentation and coordinate, removes stale markers, and disposes listeners', () => {
     const onSelect = vi.fn()
     const markers = createCommunityWaypointMarkers({} as Map)

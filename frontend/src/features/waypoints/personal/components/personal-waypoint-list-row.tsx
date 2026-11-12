@@ -25,7 +25,7 @@ interface PersonalWaypointListRowProps {
   readonly isDropTarget?: boolean
   readonly index: number
   readonly keyboardReordering?: boolean
-  readonly onHandleKeyDown?: (waypointId: string, index: number, event: KeyboardEvent<HTMLButtonElement>) => void
+  readonly onHandleKeyDown?: (waypointId: string, event: KeyboardEvent<HTMLButtonElement>) => void
   readonly handleDescriptionId: string
   readonly group?: string
 }
@@ -45,7 +45,6 @@ export function PersonalWaypointListRow({
   handleRef,
   isDragging = false,
   isDropTarget = false,
-  index,
   keyboardReordering = false,
   onHandleKeyDown,
   handleDescriptionId,
@@ -92,7 +91,6 @@ export function PersonalWaypointListRow({
     <SavedListRow
       rowRef={rowRef}
       className={`personal-waypoint-row${isDragging ? ' personal-waypoint-row-dragging' : ''}${isDropTarget ? ' personal-waypoint-row-drop-target' : ''}`}
-      dropTarget={isDropTarget}
       density="compact"
       leading={<>
         {editing && <IconButton
@@ -100,7 +98,7 @@ export function PersonalWaypointListRow({
           label={`Reorder ${label}`}
           icon={<GripVerticalIcon />}
           onClick={() => undefined}
-          onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, index, event)}
+          onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, event)}
           ariaDescribedBy={handleDescriptionId}
           ariaKeyShortcuts="Space Enter ArrowUp ArrowDown Escape"
           dataKeyboardReordering={keyboardReordering}

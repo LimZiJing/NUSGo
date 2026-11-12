@@ -277,12 +277,7 @@
 
 .personal-waypoint-row-dragging { opacity: .55; }
 
-.personal-waypoint-category-drop-target[data-drop-target='true'] {
-  outline: 2px dotted var(--accent);
-  outline-offset: 2px;
-  background: var(--accent-soft);
-}
-
+.personal-waypoint-category-drop-target[data-drop-target='true'],
 .personal-waypoint-row-drop-target {
   outline: 2px dotted var(--accent);
   outline-offset: 2px;

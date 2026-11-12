@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { moveGroupedWaypointFromDrag, PersonalWaypointList, resolveInsertionIndexFromPointer } from './personal-waypoint-list'
+import { moveGroupedWaypointFromDrag, resolveInsertionIndexFromPointer } from './personal-waypoint-group-drag'
+import { PersonalWaypointList } from './personal-waypoint-list'
 
 function createWaypoint(id: number, name: string, category: string): PersonalWaypoint {
   const suffix = String(id).padStart(12, '0')
@@ -166,6 +167,85 @@ describe('PersonalWaypointList', () => {
     expect(within(screen.getByRole('list', { name: 'Rest spot waypoints' })).getByText('Tea room')).toBeTruthy()
     expect(within(screen.getByRole('list', { name: 'Study place waypoints' })).getByText('Quiet bench')).toBeTruthy()
     expect(within(screen.getByRole('list', { name: 'Study place waypoints' })).getByText('Design studio')).toBeTruthy()
+  })
+
+  it('keeps grouped keyboard reordering inside its category and in the grouped layout', async () => {
+    const user = userEvent.setup()
+    const onMove = vi.fn(() => true)
+    const onMoveToPosition = vi.fn(() => true)
+    const onEditAnnouncement = vi.fn()
+    // Flat order Alpha, Beta, Alpha: a flat index would land P1 next to P2 in another group.
+    const flat = [
+      createWaypoint(51, 'P1', 'Alpha'),
+      createWaypoint(52, 'P2', 'Beta'),
+      createWaypoint(53, 'P3', 'Alpha'),
+    ]
+    render(
+      <PersonalWaypointList
+        waypoints={flat}
+        canEdit
+        editing
+        onRemove={() => undefined}
+        onMove={onMove}
+        onMoveToPosition={onMoveToPosition}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+
+    const handle = screen.getByRole('button', { name: 'Reorder P1, Alpha' })
+    handle.focus()
+    await user.keyboard('{Space}')
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith(
+      'Picked up P1, position 1 of 2 in Alpha. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.',
+    )
+    await user.keyboard('{ArrowDown}')
+    // The groups stay mounted while reordering, so the card layout does not jump to the flat list.
+    expect(screen.getByRole('region', { name: 'Alpha, 2 places' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Beta, 1 places' })).toBeTruthy()
+
+    await user.keyboard('{Enter}')
+    expect(onMove).not.toHaveBeenCalled()
+    expect(onMoveToPosition).toHaveBeenCalledExactlyOnceWith(flat[0]!.id, 'Alpha', 1)
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith('P1 moved to position 2 of 2 in Alpha.')
+  })
+
+  it('keeps the moved handle focused when it lands in a collapsed category', async () => {
+    const user = userEvent.setup()
+    const quietBench = waypoints[0]!
+    function MovingList() {
+      const [saved, setSaved] = useState(waypoints)
+      return <PersonalWaypointList
+        waypoints={saved}
+        canEdit
+        editing
+        moveCategoryOptions={['Rest spot', 'Study place']}
+        onMoveToCategory={(waypointId, category) => {
+          setSaved((current) => current.map((waypoint) => waypoint.id === waypointId ? { ...waypoint, category } : waypoint))
+          return true
+        }}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />
+    }
+    render(<MovingList />)
+
+    // Collapse the destination group so its rows are mounted but hidden when focus is restored.
+    await user.click(screen.getByRole('button', { name: /Study place.*1/ }))
+    expect(document.getElementById('waypoint-category-list-Study%20place')?.hasAttribute('hidden')).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: 'Waypoint options for Quiet bench, Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Move to category' }))
+    await user.click(screen.getByRole('combobox', { name: 'Move Quiet bench to category' }))
+    await user.click(screen.getByRole('option', { name: 'Study place' }))
+
+    expect(screen.getByRole('region', { name: 'Study place, 2 places' })).toBeTruthy()
+    expect(document.getElementById('waypoint-category-list-Study%20place')?.hasAttribute('hidden')).toBe(true)
+    // A hidden row cannot take focus, so focus lands on the heading the place moved into.
+    expect(document.activeElement?.textContent).toContain('Study place')
+    expect(document.activeElement?.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).not.toBe(document.body)
+    expect(quietBench.name).toBe('Quiet bench')
   })
 
   it('restores focus to a moved waypoint handle after its source category disappears', async () => {

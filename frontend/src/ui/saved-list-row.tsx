@@ -10,7 +10,6 @@ interface SavedListRowProps {
   readonly density?: 'compact' | 'regular'
   readonly className?: string
   readonly rowRef?: Ref<HTMLLIElement>
-  readonly dropTarget?: boolean
   readonly onSelect?: (event: MouseEvent<HTMLButtonElement>) => void
   readonly selectLabel?: string
 }
@@ -24,7 +23,6 @@ export function SavedListRow({
   density = 'regular',
   className,
   rowRef,
-  dropTarget,
   onSelect,
   selectLabel,
 }: SavedListRowProps) {
@@ -38,7 +36,6 @@ export function SavedListRow({
       ref={rowRef}
       className={['saved-list-row', className].filter(Boolean).join(' ')}
       data-density={density}
-      data-drop-target={dropTarget ? 'true' : undefined}
     >
       <div className="saved-list-row-leading">{leading}</div>
       {onSelect ? (

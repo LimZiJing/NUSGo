@@ -12,6 +12,13 @@ import { MenuItem } from '../../../../ui/menu-item'
 import { EllipsisVerticalIcon, MapIcon, PlusIcon } from '../../../../ui/icons'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
 import {
+  isFocusReachable,
+  moveGroupedWaypointFromDrag,
+  reorderWithinCategory,
+  resolveInsertionIndexFromPointer,
+  visibleRowMidpoints,
+} from './personal-waypoint-group-drag'
+import {
   PersonalWaypointListRow,
   PersonalWaypointSortableListRow,
 } from './personal-waypoint-list-row'
@@ -19,78 +26,7 @@ import {
 const reorderInstructionsId = 'personal-waypoint-reorder-instructions'
 const expandedCategoriesStorageKey = 'navus:personal-waypoints:expanded-categories:v1'
 
-// Insertion position within a category, derived from the pointer against visible row midpoints.
-// Rows are passed in final order with the moved waypoint already excluded, so the count of
-// midpoints above the pointer is exactly the insertion index.
-// eslint-disable-next-line react-refresh/only-export-components
-export function resolveInsertionIndexFromPointer(
-  rowMidpoints: readonly number[],
-  pointerY: number,
-): number {
-  return rowMidpoints.filter((midpoint) => midpoint < pointerY).length
-}
-
-// Visible row midpoints for a category, excluding the dragged row. Returns null when the group
-// has no measurable rows (collapsed heading, or only the dragged place), so the caller falls back
-// to "append" for a heading drop or the library-projected index for a row drop.
-// eslint-disable-next-line react-refresh/only-export-components
-export function visibleRowMidpoints(
-  categoryWaypointIds: readonly string[],
-  excludedWaypointId: string,
-  handles: ReadonlyMap<string, HTMLButtonElement | null>,
-): number[] | null {
-  const midpoints: number[] = []
-  for (const id of categoryWaypointIds) {
-    if (id === excludedWaypointId) continue
-    const row = handles.get(id)?.closest('li')
-    if (!row) continue
-    const rect = row.getBoundingClientRect()
-    if (rect.width === 0 && rect.height === 0) continue
-    midpoints.push(rect.top + rect.height / 2)
-  }
-  return midpoints.length > 0 ? midpoints.sort((left, right) => left - right) : null
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function moveGroupedWaypointFromDrag({
-  waypointId,
-  targetId,
-  sourceGroup,
-  sourceIndex,
-  targetGroup,
-  targetIndex,
-  resolvedIndex,
-  waypoints,
-  onMoveToPosition,
-}: {
-  readonly waypointId: string
-  readonly targetId: string
-  readonly sourceGroup?: string
-  readonly sourceIndex?: number
-  readonly targetGroup?: string
-  readonly targetIndex?: number
-  /** Pointer-derived index; authoritative when the destination rows are visible. */
-  readonly resolvedIndex?: number
-  readonly waypoints: readonly PersonalWaypoint[]
-  readonly onMoveToPosition?: (waypointId: string, category: string, indexWithinCategory: number) => boolean
-}): { readonly kind: 'moved' | 'unchanged' | 'failed' | 'invalid'; readonly category?: string; readonly index?: number } {
-  const waypoint = waypoints.find(({ id }) => id === waypointId)
-  if (!waypoint) return { kind: 'invalid' }
-  const groupPrefix = 'personal-waypoint-category:'
-  const targetCategory = targetId.startsWith(groupPrefix)
-    ? decodeURIComponent(targetId.slice(groupPrefix.length))
-    : targetGroup ?? sourceGroup
-  const appendIndex = waypoints.filter(({ category, id }) => category === targetCategory && id !== waypointId).length
-  // A collapsed heading has no visible rows, so its only meaning is "append".
-  const insertionIndex = resolvedIndex ?? (targetId.startsWith(groupPrefix) ? appendIndex : targetIndex ?? sourceIndex)
-  if (!targetCategory || !Number.isInteger(insertionIndex) || insertionIndex === undefined || insertionIndex < 0) return { kind: 'invalid' }
-  const sourceGlobalIndex = waypoints.findIndex(({ id }) => id === waypointId)
-  const originalCategoryIndex = waypoints.filter(({ category }, index) => category === waypoint.category && index < sourceGlobalIndex).length
-  if (targetCategory === waypoint.category && insertionIndex === originalCategoryIndex) return { kind: 'unchanged', category: targetCategory, index: insertionIndex }
-  return onMoveToPosition?.(waypointId, targetCategory, insertionIndex)
-    ? { kind: 'moved', category: targetCategory, index: insertionIndex }
-    : { kind: 'failed', category: targetCategory, index: insertionIndex }
-}
+const categoryHeadingId = (category: string): string => `waypoint-category-heading-${encodeURIComponent(category)}`
 
 function readExpandedCategories(): string[] {
   try {
@@ -104,6 +40,9 @@ function readExpandedCategories(): string[] {
 
 interface KeyboardReorderState {
   readonly waypointId: string
+  /** Set when reordering inside a category group; absent for the legacy flat list. */
+  readonly category?: string
+  readonly orderIds: readonly string[]
   readonly startIndex: number
   readonly currentIndex: number
 }
@@ -158,27 +97,31 @@ export function PersonalWaypointList({
   const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null)
   const previousEditing = useRef(editing)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const pendingMoveRestoreRef = useRef<{ readonly scrollTop: number; readonly waypointId?: string } | null>(null)
+  const pendingMoveRestoreRef = useRef<{ readonly scrollTop: number; readonly waypointId?: string; readonly category?: string } | null>(null)
   useLayoutEffect(() => {
     if (pendingMoveRestoreRef.current === null) return
     const pending = pendingMoveRestoreRef.current
     pendingMoveRestoreRef.current = null
     const panel = document.getElementById('more-panel-scroll')
     if (panel) panel.scrollTop = pending.scrollTop
-    const restoreFocus = (): void => {
-      const movedHandle = pending.waypointId ? handleRefs.current.get(pending.waypointId) : null
-      if (movedHandle?.isConnected) movedHandle.focus({ preventScroll: true })
-      else searchInputRef.current?.focus({ preventScroll: true })
+    // The moved handle is mounted even when its category is collapsed, but focus() on a control
+    // inside a hidden list silently does nothing. Fall back to the destination heading, then search.
+    const movedHandle = pending.waypointId ? handleRefs.current.get(pending.waypointId) ?? null : null
+    if (isFocusReachable(movedHandle)) {
+      movedHandle.focus({ preventScroll: true })
+      return
     }
-    restoreFocus()
-    if (pending.waypointId && !handleRefs.current.get(pending.waypointId)?.isConnected) {
-      requestAnimationFrame(restoreFocus)
+    const heading = pending.category ? document.getElementById(categoryHeadingId(pending.category)) : null
+    if (heading) {
+      heading.focus({ preventScroll: true })
+      return
     }
+    searchInputRef.current?.focus({ preventScroll: true })
   })
   const moveToCategory = (waypointId: string, nextCategory: string): boolean => {
     const panel = document.getElementById('more-panel-scroll')
     const succeeded = onMoveToCategory?.(waypointId, nextCategory) ?? false
-    if (succeeded) pendingMoveRestoreRef.current = { scrollTop: panel?.scrollTop ?? 0, waypointId }
+    if (succeeded) pendingMoveRestoreRef.current = { scrollTop: panel?.scrollTop ?? 0, waypointId, category: nextCategory }
     return succeeded
   }
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
@@ -194,9 +137,11 @@ export function PersonalWaypointList({
     searchQuery,
     activeCategory || null,
   ), [activeCategory, searchQuery, waypoints])
-  const keyboardPreviewWaypoints = keyboardReorder
-    ? arrayMove([...visibleWaypoints], keyboardReorder.startIndex, keyboardReorder.currentIndex)
-    : visibleWaypoints
+  const keyboardPreviewWaypoints = keyboardReorder === null
+    ? visibleWaypoints
+    : keyboardReorder.category === undefined
+      ? arrayMove([...visibleWaypoints], keyboardReorder.startIndex, keyboardReorder.currentIndex)
+      : reorderWithinCategory(visibleWaypoints, keyboardReorder.waypointId, keyboardReorder.category, keyboardReorder.currentIndex)
   const groupedWaypoints = useMemo(() => {
     const groups = new Map<string, PersonalWaypoint[]>()
     for (const waypoint of keyboardPreviewWaypoints) {
@@ -267,7 +212,6 @@ export function PersonalWaypointList({
 
   const handleReorderKeyDown = (
     waypointId: string,
-    index: number,
     event: KeyboardEvent<HTMLButtonElement>,
   ): void => {
     if (!canReorder) return
@@ -277,17 +221,22 @@ export function PersonalWaypointList({
 
     if (keyboardReorder) {
       if (keyboardReorder.waypointId !== waypointId) return
+      const { orderIds, startIndex } = keyboardReorder
+      const total = orderIds.length
+      const position = (positionIndex: number): string => keyboardReorder.category === undefined
+        ? `${positionIndex + 1} of ${total}`
+        : `${positionIndex + 1} of ${total} in ${keyboardReorder.category}`
 
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault()
         const direction = event.key === 'ArrowUp' ? -1 : 1
-        const currentIndex = Math.max(0, Math.min(waypoints.length - 1, keyboardReorder.currentIndex + direction))
+        const currentIndex = Math.max(0, Math.min(total - 1, keyboardReorder.currentIndex + direction))
         if (currentIndex === keyboardReorder.currentIndex) {
-          onEditAnnouncement?.(`${waypoint.name} is at position ${currentIndex + 1} of ${waypoints.length}.`)
+          onEditAnnouncement?.(`${waypoint.name} is at position ${position(currentIndex)}.`)
           return
         }
         setKeyboardReorder({ ...keyboardReorder, currentIndex })
-        onEditAnnouncement?.(`${waypoint.name}, position ${currentIndex + 1} of ${waypoints.length}.`)
+        onEditAnnouncement?.(`${waypoint.name}, position ${position(currentIndex)}.`)
         return
       }
 
@@ -302,28 +251,46 @@ export function PersonalWaypointList({
       if (isSpaceKey || event.key === 'Enter') {
         event.preventDefault()
         const targetIndex = keyboardReorder.currentIndex
+        const category = keyboardReorder.category
         setKeyboardReorder(null)
-        if (targetIndex === keyboardReorder.startIndex) {
-          onEditAnnouncement?.(`${waypoint.name} remains at position ${targetIndex + 1} of ${waypoints.length}.`)
+        if (targetIndex === startIndex) {
+          onEditAnnouncement?.(`${waypoint.name} remains at position ${position(targetIndex)}.`)
           return
         }
 
-        if (!onMove(waypointId, targetIndex)) {
+        // Grouped mode reorders inside the place's own category; the flat list reorders every place.
+        const saved = category === undefined
+          ? onMove(waypointId, targetIndex)
+          : onMoveToPosition?.(waypointId, category, targetIndex) ?? false
+        if (!saved) {
           onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
+          pendingFocusRef.current = { waypointId, action: 'reorder' }
           return
         }
 
         pendingFocusRef.current = { waypointId, action: 'reorder' }
-        onEditAnnouncement?.(`${waypoint.name} moved to position ${targetIndex + 1} of ${waypoints.length}.`)
+        onEditAnnouncement?.(`${waypoint.name} moved to position ${position(targetIndex)}.`)
       }
       return
     }
 
     if (!isSpaceKey && event.key !== 'Enter') return
     event.preventDefault()
-    setKeyboardReorder({ waypointId, startIndex: index, currentIndex: index })
+    // The legacy flat list reorders across every place; the grouped view stays inside its category.
+    const orderIds = categoryView || !canDragGrouped
+      ? waypoints.map(({ id }) => id)
+      : waypoints.filter((item) => item.category === waypoint.category).map(({ id }) => id)
+    const startIndex = Math.max(0, orderIds.indexOf(waypointId))
+    setKeyboardReorder({
+      waypointId,
+      category: canDragGrouped && !categoryView ? waypoint.category : undefined,
+      orderIds,
+      startIndex,
+      currentIndex: startIndex,
+    })
     pendingFocusRef.current = { waypointId, action: 'reorder' }
-    onEditAnnouncement?.(`Picked up ${waypoint.name}, position ${index + 1} of ${waypoints.length}. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.`)
+    const scope = canDragGrouped && !categoryView ? ` of ${orderIds.length} in ${waypoint.category}` : ` of ${orderIds.length}`
+    onEditAnnouncement?.(`Picked up ${waypoint.name}, position ${startIndex + 1}${scope}. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.`)
   }
 
   const handleDragEnd = (event: DragEndEvent, manager: DragDropManager): void => {
@@ -390,6 +357,9 @@ export function PersonalWaypointList({
         if (moveResult.kind === 'failed') onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
         else if (saved) onEditAnnouncement?.(`${waypoint.name} moved to ${moveResult.category}.`)
         else onEditAnnouncement?.(`Could not determine a destination for ${waypoint.name}.`)
+        if (saved && moveResult.category !== undefined) {
+          pendingMoveRestoreRef.current = { ...pendingMoveRestoreRef.current!, category: moveResult.category }
+        }
         if (!saved) {
           pendingMoveRestoreRef.current = null
           handleRefs.current.get(waypointId)?.focus()
@@ -480,7 +450,7 @@ export function PersonalWaypointList({
         {editMode && <p id={reorderInstructionsId} className="visually-hidden">
           Press Space or Enter to start reordering. Use the Up and Down arrow keys to change position. Press Space or Enter to save, or Escape to cancel.
         </p>}
-        {categoryView || keyboardReorder ? listRows : <>
+        {categoryView || (keyboardReorder !== null && keyboardReorder.category === undefined) ? listRows : <>
           {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
             <Button label="Expand all" variant="ghost" onClick={() => {
               const categories = groupedWaypoints.map(([name]) => name)
@@ -525,7 +495,9 @@ export function PersonalWaypointList({
               <ul id={`waypoint-category-list-${encodeURIComponent(name)}`} hidden={!expanded} data-editing={editMode ? 'true' : 'false'} className="personal-waypoint-list-rows" aria-label={`${name} waypoints`}>
                 {items.map((waypoint) => {
                   const rowProps = {
-                  waypoint, editing: editMode, handleDisabled: !canReorder, index: waypoints.findIndex(({ id }) => id === waypoint.id), handleDescriptionId: reorderInstructionsId,
+                  waypoint, editing: editMode, index: waypoints.findIndex(({ id }) => id === waypoint.id), handleDescriptionId: reorderInstructionsId,
+                  handleDisabled: !canReorder || Boolean(keyboardReorder && keyboardReorder.waypointId !== waypoint.id),
+                  keyboardReordering: keyboardReorder?.waypointId === waypoint.id,
                   onRemove: (id: string) => { pendingFocusRef.current = { waypointId: id, action: 'remove' }; onRemove(id) },
                   onFocusWaypoint, onOpenDetails, onDirections, onHandleRef: registerHandleRef, onHandleKeyDown: handleReorderKeyDown, moveCategoryOptions, onMoveToCategory: moveToCategory,
                   }

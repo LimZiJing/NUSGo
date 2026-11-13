@@ -8,13 +8,13 @@ This is the specification for NUSGo buttons, chips, and pills. Vocabulary is def
 | --- | --- | --- |
 | `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Use `label` with optional leading `icon` and `trailingIcon` for a standard centered control, or `children` for a rich row whose content owns its alignment and layout. `type` defaults to `button` and supports `submit` and `reset`; a native form submit button can rely on the form `onSubmit` handler without a click callback. Native button attributes and pointer handlers are forwarded to the underlying button. Also accepts `title`, `expanded` and `controls` (`aria-expanded`, `aria-controls`) for disclosure triggers, and `busy` (`aria-busy`). |
 | `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. Also accepts variant `plain`: no box at rest, on hover or when pressed (hover only dims the icon; focus keeps the ring), for icon toggles such as a favourite star and for dismiss icons. The caller changes the icon to show a pressed state. |
-| `BackButton` | Back navigation | `mode="header"` composes a plain `IconButton`; `mode="inline"` shows a compact arrow and label; `mode="label-only"` keeps a label-only ghost action. |
+| `BackButton` | Back navigation | `mode="header"` uses a secondary `IconButton` with a left arrow; `mode="inline"` shows a compact arrow and label; `mode="label-only"` keeps a label-only ghost action. |
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
 | `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
 | `Pill` | A non-interactive status label | Tones `neutral` and `success`, optional leading dot. `InfoPill` is built on it. |
 | `Select` | Choosing one value from a short list, such as a building | Labelled dropdown with a `listbox`. See [Select](#select). |
 
-`NavigateButton` is a primary `Button` with the navigation icon. `BackButton` uses the shared `IconButton` or `Button` for header, inline and label-only back actions. Inline mode keeps the existing compact arrow-and-label geometry.
+`NavigateButton` is a primary `Button` with the navigation icon. `BackButton` composes the shared `IconButton` for header back actions and `Button` for inline and label-only actions. The header arrow uses the secondary style, so it has the same neutral surface and text colour as other buttons. Inline mode keeps its existing compact arrow-and-label geometry.
 
 Props are platform-neutral. `className` is for layout. Shared variants and tokens own a control's appearance; documented feature surfaces below keep local styling to preserve established layouts.
 
